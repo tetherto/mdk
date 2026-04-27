@@ -147,7 +147,7 @@ class ConnectionService {
         valid[entry.id] = true
         await this.setupThing(entry)
       } catch (e) {
-        this.debugError(entry, e)
+        this.debugError(`ERR_SETUP_THING ${entry.id}`, e)
       }
     }
 

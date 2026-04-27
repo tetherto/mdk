@@ -29,7 +29,10 @@
     "modbus-stream": "0.46.0",
     "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
     "standard": "17.1.2",
-    "uuid": "9.0.1",
+    "uuid": "14.0.0",
     "yargs": "17.7.2"
+  },
+  "overrides": {
+    "fastify": "5.8.5"
   }
 }

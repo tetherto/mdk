@@ -4,8 +4,6 @@ const crypto = require('crypto')
 const debug = require('debug')('cdu:auth')
 
 function getAuthData (username, password, random) {
-  debug(`getAuthData(${username}, ${password}, ${random})`)
-
   // 1. get MD5 of username
   const md5Username = crypto.createHash('md5').update(username).digest()
   debug('md5Username', md5Username)

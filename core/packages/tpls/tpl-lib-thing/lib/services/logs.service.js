@@ -61,7 +61,7 @@ class LogsService {
     try {
       await log.close()
     } catch (e) {
-      this.debugError(log.discoveryKey.toString('hex'), e)
+      this.debugError('ERR_RELEASE_BEE', e)
     }
   }
 

@@ -55,7 +55,7 @@ class SnapsService {
 
       await this.releaseBeeTimeLog(log)
     } catch (e) {
-      this.debugError(snap, e)
+      this.debugError('ERR_SAVE_SNAP', e)
     }
   }
 

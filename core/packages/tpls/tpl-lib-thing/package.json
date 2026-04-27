@@ -30,7 +30,7 @@
     "mingo": "6.5.6",
     "miningos-lib-stats": "git+https://github.com/tetherto/miningos-lib-stats.git",
     "svc-facs-miningos-thg-write-calls": "git+https://github.com/tetherto/svc-facs-miningos-thg-write-calls.git",
-    "uuid": "9.0.1"
+    "uuid": "14.0.0"
   },
   "devDependencies": {
     "brittle": "3.16.3",

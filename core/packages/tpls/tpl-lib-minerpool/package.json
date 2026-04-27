@@ -1,28 +1,16 @@
 {
-  "name": "@tetherto/miningos-tpl-lib-minerpool",
+  "name": "@tetherto/tpl-lib-minerpool",
   "version": "0.0.1",
-  "description": "MiningOS Template Lib Miner Pool",
+  "description": "Template Lib Miner Pool",
   "keywords": [
     "tether"
   ],
   "author": "Tether",
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tetherto/miningos-tpl-lib-minerpool.git"
-  },
-  "homepage": "https://github.com/tetherto/miningos-tpl-lib-minerpool#readme",
-  "bugs": {
-    "url": "https://github.com/tetherto/miningos-tpl-lib-minerpool/issues"
-  },  
   "main": "index.js",
   "engines": {
     "node": ">=20"
   },
-  "files": [
-    "index.js",
-    "lib/"
-  ],
   "type": "commonjs",  
   "scripts": {
     "lint": "standard",

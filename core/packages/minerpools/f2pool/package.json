@@ -1,0 +1,34 @@
+{
+  "name": "@tetherto/minerpool-f2pool",
+  "version": "0.0.1",
+  "description": "F2Pool miner pool lib",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",  
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "commonjs",  
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit && npm run test:integration",
+    "test:unit": "NODE_ENV=test brittle tests/unit/**/*.test.js",
+    "test:integration": "NODE_ENV=test brittle tests/integration/**/*.test.js",
+    "test:coverage": "NODE_ENV=test brittle --coverage tests/unit/**/*.test.js"
+  },
+  "dependencies": {
+    "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git"
+  },
+  "devDependencies": {
+    "brittle": "3.16.3",
+    "date-fns": "3.6.0",
+    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
+    "standard": "17.1.2",
+    "yargs": "17.7.2"
+  }
+}

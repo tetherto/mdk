@@ -99,8 +99,8 @@ Alternatively, you can use `npx pnpm` for all commands if you prefer not to enab
 
 ```bash
 # Clone the repository
-git clone https://github.com/tetherto/miningos-ui-kit.git
-cd miningos-ui-kit
+git clone https://github.com/tetherto/mdk.git
+cd mdk/ui-client
 
 # Install dependencies
 pnpm install
@@ -259,13 +259,13 @@ For detailed information, see:
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/tetherto/miningos-ui-kit/issues)
+- **Issues**: [GitHub Issues](https://github.com/tetherto/mdk/issues)
 
 ---
 
 ## License
 
-Apache 2.0 - See [LICENSE](https://github.com/tetherto/miningos-app-ui/blob/staging/LICENSE) for details.
+Apache 2.0 - See [LICENSE](https://github.com/tetherto/mdk/LICENSE) for details.
 
 ---
 

@@ -1,0 +1,177 @@
+{
+  "collectSnapTimeoutMs": 120000,
+  "collectSnapsItvMs": 60000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "thingRtdConcurrency": 500,
+  "alerts": {
+    "container-bd-d40-m56": {
+      "oil_min_inlet_temp_warn": {
+        "description": "Oil tank inlet temperature is too low.",
+        "severity": "medium",
+        "params": {
+          "temp": 20
+        }
+      },
+      "oil_pump_error": {
+        "description": "Oil pump thermal relay action, need to check whether the oil pump overload or phase failure, press the reset button on the thermal relay before re-running the oil pump.",
+        "severity": "critical"
+      },
+      "water_pump_error": {
+        "description": "Water pump thermal relay action, need to check whether the water pump overload or phase failure, press the reset button on the thermal relay before re-running the water pump.",
+        "severity": "critical"
+      },
+      "hot_oil_overheat": {
+        "description": "Oil tank hot oil temperature is too high, check oil circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "hot_water_overheat": {
+        "description": "Water tank hot water temperature is too high, check water circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "cold_oil_overheat": {
+        "description": "Oil tank cold oil temperature is too high, check oil circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "cold_water_overheat": {
+        "description": "Water tank cold water temperature is too high, check water circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "oil_pump_not_running": {
+        "description": "Oil pump control signal output, but did not detect the oil pump running, check the operating panel \"manual / automatic\" switching knob is in the \"automatic\" gear. Check whether the \"manual/automatic\" switching knob on the operation panel is in the \"automatic\" position.",
+        "severity": "critical"
+      },
+      "water_pump_not_running": {
+        "description": "Water pump control signal output, but did not detect the water pump running, check the operating panel \"manual / automatic\" switching knob is in the \"automatic\" gear. Check whether the \"manual/automatic\" switching knob on the operation panel is in the \"automatic\" position.",
+        "severity": "critical"
+      }
+    },
+    "container-bd-d40-m30": {
+      "oil_min_inlet_temp_warn": {
+        "description": "Oil tank inlet temperature is too low.",
+        "severity": "medium",
+        "params": {
+          "temp": 20
+        }
+      },
+      "oil_pump_error": {
+        "description": "Oil pump thermal relay action, need to check whether the oil pump overload or phase failure, press the reset button on the thermal relay before re-running the oil pump.",
+        "severity": "critical"
+      },
+      "water_pump_error": {
+        "description": "Water pump thermal relay action, need to check whether the water pump overload or phase failure, press the reset button on the thermal relay before re-running the water pump.",
+        "severity": "critical"
+      },
+      "hot_oil_overheat": {
+        "description": "Oil tank hot oil temperature is too high, check oil circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "hot_water_overheat": {
+        "description": "Water tank hot water temperature is too high, check water circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "cold_oil_overheat": {
+        "description": "Oil tank cold oil temperature is too high, check oil circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "cold_water_overheat": {
+        "description": "Water tank cold water temperature is too high, check water circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "oil_pump_not_running": {
+        "description": "Oil pump control signal output, but did not detect the oil pump running, check the operating panel \"manual / automatic\" switching knob is in the \"automatic\" gear. Check whether the \"manual/automatic\" switching knob on the operation panel is in the \"automatic\" position.",
+        "severity": "critical"
+      },
+      "water_pump_not_running": {
+        "description": "Water pump control signal output, but did not detect the water pump running, check the operating panel \"manual / automatic\" switching knob is in the \"automatic\" gear. Check whether the \"manual/automatic\" switching knob on the operation panel is in the \"automatic\" position.",
+        "severity": "critical"
+      }
+    },
+    "container-bd-d40-a1346": {
+      "oil_min_inlet_temp_warn": {
+        "description": "Oil tank inlet temperature is too low.",
+        "severity": "medium",
+        "params": {
+          "temp": 20
+        }
+      },
+      "oil_pump_error": {
+        "description": "Oil pump thermal relay action, need to check whether the oil pump overload or phase failure, press the reset button on the thermal relay before re-running the oil pump.",
+        "severity": "critical"
+      },
+      "water_pump_error": {
+        "description": "Water pump thermal relay action, need to check whether the water pump overload or phase failure, press the reset button on the thermal relay before re-running the water pump.",
+        "severity": "critical"
+      },
+      "hot_oil_overheat": {
+        "description": "Oil tank hot oil temperature is too high, check oil circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "hot_water_overheat": {
+        "description": "Water tank hot water temperature is too high, check water circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "cold_oil_overheat": {
+        "description": "Oil tank cold oil temperature is too high, check oil circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "cold_water_overheat": {
+        "description": "Water tank cold water temperature is too high, check water circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "oil_pump_not_running": {
+        "description": "Oil pump control signal output, but did not detect the oil pump running, check the operating panel \"manual / automatic\" switching knob is in the \"automatic\" gear. Check whether the \"manual/automatic\" switching knob on the operation panel is in the \"automatic\" position.",
+        "severity": "critical"
+      },
+      "water_pump_not_running": {
+        "description": "Water pump control signal output, but did not detect the water pump running, check the operating panel \"manual / automatic\" switching knob is in the \"automatic\" gear. Check whether the \"manual/automatic\" switching knob on the operation panel is in the \"automatic\" position.",
+        "severity": "critical"
+      }
+    },
+    "container-bd-d40-s19xp": {
+      "oil_min_inlet_temp_warn": {
+        "description": "Oil tank inlet temperature is too low.",
+        "severity": "medium",
+        "params": {
+          "temp": 20
+        }
+      },
+      "oil_pump_error": {
+        "description": "Oil pump thermal relay action, need to check whether the oil pump overload or phase failure, press the reset button on the thermal relay before re-running the oil pump.",
+        "severity": "critical"
+      },
+      "water_pump_error": {
+        "description": "Water pump thermal relay action, need to check whether the water pump overload or phase failure, press the reset button on the thermal relay before re-running the water pump.",
+        "severity": "critical"
+      },
+      "hot_oil_overheat": {
+        "description": "Oil tank hot oil temperature is too high, check oil circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "hot_water_overheat": {
+        "description": "Water tank hot water temperature is too high, check water circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "cold_oil_overheat": {
+        "description": "Oil tank cold oil temperature is too high, check oil circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "cold_water_overheat": {
+        "description": "Water tank cold water temperature is too high, check water circulation system and cooling system is running normally.",
+        "severity": "critical"
+      },
+      "oil_pump_not_running": {
+        "description": "Oil pump control signal output, but did not detect the oil pump running, check the operating panel \"manual / automatic\" switching knob is in the \"automatic\" gear. Check whether the \"manual/automatic\" switching knob on the operation panel is in the \"automatic\" position.",
+        "severity": "critical"
+      },
+      "water_pump_not_running": {
+        "description": "Water pump control signal output, but did not detect the water pump running, check the operating panel \"manual / automatic\" switching knob is in the \"automatic\" gear. Check whether the \"manual/automatic\" switching knob on the operation panel is in the \"automatic\" position.",
+        "severity": "critical"
+      }
+    }
+  },
+  "container": {
+    "delay": 100,
+    "timeout": 30000
+  }
+}

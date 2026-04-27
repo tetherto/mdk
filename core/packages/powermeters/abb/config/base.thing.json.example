@@ -1,0 +1,29 @@
+{
+  "collectSnapTimeoutMs": 10000,
+  "_idFile": "",
+  "collectSnapsItvMs": 5000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "powermeter": {
+    "timeout": 10000,
+    "cacheLimit": 2
+  },
+  "alerts": {
+    "powermeter-abb-reu615": {
+      "medium_voltage_low": {
+        "description": "Medium voltage below minimum threshold",
+        "severity": "high",
+        "params": {
+          "minVoltage": 32000
+        }
+      },
+      "medium_voltage_high": {
+        "description": "Medium voltage above maximum threshold",
+        "severity": "high",
+        "params": {
+          "maxVoltage": 36000
+        }
+      }
+    }
+  }
+}

@@ -13,7 +13,7 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "preinstall": "for pkg in packages/*/*; do if [ -f \"$pkg/package.json\" ]; then npm install --prefix \"$pkg\"; fi; done",
+    "preinstall": "for pkg in packages/*/*; do if [ -f \"$pkg/package.json\" ]; then npm ci --prefix \"$pkg\"; fi; done",
     "lint": "standard",
     "lint:fix": "standard --fix",
     "test": "npm run lint && npm run test:unit && npm run test:integration",

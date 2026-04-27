@@ -1,0 +1,6 @@
+{
+  "_idFile": "",
+  "collectSnapsItvMs": 60000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3
+}

@@ -1,0 +1,45 @@
+{
+  "collectSnapTimeoutMs": 10000,
+  "collectSnapsItvMs": 5000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "alerts": {
+    "sensor-temp-seneca": {
+      "cabinet_temp_high": {
+        "description": "LV Cabinet temperature is above 60 degrees.",
+        "severity": "high",
+        "params": {
+          "temp": 60
+        }
+      },
+      "cabinet_temp_alert": {
+        "description": "LV Cabinet temperature is above 70 degrees. ",
+        "severity": "critical",
+        "params": {
+          "temp": 70
+        }
+      },
+      "oil_temp_high": {
+        "description": "Transformer oil temperature is above 80 degrees.",
+        "severity": "high",
+        "params": {
+          "temp": 80
+        }
+      },
+      "oil_temp_critical": {
+        "description": "Transformer oil temperature is above 90 degrees. Transformer will trip at 95 degrees.",
+        "severity": "critical",
+        "params": {
+          "temp": 90
+        }
+      },
+      "sensor_error": {
+        "description": "Sensor reading is faulty",
+        "severity": "medium"
+      }
+    }
+  },
+  "sensor": {
+    "timeout": 10000
+  }
+}

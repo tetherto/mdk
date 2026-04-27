@@ -1,0 +1,43 @@
+{
+  "name": "@tetherto/tpl-lib-thing",
+  "version": "0.0.1",
+  "description": "Template Lib Thing",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engine": {
+    "node": ">=20.0"
+  },
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit && npm run test:integration",
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.js",
+    "test:integration": "NODE_ENV=test brittle tests/integration/*.js",
+    "test:coverage": "brittle --coverage tests/unit/*.js"
+  },
+  "dependencies": {
+    "@bitfinex/lib-js-util-promise": "git+https://github.com/bitfinexcom/lib-js-util-promise.git",
+    "async": "3.2.6",
+    "bfx-facs-interval": "git+https://github.com/bitfinexcom/bfx-facs-interval.git",
+    "bfx-facs-scheduler": "git+https://github.com/bitfinexcom/bfx-facs-scheduler.git",
+    "debug": "4.4.1",
+    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git",
+    "lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "lib-js-util-promise": "git+https://github.com/bitfinexcom/lib-js-util-promise.git",
+    "mingo": "6.5.6",
+    "miningos-lib-stats": "git+https://github.com/tetherto/miningos-lib-stats.git",
+    "svc-facs-miningos-thg-write-calls": "git+https://github.com/tetherto/svc-facs-miningos-thg-write-calls.git",
+    "uuid": "9.0.1"
+  },
+  "devDependencies": {
+    "brittle": "3.16.3",
+    "standard": "17.1.2",
+    "yargs": "17.7.2"
+  },
+  "overrides": {
+    "minimatch": ">=10.2.1"
+  }
+}

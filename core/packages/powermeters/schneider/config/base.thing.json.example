@@ -1,0 +1,10 @@
+{
+  "collectSnapTimeoutMs": 120000,
+  "_idFile": "",
+  "collectSnapsItvMs": 5000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "powermeter": {
+    "timeout": 30000
+  }
+}

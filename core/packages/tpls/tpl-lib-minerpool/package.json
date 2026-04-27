@@ -1,0 +1,47 @@
+{
+  "name": "@tetherto/miningos-tpl-lib-minerpool",
+  "version": "0.0.1",
+  "description": "MiningOS Template Lib Miner Pool",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/miningos-tpl-lib-minerpool.git"
+  },
+  "homepage": "https://github.com/tetherto/miningos-tpl-lib-minerpool#readme",
+  "bugs": {
+    "url": "https://github.com/tetherto/miningos-tpl-lib-minerpool/issues"
+  },  
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "index.js",
+    "lib/"
+  ],
+  "type": "commonjs",  
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit && npm run test:integration",
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.js",
+    "test:integration": "NODE_ENV=test brittle tests/integration/*.js",
+    "test:coverage": "brittle --coverage tests/unit/*.js"
+  },
+  "dependencies": {
+    "bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",
+    "bfx-facs-scheduler": "git+https://github.com/bitfinexcom/bfx-facs-scheduler.git",
+    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git",
+    "lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "mingo": "6.5.6"
+  },
+  "devDependencies": {
+    "brittle": "3.16.3",
+    "standard": "17.1.2",
+    "yargs": "17.7.2"
+  }
+}

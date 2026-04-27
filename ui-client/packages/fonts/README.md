@@ -1,6 +1,6 @@
 # @mdk/fonts
 
-Font assets for MDK.
+Font assets for MDK (JetBrains Mono).
 
 ## Installation
 
@@ -10,37 +10,41 @@ pnpm add @mdk/fonts
 
 ## Usage
 
-Import the font CSS in your application entry point:
+Import the font CSS once in your application entry point:
 
 ```typescript
 import '@mdk/fonts/jetbrains-mono.css'
 ```
 
-This will:
-1. Load JetBrains Mono font family (weights: 100, 300, 400, 500, 600, 700)
-2. Override the `--font-mono` CSS variable to use JetBrains Mono
+This is all you need. The CSS file references the woff2 assets via relative
+URLs (`./fonts/*.woff2`), and your bundler (Vite, webpack, Rollup, etc.) will
+automatically resolve, hash, and emit them alongside your other build assets —
+no manual copy step required.
+
+After importing, the package will:
+
+1. Register the JetBrains Mono font family for weights 100, 300, 400, 500, 600, 700.
+2. Override the `--font-mono` CSS variable so `@mdk/core` components pick it up.
 
 ## What's Included
 
-- **JetBrainsMono-Thin.woff2** (88 KB) - Font weight 100
-- **JetBrainsMono-Light.woff2** (92 KB) - Font weight 300
-- **JetBrainsMono-Regular.woff2** (90 KB) - Font weight 400
-- **JetBrainsMono-Medium.woff2** (92 KB) - Font weight 500
-- **JetBrainsMono-SemiBold.woff2** (92 KB) - Font weight 600
-- **JetBrainsMono-Bold.woff2** (92 KB) - Font weight 700
-
-**Total size:** 564 KB (all fonts) | 1 KB (CSS only, gzips to 270 bytes)
+- **JetBrainsMono-Thin.woff2** - Font weight 100
+- **JetBrainsMono-Light.woff2** - Font weight 300
+- **JetBrainsMono-Regular.woff2** - Font weight 400
+- **JetBrainsMono-Medium.woff2** - Font weight 500
+- **JetBrainsMono-SemiBold.woff2** - Font weight 600
+- **JetBrainsMono-Bold.woff2** - Font weight 700
 
 ## Optional
 
-This package is **optional**. If you don't import it, `@mdk/core` will fall back to system monospace fonts.
+This package is **optional**. If you do not import it, `@mdk/core` falls back
+to the system monospace font stack defined on `--font-mono`.
 
-## For Demo Apps
+## Direct asset access
 
-If you're building a demo/documentation app, copy the fonts to your public folder:
+If you need to reference an individual font file directly (for example, to
+add a `<link rel="preload">` hint), the woff2 files are also exported:
 
-```bash
-cp -r packages/fonts/public/fonts apps/your-app/public/
+```typescript
+import jetBrainsRegular from '@mdk/fonts/fonts/JetBrainsMono-Regular.woff2'
 ```
-
-Then import the CSS as shown above.

@@ -5,7 +5,8 @@
   "private": true,
   "description": "Font assets for MDK",
   "exports": {
-    "./jetbrains-mono.css": "./dist/jetbrains-mono.css"
+    "./jetbrains-mono.css": "./dist/jetbrains-mono.css",
+    "./fonts/*": "./dist/fonts/*"
   },
   "files": [
     "dist"

@@ -1,13 +1,17 @@
 # MDK
 
-MDK is a JavaScript-based SDK that provides a modular and extensible foundation for:
+[This repository](https://github.com/tetherto/mdk) is the monorepo for [MDK](https://mdk.tether.io/), a JavaScript-based SDK that provides a modular and extensible foundation for:
 
 - Monitoring mining infrastructure  
 - Controlling devices and containers  
 - Collecting telemetry and operational data  
 - Building custom mining applications and integrations  
 
+MDK is released under [Apache License Version 2.0](LICENSE)
+
 ---
+
+## Status
 
 ⚠️ **Work in Progress**
 
@@ -17,7 +21,7 @@ The latest development code is available on the `main` branch, with pre-release 
 
 ---
 
-## Current Development Status
+## Current development status
 
 - `*-beta`, `*-rc` → Active development tags (latest features and changes)  
 - `x.y.z` → Reserved for stable releases  
@@ -38,7 +42,15 @@ Contributions are welcome while MDK is under active development.
 4. Make your changes  
 5. Submit a Pull Request  
 
+Learn more about [contributing](CONTRIBUTING.md)
+
 ### Example
 
 ```bash
 git checkout -b feature/your-feature-name
+```
+---
+
+## Documentation 
+
+End user documentation is available at [docs.mdk.tether.io/](https://docs.mdk.tether.io/)

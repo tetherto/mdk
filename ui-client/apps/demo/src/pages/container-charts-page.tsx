@@ -172,7 +172,7 @@ export const ContainerChartsPage = (): JSX.Element => {
         Overview dashboard for container miner combinations: combination selector plus liquid
         temperature (hot for Bitdeer), liquid low, oil (hidden for hydro / MicroBT), and pressure
         (hidden for immersion). Data and feature flags are passed in by the host app; chart series
-        use the same adapters as miningos-app-ui. Every chart example below (except &quot;Default
+        use the same adapters as mdk. Every chart example below (except &quot;Default
         adapter colors&quot;) passes a demo-local <code>getDatasetBorderColor</code> so each series
         in a card gets its own color; production apps can omit it and keep adapter defaults.
       </p>

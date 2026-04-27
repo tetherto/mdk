@@ -48,7 +48,7 @@ const formatPct = (value: number, total: number): string => {
 
 /**
  * DoughnutChart – Presentational Chart.js doughnut chart
- * with custom HTML legend matching the miningOS design.
+ * with custom HTML legend matching the MDK design.
  *
  * @example
  * ```tsx

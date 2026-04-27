@@ -28,7 +28,7 @@ export const MicroBTWidgetBoxPage = (): JSX.Element => (
       Compact container widget for Micro BT CDU status: circulation pump (running vs off, matched to{' '}
       <code>circulation_pump_running_status === &apos;running&apos;</code>) and cooling fan (
       <code>cooling_fan_control</code>: running vs error when false or missing). Labels match
-      miningos-app-ui (including &quot;Cicle Pump&quot;).
+      mdk (including &quot;Cicle Pump&quot;).
     </p>
     <div
       style={{
@@ -90,7 +90,7 @@ export const MicroBTWidgetBoxPage = (): JSX.Element => (
         <h3>Pump status string &quot;Running&quot; (capital R) — treated as off</h3>
         <p style={{ color: 'var(--muted-foreground)', fontSize: '14px', marginBottom: '0.5rem' }}>
           The widget matches the lowercase container status token <code>running</code> only (same as
-          miningos-app-ui).
+          mdk).
         </p>
         <WidgetDemoPreview>
           <MicroBTWidgetBox

@@ -84,7 +84,7 @@ export const parseSettingsFile = async (file: File): Promise<SettingsExportData>
 
 export const exportSettingsToFile = (data: SettingsExportData): string => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const filename = `miningos-settings-${timestamp}.json`
+  const filename = `mdk-settings-${timestamp}.json`
 
   const jsonString = JSON.stringify(data, null, 2)
   const blob = new Blob([jsonString], { type: 'application/json' })

@@ -103,7 +103,7 @@ const resolveDatasetColor = (item: TooltipItem<any>): string => {
 }
 
 /**
- * Creates a Chart.js external tooltip handler matching the miningOS design.
+ * Creates a Chart.js external tooltip handler matching the MDK design.
  *
  * The tooltip follows the real mouse cursor (not data points) via a mousemove
  * listener on the chart container. Content is updated by Chart.js's external

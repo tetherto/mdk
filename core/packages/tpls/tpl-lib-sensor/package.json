@@ -1,16 +1,12 @@
 {
-  "name": "miningos-tpl-lib-sensor",
+  "name": "@tethert0/tpl-lib-sensor",
   "version": "0.0.1",
-  "description": "MiningOS Template Lib Sensor",
+  "description": "Template Lib Sensor",
   "keywords": [
     "tether"
   ],
   "author": "Tether",
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tetherto/miningos-tpl-lib-sensor.git"
-  },
   "engine": {
     "node": ">=20.0"
   },
@@ -23,7 +19,6 @@
     "test:coverage": "brittle --coverage tests/unit/*.js"
   },
   "dependencies": {
-    "miningos-tpl-lib-thing": "git+https://github.com/tetherto/miningos-tpl-lib-thing.git#develop"
   },
   "devDependencies": {
     "brittle": "3.16.3",

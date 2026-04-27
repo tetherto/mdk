@@ -7,10 +7,6 @@
   ],
   "author": "Terher",
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tetherto/miningos-lib-powermeter-schneider.git"
-  },
   "engine": {
     "node": ">=20.0"
   },

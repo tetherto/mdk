@@ -1,0 +1,26 @@
+@use '@mdk/core/styles' as *;
+
+.miner-info-card-demo {
+  &__header {
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  &__examples {
+    @include flex_wrap;
+
+    gap: 70px;
+  }
+
+  &__section {
+    @include flex_column;
+
+    gap: 8px;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+}

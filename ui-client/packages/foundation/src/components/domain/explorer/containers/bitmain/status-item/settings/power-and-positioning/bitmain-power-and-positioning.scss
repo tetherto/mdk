@@ -1,0 +1,69 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitmain-power-positioning {
+  @include flex_column;
+
+  gap: 1.5rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+
+  &__panel {
+    flex: 1;
+    border: 1px solid var(--mdk-dialog-border-color);
+    min-width: 0;
+  }
+
+  &__section {
+    padding: 1rem;
+  }
+
+  &__power-item {
+    margin-bottom: 1.5rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__subtitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--mdk-color-text-secondary);
+    margin-bottom: 0.5rem;
+  }
+
+  &__value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--mdk-color-white);
+    margin: 0;
+  }
+
+  &__location-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  &__location-item {
+    min-width: 0;
+  }
+
+  &__location-details {
+    @include flex_column;
+
+    gap: 0.5rem;
+
+    p {
+      font-size: 14px;
+      color: var(--mdk-color-white);
+      margin: 0;
+    }
+  }
+}

@@ -1,0 +1,19 @@
+.secondary-stat-card-demo {
+  &__header {
+    @include flex_column;
+
+    gap: 0.5rem;
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  &__section {
+    margin-bottom: 2rem;
+  }
+
+  &__grid {
+    @include flex_align;
+
+    gap: 40px;
+  }
+}

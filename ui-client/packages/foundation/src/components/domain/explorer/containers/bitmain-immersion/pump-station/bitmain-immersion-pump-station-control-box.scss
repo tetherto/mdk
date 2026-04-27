@@ -1,0 +1,37 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitmain-immersion-pump-station-control-box {
+  background: var(--mdk-color-dark-bg);
+  border: 1px solid var(--mdk-border-default-color);
+  padding: 1.5rem;
+
+  &__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mdk-color-white);
+    margin: 0 0 1rem;
+  }
+
+  &__content {
+    @include flex_column;
+
+    gap: 0.75rem;
+  }
+
+  &__status {
+    display: flex;
+  }
+
+  &__state {
+    font-size: 0.875rem;
+    font-weight: 600;
+
+    &--on {
+      color: var(--mdk-color-strong-green);
+    }
+
+    &--off {
+      color: var(--mdk-color-brick-red);
+    }
+  }
+}

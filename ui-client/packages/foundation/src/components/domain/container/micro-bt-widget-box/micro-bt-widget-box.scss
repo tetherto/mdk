@@ -1,0 +1,23 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-micro-bt-widget-box {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.mdk-micro-bt-widget-box__item {
+  @include flex_column;
+  gap: 8px;
+}
+
+.mdk-micro-bt-widget-box__title {
+  font-size: 10px;
+  line-height: 12px;
+  color: var(--mdk-color-white-5);
+}
+
+.mdk-micro-bt-widget-box .mdk-indicator {
+  padding: 4px 8px;
+  gap: 4px;
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@mdk/demo",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "clean": "rimraf dist node_modules .turbo",
+    "dev": "vite",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "catalog:",
+    "@mdk/core": "workspace:*",
+    "@mdk/fonts": "workspace:*",
+    "@mdk/foundation": "workspace:*",
+    "@radix-ui/react-icons": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "react-redux": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@reduxjs/toolkit": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "react-router-dom": "catalog:",
+    "vite": "catalog:"
+  }
+}

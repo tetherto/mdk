@@ -1,0 +1,43 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-miner-info-card {
+  @include flex_column;
+
+  font-family: var(--font-mono);
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--mdk-color-white-transparent);
+  overflow: auto;
+
+  &__label {
+    font-size: 16px;
+    color: var(--mdk-color-white);
+    text-transform: uppercase;
+    font-weight: 400;
+    padding: 8px 10px;
+  }
+
+  &__row {
+    @include flex_row;
+
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+
+  &__controls {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 5px;
+    row-gap: 5px;
+  }
+
+  &__stats-row {
+    @include flex_row;
+
+    width: 100%;
+  }
+}

@@ -1,0 +1,15 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitdeer-settings {
+  @include flex_column;
+
+  gap: 2rem;
+
+  &__params {
+    width: 100%;
+  }
+
+  &__thresholds {
+    width: 100%;
+  }
+}

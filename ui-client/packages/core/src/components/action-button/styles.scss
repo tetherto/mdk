@@ -1,0 +1,61 @@
+@use '../../styles/mixins' as *;
+
+.mdk_action_button {
+  &__trigger {
+    letter-spacing: 0.05em;
+  }
+
+  &__popover {
+    max-width: 400px;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 1rem 1.25rem !important;
+    background-color: var(--mdk-color-gray-900) !important;
+  }
+
+  &__header {
+    @include flex_align;
+
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__icon {
+    display: flex;
+    flex-shrink: 0;
+
+    svg {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+
+    &--danger {
+      color: var(--mdk-color-brick-red);
+    }
+
+    &--primary,
+    &--secondary {
+      color: var(--mdk-button-primary-bg);
+    }
+  }
+
+  &__title {
+    font-weight: 500;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+    color: var(--mdk-color-white);
+  }
+
+  &__description {
+    line-height: 1.7;
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__actions {
+    @include flex_justify_end;
+
+    gap: 0.5rem;
+  }
+}

@@ -1,0 +1,155 @@
+.mosaic-demo {
+  &__title {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  &__header {
+    @include flex_align_between;
+
+    padding: 1.5rem;
+    border-bottom: 2px solid var(--mdk-color-primary);
+    border-radius: 8px;
+    flex-wrap: wrap;
+
+    &-stats {
+      display: flex;
+      gap: 2rem;
+    }
+  }
+  &__metric {
+    &-card {
+      @include flex_column;
+
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--mdk-button-secondary-border);
+
+      &--scrollable {
+        min-height: 30vh;
+        overflow-y: auto;
+      }
+    }
+
+    &-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+      color: var(--mdk-color-primary);
+      line-height: 1;
+    }
+
+    &-change {
+      font-size: 0.875rem;
+      margin: 0.5rem 0 0 0;
+    }
+  }
+
+  &__workers {
+    &-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    &-header {
+      display: flex;
+      border-bottom: 1px solid var(--mdk-button-secondary-border);
+      padding: 0.5rem 0;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    &-row {
+      @include flex_align;
+
+      border-top: 1px solid var(--mdk-button-secondary-border);
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    &-col {
+      &--name {
+        flex: 2;
+      }
+
+      &--hashrate {
+        flex: 2;
+      }
+
+      &--status {
+        flex: 1;
+      }
+    }
+  }
+
+  /* Chart */
+  &__chart {
+    &-container {
+      margin-top: 1rem;
+      flex: 1;
+    }
+
+    &-svg {
+      display: block;
+      border-radius: 4px;
+      padding: 1rem;
+    }
+  }
+
+  &__alerts {
+    &-container {
+      margin-top: 1rem;
+      flex: 1;
+    }
+
+    &__alert-card {
+      margin-bottom: 0.75rem;
+
+      &--last {
+        margin-bottom: 0;
+      }
+    }
+
+    &__alert-title {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    &__alert-description {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.875rem;
+    }
+
+    &-time {
+      font-size: 0.75rem;
+    }
+  }
+
+  &__earnings {
+    &-grid {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    &-item {
+      padding: 1rem;
+      border-radius: 4px;
+    }
+
+    &-label {
+      font-size: 0.75rem;
+      margin: 0 0 0.5rem 0;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    &-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0;
+    }
+  }
+}

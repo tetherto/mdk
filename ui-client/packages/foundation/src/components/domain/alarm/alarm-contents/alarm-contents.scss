@@ -1,0 +1,17 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-alarm-contents {
+  max-height: 250px;
+  overflow-x: hidden;
+
+  &__list {
+    @include flex_column;
+
+    max-height: 250px;
+    overflow-y: auto;
+  }
+
+  &__fallback {
+    width: 100%;
+  }
+}

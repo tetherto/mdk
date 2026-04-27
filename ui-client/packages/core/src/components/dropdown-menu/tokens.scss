@@ -1,0 +1,119 @@
+@use 'sass:map';
+
+// COLORS
+$content-border-color: var(--mdk-color-white-2);
+$content-background-color: var(--mdk-color-background-dark);
+$content-item-border-color: var(--mdk-color-white-transparent);
+$content-item-hover-background-color: var(--mdk-color-white-4);
+
+$menu-item-text-color: var(--mdk-color-white-7);
+$menu-item-active-text-color: var(--mdk-color-primary);
+$menu-item-active-background-color: var(--mdk-color-primary-10);
+
+$search-input-background-color: var(--mdk-color-white-transparent);
+
+// SIZE CONFIG (CONSISTENT NAMING)
+$dropdown-sizes: (
+  sm: (
+    content-max-width: 160px,
+
+    item-font-size: 12px,
+    item-line-height: 15px,
+    item-padding: 8px 12px,
+    item-icon-size: 12px,
+    item-icon-gap: 8px,
+
+    search-input-font-size: 12px,
+    search-input-line-height: 16px,
+    search-input-height: 32px,
+    search-input-padding: 8px 12px,
+    search-icon-size: 12px,
+
+    empty-padding: 48px 14px,
+  ),
+
+  md: (
+    content-max-width: 220px,
+
+    item-font-size: 14px,
+    item-line-height: 17px,
+    item-padding: 9px 16px,
+    item-icon-size: 14px,
+    item-icon-gap: 10px,
+
+    search-input-font-size: 14px,
+    search-input-line-height: 20px,
+    search-input-height: 40px,
+    search-input-padding: 9px 16px,
+    search-icon-size: 14px,
+
+    empty-padding: 54px 18px,
+  ),
+
+  lg: (
+    content-max-width: 280px,
+
+    item-font-size: 16px,
+    item-line-height: 22px,
+    item-padding: 12px 20px,
+    item-icon-size: 16px,
+    item-icon-gap: 12px,
+
+    search-input-font-size: 16px,
+    search-input-line-height: 24px,
+    search-input-height: 48px,
+    search-input-padding: 12px 20px,
+    search-icon-size: 16px,
+
+    empty-padding: 71px 26px,
+  ),
+);
+
+// MIXINS
+@mixin dropdown-item-size($size, $config) {
+  &--size-#{$size} {
+    padding: map.get($config, item-padding);
+    font-size: map.get($config, item-font-size);
+    line-height: map.get($config, item-line-height);
+
+    .mdk-dropdown-menu__item-icon,
+    .mdk-checkbox {
+      width: map.get($config, item-icon-size);
+      height: map.get($config, item-icon-size);
+      margin-right: map.get($config, item-icon-gap);
+    }
+  }
+}
+
+@mixin dropdown-search-size($size, $config) {
+  &--size-#{$size} {
+    .mdk-dropdown-menu__search-input {
+      padding: map.get($config, search-input-padding);
+      padding-right: 32px;
+      height: map.get($config, search-input-height);
+      font-size: map.get($config, search-input-font-size);
+      line-height: map.get($config, search-input-line-height);
+    }
+
+    .mdk-input__icon {
+      width: map.get($config, search-icon-size);
+      height: map.get($config, search-icon-size);
+    }
+  }
+}
+
+@mixin dropdown-empty-size($size, $config) {
+  &--size-#{$size} {
+    padding: map.get($config, empty-padding);
+    font-size: map.get($config, item-font-size);
+    line-height: map.get($config, item-line-height);
+  }
+}
+
+@mixin dropdown-label-size($size, $config) {
+  &--size-#{$size} {
+    padding: map.get($config, item-padding);
+    font-size: map.get($config, item-font-size);
+    line-height: map.get($config, item-line-height);
+  }
+}

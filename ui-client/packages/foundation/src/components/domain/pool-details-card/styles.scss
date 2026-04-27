@@ -1,0 +1,71 @@
+@use '@mdk/core/styles' as *;
+
+$_prefix: 'mdk-pool-details-card';
+
+.#{$_prefix} {
+  @include flex_column;
+
+  border-radius: 0;
+  padding: 10px 5px;
+  box-sizing: border-box;
+  background-color: var(--mdk-color-surface);
+  border: 1px solid var(--mdk-dialog-border-color);
+
+  &__header {
+    padding: 5px;
+    padding-left: 10px;
+
+    &--underline {
+      border-bottom: 1px solid var(--mdk-dialog-border-color);
+    }
+  }
+
+  &__label {
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 22px;
+    text-transform: uppercase;
+    color: var(--mdk-color-white);
+  }
+
+  &__list {
+    @include flex_column_justify_center;
+
+    gap: 5px;
+    width: 100%;
+    padding: 10px;
+    min-height: 176px;
+    box-sizing: border-box;
+  }
+
+  &__item {
+    @include flex_row;
+
+    justify-content: space-between;
+    font-size: 12px;
+  }
+
+  &__item-title {
+    font-weight: 600;
+    margin-right: 5px;
+    color: rgb(var(--mdk-color-dark-grey));
+  }
+
+  &__item-value {
+    @include text_ellipsis;
+
+    max-width: 200px;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__empty {
+    @include flex_center;
+
+    padding: 10px;
+    min-width: 176px;
+    font-size: 12px;
+    text-align: center;
+    color: var(--mdk-color-text-disabled);
+  }
+}

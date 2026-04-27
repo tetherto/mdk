@@ -1,0 +1,35 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitdeer-options {
+  @include flex_column_align_start;
+
+  flex-wrap: wrap;
+  gap: 10px;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+}
+
+// Container Fan Legend
+.mdk-container-fan-legend {
+  @include flex_column_center;
+
+  width: 40px;
+  height: 50px;
+  border: 1px solid transparent;
+  margin: 10px;
+  padding: 1px;
+}
+
+// Right Options Buttons Container
+.mdk-right-options-buttons {
+  @include flex_center_justify_start;
+
+  gap: 16px;
+  flex-wrap: wrap;
+
+  @media (min-width: 768px) {
+    width: auto;
+  }
+}

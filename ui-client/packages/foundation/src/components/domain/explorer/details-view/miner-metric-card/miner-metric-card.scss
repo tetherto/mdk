@@ -1,0 +1,72 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-miner-metric-card {
+  padding: 10px;
+  position: relative;
+  border: 1px solid var(--mdk-border-default-color);
+
+  &__title {
+    padding: 5px 5px 5px 10px;
+    color: var(--mdk-color-white);
+  }
+
+  &__efficiency {
+    @include flex_row;
+
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 400;
+    text-indent: 10px;
+
+    @media (min-width: 1240px) {
+      position: absolute;
+      top: 16px;
+      right: 15px;
+    }
+  }
+
+  &__content {
+    @include flex_column;
+
+    gap: 10px;
+    padding: 10px 10px 0 10px;
+
+    @media (min-width: 1024px) {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__box {
+    @include flex_column;
+
+    gap: 8px;
+    background-color: rgba(var(--mdk-color-white-rgb), 0.1);
+    padding: 8px 10px;
+  }
+
+  &__grid-box {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    grid-column: span 2;
+    padding: 8px 10px;
+    background-color: rgba(var(--mdk-color-white-rgb), 0.1);
+
+    @media (min-width: 1024px) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__item {
+    @include flex_row;
+
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  &__label {
+    color: rgba(var(--mdk-color-white-rgb), 0.6);
+  }
+}

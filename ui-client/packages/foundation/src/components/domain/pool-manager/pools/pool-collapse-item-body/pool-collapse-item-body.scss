@@ -1,0 +1,155 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-pm-pool-body {
+  @include flex_column;
+
+  gap: 32px;
+  padding: 16px;
+
+  &__section {
+    @include flex_column;
+
+    gap: 8px;
+
+    &-header {
+      @include flex_align_between;
+    }
+
+    &-title {
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--mdk-color-text-secondary);
+    }
+  }
+
+  &__empty {
+    font-size: 14px;
+    color: var(--mdk-color-white-7);
+  }
+
+  &__endpoints-list {
+    @include flex_column;
+
+    gap: 0;
+  }
+
+  &__endpoint {
+    @include flex_align;
+
+    gap: 32px;
+    padding: 16px;
+    border: 1px solid var(--mdk-color-white-2);
+
+    &-role {
+      @include flex_align;
+
+      flex-basis: 150px;
+      gap: 8px;
+
+      &-name {
+        @include flex_center;
+
+        flex-basis: 100px;
+        padding: 8px;
+        font-size: 12px;
+        color: var(--mdk-color-primary);
+        background-color: rgba(var(--mdk-color-primary-rgb), 0.2);
+      }
+    }
+
+    &-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--mdk-color-white-7);
+      flex-shrink: 0;
+    }
+
+    &-field {
+      @include flex_column;
+
+      flex: 1;
+      gap: 4px;
+
+      &-title {
+        font-size: 12px;
+        line-height: 1;
+        color: var(--mdk-color-white-5);
+      }
+
+      &-value {
+        font-size: 14px;
+        line-height: 1;
+        color: var(--mdk-color-text-secondary);
+      }
+    }
+
+    &-action {
+      flex: 0;
+
+      .mdk-button {
+        height: 24px;
+        width: 24px;
+      }
+    }
+  }
+
+  &__credentials {
+    @include flex_align;
+
+    gap: 32px;
+    padding: 16px;
+    border: 1px solid var(--mdk-color-white-2);
+
+    &-field {
+      @include flex_column;
+
+      flex: 1;
+      gap: 8px;
+    }
+
+    &-label {
+      font-size: 14px;
+      line-height: 1;
+      color: var(--mdk-color-white-7);
+    }
+
+    &-value {
+      padding: 8px;
+      font-size: 14px;
+      line-height: 1;
+      background-color: var(--mdk-color-white-transparent);
+      color: var(--mdk-color-white);
+    }
+  }
+
+  &__validation {
+    @include flex_align_between;
+
+    padding: 16px;
+    border: 1px solid var(--mdk-color-white-2);
+
+    &-indicator {
+      @include flex_align;
+
+      gap: 8px;
+    }
+    &-status {
+      font-size: 14px;
+      line-height: 20px;
+
+      &--valid {
+        color: var(--mdk-color-success);
+      }
+
+      &--invalid {
+        color: var(--mdk-color-error);
+      }
+    }
+
+    &-timestamp {
+      font-size: 12px;
+      color: var(--mdk-color-white-5);
+    }
+  }
+}

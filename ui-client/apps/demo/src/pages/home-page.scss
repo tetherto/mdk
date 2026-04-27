@@ -1,0 +1,218 @@
+.home-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+
+  &__header {
+    background: linear-gradient(135deg, rgba(247, 147, 26, 0.1) 0%, rgba(247, 147, 26, 0.05) 100%);
+    border-bottom: 1px solid rgba(247, 147, 26, 0.2);
+    padding: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  &__header-content {
+    @include flex_align_between;
+    gap: 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+
+  &__branding {
+    @include flex_align;
+
+    gap: 1rem;
+  }
+
+  &__logo {
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  &__brand-text {
+    @include flex_column;
+    gap: 0.25rem;
+  }
+
+  &__brand-name {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  &__brand-tagline {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+  }
+
+  &__header-meta {
+    @include flex_align;
+
+    gap: 1.5rem;
+  }
+
+  &__version {
+    padding: 0.375rem 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  &__github-link {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    border: 1px solid var(--mdk-color-white-2);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--color-primary);
+      transform: translateY(-2px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  &__hero {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding: 2rem;
+  }
+
+  &__title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+    color: var(--color-text-primary);
+  }
+
+  &__subtitle {
+    font-size: 1.25rem;
+    color: var(--color-text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  &__section {
+    margin-bottom: 3rem;
+    padding: 0 2rem;
+  }
+
+  &__section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-primary);
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(247, 147, 26, 0.2);
+  }
+
+  &__categories {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  &__stats {
+    @include flex_align;
+
+    gap: 4rem;
+    padding: 3rem 2rem;
+    border-top: 1px solid var(--color-border);
+    margin-top: 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 2rem;
+      text-align: center;
+    }
+  }
+}
+
+.category-card {
+  @include flex_column;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 2rem;
+
+  gap: 1rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-elevated);
+  border-radius: 8px;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+
+  &__description {
+    flex: 1;
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__count {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+}
+
+.stat-item {
+  @include flex_column;
+
+  gap: 0.5rem;
+
+  &__value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+
+  &__label {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}

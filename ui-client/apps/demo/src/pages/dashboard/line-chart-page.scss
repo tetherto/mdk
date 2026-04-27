@@ -1,0 +1,36 @@
+@use '@mdk/core/styles' as *;
+
+.line-chart-page {
+  &__header {
+    margin-bottom: 40px;
+    text-align: center;
+
+    code {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+  }
+
+  &__examples {
+    @include flex_column;
+
+    gap: 60px;
+  }
+
+  &__section {
+    @include flex_column;
+
+    gap: 8px;
+
+    p {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.6;
+    }
+  }
+
+  &__card {
+    width: 100%;
+    max-width: 1200px;
+  }
+}

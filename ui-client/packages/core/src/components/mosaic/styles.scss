@@ -1,0 +1,22 @@
+@use '../../styles/mixins' as *;
+
+.mosaic-grid {
+  @include flex_column;
+
+  gap: 16px;
+
+  // Desktop: use CSS Grid with named areas
+  @media (min-width: 1640px) {
+    display: grid;
+    grid-template-columns: var(--mosaic-columns);
+    grid-auto-rows: var(--mosaic-row-height);
+    gap: var(--mosaic-gap);
+    grid-template-areas: var(--mosaic-areas);
+  }
+}
+
+.mosaic-item {
+  min-width: 0;
+  min-height: 0;
+  // grid-area is set via inline style
+}

@@ -1,0 +1,279 @@
+// CSS Variables
+@layer base {
+  :root {
+    --background: 0 0% 6%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 17.5%;
+    --input: 0 0% 17.5%;
+    --ring: 0 0% 83.9%;
+
+    /* Brand Colors */
+    --mdk-color-primary: #f7931a;
+    --mdk-color-success: 114, 245, 158; /* #1db954 in Hex */
+    --mdk-color-error: 239, 68, 68; /* #ef4444 in Hex */
+    --mdk-color-warning: #ffc107;
+    --mdk-color-warning-rgb: 255, 193, 7; /* #ffc107 in Hex */
+
+    --mdk-color-primary-hover: #f7931acc;
+    --mdk-color-primary-button-hover: #f8a348;
+    --mdk-color-primary-hover-light: #e8a140;
+
+    /* Loader/Spinner Colors */
+    --mdk-color-soft-apricot: 255, 236, 186; /* #ffecba in Hex */
+    --mdk-color-soft-red: 254, 202, 202; /* #fecaca in Hex */
+    --mdk-color-soft-gray: 229, 231, 235; /* #e5e7eb in Hex */
+    --mdk-color-soft-blue: 219, 234, 254; /* #dbeafe in Hex */
+    --mdk-color-soft-yellow: 254, 243, 199; /* #fef3c7 in Hex */
+    --mdk-color-soft-green: 209, 250, 229; /* #d1fae5 in Hex */
+    --mdk-color-soft-purple: 243, 232, 255; /* #f3e8ff in Hex */
+    --mdk-color-soft-amber: 254, 243, 199; /* #fef3c7 in Hex */
+
+    /* Backgrounds */
+    --mdk-color-surface: #0f0f0f;
+    --mdk-color-background-dark: #17130f;
+    --mdk-color-background-light: #e5e7eb;
+
+    /* Common Component Colors */
+    --mdk-color-white: #ffffff;
+    --mdk-color-white-alpha-026: #ffffff26;
+    --mdk-color-white-alpha-04d: #ffffff4d;
+    --mdk-color-white-alpha-04: #ffffff40;
+    --mdk-color-white-alpha-024: #ffffff24;
+    --mdk-color-white-transparent: #ffffff1a;
+    --mdk-color-text-secondary: #ffffffd9;
+    --mdk-color-text-disabled: #ffffff80;
+    --mdk-color-dark-black: #10100f;
+    --mdk-black-alpha-03: #0000004d;
+    --mdk-border-default-color: #424242;
+    --mdk-color-green: #72f59e;
+    --mdk-color-socket-on-green: #2c5b3c;
+    --mdk-color-brick-red: #ff3b30;
+    --mdk-color-brick-green: #34c759;
+    --mdk-color-brick-green-rgb: 52, 199, 89; /*  #34c759 in Hex  */
+    --mdk-color-dark-green: #18251c;
+    --mdk-color-strong-green: #03c04a;
+    --mdk-color-mint-green: #6ee7b7;
+    --mdk-color-obsidian: #161514;
+    --mdk-color-medium-blue: #4289c1;
+    --mdk-color-green-rgb: 114, 245, 158; /* #72f59e in Hex */
+    --mdk-color-black: 0, 0, 0; /* #000000 in Hex */
+    --mdk-color-grey-idle: 107, 114, 128; /* #6b7280 in Hex */
+    --mdk-color-white-rgb: 255, 255, 255; /* #ffffff in Hex */
+    --mdk-color-orange-warning: 245, 158, 11; /* #f59e0b in Hex */
+    --mdk-color-low-yellow: 246, 238, 92; /* #f6ee5c in Hex */
+    --mdk-color-gold: 255, 215, 0; /* #ffd700 in Hex */
+    --mdk-color-sleep-blue: 59, 130, 246; /* #3b82f6 in Hex */
+    --mdk-color-dark-grey: 159, 166, 172; /* #9fa6ac in Hex */
+    --mdk-color-purple-high: 139, 92, 246; /* #8b5cf6 in Hex */
+    --mdk-color-primary-rgb: 247, 147, 26; /* #f7931a in RGB */
+    --mdk-color-light-blue: #22afff;
+    --mdk-color-blue: #357af6;
+    --mdk-color-blue-rgb: 53, 122, 246; /* #357AF6 in RGB */
+
+    /* Neutral / Gray scale */
+    --mdk-color-gray-900: #1f1f1f;
+    --mdk-color-gray-500: #777777;
+    --mdk-color-gray-450: #87888c;
+    --mdk-color-gray-400: #8e8e8e;
+    --mdk-color-gray-300: #e1e0e0;
+    --mdk-color-gray-stone: #898887;
+    --mdk-color-black-bg: #000000;
+    --mdk-color-dark-bg: #1a1a1a;
+    --mdk-color-brown-selected: #6b5a3d;
+    --mdk-color-light-grey: #d9d9d9;
+    --mdk-color-darker-grey: #404040;
+    --mdk-color-onyx: #141414;
+    --mdk-color-dark: #0e0e0e;
+
+    /* Overlays */
+    --mdk-overlay-bg: rgba(0, 0, 0, 0.45);
+    --mdk-color-white-60: rgba(255, 255, 255, 0.6);
+    --mdk-color-white-12: #ffffff1f;
+    --mdk-color-white-8: #ffffff14;
+    --mdk-color-white-7: #ffffffb3;
+    --mdk-color-white-5: #ffffff80;
+    --mdk-color-white-2: #ffffff33;
+    --mdk-color-white-4: #ffffff0d;
+    --mdk-color-white-05: #ffffff05;
+
+    /* Shadows */
+    --mdk-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --mdk-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.25);
+    --mdk-shadow-lg:
+      0 6px 16px 0 rgba(0, 0, 0, 0.3), 0 3px 6px -4px rgba(0, 0, 0, 0.2),
+      0 9px 28px 8px rgba(0, 0, 0, 0.15);
+    --mdk-shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    /* Breadcrumbs specific colors */
+    --mdk-breadcrumbs-separator-color: var(--mdk-color-primary);
+    --mdk-breadcrumbs-link-color: var(--mdk-color-grey-idle);
+    --mdk-breadcrumbs-link-hover-color: var(--mdk-color-primary);
+    --mdk-breadcrumbs-link-current-color: var(--mdk-color-grey-idle);
+    --mdk-breadcrumbs-back-button-color: var(--mdk-color-primary);
+
+    /* Switch specific colors */
+    --mdk-switch-unchecked-bg: #343434;
+    --mdk-switch-thumb-shadow: rgba(0, 0, 0, 0.2);
+    --mdk-switch-thumb-shadow-checked: rgba(0, 0, 0, 0.3);
+
+    /* Dialog specific colors */
+    --mdk-dialog-box-shadow-color: rgb(0 0 0 / 0.1);
+    --mdk-dialog-border-color: rgba(255, 255, 255, 0.1);
+
+    /* Popover specific colors */
+    --mdk-popover-bg: #000000;
+    --mdk-popover-text: #ffffff;
+    --mdk-popover-border: #ffffff1a;
+
+    /* Input specific colors */
+    --mdk-input-bg: #363636;
+    --mdk-input-placeholder-color: #999999;
+    --mdk-input-border-hover: var(--mdk-color-gray-500);
+
+    /* TagInput specific colors */
+    --mdk-tag-input-bg: transparent;
+    --mdk-tag-input-border: var(--mdk-color-white-transparent);
+    --mdk-tag-input-border-hover: var(--mdk-color-white-transparent);
+    --mdk-tag-input-text: var(--mdk-color-text-secondary);
+    --mdk-tag-input-placeholder: var(--mdk-color-text-disabled);
+    --mdk-tag-input-icon: var(--mdk-color-text-disabled);
+    --mdk-tag-input-icon-focus: var(--mdk-color-white-60);
+    --mdk-tag-input-tag-bg: var(--mdk-color-white-transparent);
+    --mdk-tag-input-dropdown-bg: #1f1f1f;
+    --mdk-tag-input-dropdown-border: var(--mdk-color-white-transparent);
+    --mdk-tag-input-option-hover-bg: var(--mdk-color-white-transparent);
+    --mdk-tag-input-option-selected-bg: #543b29;
+
+    /* Select specific colors */
+    --mdk-select-content-bg: #1a1a1a;
+    --mdk-select-item-text: #e1e0e0;
+    --mdk-select-item-highlighted-text: #1a1a1a;
+
+    /* Dropdown Menu specific colors */
+    --mdk-dropdown-menu-content-bg: #1a1a1a;
+    --mdk-dropdown-menu-item-text: #e1e0e0;
+    --mdk-dropdown-menu-item-highlighted-text: #1a1a1a;
+
+    /* Data Table specific colors */
+    --mdk-table-border: #ffffff1a;
+    --mdk-table-row-border: #303030;
+
+    --mdk-table-loader-overlay-bg: #00000033;
+    --mdk-table-header-bg: #17130f;
+    --mdk-table-header-hover-bg: #303030;
+    --mdk-table-body-hover-bg: #1d1d1d;
+    --mdk-table-selected-row-bg: #583a16;
+    --mdk-table-selected-row-hover-bg: #7a4d17;
+    --mdk-table-header-sorted-bg: #2e2e2e;
+
+    --mdk-table-text-primary: #ffffff80;
+    --mdk-table-text-secondary: #ffffffb3;
+
+    /* mdk button tokens (mining-os baseline) */
+    --mdk-radius: 0px;
+    --mdk-font-size: 14px;
+    --mdk-line-height: 22px;
+    --mdk-font-weight: 600;
+    --mdk-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.04);
+    --mdk-shadow-light: 0 2px 0 0 rgba(255, 255, 255, 0.04);
+
+    --mdk-button-primary-bg: #f7931a;
+    --mdk-button-primary-bg-hover: #c4730f;
+    --mdk-button-primary-text: #000000;
+    --mdk-button-primary-text-hover: #ffffff;
+    --mdk-button-primary-bg-hover-overlay: rgba(255, 255, 255, 0.15);
+    --mdk-color-primary-10: #f7931a1a;
+
+    --mdk-button-secondary-text: #ffffffcc;
+    --mdk-button-secondary-border: #ffffff33;
+    --mdk-button-secondary-border-visible: rgba(255, 255, 255, 0.65);
+    --mdk-button-secondary-border-hover: #f7931a80;
+    --mdk-button-secondary-bg: #17130f;
+
+    --mdk-button-danger-bg: #ef4444;
+    --mdk-button-danger-bg-hover: #f36060;
+    --mdk-button-danger-text: #ffffff;
+    --mdk-button-danger-border: #ef4444;
+
+    --mdk-orange-dimmer: #1d1914;
+
+    /* Accordion specific colors */
+    --mdk-accordion-item-bg: #0e0e0e80;
+
+    /* Chart Container specific colors */
+    --mdk-chart-container-bg: rgba(0, 0, 0, 0.5);
+    --mdk-chart-container-legend-label: rgba(255, 255, 255, 0.7);
+    --mdk-chart-container-title: rgba(255, 255, 255, 0.5);
+
+    /* Cascader specific colors */
+    --mdk-cascader-active-bg: #583a16;
+    --mdk-cascader-checkbox-bg: #141414;
+    --mdk-cascader-box-shadow-color: rgba(254, 151, 27, 0.29);
+    --mdk-cascader-color-highlight: #dc4446;
+
+    /* Status colors */
+    --mdk-color-severity-critical: #ff0000;
+    --mdk-color-severity-high: #ffa500;
+    --mdk-color-severity-medium: #ffff00;
+
+    /* Text muted variants */
+    --mdk-color-text-muted: #9f9e9e;
+    --mdk-color-text-muted-warm: #deb7b7;
+
+    /* Sidebar specific colors */
+    --mdk-sidebar-bg: var(--mdk-color-surface);
+    --mdk-sidebar-item-hover-bg: rgba(255, 255, 255, 0.05);
+    --mdk-sidebar-overlay-bg: var(--mdk-color-surface);
+    --mdk-sidebar-border-color: var(--mdk-color-primary);
+    --mdk-sidebar-item-color: var(--mdk-color-gray-stone);
+    --mdk-sidebar-overlay-border: var(--mdk-color-primary);
+    --mdk-sidebar-item-active-color: var(--mdk-color-primary);
+    --mdk-sidebar-toggle-bg: var(--mdk-color-background-dark);
+
+    /* Demo App specific colors */
+    --color-primary: #f7931a;
+    --color-primary-light: #ffb347;
+    --color-primary-transparent: rgba(247, 147, 26, 0.1);
+    --color-primary-transparent-20: rgba(247, 147, 26, 0.2);
+    --color-text-primary: #ffffff;
+    --color-text-secondary: rgba(255, 255, 255, 0.7);
+    --color-background-elevated: #1a1a1a;
+    --color-border: rgba(255, 255, 255, 0.1);
+  }
+
+  .dark {
+    --background: 0 0% 6%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 17.5%;
+    --input: 0 0% 17.5%;
+    --ring: 0 0% 83.9%;
+  }
+}

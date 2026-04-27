@@ -1,0 +1,14 @@
+.mdk-alerts-confirmation-modal {
+  max-width: 480px;
+
+  &__body {
+    padding: 16px 0;
+    line-height: 1.5;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}

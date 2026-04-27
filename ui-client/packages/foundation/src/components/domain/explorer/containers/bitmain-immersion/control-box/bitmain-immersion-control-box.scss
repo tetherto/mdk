@@ -1,0 +1,67 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitmain-immersion-control-box {
+  @include flex_column;
+
+  gap: 4px;
+  border: 1px solid var(--mdk-color-white-transparent);
+
+  &--secondary {
+    border: none;
+  }
+
+  &__top {
+    @include flex_row;
+
+    flex: 1;
+  }
+
+  &__title {
+    color: var(--mdk-color-white);
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 0 0 0.5rem;
+  }
+
+  &__left {
+    @include flex_column;
+
+    flex-basis: 50%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding: 1rem;
+    padding-right: 0.5rem;
+    border-right: 1px solid var(--mdk-color-primary);
+    row-gap: 1rem;
+    box-sizing: border-box;
+
+    &--secondary {
+      padding: 0;
+      padding-right: 0.5rem;
+    }
+  }
+
+  &__right {
+    @include flex_column;
+
+    flex-basis: 50%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding: 1rem;
+    padding-left: 0.5rem;
+    row-gap: 1rem;
+    box-sizing: border-box;
+
+    &--secondary {
+      padding: 0;
+      padding-left: 0.5rem;
+    }
+  }
+
+  &__bottom {
+    @include flex_center;
+
+    padding: 1rem;
+    border-top: 1px solid var(--mdk-color-primary);
+  }
+}

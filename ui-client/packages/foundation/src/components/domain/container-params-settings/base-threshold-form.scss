@@ -1,0 +1,89 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-base-threshold-form {
+  &__section-title {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--mdk-color-background-light);
+  }
+
+  &__threshold-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  &__input-label {
+    @include text_ellipsis;
+
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--mdk-color-background-light);
+    display: block;
+    min-width: 0;
+    line-height: 1.2;
+    height: 16px;
+  }
+
+  &__flex-row {
+    @include flex_wrap;
+
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  &__flex-col {
+    @include flex_column;
+
+    flex: 1;
+    min-width: 140px;
+
+    @media (min-width: 480px) {
+      min-width: 120px;
+      max-width: 160px;
+    }
+
+    @media (min-width: 768px) {
+      min-width: 140px;
+      max-width: none;
+    }
+  }
+
+  &__color-block {
+    @include flex_center;
+
+    padding: 4px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  &__action-buttons {
+    @include flex_justify_end;
+
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--mdk-color-darker-grey);
+  }
+
+  &__table-container {
+    margin-bottom: 24px;
+  }
+
+  &__status-indicator {
+    @include flex_center;
+
+    font-size: 16px;
+  }
+
+  &__no-flash-icon,
+  &__no-sound-icon {
+    color: var(--mdk-color-white);
+    font-size: 16px;
+  }
+}

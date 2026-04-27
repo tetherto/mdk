@@ -1,0 +1,74 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-alarm-row {
+  box-sizing: border-box;
+  padding-right: 8px;
+
+  &:not(:last-child) {
+    padding-bottom: 8px;
+  }
+
+  &__container {
+    @include flex_column;
+
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--mdk-alarm-color);
+    cursor: pointer;
+    background-color: color-mix(in srgb, var(--mdk-alarm-color, transparent) 10%, transparent);
+    border-color: color-mix(
+      in srgb,
+      var(--mdk-alarm-color, var(--mdk-color-white)) 20%,
+      transparent
+    );
+  }
+
+  &__title-row {
+    @include flex_align;
+
+    gap: 8px;
+  }
+
+  &__title {
+    font-size: 16px;
+    line-height: 16px;
+    word-break: break-word;
+    color: var(--mdk-alarm-color, var(--mdk-color-white));
+  }
+
+  &__subtitle {
+    font-size: 14px;
+    color: var(--mdk-color-text-disabled);
+  }
+
+  &__body {
+    font-size: 12px;
+    color: var(--mdk-color-white-alpha-04);
+  }
+
+  &__icon {
+    @include inline_flex_align;
+
+    justify-content: center;
+    color: var(--mdk-alarm-color, var(--mdk-color-white));
+
+    &--critical {
+      height: 14px;
+      width: 14px;
+    }
+
+    &--high {
+      &::before {
+        content: '!';
+        font-weight: bold;
+      }
+    }
+
+    &--dot {
+      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      flex-shrink: 0;
+    }
+  }
+}

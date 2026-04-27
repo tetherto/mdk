@@ -1,0 +1,53 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-rack-select {
+  &__trigger {
+    width: 100%;
+    background-color: var(--mdk-input-bg);
+    border: 1px solid var(--mdk-border);
+    color: var(--foreground);
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      border-color: var(--mdk-input-border-hover);
+    }
+
+    &.mdk-rack-select--error {
+      border-color: var(--mdk-color-brick-red);
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(var(--mdk-color-error), 0.2);
+      }
+    }
+
+    &.mdk-rack-select--warning {
+      border-color: var(--mdk-color-warning);
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(var(--mdk-color-warning-rgb), 0.2);
+      }
+    }
+  }
+
+  &__content {
+    background-color: var(--mdk-select-content-bg);
+    border: 1px solid var(--mdk-border);
+    box-shadow: var(--mdk-shadow-md);
+  }
+
+  &__empty {
+    padding: 12px;
+    font-size: var(--mdk-font-size);
+    color: var(--mdk-color-text-disabled);
+    text-align: center;
+  }
+}
+
+.mdk-select__item {
+  color: var(--mdk-select-item-text);
+
+  &[data-highlighted] {
+    background-color: var(--mdk-color-primary);
+    color: var(--mdk-select-item-highlighted-text);
+  }
+}

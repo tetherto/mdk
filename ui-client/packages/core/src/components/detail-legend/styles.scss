@@ -1,0 +1,87 @@
+@use '../../styles/mixins' as *;
+
+.mdk-detail-legend {
+  @include flex_wrap;
+
+  gap: 25px;
+  row-gap: 16px;
+
+  &__item {
+    @include flex_row;
+
+    gap: 8px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    border: none;
+    background: none;
+    padding: 0;
+    text-align: left;
+
+    &--hidden {
+      opacity: 0.3;
+    }
+  }
+
+  &__icon {
+    @include flex_align_start;
+
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  &__color-box {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  &__content {
+    @include flex_column;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: var(--mdk-color-white-7);
+  }
+
+  &__value-row {
+    @include flex_center;
+
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  &__value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--mdk-color-white);
+  }
+
+  &__unit {
+    @include text_ellipsis;
+
+    flex: 1;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 14px;
+    text-align: start;
+    color: var(--mdk-color-white-7);
+    min-width: 0;
+  }
+
+  &__percent-change {
+    @include inline_flex_align;
+
+    gap: 2px;
+    font-size: 12px;
+    font-weight: 600;
+
+    &--positive {
+      color: rgb(var(--mdk-color-success));
+    }
+
+    &--negative {
+      color: rgb(var(--mdk-color-error));
+    }
+  }
+}

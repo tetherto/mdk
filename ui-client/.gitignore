@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+dist-css
+.next
+out
+build
+
+# Test coverage
+coverage
+*.lcov
+
+# Compiled CSS (should be in dist, not src)
+packages/*/src/styles.css
+packages/*/src/styles.css.map
+
+# Turbo
+.turbo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Cache
+.cache
+*.tsbuildinfo

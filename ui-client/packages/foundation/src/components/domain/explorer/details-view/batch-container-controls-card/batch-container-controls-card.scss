@@ -1,0 +1,34 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-batch-container-controls-card {
+  padding: 25px;
+  min-width: 300px;
+  width: 100%;
+
+  .mdk-container-controls-box__buttons-row {
+    button {
+      flex: 1 1 auto;
+    }
+
+    button:last-child {
+      margin-top: 20px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    min-width: 500px;
+    width: auto;
+
+    .mdk-container-controls-box__buttons-row {
+      button:last-child {
+        margin-top: unset;
+      }
+    }
+  }
+
+  &__controls {
+    @include flex_column;
+
+    padding: 5px;
+  }
+}

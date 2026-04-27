@@ -1,0 +1,46 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-confirm-position {
+  &__text {
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--mdk-color-white);
+    margin-bottom: 24px;
+  }
+
+  &__fields {
+    @include flex_column;
+
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  &__field-group {
+    @include flex_column;
+
+    gap: 8px;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--mdk-color-text-secondary);
+    text-transform: uppercase;
+  }
+
+  &__error {
+    color: var(--mdk-color-brick-red);
+    font-size: 13px;
+    margin-top: -8px;
+    margin-bottom: 16px;
+    text-align: right;
+  }
+
+  &__footer {
+    @include flex_justify_end;
+
+    gap: 12px;
+    border-top: 1px solid var(--mdk-dialog-border-color);
+    padding-top: 24px;
+  }
+}

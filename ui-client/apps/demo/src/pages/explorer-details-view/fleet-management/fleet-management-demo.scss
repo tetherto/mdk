@@ -1,0 +1,22 @@
+@use '@mdk/core/styles' as *;
+
+.fleet-management-demo {
+  &__examples {
+    @include flex_wrap;
+
+    gap: 32px;
+  }
+
+  &__section {
+    @include flex_column;
+
+    gap: 8px;
+    width: 320px;
+  }
+}
+
+// Give the Position Change Dialog a bit more horizontal room for the
+// Replace Miner form which packs auth + tags + IP fields.
+.mdk-position-change-dialog {
+  --mdk-dialog-max-width: 40rem;
+}

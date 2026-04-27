@@ -1,0 +1,125 @@
+@use '../../styles/mixins' as *;
+
+.mdk-logs-card {
+  &__container {
+    @include flex-row;
+
+    width: 100%;
+  }
+
+  &__header-container {
+    @include flex-row;
+
+    align-items: center;
+  }
+
+  &__inner-container {
+    @include flex_column;
+
+    width: 100%;
+  }
+
+  &__log-inner-container {
+    @include flex_row;
+
+    gap: 5px;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  &__data-container {
+    @include flex_column;
+
+    flex: 1;
+  }
+
+  &__status-icon {
+    width: 10px;
+    height: 10px;
+    margin: 5px;
+    margin-top: 8px;
+    border-radius: 50%;
+
+    &--critical {
+      background-color: rgb(var(--mdk-color-error));
+    }
+
+    &--high {
+      background-color: var(--mdk-color-primary);
+    }
+
+    &--medium {
+      background-color: var(--mdk-color-warning);
+    }
+  }
+
+  &__list-container {
+    @include flex_column;
+
+    gap: 15px;
+    height: 100%;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 500px;
+
+    &--empty {
+      padding: 0;
+    }
+
+    &::-webkit-scrollbar {
+      width: 4px;
+      background: transparent;
+    }
+  }
+
+  &__title-text {
+    font-size: 12px;
+    color: var(--mdk-color-background-light);
+  }
+
+  &__subtitle-text {
+    font-size: 10px;
+    padding: 5px 0;
+    max-width: 100%;
+    color: var(--mdk-color-text-muted);
+  }
+
+  &__body-text {
+    display: flex;
+    gap: 5px;
+    font-size: 10px;
+    color: var(--mdk-color-text-muted-warm);
+  }
+
+  &__icon-wrapper {
+    @include flex_column_center;
+
+    margin: 5px;
+  }
+
+  &__row-container {
+    @include flex_row;
+
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__empty {
+    @include flex_column_center;
+
+    padding: 18px;
+    font-size: 14px;
+  }
+
+  &__pagination {
+    margin: 16px 10px;
+  }
+
+  &__skeleton-row {
+    @include flex_column;
+
+    gap: 8px;
+    width: 100%;
+    padding: 8px;
+  }
+}

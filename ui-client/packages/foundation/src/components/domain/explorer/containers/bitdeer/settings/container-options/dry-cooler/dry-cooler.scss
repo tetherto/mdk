@@ -1,0 +1,52 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-dry-cooler {
+  @include flex_column;
+
+  width: 100%;
+  gap: 16px;
+
+  @media (min-width: 1440px) {
+    @include flex_row;
+  }
+
+  &__segment {
+    @include flex_column;
+
+    gap: 16px;
+    flex: 1;
+  }
+
+  &__card {
+    @include flex_column;
+
+    gap: 16px;
+    padding: 16px;
+    background-color: var(--mdk-color-surface);
+    border: 1px solid var(--mdk-dialog-border-color);
+  }
+
+  &__status {
+    @include flex_align_between;
+
+    gap: 12px;
+  }
+
+  &__title {
+    color: var(--mdk-color-white);
+    font-size: 18px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  &__pumps {
+    @include flex_column;
+
+    flex-wrap: wrap;
+    gap: 12px;
+
+    @media (min-width: 1200px) {
+      @include flex_row;
+    }
+  }
+}

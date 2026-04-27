@@ -1,0 +1,132 @@
+@use '../../styles/mixins' as *;
+.mdk-indicator {
+  @include inline_flex_align;
+
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  transition: opacity 0.2s;
+  text-transform: capitalize;
+  white-space: nowrap;
+
+  /* Direct children spacing */
+  > span + span {
+    margin-left: 4px;
+  }
+
+  > span + svg {
+    margin-left: 4px;
+  }
+
+  /* Size Variants */
+  &--sm {
+    font-size: 12px;
+    padding: 0.25rem 0.5rem;
+    line-height: 1rem;
+    gap: 6px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  &--md {
+    font-size: 14px;
+    padding: 0.375rem 0.75rem;
+    line-height: 1.25rem;
+    gap: 8px;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  &--lg {
+    font-size: 16px;
+    padding: 0.5rem 1rem;
+    line-height: 1.5rem;
+    gap: 10px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  /* Icon styling */
+  svg {
+    flex-shrink: 0;
+    opacity: 0.8;
+    transition:
+      opacity 0.2s,
+      transform 0.2s;
+  }
+
+  /* Color Variants */
+  &--red {
+    background-color: rgba(var(--mdk-color-error), 0.1);
+    color: rgb(var(--mdk-color-error));
+  }
+
+  &--gray {
+    background-color: rgba(var(--mdk-color-dark-grey), 0.1);
+    color: rgb(var(--mdk-color-dark-grey));
+  }
+
+  &--blue {
+    background-color: rgba(var(--mdk-color-sleep-blue), 0.1);
+    color: rgb(var(--mdk-color-sleep-blue));
+  }
+
+  &--yellow {
+    background-color: rgba(var(--mdk-color-low-yellow), 0.1);
+    color: rgb(var(--mdk-color-low-yellow));
+  }
+
+  &--green {
+    background-color: rgba(var(--mdk-color-success), 0.1);
+    color: rgb(var(--mdk-color-success));
+  }
+
+  &--purple {
+    background-color: rgba(var(--mdk-color-purple-high), 0.1);
+    color: rgb(var(--mdk-color-purple-high));
+  }
+
+  &--amber {
+    background-color: rgba(var(--mdk-color-orange-warning), 0.1);
+    color: rgb(var(--mdk-color-orange-warning));
+  }
+
+  &--slate {
+    background-color: rgba(var(--mdk-color-grey-idle), 0.1);
+    color: rgb(var(--mdk-color-grey-idle));
+  }
+
+  /* Clickable State */
+  &--clickable {
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      opacity: 0.8;
+
+      svg {
+        opacity: 1;
+        transform: translateY(2px);
+      }
+    }
+
+    &:active {
+      opacity: 0.9;
+      transform: scale(0.98);
+    }
+  }
+
+  &--vertical {
+    @include flex_column_align_center;
+  }
+}

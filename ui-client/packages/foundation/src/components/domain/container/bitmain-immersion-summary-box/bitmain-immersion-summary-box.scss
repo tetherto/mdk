@@ -1,0 +1,38 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitmain-immersion-summary-box {
+  @include flex_column;
+  gap: 16px;
+}
+
+.mdk-bitmain-immersion-summary-box__pumps {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.mdk-bitmain-immersion-summary-box__pump {
+  @include flex_column;
+  gap: 8px;
+}
+
+.mdk-bitmain-immersion-summary-box__pump-title {
+  font-size: 10px;
+  line-height: 12px;
+  color: var(--mdk-color-white-5);
+}
+
+.mdk-bitmain-immersion-summary-box__liquid-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  & > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.mdk-bitmain-immersion-summary-box .mdk-indicator {
+  padding: 4px 8px;
+  gap: 4px;
+}

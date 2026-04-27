@@ -1,0 +1,11 @@
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    color: hsl(var(--foreground));
+    font-family: var(--font-mono);
+    background: var(--mdk-color-surface);
+  }
+}

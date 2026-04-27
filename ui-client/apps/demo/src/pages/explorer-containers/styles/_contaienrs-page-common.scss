@@ -1,0 +1,15 @@
+.explorer-containers-page {
+  &__header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    p {
+      color: var(--mdk-color-light);
+      font-size: 1.1rem;
+    }
+  }
+
+  &__tabs {
+    margin-top: 2rem;
+  }
+}

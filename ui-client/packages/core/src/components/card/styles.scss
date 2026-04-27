@@ -1,0 +1,73 @@
+/**
+ * Card component styles
+ */
+
+$mdk-card-cut-edge-size: 8px;
+$mdk-card-cut-before-edge-size: 7.5px;
+
+.mdk-card {
+  position: relative;
+
+  &.mdk-card--clickable {
+    cursor: pointer;
+  }
+
+  box-sizing: border-box;
+  overflow: hidden;
+  background-color: var(--mdk-color-surface);
+  border: 1px solid var(--mdk-border-default-color);
+  transition: border-color 0.4s;
+
+  /* Cut corner at top-left - creates the angled notch */
+  clip-path: polygon(
+    $mdk-card-cut-edge-size 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 $mdk-card-cut-edge-size
+  );
+
+  /* L-shaped top-left border accent (::before pseudo-element) - orange only on hover */
+  &::before {
+    position: absolute;
+    content: '';
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-top: $mdk-card-cut-before-edge-size solid var(--mdk-border-default-color);
+    border-right: $mdk-card-cut-before-edge-size solid transparent;
+    transition: border-color 0.4s;
+    z-index: 1;
+  }
+
+  @media (min-width: 768px) {
+    &:hover {
+      border-color: var(--mdk-color-primary);
+
+      &::before {
+        border-top-color: var(--mdk-color-primary);
+      }
+    }
+  }
+
+  &__header {
+    padding: 16px;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--mdk-color-white-transparent);
+    }
+  }
+
+  &__body {
+    padding: 16px;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--mdk-color-white-transparent);
+    }
+  }
+
+  &__footer {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,125 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-pm-add-pool-modal {
+  &__body {
+    @include flex_column;
+
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  &__section-header {
+    font-weight: 800;
+    font-size: 12px;
+    line-height: 14px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--mdk-color-white-7);
+  }
+
+  &__endpoints-section {
+    @include flex_column;
+
+    gap: 16px;
+  }
+
+  &__endpoints-header {
+    @include flex_align_between;
+  }
+
+  &__endpoints-error {
+    font-size: 12px;
+    color: rgb(var(--mdk-color-error));
+  }
+
+  &__endpoints-list {
+    @include flex_column;
+
+    gap: 8px;
+  }
+
+  &__endpoint {
+    @include flex_column;
+
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid var(--mdk-color-white-2);
+
+    &-header {
+      @include flex_align_between;
+
+      .mdk-button {
+        width: 32px;
+      }
+    }
+
+    &-role {
+      @include flex_center;
+
+      flex-basis: 80px;
+      padding: 8px;
+      font-size: 12px;
+      color: var(--mdk-color-primary);
+      background-color: rgba(var(--mdk-color-primary-rgb), 0.2);
+    }
+    &-fields {
+      @include flex_align;
+
+      gap: 16px;
+    }
+
+    &-field {
+      @include flex_column;
+
+      flex: 1;
+      gap: 4px;
+    }
+
+    &-label {
+      font-size: 12px;
+      color: var(--mdk-color-white-7);
+    }
+    &-value {
+      padding: 6px 8px;
+      font-size: 14px;
+      background-color: var(--mdk-color-white-transparent);
+      color: var(--mdk-color-white);
+    }
+  }
+
+  &__validation-section {
+    @include flex_column;
+
+    gap: 8px;
+  }
+
+  &__validation-header {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  &__validation-body {
+    @include flex_align_between;
+
+    padding: 16px;
+    border: 1px solid var(--mdk-color-white-2);
+  }
+
+  &__validation-status {
+    font-size: 14px;
+
+    &--valid {
+      color: var(--mdk-color-success);
+    }
+
+    &--invalid {
+      color: var(--mdk-color-error);
+    }
+  }
+
+  &__footer {
+    border-top: 1px solid var(--mdk-color-white-2);
+    padding-top: 24px;
+    margin-top: 8px;
+  }
+}

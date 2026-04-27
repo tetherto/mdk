@@ -1,0 +1,103 @@
+@use 'sass:map';
+@use '../../styles/mixins' as *;
+@use './tokens' as *;
+
+.mdk-dropdown-menu {
+  &__content {
+    z-index: 10000;
+    overflow: hidden;
+    border: 1px solid $content-border-color;
+    background-color: $content-background-color;
+
+    @each $size, $config in $dropdown-sizes {
+      &--size-#{$size} {
+        max-width: map.get($config, content-max-width);
+      }
+    }
+
+    &--align-width {
+      width: var(--radix-dropdown-menu-trigger-width);
+      min-width: unset;
+      max-width: unset;
+      max-height: var(--radix-dropdown-menu-content-available-height);
+    }
+  }
+
+  &__label {
+    font-weight: 600;
+    color: $menu-item-text-color;
+    border-bottom: 1px solid $content-item-border-color;
+
+    @each $size, $config in $dropdown-sizes {
+      @include dropdown-label-size($size, $config);
+    }
+  }
+
+  &__item {
+    @include flex_align;
+
+    position: relative;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    color: $menu-item-text-color;
+    transition: background-color 0.3s ease;
+
+    &:not(:last-of-type) {
+      border-bottom: 1px solid $content-item-border-color;
+    }
+
+    &[data-highlighted],
+    &:hover {
+      background-color: $content-item-hover-background-color;
+    }
+
+    &[data-disabled] {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    &[data-active] {
+      color: $menu-item-active-text-color;
+      background-color: $menu-item-active-background-color;
+    }
+
+    @each $size, $config in $dropdown-sizes {
+      @include dropdown-item-size($size, $config);
+    }
+  }
+
+  &__item-icon {
+    @include flex_center;
+
+    flex-shrink: 0;
+  }
+
+  &__search {
+    @each $size, $config in $dropdown-sizes {
+      @include dropdown-search-size($size, $config);
+    }
+  }
+
+  &__search-input {
+    border: none !important;
+    padding-right: 14px !important;
+    background-color: $search-input-background-color;
+    border-bottom: 1px solid $content-item-border-color !important;
+  }
+
+  &__empty {
+    @include flex_center;
+
+    font-weight: 400;
+    text-align: center;
+    letter-spacing: -0.5px;
+    color: $menu-item-text-color;
+
+    @each $size, $config in $dropdown-sizes {
+      @include dropdown-empty-size($size, $config);
+    }
+  }
+}

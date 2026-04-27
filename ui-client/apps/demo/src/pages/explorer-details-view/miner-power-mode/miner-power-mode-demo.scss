@@ -1,0 +1,34 @@
+@use '@mdk/core/styles' as *;
+
+.miner-power-mode-demo {
+  &__header {
+    margin-bottom: 48px;
+
+    h1 {
+      margin-bottom: 8px;
+    }
+  }
+
+  &__examples {
+    @include flex_column;
+
+    gap: 40px;
+  }
+
+  &__section {
+    @include flex_column_align_start;
+
+    gap: 16px;
+
+    .description {
+      font-size: 14px;
+      color: var(--mdk-color-text-tertiary);
+      margin-bottom: 8px;
+    }
+  }
+
+  &__button-group {
+    @include flex_row;
+    gap: 12px;
+  }
+}

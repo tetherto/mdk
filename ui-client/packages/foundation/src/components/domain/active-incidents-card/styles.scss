@@ -1,0 +1,144 @@
+@use '@mdk/core/styles' as *;
+
+$_prefix: 'mdk-active-incidents-card';
+
+.#{$_prefix} {
+  @include flex_column;
+
+  margin: 0;
+  border-radius: 0;
+  padding: 10px 5px;
+  box-sizing: border-box;
+  background-color: var(--mdk-color-surface);
+  border: 1px solid var(--mdk-dialog-border-color);
+
+  &__header {
+    padding: 5px;
+    padding-left: 10px;
+    border-bottom: 1px solid var(--mdk-dialog-border-color);
+  }
+
+  &__label {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 22px;
+    font-style: normal;
+    text-transform: uppercase;
+    color: var(--mdk-color-white);
+  }
+
+  &__list {
+    @include flex_column;
+
+    gap: 20px;
+    height: 100%;
+    overflow-y: auto;
+    max-height: 450px;
+    padding: 15px 10px;
+    padding-bottom: 10px;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+      background-color: transparent;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: var(--mdk-color-background-dark);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--mdk-color-primary);
+      border-radius: 3px;
+
+      &:hover {
+        background-color: var(--mdk-color-primary-hover);
+      }
+    }
+  }
+
+  &__row {
+    @include flex_row_align_start;
+
+    &--clickable {
+      cursor: pointer;
+    }
+  }
+
+  &__row-content {
+    @include flex_row_align_start;
+
+    width: 100%;
+    cursor: pointer;
+  }
+
+  &__row-data {
+    @include flex_column;
+
+    flex: 1;
+    gap: 2px;
+  }
+
+  &__row-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--mdk-color-soft-gray);
+    font-family: 'JetBrains Mono', monospace, sans-serif;
+  }
+
+  &__row-subtitle {
+    font-size: 12px;
+    padding: 4px 0;
+    max-width: 100%;
+    color: var(--mdk-color-text-muted);
+  }
+
+  &__row-body {
+    font-size: 12px;
+    color: var(--mdk-color-text-muted-warm);
+  }
+
+  &__dot {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    margin-top: 4px;
+    border-radius: 50%;
+    margin-right: 12px;
+
+    &--critical {
+      background-color: var(--mdk-color-severity-critical);
+    }
+
+    &--high {
+      background-color: var(--mdk-color-severity-high);
+    }
+
+    &--medium {
+      background-color: var(--mdk-color-severity-medium);
+    }
+  }
+
+  &__arrow {
+    @include flex_center;
+
+    font-size: 28px;
+    padding-left: 16px;
+    color: var(--mdk-button-secondary-text);
+  }
+
+  &__empty {
+    @include flex_column_center;
+
+    padding: 20px;
+    font-size: 12px;
+    min-height: 190px;
+    color: var(--mdk-color-text-disabled);
+  }
+
+  &__skeleton-container {
+    @include flex_column;
+
+    gap: 14px;
+    padding: 10px;
+  }
+}

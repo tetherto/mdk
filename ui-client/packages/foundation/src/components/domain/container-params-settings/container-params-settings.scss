@@ -1,0 +1,45 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-container-params {
+  &__title {
+    color: var(--mdk-color-primary);
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 25px;
+    text-transform: uppercase;
+    margin: 0 0 1.25rem 0;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.25rem 1.875rem;
+      padding: 1.25rem;
+    }
+
+    @media (min-width: 1200px) {
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+  }
+
+  &__field {
+    @include flex_column;
+    min-width: 0;
+  }
+
+  &__label {
+    @include text_ellipsis;
+
+    color: var(--mdk-color-background-light);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: normal;
+    padding-bottom: 0.5rem;
+  }
+}

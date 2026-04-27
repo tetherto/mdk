@@ -1,0 +1,25 @@
+$_prefix: 'mdk-skeleton';
+
+.#{$_prefix} {
+  &__line {
+    height: 32px;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.06) 25%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.06) 75%
+    );
+    border-radius: 4px;
+    background-size: 200% 100%;
+    animation: mdk-skeleton-shimmer 1.5s infinite;
+  }
+}
+
+@keyframes mdk-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

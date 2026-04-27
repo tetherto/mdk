@@ -1,0 +1,27 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-power-mode-dropdown-button {
+  @include flex_align_between;
+
+  background-color: var(--mdk-color-onyx);
+  padding: 4px 10px;
+  color: rgba(var(--mdk-color-white-rgb), 0.7);
+  cursor: pointer;
+  border: 1px solid rgba(var(--mdk-color-white-rgb), 0.1);
+  transition: border-color 0.2s ease;
+  font-size: 14px;
+
+  &:hover {
+    border-color: rgba(var(--mdk-color-white-rgb), 0.2);
+  }
+
+  &--disabled {
+    color: rgba(var(--mdk-color-white-rgb), 0.4);
+    cursor: not-allowed;
+    opacity: 0.5;
+
+    &:hover {
+      border-color: rgba(var(--mdk-color-white-rgb), 0.1);
+    }
+  }
+}

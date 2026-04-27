@@ -1,0 +1,19 @@
+{
+  "name": "@mdk/fonts",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Font assets for MDK",
+  "exports": {
+    "./jetbrains-mono.css": "./dist/jetbrains-mono.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "clean": "rimraf dist node_modules .turbo",
+    "dev": "vite build --watch"
+  },
+  "devDependencies": {}
+}

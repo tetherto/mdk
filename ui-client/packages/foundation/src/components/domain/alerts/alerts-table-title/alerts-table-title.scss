@@ -1,0 +1,16 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-alerts-table-title {
+  @include flex_column;
+
+  gap: 10px;
+
+  &__title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  &__subtitle {
+    width: 100%;
+  }
+}

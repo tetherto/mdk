@@ -1,0 +1,13 @@
+.micro-bt-settings-demo {
+  @include flex_column;
+
+  &__preview {
+    @include flex_column;
+
+    gap: 1rem;
+
+    h3 {
+      padding-bottom: 0.5rem;
+    }
+  }
+}

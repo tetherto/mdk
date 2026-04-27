@@ -1,0 +1,79 @@
+.bitmain-immersion-controls-demo {
+  @include flex_column;
+
+  &__section {
+    padding: 1.5rem;
+
+    h2,
+    h3 {
+      margin: 0 0 1.5rem;
+    }
+  }
+
+  &__presets {
+    margin-bottom: 2rem;
+  }
+
+  &__preset-buttons {
+    @include flex_wrap;
+    gap: 0.75rem;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  &__gps-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 1fr;
+    gap: 1rem;
+  }
+
+  &__fan-controls {
+    @include flex_column;
+
+    gap: 0.75rem;
+  }
+
+  &__unit-controls {
+    @include flex_column;
+
+    gap: 1.5rem;
+  }
+
+  &__checkbox-group {
+    @include flex_column;
+
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  &__checkbox-label {
+    @include flex_align;
+
+    gap: 0.5rem;
+  }
+
+  &__preview {
+    @include flex_column;
+
+    gap: 2rem;
+  }
+
+  &__preview-section {
+    padding: 1.5rem;
+    background: var(--mdk-color-bg-primary);
+
+    h3 {
+      margin: 0 0 1.5rem;
+    }
+  }
+
+  &__units-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+}

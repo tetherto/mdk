@@ -1,0 +1,30 @@
+@use '../../styles/mixins' as *;
+.mdk-error-card {
+  &--card {
+    @include flex_column;
+
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--mdk-color-brick-red);
+  }
+
+  &--inline {
+    @include flex_column;
+    
+    gap: 4px;
+  }
+
+  &__title {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--mdk-color-brick-red);
+  }
+
+  &__message {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--mdk-color-brick-red);
+    line-height: 1.5;
+  }
+}

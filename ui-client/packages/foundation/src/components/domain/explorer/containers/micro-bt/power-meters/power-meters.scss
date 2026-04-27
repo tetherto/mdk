@@ -1,0 +1,19 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-power-meters {
+  @include flex_column;
+
+  gap: 1.5rem;
+
+  &__panel {
+    padding: 1.5rem;
+    min-width: 300px;
+    width: 100%;
+    border: 1px solid var(--mdk-color-white-transparent);
+
+    @media (min-width: 768px) {
+      min-width: 300px;
+      width: auto;
+    }
+  }
+}

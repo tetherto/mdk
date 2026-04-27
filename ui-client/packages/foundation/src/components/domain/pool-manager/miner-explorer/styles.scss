@@ -1,0 +1,44 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-pm-miner-explorer {
+  @include flex_column;
+
+  width: 100%;
+  gap: 24px;
+
+  &__toolbar {
+    @include flex_align;
+
+    gap: 16px;
+    flex-wrap: wrap;
+
+    &__search-row {
+      @include flex_row;
+
+      flex: 1;
+      gap: 16px;
+      min-width: 200px;
+    }
+
+    &__search {
+      width: 100%;
+    }
+
+    &__filters {
+      @include flex_align;
+
+      flex: 1;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    &__filter-select {
+      min-width: 120px;
+      flex: 1;
+    }
+  }
+
+  &__table {
+    width: 100%;
+  }
+}

@@ -1,0 +1,461 @@
+@use '../../styles/mixins' as *;
+/**
+* Date Picker Component Styles (mining-os theme)
+*
+* Based on mining-os PresetDateRangePicker:
+ * - Dark theme with black backgrounds
+ * - Orange primary color (#F7931A)
+ * - Transparent white borders and text
+ * - Modal interface for range picker
+ *
+ * react-day-picker v9 class names
+ */
+
+.mdk-date-picker__modal {
+  border-radius: 0px !important;
+}
+
+/* ===== Trigger Button ===== */
+.mdk-date-picker__trigger {
+  @include inline_flex_align;
+
+  justify-content: flex-start;
+  gap: 8px;
+  max-width: 245px;
+  width: fit-content;
+  padding: 8px 12px;
+  min-height: 40px;
+  background-color: var(--mdk-popover-bg);
+  border: 1px solid var(--mdk-button-secondary-border);
+  border-radius: 0;
+  color: var(--mdk-color-white);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(var(--mdk-color-primary-rgb), 0.2);
+    border-color: var(--mdk-color-primary);
+    color: var(--mdk-color-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mdk-color-primary);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &[data-state='open'] {
+    background-color: rgba(var(--mdk-color-primary-rgb), 0.2);
+    border-color: var(--mdk-color-primary);
+    color: var(--mdk-color-primary);
+  }
+}
+
+.mdk-date-picker__icon {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.mdk-date-picker__text {
+  @include text_ellipsis;
+}
+
+/* ===== Calendar Content (single date popover) ===== */
+.mdk-popover__content.mdk-date-picker__content {
+  width: auto !important;
+  max-width: none !important;
+  padding: 0;
+}
+
+/* ===== Calendar Base Styles (react-day-picker v9) ===== */
+.mdk-date-picker__calendar {
+  font-family: var(--font-mono);
+  color: var(--mdk-color-white);
+
+  /* Root */
+  &.rdp-root {
+    width: 100%;
+    --rdp-accent-color: var(--mdk-color-primary);
+    --rdp-accent-background-color: rgba(var(--mdk-color-primary-rgb), 0.2);
+  }
+
+  /* Navigation bar */
+  .rdp-nav {
+    @include flex_align;
+
+    gap: 4px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1;
+  }
+
+  .rdp-button_previous,
+  .rdp-button_next {
+    @include inline_flex_align;
+
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+    background-color: var(--mdk-color-surface);
+    border: 1px solid var(--mdk-button-secondary-border);
+    border-radius: 0;
+    color: var(--mdk-color-white);
+    cursor: pointer;
+    padding: 0;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s;
+
+    &:hover:not(:disabled) {
+      background-color: var(--mdk-color-obsidian);
+      border-color: var(--mdk-color-primary);
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  }
+
+  .rdp-chevron {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+  }
+
+  .rdp-caption_label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--mdk-color-white);
+  }
+
+  /* Months container */
+  .rdp-months {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    /* Keep calendars side-by-side - do NOT wrap */
+    flex-wrap: nowrap;
+    gap: 16px;
+    position: relative;
+    /* Prevent shrinking */
+    flex-shrink: 0;
+  }
+
+  .rdp-month {
+    flex: 1;
+    border: 1px solid var(--mdk-button-secondary-border);
+    background-color: rgba(var(--mdk-color-black), 0.5);
+    padding: 12px;
+    border-radius: 0;
+    position: relative;
+    width: fit-content;
+    @include flex_column_align_center;
+  }
+
+  .rdp-month_caption {
+    margin-bottom: 8px;
+  }
+
+  /* Month grid - use native table layout for proper column sizing */
+  .rdp-month_grid {
+    border-collapse: separate;
+    border-spacing: 4px;
+    width: 100%;
+  }
+
+  .rdp-weekday {
+    height: 24px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--mdk-color-text-disabled);
+    text-transform: uppercase;
+    padding: 0;
+  }
+
+  /* Day cells - let table auto-distribute width equally across 7 columns */
+  .rdp-day {
+    height: 25px;
+    margin-right: 2px;
+    padding: 0;
+    position: relative;
+    text-align: center;
+  }
+
+  /* Day button (the actual clickable element) */
+  .rdp-day_button {
+    @include inline_flex_align;
+
+    justify-content: center;
+    width: 27px;
+    height: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0 auto;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--mdk-color-white);
+    border-radius: 0;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+
+    &:hover {
+      background-color: var(--mdk-color-white-transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--mdk-color-primary);
+      outline-offset: -1px;
+      z-index: 1;
+    }
+  }
+
+  /* Selected day */
+  .rdp-selected .rdp-day_button {
+    background-color: var(--mdk-color-primary);
+    color: var(--mdk-button-primary-text);
+    font-weight: 500;
+
+    &:hover {
+      background-color: var(--mdk-color-primary);
+    }
+  }
+
+  /* Today */
+  .rdp-today .rdp-day_button {
+    font-weight: 600;
+    border: 1px solid var(--mdk-color-primary);
+  }
+
+  .rdp-today.rdp-selected .rdp-day_button {
+    color: var(--mdk-button-primary-text);
+  }
+
+  /* Outside current month */
+  .rdp-outside .rdp-day_button {
+    opacity: 0.3;
+  }
+
+  /* Disabled days */
+  .rdp-disabled .rdp-day_button {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+
+  /* Range selection styles */
+  .rdp-range_start .rdp-day_button {
+    background-color: var(--mdk-color-primary);
+    color: var(--mdk-button-primary-text);
+    font-weight: 500;
+  }
+
+  .rdp-range_end .rdp-day_button {
+    background-color: var(--mdk-color-primary);
+    color: var(--mdk-button-primary-text);
+    font-weight: 500;
+  }
+
+  .rdp-range_middle .rdp-day_button {
+    background-color: rgba(var(--mdk-color-primary-rgb), 0.2);
+    color: var(--mdk-color-white);
+  }
+
+  /* Dropdown (year/month selectors if used) */
+  .rdp-dropdown {
+    background-color: var(--mdk-popover-bg);
+    border: 1px solid var(--mdk-button-secondary-border);
+    color: var(--mdk-color-white);
+    padding: 4px;
+    border-radius: 0;
+  }
+}
+
+/* ===== Modal Layout (DateRangePicker) ===== */
+/* Combined selector to override Popover's max-width: 500px */
+.mdk-popover__content.mdk-date-picker__modal {
+  width: auto !important;
+  max-width: none !important;
+  padding: 16px;
+  background-color: var(--mdk-color-surface);
+  border: 1px solid var(--mdk-button-secondary-border);
+}
+
+.mdk-date-picker__modal-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--mdk-button-secondary-border);
+  margin-bottom: 16px;
+}
+
+.mdk-date-picker__modal-title {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--mdk-color-white);
+  margin: 0;
+}
+
+.mdk-date-picker__modal-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.mdk-date-picker__calendar-container {
+  @include flex_justify_center;
+
+  /* Prevent the container from shrinking calendars */
+  min-width: 0;
+  width: 100%;
+}
+
+/* ===== Meta Section (Summary + Presets) ===== */
+.mdk-date-picker__meta {
+  @include flex_align;
+
+  gap: 16px;
+  min-width: 0;
+}
+
+.mdk-date-picker__summary {
+  @include flex_column;
+
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  gap: 2px;
+  padding: 8px 12px;
+  background-color: var(--mdk-color-obsidian);
+  border: 1px solid var(--mdk-button-secondary-border);
+  font-size: 14px;
+  color: var(--mdk-color-text-disabled);
+  height: 100%;
+  justify-content: center;
+}
+
+.mdk-date-picker__summary-title {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.mdk-date-picker__summary-dates {
+  @include flex_align;
+
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mdk-date-picker__summary-date {
+  color: var(--mdk-color-primary);
+  font-weight: 500;
+}
+
+.mdk-date-picker__summary-count {
+  font-size: 14px;
+}
+
+.mdk-date-picker__presets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+  padding: 12px;
+  white-space: nowrap;
+  background-color: var(--mdk-color-obsidian);
+  border: 1px solid var(--mdk-button-secondary-border);
+
+  button {
+    padding: 2px 8px;
+    height: auto;
+  }
+}
+
+/* ===== Modal Footer ===== */
+.mdk-date-picker__modal-footer {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--mdk-button-secondary-border);
+
+  button {
+    flex: 1;
+    min-width: 120px;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+/* ===== Panel Labels (Start/End Date for range picker) ===== */
+.mdk-date-picker__calendar-container {
+  /* Adjust nav position to account for label margin */
+  .rdp-nav {
+    top: 32px;
+    @include flex_between;
+
+    width: 100%;
+
+    .rdp-button_previous {
+      margin-left: 25px;
+    }
+  }
+
+  .rdp-month {
+    position: relative;
+    margin-top: 20px;
+  }
+
+  .rdp-month::before {
+    position: absolute;
+    left: 0px;
+    top: -20px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 14px;
+    letter-spacing: 1.32px;
+    text-transform: uppercase;
+    color: var(--mdk-color-text-disabled);
+  }
+
+  .rdp-month:not(:last-child)::before {
+    content: 'start date';
+  }
+
+  .rdp-month:last-child::before {
+    content: 'end date';
+  }
+
+  /* Single month picker - no labels */
+  .rdp-months:has(.rdp-month:only-child) .rdp-month {
+    margin-top: 0;
+
+    &::before {
+      display: none;
+    }
+  }
+}

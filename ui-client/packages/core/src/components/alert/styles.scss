@@ -1,0 +1,125 @@
+@use '../../styles/mixins' as *;
+
+.mdk-alert {
+  @include flex_align;
+
+  position: relative;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  line-height: 1.5;
+  box-sizing: border-box;
+  width: 100%;
+
+  &--success {
+    background-color: rgba(var(--mdk-color-success), 0.1);
+    border-color: rgba(var(--mdk-color-success), 0.3);
+    color: rgb(var(--mdk-color-success));
+  }
+
+  &--info {
+    background-color: rgba(var(--mdk-color-sleep-blue), 0.1);
+    border-color: rgba(var(--mdk-color-sleep-blue), 0.3);
+    color: rgb(var(--mdk-color-sleep-blue));
+  }
+
+  &--warning {
+    background-color: rgba(var(--mdk-color-warning-rgb), 0.1);
+    border-color: rgba(var(--mdk-color-warning-rgb), 0.3);
+    color: rgb(var(--mdk-color-warning-rgb));
+  }
+
+  &--error {
+    background-color: rgba(var(--mdk-color-error), 0.1);
+    border-color: rgba(var(--mdk-color-error), 0.3);
+    color: rgb(var(--mdk-color-error));
+  }
+
+  &--banner {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+  }
+
+  &--with-description {
+    @include flex_align_start;
+
+    padding: 14px 16px;
+
+    .mdk-alert__icon {
+      margin-top: 2px;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .mdk-alert__title {
+      font-weight: 600;
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+
+    svg {
+      display: block;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__content {
+    @include flex_column;
+
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+  }
+
+  &__title {
+    line-height: 1.4;
+  }
+
+  &__description {
+    font-size: 12px;
+    opacity: 0.85;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  &__action {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  &__close {
+    @include inline_flex_align;
+
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+    border-radius: 3px;
+    transition: opacity 0.2s;
+
+    svg {
+      display: block;
+      width: 14px;
+      height: 14px;
+    }
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}

@@ -1,0 +1,72 @@
+.list-view-filter-example {
+  &__header {
+    margin-bottom: 2rem;
+  }
+
+  &__toolbar {
+    @include flex_align_between;
+
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: var(--mdk-color-obsidian);
+    border: 1px solid var(--mdk-border-default-color);
+    border-radius: 0.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  &__toolbar-actions {
+    @include flex_align;
+
+    gap: 1rem;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      width: 100%;
+    }
+  }
+
+  &__active-filters {
+    @include flex_align;
+
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background-color: rgba(var(--mdk-color-primary-rgb), 0.1);
+    border: 1px solid rgba(var(--mdk-color-primary-rgb), 0.3);
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  &__active-filters-tags {
+    @include flex_wrap;
+    gap: 0.5rem;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  &__card-header {
+    @include flex_between;
+
+    align-items: center;
+  }
+
+  &__card-row {
+    @include flex_between;
+
+    gap: 0.5rem;
+  }
+}

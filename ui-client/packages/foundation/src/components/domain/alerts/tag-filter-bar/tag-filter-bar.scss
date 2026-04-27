@@ -1,0 +1,20 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-alerts-tag-filter-bar {
+  @include flex_column;
+
+  flex: 1;
+  gap: 12px;
+  align-items: stretch;
+  margin-bottom: 20px;
+
+  @media (min-width: 900px) {
+    @include flex_row;
+    @include flex_align;
+  }
+
+  &__search {
+    flex: 1;
+    width: 100%;
+  }
+}

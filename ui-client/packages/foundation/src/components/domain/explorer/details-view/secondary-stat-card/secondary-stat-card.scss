@@ -1,0 +1,25 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-secondary-stat-card {
+  @include flex_column_center;
+
+  border: none;
+  height: 70px;
+
+  &__name {
+    color: rgb(var(--mdk-color-soft-gray));
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 22px;
+    letter-spacing: -0.05px;
+    text-align: center;
+  }
+
+  &__value {
+    color: rgb(var(--mdk-color-soft-gray));
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 22px;
+    text-align: center;
+  }
+}

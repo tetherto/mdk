@@ -1,0 +1,25 @@
+.status-item-demo {
+  &__showcase {
+    padding: 1rem;
+    border: 1px solid var(--mdk-dialog-border-color);
+    margin-top: 2rem;
+
+    h3 {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  &__showcase-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+}

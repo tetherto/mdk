@@ -1,0 +1,60 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-data-row {
+  display: table-row;
+  font-size: 0.8125rem; // 13px
+  font-weight: 400;
+  color: var(--mdk-color-text-secondary);
+
+  &__label {
+    display: table-cell;
+  }
+
+  &__value {
+    display: table-cell;
+    padding-left: 0.5rem; // 8px
+  }
+
+  &__units {
+    display: table-cell;
+    padding-left: 0.25rem; // 4px
+  }
+
+  // Highlighted state
+  &--highlighted {
+    font-size: 0.875rem; // 14px
+    font-weight: 600;
+  }
+
+  // Flash animation
+  &--flash {
+    animation: flashText 1s infinite;
+  }
+
+  // Flash animation with custom color
+  &--flash[style*='color'] {
+    animation: flashTextWithColor 1s infinite;
+  }
+}
+
+// Flash animation (default)
+@keyframes flashText {
+  0%,
+  100% {
+    color: var(--mdk-color-text-secondary);
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// Flash animation preserving custom color
+@keyframes flashTextWithColor {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

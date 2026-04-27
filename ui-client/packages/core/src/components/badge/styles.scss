@@ -1,0 +1,265 @@
+@use '../../styles/mixins' as *;
+/* ========================================
+   Badge Component Styles
+   ======================================== */
+
+/* Wrapper (when badge has children) */
+.mdk-badge-wrapper {
+  position: relative;
+  line-height: 1;
+}
+
+/* Base Badge */
+.mdk-badge {
+  @include inline_flex_align;
+
+  justify-content: center;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
+  border-radius: 9999px; // Default: fully rounded
+  transition: all 0.2s ease;
+  color: var(--mdk-color-white);
+
+  /* When badge has children, position absolutely */
+  .mdk-badge-wrapper & {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(50%, -50%);
+    transform-origin: 100% 0%;
+    z-index: 10;
+  }
+
+  /* Animation for new badges */
+  animation: badge-zoom 0.3s cubic-bezier(0.12, 0.4, 0.29, 1.46);
+}
+
+@keyframes badge-zoom {
+  0% {
+    transform: translate(50%, -50%) scale(0);
+  }
+  100% {
+    transform: translate(50%, -50%) scale(1);
+  }
+}
+
+/* Standalone badge (no children) */
+.mdk-badge--standalone {
+  position: relative;
+  transform: none;
+  animation: none;
+}
+
+/* Square badge (no border-radius) */
+.mdk-badge--square {
+  border-radius: 0;
+
+  // Dot badges should still be circles even when square
+  &.mdk-badge--dot {
+    border-radius: 50%;
+  }
+}
+
+/* ========================================
+   SIZE VARIANTS
+   ======================================== */
+
+/* Small */
+.mdk-badge--sm {
+  min-width: 0.875rem;
+  height: 0.875rem;
+  padding: 0 0.25rem;
+  font-size: 0.5625rem;
+  line-height: 0.875rem;
+
+  &.mdk-badge--dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .mdk-badge-wrapper & {
+    transform: translate(40%, -40%);
+  }
+
+  @media (min-width: 769px) {
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 0.3125rem;
+    font-size: 0.625rem;
+    line-height: 1rem;
+  }
+}
+
+/* Medium (Mobile) */
+.mdk-badge--md {
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.375rem;
+  font-size: 0.625rem;
+  line-height: 1rem;
+
+  &.mdk-badge--dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .mdk-badge-wrapper & {
+    transform: translate(50%, -50%);
+  }
+
+  @media (min-width: 769px) {
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.4375rem;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+  }
+}
+
+/* Large  */
+.mdk-badge--lg {
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.4375rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+
+  &.mdk-badge--dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .mdk-badge-wrapper & {
+    transform: translate(50%, -50%);
+  }
+
+  @media (min-width: 769px) {
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* ========================================
+   COLOR VARIANTS
+   ======================================== */
+
+/* Default (Gray) */
+.mdk-badge--default {
+  color: var(--mdk-color-surface);
+  background-color: var(--mdk-color-surface);
+}
+
+/* Primary (Orange) */
+.mdk-badge--primary {
+  background-color: var(--mdk-color-primary);
+  color: var(--mdk-color-white);
+}
+
+/* Success (Green) */
+.mdk-badge--success {
+  background-color: var(--mdk-color-brick-green);
+}
+
+/* Warning (Yellow/Orange) */
+.mdk-badge--warning {
+  background-color: rgb(var(--mdk-color-orange-warning));
+}
+
+/* Error (Red) */
+.mdk-badge--error {
+  background-color: rgb(var(--mdk-color-error));
+}
+
+/* Info (Blue) */
+.mdk-badge--info {
+  background-color: rgb(var(--mdk-color-sleep-blue));
+}
+
+/* ========================================
+   DOT BADGE
+   ======================================== */
+
+.mdk-badge--dot {
+  padding: 0;
+  border-radius: 50%; // Always circular for dots
+
+  .mdk-badge-wrapper & {
+    transform: translate(30%, -30%);
+  }
+}
+
+/* ========================================
+   STATUS BADGE
+   ======================================== */
+
+.mdk-badge--status {
+  @include inline_flex_align;
+
+  position: relative;
+  gap: 0.5rem;
+  padding: 0;
+  min-width: 0;
+  height: auto;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  animation: none;
+  font-weight: 400;
+  font-size: 0.875rem;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &.mdk-badge--status-default::before {
+    background-color: var(--mdk-color-primary);
+  }
+
+  &.mdk-badge--status-success::before {
+    background-color: var(--mdk-color-brick-green);
+  }
+
+  &.mdk-badge--status-processing::before {
+    background-color: rgb(var(--mdk-color-sleep-blue));
+    animation: badge-processing 1.5s ease-in-out infinite;
+  }
+
+  &.mdk-badge--status-error::before {
+    background-color: rgb(var(--mdk-color-error));
+  }
+
+  &.mdk-badge--status-warning::before {
+    background-color: rgb(var(--mdk-color-orange-warning));
+  }
+}
+
+@keyframes badge-processing {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(0.8);
+  }
+}

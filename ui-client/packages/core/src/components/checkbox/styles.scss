@@ -1,0 +1,227 @@
+@use '../../styles/mixins' as *;
+/* ========================================
+   Checkbox Component Styles
+   ======================================== */
+
+/* Base Checkbox */
+.mdk-checkbox {
+  @include inline_flex_align;
+
+  all: unset;
+  justify-content: center;
+  border: 1px solid var(--mdk-button-secondary-border);
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 200ms ease;
+  flex-shrink: 0;
+  position: relative;
+
+  &:hover:not(:disabled) {
+    border-color: currentColor;
+    opacity: 0.85;
+  }
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &[data-state='checked'] {
+    border-color: currentColor;
+    background-color: currentColor;
+  }
+}
+
+/* Indicator (Checkmark container) */
+.mdk-checkbox__indicator {
+  @include flex_center;
+
+  width: 100%;
+  height: 100%;
+  color: var(--mdk-color-white);
+}
+
+/* Icon (Checkmark SVG) */
+.mdk-checkbox__icon {
+  width: 100%;
+  height: 100%;
+}
+
+/* ========================================
+   SIZE VARIANTS
+   ======================================== */
+
+/* Extra Small */
+.mdk-checkbox--xs {
+  width: 13px;
+  height: 13px;
+
+  .mdk-checkbox__icon {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+/* Small */
+.mdk-checkbox--sm {
+  width: 16px;
+  height: 16px;
+
+  .mdk-checkbox__icon {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Medium (Default) */
+.mdk-checkbox--md {
+  width: 20px;
+  height: 20px;
+
+  .mdk-checkbox__icon {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Large */
+.mdk-checkbox--lg {
+  width: 24px;
+  height: 24px;
+
+  .mdk-checkbox__icon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* ========================================
+   RADIUS VARIANTS
+   ======================================== */
+
+/* None (Square corners) */
+.mdk-checkbox--radius-none {
+  border-radius: 0;
+}
+
+/* Small (Slightly rounded) */
+.mdk-checkbox--radius-small {
+  border-radius: 4px;
+}
+
+/* Medium (Moderately rounded) */
+.mdk-checkbox--radius-medium {
+  border-radius: 6px;
+}
+
+/* Large (Very rounded) */
+.mdk-checkbox--radius-large {
+  border-radius: 8px;
+}
+
+/* Full (Circular) */
+.mdk-checkbox--radius-full {
+  border-radius: 9999px;
+}
+
+/* ========================================
+   COLOR VARIANTS
+   ======================================== */
+
+/* Default  */
+.mdk-checkbox--default {
+  color: var(--mdk-color-gray-400);
+
+  &[data-state='checked'] {
+    background-color: var(--mdk-color-gray-400);
+  }
+}
+
+/* Primary  */
+.mdk-checkbox--primary {
+  color: var(--mdk-color-primary);
+
+  &[data-state='checked'] {
+    background-color: var(--mdk-color-primary);
+  }
+}
+
+/* Success  */
+.mdk-checkbox--success {
+  color: rgb(var(--mdk-color-success));
+
+  &[data-state='checked'] {
+    background-color: rgb(var(--mdk-color-success));
+  }
+}
+
+/* Warning  */
+.mdk-checkbox--warning {
+  color: var(--mdk-color-warning);
+
+  &[data-state='checked'] {
+    background-color: var(--mdk-color-warning);
+  }
+}
+
+/* Error/Danger  */
+.mdk-checkbox--error {
+  color: rgb(var(--mdk-color-error));
+
+  &[data-state='checked'] {
+    background-color: rgb(var(--mdk-color-error));
+  }
+}
+
+/* ========================================
+   INDETERMINATE STATE
+   ======================================== */
+
+.mdk-checkbox[data-state='indeterminate'] {
+  background-color: transparent;
+
+  .mdk-checkbox__indicator svg {
+    display: none;
+  }
+
+  .mdk-checkbox__indicator::after {
+    content: '';
+    display: block;
+    background-color: var(--mdk-color-primary);
+    border-radius: 1px;
+  }
+}
+
+/* Indeterminate sizes */
+.mdk-checkbox--xs[data-state='indeterminate'] {
+  .mdk-checkbox__indicator::after {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+.mdk-checkbox--sm[data-state='indeterminate'] {
+  .mdk-checkbox__indicator::after {
+    width: 8px;
+    height: 8px;
+  }
+}
+
+.mdk-checkbox--md[data-state='indeterminate'] {
+  .mdk-checkbox__indicator::after {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+.mdk-checkbox--lg[data-state='indeterminate'] {
+  .mdk-checkbox__indicator::after {
+    width: 12px;
+    height: 12px;
+  }
+}

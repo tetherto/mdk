@@ -1,0 +1,100 @@
+@use '../../styles/mixins' as *;
+.mdk-doughnut-chart {
+  @include flex_column;
+
+  gap: 24px;
+  width: 100%;
+
+  &--legend-left,
+  &--legend-right {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  // ── Legend ─────────────────────────────────────────────────────────────────
+  &__legend {
+    @include flex_column;
+
+    gap: 8px;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  &--legend-left &__legend,
+  &--legend-right &__legend {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 0%;
+  }
+
+  &__legend-item {
+    @include flex_align;
+
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &--hidden {
+      opacity: 0.3;
+    }
+  }
+
+  &__legend-color {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+
+  &__legend-label {
+    @include text_ellipsis;
+    font-family: var(--font-mono);
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    color: hsl(210 40% 98% / 0.85);
+  }
+
+  &__legend-stats {
+    @include flex_align;
+
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  &__legend-pct {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    color: hsl(210 40% 98% / 0.6);
+  }
+
+  &__legend-count {
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    color: hsl(210 40% 98% / 0.9);
+  }
+
+  // ── Chart ─────────────────────────────────────────────────────────────────
+  &__chart {
+    @include flex_center;
+
+    width: 100%;
+    flex-shrink: 0;
+    position: relative;
+    align-self: center;
+    
+    canvas {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+  }
+}

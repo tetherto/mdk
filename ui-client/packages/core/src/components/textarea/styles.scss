@@ -1,0 +1,84 @@
+@use '../../styles/mixins' as *;
+/**
+ * TextArea Component Styles (mining-os theme)
+ *
+ * - Default: Dark gray bg, no border
+ * - Hover: Light gray border
+ * - Focus: Orange/amber border
+ */
+
+.mdk-textarea-root {
+  @include flex_column;
+
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.mdk-textarea__label {
+  color: var(--mdk-color-white, #ffffff);
+  font-size: var(--mdk-font-size, 14px);
+  line-height: var(--mdk-line-height, 22px);
+}
+
+.mdk-textarea__wrapper {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  &--error {
+    .mdk-textarea {
+      border-color: rgb(var(--mdk-color-error, #ef4444));
+    }
+
+    .mdk-textarea:hover:not(:disabled):not(:focus),
+    .mdk-textarea:focus {
+      border-color: rgb(var(--mdk-color-error, #ef4444));
+    }
+  }
+}
+
+.mdk-textarea__error {
+  font-size: var(--mdk-font-size, 14px);
+  line-height: var(--mdk-line-height, 22px);
+  color: rgb(var(--mdk-color-error, #ef4444));
+}
+
+.mdk-textarea {
+  width: 100%;
+  min-height: 5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--mdk-font-size, 14px);
+  line-height: var(--mdk-line-height, 22px);
+  font-family: inherit;
+  color: var(--mdk-color-white, #ffffff);
+  background: var(--mdk-input-bg, #363636);
+  border: 1px solid transparent;
+  border-radius: 0;
+  outline: none;
+  resize: none;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+
+  &::placeholder {
+    color: var(--mdk-input-placeholder-color, #999999);
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--mdk-input-border-hover, #777777);
+  }
+
+  &:focus {
+    border-color: var(--mdk-color-primary, #f7931a);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}

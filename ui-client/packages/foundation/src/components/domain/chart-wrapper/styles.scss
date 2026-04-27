@@ -1,0 +1,48 @@
+@use '@mdk/core/styles' as *;
+
+/* ========================================
+   Chart wrapper Component
+   ======================================== */
+
+.mdk-chart-wrapper {
+  position: relative;
+  display: flex;
+  flex: 1;
+  width: 100%;
+
+  /* Chart content wrapper */
+  &__content {
+    flex: 1;
+    width: 100%;
+    position: static;
+    visibility: visible;
+    pointer-events: auto;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+
+    /* Hidden state when loading or empty */
+    &--hidden {
+      position: absolute;
+      z-index: -1;
+      visibility: hidden;
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+
+  /* Empty state wrapper */
+  &__empty {
+    @include flex_center;
+
+    width: 100%;
+    padding: 1rem;
+  }
+
+  &__loading {
+    @include flex_center;
+
+    width: 100%;
+    height: 100%;
+    contain: layout;
+  }
+}

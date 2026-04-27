@@ -1,0 +1,26 @@
+.mdk-settings-dashboard {
+  @include flex_column;
+
+  padding: 10px 20px;
+  gap: 20px;
+  min-width: 300px;
+
+  &__title {
+    margin-top: 30px;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  &__danger-actions {
+    @include flex_wrap;
+
+    gap: 12px;
+  }
+
+  &__accordions {
+    @include flex_column;
+
+    gap: 20px;
+    margin-top: 20px;
+  }
+}

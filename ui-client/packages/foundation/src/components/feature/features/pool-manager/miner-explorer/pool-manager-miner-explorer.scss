@@ -1,0 +1,20 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-pm-miner-explorer-page {
+  @include flex_column;
+
+  gap: 24px;
+
+  &__header {
+    @include flex_align_start_between;
+  }
+
+  &__title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  &__subtitle {
+    margin-top: 4px;
+  }
+}

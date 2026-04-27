@@ -1,0 +1,11 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-micro-bt-settings {
+  @include flex_column;
+
+  gap: 1.5rem;
+
+  &__divider {
+    height: 1.5rem;
+  }
+}

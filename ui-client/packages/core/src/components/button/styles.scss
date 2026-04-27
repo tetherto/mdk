@@ -1,0 +1,181 @@
+@use '../../styles/mixins' as *;
+$animation-duration: 0.3s;
+
+$button-icon-size: 12px;
+$button-min-height-link: 18px;
+$button-min-height-common: 40px;
+$button-min-width-loading: 80px;
+$button-content-line-height: 18px;
+$button-min-height-tertiary: 30px;
+
+.mdk-button {
+  @include flex_center;
+
+  cursor: pointer;
+  box-shadow: none;
+  padding: 10px 21px;
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  min-height: $button-min-height-common;
+  transition:
+    background-color $animation-duration ease,
+    border-color $animation-duration ease,
+    color $animation-duration ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &__content {
+    @include flex_align;
+
+    gap: 8px;
+    line-height: $button-content-line-height;
+  }
+
+  &__children {
+    @include flex_center;
+
+    letter-spacing: 0;
+    font-size: var(--button-font-size, 14px);
+    font-weight: var(--button-font-weight, 500);
+  }
+
+  &__icon {
+    @include flex_center;
+
+    svg {
+      width: $button-icon-size;
+      height: $button-icon-size;
+    }
+  }
+
+  &__loading {
+    @include flex_center;
+
+    min-width: $button-min-width-loading;
+    color: inherit;
+
+    .mdk-spinner {
+      transform: scale(0.75);
+      transform-origin: center;
+    }
+
+    .mdk-spinner__circle {
+      border-color: currentColor;
+      border-top-color: transparent;
+    }
+  }
+
+  &--size {
+    &-sm {
+      min-height: unset;
+      height: 32px;
+    }
+    &-md {
+      min-height: unset;
+      height: 40px;
+    }
+    &-lg {
+      min-height: unset;
+      height: 48px;
+    }
+  }
+
+  &--full-width {
+    width: 100%;
+  }
+
+  &--variant-primary {
+    color: rgb(var(--mdk-color-black));
+    background-color: var(--mdk-color-primary);
+  }
+
+  &--variant-secondary {
+    color: var(--mdk-color-white-7);
+    background-color: var(--mdk-button-secondary-bg);
+    border-color: var(--mdk-button-secondary-border);
+  }
+
+  &--variant-danger {
+    color: var(--mdk-color-white);
+    background-color: var(--mdk-button-danger-bg);
+  }
+
+  &--variant-tertiary {
+    padding: 5px 21px;
+    line-height: normal;
+    align-self: flex-start;
+    color: var(--mdk-color-primary);
+    min-height: $button-min-height-tertiary;
+    background-color: var(--mdk-orange-dimmer);
+
+    --button-font-size: 12px;
+    --button-font-weight: 700;
+  }
+
+  &--variant-link,
+  &--variant-nav-link {
+    border: none;
+    padding: unset;
+    min-width: unset;
+    position: relative;
+    line-height: normal;
+    max-height: fit-content;
+    background-color: transparent;
+    min-height: $button-min-height-link;
+    color: var(--mdk-color-primary);
+  }
+  &--variant-link {
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1px;
+      opacity: 0;
+      background-color: currentColor;
+      transition: opacity $animation-duration ease;
+    }
+  }
+
+  &--variant-icon {
+    padding: 10px 13px;
+    color: var(--mdk-color-white-7);
+    background-color: var(--mdk-button-secondary-bg);
+    border-color: var(--mdk-button-secondary-border);
+  }
+
+  &:not(:disabled):hover {
+    &.mdk-button--variant-primary {
+      background: var(--mdk-color-primary-button-hover);
+    }
+
+    &.mdk-button--variant-secondary {
+      background: var(--mdk-color-background-dark);
+      border-color: var(--mdk-button-secondary-border-hover);
+    }
+
+    &.mdk-button--variant-danger {
+      background: var(--mdk-button-danger-bg-hover);
+    }
+
+    &.mdk-button--variant-tertiary {
+      background-color: var(--mdk-color-primary);
+      color: rgb(var(--mdk-color-black));
+    }
+
+    &.mdk-button--variant-link {
+      &::after {
+        opacity: 1;
+      }
+    }
+
+    &.mdk-button--variant-icon {
+      background: var(--mdk-color-background-dark);
+      border-color: var(--mdk-button-secondary-border-hover);
+    }
+  }
+}

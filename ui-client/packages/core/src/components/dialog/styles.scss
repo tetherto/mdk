@@ -1,0 +1,173 @@
+@use '../../styles/mixins' as *;
+/**
+ * Dialog Component Styles
+ */
+
+:root {
+  --mdk-dialog-max-width: 32rem;
+}
+
+.mdk-dialog {
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--mdk-overlay-bg);
+
+    &[data-state='open'] {
+      animation: fadeIn 200ms ease-out;
+    }
+
+    &[data-state='closed'] {
+      animation: fadeOut 200ms ease-in;
+    }
+  }
+
+  &__content {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    gap: 1rem;
+    z-index: 50;
+    width: 100%;
+    display: grid;
+    padding: 1.5rem;
+    max-width: var(--mdk-dialog-max-width);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    translate: -50% -50%;
+    animation-duration: 200ms;
+    background: var(--mdk-color-surface);
+    border: 1px solid var(--mdk-dialog-border-color);
+    box-shadow: 0 10px 15px -3px var(--mdk-dialog-box-shadow-color);
+
+    &[data-state='open'] {
+      animation: dialogIn 200ms ease-out;
+    }
+
+    &[data-state='closed'] {
+      animation: dialogOut 200ms ease-in;
+    }
+  }
+
+  &__header {
+    @include flex_align_start_between;
+    position: relative;
+
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--mdk-dialog-border-color);
+
+    &--bare {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    &__container {
+      @include flex_column;
+
+      gap: 0.75rem;
+    }
+
+    &__close {
+      position: relative;
+      right: -1rem;
+      top: -0.75rem;
+      border: 0;
+      width: 32px;
+      height: 32px;
+      min-width: unset;
+      min-height: unset;
+      background: transparent;
+      color: var(--mdk-color-white-60);
+      transition:
+        background 0.2s ease-in-out,
+        color 0.2s ease-in-out;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      &:hover {
+        color: var(--mdk-color-white) !important;
+        background: var(--mdk-color-white-12) !important;
+      }
+    }
+
+    @media (min-width: 640px) {
+      text-align: left;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column-reverse;
+    padding-top: 24px;
+    border-top: 1px solid var(--mdk-dialog-border-color);
+
+    @media (min-width: 640px) {
+      flex-direction: row;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+  }
+
+  &__title {
+    font-family: var(--font-mono);
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: -0.025em;
+  }
+
+  &__description {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: hsl(var(--muted-foreground));
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    scale: 0.95;
+    translate: -50% -48%;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: -50% -50%;
+  }
+}
+
+@keyframes dialogOut {
+  from {
+    opacity: 1;
+    scale: 1;
+    translate: -50% -50%;
+  }
+  to {
+    opacity: 0;
+    scale: 0.95;
+    translate: -50% -48%;
+  }
+}

@@ -1,0 +1,37 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-container-fan-legend {
+  @include flex_align;
+
+  gap: 8px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+
+  &__number {
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 16px;
+    text-align: center;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__icon {
+    @include flex_center;
+
+    width: 20px;
+    height: 20px;
+
+    svg {
+      width: 100%;
+      height: 100%;
+      transition: all 0.2s ease;
+    }
+
+    // On state - rotating animation
+    &--on {
+      svg {
+        animation: spin 2s linear infinite;
+      }
+    }
+  }
+}

@@ -1,0 +1,395 @@
+{
+  "collectSnapTimeoutMs": 120000,
+  "collectSnapsItvMs": 60000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "alerts": {
+    "container-mbt-kehua": {
+      "water_min_inlet_temp_warn": {
+        "description": "Water tank inlet temperature is too low.",
+        "severity": "medium",
+        "params": {
+          "temp": 20
+        }
+      },
+      "power_fault": {
+        "description": "Power supply issue",
+        "severity": "medium"
+      },
+      "circulating_pump_fault": {
+        "description": "Circulating pump failure",
+        "severity": "critical"
+      },
+      "fan_fault": {
+        "description": "Fan malfunction",
+        "severity": "high"
+      },
+      "low_inlet_pressure_circ_pump": {
+        "description": "Low inlet pressure of circulation pump",
+        "severity": "critical"
+      },
+      "low_outlet_pressure_circ_pump": {
+        "description": "Low outlet pressure of circulation pump",
+        "severity": "critical"
+      },
+      "high_outlet_pressure_circ_pump": {
+        "description": "High outlet pressure of circulation pump",
+        "severity": "high"
+      },
+      "circ_pump_inverter_fault": {
+        "description": "Circulation pump inverter fault",
+        "severity": "critical"
+      },
+      "high_pressure_diff_filter": {
+        "description": "High pressure difference across the filter",
+        "severity": "high"
+      },
+      "small_inlet_outlet_pressure_diff": {
+        "description": "Small inlet/outlet pressure difference of the unit",
+        "severity": "high"
+      },
+      "large_inlet_outlet_pressure_diff": {
+        "description": "Large inlet/outlet pressure difference of the unit",
+        "severity": "high"
+      },
+      "high_inlet_temp_unit": {
+        "description": "High inlet temperature of the unit",
+        "severity": "high"
+      },
+      "high_outlet_temp_unit": {
+        "description": "High outlet temperature of the unit",
+        "severity": "high"
+      },
+      "small_temp_dew_point_diff_inlet_unit": {
+        "description": "Small temperature/dew point difference at the unit inlet",
+        "severity": "high"
+      },
+      "circ_pump_inlet_pressure_sensor_fault": {
+        "description": "Circulation pump inlet pressure sensor fault",
+        "severity": "high"
+      },
+      "circ_pump_outlet_pressure_sensor_fault": {
+        "description": "Circulation pump outlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_inlet_pressure_sensor_fault": {
+        "description": "Unit inlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_outlet_pressure_sensor_fault": {
+        "description": "Unit outlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_inlet_temp_sensor_fault": {
+        "description": "Unit inlet temperature sensor fault",
+        "severity": "high"
+      },
+      "unit_outlet_temp_sensor_fault": {
+        "description": "Unit outlet temperature sensor fault",
+        "severity": "high"
+      },
+      "filter_front_pressure_sensor_fault": {
+        "description": "Filter front pressure sensor fault",
+        "severity": "high"
+      },
+      "filter_rear_pressure_sensor_fault": {
+        "description": "Filter rear pressure sensor fault",
+        "severity": "high"
+      },
+      "bypass_valve_fault": {
+        "description": "Bypass valve fault",
+        "severity": "critical"
+      },
+      "temp_sensor_chilled_water_supply_fault": {
+        "description": "Temperature sensor fault at chilled water supply",
+        "severity": "high"
+      },
+      "pressure_sensor_chilled_water_supply_fault": {
+        "description": "Pressure sensor fault at chilled water supply",
+        "severity": "high"
+      },
+      "outdoor_ambient_temp_sensor_fault": {
+        "description": "Outdoor ambient temperature sensor fault",
+        "severity": "medium"
+      },
+      "indoor_temp_humidity_sensor_fault": {
+        "description": "Indoor temperature and humidity sensor fault",
+        "severity": "medium"
+      },
+      "makeup_water_pump_fault": {
+        "description": "Make-up water pump fault",
+        "severity": "critical"
+      },
+      "water_immersion_alarm": {
+        "description": "Water immersion detected",
+        "severity": "critical"
+      },
+      "circ_pump_high_inlet_pressure": {
+        "description": "High inlet pressure of circulation pump",
+        "severity": "critical"
+      }
+    },
+    "container-mbt-wanderint": {
+      "water_max_inlet_temp_warn": {
+        "description": "Water tank inlet temperature is too high.",
+        "severity": "warning",
+        "params": {
+          "lowTemp": 50,
+          "normalTemp": 50,
+          "highTemp": 40
+        }
+      },
+      "water_min_inlet_temp_warn": {
+        "description": "Water tank inlet temperature is too low.",
+        "severity": "warning",
+        "params": {
+          "temp": 20
+        }
+      },
+      "power_fault": {
+        "description": "Power supply issue",
+        "severity": "warning"
+      },
+      "circulating_pump_fault": {
+        "description": "Circulating pump failure",
+        "severity": "critical"
+      },
+      "fan_fault": {
+        "description": "Fan malfunction",
+        "severity": "high"
+      },
+      "low_inlet_pressure_circ_pump": {
+        "description": "Low inlet pressure of circulation pump",
+        "severity": "critical"
+      },
+      "low_outlet_pressure_circ_pump": {
+        "description": "Low outlet pressure of circulation pump",
+        "severity": "critical"
+      },
+      "high_outlet_pressure_circ_pump": {
+        "description": "High outlet pressure of circulation pump",
+        "severity": "high"
+      },
+      "circ_pump_fault": {
+        "description": "Circulation pump fault",
+        "severity": "critical"
+      },
+      "circ_pump_inverter_fault": {
+        "description": "Circulation pump inverter fault",
+        "severity": "critical"
+      },
+      "high_pressure_diff_filter": {
+        "description": "High pressure difference across the filter",
+        "severity": "high"
+      },
+      "small_inlet_outlet_pressure_diff": {
+        "description": "Small inlet/outlet pressure difference of the unit",
+        "severity": "high"
+      },
+      "large_inlet_outlet_pressure_diff": {
+        "description": "Large inlet/outlet pressure difference of the unit",
+        "severity": "high"
+      },
+      "high_inlet_temp_unit": {
+        "description": "High inlet temperature of the unit",
+        "severity": "high"
+      },
+      "high_outlet_temp_unit": {
+        "description": "High outlet temperature of the unit",
+        "severity": "high"
+      },
+      "small_temp_dew_point_diff_inlet_unit": {
+        "description": "Small temperature/dew point difference at the unit inlet",
+        "severity": "high"
+      },
+      "circ_pump_inlet_pressure_sensor_fault": {
+        "description": "Circulation pump inlet pressure sensor fault",
+        "severity": "high"
+      },
+      "circ_pump_outlet_pressure_sensor_fault": {
+        "description": "Circulation pump outlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_inlet_pressure_sensor_fault": {
+        "description": "Unit inlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_outlet_pressure_sensor_fault": {
+        "description": "Unit outlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_inlet_temp_sensor_fault": {
+        "description": "Unit inlet temperature sensor fault",
+        "severity": "high"
+      },
+      "unit_outlet_temp_sensor_fault": {
+        "description": "Unit outlet temperature sensor fault",
+        "severity": "high"
+      },
+      "filter_front_pressure_sensor_fault": {
+        "description": "Filter front pressure sensor fault",
+        "severity": "high"
+      },
+      "filter_rear_pressure_sensor_fault": {
+        "description": "Filter rear pressure sensor fault",
+        "severity": "high"
+      },
+      "bypass_valve_fault": {
+        "description": "Bypass valve fault",
+        "severity": "critical"
+      },
+      "temp_sensor_chilled_water_supply_fault": {
+        "description": "Temperature sensor fault at chilled water supply",
+        "severity": "high"
+      },
+      "pressure_sensor_chilled_water_supply_fault": {
+        "description": "Pressure sensor fault at chilled water supply",
+        "severity": "high"
+      },
+      "outdoor_ambient_temp_sensor_fault": {
+        "description": "Outdoor ambient temperature sensor fault",
+        "severity": "medium"
+      },
+      "indoor_temp_humidity_sensor_fault": {
+        "description": "Indoor temperature and humidity sensor fault",
+        "severity": "medium"
+      },
+      "makeup_water_pump_fault": {
+        "description": "Make-up water pump fault",
+        "severity": "critical"
+      },
+      "water_immersion_alarm": {
+        "description": "Water immersion detected",
+        "severity": "critical"
+      }
+    },
+    "container-mbt-wonderint": {
+      "water_min_inlet_temp_warn": {
+        "description": "Water tank inlet temperature is too low.",
+        "severity": "medium",
+        "params": {
+          "temp": 20
+        }
+      },
+      "power_fault": {
+        "description": "Power supply issue",
+        "severity": "medium"
+      },
+      "circulating_pump_fault": {
+        "description": "Circulating pump failure",
+        "severity": "critical"
+      },
+      "fan_fault": {
+        "description": "Fan malfunction",
+        "severity": "high"
+      },
+      "low_inlet_pressure_circ_pump": {
+        "description": "Low inlet pressure of circulation pump",
+        "severity": "critical"
+      },
+      "low_outlet_pressure_circ_pump": {
+        "description": "Low outlet pressure of circulation pump",
+        "severity": "critical"
+      },
+      "high_outlet_pressure_circ_pump": {
+        "description": "High outlet pressure of circulation pump",
+        "severity": "high"
+      },
+      "circ_pump_inverter_fault": {
+        "description": "Circulation pump inverter fault",
+        "severity": "critical"
+      },
+      "high_pressure_diff_filter": {
+        "description": "High pressure difference across the filter",
+        "severity": "high"
+      },
+      "small_inlet_outlet_pressure_diff": {
+        "description": "Small inlet/outlet pressure difference of the unit",
+        "severity": "high"
+      },
+      "large_inlet_outlet_pressure_diff": {
+        "description": "Large inlet/outlet pressure difference of the unit",
+        "severity": "high"
+      },
+      "high_inlet_temp_unit": {
+        "description": "High inlet temperature of the unit",
+        "severity": "high"
+      },
+      "high_outlet_temp_unit": {
+        "description": "High outlet temperature of the unit",
+        "severity": "high"
+      },
+      "small_temp_dew_point_diff_inlet_unit": {
+        "description": "Small temperature/dew point difference at the unit inlet",
+        "severity": "high"
+      },
+      "circ_pump_inlet_pressure_sensor_fault": {
+        "description": "Circulation pump inlet pressure sensor fault",
+        "severity": "high"
+      },
+      "circ_pump_outlet_pressure_sensor_fault": {
+        "description": "Circulation pump outlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_inlet_pressure_sensor_fault": {
+        "description": "Unit inlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_outlet_pressure_sensor_fault": {
+        "description": "Unit outlet pressure sensor fault",
+        "severity": "high"
+      },
+      "unit_inlet_temp_sensor_fault": {
+        "description": "Unit inlet temperature sensor fault",
+        "severity": "high"
+      },
+      "unit_outlet_temp_sensor_fault": {
+        "description": "Unit outlet temperature sensor fault",
+        "severity": "high"
+      },
+      "filter_front_pressure_sensor_fault": {
+        "description": "Filter front pressure sensor fault",
+        "severity": "high"
+      },
+      "filter_rear_pressure_sensor_fault": {
+        "description": "Filter rear pressure sensor fault",
+        "severity": "high"
+      },
+      "bypass_valve_fault": {
+        "description": "Bypass valve fault",
+        "severity": "critical"
+      },
+      "temp_sensor_chilled_water_supply_fault": {
+        "description": "Temperature sensor fault at chilled water supply",
+        "severity": "high"
+      },
+      "pressure_sensor_chilled_water_supply_fault": {
+        "description": "Pressure sensor fault at chilled water supply",
+        "severity": "high"
+      },
+      "outdoor_ambient_temp_sensor_fault": {
+        "description": "Outdoor ambient temperature sensor fault",
+        "severity": "medium"
+      },
+      "indoor_temp_humidity_sensor_fault": {
+        "description": "Indoor temperature and humidity sensor fault",
+        "severity": "medium"
+      },
+      "makeup_water_pump_fault": {
+        "description": "Make-up water pump fault",
+        "severity": "critical"
+      },
+      "water_immersion_alarm": {
+        "description": "Water immersion detected",
+        "severity": "critical"
+      },
+      "circ_pump_high_inlet_pressure": {
+        "description": "High inlet pressure of circulation pump",
+        "severity": "critical"
+      }
+    }
+  },
+  "container": {
+    "timeout": 30000
+  }
+}

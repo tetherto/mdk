@@ -1,0 +1,245 @@
+@use '../../styles/mixins' as *;
+/* Base spinner container */
+.mdk-spinner {
+  @include flex_center;
+  pointer-events: none;
+}
+
+.mdk-spinner--fullscreen {
+  position: fixed;
+  width: 100dvw;
+  height: 100dvh;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  padding: 24px;
+  box-sizing: border-box;
+  border-radius: 4px;
+}
+
+/* Spinner content wrapper */
+.mdk-spinner__content {
+  @include flex_column_center;
+  gap: 1rem;
+}
+
+.mdk-spinner__circle--sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+
+.mdk-spinner__circle--md {
+  width: 2rem;
+  height: 2rem;
+  border-width: 3px;
+}
+
+.mdk-spinner__circle--lg {
+  width: 3rem;
+  height: 3rem;
+  border-width: 4px;
+}
+
+/* Spinner circle */
+.mdk-spinner__circle {
+  border-radius: 50%;
+  border-style: solid;
+  border-top-color: transparent;
+  animation: mdk-spinner-spin 1s linear infinite;
+}
+
+.mdk-spinner__circle--secondary {
+  border-color: var(--mdk-color-white);
+  border-top-color: transparent;
+}
+
+.mdk-spinner__circle--primary {
+  border-color: var(--mdk-color-primary);
+  border-top-color: transparent;
+}
+
+/* Speed variants */
+.mdk-spinner__circle--slow {
+  animation-duration: 1.5s;
+}
+
+.mdk-spinner__circle--normal {
+  animation-duration: 1s;
+}
+
+.mdk-spinner__circle--fast {
+  animation-duration: 0.6s;
+}
+
+/* Label */
+.mdk-spinner__label {
+  color: var(--mdk-switch-unchecked-bg);
+  font-weight: 500;
+}
+
+.mdk-spinner__label--sm {
+  font-size: 0.875rem;
+}
+
+.mdk-spinner__label--md {
+  font-size: 1rem;
+}
+
+.mdk-spinner__label--lg {
+  font-size: 1.125rem;
+}
+
+/* Keyframe animation */
+@keyframes mdk-spinner-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Spinning dot container - matches ant-spin-dot */
+.mdk-spinner__dot {
+  position: relative;
+  display: inline-block;
+  animation: mdk-spinner-rotate 1.2s linear infinite;
+  font-size: 44px;
+  width: 1em;
+  height: 1em;
+}
+
+/* Size variants */
+.mdk-spinner__dot--sm {
+  font-size: 24px;
+}
+
+.mdk-spinner__dot--md {
+  font-size: 44px;
+}
+
+.mdk-spinner__dot--lg {
+  font-size: 64px;
+}
+
+/* Speed variants */
+.mdk-spinner__dot--slow {
+  animation-duration: 1.5s;
+}
+
+.mdk-spinner__dot--normal {
+  animation-duration: 1s;
+}
+
+.mdk-spinner__dot--fast {
+  animation-duration: 0.6s;
+}
+
+/* Individual dot items - matches ant-spin-dot-item positioning */
+.mdk-spinner__dot-item {
+  position: absolute;
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 0; /* Sharp edges for cyber style */
+  transform: scale(0.75);
+  transform-origin: 50% 50%;
+  opacity: 0.3;
+}
+
+/* Position each dot in 2x2 grid */
+.mdk-spinner__dot-item:nth-child(1) {
+  top: 0;
+  left: 0;
+}
+
+.mdk-spinner__dot-item:nth-child(2) {
+  top: 0;
+  right: 0;
+}
+
+.mdk-spinner__dot-item:nth-child(3) {
+  bottom: 0;
+  right: 0;
+}
+
+.mdk-spinner__dot-item:nth-child(4) {
+  bottom: 0;
+  left: 0;
+}
+
+/* Pulsing animation for each dot */
+.mdk-spinner__dot-item:nth-child(1) {
+  animation: mdk-spinner-scale 1.2s 0s infinite ease-in-out;
+}
+
+.mdk-spinner__dot-item:nth-child(2) {
+  animation: mdk-spinner-scale 1.2s 0.4s infinite ease-in-out;
+}
+
+.mdk-spinner__dot-item:nth-child(3) {
+  animation: mdk-spinner-scale 1.2s 0.8s infinite ease-in-out;
+}
+
+.mdk-spinner__dot-item:nth-child(4) {
+  animation: mdk-spinner-scale 1.2s 1.2s infinite ease-in-out;
+}
+
+/* Color variants with glow effect */
+.mdk-spinner__dot-item--primary {
+  background-color: rgb(var(--mdk-color-primary-rgb));
+  box-shadow:
+    0 0 4px rgb(var(--mdk-color-primary-rgb)),
+    0 0 12px rgba(var(--mdk-color-primary-rgb), 0.6);
+}
+
+/* Label */
+.mdk-spinner__label {
+  font-weight: 500;
+  color: rgb(var(--mdk-color-orange-warning));
+}
+
+.mdk-spinner__label--sm {
+  font-size: 0.875rem;
+}
+
+.mdk-spinner__label--md {
+  font-size: 1rem;
+}
+
+.mdk-spinner__label--lg {
+  font-size: 1.125rem;
+}
+
+/* Keyframe animations */
+@keyframes mdk-spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes mdk-spinner-scale {
+  0%,
+  100% {
+    transform: scale(2);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Keyframe animation */
+@keyframes mdk-spinner-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

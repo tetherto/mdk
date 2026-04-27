@@ -1,0 +1,74 @@
+{
+  "collectSnapTimeoutMs": 120000,
+  "collectSnapsItvMs": 60000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "thingRtdConcurrency": 500,
+  "thresholdHashrate": 50000000,
+  "alerts": {
+    "miner-av-a1346": {
+      "chips_temp_critical": {
+        "description": "Chip temperatures too high",
+        "severity": "critical",
+        "params": {
+          "temp": 120
+        }
+      },
+      "power_error_status": {
+        "description": "Power error status.",
+        "severity": "medium"
+      },
+      "hashboard_temp_overheating": {
+        "description": "The temperature of the hashboard is overheating.",
+        "severity": "critical"
+      },
+      "hashboard_error": {
+        "description": "Hashboard error.",
+        "severity": "high"
+      },
+      "control_board_exception": {
+        "description": "Control board rebooted as an exception.",
+        "severity": "medium"
+      },
+      "pool_connect_failed": {
+        "description": "Pool connect failed.",
+        "severity": "high"
+      },
+      "all_pools_dead": {
+        "description": "All pools are dead.",
+        "severity": "critical"
+      },
+      "wrong_miner_pool": {
+        "description": "Some Miner pools do not correspond to correct pool IP.",
+        "severity": "critical"
+      },
+      "wrong_miner_subaccount": {
+        "description": "Miner subaccount is not correct.",
+        "severity": "critical"
+      },
+      "wrong_worker_name": {
+        "description": "Worker name does not correspond to MiningOS ID.",
+        "severity": "medium"
+      },
+      "ip_worker_name": {
+        "description": "Worker name corresponds to IP instead of MiningOS ID.",
+        "severity": "medium"
+      }
+    }
+  },
+  "miner": {
+    "timeout": 30000,
+    "pools": [
+      {
+        "url": "POOL_URL",
+        "worker_name": "WORKER_NAME",
+        "worker_password": "WORKER_PASSWORD",
+        "pool": "TestPool"
+      }
+    ],
+    "minerDefaultPort": 4028,
+    "nominalEfficiencyWThs": {
+      "miner-av-a1346": 0
+    }
+  }
+}

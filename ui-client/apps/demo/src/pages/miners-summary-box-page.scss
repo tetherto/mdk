@@ -1,0 +1,15 @@
+.miners-summary-box-page {
+  &__grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1fr;
+    max-width: 960px;
+  }
+
+  &__preview {
+    max-width: 50%;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 1.5rem;
+  }
+}

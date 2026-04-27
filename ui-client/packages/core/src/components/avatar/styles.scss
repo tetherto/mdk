@@ -1,0 +1,29 @@
+@use '../../styles/mixins' as *;
+/**
+ * Avatar Component Styles
+ */
+
+.mdk-avatar {
+  position: relative;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 9999px;
+
+  &__image {
+    aspect-ratio: 1;
+    height: 100%;
+    width: 100%;
+  }
+
+  &__fallback {
+    @include flex_center;
+
+    height: 100%;
+    width: 100%;
+    border-radius: 9999px;
+    background: hsl(var(--muted));
+  }
+}

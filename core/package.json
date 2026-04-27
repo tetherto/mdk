@@ -1,0 +1,38 @@
+{
+  "name": "@tetherto/mdk-core",
+  "version": "0.0.1",
+  "description": "MDK Core",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "preinstall": "for pkg in packages/*/*; do if [ -f \"$pkg/package.json\" ]; then npm ci --prefix \"$pkg\"; fi; done",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit && npm run test:integration",
+    "test:unit": "NODE_ENV=test brittle tests/unit/**/*.test.js",
+    "test:integration": "NODE_ENV=test npx brittle tests/integration/**/*.test.js",
+    "test:coverage": "brittle --coverage tests/unit/**/*.js"
+  },
+  "dependencies": {
+    "miningos-app-node": "git+https://github.com/tetherto/miningos-app-node.git#develop",
+    "bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",
+    "bfx-facs-interval": "git+https://github.com/bitfinexcom/bfx-facs-interval.git",
+    "bfx-svc-boot-js": "git+https://github.com/bitfinexcom/bfx-svc-boot-js.git",
+    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git",
+    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
+    "miningos-wrk-ork": "git+https://github.com/tetherto/miningos-wrk-ork.git#develop",
+    "svc-facs-action-approver": "git+https://github.com/tetherto/svc-facs-action-approver.git"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0",
+    "standard": "17.1.0"
+  }  
+}

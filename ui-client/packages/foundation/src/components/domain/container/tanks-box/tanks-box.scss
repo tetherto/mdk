@@ -1,0 +1,92 @@
+@use '@mdk/core/styles' as *;
+
+$tanks-box-row-bg: #ffffff0d;
+$tanks-box-border: #ffffff1a;
+
+@keyframes mdk-tanks-box-flash {
+  0%,
+  100% {
+    color: inherit;
+  }
+  50% {
+    color: var(--mdk-color-brick-red);
+  }
+}
+
+.mdk-tanks-box {
+  @include flex_row;
+  gap: 16px;
+}
+
+.mdk-tanks-box__row {
+  @include flex_column;
+  gap: 12px;
+  flex: 1;
+  padding: 12px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 12px;
+  background-color: $tanks-box-row-bg;
+}
+
+.mdk-tanks-box__params {
+  @include flex_column;
+  gap: 8px;
+}
+
+.mdk-tanks-box__param {
+  @include flex_row;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  gap: 8px;
+}
+
+.mdk-tanks-box__param-label,
+.mdk-tanks-box__param-value {
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+
+  &[data-flash] {
+    animation: mdk-tanks-box-flash 1s infinite;
+  }
+}
+
+.mdk-tanks-box__param-value {
+  @include flex_row;
+}
+
+.mdk-tanks-box__pump-statuses {
+  @include flex_row;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid $tanks-box-border;
+
+  & > * {
+    flex: 1;
+  }
+}
+
+.mdk-tanks-box__pump-status {
+  @include flex_column;
+  gap: 8px;
+
+  * {
+    font-size: 10px;
+
+    @media (max-width: 768px) {
+      font-size: 9px;
+    }
+  }
+}
+
+.mdk-tanks-box__pump-status-title {
+  flex-shrink: 0;
+}
+
+.mdk-tanks-box .mdk-indicator {
+  padding: 4px 8px;
+  gap: 4px;
+}

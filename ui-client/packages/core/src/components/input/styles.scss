@@ -1,0 +1,160 @@
+@use '../../styles/mixins' as *;
+$input-default-padding: 9px 12px;
+$input-medium-padding: 6px 12px;
+
+.mdk-input-root {
+  @include flex_column;
+
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.mdk-input__label {
+  color: var(--mdk-color-white);
+  font-size: var(--mdk-font-size, 14px);
+  line-height: var(--mdk-line-height, 22px);
+}
+
+.mdk-input__wrapper {
+  @include flex_align;
+
+  position: relative;
+  width: 100%;
+  min-width: 0;
+
+  &--search {
+    .mdk-input {
+      padding-right: 2.5rem;
+    }
+  }
+
+  &--has-prefix {
+    .mdk-input {
+      padding-left: 2.5rem;
+    }
+  }
+
+  &--has-suffix {
+    .mdk-input {
+      padding-right: 2.5rem;
+    }
+  }
+
+  &--has-prefix.mdk-input__wrapper--has-suffix {
+    .mdk-input {
+      padding-inline: 2.5rem;
+    }
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  &--error {
+    .mdk-input {
+      border-color: rgb(var(--mdk-color-error));
+    }
+
+    .mdk-input:hover:not(:disabled):not(:focus),
+    .mdk-input:focus {
+      border-color: rgb(var(--mdk-color-error));
+    }
+  }
+}
+
+.mdk-input__error {
+  color: rgb(var(--mdk-color-error));
+  font-size: var(--mdk-font-size, 14px);
+  line-height: var(--mdk-line-height, 22px);
+}
+
+.mdk-input__prefix,
+.mdk-input__suffix,
+.mdk-input__icon {
+  @include flex_center;
+
+  position: absolute;
+  pointer-events: none;
+  font-size: var(--mdk-font-size, 14px);
+  line-height: var(--mdk-line-height, 22px);
+  color: var(--mdk-input-placeholder-color);
+}
+
+.mdk-input__icon {
+  width: 16px;
+  height: 16px;
+}
+
+.mdk-input__prefix {
+  left: 0.75rem;
+}
+
+.mdk-input__suffix,
+.mdk-input__icon {
+  right: 0.75rem;
+}
+
+.mdk-input {
+  @include flex_align;
+
+  width: 100%;
+  outline: none;
+  font-size: 14px;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+  border-radius: 0;
+  line-height: 20px;
+  font-family: inherit;
+  border: 1px solid transparent;
+  padding: $input-default-padding;
+  color: var(--mdk-color-text-disabled);
+  background-color: var(--mdk-color-white-transparent);
+
+  &[aria-invalid='true'] {
+    border-color: rgb(var(--mdk-color-error));
+  }
+
+  &--size-medium {
+    padding: $input-medium-padding;
+  }
+
+  &::placeholder {
+    color: var(--mdk-input-placeholder-color);
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--mdk-color-white-alpha-04d);
+    background-color: var(--mdk-color-white-alpha-026);
+  }
+
+  &:focus {
+    border-color: var(--mdk-color-primary);
+    background-color: var(--mdk-color-white-2);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Hide number input spinner arrows */
+  &[type='number']::-webkit-outer-spin-button,
+  &[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+.mdk-input__wrapper--size-medium {
+  .mdk-input__icon {
+    width: 14px;
+    height: 14px;
+  }
+}

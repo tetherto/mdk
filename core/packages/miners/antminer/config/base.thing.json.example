@@ -1,0 +1,417 @@
+{
+  "collectSnapTimeoutMs": 120000,
+  "collectSnapsItvMs": 60000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "thingRtdConcurrency": 500,
+  "thresholdHashrate": 50000000,
+  "alerts": {
+    "miner-am-s19xp_h": {
+      "max_pcb_temp_warning": {
+        "description": "Hashboard Temperature > 75. Miner will turn off at 80C",
+        "severity": "high",
+        "params": {
+          "temp": 75
+        }
+      },
+      "max_pcb_temp_critical": {
+        "description": "Hashboard Temperature too high. Miner turned off",
+        "severity": "critical",
+        "params": {
+          "temp": 80
+        }
+      },
+      "max_inlet_temp_warning": {
+        "description": "Inlet Temperature > 40. Miner will turn off at 45C",
+        "severity": "high",
+        "params": {
+          "temp": 40
+        }
+      },
+      "max_inlet_temp_critical": {
+        "description": "Inlet Temperature too high. Miner turned off",
+        "severity": "critical",
+        "params": {
+          "temp": 45
+        }
+      },
+      "min_inlet_temp_warning": {
+        "description": "Inlet Temperature < 25. Miner will turn off at 20C",
+        "severity": "high",
+        "params": {
+          "temp": 25
+        }
+      },
+      "min_inlet_temp_critical": {
+        "description": "Inlet Temperature too low. Miner turned off",
+        "severity": "critical",
+        "params": {
+          "temp": 20
+        }
+      },
+      "hashrate_low": {
+        "description": "The hash rate is below the expected level.",
+        "severity": "medium"
+      },
+      "hashrate_high": {
+        "description": "The total average hash rate exceeds the safe limit significantly.",
+        "severity": "medium"
+      },
+      "power_init_error": {
+        "description": "Error during power initialization or power output voltage issue.",
+        "severity": "medium"
+      },
+      "power_supply_not_calibrated": {
+        "description": "Power supply is not calibrated.",
+        "severity": "medium"
+      },
+      "insufficient_hashboards": {
+        "description": "The number of hashboards is less than the required minimum.",
+        "severity": "medium"
+      },
+      "high_temp_protection": {
+        "description": "High-temperature protection triggered.",
+        "severity": "critical"
+      },
+      "low_temp_protection": {
+        "description": "Low-temperature protection triggered.",
+        "severity": "critical"
+      },
+      "eeprom_data_error": {
+        "description": "EEPROM data error on one or more chains.",
+        "severity": "medium"
+      },
+      "temp_sensor_error": {
+        "description": "Temperature sensor error.",
+        "severity": "critical"
+      },
+      "memory_malloc_error": {
+        "description": "Memory allocation error.",
+        "severity": "medium"
+      },
+      "chip_insufficient": {
+        "description": "The number of chips is less than the design.",
+        "severity": "medium"
+      },
+      "voltage_freq_exceeds_limit": {
+        "description": "Voltage or frequency exceeds the specified limit.",
+        "severity": "medium"
+      },
+      "voltage_freq_mismatch": {
+        "description": "Voltage or frequency mismatch on one or more chains.",
+        "severity": "medium"
+      },
+      "mixed_level_not_found": {
+        "description": "Unable to find the mixed level.",
+        "severity": "medium"
+      },
+      "all_pools_dead": {
+        "description": "All pools are dead.",
+        "severity": "critical"
+      },
+      "wrong_miner_pool": {
+        "description": "Some Miner pools do not correspond to correct pool IP.",
+        "severity": "critical"
+      },
+      "wrong_miner_subaccount": {
+        "description": "Miner subaccount is not correct.",
+        "severity": "critical"
+      },
+      "wrong_worker_name": {
+        "description": "Worker name does not correspond to MiningOS ID.",
+        "severity": "medium"
+      },
+      "ip_worker_name": {
+        "description": "Worker name corresponds to IP instead of MiningOS ID.",
+        "severity": "medium"
+      }
+    },
+    "miner-am-s19xp": {
+      "max_outlet_temp_warning": {
+        "description": "Outlet Temperature > 70. Miner will turn off at 75C",
+        "severity": "high",
+        "params": {
+          "temp": 70
+        }
+      },
+      "hashrate_low": {
+        "description": "The hash rate is below the expected level.",
+        "severity": "medium"
+      },
+      "hashrate_high": {
+        "description": "The total average hash rate exceeds the safe limit significantly.",
+        "severity": "medium"
+      },
+      "power_init_error": {
+        "description": "Error during power initialization or power output voltage issue.",
+        "severity": "medium"
+      },
+      "power_supply_not_calibrated": {
+        "description": "Power supply is not calibrated.",
+        "severity": "medium"
+      },
+      "insufficient_hashboards": {
+        "description": "The number of hashboards is less than the required minimum.",
+        "severity": "medium"
+      },
+      "high_temp_protection": {
+        "description": "High-temperature protection triggered.",
+        "severity": "critical"
+      },
+      "low_temp_protection": {
+        "description": "Low-temperature protection triggered.",
+        "severity": "critical"
+      },
+      "eeprom_data_error": {
+        "description": "EEPROM data error on one or more chains.",
+        "severity": "medium"
+      },
+      "temp_sensor_error": {
+        "description": "Temperature sensor error.",
+        "severity": "critical"
+      },
+      "memory_malloc_error": {
+        "description": "Memory allocation error.",
+        "severity": "medium"
+      },
+      "chip_insufficient": {
+        "description": "The number of chips is less than the design.",
+        "severity": "medium"
+      },
+      "voltage_freq_exceeds_limit": {
+        "description": "Voltage or frequency exceeds the specified limit.",
+        "severity": "medium"
+      },
+      "voltage_freq_mismatch": {
+        "description": "Voltage or frequency mismatch on one or more chains.",
+        "severity": "medium"
+      },
+      "mixed_level_not_found": {
+        "description": "Unable to find the mixed level.",
+        "severity": "medium"
+      },
+      "all_pools_dead": {
+        "description": "All pools are dead.",
+        "severity": "critical"
+      },
+      "wrong_miner_pool": {
+        "description": "Some Miner pools do not correspond to correct pool IP.",
+        "severity": "critical"
+      },
+      "wrong_miner_subaccount": {
+        "description": "Miner subaccount is not correct.",
+        "severity": "critical"
+      },
+      "wrong_worker_name": {
+        "description": "Worker name does not correspond to MiningOS ID.",
+        "severity": "medium"
+      },
+      "ip_worker_name": {
+        "description": "Worker name corresponds to IP instead of MiningOS ID.",
+        "severity": "medium"
+      }
+    },    
+    "miner-am-s21": {
+      "max_pcb_temp_warning": {
+        "description": "Hashboard Temperature > 75. Miner will turn off at 80C",
+        "severity": "high",
+        "params": {
+          "temp": 75
+        }
+      },
+      "max_pcb_temp_critical": {
+        "description": "Hashboard Temperature too high. Miner turned off",
+        "severity": "critical",
+        "params": {
+          "temp": 80
+        }
+      },
+      "hashrate_low": {
+        "description": "The hash rate is below the expected level.",
+        "severity": "medium"
+      },
+      "hashrate_high": {
+        "description": "The total average hash rate exceeds the safe limit significantly.",
+        "severity": "medium"
+      },
+      "power_init_error": {
+        "description": "Error during power initialization or power output voltage issue.",
+        "severity": "medium"
+      },
+      "power_supply_not_calibrated": {
+        "description": "Power supply is not calibrated.",
+        "severity": "medium"
+      },
+      "insufficient_hashboards": {
+        "description": "The number of hashboards is less than the required minimum.",
+        "severity": "medium"
+      },
+      "high_temp_protection": {
+        "description": "High-temperature protection triggered.",
+        "severity": "critical"
+      },
+      "low_temp_protection": {
+        "description": "Low-temperature protection triggered.",
+        "severity": "critical"
+      },
+      "eeprom_data_error": {
+        "description": "EEPROM data error on one or more chains.",
+        "severity": "medium"
+      },
+      "temp_sensor_error": {
+        "description": "Temperature sensor error.",
+        "severity": "critical"
+      },
+      "memory_malloc_error": {
+        "description": "Memory allocation error.",
+        "severity": "medium"
+      },
+      "chip_insufficient": {
+        "description": "The number of chips is less than the design.",
+        "severity": "medium"
+      },
+      "voltage_freq_exceeds_limit": {
+        "description": "Voltage or frequency exceeds the specified limit.",
+        "severity": "medium"
+      },
+      "voltage_freq_mismatch": {
+        "description": "Voltage or frequency mismatch on one or more chains.",
+        "severity": "medium"
+      },
+      "mixed_level_not_found": {
+        "description": "Unable to find the mixed level.",
+        "severity": "medium"
+      },
+      "all_pools_dead": {
+        "description": "All pools are dead.",
+        "severity": "critical"
+      },
+      "wrong_miner_pool": {
+        "description": "Some Miner pools do not correspond to correct pool IP.",
+        "severity": "critical"
+      },
+      "wrong_miner_subaccount": {
+        "description": "Miner subaccount is not correct.",
+        "severity": "critical"
+      },
+      "wrong_worker_name": {
+        "description": "Worker name does not correspond to MiningOS ID.",
+        "severity": "medium"
+      },
+      "ip_worker_name": {
+        "description": "Worker name corresponds to IP instead of MiningOS ID.",
+        "severity": "medium"
+      }
+    },
+    "miner-am-s21pro": {
+      "max_pcb_temp_warning": {
+        "description": "Hashboard Temperature > 75. Miner will turn off at 80C",
+        "severity": "high",
+        "params": {
+          "temp": 75
+        }
+      },
+      "max_pcb_temp_critical": {
+        "description": "Hashboard Temperature too high. Miner turned off",
+        "severity": "critical",
+        "params": {
+          "temp": 80
+        }
+      },
+      "hashrate_low": {
+        "description": "The hash rate is below the expected level.",
+        "severity": "medium"
+      },
+      "hashrate_high": {
+        "description": "The total average hash rate exceeds the safe limit significantly.",
+        "severity": "medium"
+      },
+      "power_init_error": {
+        "description": "Error during power initialization or power output voltage issue.",
+        "severity": "medium"
+      },
+      "power_supply_not_calibrated": {
+        "description": "Power supply is not calibrated.",
+        "severity": "medium"
+      },
+      "insufficient_hashboards": {
+        "description": "The number of hashboards is less than the required minimum.",
+        "severity": "medium"
+      },
+      "high_temp_protection": {
+        "description": "High-temperature protection triggered.",
+        "severity": "critical"
+      },
+      "low_temp_protection": {
+        "description": "Low-temperature protection triggered.",
+        "severity": "critical"
+      },
+      "eeprom_data_error": {
+        "description": "EEPROM data error on one or more chains.",
+        "severity": "medium"
+      },
+      "temp_sensor_error": {
+        "description": "Temperature sensor error.",
+        "severity": "critical"
+      },
+      "memory_malloc_error": {
+        "description": "Memory allocation error.",
+        "severity": "medium"
+      },
+      "chip_insufficient": {
+        "description": "The number of chips is less than the design.",
+        "severity": "medium"
+      },
+      "voltage_freq_exceeds_limit": {
+        "description": "Voltage or frequency exceeds the specified limit.",
+        "severity": "medium"
+      },
+      "voltage_freq_mismatch": {
+        "description": "Voltage or frequency mismatch on one or more chains.",
+        "severity": "medium"
+      },
+      "mixed_level_not_found": {
+        "description": "Unable to find the mixed level.",
+        "severity": "medium"
+      },
+      "all_pools_dead": {
+        "description": "All pools are dead.",
+        "severity": "critical"
+      },
+      "wrong_miner_pool": {
+        "description": "Some Miner pools do not correspond to correct pool IP.",
+        "severity": "critical"
+      },
+      "wrong_miner_subaccount": {
+        "description": "Miner subaccount is not correct.",
+        "severity": "critical"
+      },
+      "wrong_worker_name": {
+        "description": "Worker name does not correspond to MiningOS ID.",
+        "severity": "medium"
+      },
+      "ip_worker_name": {
+        "description": "Worker name corresponds to IP instead of MiningOS ID.",
+        "severity": "medium"
+      }
+    }
+  },
+  "miner": {
+    "timeout": 60000,
+    "pools": [
+      {
+        "url": "POOL_URL",
+        "worker_name": "WORKER_NAME",
+        "worker_password": "WORKER_PASSWORD",
+        "pool": "TestPool"
+      }
+    ],
+    "minerDefaultPort": 80,
+    "nominalEfficiencyWThs": {
+      "miner-am-s19xp_h": 0,
+      "miner-am-s19xp": 0,
+      "miner-am-s21": 0,
+      "miner-am-s21pro": 0
+    }
+  }
+}

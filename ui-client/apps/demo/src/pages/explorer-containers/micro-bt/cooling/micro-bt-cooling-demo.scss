@@ -1,0 +1,42 @@
+.micro-bt-cooling-demo {
+  @include flex_column;
+
+  &__controls {
+    @include flex_column;
+
+    gap: 1rem;
+  }
+
+  &__buttons {
+    @include flex_row;
+
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__preview {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 2rem;
+  }
+
+  &__info {
+    @include flex_column;
+
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  &__details {
+    @include flex_column;
+
+    gap: 0.75rem;
+  }
+
+  &__component {
+    @include flex_column;
+
+    min-height: 400px;
+  }
+}

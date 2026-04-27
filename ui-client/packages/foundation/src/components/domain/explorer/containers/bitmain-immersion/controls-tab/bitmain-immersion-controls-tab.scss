@@ -1,0 +1,89 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitmain-controls-tab {
+  @include flex_column;
+
+  gap: 1rem;
+
+  &__section {
+    background: var(--mdk-color-dark-bg);
+    border: 1px solid var(--mdk-border-default-color);
+    padding: 1.5rem;
+  }
+
+  &__section-header {
+    @include flex_align_between;
+
+    gap: 1rem;
+  }
+
+  &__section-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mdk-color-white);
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mdk-color-white);
+    margin: 0 0 1rem;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  &__item {
+    @include flex_align_between;
+
+    padding: 0.75rem 1rem;
+    background: var(--mdk-color-surface);
+    border: 1px solid var(--mdk-border-default-color);
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mdk-color-text-muted);
+  }
+
+  &__value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mdk-color-white);
+  }
+
+  &__location {
+    @include flex_column;
+
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--mdk-color-surface);
+    border: 1px solid var(--mdk-border-default-color);
+  }
+
+  &__location-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mdk-color-primary);
+    text-transform: uppercase;
+  }
+
+  &__location-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--mdk-color-white);
+  }
+
+  &__location-dir {
+    font-size: 0.875rem;
+    color: var(--mdk-color-text-muted);
+  }
+}

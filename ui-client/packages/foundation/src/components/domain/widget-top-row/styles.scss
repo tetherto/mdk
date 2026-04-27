@@ -1,0 +1,57 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-widget-top-row {
+  @include flex_row;
+
+  align-items: center;
+  gap: 10px;
+  color: var(--mdk-color-white) !important;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--mdk-dialog-border-color);
+
+  &__inner {
+    flex: 1;
+
+    @include flex_center;
+  }
+
+  &__title {
+    @include flex_align;
+
+    color: var(--mdk-color-background-light);
+    font-size: 15px;
+    font-weight: 500;
+    flex-grow: 1;
+  }
+
+  &__power {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--mdk-color-white);
+
+    span {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--mdk-color-gray-450);
+    }
+  }
+
+  &__alarm-info-icon {
+    $icon-size: 28px;
+
+    width: $icon-size;
+    height: $icon-size;
+    margin: -16px 0;
+
+    & > svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &__alarm-info-title {
+    margin: 0;
+  }
+}

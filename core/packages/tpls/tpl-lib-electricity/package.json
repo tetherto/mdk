@@ -1,0 +1,35 @@
+{
+  "name": "@tetherto/tpl-lib-electricity",
+  "version": "0.0.1",
+  "description": "Template Electricity",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "worker.js",
+  "type": "commonjs",
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && NODE_ENV=test brittle tests/unit/*.test.js tests/integration/*.test.js",
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js",
+    "test:integration": "NODE_ENV=test brittle tests/integration/*.test.js",
+    "test:coverage": "brittle --coverage tests/unit/*.test.js tests/integration/*.test.js"
+  },
+  "dependencies": {
+    "async": "3.2.6",
+    "bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",
+    "bfx-facs-scheduler": "git+https://github.com/bitfinexcom/bfx-facs-scheduler.git",
+    "bfx-svc-boot-js": "git+https://github.com/bitfinexcom/bfx-svc-boot-js.git",
+    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git",
+    "mingo": "6.4.6"
+  },
+  "devDependencies": {
+    "brittle": "3.16.3",
+    "standard": "17.1.2"
+  }
+}

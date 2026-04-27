@@ -1,0 +1,36 @@
+{
+  "name": "@tetherto/sensor-temp-seneca",
+  "version": "0.0.1",
+  "description": "Sensor Temperature SENECA",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engine": {
+    "node": ">=20.0"
+  },
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit && npm run test:integration",
+    "test:unit": "brittle tests/unit/*.js",
+    "test:integration": "NODE_ENV=test brittle tests/integration/*.js",
+    "test:coverage": "brittle --coverage tests/unit/*.js"
+  },
+  "dependencies": {
+    "@bitfinex/lib-js-util-promise": "git+https://github.com/bitfinexcom/lib-js-util-promise.git",
+    "async": "3.2.6",
+    "svc-facs-modbus": "git+https://github.com/tetherto/svc-facs-modbus.git"
+  },
+  "devDependencies": {
+    "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "brittle": "3.16.3",
+    "debug": "4.4.1",
+    "modbus-stream": "0.46.0",
+    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
+    "standard": "17.1.2",
+    "uuid": "9.0.1",
+    "yargs": "17.7.2"
+  }
+}

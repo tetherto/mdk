@@ -1,0 +1,19 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-miner-info-card {
+  @include flex_column;
+
+  font-family: var(--font-mono);
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--mdk-color-white-transparent);
+  overflow: auto;
+
+  &__label {
+    font-size: 16px;
+    color: var(--mdk-color-white);
+    text-transform: uppercase;
+    font-weight: 400;
+    padding: 8px 10px;
+  }
+}

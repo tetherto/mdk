@@ -1,0 +1,172 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-socket {
+  @include flex_column_center;
+
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  background-color: var(--mdk-color-surface);
+  border: none;
+  padding: 3px;
+  cursor: pointer;
+  position: relative;
+
+  &--has-cooling {
+    width: auto;
+    height: auto;
+  }
+
+  &--heatmap {
+    width: 27px;
+    height: 30px;
+  }
+
+  &--selected {
+    border: 1px solid var(--mdk-color-green);
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+  }
+
+  &[data-status='offline'] {
+    background-color: rgb(var(--mdk-color-grey-idle));
+  }
+
+  &[data-status='miner-disconnected'] {
+    &[data-enabled='true'] {
+      background-color: var(--mdk-color-surface);
+      border: 1px solid var(--mdk-color-socket-on-green);
+    }
+
+    &[data-enabled='false'] {
+      background-color: rgba(var(--mdk-color-grey-idle), 0.1);
+      border: 1px solid var(--mdk-color-white-transparent);
+    }
+  }
+
+  &[data-status='error'] {
+    background-color: rgba(var(--mdk-color-error), 0.1);
+  }
+
+  &[data-status='error-mining'] {
+    background-color: rgba(var(--mdk-color-primary-rgb), 0.1);
+  }
+
+  &[data-status='high'] {
+    background-color: rgb(var(--mdk-color-purple-high), 0.1);
+  }
+
+  &[data-status='low'] {
+    background-color: rgb(var(--mdk-color-low-yellow), 0.1);
+  }
+
+  &[data-status='normal'] {
+    background-color: rgba(var(--mdk-color-green-rgb), 0.1);
+  }
+
+  &[data-status='sleeping'] {
+    background-color: rgb(var(--mdk-color-sleep-blue), 0.1);
+  }
+
+  &__wrapper {
+    @include flex_column;
+
+    position: relative;
+    width: 100%;
+    height: 100%;
+    gap: 1px;
+  }
+
+  &__connection-icon {
+    @include flex_column_center;
+
+    position: absolute;
+    inset: 0;
+    font-size: 24px;
+    color: var(--mdk-color-white);
+    background-color: rgba(var(--mdk-color-black), 0.5);
+    height: 100%;
+    width: 100%;
+  }
+
+  &__add-icon {
+    @include flex_center;
+
+    font-size: 22px;
+  }
+
+  &__consumption-box {
+    @include flex_column_center;
+
+    background-color: transparent;
+    padding: 1px;
+    min-height: 17px;
+    gap: 1px;
+  }
+
+  &__fan-icon {
+    color: rgba(var(--mdk-color-white-rgb), 0.3);
+
+    &--on {
+      color: var(--mdk-color-green);
+    }
+  }
+
+  &__value {
+    font-size: 8px;
+    line-height: 8px;
+    white-space: nowrap;
+    color: rgba(var(--mdk-color-white-rgb), 0.8);
+
+    &[data-status='offline'] {
+      color: rgba(var(--mdk-color-white-rgb), 0.8);
+    }
+
+    &[data-status='miner-disconnected'] {
+      color: rgba(var(--mdk-color-white-rgb), 0.8);
+    }
+
+    &[data-status='error'] {
+      color: rgb(var(--mdk-color-error));
+    }
+
+    &[data-status='error-mining'] {
+      color: var(--mdk-color-primary);
+    }
+
+    &[data-status='high'] {
+      color: rgb(var(--mdk-color-purple-high));
+    }
+
+    &[data-status='low'] {
+      color: rgb(var(--mdk-color-low-yellow));
+    }
+
+    &[data-status='normal'] {
+      color: var(--mdk-color-green);
+    }
+
+    &[data-status='sleeping'] {
+      color: rgb(var(--mdk-color-sleep-blue));
+    }
+  }
+
+  &__index {
+    font-size: 8px;
+    text-align: center;
+    font-weight: 700;
+    width: 100%;
+    color: rgba(var(--mdk-color-white-rgb), 0.8);
+    background-color: rgba(var(--mdk-color-white-rgb), 0.21);
+
+    &[data-enabled='true'] {
+      background-color: var(--mdk-color-socket-on-green);
+    }
+
+    &[data-enabled='false'] {
+      background-color: rgba(var(--mdk-color-white-rgb), 0.21);
+    }
+  }
+}

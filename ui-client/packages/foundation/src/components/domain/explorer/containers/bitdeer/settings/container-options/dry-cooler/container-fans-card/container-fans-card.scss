@@ -1,0 +1,13 @@
+.mdk-container-fans-card {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(4, auto);
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+
+  @media (min-width: 768px) {
+    grid-template-rows: unset;
+    grid-template-columns: repeat(3, auto);
+    grid-auto-flow: column;
+  }
+}

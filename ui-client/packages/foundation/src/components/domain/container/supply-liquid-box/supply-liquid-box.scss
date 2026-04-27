@@ -1,0 +1,16 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-supply-liquid-box {
+  @include flex_column;
+  gap: 16px;
+}
+
+.mdk-supply-liquid-box__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  & > :first-child {
+    grid-column: 1 / -1;
+  }
+}

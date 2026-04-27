@@ -1,0 +1,161 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-timeline-chart {
+  width: 100%;
+
+  &__loading {
+    @include flex_center;
+
+    min-height: 200px;
+  }
+
+  &__legend {
+    @include flex_wrap;
+
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 0 8px;
+  }
+
+  &__legend-item {
+    @include flex_align;
+
+    gap: 6px;
+  }
+
+  &__legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  &__legend-label {
+    font-size: 12px;
+    color: var(--mdk-color-text-secondary);
+    text-transform: capitalize;
+  }
+
+  &__visualization {
+    display: flex;
+    width: 100%;
+  }
+
+  &__y-axis-title {
+    @include flex_center;
+
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: 11px;
+    color: var(--mdk-color-text-tertiary);
+    padding-right: 8px;
+  }
+
+  &__content {
+    @include flex_column;
+
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__rows {
+    @include flex_column;
+
+    gap: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+
+  &__row {
+    @include flex_align;
+
+    gap: 8px;
+    min-height: 24px;
+  }
+
+  &__row-label {
+    @include text_ellipsis;
+
+    width: 120px;
+    min-width: 120px;
+    font-size: 11px;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__row-track {
+    flex: 1;
+    height: 20px;
+    background: var(--mdk-color-bg-secondary);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  &__bar {
+    position: absolute;
+    height: 100%;
+    min-width: 2px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+
+  &__time-axis {
+    margin-top: 8px;
+    padding-left: 128px;
+  }
+
+  &__time-axis-labels {
+    @include flex_between;
+
+    padding-right: 8px;
+  }
+
+  &__time-label {
+    font-size: 10px;
+    color: var(--mdk-color-text-tertiary);
+  }
+
+  &__x-axis-title {
+    text-align: center;
+    font-size: 11px;
+    color: var(--mdk-color-text-tertiary);
+    margin-top: 4px;
+  }
+
+  &__tooltip {
+    @include flex_column;
+
+    gap: 4px;
+    padding: 4px 0;
+  }
+
+  &__tooltip-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--mdk-color-text-primary);
+    text-transform: capitalize;
+    margin-bottom: 2px;
+  }
+
+  &__tooltip-row {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  &__tooltip-label {
+    color: var(--mdk-color-text-tertiary);
+    min-width: 40px;
+  }
+
+  &__tooltip-value {
+    color: var(--mdk-color-text-primary);
+  }
+}

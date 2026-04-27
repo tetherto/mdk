@@ -1,0 +1,13 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-miner-power-mode-selection-buttons {
+  @include flex_column;
+
+  grid-column: 1;
+  gap: 8px;
+  margin-left: 0;
+
+  &--margin {
+    margin-left: 10px;
+  }
+}

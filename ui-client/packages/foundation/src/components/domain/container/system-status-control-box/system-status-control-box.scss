@@ -1,0 +1,18 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-system-status-control-box {
+  padding: 0;
+  margin-bottom: 1rem;
+
+  &__current-status {
+    color: rgb(var(--mdk-color-error));
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  &__started-option {
+    font-weight: 600;
+    font-size: 14px;
+  }
+}

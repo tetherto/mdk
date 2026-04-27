@@ -1,0 +1,42 @@
+@use '../../styles/mixins' as *;
+/* Loader container */
+.mdk-loader {
+  @include flex_center;
+  height: 200px;
+}
+
+/* Dot element */
+.mdk-loader__dot {
+  display: inline-block;
+  transform: scale(2);
+  animation: mdk-loader-pulse 1s linear infinite;
+}
+
+/* Color variants - inactive state */
+.mdk-loader__dot--orange {
+  --active-color: var(--mdk-color-primary);
+  background-color: rgb(var(--mdk-color-soft-apricot));
+}
+
+.mdk-loader__dot--red {
+  background-color: rgb(var(--mdk-color-soft-red));
+  --active-color: rgb(var(--mdk-color-error));
+}
+
+.mdk-loader__dot--gray {
+  background-color: rgb(var(--mdk-color-soft-gray));
+  --active-color: rgb(var(--mdk-color-grey-idle));
+}
+
+.mdk-loader__dot--blue {
+  background-color: rgb(var(--mdk-color-soft-blue));
+  --active-color: rgb(var(--mdk-color-sleep-blue));
+}
+
+/* Pulse animation */
+@keyframes mdk-loader-pulse {
+  50% {
+    background-color: var(--active-color);
+    transform: scale(1);
+  }
+}

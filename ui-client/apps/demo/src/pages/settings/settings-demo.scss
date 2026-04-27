@@ -1,0 +1,29 @@
+.settings-demo {
+  &__header {
+    margin-bottom: 32px;
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+
+    p {
+      font-size: 14px;
+      opacity: 0.7;
+      margin: 0;
+    }
+  }
+
+  &__section {
+    margin-bottom: 48px;
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--mdk-dialog-border-color);
+    }
+  }
+}

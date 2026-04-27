@@ -1,0 +1,32 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-device-info {
+  @include flex_column;
+
+  box-sizing: border-box;
+  width: 100%;
+  gap: 5px;
+  padding: 10px;
+}
+
+.mdk-info-container {
+  @include flex_align_between;
+
+  font-size: 12px;
+
+  &__title {
+    @include text_ellipsis;
+
+    font-weight: 600;
+    margin-right: 5px;
+    color: rgb(var(--mdk-color-dark-grey));
+  }
+
+  &__value {
+    @include text_ellipsis;
+
+    color: var(--mdk-color-text-secondary);
+    max-width: 200px;
+    text-align: right;
+  }
+}

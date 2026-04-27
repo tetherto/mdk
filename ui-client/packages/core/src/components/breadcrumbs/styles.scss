@@ -1,0 +1,106 @@
+@use '../../styles/mixins' as *;
+/* ========================================
+   Breadcrumbs Component Styles
+   ======================================== */
+
+.mdk-breadcrumbs {
+  @include flex_column;
+
+  gap: 0.5rem;
+}
+
+/* Back Button */
+.mdk-breadcrumbs__back {
+  @include inline_flex_align;
+
+  all: unset;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  transition: opacity 200ms ease;
+  color: var(--mdk-breadcrumbs-back-button-color);
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mdk-color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  > span {
+    line-height: 1;
+  }
+}
+
+.mdk-breadcrumbs__back-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* Breadcrumb List */
+.mdk-breadcrumbs__list {
+  @include flex_align;
+
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mdk-breadcrumbs__item {
+  @include flex_align;
+
+  gap: 0.5rem;
+}
+
+/* Breadcrumb Links */
+.mdk-breadcrumbs__link {
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: color 200ms ease;
+  font-family: var(--font-mono);
+  color: rgb(var(--mdk-breadcrumbs-link-color));
+
+  &:hover {
+    color: var(--mdk-breadcrumbs-link-hover-color);
+  }
+
+  &:focus-visible {
+    border-radius: 2px;
+    outline-offset: 2px;
+    outline: 2px solid var(--mdk-breadcrumbs-link-hover-color);
+  }
+
+  &--button {
+    all: unset;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: rgb(var(--mdk-breadcrumbs-link-color));
+
+    &:hover {
+      color: var(--mdk-breadcrumbs-link-hover-color);
+    }
+  }
+
+  &--current {
+    font-weight: bold;
+  }
+}
+
+/* Separator */
+.mdk-breadcrumbs__separator {
+  user-select: none;
+  font-size: 0.875rem;
+  font-family: var(--font-mono);
+  color: var(--mdk-breadcrumbs-separator-color);
+}

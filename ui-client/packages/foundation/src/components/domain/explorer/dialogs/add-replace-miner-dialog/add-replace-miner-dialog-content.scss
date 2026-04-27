@@ -1,0 +1,64 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-add-replace-miner {
+  &__form {
+    @include flex_column;
+
+    gap: 16px;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  &__field-group {
+    @include flex_column;
+  }
+
+  &__label {
+    color: var(--mdk-color-text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  &__checkbox-wrapper {
+    @include flex_align;
+
+    gap: 8px;
+    margin-top: 8px;
+    cursor: pointer;
+    color: var(--foreground);
+    font-size: 14px;
+
+    input[type='checkbox'] {
+      accent-color: var(--mdk-color-primary);
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__error-msg {
+    color: var(--mdk-color-brick-red);
+    font-size: 13px;
+    text-align: right;
+    margin-top: 8px;
+  }
+
+  &__footer {
+    @include flex_justify_end;
+
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--mdk-table-border);
+  }
+
+  &__miner-type-error {
+    color: var(--mdk-color-brick-red);
+    font-size: 12px;
+    min-height: 15px;
+    margin-top: 4px;
+  }
+}

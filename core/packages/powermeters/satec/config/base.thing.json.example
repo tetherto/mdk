@@ -1,0 +1,11 @@
+{
+  "collectSnapTimeoutMs": 10000,
+  "_idFile": "",
+  "collectSnapsItvMs": 5000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "powermeter": {
+    "timeout": 10000
+  },
+  "scheduleAddlStatConfigTfs": [["15m", "0 */15 * * * *"]]
+}

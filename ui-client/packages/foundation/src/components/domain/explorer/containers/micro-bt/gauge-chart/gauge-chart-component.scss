@@ -1,0 +1,38 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-gauge-chart-component {
+  @include flex_column_center;
+
+  overflow: hidden;
+
+  &__title {
+    margin: 0 0 0.625rem;
+    font-size: 1.125rem;
+    font-weight: 400;
+  }
+
+  &__chart {
+    position: relative;
+    width: 100%;
+  }
+
+  &__value {
+    @include flex_center;
+
+    gap: 0.25rem;
+    margin-top: -2.5rem;
+    font-size: 1.3125rem;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+  }
+
+  &__value-number {
+    font-weight: 600;
+  }
+
+  &__value-unit {
+    font-weight: 400;
+    opacity: 0.8;
+  }
+}

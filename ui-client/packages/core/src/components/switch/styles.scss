@@ -1,0 +1,212 @@
+@use '../../styles/mixins' as *;
+/* Base Switch (Track/Background) */
+
+.mdk-switch {
+  @include inline_flex_align;
+
+  all: unset;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+  box-shadow: var(--mdk-shadow-inset);
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* Thumb (Sliding Circle) */
+.mdk-switch__thumb {
+  display: block;
+  background-color: var(--mdk-color-white);
+  box-shadow: 0 2px 4px var(--mdk-switch-thumb-shadow);
+  transition: transform 200ms ease;
+  will-change: transform;
+}
+
+/* ========================================
+   SIZE VARIANTS
+   ======================================== */
+
+/* Small */
+.mdk-switch--sm {
+  width: 32px;
+  height: 18px;
+
+  .mdk-switch__thumb {
+    width: 14px;
+    height: 14px;
+    transform: translateX(2px);
+  }
+
+  &[data-state='checked'] .mdk-switch__thumb {
+    transform: translateX(16px);
+  }
+}
+
+/* Medium (Default) */
+.mdk-switch--md {
+  width: 42px;
+  height: 24px;
+
+  .mdk-switch__thumb {
+    width: 20px;
+    height: 20px;
+    transform: translateX(2px);
+  }
+
+  &[data-state='checked'] .mdk-switch__thumb {
+    transform: translateX(20px);
+  }
+}
+
+/* Large */
+.mdk-switch--lg {
+  width: 52px;
+  height: 30px;
+
+  .mdk-switch__thumb {
+    width: 26px;
+    height: 26px;
+    transform: translateX(2px);
+  }
+
+  &[data-state='checked'] .mdk-switch__thumb {
+    transform: translateX(24px);
+  }
+}
+
+/* ========================================
+   RADIUS VARIANTS
+   ======================================== */
+
+/* None (Square corners) */
+.mdk-switch--radius-none {
+  border-radius: 0;
+
+  .mdk-switch__thumb {
+    border-radius: 0;
+  }
+}
+
+/* Small (Slightly rounded) */
+.mdk-switch--radius-small {
+  border-radius: 4px;
+
+  .mdk-switch__thumb {
+    border-radius: 2px;
+  }
+}
+
+/* Medium (Moderately rounded) */
+.mdk-switch--radius-medium {
+  border-radius: 8px;
+
+  .mdk-switch__thumb {
+    border-radius: 6px;
+  }
+}
+
+/* Large (Very rounded) */
+.mdk-switch--radius-large {
+  border-radius: 12px;
+
+  .mdk-switch__thumb {
+    border-radius: 10px;
+  }
+}
+
+/* Full (Pill-shaped, fully rounded) */
+.mdk-switch--radius-full {
+  border-radius: 9999px;
+
+  .mdk-switch__thumb {
+    border-radius: 9999px;
+  }
+}
+
+/* ========================================
+   COLOR VARIANTS
+   ======================================== */
+
+/* Default (Gray/Neutral) */
+.mdk-switch--default {
+  background-color: var(--mdk-switch-unchecked-bg);
+
+  &[data-state='checked'] {
+    background-color: var(--mdk-color-gray-400);
+  }
+
+  &:focus-visible {
+    outline-color: var(--mdk-color-gray-400);
+  }
+}
+
+/* Primary (Orange) */
+.mdk-switch--primary {
+  background-color: var(--mdk-switch-unchecked-bg);
+
+  &[data-state='checked'] {
+    background-color: var(--mdk-color-primary);
+  }
+
+  &:focus-visible {
+    outline-color: var(--mdk-color-primary);
+  }
+}
+
+/* Success (Green) */
+.mdk-switch--success {
+  background-color: var(--mdk-switch-unchecked-bg);
+
+  &[data-state='checked'] {
+    background-color: rgb(var(--mdk-color-success));
+  }
+
+  &:focus-visible {
+    outline-color: rgb(var(--mdk-color-success));
+  }
+}
+
+/* Warning (Yellow) */
+.mdk-switch--warning {
+  background-color: var(--mdk-switch-unchecked-bg);
+
+  &[data-state='checked'] {
+    background-color: var(--mdk-color-warning);
+  }
+
+  &:focus-visible {
+    outline-color: var(--mdk-color-warning);
+  }
+}
+
+/* Error/Danger (Red) */
+.mdk-switch--error,
+.mdk-switch--danger {
+  background-color: var(--mdk-switch-unchecked-bg);
+
+  &[data-state='checked'] {
+    background-color: rgb(var(--mdk-color-error));
+  }
+
+  &:focus-visible {
+    outline-color: rgb(var(--mdk-color-error));
+  }
+}
+
+/* Hover effect */
+.mdk-switch:not(:disabled):hover {
+  opacity: 0.9;
+}
+
+/* Enhanced thumb shadow when checked */
+.mdk-switch[data-state='checked'] .mdk-switch__thumb {
+  box-shadow: 0 3px 6px var(--mdk-switch-thumb-shadow-checked);
+}

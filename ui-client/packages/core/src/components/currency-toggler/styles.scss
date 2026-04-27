@@ -1,0 +1,33 @@
+.mdk_currency_toggler {
+  gap: 4px;
+  padding: 4px;
+  display: inline-flex;
+  background-color: var(--mdk-color-background-dark);
+  border: 1px solid var(--mdk-button-secondary-border);
+
+  &__button {
+    border: none;
+    box-shadow: none;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 7px 17px;
+    font-size: 0.875rem;
+    background: transparent;
+    transition:
+    color 0.3s ease-in-out,
+    background 0.3s ease-in-out;
+    font-family: var(--font-mono);
+    color: var(--mdk-table-table-text-secondary);
+
+    &--active {
+      background: var(--color-primary-transparent-20);
+      color: var(--mdk-color-primary);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      color: var(--mdk-color-gray-450);
+      background: var(--mdk-color-white-8);
+    }
+  }
+}

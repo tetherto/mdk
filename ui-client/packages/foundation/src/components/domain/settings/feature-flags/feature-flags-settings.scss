@@ -1,0 +1,65 @@
+.mdk-settings-feature-flags {
+  padding: 20px;
+
+  &__add-row {
+    @include flex_align;
+
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  &__input {
+    flex: 1;
+  }
+
+  &__add-btn-text {
+    white-space: nowrap;
+  }
+
+  &__toggles {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 16px;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (min-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  &__flag-item {
+    @include flex_align;
+
+    gap: 16px;
+  }
+
+  &__flag-name {
+    flex: 1;
+    word-break: break-word;
+    font-size: 14px;
+    min-width: 0;
+  }
+
+  &__flag-delete {
+    @include flex_align;
+
+    background: none;
+    border: none;
+    color: rgb(var(--mdk-color-error));
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  &__save {
+    margin-top: 40px;
+  }
+}

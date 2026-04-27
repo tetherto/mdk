@@ -1,0 +1,16 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-position-change-dialog {
+  background-color: var(--mdk-color-black-bg);
+
+  .mdk-dialog__header {
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--mdk-color-white-01);
+  }
+
+  .mdk-dialog__body {
+    @include flex_column_between;
+
+    margin-top: 16px;
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "name": "@tetherto/mdk-ui-client",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@10.5.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "turbo build",
+    "build:verbose": "turbo build --output-logs=full",
+    "build:demo": "VITE_BASE_PATH=/mdk turbo build --filter=@mdk/demo",
+    "build:scss": "turbo build:scss",
+    "build:ts": "turbo build:ts",
+    "check": "turbo check",
+    "clean": "turbo clean && rimraf node_modules",
+    "dev": "turbo dev",
+    "dev:demo": "VITE_BASE_PATH=/mdk turbo dev --filter=@mdk/demo",
+    "dev:packages": "turbo dev --filter=!@mdk/demo",
+    "format": "turbo format",
+    "size": "node scripts/bundle-size.mjs",
+    "size:check": "pnpm build && pnpm size",
+    "test": "turbo test",
+    "test:watch": "turbo test:watch",
+    "test:coverage": "turbo test:coverage",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "prepare": "husky",
+    "fullcheck": "pnpm build && pnpm lint && pnpm typecheck && pnpm format && pnpm test:coverage",
+    "preview:demo": "VITE_BASE_PATH=/mdk turbo preview --filter=@mdk/demo",
+    "typecheck": "turbo typecheck",
+    "watch": "turbo watch",
+    "watch:scss": "turbo watch:scss",
+    "watch:ts": "turbo watch:ts"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "autoprefixer": "catalog:",
+    "concurrently": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-format": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
+    "npm-run-all2": "catalog:",
+    "postcss": "catalog:",
+    "prettier": "catalog:",
+    "rimraf": "catalog:",
+    "rollup-plugin-postcss": "catalog:",
+    "sass": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}

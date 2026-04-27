@@ -1,0 +1,13 @@
+@use '../pump-shared' as *;
+
+.mdk-pump-box {
+  @include pump-container;
+
+  &__status {
+    @include pump-status;
+  }
+
+  &__title {
+    @include pump-title;
+  }
+}

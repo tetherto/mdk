@@ -1,0 +1,61 @@
+.mdk-settings-import-export {
+  @include flex_column;
+
+  gap: 24px;
+  padding: 10px 0;
+
+  &__description {
+    opacity: 0.7;
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  &__actions {
+    @include flex_wrap;
+
+    gap: 16px;
+
+    .mdk-btn {
+      height: 32px;
+      font-size: 13px;
+      padding: 0 12px;
+    }
+  }
+
+  &__warning {
+    color: var(--mdk-color-warning);
+    font-size: 13px;
+    margin: 8px 0 0;
+    font-style: italic;
+  }
+
+  &__upload-area {
+    border: 2px dashed var(--mdk-dialog-border-color);
+    border-radius: 8px;
+    padding: 48px 24px;
+    text-align: center;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+
+    &:hover {
+      border-color: var(--mdk-color-warning);
+    }
+  }
+
+  &__file-input {
+    margin-bottom: 16px;
+  }
+
+  &__upload-text {
+    font-size: 14px;
+    margin: 0 0 8px;
+  }
+
+  &__upload-hint {
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 0;
+  }
+}

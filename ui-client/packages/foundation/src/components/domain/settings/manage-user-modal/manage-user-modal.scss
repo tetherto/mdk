@@ -1,0 +1,92 @@
+.mdk-settings-manage-user {
+  &__dialog {
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  &__form {
+    @include flex_column;
+
+    gap: 20px;
+  }
+
+  &__section {
+    margin-bottom: 8px;
+  }
+
+  &__section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+
+  &__section-desc {
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 0 0 16px;
+  }
+
+  &__helper {
+    margin-top: 8px;
+    font-size: 12px;
+    opacity: 0.6;
+  }
+
+  &__perms-table {
+    border: 1px solid var(--mdk-dialog-border-color);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__perms-header {
+    @include flex_align;
+
+    padding: 12px 16px;
+    background-color: var(--mdk-color-surface);
+    border-bottom: 1px solid var(--mdk-dialog-border-color);
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.6;
+  }
+
+  &__perms-row {
+    @include flex_align;
+
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--mdk-dialog-border-color);
+    font-size: 14px;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__perms-cell--flex {
+    flex: 1;
+  }
+
+  &__perms-cell--fixed {
+    width: 120px;
+    text-align: center;
+  }
+
+  &__perm-icon {
+    @include flex_center;
+
+    font-size: 12px;
+    gap: 4px;
+
+    &--rw {
+      color: rgb(var(--mdk-color-success));
+    }
+
+    &--r {
+      color: var(--mdk-color-warning);
+    }
+
+    &--none {
+      color: rgb(var(--mdk-color-error));
+    }
+  }
+}

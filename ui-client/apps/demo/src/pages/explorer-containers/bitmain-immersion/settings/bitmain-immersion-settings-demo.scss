@@ -1,0 +1,12 @@
+.bitmain-immersion-demo {
+  @include flex_column;
+
+  &__preview {
+    padding: 1rem;
+    border: 1px solid var(--mdk-dialog-border-color);
+
+    h3 {
+      margin-bottom: 1.5rem;
+    }
+  }
+}

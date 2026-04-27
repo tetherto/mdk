@@ -1,0 +1,43 @@
+.socket-demo {
+  &__header {
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  &__switch {
+    @include flex_align;
+
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  &__examples {
+    @include flex_wrap;
+
+    gap: 70px;
+  }
+
+  &__section {
+    @include flex_column;
+
+    gap: 8px;
+  }
+
+  &__grid {
+    @include flex_wrap;
+
+    gap: 12px;
+  }
+
+  &__labeled {
+    @include flex_column_center;
+    gap: 6px;
+  }
+
+  &__label {
+    @include text_ellipsis;
+
+    font-size: 11px;
+    opacity: 0.5;
+  }
+}

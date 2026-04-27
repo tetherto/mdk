@@ -1,0 +1,16 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-enabled-disable-toggle {
+  @include flex_column_center;
+
+  &__toggle {
+    @include flex_between;
+
+    flex-basis: 50%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding: 0 5px;
+    box-sizing: border-box;
+    margin-block: 5px;
+  }
+}

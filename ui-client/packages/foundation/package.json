@@ -1,0 +1,90 @@
+{
+  "name": "@mdk/foundation",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Complete foundation with features, state management, API client, hooks, and utilities",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./domain": {
+      "types": "./src/components/domain/index.ts",
+      "default": "./src/components/domain/index.ts"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./src/styles/index.scss": "./src/styles/index.scss",
+    "./feature": {
+      "types": "./src/components/feature/index.ts",
+      "default": "./src/components/feature/index.ts"
+    },
+    "./hooks": {
+      "types": "./src/hooks/index.ts",
+      "default": "./src/hooks/index.ts"
+    },
+    "./api": {
+      "types": "./src/api/index.ts",
+      "default": "./src/api/index.ts"
+    },
+    "./state": {
+      "types": "./src/state/index.ts",
+      "default": "./src/state/index.ts"
+    },
+    "./test-utils": {
+      "types": "./src/test-utils/index.ts",
+      "default": "./src/test-utils/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "rimraf dist tsconfig.tsbuildinfo && pnpm build:ts && pnpm build:scss",
+    "build:ts": "tsc",
+    "build:scss": "vite build",
+    "clean": "rimraf dist node_modules .turbo",
+    "dev": "concurrently -n ts,scss -c cyan,magenta \"pnpm dev:ts\" \"pnpm dev:scss\"",
+    "dev:ts": "tsc --watch",
+    "dev:scss": "vite build --watch",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.js --maxConcurrency=5",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --config vitest.config.js --coverage",
+    "lint:fix": "eslint . --fix",
+    "format": "eslint . --fix",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@reduxjs/toolkit": "^2.0.0",
+    "@testing-library/react": "^16.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-redux": "^9.0.0",
+    "vitest": "^4.0.0"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "catalog:",
+    "@mdk/core": "workspace:*",
+    "@radix-ui/react-icons": "catalog:",
+    "@radix-ui/react-use-controllable-state": "catalog:",
+    "date-fns": "catalog:",
+    "date-fns-tz": "catalog:",
+    "lodash": "catalog:"
+  },
+  "devDependencies": {
+    "@reduxjs/toolkit": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/lodash": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
+    "happy-dom": "catalog:",
+    "jsdom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "react-redux": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

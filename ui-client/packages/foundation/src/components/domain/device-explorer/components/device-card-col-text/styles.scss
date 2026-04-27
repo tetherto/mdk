@@ -1,0 +1,19 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-device-card-col-text {
+  @include text_ellipsis;
+  @include flex_column_center;
+
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  font-style: normal;
+  align-items: flex-start;
+  color: var(--mdk-color-white);
+
+  &:hover {
+    overflow: visible;
+    white-space: normal;
+    width: auto;
+  }
+}

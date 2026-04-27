@@ -1,0 +1,48 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-pm-pool-header {
+  @include flex_align;
+
+  gap: 24px;
+
+  &__title-section {
+    @include flex_column;
+
+    flex: 1;
+    gap: 8px;
+  }
+
+  &__title {
+    font-size: 18px;
+    line-height: 28px;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__subtitle {
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--mdk-color-white-5);
+  }
+
+  &__miner-count {
+    font-size: 14px;
+    line-height: 1;
+    color: var(--mdk-color-white-7);
+  }
+
+  &__validation {
+    padding: 4px 8px;
+    font-size: 14px;
+    line-height: 1;
+
+    &--valid {
+      color: rgb(var(--mdk-color-success));
+      background-color: rgba(var(--mdk-color-success), 0.1);
+    }
+
+    &--invalid {
+      color: rgb(var(--mdk-color-error));
+      background-color: transparent;
+    }
+  }
+}

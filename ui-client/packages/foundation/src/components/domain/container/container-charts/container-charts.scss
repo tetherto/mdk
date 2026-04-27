@@ -1,0 +1,66 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-container-charts {
+  @include flex_column;
+
+  gap: 10px;
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.mdk-container-charts__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.mdk-container-charts__select-row {
+  @include flex_column;
+
+  gap: 10px;
+  margin-bottom: 20px;
+
+  @media (min-width: 768px) {
+    @include flex_align;
+  }
+}
+
+.mdk-container-charts__select-label {
+  white-space: nowrap;
+}
+
+.mdk-container-charts__select {
+  min-width: 200px;
+  max-width: 360px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--mdk-button-secondary-border);
+  background: var(--mdk-button-secondary-bg);
+  color: var(--mdk-button-secondary-text);
+}
+
+.mdk-container-charts__chart-block {
+  @include flex_column;
+
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.mdk-container-charts__chart-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.mdk-container-charts__layout {
+  @include flex_column;
+
+  gap: 20px;
+}
+
+.mdk-container-charts__loading {
+  @include flex_center;
+
+  min-height: 120px;
+}

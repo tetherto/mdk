@@ -1,0 +1,310 @@
+@use '../../styles/mixins' as *;
+$border-width: 0.5px;
+$transition-duration: 0.3s;
+$sidebar-collapsed-width: 65px;
+$sidebar-expanded-width: 220px;
+
+.mdk-sidebar {
+  @include flex_column;
+
+  position: relative;
+  z-index: 10;
+  height: 100%;
+  flex-shrink: 0;
+  padding-top: 20px;
+  scrollbar-width: none;
+  box-sizing: border-box;
+  -ms-overflow-style: none;
+  width: $sidebar-collapsed-width;
+  background: var(--mdk-sidebar-bg, var(--mdk-color-surface));
+  border-right: $border-width solid
+    var(--mdk-sidebar-border-color, var(--mdk-color-primary));
+  transition:
+    width $transition-duration ease-in-out,
+    transform $transition-duration ease-in-out;
+
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Corner decoration */
+  &::after {
+    content: '';
+    top: -9px;
+    right: -10px;
+    width: 20.5px;
+    height: 20px;
+    position: absolute;
+    transform: rotate(45deg);
+    background: var(--mdk-sidebar-bg, var(--mdk-color-surface));
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+    border-right: $border-width solid
+      var(--mdk-sidebar-border-color, var(--mdk-color-primary));
+    display: none;
+
+    @media (min-width: 768px) {
+      display: block;
+    }
+  }
+
+  &__header {
+    flex-shrink: 0;
+    border-bottom: $border-width solid var(--color-border);
+    overflow: hidden;
+    opacity: 0;
+    max-height: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity $transition-duration ease-in-out,
+      max-height $transition-duration ease-in-out,
+      visibility $transition-duration ease-in-out;
+  }
+
+  &--with-header {
+    padding-top: 0;
+  }
+
+  &--expanded &__header {
+    opacity: 1;
+    max-height: 100px;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+.mdk-sidebar--expanded {
+  width: $sidebar-expanded-width;
+}
+
+.mdk-sidebar--hidden {
+  pointer-events: none;
+  transform: translateX(-100%);
+}
+
+/* ─── Overlay Mode (mobile) ─────────────────────────────────────────────── */
+
+.mdk-sidebar--overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-100%);
+
+  .mdk-sidebar__toggle {
+    display: none;
+  }
+}
+
+.mdk-sidebar--overlay-visible {
+  overflow: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+
+  .mdk-sidebar__toggle {
+    display: flex;
+  }
+}
+
+.mdk-sidebar__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: var(--mdk-sidebar-backdrop-bg, rgba(0, 0, 0, 0.5));
+}
+
+/* ─── Toggle Button ─────────────────────────────────────────────────────── */
+
+.mdk-sidebar__toggle {
+  @include flex_center;
+
+  position: absolute;
+  top: 42px;
+  padding: 0;
+  z-index: 11;
+  width: 25px;
+  height: 25px;
+  right: -13px;
+  cursor: pointer;
+  border-radius: 50%;
+  background: var(--mdk-sidebar-toggle-bg);
+  color: var(--mdk-sidebar-border-color, var(--mdk-color-primary));
+  border: 1px solid var(--mdk-sidebar-border-color, var(--mdk-color-primary));
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* ─── Menu ──────────────────────────────────────────────────────────────── */
+
+.mdk-sidebar__menu {
+  @include flex_column_align_center;
+
+  gap: 2px;
+  flex: 1;
+  width: 100%;
+  padding: 0 10px;
+  overflow-y: auto;
+  user-select: none;
+  scrollbar-width: none;
+  box-sizing: border-box;
+  -ms-overflow-style: none;
+  animation: mdk-sidebar-fade-in 0.3s ease-in;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ─── Menu Item ─────────────────────────────────────────────────────────── */
+
+.mdk-sidebar__item {
+  @include flex_center;
+
+  padding: 0;
+  width: 100%;
+  border: none;
+  height: 40px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  column-gap: 12px;
+  white-space: nowrap;
+  flex-direction: row;
+  font-family: inherit;
+  box-sizing: border-box;
+  background: transparent;
+  color: var(--mdk-sidebar-item-color, var(--mdk-color-gray-400));
+}
+
+/* Expanded sidebar: items get left-aligned with padding */
+.mdk-sidebar--expanded .mdk-sidebar__item {
+  padding: 5px 10px;
+  min-width: 190px;
+  justify-content: flex-start;
+}
+
+.mdk-sidebar__item--active {
+  color: var(--mdk-sidebar-item-active-color, var(--mdk-color-primary));
+}
+
+.mdk-sidebar__item--disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Sub-item styles (source-order wins over expanded at same specificity) */
+.mdk-sidebar__item.mdk-sidebar__item--sub {
+  height: 32px;
+  min-width: 0;
+  padding: 8px 12px;
+  justify-content: flex-start;
+
+  &:hover {
+    color: var(--mdk-color-primary);
+    background: var(--mdk-orange-dimmer);
+  }
+}
+
+.mdk-sidebar__item--sub.mdk-sidebar__item--active {
+  color: var(--mdk-sidebar-item-active-color, var(--mdk-color-primary));
+}
+
+/* ─── Item Parts ────────────────────────────────────────────────────────── */
+
+.mdk-sidebar__item-icon {
+  @include flex_center;
+
+  flex-shrink: 0;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.mdk-sidebar__item-label {
+  @include text_ellipsis;
+
+  flex: 1;
+  font-family: inherit;
+  text-align: left;
+}
+
+/* ─── Group ─────────────────────────────────────────────────────────────── */
+
+.mdk-sidebar__group {
+  @include flex_column_align_start;
+
+  width: 100%;
+  position: relative;
+}
+
+.mdk-sidebar__group-toggle {
+  @include flex_center;
+
+  cursor: pointer;
+  margin-left: auto;
+  padding: 2px;
+  min-width: 24px;
+  min-height: 24px;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.mdk-sidebar__group-items {
+  @include flex_column;
+
+  padding: 5px;
+  font-size: 12px;
+  user-select: none;
+  margin-left: 12px;
+  width: calc(100% - 12px);
+
+  .mdk-sidebar__group-items {
+    margin-left: 8px;
+    width: calc(100% - 8px);
+  }
+}
+
+/* ─── Overlay Flyout ────────────────────────────────────────────────────── */
+
+.mdk-sidebar__overlay {
+  @include flex_column;
+
+  z-index: 100;
+  position: fixed;
+  min-width: 180px;
+  box-sizing: border-box;
+  background: var(--mdk-sidebar-toggle-bg);
+  animation: mdk-sidebar-fade-in 0.15s ease-in;
+  border: 1px solid var(--mdk-dialog-border-color);
+
+  @media (max-height: 590px) {
+    transform: translateY(-90%);
+  }
+}
+
+/* Nested flyout: positioned relative to parent group */
+.mdk-sidebar__overlay--nested {
+  position: absolute;
+  top: 0;
+  left: 100%;
+}
+
+/* Overlay items always show labels */
+.mdk-sidebar__overlay .mdk-sidebar__item {
+  height: 32px;
+  padding: 4px 12px;
+  justify-content: flex-start;
+}

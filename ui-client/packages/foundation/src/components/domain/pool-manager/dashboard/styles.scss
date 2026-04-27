@@ -1,0 +1,245 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-pm-dashboard {
+  @include flex_column;
+
+  &__stat {
+    &-blocks {
+      @include flex_column;
+
+      padding: 10px 0;
+      gap: 24px;
+
+      @media (min-width: 992px) {
+        @include flex_align;
+
+        flex-direction: row;
+      }
+    }
+
+    &-block {
+      @include flex_column;
+
+      flex: 1;
+      gap: 16px;
+      padding: 25px;
+      background-color: var(--mdk-color-surface);
+      border: 1px solid var(--mdk-color-white-transparent);
+    }
+
+    &-header {
+      @include flex_align_between;
+    }
+
+    &-label {
+      color: var(--mdk-color-white);
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 100%;
+      letter-spacing: 0.3px;
+    }
+
+    &-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+
+      &[data-type='error'] {
+        background-color: rgb(var(--mdk-color-error));
+      }
+
+      &[data-type='success'] {
+        background-color: rgb(var(--mdk-color-success));
+      }
+    }
+
+    &-value {
+      &-row {
+        @include flex_align;
+
+        gap: 4px;
+      }
+
+      font-weight: 400;
+      font-size: 24px;
+      line-height: 100%;
+      color: var(--mdk-color-primary);
+    }
+
+    &-secondary {
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--mdk-color-text-disabled);
+    }
+  }
+
+  &__nav {
+    &-blocks {
+      @include flex_column;
+
+      gap: 24px;
+      padding: 10px 0;
+
+      @media (min-width: 992px) {
+        flex-direction: row;
+      }
+    }
+
+    &-block {
+      @include flex_column;
+
+      flex: 1;
+      height: 250px;
+      gap: 24px;
+      padding: 25px;
+      border: 1px solid var(--mdk-color-white-transparent);
+    }
+
+    &-header {
+      @include flex_align;
+
+      gap: 16px;
+    }
+
+    &-icon {
+      @include flex_center;
+
+      width: 48px;
+      height: 48px;
+      color: rgb(var(--mdk-color-primary-rgb));
+      background-color: rgba(var(--mdk-color-primary-rgb), 0.2);
+      flex-shrink: 0;
+    }
+
+    &-title {
+      font-weight: 400;
+      font-size: 20px;
+      line-height: 28px;
+      color: var(--mdk-color-white);
+    }
+
+    &-description {
+      flex: 1;
+      margin: 0;
+      font-weight: 400;
+      font-size: 14px;
+      line-height: 22px;
+      color: var(--mdk-color-white-7);
+    }
+
+    &-action {
+      @include flex_align_between;
+
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: var(--mdk-color-primary);
+      font-size: 14px;
+      font-family: inherit;
+
+      &:hover {
+        opacity: 0.85;
+      }
+    }
+
+    &-arrow {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+  }
+
+  &__alerts {
+    &-wrapper {
+      @include flex_column;
+
+      gap: 8px;
+      padding: 0 25px 25px;
+      border: 1px solid var(--mdk-color-white-transparent);
+    }
+
+    &-title {
+      @include flex_align;
+
+      height: 55px;
+      font-weight: 400;
+      font-size: 18px;
+      line-height: 28px;
+      background-color: var(--mdk-color-surface);
+      color: var(--mdk-color-white);
+    }
+
+    &-empty {
+      font-size: 14px;
+      color: var(--mdk-color-text-disabled);
+    }
+  }
+
+  &__alert {
+    &-row {
+      @include flex_column_between;
+
+      @media (min-width: 992px) {
+        flex-direction: row;
+      }
+
+      padding: 8px 0;
+      border-bottom: 1px solid var(--mdk-color-white-transparent);
+    }
+
+    &-text {
+      @include flex_align;
+
+      color: var(--mdk-color-white);
+      flex: 1;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    &-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      flex-shrink: 0;
+
+      align-self: baseline;
+      margin-top: 6px;
+
+      @media (min-width: 992px) {
+        align-self: unset;
+        margin-top: 0;
+      }
+
+      &[data-severity='critical'] {
+        background-color: rgb(var(--mdk-color-error));
+      }
+
+      &[data-severity='high'] {
+        background-color: var(--mdk-color-warning);
+      }
+
+      &[data-severity='medium'] {
+        background-color: rgb(var(--mdk-color-gold));
+      }
+
+      &[data-severity='low'] {
+        background-color: rgb(var(--mdk-color-success));
+      }
+
+      &[data-severity='info'] {
+        background-color: rgb(var(--mdk-color-sleep-blue));
+      }
+    }
+
+    &-time {
+      align-self: flex-end;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 16px;
+      flex-shrink: 0;
+      margin-left: 12px;
+    }
+  }
+}

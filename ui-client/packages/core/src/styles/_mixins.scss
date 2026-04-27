@@ -1,0 +1,183 @@
+/**
+ * Shared SCSS Mixins
+ * Import this file to use the mixins in your SCSS files.
+ */
+
+@mixin flex_align {
+  display: flex;
+  align-items: center;
+}
+
+@mixin flex_wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+@mixin inline_flex_align {
+  display: inline-flex;
+  align-items: center;
+}
+
+@mixin flex_justify_end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@mixin flex_align_start {
+  display: flex;
+  align-items: flex-start;
+}
+
+@mixin flex_align_end {
+  display: flex;
+  align-items: flex-end;
+}
+
+@mixin flex_column {
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin flex_row {
+  display: flex;
+  flex-direction: row;
+}
+
+@mixin flex_justify_center {
+  display: flex;
+  justify-content: center;
+}
+
+@mixin flex_between {
+  display: flex;
+  justify-content: space-between;
+}
+
+@mixin flex_column_align_end {
+  @include flex_column;
+
+  align-items: flex-end;
+}
+
+@mixin flex_justify_end_align_center {
+  @include flex_align;
+
+  justify-content: flex-end;
+}
+
+@mixin flex_center_justify_start {
+  @include flex_align;
+
+  justify-content: flex-start;
+}
+
+@mixin flex_column_justify_start {
+  @include flex_column;
+
+  justify-content: flex-start;
+}
+
+@mixin flex_end_justify_start {
+  @include flex_align_end;
+
+  justify-content: flex-start;
+}
+
+@mixin flex_center_justify_end {
+  @include flex_align;
+
+  justify-content: flex-end;
+}
+
+@mixin flex_column_align_center {
+  @include flex_column;
+
+  align-items: center;
+}
+
+@mixin flex_align_start_center {
+  @include flex_align_start;
+
+  justify-content: center;
+}
+
+@mixin flex_align_start_between {
+  @include flex_align_start;
+
+  justify-content: space-between;
+}
+
+@mixin flex_column_center_start {
+  @include flex_column;
+
+  align-items: flex-start;
+  justify-content: center;
+}
+
+@mixin flex_column_center_between {
+  @include flex_column;
+
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex_column_justify_end {
+  @include flex_column;
+
+  justify-content: flex-end;
+}
+
+@mixin flex_center {
+  @include flex_align;
+
+  justify-content: center;
+}
+
+@mixin flex_align_between {
+  @include flex_align;
+
+  justify-content: space-between;
+}
+
+@mixin flex_between_end {
+  @include flex_between;
+
+  align-items: flex-end;
+}
+
+@mixin flex_column_center {
+  @include flex_column;
+
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex_column_between {
+  @include flex_column;
+
+  justify-content: space-between;
+}
+
+@mixin flex_column_align_start {
+  @include flex_column;
+
+  align-items: flex-start;
+}
+
+@mixin flex_row_align_start {
+  @include flex_row;
+
+  align-items: flex-start;
+}
+
+@mixin flex_column_justify_center {
+  @include flex_column;
+
+  justify-content: center;
+}
+
+@mixin text_ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

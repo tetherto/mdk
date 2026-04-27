@@ -1,0 +1,139 @@
+@use '@mdk/core/styles' as *;
+
+@forward './components/device-card-col-text/styles.scss';
+@forward './components/mining-status-indicator/styles.scss';
+@forward './components/status-label/styles.scss';
+
+.mdk-device-explorer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  &__toolbar {
+    @include flex_center;
+    align-items: stretch;
+    gap: 8px;
+    margin: 20px 0;
+    min-width: 0;
+
+    &__filter {
+      flex-shrink: 0;
+
+      .mdk-list-view-filter__trigger,
+      .mdk-badge-wrapper,
+      .mdk-button {
+        height: 100%;
+      }
+    }
+
+    &__search {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &__tabs {
+      flex-shrink: 0;
+    }
+
+    &__tabs-list {
+      width: auto;
+
+      &::after {
+        display: none;
+      }
+    }
+
+    &__tab-trigger {
+      margin: 0;
+    }
+
+    @media screen and (max-width: 800px) {
+      @include flex_column;
+
+      &__filter {
+        flex-shrink: 0;
+
+        .mdk-list-view-filter__trigger,
+        .mdk-badge-wrapper,
+        .mdk-button {
+          width: 100%;
+        }
+      }
+
+      &__tabs-list {
+        @include flex_justify_center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        button.mdk_tabs__trigger--side {
+          margin-left: 0;
+        }
+      }
+    }
+  }
+
+  &__table {
+    width: 100%;
+
+    &__cell-wrapper {
+      @include flex_align;
+
+      gap: 6px;
+    }
+
+    &__cell {
+      &--type-temp,
+      &--type-hash-rate,
+      &--type-status,
+      &--type-power-mode {
+        @include flex_center;
+
+        gap: 6px;
+      }
+
+      &--type-efficiency {
+        width: 100px;
+      }
+
+      &--type-status {
+        &__value {
+          width: 65px;
+        }
+      }
+
+      &--type-power-mode {
+        &__value {
+          width: 80px;
+        }
+
+        &__icon {
+          @include flex_center;
+        }
+      }
+
+      &--type-led {
+        @include flex_column_center;
+
+        color: var(--mdk-color-white);
+        font-size: 9px;
+        font-weight: 500;
+        text-transform: uppercase;
+        border-radius: 3px;
+        background-color: var(--mdk-color-brick-red);
+        padding: 3px;
+        width: min-content;
+        height: min-content;
+
+        &--value-on {
+          background-color: var(--mdk-color-brick-green);
+        }
+      }
+    }
+
+    &__alarms {
+      &__status-container {
+        @include flex_center;
+      }
+    }
+  }
+}

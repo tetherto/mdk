@@ -1,0 +1,37 @@
+/* Tag Base Styles */
+.mdk-tag {
+  display: inline-block;
+  text-align: center;
+  padding-inline: 7px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.25rem;
+  font-weight: 500;
+  transition: opacity 0.2s;
+
+  /* Color Variants */
+  &--dark {
+    background-color: var(--mdk-color-dark-green);
+    color: var(--mdk-color-white);
+  }
+
+  &--red {
+    background-color: var(--mdk-color-brick-red);
+    color: var(--mdk-color-white);
+  }
+
+  &--green {
+    background-color: var(--mdk-color-brick-green);
+    color: var(--mdk-color-white);
+  }
+
+  &--amber {
+    background-color: rgb(var(--mdk-color-orange-warning));
+    color: var(--mdk-color-white);
+  }
+
+  &--blue {
+    background-color: var(--mdk-color-sleep-blue);
+    color: var(--mdk-color-white);
+  }
+}

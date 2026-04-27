@@ -1,0 +1,26 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitmain-immersion-unit-control-box {
+  @include flex_column;
+
+  gap: 0.75rem;
+
+  &__item {
+    @include flex_align_between;
+
+    gap: 0.5rem;
+  }
+
+  &__item-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mdk-color-text-muted);
+  }
+
+  &__item-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mdk-color-white);
+    white-space: nowrap;
+  }
+}

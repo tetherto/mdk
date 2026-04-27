@@ -1,0 +1,18 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-alerts-page {
+  @include flex_column;
+
+  gap: 24px;
+
+  &__header {
+    @include flex_align;
+  }
+
+  &__historical {
+    @include flex_column;
+
+    gap: 12px;
+    margin-top: 8px;
+  }
+}

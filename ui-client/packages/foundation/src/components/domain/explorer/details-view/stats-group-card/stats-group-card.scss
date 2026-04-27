@@ -1,0 +1,15 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-stats-group-card {
+  @include flex_column;
+
+  margin: 25px 10px;
+  gap: 10px;
+
+  &__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    grid-auto-rows: 1fr;
+    gap: 5px;
+  }
+}

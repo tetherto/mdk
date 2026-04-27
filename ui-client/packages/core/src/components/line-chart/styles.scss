@@ -1,0 +1,29 @@
+$_prefix: mdk-lw-line-chart;
+
+.#{$_prefix}-wrapper {
+  width: 100%;
+  min-width: 0;
+
+  &-outer {
+    position: relative;
+  }
+
+  .#{$_prefix}-tooltip {
+    min-width: 270px;
+    position: absolute;
+    background: var(--mdk-color-dark-black);
+    color: var(--mdk-color-light-grey);
+    font-size: 12px;
+    font-weight: normal;
+    padding: 13px;
+    border-top-left-radius: 16px;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+    z-index: 10;
+
+    &--no-min-width {
+      min-width: 'unset';
+    }
+  }
+}

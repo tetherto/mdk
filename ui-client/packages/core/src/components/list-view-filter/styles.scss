@@ -1,0 +1,55 @@
+@use '../../styles/mixins' as *;
+.mdk-list-view-filter {
+  position: relative;
+  display: inline-block;
+
+  &__trigger {
+    @include inline_flex_align;
+
+    position: relative;
+
+    .mdk-button {
+      transition:
+        color,
+        border-color 200ms ease;
+
+      &:hover {
+        color: var(--mdk-color-primary-hover-light);
+        border-color: var(--mdk-color-primary-hover-light);
+      }
+
+      &__label {
+        gap: 8px;
+        padding: 0 15px;
+      }
+    }
+  }
+
+  &__dropdown {
+    max-width: 30vw;
+    padding: 0;
+    background-color: var(--mdk-color-obsidian);
+    border: unset;
+  }
+
+  &__header {
+    padding: 12px;
+    background-color: var(--mdk-color-obsidian);
+  }
+
+  &__content {
+    padding: 0;
+  }
+
+  .mdk-cascader {
+    border: none;
+    background: transparent;
+    &__panels {
+      border: none;
+    }
+
+    .mdk-tag-input__wrapper {
+      width: 15vw;
+    }
+  }
+}

@@ -1,0 +1,49 @@
+@use '../../styles/mixins' as *;
+.mdk-empty-state {
+  @include flex_column_center;
+  
+  text-align: center;
+
+  --mdk-empty-state-description-color: var(--mdk-color-gray-400);
+
+  // Size variants
+  &--sm {
+    padding: 8px 0;
+    gap: 4px;
+
+    .mdk-empty-state__description {
+      font-size: 12px;
+    }
+  }
+
+  &--md {
+    padding: 24px 0;
+    gap: 8px;
+
+    .mdk-empty-state__description {
+      font-size: 14px;
+    }
+  }
+
+  &--lg {
+    padding: 48px 0;
+    gap: 12px;
+
+    .mdk-empty-state__description {
+      font-size: 16px;
+    }
+  }
+
+  &__image {
+    @include flex_center;
+    
+    line-height: 1;
+    color: var(--mdk-color-gray-400);
+  }
+
+  &__description {
+    font-family: var(--font-mono);
+    color: var(--mdk-empty-state-description-color);
+    line-height: 1.5;
+  }
+}

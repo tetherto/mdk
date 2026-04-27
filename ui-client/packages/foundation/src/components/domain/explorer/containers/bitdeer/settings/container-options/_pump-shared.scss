@@ -1,0 +1,22 @@
+@use '@mdk/core/styles' as *;
+
+@mixin pump-container {
+  padding: 15px;
+  min-width: 100px;
+  flex: 1;
+  background-color: var(--mdk-color-surface);
+  border: 1px solid var(--mdk-dialog-border-color);
+}
+
+@mixin pump-status {
+  @include flex_column;
+
+  gap: 8px;
+}
+
+@mixin pump-title {
+  color: var(--mdk-color-white);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: normal;
+}

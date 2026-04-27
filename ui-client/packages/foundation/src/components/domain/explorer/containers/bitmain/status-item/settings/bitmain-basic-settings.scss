@@ -1,0 +1,21 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitmain-basic-settings {
+  @include flex_column;
+
+  gap: 1.5rem;
+
+  &__section {
+    width: 100%;
+  }
+
+  &__title {
+    color: var(--mdk-color-white);
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 25px;
+    text-transform: uppercase;
+    margin: 0 0 10px 0;
+  }
+}

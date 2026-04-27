@@ -1,0 +1,137 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-single-stat-card {
+  @include flex_column;
+
+  gap: 3px;
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: normal;
+
+  @media (min-width: 768px) {
+    font-size: 12px;
+  }
+
+  &--row {
+    @include flex_row;
+  }
+
+  &--secondary,
+  &--tertiary {
+    @include flex_align_start_between;
+
+    flex-wrap: nowrap;
+    overflow: hidden;
+    padding: 12px;
+  }
+
+  &--tertiary {
+    border: 1px solid var(--stat-color);
+
+    .mdk-single-stat-card__text,
+    .mdk-single-stat-card__name,
+    .mdk-single-stat-card__subtitle,
+    .mdk-single-stat-card__value {
+      color: var(--stat-color, inherit);
+    }
+  }
+
+  &--flash {
+    animation: flash-border 1s infinite;
+
+    .mdk-single-stat-card__name,
+    .mdk-single-stat-card__subtitle,
+    .mdk-single-stat-card__value {
+      animation: flash-text 1s infinite;
+    }
+  }
+
+  &--superflash {
+    animation: flash-border 0.5s infinite;
+
+    .mdk-single-stat-card__name,
+    .mdk-single-stat-card__subtitle,
+    .mdk-single-stat-card__value {
+      animation: flash-text 0.5s infinite;
+      font-weight: 500;
+    }
+  }
+
+  &__text {
+    @include flex_column;
+
+    gap: 3px;
+  }
+
+  &__name {
+    white-space: nowrap;
+
+    .mdk-single-stat-card--primary & {
+      color: rgba(var(--mdk-color-white-rgb), 0.5);
+    }
+
+    @media (min-width: 768px) {
+      font-size: 12px;
+    }
+  }
+
+  &__subtitle {
+    .mdk-single-stat-card--primary & {
+      color: rgba(var(--mdk-color-white-rgb), 0.5);
+    }
+
+    @media (min-width: 768px) {
+      .mdk-single-stat-card--secondary &,
+      .mdk-single-stat-card--tertiary & {
+        font-size: 12px;
+      }
+    }
+  }
+
+  &__value {
+    font-size: 10px;
+    color: var(--mdk-color-white);
+
+    .mdk-single-stat-card--secondary &,
+    .mdk-single-stat-card--tertiary & {
+      text-align: end;
+    }
+
+    .mdk-single-stat-card--primary & {
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .mdk-single-stat-card--long-value & {
+      font-size: 14px;
+    }
+
+    @media (min-width: 768px) {
+      .mdk-single-stat-card--primary & {
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+@keyframes flash-border {
+  0%,
+  100% {
+    border-color: rgba(var(--mdk-color-black), 0.5);
+  }
+  50% {
+    border-color: var(--stat-color, inherit);
+  }
+}
+
+@keyframes flash-text {
+  0%,
+  100% {
+    color: var(--mdk-color-white);
+  }
+  50% {
+    color: var(--stat-color, inherit);
+  }
+}

@@ -1,0 +1,13 @@
+node_modules
+*.swp
+*.swo
+.DS_Store
+npm-debug.log
+!config/*.json.example
+config/*.json
+status
+logs
+store
+.idea
+coverage
+.scannerwork

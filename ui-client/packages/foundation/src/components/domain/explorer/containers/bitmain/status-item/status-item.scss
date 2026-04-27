@@ -1,0 +1,25 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-status-item {
+  flex-basis: 100%;
+
+  @media (min-width: 768px) {
+    flex-basis: 33%;
+  }
+
+  &__content {
+    @include flex_align_between;
+
+    padding: 0;
+
+    @media (min-width: 768px) {
+      padding: 0 50px;
+    }
+  }
+
+  &__label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--mdk-color-white);
+  }
+}

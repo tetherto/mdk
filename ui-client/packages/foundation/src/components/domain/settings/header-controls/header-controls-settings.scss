@@ -1,0 +1,84 @@
+.mdk-settings-header-controls {
+  @include flex_column;
+
+  gap: 24px;
+  padding: 10px 0;
+
+  &__description {
+    opacity: 0.7;
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  &__table {
+    @include flex_column;
+
+    border: 1px solid var(--mdk-dialog-border-color);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__table-header {
+    @include flex_align;
+
+    background-color: var(--mdk-color-background-dark);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--mdk-dialog-border-color);
+  }
+
+  &__header-column {
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: right;
+    width: 160px;
+
+    &--wide {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 600;
+      opacity: 0.7;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+    }
+  }
+
+  &__table-row {
+    @include flex_align;
+
+    padding: 16px;
+    border-bottom: 1px solid var(--mdk-dialog-border-color);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background-color: rgba(var(--mdk-color-white-rgb), 0.05);
+    }
+  }
+
+  &__row-column--wide {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  &__toggle-column {
+    @include flex_align;
+
+    justify-content: center;
+    width: 160px;
+  }
+
+  &__actions {
+    @include flex_justify_end;
+
+    gap: 12px;
+    margin-top: 8px;
+  }
+}

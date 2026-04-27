@@ -1,0 +1,36 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-bitmain-immersion-system-status {
+  background: var(--mdk-color-dark-bg);
+  border: 1px solid var(--mdk-border-default-color);
+  padding: 1.5rem;
+
+  &__header {
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--mdk-color-white);
+    margin: 0;
+  }
+
+  &__content {
+    @include flex_column;
+
+    gap: 1rem;
+  }
+
+  &__item {
+    @include flex_align_between;
+
+    gap: 1rem;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mdk-color-text-muted);
+  }
+}

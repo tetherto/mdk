@@ -1,0 +1,27 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-device-explorer__status-label {
+  @include flex-center;
+  color: var(--mdk-color-white);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 3px;
+  width: min-content;
+  height: min-content;
+
+  background-color: var(--mdk-color-brick-green);
+
+  &--error {
+    background-color: var(--mdk-color-brick-red);
+  }
+
+  &--sleep {
+    background-color: var(--mdk-color-medium-blue);
+  }
+
+  &--offline {
+    background-color: var(--mdk-color-dark-grey);
+  }
+}

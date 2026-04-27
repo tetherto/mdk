@@ -1,0 +1,32 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-status-indicator {
+  @include flex_center;
+
+  width: 24px;
+  height: 24px;
+
+  &__icon {
+    @include flex_center;
+
+    font-size: 16px;
+    transition: color 0.2s ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &--inactive {
+    .mdk-status-indicator__icon {
+      color: var(--mdk-color-white);
+
+      &--flash,
+      &--sound {
+        color: var(--mdk-color-white);
+        opacity: 0.6;
+      }
+    }
+  }
+}

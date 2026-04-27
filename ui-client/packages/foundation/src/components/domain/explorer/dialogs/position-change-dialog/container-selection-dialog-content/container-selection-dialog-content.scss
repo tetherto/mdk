@@ -1,0 +1,74 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-container-selection {
+  @include flex_column;
+
+  padding: 8px 0;
+
+  &__header-info {
+    @include flex_column;
+
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background-color: var(--mdk-color-white-05);
+    border-radius: 4px;
+  }
+
+  &__meta-item {
+    font-size: 14px;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__label {
+    font-weight: 600;
+    margin-right: 8px;
+    color: var(--mdk-color-white);
+  }
+
+  &__list {
+    @include flex_column;
+    max-height: 300px;
+    overflow-y: auto;
+    gap: 10px;
+    padding-right: 4px;
+
+    /* Scrollbar styling using brand primary color */
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--mdk-color-primary);
+      border-radius: 10px;
+    }
+  }
+
+  &__card {
+    display: block; // Link behavior
+    padding: 12px 20px;
+    border: 1px solid var(--mdk-color-primary);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: var(--mdk-color-primary);
+
+      .mdk-container-selection__card-text {
+        color: var(--mdk-color-black-bg);
+      }
+    }
+  }
+
+  &__card-text {
+    color: var(--mdk-color-primary);
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  &__footer {
+    @include flex_justify_end;
+
+    margin-top: 24px;
+  }
+}

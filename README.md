@@ -1,1 +1,44 @@
-# mdk
+# MDK
+
+MDK is a JavaScript-based SDK that provides a modular and extensible foundation for:
+
+- Monitoring mining infrastructure  
+- Controlling devices and containers  
+- Collecting telemetry and operational data  
+- Building custom mining applications and integrations  
+
+---
+
+⚠️ **Work in Progress**
+
+MDK is currently under active development and is **not yet considered stable**.
+
+The latest development code is available on the `main` branch, with pre-release versions tagged as `*-beta` and `*-rc`. Stable releases will be tagged using semantic versioning without suffixes (e.g., `1.0.0`).
+
+---
+
+## Current Development Status
+
+- `*-beta`, `*-rc` → Active development tags (latest features and changes)  
+- `x.y.z` → Reserved for stable releases  
+
+To test the SDK or explore the latest functionality, use the **`main` branch**.
+
+---
+
+## Contributing
+
+Contributions are welcome while MDK is under active development.
+
+### How to contribute
+
+1. Fork this repository  
+2. Clone your fork locally  
+3. Create a new branch  
+4. Make your changes  
+5. Submit a Pull Request  
+
+### Example
+
+```bash
+git checkout -b feature/your-feature-name

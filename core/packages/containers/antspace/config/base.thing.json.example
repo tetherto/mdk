@@ -1,0 +1,146 @@
+{
+  "collectSnapTimeoutMs": 120000,
+  "collectSnapsItvMs": 60000,
+  "logRotateMaxLength": 10000,
+  "logKeepCount": 3,
+  "alerts": {
+    "container-as-hk3": {
+      "power_fault": {
+        "description": "Power supply issue",
+        "severity": "medium"
+      },
+      "liquid_level_low": {
+        "description": "Low liquid level",
+        "severity": "medium"
+      },
+      "circulating_pump_fault": {
+        "description": "Circulating pump failure",
+        "severity": "critical"
+      },
+      "fan_fault": {
+        "description": "Fan malfunction",
+        "severity": "high"
+      },
+      "fluid_infusion_pump_fault": {
+        "description": "Fluid infusion pump failure",
+        "severity": "high"
+      },
+      "spray_pump_fault": {
+        "description": "Spray pump failure",
+        "severity": "high"
+      },
+      "cooling_tower_fan_fault": {
+        "description": "Cooling tower fan failure",
+        "severity": "high"
+      },
+      "leakage_fault": {
+        "description": "Liquid leakage detected",
+        "severity": "critical"
+      },
+      "supply_liquid_temp_low": {
+        "description": "Low supply liquid temperature",
+        "severity": "high",
+        "params": {
+          "temp": 20
+        }
+      },
+      "supply_liquid_temp_high": {
+        "description": "High supply liquid temperature",
+        "severity": "high"
+      },
+      "supply_liquid_temp_too_high": {
+        "description": "Excessively high supply liquid temperature",
+        "severity": "critical"
+      },
+      "supply_liquid_pressure_high": {
+        "description": "High supply liquid pressure",
+        "severity": "critical"
+      },
+      "return_liquid_pressure_low": {
+        "description": "Low return liquid pressure",
+        "severity": "critical"
+      },
+      "supply_liquid_flow_low": {
+        "description": "Low supply liquid flow rate",
+        "severity": "critical"
+      },
+      "freezing_alarm": {
+        "description": "Freezing alarm",
+        "severity": "medium"
+      },
+      "cooling_tower_liquid_level_low": {
+        "description": "Low cooling tower liquid level",
+        "severity": "high"
+      }
+    },
+    "container-as-immersion": {
+      "circulating_pump_fault": {
+        "description": "Circulating pump failure",
+        "severity": "critical"
+      },
+      "fan_fault": {
+        "description": "Fan malfunction",
+        "severity": "high"
+      },
+      "dry_cooler_power_fre_fault": {
+        "description": "Power frequency fault for dry cooler",
+        "severity": "high"
+      },
+      "dry_cooler_fre_conv": {
+        "description": "Frequency conversion fault for dry cooler",
+        "severity": "high"
+      },
+      "secondary_pump_fault": {
+        "description": "Secondary circulation pump failure",
+        "severity": "critical"
+      },
+      "phase_failure": {
+        "description": "Phase fault and sequence protection",
+        "severity": "high"
+      },
+      "supply_liquid_temp_fault": {
+        "description": "Liquid supply temperature sensor fault",
+        "severity": "critical"
+      },
+      "return_liquid_temp_fault": {
+        "description": "Liquid return temperature sensor fault",
+        "severity": "critical"
+      },
+      "power_distribution_fault": {
+        "description": "Power distribution box temperature sensor fault",
+        "severity": "high"
+      },
+      "lever_sensor_fault": {
+        "description": "Liquid level sensor fault",
+        "severity": "critical"
+      },
+      "smoke_sensor_fault": {
+        "description": "Smoke sensor fault",
+        "severity": "high"
+      },
+      "return_liquid_temp_high": {
+        "description": "High secondary liquid return temperature",
+        "severity": "high"
+      },
+      "return_liquid_temp_too_high": {
+        "description": "Excessively high secondary liquid return temperature",
+        "severity": "critical"
+      },
+      "power_distribution_temp_high": {
+        "description": "High power distribution box temperature",
+        "severity": "high"
+      },
+      "lever_high": {
+        "description": "High liquid level",
+        "severity": "high"
+      },
+      "lever_low": {
+        "description": "Low liquid level",
+        "severity": "critical"
+      }
+    }
+  },
+  "container": {
+    "timeout": 30000
+  }
+}

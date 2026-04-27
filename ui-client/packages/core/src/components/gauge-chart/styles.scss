@@ -1,0 +1,10 @@
+.mdk-gauge-chart {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}

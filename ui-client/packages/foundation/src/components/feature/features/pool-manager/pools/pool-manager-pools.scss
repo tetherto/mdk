@@ -1,0 +1,54 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-pm-pools {
+  @include flex_column;
+
+  gap: 24px;
+  width: 100%;
+
+  &__header {
+    @include flex_between;
+
+    &-title {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 32px;
+      color: var(--mdk-color-white);
+      margin-bottom: 10px;
+    }
+  }
+
+  &__accordion {
+    @include flex_column;
+
+    gap: 0;
+
+    &-item {
+      margin-bottom: 0;
+    }
+
+    &-trigger {
+      width: 100%;
+      padding: 12px 16px;
+
+      .mdk-accordion__trigger-left {
+        flex: 0;
+        min-width: 0;
+        padding-inline-end: 12px;
+      }
+      .mdk-accordion__trigger-right {
+        flex: 1;
+      }
+
+      .mdk-accordion__custom-label {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+
+    &-content {
+      padding: 0;
+      border-top: 1px solid var(--mdk-color-white-2);
+    }
+  }
+}

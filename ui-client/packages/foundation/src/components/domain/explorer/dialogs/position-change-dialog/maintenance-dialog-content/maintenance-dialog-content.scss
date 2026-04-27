@@ -1,0 +1,23 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-maintenance-confirm {
+  &__warning {
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--mdk-color-brick-red);
+    margin: 16px 0 24px 0;
+  }
+
+  &__highlight {
+    font-weight: 700;
+    color: var(--mdk-color-white);
+  }
+
+  &__footer {
+    @include flex_justify_end;
+
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid var(--mdk-dialog-border-color);
+  }
+}

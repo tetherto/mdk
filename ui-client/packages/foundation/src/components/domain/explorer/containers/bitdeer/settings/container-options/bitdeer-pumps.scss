@@ -1,0 +1,16 @@
+@use '@mdk/core/styles' as *;
+@use './pump-shared' as *;
+
+.mdk-bitdeer-pumps {
+  padding: 15px;
+  background-color: var(--mdk-color-surface);
+  border: 1px solid var(--mdk-dialog-border-color);
+
+  &__status {
+    @include pump-status;
+  }
+
+  &__title {
+    @include pump-title;
+  }
+}

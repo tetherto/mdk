@@ -1,0 +1,12 @@
+@use '@mdk/core/styles' as *;
+
+.mdk-static-ip-assignment {
+  margin-bottom: 24px;
+  width: 100%;
+
+  .mdk-input__label {
+    color: var(--mdk-color-text-secondary);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+}

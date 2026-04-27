@@ -1,0 +1,174 @@
+@use '../../styles/mixins' as *;
+
+/* ========================================
+   Typography Component Styles
+   ======================================== */
+
+.mdk-typography {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+}
+
+/* ========================================
+   VARIANT STYLES
+   ======================================== */
+
+/* Heading 1 */
+.mdk-typography--heading1 {
+  font-size: 2.5rem; // 40px
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Heading 2 */
+.mdk-typography--heading2 {
+  font-size: 2rem; // 32px
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Heading 3 */
+.mdk-typography--heading3 {
+  font-size: 1.5rem; // 24px
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Body Text */
+.mdk-typography--body {
+  font-size: 1rem; // 16px
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Secondary Text */
+.mdk-typography--secondary {
+  font-size: 0.875rem; // 14px
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Caption Text */
+.mdk-typography--caption {
+  font-size: 0.75rem; // 12px
+  line-height: 1.4;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* ========================================
+   SIZE OVERRIDES
+   ======================================== */
+
+.mdk-typography--size-xs {
+  font-size: 0.75rem; // 12px
+}
+
+.mdk-typography--size-sm {
+  font-size: 0.875rem; // 14px
+}
+
+.mdk-typography--size-md {
+  font-size: 1rem; // 16px
+}
+
+.mdk-typography--size-lg {
+  font-size: 1.125rem; // 18px
+}
+
+.mdk-typography--size-xl {
+  font-size: 1.25rem; // 20px
+}
+
+.mdk-typography--size-2xl {
+  font-size: 1.5rem; // 24px
+}
+
+.mdk-typography--size-3xl {
+  font-size: 2rem; // 32px
+}
+
+.mdk-typography--size-4xl {
+  font-size: 2.5rem; // 40px
+}
+
+/* ========================================
+   WEIGHT OVERRIDES
+   ======================================== */
+
+.mdk-typography--weight-light {
+  font-weight: 300;
+}
+
+.mdk-typography--weight-normal {
+  font-weight: 400;
+}
+
+.mdk-typography--weight-medium {
+  font-weight: 500;
+}
+
+.mdk-typography--weight-semibold {
+  font-weight: 600;
+}
+
+.mdk-typography--weight-bold {
+  font-weight: 700;
+}
+
+/* ========================================
+   ALIGNMENT
+   ======================================== */
+
+.mdk-typography--align-left {
+  text-align: left;
+}
+
+.mdk-typography--align-center {
+  text-align: center;
+}
+
+.mdk-typography--align-right {
+  text-align: right;
+}
+
+.mdk-typography--align-justify {
+  text-align: justify;
+}
+
+/* ========================================
+   COLOR VARIANTS
+   ======================================== */
+
+.mdk-typography--color-default {
+  color: inherit;
+}
+
+.mdk-typography--color-primary {
+  color: var(--mdk-color-primary);
+}
+
+.mdk-typography--color-success {
+  color: rgb(var(--mdk-color-success));
+}
+
+.mdk-typography--color-warning {
+  color: var(--mdk-color-warning);
+}
+
+.mdk-typography--color-error {
+  color: rgb(var(--mdk-color-error));
+}
+
+.mdk-typography--color-muted {
+  color: var(--mdk-color-grey-idle);
+  opacity: 0.8;
+}
+
+.mdk-typography--truncate {
+  @include text_ellipsis;
+}

@@ -22,7 +22,6 @@
   },
   "devDependencies": {
     "brittle": "3.16.3",
-    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
     "standard": "17.1.2"
   }
 }

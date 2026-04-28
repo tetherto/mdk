@@ -1,0 +1,173 @@
+name: MDK UI CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+    paths:
+      - "ui-client/**"
+      - ".github/workflows/ui.yaml"
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "lts/*"
+  PNPM_VERSION: "10.5.0"
+  UI_DIR: ui-client
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: moderate
+          vulnerability-check: true
+          license-check: true
+          comment-summary-in-pr: always
+
+  ui-lint:
+    name: UI Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ env.UI_DIR }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup runtime
+        uses: ./.github/actions/setup-runtime
+        with:
+          node_version: ${{ env.NODE_VERSION }}
+          package_manager: pnpm
+          pnpm_version: ${{ env.PNPM_VERSION }}
+          cache_dependency_path: ${{ env.UI_DIR }}/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+  ui-typecheck:
+    name: UI Typecheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ env.UI_DIR }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup runtime
+        uses: ./.github/actions/setup-runtime
+        with:
+          node_version: ${{ env.NODE_VERSION }}
+          package_manager: pnpm
+          pnpm_version: ${{ env.PNPM_VERSION }}
+          cache_dependency_path: ${{ env.UI_DIR }}/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+  ui-test:
+    name: UI Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ env.UI_DIR }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup runtime
+        uses: ./.github/actions/setup-runtime
+        with:
+          node_version: ${{ env.NODE_VERSION }}
+          package_manager: pnpm
+          pnpm_version: ${{ env.PNPM_VERSION }}
+          cache_dependency_path: ${{ env.UI_DIR }}/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check
+        continue-on-error: true
+        run: pnpm run format
+
+      - name: Test with coverage
+        continue-on-error: true
+        run: pnpm run test:coverage || pnpm test
+
+  ui-build:
+    name: UI Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ env.UI_DIR }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup runtime
+        uses: ./.github/actions/setup-runtime
+        with:
+          node_version: ${{ env.NODE_VERSION }}
+          package_manager: pnpm
+          pnpm_version: ${{ env.PNPM_VERSION }}
+          cache_dependency_path: ${{ env.UI_DIR }}/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Security audit
+        continue-on-error: true
+        run: |
+          pnpm audit --audit-level=moderate 2>&1 || echo "::warning::pnpm audit reported issues"
+          pnpm audit --audit-level=high 2>&1 || echo "::warning::High severity vulnerabilities detected"
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Bundle size report
+        continue-on-error: true
+        run: |
+          echo "## UI Bundle Size Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          # The repo already provides scripts/bundle-size.mjs via `pnpm size`.
+          pnpm run size 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"

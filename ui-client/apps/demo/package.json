@@ -1,5 +1,5 @@
 {
-  "name": "@mdk/demo",
+  "name": "@tetherto/demo",
   "type": "module",
   "version": "0.0.1",
   "private": true,
@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",
-    "@mdk/core": "workspace:*",
-    "@mdk/fonts": "workspace:*",
-    "@mdk/foundation": "workspace:*",
+    "@tetherto/core": "workspace:*",
+    "@tetherto/fonts": "workspace:*",
+    "@tetherto/foundation": "workspace:*",
     "@radix-ui/react-icons": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

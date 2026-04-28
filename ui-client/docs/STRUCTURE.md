@@ -5,7 +5,7 @@ Complete monorepo structure with all packages and their relationships.
 ## 📁 Directory Structure
 
 ```
-@mdk/ui-dev-kit/
+@tetherto/ui-dev-kit/
 ├── packages/
 │   ├── core/                    # Core UI components, utilities, types, and theme system
 │   ├── foundation/              # All-in-one foundation package (domain, feature, hooks, api, state, test-utils)
@@ -26,7 +26,7 @@ Complete monorepo structure with all packages and their relationships.
 
 ## 📦 Package Details
 
-### `@mdk/core`
+### `@tetherto/core`
 
 **Purpose:** Core UI components, utilities, types, and theme system built on Radix UI primitives
 
@@ -58,13 +58,13 @@ Complete monorepo structure with all packages and their relationships.
 
 **Usage:**
 ```tsx
-import { Button, Dialog, cn, formatDate } from '@mdk/core'
-import '@mdk/core/styles.css'
+import { Button, Dialog, cn, formatDate } from '@tetherto/core'
+import '@tetherto/core/styles.css'
 ```
 
 ---
 
-### `@mdk/foundation`
+### `@tetherto/foundation`
 
 **Purpose:** All-in-one foundation package containing domain components, features, hooks, API client, state management, and test utilities
 
@@ -94,7 +94,7 @@ import '@mdk/core/styles.css'
 **Note:** Foundation exports TypeScript source files directly (no build step needed for workspace dependencies)
 
 **Key Dependencies:**
-- `@mdk/core` (workspace)
+- `@tetherto/core` (workspace)
 - Redux Toolkit (@reduxjs/toolkit)
 - React Redux (react-redux)
 - Testing Library (@testing-library/react)
@@ -105,33 +105,33 @@ import '@mdk/core/styles.css'
 
 ```tsx
 // Main exports
-import { SomeComponent } from '@mdk/foundation'
+import { SomeComponent } from '@tetherto/foundation'
 
 // Domain components
-import { MinerCard, PoolStats } from '@mdk/foundation/domain'
+import { MinerCard, PoolStats } from '@tetherto/foundation/domain'
 
 // Feature compositions
-import { Dashboard } from '@mdk/foundation/feature'
+import { Dashboard } from '@tetherto/foundation/feature'
 
 // Hooks
-import { useLocalStorage, useDebounce } from '@mdk/foundation/hooks'
+import { useLocalStorage, useDebounce } from '@tetherto/foundation/hooks'
 
 // API client
-import { useGetMinersQuery } from '@mdk/foundation/api'
+import { useGetMinersQuery } from '@tetherto/foundation/api'
 
 // State management
-import { store, useAppSelector } from '@mdk/foundation/state'
+import { store, useAppSelector } from '@tetherto/foundation/state'
 
 // Testing utilities
-import { render, mockMiner } from '@mdk/foundation/test-utils'
+import { render, mockMiner } from '@tetherto/foundation/test-utils'
 
 // Styles
-import '@mdk/foundation/styles.css'
+import '@tetherto/foundation/styles.css'
 ```
 
 ---
 
-### `@mdk/fonts`
+### `@tetherto/fonts`
 
 **Purpose:** Font assets for the MDK
 
@@ -145,7 +145,7 @@ import '@mdk/foundation/styles.css'
 
 **Usage:**
 ```tsx
-import '@mdk/fonts/jetbrains-mono.css'
+import '@tetherto/fonts/jetbrains-mono.css'
 ```
 
 ---
@@ -154,7 +154,7 @@ import '@mdk/fonts/jetbrains-mono.css'
 
 ```
 ┌──────────────────────────────────────────────┐
-│ @mdk/core                             │
+│ @tetherto/core                             │
 │ • Components (Radix UI-based)                │
 │ • Types & Utilities                          │
 │ • Theme & Styles                             │
@@ -164,7 +164,7 @@ import '@mdk/fonts/jetbrains-mono.css'
                  │ workspace:*
                  │
 ┌────────────────▼─────────────────────────────┐
-│ @mdk/foundation                       │
+│ @tetherto/foundation                       │
 │ • Domain Components   (./domain)             │
 │ • Feature Compositions (./feature)           │
 │ • Custom Hooks        (./hooks)              │
@@ -174,17 +174,17 @@ import '@mdk/fonts/jetbrains-mono.css'
 └──────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────┐
-│ @mdk/fonts                            │
+│ @tetherto/fonts                            │
 │ • JetBrains Mono font assets                 │
 └──────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────┐
 │ Apps                                         │
 │                                              │
-│ @mdk/demo                             │
-│ ├─ depends on: @mdk/core              │
-│ ├─ depends on: @mdk/foundation        │
-│ └─ depends on: @mdk/fonts             │
+│ @tetherto/demo                             │
+│ ├─ depends on: @tetherto/core              │
+│ ├─ depends on: @tetherto/foundation        │
+│ └─ depends on: @tetherto/fonts             │
 └──────────────────────────────────────────────┘
 ```
 
@@ -340,13 +340,13 @@ packages:
 **Filter Commands:**
 ```bash
 # Run command in specific package
-pnpm --filter @mdk/core build
+pnpm --filter @tetherto/core build
 
 # Run command in all packages
 pnpm -r build
 
 # Run command in package and its dependencies
-pnpm --filter @mdk/demo... build
+pnpm --filter @tetherto/demo... build
 ```
 
 ## 📝 Adding New Features
@@ -355,7 +355,7 @@ pnpm --filter @mdk/demo... build
 
 The project uses a **consolidated package structure**. Instead of creating new packages, add features to existing ones:
 
-#### Adding to `@mdk/core`
+#### Adding to `@tetherto/core`
 For new core components, utilities, or types:
 
 ```bash
@@ -372,7 +372,7 @@ Then export from `packages/core/src/index.ts`:
 export * from './components/my-component'
 ```
 
-#### Adding to `@mdk/foundation`
+#### Adding to `@tetherto/foundation`
 
 Foundation uses **export paths** for organization:
 
@@ -416,7 +416,7 @@ mkdir -p packages/my-package/src
 2. Create `package.json` following the existing pattern:
 ```json
 {
-  "name": "@mdk/my-package",
+  "name": "@tetherto/my-package",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -434,7 +434,7 @@ mkdir -p packages/my-package/src
     "clean": "rimraf dist node_modules .turbo"
   },
   "dependencies": {
-    "@mdk/core": "workspace:*"
+    "@tetherto/core": "workspace:*"
   }
 }
 ```
@@ -529,7 +529,7 @@ In package.json files, reference catalog versions:
 
 ### Testing
 
-- **Use foundation test-utils** - Import from `@mdk/foundation/test-utils`
+- **Use foundation test-utils** - Import from `@tetherto/foundation/test-utils`
 - **Test in isolation** - Mock external dependencies
 - **Vitest for unit tests** - Fast, ESM-native testing
 - **React Testing Library** - Test components like users interact with them
@@ -540,13 +540,13 @@ In package.json files, reference catalog versions:
 
 The project uses a **two-layer architecture** instead of many micro-packages:
 
-1. **Core Layer** (`@mdk/core`)
+1. **Core Layer** (`@tetherto/core`)
    - Radix UI-based components
    - Type definitions and utilities
    - Theme and styling system
    - Chart and table integrations
 
-2. **Foundation Layer** (`@mdk/foundation`)
+2. **Foundation Layer** (`@tetherto/foundation`)
    - Domain-specific components
    - Feature compositions
    - State management
@@ -633,7 +633,7 @@ The project uses a **mixed approach** for package exports:
 1. **Write in SCSS** - `src/styles/*.scss`
 2. **Build to CSS** - `dist/styles.css` (via Vite)
 3. **Export CSS** - `./styles.css` export path
-4. **Consume in apps** - `import '@mdk/core/styles.css'`
+4. **Consume in apps** - `import '@tetherto/core/styles.css'`
 
 **Why separate CSS?**
 - Control over when styles are loaded
@@ -681,7 +681,7 @@ pnpm build:verbose
 pnpm typecheck
 
 # Type check specific package
-pnpm --filter @mdk/core typecheck
+pnpm --filter @tetherto/core typecheck
 
 # Clean TypeScript build info
 find . -name "tsconfig.tsbuildinfo" -delete
@@ -695,8 +695,8 @@ pnpm typecheck
 pnpm lint:fix
 
 # Lint specific package
-pnpm --filter @mdk/core lint
-pnpm --filter @mdk/core lint:fix
+pnpm --filter @tetherto/core lint
+pnpm --filter @tetherto/core lint:fix
 
 # Format code
 pnpm format
@@ -712,7 +712,7 @@ pnpm build:scss
 pnpm watch:scss
 
 # Check for SCSS syntax errors
-pnpm --filter @mdk/core build:scss
+pnpm --filter @tetherto/core build:scss
 ```
 
 ### Development Server Issues
@@ -762,7 +762,7 @@ pnpm build
 
 ### Common Issues
 
-**Issue: "Cannot find module '@mdk/core'"**
+**Issue: "Cannot find module '@tetherto/core'"**
 - Ensure packages are built: `pnpm build`
 - Check workspace is properly linked: `pnpm install`
 

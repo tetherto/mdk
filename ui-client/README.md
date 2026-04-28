@@ -42,7 +42,7 @@ The **MDK** is a comprehensive toolkit providing:
 
 This monorepo contains 2 main packages in a simplified architecture:
 
-### `@mdk/core`
+### `@tetherto/core`
 
 Core UI components, utilities, types, and theme system. This package includes:
 
@@ -52,7 +52,7 @@ Core UI components, utilities, types, and theme system. This package includes:
 - Theme system with design tokens
 - SCSS-based styling
 
-### `@mdk/foundation`
+### `@tetherto/foundation`
 
 Complete foundation with features, state management, and utilities. This package includes:
 
@@ -68,7 +68,7 @@ Complete foundation with features, state management, and utilities. This package
 Interactive demo showcasing all components.
 
 - **Location**: `apps/demo`
-- **Run**: `pnpm --filter @mdk/demo dev`
+- **Run**: `pnpm --filter @tetherto/demo dev`
 
 📖 **See [docs/STRUCTURE.md](docs/STRUCTURE.md) for complete package details and dependency graph.**
 
@@ -122,7 +122,7 @@ pnpm dev:demo
 pnpm build
 
 # Build specific package
-pnpm --filter @mdk/core build
+pnpm --filter @tetherto/core build
 
 # Type check all packages
 pnpm typecheck
@@ -134,14 +134,14 @@ pnpm lint
 pnpm lint:fix
 ```
 
-### Using @mdk/core in Your App
+### Using @tetherto/core in Your App
 
 1. Add the dependency to your app's `package.json`:
 
 ```json
 {
   "dependencies": {
-    "@mdk/core": "workspace:*"
+    "@tetherto/core": "workspace:*"
   }
 }
 ```
@@ -149,8 +149,8 @@ pnpm lint:fix
 2. Import and use components:
 
 ```tsx
-import { Button, Dialog, Switch } from '@mdk/core'
-import '@mdk/core/styles.css'
+import { Button, Dialog, Switch } from '@tetherto/core'
+import '@tetherto/core/styles.css'
 
 const App = () => {
   return <Button variant="secondary">Click me</Button>
@@ -241,8 +241,8 @@ For detailed information, see:
 
 ### Package Documentation
 
-- **[@mdk/core](packages/core/README.md)** - Core components, utilities, and theme ([Usage Guide](packages/core/USAGE.md))
-- **[@mdk/foundation](packages/foundation/README.md)** - Complete foundation with features, state, API, and utilities
+- **[@tetherto/core](packages/core/README.md)** - Core components, utilities, and theme ([Usage Guide](packages/core/USAGE.md))
+- **[@tetherto/foundation](packages/foundation/README.md)** - Complete foundation with features, state, API, and utilities
 
 ### Demo App
 

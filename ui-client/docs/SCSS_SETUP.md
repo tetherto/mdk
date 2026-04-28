@@ -7,7 +7,7 @@ This monorepo uses **SCSS** with **Vite** and **Turborepo** for styling, replaci
 - **Build Tool**: Turborepo (orchestration) + Vite (bundling)
 - **SCSS Compiler**: Dart Sass (via Vite)
 - **PostCSS**: Autoprefixer for vendor prefixes
-- **Module Resolution**: Vite aliases for `@mdk/*` workspace packages
+- **Module Resolution**: Vite aliases for `@tetherto/*` workspace packages
 
 ## Why This Stack?
 
@@ -49,7 +49,7 @@ This monorepo uses **SCSS** with **Vite** and **Turborepo** for styling, replaci
 ┌─────────────────────────────────────┐
 │ Vite (Build Tool)                   │
 │ - Compiles SCSS to CSS              │
-│ - Resolves @mdk/* imports           │
+│ - Resolves @tetherto/* imports           │
 │ - Applies PostCSS transforms        │
 └──────────────┬──────────────────────┘
                │
@@ -66,22 +66,22 @@ This monorepo uses **SCSS** with **Vite** and **Turborepo** for styling, replaci
 
 ### Packages with SCSS
 
-1. **@mdk/core** - Core components with base styles and design tokens
-2. **@mdk/foundation** - Foundation components and feature styles
-3. **@mdk/fonts** - Font assets (JetBrains Mono)
+1. **@tetherto/core** - Core components with base styles and design tokens
+2. **@tetherto/foundation** - Foundation components and feature styles
+3. **@tetherto/fonts** - Font assets (JetBrains Mono)
 
 Packages with SCSS build:
-- `@mdk/core`
+- `@tetherto/core`
   - `src/styles/` - Source SCSS files
   - `dist/styles.css` - Compiled, minified CSS
   - `vite.config.js` - Vite configuration for SCSS compilation
 
-- `@mdk/foundation`
+- `@tetherto/foundation`
   - `src/styles/` - Source SCSS files
   - `dist/styles.css` - Compiled CSS
   - `vite.config.js` - Vite configuration
 
-- `@mdk/fonts`
+- `@tetherto/fonts`
   - `src/` - Font files and CSS
   - `dist/jetbrains-mono.css` - Built font CSS
   - `vite.config.js` - Vite configuration
@@ -122,8 +122,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@mdk/core': resolve(__dirname, '../core/src'),
-      '@mdk/theme': resolve(__dirname, '../theme/src'),
+      '@tetherto/core': resolve(__dirname, '../core/src'),
+      '@tetherto/theme': resolve(__dirname, '../theme/src'),
     },
   },
 })
@@ -154,11 +154,11 @@ export default defineConfig({
 // packages/my-package/src/styles/index.scss
 
 /**
- * @mdk/my-package styles
+ * @tetherto/my-package styles
  */
 
 // Import from other workspace packages (core exports SCSS mixins)
-@use '@mdk/core/styles' as core;
+@use '@tetherto/core/styles' as core;
 
 // Your styles using CSS variables
 .my-component {
@@ -206,8 +206,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@mdk/core': resolve(__dirname, '../core/src'),
-      '@mdk/foundation': resolve(__dirname, '../foundation/src'),
+      '@tetherto/core': resolve(__dirname, '../core/src'),
+      '@tetherto/foundation': resolve(__dirname, '../foundation/src'),
     },
   },
 })
@@ -255,8 +255,8 @@ pnpm build
 pnpm build:scss
 
 # Build specific package
-pnpm --filter @mdk/core build
-pnpm --filter @mdk/core build:scss
+pnpm --filter @tetherto/core build
+pnpm --filter @tetherto/core build:scss
 ```
 
 ### Turborepo Features
@@ -270,7 +270,7 @@ pnpm build
 pnpm build --force
 
 # Build with dependencies
-pnpm --filter @mdk/components-foundation... build
+pnpm --filter @tetherto/components-foundation... build
 # → Builds foundation + all its dependencies
 
 # Parallel builds
@@ -283,20 +283,20 @@ pnpm --filter @mdk/components-foundation... build
 
 ```tsx
 // In your app entry point (e.g., apps/demo/src/main.tsx)
-import '@mdk/core/styles.css'
-import '@mdk/foundation/styles.css'
-import '@mdk/fonts/jetbrains-mono.css'
+import '@tetherto/core/styles.css'
+import '@tetherto/foundation/styles.css'
+import '@tetherto/fonts/jetbrains-mono.css'
 ```
 
 **Note:** Always import compiled CSS files (`.css`), not SCSS source files. The SCSS is pre-compiled during the build process.
 
 ## Workspace Package Resolution
 
-Vite resolves `@mdk/*` imports using aliases:
+Vite resolves `@tetherto/*` imports using aliases:
 
 ```scss
 // This works! ✅
-@use '@mdk/core/styles' as core;
+@use '@tetherto/core/styles' as core;
 
 // No need for relative paths ❌
 @use '../../core/src/styles/_mixins.scss' as core;
@@ -304,7 +304,7 @@ Vite resolves `@mdk/*` imports using aliases:
 
 ### How It Works
 
-1. **Vite Alias**: Maps `@mdk/core` to `../core/src`
+1. **Vite Alias**: Maps `@tetherto/core` to `../core/src`
 2. **SCSS Load Paths**: Adds `../` to SCSS resolution
 3. **Modern SCSS API**: Uses Dart Sass modern compiler
 
@@ -414,7 +414,7 @@ pnpm build
 ```javascript
 resolve: {
   alias: {
-    '@mdk/core': resolve(__dirname, '../core/src'),
+    '@tetherto/core': resolve(__dirname, '../core/src'),
   },
 }
 ```
@@ -462,7 +462,7 @@ pnpm build --force
 
 ```scss
 // ✅ Good - Namespaced
-@use '@mdk/core/styles' as core;
+@use '@tetherto/core/styles' as core;
 
 .my-component {
   // Use core mixins if available
@@ -470,7 +470,7 @@ pnpm build --force
 }
 
 // ❌ Bad - Global namespace pollution
-@use '@mdk/core/styles' as *;
+@use '@tetherto/core/styles' as *;
 ```
 
 ### 3. Leverage Turborepo
@@ -480,9 +480,9 @@ pnpm build --force
 pnpm build
 
 # ❌ Bad - Manual dependency management
-pnpm --filter @mdk/core build
-pnpm --filter @mdk/foundation build
-pnpm --filter @mdk/fonts build
+pnpm --filter @tetherto/core build
+pnpm --filter @tetherto/foundation build
+pnpm --filter @tetherto/fonts build
 ```
 
 ### 4. Keep Specificity Low

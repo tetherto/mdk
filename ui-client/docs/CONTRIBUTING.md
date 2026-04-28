@@ -63,11 +63,11 @@ chore(deps): update dependencies
 ```bash
 # Development
 pnpm dev                    # Run all packages in dev mode
-pnpm dev --filter @mdk/core # Run specific package
+pnpm dev --filter @tetherto/core # Run specific package
 
 # Building
 pnpm build                  # Build all packages
-pnpm build --filter @mdk/*  # Build specific packages
+pnpm build --filter @tetherto/*  # Build specific packages
 
 # Testing
 pnpm test                   # Run all tests
@@ -90,8 +90,8 @@ pnpm clean                  # Remove all build artifacts
 
 ```bash
 # From root (recommended)
-pnpm add react --filter @mdk/foundation
-pnpm add -D vitest --filter @mdk/foundation
+pnpm add react --filter @tetherto/foundation
+pnpm add -D vitest --filter @tetherto/foundation
 
 # Or cd into package
 cd packages/components-foundation
@@ -119,7 +119,7 @@ cd packages/my-package
 
 ```json
 {
-  "name": "@mdk/my-package",
+  "name": "@tetherto/my-package",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,6 +1,6 @@
-# @mdk/demo
+# @tetherto/demo
 
-Demo application showcasing the `@mdk/core` component library.
+Demo application showcasing the `@tetherto/core` component library.
 
 ## Getting Started
 
@@ -9,7 +9,7 @@ Demo application showcasing the `@mdk/core` component library.
 pnpm install
 
 # Run the demo app
-pnpm --filter @mdk/demo dev
+pnpm --filter @tetherto/demo dev
 ```
 
 ## Features
@@ -30,13 +30,13 @@ This demo showcases:
 
 ```bash
 # Type check
-pnpm --filter @mdk/demo typecheck
+pnpm --filter @tetherto/demo typecheck
 
 # Lint
-pnpm --filter @mdk/demo lint
+pnpm --filter @tetherto/demo lint
 
 # Build
-pnpm --filter @mdk/demo build
+pnpm --filter @tetherto/demo build
 ```
 
 ## Build info

@@ -1,5 +1,5 @@
 {
-  "name": "@mdk/foundation",
+  "name": "@tetherto/foundation",
   "type": "module",
   "version": "0.0.1",
   "private": true,
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",
-    "@mdk/core": "workspace:*",
+    "@tetherto/core": "workspace:*",
     "@radix-ui/react-icons": "catalog:",
     "@radix-ui/react-use-controllable-state": "catalog:",
     "date-fns": "catalog:",

@@ -1,4 +1,4 @@
-# @mdk/core - Usage Guide
+# @tetherto/core - Usage Guide
 
 ## Quick Start
 
@@ -9,7 +9,7 @@ In your app's `package.json`, add the dependency:
 ```json
 {
   "dependencies": {
-    "@mdk/core": "workspace:*",
+    "@tetherto/core": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }
@@ -27,7 +27,7 @@ pnpm install
 In your app's entry point (e.g., `main.tsx` or `App.tsx`), import the base styles:
 
 ```tsx
-import '@mdk/core/styles.css'
+import '@tetherto/core/styles.css'
 ```
 
 ### 3. Use Components
@@ -40,7 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 const MyComponent = () => {
   return (
@@ -63,7 +63,7 @@ const MyComponent = () => {
 ### Button
 
 ```tsx
-import { Button } from '@mdk/core'
+import { Button } from '@tetherto/core'
 import { PlusIcon } from '@radix-ui/react-icons'
 
 // Variants (default: secondary)
@@ -116,7 +116,7 @@ Also accepts standard `<button>` HTML attributes. **No `size` prop.**
 ### Checkbox
 
 ```tsx
-import { Checkbox, Label } from '@mdk/core'
+import { Checkbox, Label } from '@tetherto/core'
 import { useState } from 'react'
 
 const CheckboxDemo = () => {
@@ -134,7 +134,7 @@ const CheckboxDemo = () => {
 ### Switch
 
 ```tsx
-import { Label, Switch } from '@mdk/core'
+import { Label, Switch } from '@tetherto/core'
 import { useState } from 'react'
 
 const SwitchDemo = () => {
@@ -152,7 +152,7 @@ const SwitchDemo = () => {
 ### Accordion
 
 ```tsx
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@mdk/core'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@tetherto/core'
 
 const AccordionDemo = () => {
   return (
@@ -175,7 +175,7 @@ const AccordionDemo = () => {
 ### Avatar
 
 ```tsx
-import { Avatar, AvatarFallback, AvatarImage } from '@mdk/core'
+import { Avatar, AvatarFallback, AvatarImage } from '@tetherto/core'
 
 const AvatarDemo = () => {
   return (
@@ -201,7 +201,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
   Button,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 const AlertDialogDemo = () => {
   return (
@@ -231,7 +231,7 @@ const AlertDialogDemo = () => {
 For components that are re-exported as Radix primitives, use the namespace:
 
 ```tsx
-import { DropdownMenu, Popover, Select, Tabs, Toast, Tooltip } from '@mdk/core'
+import { DropdownMenu, Popover, Select, Tabs, Toast, Tooltip } from '@tetherto/core'
 
 // Dropdown Menu
 <DropdownMenu.Root>
@@ -300,7 +300,7 @@ Override typography per button via CSS variables:
 All components are fully typed. Import types as needed:
 
 ```tsx
-import type { ButtonProps } from '@mdk/core'
+import type { ButtonProps } from '@tetherto/core'
 
 const MyButton: React.FC<ButtonProps> = (props) => {
   return <Button {...props} />
@@ -314,7 +314,7 @@ const MyButton: React.FC<ButtonProps> = (props) => {
 The `cn()` utility merges class names:
 
 ```tsx
-import { cn } from '@mdk/core'
+import { cn } from '@tetherto/core'
 
 const className = cn('base-class', condition && 'conditional-class', { 'object-class': true })
 ```
@@ -334,7 +334,7 @@ const className = cn('base-class', condition && 'conditional-class', { 'object-c
 Make sure you've imported the styles:
 
 ```tsx
-import '@mdk/core/styles.css'
+import '@tetherto/core/styles.css'
 ```
 
 ### Type errors
@@ -350,5 +350,5 @@ pnpm add react@^18.0.0 react-dom@^18.0.0
 Run type checking to identify issues:
 
 ```bash
-pnpm --filter @mdk/core typecheck
+pnpm --filter @tetherto/core typecheck
 ```

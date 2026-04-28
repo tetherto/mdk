@@ -41,7 +41,7 @@
 ```typescript
 // Target implementation (app side)
 import { useGetPoolConfigsQuery } from '@/app/services/api'
-import { usePoolConfigs as usePoolConfigsBase } from '@mdk/foundation'
+import { usePoolConfigs as usePoolConfigsBase } from '@tetherto/foundation'
 
 export const usePoolConfigs = () => {
   const { data, isLoading, error } = useGetPoolConfigsQuery({})
@@ -59,7 +59,7 @@ export const usePoolConfigs = () => {
 ```typescript
 // Target implementation (app side)
 import { useGetListThingsQuery } from '@/app/services/api'
-import { useGetAvailableDevices as useGetAvailableDevicesBase } from '@mdk/foundation'
+import { useGetAvailableDevices as useGetAvailableDevicesBase } from '@tetherto/foundation'
 
 export const useGetAvailableDevices = () => {
   const { data } = useGetListThingsQuery({

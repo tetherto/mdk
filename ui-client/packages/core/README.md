@@ -1,4 +1,4 @@
-# @mdk/core
+# @tetherto/core
 
 Core UI component library built on Radix UI primitives.
 
@@ -13,7 +13,7 @@ Since this is a workspace package in the monorepo, you can add it as a dependenc
 ```json
 {
   "dependencies": {
-    "@mdk/core": "workspace:*"
+    "@tetherto/core": "workspace:*"
   }
 }
 ```
@@ -29,7 +29,7 @@ pnpm install
 ### Importing Components
 
 ```tsx
-import { Button, Dialog, Label, Switch } from '@mdk/core'
+import { Button, Dialog, Label, Switch } from '@tetherto/core'
 ```
 
 ### Importing Styles
@@ -37,7 +37,7 @@ import { Button, Dialog, Label, Switch } from '@mdk/core'
 Import the base styles in your application entry point:
 
 ```tsx
-import '@mdk/core/styles.css'
+import '@tetherto/core/styles.css'
 ```
 
 ### Example
@@ -50,7 +50,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 const App = () => {
   return (

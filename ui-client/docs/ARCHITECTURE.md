@@ -15,19 +15,19 @@ MDK (Mining Development Kit) is a reusable UI toolkit for building mining dashbo
 The entire library is split into two packages:
 
 ```
-@mdk/core
+@tetherto/core
     ↓ (workspace:*)
-@mdk/foundation
+@tetherto/foundation
 ```
 
-**`@mdk/core`** — generic, domain-agnostic UI layer.
+**`@tetherto/core`** — generic, domain-agnostic UI layer.
 - ~50 components built on Radix UI primitives, styled with SCSS
 - Chart components (Chart.js, lightweight-charts)
 - Data table (TanStack Table)
 - Form system (React Hook Form + Zod)
 - Design tokens, shared utilities, and constants
 
-**`@mdk/foundation`** — mining domain layer, depends on `core`.
+**`@tetherto/foundation`** — mining domain layer, depends on `core`.
 - Domain-specific React components (DeviceExplorer, ActiveIncidentsCard, etc.)
 - Custom hooks (permissions, notifications, pagination, chart checks)
 - Redux Toolkit state — two slices: `auth` and `notification`
@@ -35,7 +35,7 @@ The entire library is split into two packages:
 - API barrel export (endpoint definitions live in consuming apps)
 - Test utilities co-located (not a separate package)
 
-A third package, **`@mdk/fonts`**, ships JetBrains Mono font assets independently.
+A third package, **`@tetherto/fonts`**, ships JetBrains Mono font assets independently.
 
 ---
 
@@ -44,9 +44,9 @@ A third package, **`@mdk/fonts`**, ships JetBrains Mono font assets independentl
 ```
 mdk-ui/
 ├── packages/
-│   ├── core/         # @mdk/core
-│   ├── foundation/   # @mdk/foundation
-│   └── fonts/        # @mdk/fonts
+│   ├── core/         # @tetherto/core
+│   ├── foundation/   # @tetherto/foundation
+│   └── fonts/        # @tetherto/fonts
 ├── apps/
 │   └── demo/         # Interactive component showcase (not published)
 └── docs/
@@ -62,11 +62,11 @@ mdk-ui/
 
 ## Build Strategy
 
-`@mdk/core` is **fully built** before use — tsc emits JS + declarations, Vite compiles SCSS to CSS, Terser minifies.
+`@tetherto/core` is **fully built** before use — tsc emits JS + declarations, Vite compiles SCSS to CSS, Terser minifies.
 
-`@mdk/foundation` exports **TypeScript source directly** — consuming packages (including the demo) compile it themselves. Vite only builds its CSS. This gives instant feedback in development without a build step.
+`@tetherto/foundation` exports **TypeScript source directly** — consuming packages (including the demo) compile it themselves. Vite only builds its CSS. This gives instant feedback in development without a build step.
 
-`@mdk/fonts` is a single Vite build producing a CSS file with font-face declarations.
+`@tetherto/fonts` is a single Vite build producing a CSS file with font-face declarations.
 
 ---
 

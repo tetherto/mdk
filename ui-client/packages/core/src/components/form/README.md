@@ -27,7 +27,7 @@ import {
   FormControl,
   FormMessage,
   Input,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -61,7 +61,7 @@ function MyForm() {
 ```tsx
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Form, FormInput, validators } from '@mdk/core'
+import { Form, FormInput, validators } from '@tetherto/core'
 
 const schema = z.object({
   email: validators.email(),
@@ -252,7 +252,7 @@ Hierarchical select for categories and subcategories.
 Already available in the base form system. Access field state and IDs inside form components.
 
 ```tsx
-import { useFormField } from '@mdk/core'
+import { useFormField } from '@tetherto/core'
 
 function CustomFormComponent() {
   const { error, isDirty, isTouched, name } = useFormField()
@@ -339,7 +339,7 @@ return (
 Handle form reset with callbacks.
 
 ```tsx
-import { useFormReset } from '@mdk/core'
+import { useFormReset } from '@tetherto/core'
 
 const { resetForm, isDirty } = useFormReset({
   form,
@@ -360,7 +360,7 @@ return (
 Pre-built Zod validators for common field types.
 
 ```tsx
-import { validators } from '@mdk/core'
+import { validators } from '@tetherto/core'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -388,7 +388,7 @@ import {
   createPasswordMatch,
   createDateRange,
   createConditionalRequired,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 // Password confirmation
 const schema = z.object({
@@ -420,7 +420,7 @@ import {
   registerSchema,
   profileSchema,
   contactSchema,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 // Use directly or extend
 const form = useForm({
@@ -440,7 +440,7 @@ const extendedSchema = loginSchema.extend({
 Prevent typos and get autocomplete for field names.
 
 ```tsx
-import { createFieldNames } from '@mdk/core'
+import { createFieldNames } from '@tetherto/core'
 
 type FormValues = {
   email: string
@@ -488,7 +488,7 @@ import {
   validators,
   createPasswordMatch,
   createFieldNames,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 const schema = z.object({
   username: validators.username(),
@@ -649,7 +649,7 @@ const schema = z.object({
 
 **After:**
 ```tsx
-import { validators } from '@mdk/core'
+import { validators } from '@tetherto/core'
 
 const schema = z.object({
   email: validators.email(),

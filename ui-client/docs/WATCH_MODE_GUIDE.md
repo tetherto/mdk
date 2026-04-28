@@ -26,10 +26,10 @@ Watch mode automatically recompiles files when they change, providing instant fe
 
 | Package | TypeScript | SCSS | Output |
 |---------|-----------|------|--------|
-| `@mdk/core` | ✅ | ✅ | `dist/` (built JS + types + CSS) |
-| `@mdk/foundation` | ✅ | ✅ | `dist/styles.css` (TS source exported) |
-| `@mdk/fonts` | ❌ | ✅ | `dist/jetbrains-mono.css` |
-| `@mdk/demo` | ✅ | ✅ | HMR (no build output) |
+| `@tetherto/core` | ✅ | ✅ | `dist/` (built JS + types + CSS) |
+| `@tetherto/foundation` | ✅ | ✅ | `dist/styles.css` (TS source exported) |
+| `@tetherto/fonts` | ❌ | ✅ | `dist/jetbrains-mono.css` |
+| `@tetherto/demo` | ✅ | ✅ | HMR (no build output) |
 
 ## Development Workflows
 
@@ -182,11 +182,11 @@ Packages with both TypeScript and SCSS use `concurrently` to run both watchers s
 Watch mode respects package dependencies:
 
 ```
-@mdk/core (watches TS + SCSS)
+@tetherto/core (watches TS + SCSS)
     ↓
-@mdk/foundation (watches TS + SCSS)
+@tetherto/foundation (watches TS + SCSS)
     ↓
-@mdk/demo (Vite dev server)
+@tetherto/demo (Vite dev server)
 ```
 
 ### Persistent Tasks
@@ -420,13 +420,13 @@ pnpm dev
 
 ```bash
 # Watch only core
-turbo dev --filter=@mdk/core
+turbo dev --filter=@tetherto/core
 
 # Watch core and foundation
-turbo dev --filter=@mdk/core --filter=@mdk/foundation
+turbo dev --filter=@tetherto/core --filter=@tetherto/foundation
 
 # Watch everything except demo
-turbo dev --filter=!@mdk/demo
+turbo dev --filter=!@tetherto/demo
 ```
 
 ### Custom Watch Scripts
@@ -436,8 +436,8 @@ Add custom watch scripts to `package.json`:
 ```json
 {
   "scripts": {
-    "watch:components": "turbo dev --filter=@mdk/components-*",
-    "watch:libs": "turbo dev --filter=!@mdk/demo"
+    "watch:components": "turbo dev --filter=@tetherto/components-*",
+    "watch:libs": "turbo dev --filter=!@tetherto/demo"
   }
 }
 ```

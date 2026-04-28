@@ -212,4 +212,12 @@ MDK uses **StandardJS** style to keep the codebase consistent and easy to review
 
 ---
 
+## Security
+
+If you discover a security vulnerability, do not report it in a public issue.
+
+Please follow the private disclosure instructions in [SECURITY.md](SECURITY.md).
+
+---
+
 Happy contributing, and thanks for helping improve MDK! 🚀

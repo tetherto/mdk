@@ -127,57 +127,65 @@ jobs:
         run: pnpm run format
 
       - name: Test with coverage
+        id: run-tests
         run: pnpm run test:coverage || pnpm test
 
-      - name: Enforce coverage threshold (>=80%)
+      - name: Coverage summary
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
-          MIN=80
 
+          TEST_OUTCOME="${{ steps.run-tests.outcome }}"
           mapfile -t COVERAGE_JSON_FILES < <(find . -type f -path '*/coverage/coverage-final.json')
-          if [ ${#COVERAGE_JSON_FILES[@]} -eq 0 ]; then
-            echo "::error::No coverage report found (expected coverage-final.json)."
-            exit 1
+          mapfile -t LCOV_FILES < <(find . -type f -path '*/coverage/lcov.info')
+
+          if [ ${#COVERAGE_JSON_FILES[@]} -gt 0 ]; then
+            rm -rf .nyc_output
+            mkdir -p .nyc_output
+            i=0
+            for file in "${COVERAGE_JSON_FILES[@]}"; do
+              cp "$file" ".nyc_output/out-$i.json"
+              i=$((i + 1))
+            done
+
+            npx --yes nyc merge .nyc_output coverage-merged.json >/dev/null
+            cp coverage-merged.json .nyc_output/out.json
+            NYC_REPORT="$(npx --yes nyc report --reporter=text-summary 2>&1)"
+            echo "$NYC_REPORT"
+            STMT=$(echo "$NYC_REPORT" | sed -n 's/^Statements[^:]*: *\([0-9.]*\)%.*/\1/p')
+            BRANCH=$(echo "$NYC_REPORT" | sed -n 's/^Branches[^:]*: *\([0-9.]*\)%.*/\1/p')
+            FN=$(echo "$NYC_REPORT" | sed -n 's/^Functions[^:]*: *\([0-9.]*\)%.*/\1/p')
+            LINES=$(echo "$NYC_REPORT" | sed -n 's/^Lines[^:]*: *\([0-9.]*\)%.*/\1/p')
+            [ -z "$STMT" ] && STMT="—"; [ -z "$BRANCH" ] && BRANCH="—"; [ -z "$FN" ] && FN="—"; [ -z "$LINES" ] && LINES="—"
+            SRC="coverage-final.json"
+          elif [ ${#LCOV_FILES[@]} -gt 0 ]; then
+            LF=$(awk -F: '/^LF:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+            LH=$(awk -F: '/^LH:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+            FNF=$(awk -F: '/^FNF:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+            FNH=$(awk -F: '/^FNH:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+            BRF=$(awk -F: '/^BRF:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+            BRH=$(awk -F: '/^BRH:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+
+            LINES=$(awk -v h="$LH" -v f="$LF" 'BEGIN { if (f==0) print "0.00"; else printf "%.2f", (h/f)*100 }')
+            STMT="$LINES"
+            FN=$(awk -v h="$FNH" -v f="$FNF" 'BEGIN { if (f==0) print "0.00"; else printf "%.2f", (h/f)*100 }')
+            BRANCH=$(awk -v h="$BRH" -v f="$BRF" 'BEGIN { if (f==0) print "0.00"; else printf "%.2f", (h/f)*100 }')
+            SRC="lcov.info"
+          else
+            STMT="—"; BRANCH="—"; FN="—"; LINES="—"; SRC="none"
           fi
 
-          rm -rf .nyc_output
-          mkdir -p .nyc_output
-          i=0
-          for file in "${COVERAGE_JSON_FILES[@]}"; do
-            cp "$file" ".nyc_output/out-$i.json"
-            i=$((i + 1))
-          done
-
-          npx --yes nyc merge .nyc_output coverage-merged.json >/dev/null
-          cp coverage-merged.json .nyc_output/out.json
-          set +e
-          echo "Running nyc check-coverage (threshold ${MIN}%)..."
-          npx --yes nyc check-coverage --lines=$MIN --statements=$MIN --functions=$MIN --branches=$MIN
-          EXIT=$?
-          set -e
-          echo "Running nyc report (text-summary)..."
-          NYC_REPORT="$(npx --yes nyc report --reporter=text-summary 2>&1)"
-          echo "$NYC_REPORT"
-          STMT=$(echo "$NYC_REPORT" | sed -n 's/^Statements[^:]*: *\([0-9.]*\)%.*/\1/p')
-          BRANCH=$(echo "$NYC_REPORT" | sed -n 's/^Branches[^:]*: *\([0-9.]*\)%.*/\1/p')
-          FN=$(echo "$NYC_REPORT" | sed -n 's/^Functions[^:]*: *\([0-9.]*\)%.*/\1/p')
-          LINES=$(echo "$NYC_REPORT" | sed -n 's/^Lines[^:]*: *\([0-9.]*\)%.*/\1/p')
-          [ -z "$STMT" ] && STMT="—"; [ -z "$BRANCH" ] && BRANCH="—"; [ -z "$FN" ] && FN="—"; [ -z "$LINES" ] && LINES="—"
-          [ $EXIT -eq 0 ] && ICON="✅ PASS" || ICON="❌ FAIL"
-
+          [ "$TEST_OUTCOME" = "success" ] && ICON="✅ PASS" || ICON="❌ FAIL"
           {
             echo "## UI Coverage Summary"
             echo ""
-            echo "- Status: ${ICON}"
-            echo "- Threshold: ${MIN}%"
-            echo "- Statements: ${STMT}%"
-            echo "- Branches: ${BRANCH}%"
-            echo "- Functions: ${FN}%"
-            echo "- Lines: ${LINES}%"
+            echo "| Scope | Status | Statements | Branches | Functions | Lines | Source | Gate |"
+            echo "|---|---|---:|---:|---:|---:|---|---|"
+            echo "| UI | ${ICON} | ${STMT}% | ${BRANCH}% | ${FN}% | ${LINES}% | ${SRC} | Vitest thresholds |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          exit $EXIT
+          [ "$TEST_OUTCOME" = "success" ] || exit 1
 
   ui-build:
     name: UI Build

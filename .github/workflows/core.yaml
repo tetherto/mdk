@@ -113,16 +113,14 @@ jobs:
             LINES=$(echo "$NYC_REPORT" | sed -n 's/^Lines[^:]*: *\([0-9.]*\)%.*/\1/p')
             [ -z "$STMT" ] && STMT="—"; [ -z "$BRANCH" ] && BRANCH="—"; [ -z "$FN" ] && FN="—"; [ -z "$LINES" ] && LINES="—"
             [ $EXIT -eq 0 ] && ICON="✅ PASS" || ICON="❌ FAIL"
+            SRC="coverage-final.json"
 
             {
               echo "## Core Coverage Summary"
               echo ""
-              echo "- Status: ${ICON}"
-              echo "- Threshold: ${MIN}%"
-              echo "- Statements: ${STMT}%"
-              echo "- Branches: ${BRANCH}%"
-              echo "- Functions: ${FN}%"
-              echo "- Lines: ${LINES}%"
+              echo "| Scope | Status | Threshold | Statements | Branches | Functions | Lines | Source | Gate |"
+              echo "|---|---|---:|---:|---:|---:|---:|---|---|"
+              echo "| Core | ${ICON} | ${MIN}% | ${STMT}% | ${BRANCH}% | ${FN}% | ${LINES}% | ${SRC} | NYC check-coverage |"
             } >> "$GITHUB_STEP_SUMMARY"
 
             exit $EXIT

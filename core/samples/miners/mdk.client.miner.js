@@ -4,7 +4,7 @@ const {
   startApi,
   initType,
   WMTypes
-} = require('../../index') // import('@tetherto/mdk/core')
+} = require('../../index') 
 
 const startClient = async () => {
   // start API server (optional)

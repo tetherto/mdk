@@ -265,7 +265,7 @@ For detailed information, see:
 
 ## License
 
-Apache 2.0 - See [LICENSE](https://github.com/tetherto/mdk/LICENSE) for details.
+Apache 2.0 - See [LICENSE](https://github.com/tetherto/mdk/blob/main/LICENSE) for details.
 
 ---
 

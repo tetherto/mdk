@@ -5,8 +5,8 @@ import type { Alert } from '../../../device-explorer'
 import { PoolManagerDashboard } from '../dashboard'
 import type { DashboardStats } from '../dashboard-types'
 
-vi.mock('@tetherto/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tetherto/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     Button: vi.fn(({ children, onClick }) => (

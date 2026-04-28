@@ -1,4 +1,4 @@
-import { Badge, Card, Indicator, Mosaic, Typography } from '@tetherto/core'
+import { Badge, Card, Indicator, Mosaic, Typography } from '@tetherto/mdk-core-ui'
 import './mosaic-page.scss'
 
 export const MosaicPageDemo = (): JSX.Element => {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 
-import type { DataTableSortingState, DateRange } from '@tetherto/core'
-import { cn, DataTable, DateRangePicker } from '@tetherto/core'
+import type { DataTableSortingState, DateRange } from '@tetherto/mdk-core-ui'
+import { cn, DataTable, DateRangePicker } from '@tetherto/mdk-core-ui'
 
 import { useTimezone } from '../../../../hooks/use-timezone'
 import type { Alert } from '../../../../types/alerts'

@@ -1,4 +1,4 @@
-import { Button, DialogFooter } from '@tetherto/core'
+import { Button, DialogFooter } from '@tetherto/mdk-core-ui'
 import { useDispatch } from 'react-redux'
 
 import { ACTION_TYPES, SUBMIT_ACTION_TYPES } from '../../../../../../constants/actions'

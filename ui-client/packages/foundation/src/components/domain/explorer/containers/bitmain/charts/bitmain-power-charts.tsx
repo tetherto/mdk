@@ -1,4 +1,4 @@
-import { CHART_COLORS, convertKwToW, UNITS } from '@tetherto/core'
+import { CHART_COLORS, convertKwToW, UNITS } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 import type {

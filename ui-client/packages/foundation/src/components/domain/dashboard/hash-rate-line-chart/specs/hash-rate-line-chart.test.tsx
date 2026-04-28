@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { HashRateLineChart } from '../hash-rate-line-chart'
 import type { HashRateLogEntry } from '../hash-rate-line-chart-utils'
 
-import type { TimeRangeType } from '@tetherto/core'
-import { ChartContainer } from '@tetherto/core'
+import type { TimeRangeType } from '@tetherto/mdk-core-ui'
+import { ChartContainer } from '@tetherto/mdk-core-ui'
 import { getTimelineRadioButtons } from '../../../../../utils/timeline-dropdown-data-utils'
 import { getHashRateGraphData } from '../hash-rate-line-chart-utils'
 import { WEBAPP_DISPLAY_NAME } from '../../../../../constants'
 
-vi.mock('@tetherto/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   ChartContainer: vi.fn(
     ({
       title,

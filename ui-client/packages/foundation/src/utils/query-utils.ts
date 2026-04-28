@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import { MAINTENANCE_CONTAINER, NO_MAINTENANCE_CONTAINER } from '../constants/container-constants'
 
 const THING_SEARCH_ATTRIBUTES = [

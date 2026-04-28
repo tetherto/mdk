@@ -1,4 +1,4 @@
-import type { CascaderOption } from '@tetherto/core'
+import type { CascaderOption } from '@tetherto/mdk-core-ui'
 import _capitalize from 'lodash/capitalize'
 import { COMPLETE_CONTAINER_TYPE, CONTAINER_TYPE_NAME_MAP } from '../constants/container-constants'
 import {

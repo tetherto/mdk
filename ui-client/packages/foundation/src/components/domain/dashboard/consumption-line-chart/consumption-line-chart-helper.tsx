@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@tetherto/core'
-import { CHART_COLORS, ConsumptionIcon, formatUnit, formatValueUnit } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { CHART_COLORS, ConsumptionIcon, formatUnit, formatValueUnit } from '@tetherto/mdk-core-ui'
 import { formatPowerConsumption, removeContainerPrefix } from '../../../../utils/device-utils'
 import type { LineChartCardData } from '../../line-chart-card'
 

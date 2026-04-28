@@ -1,6 +1,6 @@
 import { UploadIcon } from '@radix-ui/react-icons'
 import { useRef, useState } from 'react'
-import { Button, Dialog, DialogContent, DialogFooter, ExportIcon } from '@tetherto/core'
+import { Button, Dialog, DialogContent, DialogFooter, ExportIcon } from '@tetherto/mdk-core-ui'
 
 import type { SettingsExportData } from '../../../../types/settings.types'
 

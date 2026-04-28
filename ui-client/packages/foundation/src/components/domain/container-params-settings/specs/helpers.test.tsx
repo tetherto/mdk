@@ -1,4 +1,4 @@
-import { COLOR } from '@tetherto/core'
+import { COLOR } from '@tetherto/mdk-core-ui'
 import { describe, expect, it } from 'vitest'
 import { getCommonColorMapping, getCommonTableColumns } from '../helpers'
 

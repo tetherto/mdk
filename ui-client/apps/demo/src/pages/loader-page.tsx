@@ -1,4 +1,4 @@
-import { Loader, Typography } from '@tetherto/core'
+import { Loader, Typography } from '@tetherto/mdk-core-ui'
 
 export const LoaderPage = (): JSX.Element => {
   return (

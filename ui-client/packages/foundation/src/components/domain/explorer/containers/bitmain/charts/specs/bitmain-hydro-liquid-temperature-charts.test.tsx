@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { BitMainHydroLiquidTemperatureCharts } from '../bitmain-hydro-liquid-temperature-charts'

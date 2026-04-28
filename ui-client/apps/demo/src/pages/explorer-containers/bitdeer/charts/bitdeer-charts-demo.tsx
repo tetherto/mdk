@@ -1,9 +1,9 @@
-import type { UnknownRecord } from '@tetherto/core'
-import { Button } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { Button } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 
-import { BitdeerTankPressureCharts, BitdeerTankTempCharts } from '@tetherto/foundation'
+import { BitdeerTankPressureCharts, BitdeerTankTempCharts } from '@tetherto/mdk-foundation-ui'
 import './bitdeer-charts-demo.scss'
 
 const CHART_HEIGHT = 300

@@ -1,5 +1,5 @@
 /* eslint-disable ts/ban-ts-comment */
-import { HEATMAP, UNITS } from '@tetherto/core'
+import { HEATMAP, UNITS } from '@tetherto/mdk-core-ui'
 import { describe, expect, it } from 'vitest'
 import { MINER_TYPE } from '../../constants/device-constants'
 import type { Device } from '../../types/device'

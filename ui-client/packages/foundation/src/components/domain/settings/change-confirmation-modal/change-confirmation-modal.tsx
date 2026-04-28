@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Button, Dialog, DialogContent, DialogFooter } from '@tetherto/core'
+import { Button, Dialog, DialogContent, DialogFooter } from '@tetherto/mdk-core-ui'
 
 export type ChangeConfirmationModalProps = {
   open: boolean

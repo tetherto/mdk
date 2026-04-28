@@ -1,4 +1,4 @@
-import { Button, Card, Typography } from '@tetherto/core'
+import { Button, Card, Typography } from '@tetherto/mdk-core-ui'
 
 export const CardPage = (): JSX.Element => {
   return (

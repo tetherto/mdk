@@ -1,4 +1,4 @@
-import { TanksBox } from '@tetherto/foundation'
+import { TanksBox } from '@tetherto/mdk-foundation-ui'
 
 export const TanksBoxPage = (): JSX.Element => (
   <section className="demo-section">

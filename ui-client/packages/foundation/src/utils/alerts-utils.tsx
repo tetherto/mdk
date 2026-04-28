@@ -1,5 +1,5 @@
-import type { LogData, UnknownRecord } from '@tetherto/core'
-import { LOG_TYPES, LogDot, LogItem } from '@tetherto/core'
+import type { LogData, UnknownRecord } from '@tetherto/mdk-core-ui'
+import { LOG_TYPES, LogDot, LogItem } from '@tetherto/mdk-core-ui'
 import _join from 'lodash/join'
 import _map from 'lodash/map'
 import type {

@@ -1,4 +1,4 @@
-import { Typography } from '@tetherto/core'
+import { Typography } from '@tetherto/mdk-core-ui'
 
 export const TypographyExample = (): React.ReactElement => {
   return (

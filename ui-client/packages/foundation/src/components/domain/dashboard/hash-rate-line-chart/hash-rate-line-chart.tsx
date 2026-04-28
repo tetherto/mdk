@@ -1,5 +1,5 @@
-import type { IChartApi } from '@tetherto/core'
-import { ChartContainer, LineChart } from '@tetherto/core'
+import type { IChartApi } from '@tetherto/mdk-core-ui'
+import { ChartContainer, LineChart } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 

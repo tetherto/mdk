@@ -1,4 +1,4 @@
-import { UNITS } from '@tetherto/core'
+import { UNITS } from '@tetherto/mdk-core-ui'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Device } from '@/types'
 import { isBitdeer, isMicroBT } from '@/utils/container-utils'

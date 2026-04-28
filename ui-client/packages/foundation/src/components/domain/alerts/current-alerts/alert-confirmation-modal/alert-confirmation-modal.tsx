@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogContent, DialogFooter } from '@tetherto/core'
+import { Button, Dialog, DialogContent, DialogFooter } from '@tetherto/mdk-core-ui'
 
 import './alert-confirmation-modal.scss'
 

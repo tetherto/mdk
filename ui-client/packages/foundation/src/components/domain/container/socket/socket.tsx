@@ -1,4 +1,4 @@
-import { cn, FanIcon, formatValueUnit, SimpleTooltip, UNITS, unitToKilo } from '@tetherto/core'
+import { cn, FanIcon, formatValueUnit, SimpleTooltip, UNITS, unitToKilo } from '@tetherto/mdk-core-ui'
 import { ClockIcon, PlusIcon } from '@radix-ui/react-icons'
 import type { ForwardedRef } from 'react'
 import { HEATMAP_MODE } from '../../../../constants/temperature-constants'

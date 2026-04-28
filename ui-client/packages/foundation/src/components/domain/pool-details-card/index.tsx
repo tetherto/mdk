@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { cn } from '@tetherto/core'
+import { cn } from '@tetherto/mdk-core-ui'
 
 const noDataMessage = 'No data available'
 

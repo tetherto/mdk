@@ -27,8 +27,8 @@ pnpm test:watch             # watch mode
 pnpm test:coverage          # with coverage report
 
 # Run a single test file
-pnpm --filter @tetherto/core test -- <path/to/file.test.ts>
-pnpm --filter @tetherto/foundation test -- <path/to/file.test.ts>
+pnpm --filter @tetherto/mdk-core-ui test -- <path/to/file.test.ts>
+pnpm --filter @tetherto/mdk-foundation-ui test -- <path/to/file.test.ts>
 
 # Code quality
 pnpm check                  # lint + format + typecheck
@@ -41,18 +41,18 @@ pnpm fullcheck              # build + lint + typecheck + format + test:coverage
 
 This is a **pnpm monorepo** powered by Turborepo with two publishable packages and a demo app:
 
-- **`packages/core`** (`@tetherto/core`) — base UI component library built on Radix UI primitives. Components use CSS class-based styling (BEM: `mdk-button`, `mdk-button--variant-primary`), SCSS design tokens, and CSS variables for theming. No runtime CSS-in-JS.
-- **`packages/foundation`** (`@tetherto/foundation`) — domain layer: 70+ custom hooks, Redux Toolkit state slices, RTK Query API client infrastructure, and domain-specific components for mining operations dashboards. Depends on `@tetherto/core`.
-- **`packages/fonts`** (`@tetherto/fonts`) — font assets only (JetBrains Mono).
+- **`packages/core`** (`@tetherto/mdk-core-ui`) — base UI component library built on Radix UI primitives. Components use CSS class-based styling (BEM: `mdk-button`, `mdk-button--variant-primary`), SCSS design tokens, and CSS variables for theming. No runtime CSS-in-JS.
+- **`packages/foundation`** (`@tetherto/mdk-foundation-ui`) — domain layer: 70+ custom hooks, Redux Toolkit state slices, RTK Query API client infrastructure, and domain-specific components for mining operations dashboards. Depends on `@tetherto/mdk-core-ui`.
+- **`packages/fonts`** (`@tetherto/mdk-fonts-ui`) — font assets only (JetBrains Mono).
 - **`apps/demo`** — Vite/React app that showcases components. Uses React Router for routing.
 
 Dependency flow: `demo → foundation → core`.
 
 ### Build strategy
 
-`@tetherto/core` is **fully pre-built** — tsc emits JS + declarations, Vite compiles SCSS, Terser minifies. Consumers import from `dist/`.
+`@tetherto/mdk-core-ui` is **fully pre-built** — tsc emits JS + declarations, Vite compiles SCSS, Terser minifies. Consumers import from `dist/`.
 
-`@tetherto/foundation` **exports TypeScript source directly** — no pre-compilation of JS; consuming apps compile it themselves. Only its CSS is Vite-built. This gives instant feedback during development without a rebuild step.
+`@tetherto/mdk-foundation-ui` **exports TypeScript source directly** — no pre-compilation of JS; consuming apps compile it themselves. Only its CSS is Vite-built. This gives instant feedback during development without a rebuild step.
 
 ### State management
 
@@ -60,7 +60,7 @@ Redux Toolkit slices live in `packages/foundation/src/state/slices/`: `auth`, `n
 
 ### Styling
 
-- SCSS with design tokens; import shared mixins via `@use '@tetherto/core/styles' as *;`
+- SCSS with design tokens; import shared mixins via `@use '@tetherto/mdk-core-ui/styles' as *;`
 - Theme via CSS variables; no inline styles on components
 - Class names follow BEM: block `mdk-<component>`, modifier `--<variant>-<value>`
 - CVA (`class-variance-authority`) for type-safe variant props
@@ -75,8 +75,8 @@ Redux Toolkit slices live in `packages/foundation/src/state/slices/`: `auth`, `n
 ### Testing
 
 - Vitest + `@testing-library/react` + `happy-dom` / `jsdom`
-- `@tetherto/foundation` splits into two Vitest projects: `node` (pure logic: utils, state, constants) and `dom` (component tests)
-- Coverage thresholds: 80% (`@tetherto/core`), 94% (`@tetherto/foundation`)
+- `@tetherto/mdk-foundation-ui` splits into two Vitest projects: `node` (pure logic: utils, state, constants) and `dom` (component tests)
+- Coverage thresholds: 80% (`@tetherto/mdk-core-ui`), 94% (`@tetherto/mdk-foundation-ui`)
 - Test utilities are exported from `src/test-utils/` in each package
 
 ### TypeScript
@@ -93,7 +93,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<sc
 
 ### Build outputs
 
-`@tetherto/core` builds to `dist/` (ESM JS + declarations + CSS). `@tetherto/foundation` only builds CSS to `dist/`; its TS source is imported directly. Run `pnpm build` before `pnpm dev` on a fresh checkout.
+`@tetherto/mdk-core-ui` builds to `dist/` (ESM JS + declarations + CSS). `@tetherto/mdk-foundation-ui` only builds CSS to `dist/`; its TS source is imported directly. Run `pnpm build` before `pnpm dev` on a fresh checkout.
 
 ### Demo app conventions (`apps/demo`)
 
@@ -125,8 +125,8 @@ import { DemoBlock } from '../../../components/demo-block'
 ### Adding dependencies
 
 ```bash
-pnpm add <pkg> --filter @tetherto/foundation   # add to a specific package
-pnpm add -D <pkg> --filter @tetherto/core      # add dev dependency to a package
+pnpm add <pkg> --filter @tetherto/mdk-foundation-ui   # add to a specific package
+pnpm add -D <pkg> --filter @tetherto/mdk-core-ui      # add dev dependency to a package
 pnpm add -w <pkg>                         # add to workspace root
 ```
 

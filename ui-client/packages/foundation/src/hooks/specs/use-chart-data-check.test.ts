@@ -1,4 +1,4 @@
-import type { ChartDataset } from '@tetherto/core'
+import type { ChartDataset } from '@tetherto/mdk-core-ui'
 import { describe, expect, it } from 'vitest'
 import { useChartDataCheck } from '../use-chart-data-check'
 

@@ -1,7 +1,7 @@
 import _map from 'lodash/map'
 
-import { cn, formatErrors, formatNumber, SimpleTooltip, unitToKilo } from '@tetherto/core'
-import type { ErrorWithTimestamp } from '@tetherto/core'
+import { cn, formatErrors, formatNumber, SimpleTooltip, unitToKilo } from '@tetherto/mdk-core-ui'
+import type { ErrorWithTimestamp } from '@tetherto/mdk-core-ui'
 
 import { useTimezone } from '../../../hooks/use-timezone'
 import { AlarmInfo } from './alarm-info'

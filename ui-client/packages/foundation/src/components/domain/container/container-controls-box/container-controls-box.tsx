@@ -1,8 +1,8 @@
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
 
-import type { UnknownRecord } from '@tetherto/core'
-import { ActionButton, Button, Label, SimpleTooltip, Switch } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { ActionButton, Button, Label, SimpleTooltip, Switch } from '@tetherto/mdk-core-ui'
 
 import { MinerPowerModeSelectionButtons } from '../../explorer/details-view/miner-power-mode-selection-buttons/miner-power-mode-selection-buttons'
 import { ContentBox } from '../content-box/content-box'

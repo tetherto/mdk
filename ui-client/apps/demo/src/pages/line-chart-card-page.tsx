@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
-import { LineChartCard, WEBAPP_NAME } from '@tetherto/foundation'
-import type { LineChartCardData } from '@tetherto/foundation'
+import { LineChartCard, WEBAPP_NAME } from '@tetherto/mdk-foundation-ui'
+import type { LineChartCardData } from '@tetherto/mdk-foundation-ui'
 
 const now = Date.now()
 const HOUR = 3_600_000
@@ -131,7 +131,7 @@ export const LineChartCardPage = (): JSX.Element => {
       <h2 className="demo-section__title">Line Chart Card</h2>
       <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>
         Composable chart card with timeline selector, legend, lightweight-charts renderer, and stats
-        footer. Part of <code>@tetherto/foundation</code>.
+        footer. Part of <code>@tetherto/mdk-foundation-ui</code>.
       </p>
 
       <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: '1fr' }}>

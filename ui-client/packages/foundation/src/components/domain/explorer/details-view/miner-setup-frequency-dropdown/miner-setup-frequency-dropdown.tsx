@@ -1,4 +1,4 @@
-import { Button, DropdownMenu } from '@tetherto/core'
+import { Button, DropdownMenu } from '@tetherto/mdk-core-ui'
 import { useState } from 'react'
 
 type MinerSetupFrequencyDropdownProps = {

@@ -1,5 +1,5 @@
 /**
- * @tetherto/foundation - Hooks
+ * @tetherto/mdk-foundation-ui - Hooks
  *
  * Custom React hooks for common patterns and utilities.
  */

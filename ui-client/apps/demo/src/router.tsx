@@ -1,4 +1,4 @@
-import { Spinner } from '@tetherto/core'
+import { Spinner } from '@tetherto/mdk-core-ui'
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import App from './App'

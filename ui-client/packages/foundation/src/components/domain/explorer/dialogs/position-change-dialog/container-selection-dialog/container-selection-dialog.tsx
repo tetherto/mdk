@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@tetherto/core'
+import { Dialog, DialogContent } from '@tetherto/mdk-core-ui'
 import { MAINTENANCE_CONTAINER } from '../../../../../../constants/container-constants'
 import type { Device } from '../../../../../../types'
 import { ContainerSelectionDialogContent } from '../container-selection-dialog-content/container-selection-dialog-content'

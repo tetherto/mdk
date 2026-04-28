@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@tetherto/core'
+import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@tetherto/mdk-core-ui'
 
 import {
   POOL_ENDPOINT_REGIONS_OPTIONS,

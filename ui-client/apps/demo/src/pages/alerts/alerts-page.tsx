@@ -3,9 +3,9 @@ import { useMemo, useState } from 'react'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 
-import { Button, Checkbox, Typography } from '@tetherto/core'
-import type { Alert, Device } from '@tetherto/foundation'
-import { Alerts, devicesSlice, SEVERITY, timezoneSlice } from '@tetherto/foundation'
+import { Button, Checkbox, Typography } from '@tetherto/mdk-core-ui'
+import type { Alert, Device } from '@tetherto/mdk-foundation-ui'
+import { Alerts, devicesSlice, SEVERITY, timezoneSlice } from '@tetherto/mdk-foundation-ui'
 
 import './alerts-page.scss'
 

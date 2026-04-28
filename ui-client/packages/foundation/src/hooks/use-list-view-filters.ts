@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { CascaderOption, CascaderValue, LocalFilters } from '@tetherto/core'
+import type { CascaderOption, CascaderValue, LocalFilters } from '@tetherto/mdk-core-ui'
 
 import type { FilterOption } from '../utils/list-view-utils'
 import { getFilterOptionsByTab } from '../utils/list-view-utils'

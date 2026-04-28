@@ -1,5 +1,5 @@
 /**
- * @tetherto/foundation
+ * @tetherto/mdk-foundation-ui
  *
  * Complete foundation package with features, state management, API client, and utilities.
  */

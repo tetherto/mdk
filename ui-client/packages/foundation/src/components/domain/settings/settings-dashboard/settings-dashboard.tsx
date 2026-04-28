@@ -1,5 +1,5 @@
-import { Accordion, ActionButton } from '@tetherto/core'
-import type { ActionButtonProps } from '@tetherto/core'
+import { Accordion, ActionButton } from '@tetherto/mdk-core-ui'
+import type { ActionButtonProps } from '@tetherto/mdk-core-ui'
 import type { FeatureFlagsSettingsProps } from '../feature-flags'
 import { FeatureFlagsSettings } from '../feature-flags'
 import type { HeaderControlsSettingsProps } from '../header-controls'

@@ -1,4 +1,4 @@
-import { BitMainImmersionSettings } from '@tetherto/foundation'
+import { BitMainImmersionSettings } from '@tetherto/mdk-foundation-ui'
 import type { ReactElement } from 'react'
 import './bitmain-immersion-settings-demo.scss'
 

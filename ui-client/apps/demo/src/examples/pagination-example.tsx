@@ -1,6 +1,6 @@
-import type { IndicatorProps } from '@tetherto/core'
-import { Indicator, Pagination, Typography } from '@tetherto/core'
-import { usePagination } from '@tetherto/foundation'
+import type { IndicatorProps } from '@tetherto/mdk-core-ui'
+import { Indicator, Pagination, Typography } from '@tetherto/mdk-core-ui'
+import { usePagination } from '@tetherto/mdk-foundation-ui'
 import { useMemo } from 'react'
 
 import { DemoPageHeader } from '../components/demo-page-header'

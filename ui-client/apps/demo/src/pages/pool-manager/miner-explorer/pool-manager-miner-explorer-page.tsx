@@ -1,13 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 
-import type { Device, PoolConfigData } from '@tetherto/foundation'
+import type { Device, PoolConfigData } from '@tetherto/mdk-foundation-ui'
 import {
   actionsSlice,
   COMPLETE_MINER_TYPES,
   PoolManagerMinerExplorer,
   timezoneSlice,
-} from '@tetherto/foundation'
+} from '@tetherto/mdk-foundation-ui'
 
 import { DemoPageHeader } from '../../../components/demo-page-header'
 import { useDemoToast } from '../../../utils/use-demo-toast'

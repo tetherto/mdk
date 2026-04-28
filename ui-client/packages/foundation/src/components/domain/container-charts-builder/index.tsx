@@ -1,5 +1,5 @@
-import type { IChartApi, UnknownRecord } from '@tetherto/core'
-import { ChartContainer, formatUnit, LineChart, secondsToMs } from '@tetherto/core'
+import type { IChartApi, UnknownRecord } from '@tetherto/mdk-core-ui'
+import { ChartContainer, formatUnit, LineChart, secondsToMs } from '@tetherto/mdk-core-ui'
 import _last from 'lodash/last'
 import _map from 'lodash/map'
 import _round from 'lodash/round'

@@ -126,7 +126,7 @@ pnpm watch:scss
 
 Each package has its own build and watch scripts.
 
-### Core Package (`@tetherto/core`)
+### Core Package (`@tetherto/mdk-core-ui`)
 
 ```bash
 cd packages/core
@@ -147,9 +147,9 @@ pnpm watch:ts           # Same as dev:ts
 pnpm watch:scss         # Same as dev:scss
 ```
 
-### Foundation Package (`@tetherto/foundation`)
+### Foundation Package (`@tetherto/mdk-foundation-ui`)
 
-Same scripts as `@tetherto/core`:
+Same scripts as `@tetherto/mdk-core-ui`:
 
 ```bash
 cd packages/foundation
@@ -160,7 +160,7 @@ pnpm dev:ts             # Watch TypeScript
 pnpm dev:scss           # Watch SCSS
 ```
 
-### Fonts Package (`@tetherto/fonts`)
+### Fonts Package (`@tetherto/mdk-fonts-ui`)
 
 ```bash
 cd packages/fonts
@@ -169,7 +169,7 @@ pnpm build              # Build font CSS
 pnpm dev                # Watch mode for fonts
 ```
 
-### Demo App (`@tetherto/demo`)
+### Demo App (`@tetherto/mdk-demo-ui`)
 
 ```bash
 cd apps/demo
@@ -211,15 +211,15 @@ All tasks are defined in `turbo.json`:
 ### Execution Order
 
 ```
-@tetherto/core ───┐
-                    ├──→ @tetherto/foundation ──→ @tetherto/demo
-@tetherto/fonts ──┘
+@tetherto/mdk-core-ui ───┐
+                    ├──→ @tetherto/mdk-foundation-ui ──→ @tetherto/mdk-demo-ui
+@tetherto/mdk-fonts-ui ──┘
 ```
 
 Turborepo automatically:
-1. Builds `@tetherto/core` and `@tetherto/fonts` in parallel (independent)
-2. Builds `@tetherto/foundation` after `@tetherto/core` completes
-3. Builds `@tetherto/demo` after all dependencies complete
+1. Builds `@tetherto/mdk-core-ui` and `@tetherto/mdk-fonts-ui` in parallel (independent)
+2. Builds `@tetherto/mdk-foundation-ui` after `@tetherto/mdk-core-ui` completes
+3. Builds `@tetherto/mdk-demo-ui` after all dependencies complete
 4. Caches results for faster rebuilds
 
 ## Best Practices
@@ -269,13 +269,13 @@ Build specific packages using Turbo filters:
 
 ```bash
 # Build only core package
-turbo build --filter=@tetherto/core
+turbo build --filter=@tetherto/mdk-core-ui
 
 # Build core and its dependents
-turbo build --filter=@tetherto/core...
+turbo build --filter=@tetherto/mdk-core-ui...
 
 # Build everything except demo
-turbo build --filter=!@tetherto/demo
+turbo build --filter=!@tetherto/mdk-demo-ui
 ```
 
 ### 5. Parallel Development
@@ -464,7 +464,7 @@ ls packages/*/src/styles.css
 turbo build --verbosity=2
 
 # 2. Build specific package
-turbo build --filter=@tetherto/core
+turbo build --filter=@tetherto/mdk-core-ui
 
 # 3. Check logs
 cat .turbo/turbo-*.log

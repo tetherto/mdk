@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import type { Device, PosHistoryEntry } from '../../../../../types'
 
 export const getPosHistory = (selectedSocketToReplace: UnknownRecord): PosHistoryEntry[] => {

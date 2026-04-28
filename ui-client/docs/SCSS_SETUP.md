@@ -66,22 +66,22 @@ This monorepo uses **SCSS** with **Vite** and **Turborepo** for styling, replaci
 
 ### Packages with SCSS
 
-1. **@tetherto/core** - Core components with base styles and design tokens
-2. **@tetherto/foundation** - Foundation components and feature styles
-3. **@tetherto/fonts** - Font assets (JetBrains Mono)
+1. **@tetherto/mdk-core-ui** - Core components with base styles and design tokens
+2. **@tetherto/mdk-foundation-ui** - Foundation components and feature styles
+3. **@tetherto/mdk-fonts-ui** - Font assets (JetBrains Mono)
 
 Packages with SCSS build:
-- `@tetherto/core`
+- `@tetherto/mdk-core-ui`
   - `src/styles/` - Source SCSS files
   - `dist/styles.css` - Compiled, minified CSS
   - `vite.config.js` - Vite configuration for SCSS compilation
 
-- `@tetherto/foundation`
+- `@tetherto/mdk-foundation-ui`
   - `src/styles/` - Source SCSS files
   - `dist/styles.css` - Compiled CSS
   - `vite.config.js` - Vite configuration
 
-- `@tetherto/fonts`
+- `@tetherto/mdk-fonts-ui`
   - `src/` - Font files and CSS
   - `dist/jetbrains-mono.css` - Built font CSS
   - `vite.config.js` - Vite configuration
@@ -122,7 +122,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@tetherto/core': resolve(__dirname, '../core/src'),
+      '@tetherto/mdk-core-ui': resolve(__dirname, '../core/src'),
       '@tetherto/theme': resolve(__dirname, '../theme/src'),
     },
   },
@@ -158,7 +158,7 @@ export default defineConfig({
  */
 
 // Import from other workspace packages (core exports SCSS mixins)
-@use '@tetherto/core/styles' as core;
+@use '@tetherto/mdk-core-ui/styles' as core;
 
 // Your styles using CSS variables
 .my-component {
@@ -206,8 +206,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@tetherto/core': resolve(__dirname, '../core/src'),
-      '@tetherto/foundation': resolve(__dirname, '../foundation/src'),
+      '@tetherto/mdk-core-ui': resolve(__dirname, '../core/src'),
+      '@tetherto/mdk-foundation-ui': resolve(__dirname, '../foundation/src'),
     },
   },
 })
@@ -255,8 +255,8 @@ pnpm build
 pnpm build:scss
 
 # Build specific package
-pnpm --filter @tetherto/core build
-pnpm --filter @tetherto/core build:scss
+pnpm --filter @tetherto/mdk-core-ui build
+pnpm --filter @tetherto/mdk-core-ui build:scss
 ```
 
 ### Turborepo Features
@@ -283,9 +283,9 @@ pnpm --filter @tetherto/components-foundation... build
 
 ```tsx
 // In your app entry point (e.g., apps/demo/src/main.tsx)
-import '@tetherto/core/styles.css'
-import '@tetherto/foundation/styles.css'
-import '@tetherto/fonts/jetbrains-mono.css'
+import '@tetherto/mdk-core-ui/styles.css'
+import '@tetherto/mdk-foundation-ui/styles.css'
+import '@tetherto/mdk-fonts-ui/jetbrains-mono.css'
 ```
 
 **Note:** Always import compiled CSS files (`.css`), not SCSS source files. The SCSS is pre-compiled during the build process.
@@ -296,7 +296,7 @@ Vite resolves `@tetherto/*` imports using aliases:
 
 ```scss
 // This works! ✅
-@use '@tetherto/core/styles' as core;
+@use '@tetherto/mdk-core-ui/styles' as core;
 
 // No need for relative paths ❌
 @use '../../core/src/styles/_mixins.scss' as core;
@@ -304,7 +304,7 @@ Vite resolves `@tetherto/*` imports using aliases:
 
 ### How It Works
 
-1. **Vite Alias**: Maps `@tetherto/core` to `../core/src`
+1. **Vite Alias**: Maps `@tetherto/mdk-core-ui` to `../core/src`
 2. **SCSS Load Paths**: Adds `../` to SCSS resolution
 3. **Modern SCSS API**: Uses Dart Sass modern compiler
 
@@ -414,7 +414,7 @@ pnpm build
 ```javascript
 resolve: {
   alias: {
-    '@tetherto/core': resolve(__dirname, '../core/src'),
+    '@tetherto/mdk-core-ui': resolve(__dirname, '../core/src'),
   },
 }
 ```
@@ -462,7 +462,7 @@ pnpm build --force
 
 ```scss
 // ✅ Good - Namespaced
-@use '@tetherto/core/styles' as core;
+@use '@tetherto/mdk-core-ui/styles' as core;
 
 .my-component {
   // Use core mixins if available
@@ -470,7 +470,7 @@ pnpm build --force
 }
 
 // ❌ Bad - Global namespace pollution
-@use '@tetherto/core/styles' as *;
+@use '@tetherto/mdk-core-ui/styles' as *;
 ```
 
 ### 3. Leverage Turborepo
@@ -480,9 +480,9 @@ pnpm build --force
 pnpm build
 
 # ❌ Bad - Manual dependency management
-pnpm --filter @tetherto/core build
-pnpm --filter @tetherto/foundation build
-pnpm --filter @tetherto/fonts build
+pnpm --filter @tetherto/mdk-core-ui build
+pnpm --filter @tetherto/mdk-foundation-ui build
+pnpm --filter @tetherto/mdk-fonts-ui build
 ```
 
 ### 4. Keep Specificity Low

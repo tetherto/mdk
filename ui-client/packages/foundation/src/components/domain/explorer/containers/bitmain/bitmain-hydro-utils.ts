@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import { CONTAINER_MODEL } from '../../../../../constants/container-constants'
 import type { ContainerSnap, Device } from '../../../../../types/device'
 import {

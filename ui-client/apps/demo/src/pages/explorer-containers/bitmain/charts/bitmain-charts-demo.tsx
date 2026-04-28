@@ -1,12 +1,12 @@
-import type { UnknownRecord } from '@tetherto/core'
-import { Button } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { Button } from '@tetherto/mdk-core-ui'
 import {
   BitMainHydroLiquidTemperatureCharts,
   BitMainLiquidPressureCharts,
   BitMainLiquidTempCharts,
   BitMainPowerCharts,
   BitMainSupplyLiquidFlowCharts,
-} from '@tetherto/foundation'
+} from '@tetherto/mdk-foundation-ui'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import './bitmain-charts-demo.scss'

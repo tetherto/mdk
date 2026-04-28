@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from 'react'
-import { ChartContainer, Loader } from '@tetherto/core'
+import { ChartContainer, Loader } from '@tetherto/mdk-core-ui'
 import type { AxisTitleText, TimelineChartData, TimelineChartProps } from './timeline-chart.types'
 import { TimelineLegend } from './timeline-legend'
 import { TimelineVisualization } from './timeline-visualization'

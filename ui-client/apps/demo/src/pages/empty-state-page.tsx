@@ -1,4 +1,4 @@
-import { EmptyState } from '@tetherto/core'
+import { EmptyState } from '@tetherto/mdk-core-ui'
 import { CubeIcon } from '@radix-ui/react-icons'
 
 export const EmptyStatePage = (): JSX.Element => {

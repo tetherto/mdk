@@ -1,4 +1,4 @@
-import { cn } from '@tetherto/core'
+import { cn } from '@tetherto/mdk-core-ui'
 import { CheckIcon, Cross2Icon } from '@radix-ui/react-icons'
 import type { ReactElement } from 'react'
 import './base-status-indicator.scss'

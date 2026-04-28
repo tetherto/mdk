@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { DataTableRowSelectionState } from '@tetherto/core'
+import type { DataTableRowSelectionState } from '@tetherto/mdk-core-ui'
 import { configureStore } from '@reduxjs/toolkit'
 import { useState } from 'react'
 import { Provider } from 'react-redux'
@@ -69,8 +69,8 @@ vi.mock('@radix-ui/react-use-controllable-state', () => ({
   ),
 }))
 
-vi.mock('@tetherto/core', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@tetherto/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...original,
     cn: (...args: string[]) => args.filter(Boolean).join(' '),

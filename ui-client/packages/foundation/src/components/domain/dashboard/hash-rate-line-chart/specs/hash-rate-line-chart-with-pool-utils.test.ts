@@ -21,12 +21,12 @@ import {
   transformHashRateData,
 } from '../hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils'
 
-import { decimalToMegaNumber, getTimeRange } from '@tetherto/core'
+import { decimalToMegaNumber, getTimeRange } from '@tetherto/mdk-core-ui'
 import type { Timeline } from '../hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-constants'
 import { WEBAPP_DISPLAY_NAME } from '../../../../../constants'
 
-vi.mock('@tetherto/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tetherto/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     CHART_COLORS: {

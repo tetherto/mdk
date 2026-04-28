@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Device } from '../../../../../../types'
 import { MicroBTCooling } from '../cooling/micro-bt-cooling'
 
-vi.mock('@tetherto/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   Indicator: vi.fn(({ color, children }) => <div data-color={color}>{children}</div>),
   UNITS: { PERCENT: '%', FREQUENCY_HERTZ: 'Hz' },
 }))

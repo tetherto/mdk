@@ -19,8 +19,8 @@ vi.mock('../alerts-utils', () => ({
   getHistoricalAlertsData: mockGetHistoricalAlertsData,
 }))
 
-vi.mock('@tetherto/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tetherto/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     cn: (...args: Array<string | undefined>) => args.filter(Boolean).join(' '),

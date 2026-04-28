@@ -1,5 +1,5 @@
-import type { CascaderOption, CascaderValue } from '@tetherto/core'
-import { Card, Cascader } from '@tetherto/core'
+import type { CascaderOption, CascaderValue } from '@tetherto/mdk-core-ui'
+import { Card, Cascader } from '@tetherto/mdk-core-ui'
 import * as React from 'react'
 import { DemoPageHeader } from '../components/demo-page-header'
 

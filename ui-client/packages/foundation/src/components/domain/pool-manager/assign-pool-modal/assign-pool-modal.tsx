@@ -13,7 +13,7 @@ import {
   Form,
   FormSelect,
   Loader,
-} from '@tetherto/core'
+} from '@tetherto/mdk-core-ui'
 
 import { POOL_ENDPOINT_ROLES_LABELS, SHOW_CREDENTIAL_TEMPLATE } from '../pool-manager-constants'
 import type { PoolSummary } from '../types'

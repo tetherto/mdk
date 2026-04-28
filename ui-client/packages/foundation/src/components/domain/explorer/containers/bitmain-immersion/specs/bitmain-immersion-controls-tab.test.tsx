@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Device } from '../../../../../../types/device'
 import { BitMainControlsTab } from '../controls-tab/bitmain-immersion-controls-tab'
 
-vi.mock('@tetherto/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tetherto/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     Indicator: vi.fn(({ color, children }) => (

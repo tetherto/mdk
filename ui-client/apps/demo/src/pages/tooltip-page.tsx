@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@tetherto/core'
+} from '@tetherto/mdk-core-ui'
 
 export const TooltipPage = (): JSX.Element => {
   return (

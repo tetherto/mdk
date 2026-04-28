@@ -10,7 +10,7 @@ import {
   FormSwitch,
   FormTextArea,
   validators,
-} from '@tetherto/core'
+} from '@tetherto/mdk-core-ui'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'

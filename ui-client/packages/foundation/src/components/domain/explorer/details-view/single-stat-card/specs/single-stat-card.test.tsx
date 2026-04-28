@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { SingleStatCard } from '../single-stat-card'
 
-vi.mock('@tetherto/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   cn: vi.fn((...args) => args.filter(Boolean).join(' ')),
   SimpleTooltip: vi.fn(({ content, children }) => (
     <div data-testid="tooltip" content={content}>

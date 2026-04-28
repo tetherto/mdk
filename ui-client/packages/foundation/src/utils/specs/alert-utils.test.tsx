@@ -1,5 +1,5 @@
-import type { LogData } from '@tetherto/core'
-import { LogItem } from '@tetherto/core'
+import type { LogData } from '@tetherto/mdk-core-ui'
+import { LogItem } from '@tetherto/mdk-core-ui'
 import { render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Alert } from '../../types/alerts'
@@ -44,8 +44,8 @@ vi.mock('../../constants/alerts', () => ({
   },
 }))
 
-vi.mock('@tetherto/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tetherto/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     LogItem: vi.fn(({ data, onLogClicked }) => (

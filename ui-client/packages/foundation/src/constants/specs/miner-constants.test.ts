@@ -16,7 +16,7 @@ import {
 } from '../miner-constants'
 import { INVENTORY_LOGS_ACTION, SparePartTypes } from '../spare-parts-constants'
 
-vi.mock('@tetherto/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   COLOR: {
     LIGHT_BLUE: '#0000FF',
     GRASS_GREEN: '#00FF00',

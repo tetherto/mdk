@@ -1,4 +1,4 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, TagInput } from '@tetherto/core'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, TagInput } from '@tetherto/mdk-core-ui'
 import {
   COMPLETE_MINER_TYPES,
   MINER_TYPE_NAME_MAP,

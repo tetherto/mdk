@@ -1,6 +1,6 @@
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import type { Device } from '@tetherto/foundation'
-import { MinerPowerModeSelectionButtons } from '@tetherto/foundation'
+import type { Device } from '@tetherto/mdk-foundation-ui'
+import { MinerPowerModeSelectionButtons } from '@tetherto/mdk-foundation-ui'
 import type { ReactElement } from 'react'
 
 import { useDemoToast } from '../../../utils/use-demo-toast'

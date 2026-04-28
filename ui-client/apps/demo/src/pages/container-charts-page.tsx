@@ -1,5 +1,5 @@
-import { ContainerCharts, TAGS_LABEL } from '@tetherto/foundation'
-import type { ChartEntry, ContainerChartsDatasetBorderColorResolver } from '@tetherto/foundation'
+import { ContainerCharts, TAGS_LABEL } from '@tetherto/mdk-foundation-ui'
+import type { ChartEntry, ContainerChartsDatasetBorderColorResolver } from '@tetherto/mdk-foundation-ui'
 import { useMemo, useState } from 'react'
 import type { JSX, ReactNode } from 'react'
 

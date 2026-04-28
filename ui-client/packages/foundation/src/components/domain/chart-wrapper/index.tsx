@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { cn, EmptyState, Loader } from '@tetherto/core'
+import { cn, EmptyState, Loader } from '@tetherto/mdk-core-ui'
 import { CHART_EMPTY_DESCRIPTION } from '../../../constants/charts'
 import { useChartDataCheck } from '../../../hooks'
 

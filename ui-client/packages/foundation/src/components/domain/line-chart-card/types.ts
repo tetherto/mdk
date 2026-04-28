@@ -5,7 +5,7 @@ import type {
   IChartApi,
   LightWeightLineChartProps,
   MinMaxAvg,
-} from '@tetherto/core'
+} from '@tetherto/mdk-core-ui'
 
 export type LineChartCardDataset = {
   /** Label for the dataset (used in legend) */

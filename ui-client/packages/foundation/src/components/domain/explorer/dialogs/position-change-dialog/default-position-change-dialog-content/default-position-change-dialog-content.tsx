@@ -1,4 +1,4 @@
-import { Button } from '@tetherto/core'
+import { Button } from '@tetherto/mdk-core-ui'
 
 import { POSITION_CHANGE_DIALOG_FLOWS } from '../../../../../../constants/dialog'
 import './default-position-change-dialog-content.scss'

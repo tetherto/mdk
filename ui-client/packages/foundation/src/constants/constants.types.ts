@@ -21,4 +21,4 @@ export type * from './tail-log-stat-keys.constants'
 export type * from './temperature-constants'
 
 // Re-export color and unit types from core
-export type * from '@tetherto/core'
+export type * from '@tetherto/mdk-core-ui'

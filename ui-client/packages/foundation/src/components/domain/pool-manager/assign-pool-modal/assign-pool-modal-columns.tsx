@@ -1,5 +1,5 @@
-import type { DataTableColumnDef } from '@tetherto/core'
-import { Indicator } from '@tetherto/core'
+import type { DataTableColumnDef } from '@tetherto/mdk-core-ui'
+import { Indicator } from '@tetherto/mdk-core-ui'
 import {
   MINER_IN_POOL_STATUS_COLORS,
   MINER_IN_POOL_STATUSES,

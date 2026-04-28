@@ -1,5 +1,5 @@
-import { PoolDetailsCard } from '@tetherto/foundation'
-import type { PoolDetailItem } from '@tetherto/foundation'
+import { PoolDetailsCard } from '@tetherto/mdk-foundation-ui'
+import type { PoolDetailItem } from '@tetherto/mdk-foundation-ui'
 
 const mockPoolDetails: PoolDetailItem[] = [
   { title: 'Pool Name', value: 'Alpha Pool' },

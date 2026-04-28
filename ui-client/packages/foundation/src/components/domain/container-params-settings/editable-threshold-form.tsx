@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@tetherto/core'
-import { UNITS } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { UNITS } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import { BaseThresholdForm } from './base-threshold-form'
 

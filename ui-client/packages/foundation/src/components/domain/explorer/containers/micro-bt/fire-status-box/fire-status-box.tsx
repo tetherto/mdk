@@ -1,4 +1,4 @@
-import { Indicator } from '@tetherto/core'
+import { Indicator } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import './fire-status-box.scss'
 

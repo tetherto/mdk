@@ -1,5 +1,5 @@
-import { Button, DataTable, getDataTableColumnHelper } from '@tetherto/core'
-import type { DataTableExpandedState, DataTableRow, DataTableRowSelectionState } from '@tetherto/core'
+import { Button, DataTable, getDataTableColumnHelper } from '@tetherto/mdk-core-ui'
+import type { DataTableExpandedState, DataTableRow, DataTableRowSelectionState } from '@tetherto/mdk-core-ui'
 import React, { useMemo, useState } from 'react'
 
 import { useDemoToast } from '../utils/use-demo-toast'

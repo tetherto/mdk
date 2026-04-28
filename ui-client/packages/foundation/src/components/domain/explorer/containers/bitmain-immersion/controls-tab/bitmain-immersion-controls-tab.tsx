@@ -1,5 +1,5 @@
-import type { IndicatorColor } from '@tetherto/core'
-import { Indicator, safeString } from '@tetherto/core'
+import type { IndicatorColor } from '@tetherto/mdk-core-ui'
+import { Indicator, safeString } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import type { ContainerSnap, Device } from '../../../../../../types/device'
 import { getDeviceData } from '../../../../../../utils/device-utils'

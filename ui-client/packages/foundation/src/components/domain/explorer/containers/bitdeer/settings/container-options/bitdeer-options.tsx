@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import { getBitdeerCoolingSystemData } from '../bitdeer-settings-utils'
 import './bitdeer-options.scss'

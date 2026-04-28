@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DATE_RANGE } from '../../../../../constants'
 import { HashRateLineChartWithPool } from '../hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool'
 
-import type { TimeRangeType } from '@tetherto/core'
+import type { TimeRangeType } from '@tetherto/mdk-core-ui'
 import type { HashRateDataPoint } from '../hash-rate-line-chart-utils'
 import type { Dataset } from '../hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils'
 import {
@@ -15,8 +15,8 @@ import {
   transformHashRateData,
 } from '../hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils'
 
-vi.mock('@tetherto/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tetherto/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     ChartContainer: ({

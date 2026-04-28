@@ -1,5 +1,5 @@
-import { UNITS } from '@tetherto/core'
-import { WidgetTopRow } from '@tetherto/foundation'
+import { UNITS } from '@tetherto/mdk-core-ui'
+import { WidgetTopRow } from '@tetherto/mdk-foundation-ui'
 
 export const WidgetTopRowPage = (): JSX.Element => (
   <section className="demo-section">

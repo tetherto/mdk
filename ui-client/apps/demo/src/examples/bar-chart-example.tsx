@@ -1,5 +1,5 @@
-import { BarChart, ChartContainer } from '@tetherto/core'
-import type { ChartTooltipConfig } from '@tetherto/core'
+import { BarChart, ChartContainer } from '@tetherto/mdk-core-ui'
+import type { ChartTooltipConfig } from '@tetherto/mdk-core-ui'
 import React from 'react'
 import { DemoPageHeader } from '../components/demo-page-header'
 import {

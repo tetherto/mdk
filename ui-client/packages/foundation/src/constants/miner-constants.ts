@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@tetherto/core'
-import { COLOR } from '@tetherto/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { COLOR } from '@tetherto/mdk-core-ui'
 import { SparePartTypes } from './spare-parts-constants'
 
 export const MOVE_MINER = 'Move Miner'

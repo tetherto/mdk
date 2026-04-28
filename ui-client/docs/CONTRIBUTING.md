@@ -63,7 +63,7 @@ chore(deps): update dependencies
 ```bash
 # Development
 pnpm dev                    # Run all packages in dev mode
-pnpm dev --filter @tetherto/core # Run specific package
+pnpm dev --filter @tetherto/mdk-core-ui # Run specific package
 
 # Building
 pnpm build                  # Build all packages
@@ -90,8 +90,8 @@ pnpm clean                  # Remove all build artifacts
 
 ```bash
 # From root (recommended)
-pnpm add react --filter @tetherto/foundation
-pnpm add -D vitest --filter @tetherto/foundation
+pnpm add react --filter @tetherto/mdk-foundation-ui
+pnpm add -D vitest --filter @tetherto/mdk-foundation-ui
 
 # Or cd into package
 cd packages/components-foundation

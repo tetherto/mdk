@@ -4,7 +4,7 @@ import {
   DropdownMenu,
   SettingsNavIcon,
   UserAvatarIcon,
-} from '@tetherto/core'
+} from '@tetherto/mdk-core-ui'
 
 const SEARCH_ITEMS_SM = [
   { label: 'Option 1' },

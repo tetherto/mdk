@@ -1,4 +1,4 @@
-import { Badge, Button } from '@tetherto/core'
+import { Badge, Button } from '@tetherto/mdk-core-ui'
 
 export const BadgeExample = (): JSX.Element => {
   return (

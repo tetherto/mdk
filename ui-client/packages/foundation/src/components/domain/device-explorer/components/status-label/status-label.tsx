@@ -1,4 +1,4 @@
-import { cn } from '@tetherto/core'
+import { cn } from '@tetherto/mdk-core-ui'
 
 export type StatusLabelProps = {
   status?: 'error' | 'sleep' | 'offline'

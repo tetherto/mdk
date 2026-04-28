@@ -1,4 +1,4 @@
-import { EmptyState, Spinner } from '@tetherto/core'
+import { EmptyState, Spinner } from '@tetherto/mdk-core-ui'
 import _replace from 'lodash/replace'
 import { useState } from 'react'
 import type { ReactElement } from 'react'

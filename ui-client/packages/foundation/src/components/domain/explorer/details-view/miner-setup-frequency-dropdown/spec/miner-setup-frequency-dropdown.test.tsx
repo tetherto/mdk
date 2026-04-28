@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MinerSetupFrequencyDropdown } from '../miner-setup-frequency-dropdown'
 
-vi.mock('@tetherto/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   Button: vi.fn(({ children, disabled, ...props }) => (
     <button disabled={disabled} {...props}>
       {children}

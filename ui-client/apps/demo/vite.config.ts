@@ -36,7 +36,7 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         api: 'modern-compiler',
-        additionalData: `@use '@tetherto/core/styles' as *;\n`,
+        additionalData: `@use '@tetherto/mdk-core-ui/styles' as *;\n`,
       } as Record<string, unknown>,
     },
   },

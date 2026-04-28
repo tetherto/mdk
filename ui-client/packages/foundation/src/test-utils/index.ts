@@ -1,5 +1,5 @@
 /**
- * @tetherto/foundation - Test Utils
+ * @tetherto/mdk-foundation-ui - Test Utils
  *
  * Testing utilities and helpers for component testing.
  */

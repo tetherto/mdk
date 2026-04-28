@@ -1,6 +1,6 @@
-import type { ChartDataset, UnknownRecord } from '@tetherto/core'
+import type { ChartDataset, UnknownRecord } from '@tetherto/mdk-core-ui'
 
-import { getChartDataAvailability, hasDataValues, isNil } from '@tetherto/core'
+import { getChartDataAvailability, hasDataValues, isNil } from '@tetherto/mdk-core-ui'
 
 /**
  * Chart data with multiple datasets (e.g., LineChart)

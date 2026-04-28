@@ -4,7 +4,7 @@ import type { PumpItem } from '../pump-box'
 import { PumpBox } from '../pump-box'
 
 // Mock the Indicator component
-vi.mock('@tetherto/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   Indicator: ({ color, size, children }: any) => (
     <div data-testid="indicator" data-color={color} data-size={size}>
       {children}

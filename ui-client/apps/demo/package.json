@@ -1,5 +1,5 @@
 {
-  "name": "@tetherto/demo",
+  "name": "@tetherto/mdk-demo-ui",
   "type": "module",
   "version": "0.0.1",
   "private": true,
@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",
-    "@tetherto/core": "workspace:*",
-    "@tetherto/fonts": "workspace:*",
-    "@tetherto/foundation": "workspace:*",
+    "@tetherto/mdk-core-ui": "workspace:*",
+    "@tetherto/mdk-fonts-ui": "workspace:*",
+    "@tetherto/mdk-foundation-ui": "workspace:*",
     "@radix-ui/react-icons": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

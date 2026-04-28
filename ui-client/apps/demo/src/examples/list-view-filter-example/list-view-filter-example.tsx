@@ -1,4 +1,4 @@
-import type { CascaderOption, IndicatorProps, LocalFilters } from '@tetherto/core'
+import type { CascaderOption, IndicatorProps, LocalFilters } from '@tetherto/mdk-core-ui'
 import {
   Button,
   Card,
@@ -10,7 +10,7 @@ import {
   ListViewFilter,
   Tag,
   Typography,
-} from '@tetherto/core'
+} from '@tetherto/mdk-core-ui'
 import * as React from 'react'
 
 import './list-view-filter-example.scss'

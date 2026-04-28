@@ -12,7 +12,7 @@ vi.mock('../../miner-controls-card/miner-controls-utils', () => ({
   getCurrentPowerModes: vi.fn(() => ({ Normal: 3 })),
 }))
 
-vi.mock('@tetherto/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   cn: (...args: any[]) => args.filter(Boolean).join(' '),
 }))
 

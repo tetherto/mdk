@@ -1,4 +1,4 @@
-import { AlertTriangleIcon } from '@tetherto/core'
+import { AlertTriangleIcon } from '@tetherto/mdk-core-ui'
 import type { ReactNode } from 'react'
 import { ALERT_SEVERITY_TYPES } from '../../../../constants/alerts'
 

@@ -1,5 +1,5 @@
-import type { IndicatorColor } from '@tetherto/core'
-import { COLOR } from '@tetherto/core'
+import type { IndicatorColor } from '@tetherto/mdk-core-ui'
+import { COLOR } from '@tetherto/mdk-core-ui'
 import { MinerStatuses } from '../../../../../constants/device-constants'
 import { PowerModeColors } from '../../../../../utils/device-utils'
 import { MINER_POWER_MODE, SOCKET_STATUSES } from '../../../../../utils/status-utils'

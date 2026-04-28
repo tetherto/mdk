@@ -8,7 +8,7 @@ import {
   Button,
   CoreAlert,
   Loader,
-} from '@tetherto/core'
+} from '@tetherto/mdk-core-ui'
 
 import { useContextualModal } from '../../../../../hooks/use-contextual-modal'
 

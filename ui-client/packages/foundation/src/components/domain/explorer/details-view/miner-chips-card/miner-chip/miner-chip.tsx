@@ -1,4 +1,4 @@
-import { formatNumber, UNITS } from '@tetherto/core'
+import { formatNumber, UNITS } from '@tetherto/mdk-core-ui'
 import './miner-chip.scss'
 
 type MinerChipProps = {

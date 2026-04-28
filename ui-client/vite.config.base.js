@@ -55,8 +55,8 @@ export const createLibConfig = ({ packageDir }) => {
     },
     resolve: {
       alias: {
-        '@tetherto/core': resolve(packageDir, '../core/src'),
-        '@tetherto/foundation': resolve(packageDir, '../foundation/src'),
+        '@tetherto/mdk-core-ui': resolve(packageDir, '../core/src'),
+        '@tetherto/mdk-foundation-ui': resolve(packageDir, '../foundation/src'),
       },
     },
   })

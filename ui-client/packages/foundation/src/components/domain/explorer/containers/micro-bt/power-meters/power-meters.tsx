@@ -1,4 +1,4 @@
-import { UNITS } from '@tetherto/core'
+import { UNITS } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import type { Device } from '../../../../../../types'
 import { getContainerSpecificStats } from '../../../../../../utils/device-utils'

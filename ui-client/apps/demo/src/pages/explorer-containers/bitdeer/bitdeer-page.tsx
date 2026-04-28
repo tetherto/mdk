@@ -1,4 +1,4 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tetherto/core'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tetherto/mdk-core-ui'
 import { DemoPageHeader } from '../../../components/demo-page-header'
 import type { ReactElement } from 'react'
 

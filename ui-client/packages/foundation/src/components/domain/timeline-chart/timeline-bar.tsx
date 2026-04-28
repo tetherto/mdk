@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { format } from 'date-fns/format'
-import { SimpleTooltip } from '@tetherto/core'
+import { SimpleTooltip } from '@tetherto/mdk-core-ui'
 
 export type TimelineBarProps = {
   fromTs: number

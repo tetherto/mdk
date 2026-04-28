@@ -7,7 +7,7 @@ import {
   POOL_MANAGER_ROUTES,
 } from '../dashboard-constants'
 
-vi.mock('@tetherto/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   PoolsIcon: () => <div data-testid="PoolsIcon" />,
   SiteOverviewIcon: () => <div data-testid="SiteOverviewIcon" />,
   MinerOverviewIcon: () => <div data-testid="MinerOverviewIcon" />,

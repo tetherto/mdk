@@ -1,5 +1,5 @@
-import type { SidebarMenuItem } from '@tetherto/core'
-import { AlertsNavIcon, PoolManagerNavIcon } from '@tetherto/core'
+import type { SidebarMenuItem } from '@tetherto/mdk-core-ui'
+import { AlertsNavIcon, PoolManagerNavIcon } from '@tetherto/mdk-core-ui'
 import {
   BarChartIcon,
   ChatBubbleIcon,

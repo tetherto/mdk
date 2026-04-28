@@ -5,7 +5,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tetherto/core'
+} from '@tetherto/mdk-core-ui'
 
 const OPTIONS = [
   { value: 'option-1', label: 'Option 1' },

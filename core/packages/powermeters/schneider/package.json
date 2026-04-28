@@ -32,6 +32,7 @@
     "yargs": "17.7.2"
   },
   "overrides": {
-    "serialport": "npm:noop@1.0.0"
+    "serialport": "npm:noop@1.0.0",
+    "fastify": "5.8.5"
   }
 }

@@ -26,10 +26,14 @@
     "svc-facs-mqtt": "git+https://github.com/tetherto/svc-facs-mqtt.git"
   },
   "devDependencies": {
-    "aedes": "0.50.1",
+    "aedes": "1.0.2",
     "brittle": "3.16.3",
     "standard": "17.1.2",
     "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
     "yargs": "17.7.2"
+  },
+  "overrides": {
+    "fastify": "5.8.5",
+    "uuid": "14.0.0"
   }
 }

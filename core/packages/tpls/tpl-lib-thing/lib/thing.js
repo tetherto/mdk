@@ -19,10 +19,7 @@ class Thing extends EventEmitter {
     this.lastSnap = null
   }
 
-  debugError (data, e, alert = false) {
-    if (alert) {
-      return console.error(data, e)
-    }
+  debugError (data, e) {
     this.debug(data, e)
   }
 

@@ -30,10 +30,12 @@
     "@fastify/secure-session": "8.3.0",
     "brittle": "3.16.3",
     "debug": "4.4.1",
-    "fastify": "5.7.4",
     "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
     "passport-http": "0.3.0",
     "standard": "17.1.2",
     "yargs": "17.7.2"
+  },
+  "overrides": {
+    "fastify": "5.8.5"
   }
 }

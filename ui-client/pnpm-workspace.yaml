@@ -29,7 +29,7 @@ catalog:
   '@tanstack/react-table': ^8.21.3
   '@testing-library/jest-dom': ^6.9.1
   '@testing-library/react': ^16.1.0
-  '@types/lodash': ^4.17.23
+  '@types/lodash': ^4.17.24
   '@types/node': ^22.10.0
   '@types/react': ^18.3.18
   '@types/react-dom': ^18.3.5
@@ -53,9 +53,9 @@ catalog:
   jsdom: ^28.0.0
   lightweight-charts: ^4.1.7
   lint-staged: ^16.2.7
-  lodash: ^4.17.23
+  lodash: ^4.18.0
   npm-run-all2: ^8.0.4
-  postcss: ^8.5.6
+  postcss: ^8.5.10
   prettier: ^3.8.1
   prop-types: ^15.8.1
   react: ^18.3.1
@@ -72,7 +72,7 @@ catalog:
   terser: ^5.46.0
   turbo: ^2.8.16
   typescript: ^5.9.3
-  vite: ^7.3.1
+  vite: ^7.3.2
   vitest: ^4.1.2
   zod: ^3.24.0
 
@@ -101,6 +101,9 @@ overrides:
   svgo@>=2.1.0 <2.8.1: '>=2.8.1'
   yaml@>=1.0.0 <1.10.3: '>=1.10.3'
   yaml@>=2.0.0 <2.8.3: '>=2.8.3'
+  vite@>=7.0.0 <7.3.2: '>=7.3.2'
+  postcss@>=8.0.0 <8.5.10: '>=8.5.10'
+  lodash@>=4.0.0 <4.18.0: '>=4.18.0'
 
 shellEmulator: true
 

@@ -169,5 +169,4 @@ jobs:
         run: |
           echo "## UI Bundle Size Report" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          # The repo already provides scripts/bundle-size.mjs via `pnpm size`.
-          pnpm run size 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          pnpm run size -- --markdown 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"

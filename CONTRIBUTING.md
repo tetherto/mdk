@@ -2,7 +2,18 @@
 
 Thank you for your interest in contributing to **MDK**! 
 
-This document outlines the contribution workflow for all MDK repositories, from setting up your development environment to submitting pull requests and participating in releases.
+This document outlines the contribution workflow for the MDK repository, from setting up your development environment to submitting pull requests and participating in releases.
+
+---
+
+## Monorepo Structure
+
+MDK is a monorepo with separate backend and frontend workspaces:
+
+- `core/` - Backend services, container modules, and integration/unit tests (npm-based)
+- `ui-client/` - Frontend packages, demo app, and shared UI foundation (pnpm + Turbo-based)
+
+Choose the workflow that matches the area you are contributing to.
 
 ---
 
@@ -14,7 +25,8 @@ Before contributing, make sure you have the following installed:
 
 - **Node.js** (version 20.0 or higher)
 - **Git** (latest stable version)
-- **npm** (included with Node.js)
+- **npm** (included with Node.js, for `core/`)
+- **pnpm** (version 10 or higher, for `ui-client/`)
 
 ---
 
@@ -47,6 +59,57 @@ cd mdk
 
 ```bash
 git remote add upstream https://github.com/tetherto/mdk.git
+```
+
+---
+
+### Backend Contribution Setup (`core/`)
+
+Use this workflow when contributing to backend code under `core/`.
+
+```bash
+cd core
+npm install
+```
+
+Common commands:
+
+```bash
+# Lint backend code
+npm run lint
+
+# Run backend test suite (lint + unit + integration + package tests)
+npm test
+
+```
+
+---
+
+### Frontend Contribution Setup (`ui-client/`)
+
+Use this workflow when contributing to frontend code under `ui-client/`.
+
+```bash
+cd ui-client
+corepack enable
+pnpm install
+```
+
+Common commands:
+
+```bash
+# Build packages
+pnpm build
+
+# Run dev mode
+pnpm dev
+
+# Lint and type-check
+pnpm lint
+pnpm typecheck
+
+# Run tests
+pnpm test
 ```
 
 ---
@@ -86,7 +149,9 @@ git checkout -b fix/timeout-handling
 1. Create a branch from `main`
 2. Make your code changes
 3. Write or update tests
-4. Run linting and tests locally
+4. Run linting and tests locally in the workspace(s) you changed:
+   - `core`: `npm run lint && npm test`
+   - `ui-client`: `pnpm lint && pnpm test` (and `pnpm typecheck` for TypeScript changes)
 5. Commit changes with meaningful messages
 6. Push your branch and open a Pull Request targeting `main`
 
@@ -96,9 +161,10 @@ git checkout -b fix/timeout-handling
 
 Before submitting your PR, ensure that:
 
-- [ ] Code builds locally
-- [ ] Tests pass (`npm test`)
-- [ ] Linting passes (`npm run lint` or `npm run lint:fix`)
+- [ ] Code builds locally (`pnpm build` for `ui-client` changes)
+- [ ] Tests pass in affected workspace(s) (`npm test` for `core`, `pnpm test` for `ui-client`)
+- [ ] Linting passes (`npm run lint` for `core`, `pnpm lint` for `ui-client`)
+- [ ] Type-check passes for frontend TypeScript changes (`pnpm typecheck`)
 - [ ] New features include tests
 - [ ] Documentation is updated if applicable
 

@@ -44,11 +44,6 @@ Contributions are welcome while MDK is under active development.
 
 Learn more about [contributing](CONTRIBUTING.md)
 
-### Example
-
-```bash
-git checkout -b feature/your-feature-name
-```
 ---
 
 ## Documentation 

@@ -44,6 +44,8 @@ Contributions are welcome while MDK is under active development.
 
 Learn more about [contributing](CONTRIBUTING.md)
 
+For security vulnerability reporting, see the [Security Policy](SECURITY.md).
+
 ---
 
 ## Documentation 

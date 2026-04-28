@@ -1,4 +1,4 @@
-import { UNITS } from '@mdk/core'
+import { UNITS } from '@tetherto/core'
 import '@testing-library/jest-dom'
 import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'

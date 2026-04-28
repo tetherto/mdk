@@ -1,4 +1,4 @@
-import type { PowerModeTimelineEntry } from '@mdk/foundation'
+import type { PowerModeTimelineEntry } from '@tetherto/foundation'
 import { generateTimelineData } from './power-mode-timeline-chart-page.utils'
 
 const NOW = Date.now()

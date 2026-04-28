@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { Indicator } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
+import { Indicator } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import { DEVICE_STATUS } from '../../../../../../../constants/devices'
 import { getBitdeerCoolingSystemData } from '../bitdeer-settings-utils'

@@ -1,4 +1,4 @@
-import { Button, Divider } from '@mdk/core'
+import { Button, Divider } from '@tetherto/core'
 import { formatDistance } from 'date-fns/formatDistance'
 
 import { ArrowRightIcon } from '@radix-ui/react-icons'

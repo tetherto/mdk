@@ -1,4 +1,4 @@
-import { MicroBTWidgetBox } from '@mdk/foundation'
+import { MicroBTWidgetBox } from '@tetherto/foundation'
 import type { ComponentProps, ReactNode } from 'react'
 import './micro-bt-widget-box-page.scss'
 

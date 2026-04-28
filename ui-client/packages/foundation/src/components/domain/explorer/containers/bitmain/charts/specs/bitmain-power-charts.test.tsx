@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { BitMainPowerCharts } from '../bitmain-power-charts'
@@ -16,8 +16,8 @@ vi.mock('../../../../../container-charts-builder', () => ({
     </div>
   )),
 }))
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/core')>()
   return {
     ...actual,
     safeNumber: vi.fn((number) => number ?? 0),

@@ -1,4 +1,4 @@
-import type { RangeSelectorOption } from '@mdk/core'
+import type { RangeSelectorOption } from '@tetherto/core'
 
 type DropdownItem = {
   key: string

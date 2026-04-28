@@ -1,4 +1,4 @@
-import { UNITS } from '@mdk/core'
+import { UNITS } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import type { Device } from '../../../types/device'
 import { BaseThresholdForm } from './base-threshold-form'

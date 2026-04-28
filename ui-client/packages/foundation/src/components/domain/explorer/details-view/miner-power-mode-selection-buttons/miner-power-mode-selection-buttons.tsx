@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { cn } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
+import { cn } from '@tetherto/core'
 import type { FC } from 'react'
 import type { Device } from '../../../../../types'
 import { getDeviceModel } from '../../../../../utils/power-mode-utils'

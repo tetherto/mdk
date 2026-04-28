@@ -1,4 +1,4 @@
-import { ActionButton, Button, formatNumber, UNITS, unitToKilo } from '@mdk/core'
+import { ActionButton, Button, formatNumber, UNITS, unitToKilo } from '@tetherto/core'
 import { useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ACTION_TYPES, SUBMIT_ACTION_TYPES } from '../../../../../constants/actions'

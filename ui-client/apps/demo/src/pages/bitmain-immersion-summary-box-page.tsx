@@ -1,4 +1,4 @@
-import { BitMainImmersionSummaryBox } from '@mdk/foundation'
+import { BitMainImmersionSummaryBox } from '@tetherto/foundation'
 import type { ComponentProps, ReactNode } from 'react'
 import './bitmain-immersion-summary-box-page.scss'
 

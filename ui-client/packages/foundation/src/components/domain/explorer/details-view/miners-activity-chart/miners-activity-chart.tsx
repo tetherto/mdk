@@ -1,4 +1,4 @@
-import { cn, CoreAlert, formatNumber, Indicator, SimpleTooltip, Spinner } from '@mdk/core'
+import { cn, CoreAlert, formatNumber, Indicator, SimpleTooltip, Spinner } from '@tetherto/core'
 import {
   MINERS_ACTIVITY_ITEMS,
   MINERS_ACTIVITY_LABELS,

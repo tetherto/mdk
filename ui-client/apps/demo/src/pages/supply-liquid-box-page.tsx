@@ -1,4 +1,4 @@
-import { SupplyLiquidBox } from '@mdk/foundation'
+import { SupplyLiquidBox } from '@tetherto/foundation'
 import type { ComponentProps, ReactNode } from 'react'
 import './supply-liquid-box-page.scss'
 

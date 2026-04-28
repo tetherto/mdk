@@ -1,4 +1,4 @@
-import { cn } from '@mdk/core'
+import { cn } from '@tetherto/core'
 import { IncidentSeverity } from './incident-severity'
 import type { TIncidentSeverity } from './types'
 

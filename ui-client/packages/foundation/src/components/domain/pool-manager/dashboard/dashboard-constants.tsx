@@ -1,4 +1,4 @@
-import { MinerOverviewIcon, PoolsIcon, SiteOverviewIcon } from '@mdk/core'
+import { MinerOverviewIcon, PoolsIcon, SiteOverviewIcon } from '@tetherto/core'
 import type { NavigationBlockItem } from './dashboard-types'
 
 export const MAX_ALERTS_DISPLAYED = 5

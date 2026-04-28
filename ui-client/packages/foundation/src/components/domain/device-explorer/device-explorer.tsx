@@ -1,5 +1,5 @@
-import { cn } from '@mdk/core'
-import type { DataTableRowSelectionState, DataTableSortingState, LocalFilters } from '@mdk/core'
+import { cn } from '@tetherto/core'
+import type { DataTableRowSelectionState, DataTableSortingState, LocalFilters } from '@tetherto/core'
 import { DeviceExplorerTable } from './device-explorer-table'
 import type { DeviceExplorerTableProps } from './device-explorer-table'
 import { DeviceExplorerToolbar } from './device-explorer-toolbar'

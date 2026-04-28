@@ -6,8 +6,8 @@ import {
   PowerIcon,
   SimpleTooltip,
   UNITS,
-} from '@mdk/core'
-import type { DataTableColumnDef, UnknownRecord } from '@mdk/core'
+} from '@tetherto/core'
+import type { DataTableColumnDef, UnknownRecord } from '@tetherto/core'
 import type { Alert, DeviceExplorerDeviceData, GetColumnConfigParams } from '../types'
 import { DeviceCardColText } from '../components/device-card-col-text/device-card-col-text'
 import type { PowerModeColors } from '../../../../utils/device-utils'

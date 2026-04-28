@@ -4,8 +4,8 @@ import {
   TemperatureIndicatorIcon,
   UNITS,
   unitToKilo,
-} from '@mdk/core'
-import type { DataTableColumnDef } from '@mdk/core'
+} from '@tetherto/core'
+import type { DataTableColumnDef } from '@tetherto/core'
 import type { DeviceExplorerDeviceData, GetColumnConfigParams } from '../types'
 import { isContainerOffline } from '../../../../utils/container-utils'
 import {

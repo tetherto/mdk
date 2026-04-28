@@ -1,4 +1,4 @@
-import { COLOR } from '@mdk/core'
+import { COLOR } from '@tetherto/core'
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { FlashStatusIndicator, SoundStatusIndicator } from '../status-indicator'

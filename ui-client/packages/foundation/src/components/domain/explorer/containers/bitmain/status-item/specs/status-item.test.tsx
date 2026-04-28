@@ -2,10 +2,10 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { StatusItem } from '../status-item'
 
-import { Indicator } from '@mdk/core'
+import { Indicator } from '@tetherto/core'
 
 // Mock the Indicator component
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/core', () => ({
   Indicator: vi.fn(({ color, size, children }) => (
     <div data-testid="indicator" data-color={color} data-size={size}>
       {children}

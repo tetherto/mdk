@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 
-import type { CascaderOption, DataTableRowSelectionState } from '@mdk/core'
-import { cn, CoreAlert, Loader } from '@mdk/core'
+import type { CascaderOption, DataTableRowSelectionState } from '@tetherto/core'
+import { cn, CoreAlert, Loader } from '@tetherto/core'
 
 import { CROSS_THING_TYPES } from '../../../../constants/devices'
 import { useListViewFilters } from '../../../../hooks/use-list-view-filters'

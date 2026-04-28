@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
 import { ACTION_TYPES } from '../../../../../constants/actions'
 import { POSITION_CHANGE_DIALOG_FLOWS } from '../../../../../constants/dialog'
 import { MINER_STATUSES } from '../../../../../constants/miner-constants'

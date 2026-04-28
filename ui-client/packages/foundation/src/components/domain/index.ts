@@ -1,5 +1,5 @@
 /**
- * @mdk/foundation - Domain Components
+ * @tetherto/foundation - Domain Components
  *
  * Domain-specific components for mining operations.
  * These components encapsulate business logic and domain concepts.

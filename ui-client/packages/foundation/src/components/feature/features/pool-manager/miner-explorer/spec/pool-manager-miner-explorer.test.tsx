@@ -94,8 +94,8 @@ vi.mock('../../../../../domain/pool-manager/assign-pool-modal/assign-pool-modal'
     ) : null,
 }))
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/core')>()
   return {
     ...actual,
     SimpleTooltip: ({ children, content }: { children: React.ReactNode; content?: string }) => (

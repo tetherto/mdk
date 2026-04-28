@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
 import { getBitdeerParameterSettingsData } from '../components/domain'
 import { isAntspaceHydro, isAntspaceImmersion, isBitdeer, isMicroBT } from './container-utils'
 

@@ -1,4 +1,4 @@
-import { CoreAlert as Alert, Button } from '@mdk/core'
+import { CoreAlert as Alert, Button } from '@tetherto/core'
 import type { ReactElement } from 'react'
 
 export const AlertExample = (): ReactElement => {

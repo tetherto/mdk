@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { UNITS } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
+import { UNITS } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import type { Device } from '../../../../types/device'
 import { getContainerSpecificStats, getStats } from '../../../../utils/device-utils'

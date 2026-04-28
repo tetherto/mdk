@@ -1,4 +1,4 @@
-import type { TimelineChartData } from '@mdk/foundation'
+import type { TimelineChartData } from '@tetherto/foundation'
 
 export const NOW = Date.now()
 export const MIN_5 = 5 * 60 * 1000

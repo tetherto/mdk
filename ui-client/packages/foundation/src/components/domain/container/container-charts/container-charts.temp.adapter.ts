@@ -6,7 +6,7 @@ import _keys from 'lodash/keys'
 import _last from 'lodash/last'
 import _values from 'lodash/values'
 
-import { formatUnit, getTimeRange, UNITS } from '@mdk/core'
+import { formatUnit, getTimeRange, UNITS } from '@tetherto/core'
 
 import { CONTAINER_MODEL } from '../../../../constants/container-constants'
 import { isAntspaceHydro, isBitdeer, isMicroBT } from '../../../../utils/container-utils'

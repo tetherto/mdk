@@ -1,4 +1,4 @@
-import type { SidebarMenuItem } from '@mdk/core'
+import type { SidebarMenuItem } from '@tetherto/core'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { COMPONENT_NAV, getCategoryStats } from '../constants/navigation'

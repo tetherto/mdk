@@ -1,4 +1,4 @@
-import { COLOR } from '@mdk/core'
+import { COLOR } from '@tetherto/core'
 
 export const ALERT_SEVERITY_TYPES = {
   CRITICAL: 'Critical',

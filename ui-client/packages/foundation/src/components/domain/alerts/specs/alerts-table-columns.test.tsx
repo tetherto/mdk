@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AlertTableRecord } from '../alerts-types'
 import { getAlertsTableColumns } from '../alerts-table-columns'
-import { FALLBACK } from '@mdk/core'
+import { FALLBACK } from '@tetherto/core'
 
 const formatDate = vi.fn((d: Date) => `formatted:${d.toISOString()}`)
 

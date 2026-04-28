@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
 import { useEffect, useState } from 'react'
 import { THRESHOLD_LEVEL, THRESHOLD_TYPE } from '../constants/container-constants'
 import {

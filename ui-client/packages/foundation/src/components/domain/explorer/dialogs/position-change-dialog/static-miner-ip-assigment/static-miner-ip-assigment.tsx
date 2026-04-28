@@ -1,4 +1,4 @@
-import { Input } from '@mdk/core'
+import { Input } from '@tetherto/core'
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 
 type StaticMinerIpAssigmentProps = {

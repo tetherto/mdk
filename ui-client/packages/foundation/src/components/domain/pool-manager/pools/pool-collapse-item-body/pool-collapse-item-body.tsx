@@ -1,6 +1,6 @@
 import { useDispatch } from 'react-redux'
 
-import { Button, cn } from '@mdk/core'
+import { Button, cn } from '@tetherto/core'
 
 import { Pencil1Icon } from '@radix-ui/react-icons'
 import { ACTION_TYPES, SUBMIT_ACTION_TYPES } from '../../../../../constants/actions'

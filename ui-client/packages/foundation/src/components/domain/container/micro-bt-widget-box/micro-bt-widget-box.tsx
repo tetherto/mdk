@@ -1,4 +1,4 @@
-import { Indicator } from '@mdk/core'
+import { Indicator } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import type { Device } from '../../../../types/device'
 import { DEVICE_STATUS } from '../../../../constants/devices'

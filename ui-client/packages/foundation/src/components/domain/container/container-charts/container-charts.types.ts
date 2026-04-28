@@ -1,4 +1,4 @@
-import type { TimeRangeType } from '@mdk/core'
+import type { TimeRangeType } from '@tetherto/core'
 
 export type ChartDataPoint = {
   x: number | string

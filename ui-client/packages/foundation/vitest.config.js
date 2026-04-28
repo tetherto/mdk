@@ -4,8 +4,8 @@ import { defineConfig } from 'vitest/config'
 
 const alias = {
   '@': resolve(__dirname, './src'),
-  '@mdk/core': resolve(__dirname, '../core/src'),
-  '@mdk/foundation': resolve(__dirname, './src'),
+  '@tetherto/core': resolve(__dirname, '../core/src'),
+  '@tetherto/foundation': resolve(__dirname, './src'),
 }
 
 const define = {

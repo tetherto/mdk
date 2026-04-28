@@ -1,5 +1,5 @@
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { SecondaryStatCard } from '@mdk/foundation'
+import { SecondaryStatCard } from '@tetherto/foundation'
 import type { ReactElement } from 'react'
 import './secondary-stat-card-demo.scss'
 

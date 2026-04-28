@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
-import type { CascaderOption } from '@mdk/core'
+import type { CascaderOption } from '@tetherto/core'
 
 import { CurrentAlerts } from '../../../../domain/alerts/current-alerts/current-alerts'
 import { HistoricalAlerts } from '../../../../domain/alerts/historical-alerts/historical-alerts'

@@ -82,7 +82,7 @@ import {
   UserManagementNavIcon,
   VolumeOffIcon,
   VolumeOnIcon,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 import { DemoPageHeader } from '../components/demo-page-header'
 

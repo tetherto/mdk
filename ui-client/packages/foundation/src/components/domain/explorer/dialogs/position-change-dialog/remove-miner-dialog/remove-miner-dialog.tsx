@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@mdk/core'
+import { Dialog, DialogContent } from '@tetherto/core'
 import type { Device } from '../../../../../../types'
 import { RemoveMinerDialogContent } from './remove-miner-dialog-content'
 

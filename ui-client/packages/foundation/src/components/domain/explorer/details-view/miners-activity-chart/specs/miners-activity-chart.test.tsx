@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MinersActivityChart } from '../miners-activity-chart'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/core', () => ({
   CoreAlert: vi.fn(({ title, description }) => (
     <div data-testid="core-alert">
       <span data-testid="alert-title">{title}</span>

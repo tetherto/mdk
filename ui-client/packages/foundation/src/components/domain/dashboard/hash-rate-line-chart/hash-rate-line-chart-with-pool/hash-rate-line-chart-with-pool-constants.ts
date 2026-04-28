@@ -1,4 +1,4 @@
-import { CHART_COLORS } from '@mdk/core'
+import { CHART_COLORS } from '@tetherto/core'
 import type { DateRangeKey } from '../../../../../constants'
 import { DATE_RANGE } from '../../../../../constants'
 

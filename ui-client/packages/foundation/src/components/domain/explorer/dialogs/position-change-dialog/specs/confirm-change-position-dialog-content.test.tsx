@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
 import { configureStore } from '@reduxjs/toolkit'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useForm } from 'react-hook-form'
@@ -29,8 +29,8 @@ vi.mock('react-hook-form', async () => {
   }
 })
 
-vi.mock('@mdk/core', async () => {
-  const actual = await vi.importActual('@mdk/core')
+vi.mock('@tetherto/core', async () => {
+  const actual = await vi.importActual('@tetherto/core')
   return {
     ...actual,
     Button: vi.fn(({ children, onClick, type, variant, disabled }) => (

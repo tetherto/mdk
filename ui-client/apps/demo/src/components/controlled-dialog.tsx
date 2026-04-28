@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogContent, DialogFooter, DialogTrigger } from '@mdk/core'
+import { Button, Dialog, DialogContent, DialogFooter, DialogTrigger } from '@tetherto/core'
 import { useState } from 'react'
 
 export const ControlledDialog = (): JSX.Element => {

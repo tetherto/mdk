@@ -1,4 +1,4 @@
-import { formatNumber, UNITS } from '@mdk/core'
+import { formatNumber, UNITS } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import './miner-metric-card.scss'
 

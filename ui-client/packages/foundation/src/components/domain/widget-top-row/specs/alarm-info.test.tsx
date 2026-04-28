@@ -1,4 +1,4 @@
-import { SimpleTooltip } from '@mdk/core'
+import { SimpleTooltip } from '@tetherto/core'
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useTimezone } from '../../../../hooks/use-timezone'
@@ -6,7 +6,7 @@ import type { Alert } from '../../../../types/alerts'
 import { getAlertsDescription } from '../../../../utils/alerts-utils'
 import { AlarmInfo } from '../alarm-info'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/core', () => ({
   SimpleTooltip: vi.fn(({ content, children }) => (
     <div data-testid="tooltip">
       <div data-testid="tooltip-content">{content}</div>

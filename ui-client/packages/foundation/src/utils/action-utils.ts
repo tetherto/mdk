@@ -1,4 +1,4 @@
-import type { ApiError } from '@mdk/core'
+import type { ApiError } from '@tetherto/core'
 import type { ContainerActionValue, MinerActionValue, ThingActionValue } from '../constants/actions'
 import {
   ACTION_TYPES,

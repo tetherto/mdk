@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Provider } from 'react-redux'
 
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { actionsSlice, MAINTENANCE_CONTAINER, MinerControlsCard } from '@mdk/foundation'
+import { actionsSlice, MAINTENANCE_CONTAINER, MinerControlsCard } from '@tetherto/foundation'
 import type { ReactElement } from 'react'
 import './miner-controls-card-demo.scss'
 

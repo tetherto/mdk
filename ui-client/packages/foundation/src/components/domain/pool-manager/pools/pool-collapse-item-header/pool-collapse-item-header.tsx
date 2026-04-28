@@ -1,4 +1,4 @@
-import { cn } from '@mdk/core'
+import { cn } from '@tetherto/core'
 import {
   POOL_VALIDATION_STATUS_LABELS,
   POOL_VALIDATION_STATUSES,

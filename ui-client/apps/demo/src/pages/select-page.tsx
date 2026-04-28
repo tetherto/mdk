@@ -7,7 +7,7 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 export const SelectPage = (): JSX.Element => {
   return (

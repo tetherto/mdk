@@ -1,5 +1,5 @@
-import { ArrowIcon, cn, DropdownMenu, ExportIcon, Spinner } from '@mdk/core'
-import type { ComponentSize, SpinnerProps } from '@mdk/core'
+import { ArrowIcon, cn, DropdownMenu, ExportIcon, Spinner } from '@tetherto/core'
+import type { ComponentSize, SpinnerProps } from '@tetherto/core'
 import { useState } from 'react'
 import { EXPORT_ITEM_KEYS, EXPORT_ITEMS, EXPORT_LABEL } from './constants'
 

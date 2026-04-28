@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { TimelineChart } from '@mdk/foundation'
+import { TimelineChart } from '@tetherto/foundation'
 import { DemoBlock } from '../../../components/demo-block'
 import { DATA_BASIC, DATA_EMPTY, DATA_MANY_ROWS, DATA_MINER_STATUS, HOUR, NOW } from './mock-data'
 import '../../dashboard/line-chart-page.scss'

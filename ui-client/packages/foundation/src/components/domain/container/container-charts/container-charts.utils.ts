@@ -1,7 +1,7 @@
 import _keys from 'lodash/keys'
 import _map from 'lodash/map'
 
-import { CHART_COLORS } from '@mdk/core'
+import { CHART_COLORS } from '@tetherto/core'
 
 import type { ChartDataset } from './container-charts.types'
 

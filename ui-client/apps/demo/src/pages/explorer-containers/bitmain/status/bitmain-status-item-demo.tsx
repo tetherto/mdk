@@ -1,4 +1,4 @@
-import { StatusItem } from '@mdk/foundation'
+import { StatusItem } from '@tetherto/foundation'
 import type { ReactElement } from 'react'
 import './bitmain-status-item-demo.scss'
 

@@ -1,4 +1,4 @@
-import { CHART_COLORS, getTimeRange } from '@mdk/core'
+import { CHART_COLORS, getTimeRange } from '@tetherto/core'
 import { WEBAPP_DISPLAY_NAME } from '../../../../constants'
 import { getHashrateString, getHashrateUnit } from '../../../../utils/device-utils'
 

@@ -6,7 +6,7 @@ import {
   LogItem,
   LogRow,
   LogsCard,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 const sampleLogs = [
   {

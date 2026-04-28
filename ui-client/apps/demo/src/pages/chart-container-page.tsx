@@ -1,4 +1,4 @@
-import { ChartContainer } from '@mdk/core'
+import { ChartContainer } from '@tetherto/core'
 
 export const ChartContainerPage = (): JSX.Element => {
   return (

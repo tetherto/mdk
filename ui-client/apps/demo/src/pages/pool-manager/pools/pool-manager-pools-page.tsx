@@ -1,8 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
 
-import type { PoolConfigData } from '@mdk/foundation'
-import { actionsSlice, PoolManagerPools, timezoneSlice } from '@mdk/foundation'
+import type { PoolConfigData } from '@tetherto/foundation'
+import { actionsSlice, PoolManagerPools, timezoneSlice } from '@tetherto/foundation'
 
 import { DemoPageHeader } from '../../../components/demo-page-header'
 import { useDemoToast } from '../../../utils/use-demo-toast'

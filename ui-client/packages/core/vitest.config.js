@@ -52,7 +52,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@mdk/core': resolve(__dirname, './src'),
+      '@tetherto/core': resolve(__dirname, './src'),
     },
   },
   define: {

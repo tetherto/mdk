@@ -1,4 +1,4 @@
-import { CHART_COLORS } from '@mdk/core'
+import { CHART_COLORS } from '@tetherto/core'
 
 export const MINER_MODEL = {
   AVALON: 'avalon',

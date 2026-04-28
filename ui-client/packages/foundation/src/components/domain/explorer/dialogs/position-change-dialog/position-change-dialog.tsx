@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { Dialog, DialogContent } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
+import { Dialog, DialogContent } from '@tetherto/core'
 import * as React from 'react'
 
 import { MAINTENANCE_CONTAINER } from '../../../../../constants/container-constants'

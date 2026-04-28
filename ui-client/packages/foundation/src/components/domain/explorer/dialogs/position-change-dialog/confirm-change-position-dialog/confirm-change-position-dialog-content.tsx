@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form'
 import { useDispatch } from 'react-redux'
 import { z } from 'zod'
 
-import type { UnknownRecord } from '@mdk/core'
-import { Button, createFieldNames, DialogFooter, Form, FormCheckbox } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
+import { Button, createFieldNames, DialogFooter, Form, FormCheckbox } from '@tetherto/core'
 
 import { ACTION_TYPES, BATCH_ACTION_TYPES } from '../../../../../../constants/actions'
 import { MAINTENANCE_CONTAINER } from '../../../../../../constants/container-constants'

@@ -1,4 +1,4 @@
-import { formatNumber, unitToKilo } from '@mdk/core'
+import { formatNumber, unitToKilo } from '@tetherto/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Device } from '../../../../../../../types/device'
@@ -6,7 +6,7 @@ import { ContentBox } from '../../../../../container/content-box/content-box'
 import { BitMainPowerAndPositioning } from '../settings/power-and-positioning/bitmain-power-and-positioning'
 
 // Mock dependencies
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/core', () => ({
   formatNumber: vi.fn((num) => num.toFixed(2)),
   unitToKilo: vi.fn((num) => num / 1000),
   safeNumber: vi.fn((number) => number ?? 0),

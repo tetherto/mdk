@@ -1,4 +1,4 @@
-import type { DataTableColumnDef } from '@mdk/core'
+import type { DataTableColumnDef } from '@tetherto/core'
 import type {
   DeviceExplorerDeviceData,
   DeviceExplorerDeviceType,

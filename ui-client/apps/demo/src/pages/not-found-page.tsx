@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { NotFoundPage as NotFoundPageComponent } from '@mdk/core'
+import { NotFoundPage as NotFoundPageComponent } from '@tetherto/core'
 
 /**
  * 404 Page - handles all unmatched routes

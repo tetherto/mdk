@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Button, Dialog, DialogContent, DialogFooter, DialogTrigger, Spinner } from '@mdk/core'
+import { Button, Dialog, DialogContent, DialogFooter, DialogTrigger, Spinner } from '@tetherto/core'
 
 const ControlledDialog = lazy(() =>
   import('../components/controlled-dialog').then((module) => ({
@@ -31,7 +31,7 @@ export const DialogPage = (): JSX.Element => {
           </DialogTrigger>
           <DialogContent
             closable
-            title="Welcome to @mdk/core"
+            title="Welcome to @tetherto/core"
             description="This is a dialog component built with Radix UI primitives."
           >
             <div className="demo-section__dialog-content">

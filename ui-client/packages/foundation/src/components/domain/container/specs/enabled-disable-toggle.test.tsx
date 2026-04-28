@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { EnabledDisableToggleProps } from '../enabled-disable-toggle/enabled-disable-toggle'
 import { EnabledDisableToggle } from '../enabled-disable-toggle/enabled-disable-toggle'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/core', () => ({
   Button: vi.fn(({ children, onClick, disabled, variant }) => (
     <button data-testid={`button-${variant || 'outline'}`} onClick={onClick} disabled={disabled}>
       {children}

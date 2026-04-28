@@ -1,4 +1,4 @@
-import { Indicator } from '@mdk/core'
+import { Indicator } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import { DEVICE_STATUS } from '../../../../../../../../constants/devices'
 import './pump-box.scss'

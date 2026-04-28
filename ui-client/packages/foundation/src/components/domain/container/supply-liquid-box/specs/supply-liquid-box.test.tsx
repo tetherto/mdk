@@ -12,8 +12,8 @@ import {
   shouldAntspaceSupplyLiquidTempSuperflash,
 } from '../../../explorer/containers/bitmain/bitmain-hydro-utils'
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/core')>()
 
   return {
     ...actual,

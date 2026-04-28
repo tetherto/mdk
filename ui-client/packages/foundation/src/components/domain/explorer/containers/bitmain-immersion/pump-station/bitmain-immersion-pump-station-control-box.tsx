@@ -1,4 +1,4 @@
-import { Tag } from '@mdk/core'
+import { Tag } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import './bitmain-immersion-pump-station-control-box.scss'
 

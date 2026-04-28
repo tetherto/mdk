@@ -1,4 +1,4 @@
-import { MinersActivityChart } from '@mdk/foundation'
+import { MinersActivityChart } from '@tetherto/foundation'
 import type { ReactElement } from 'react'
 
 export const MinersActivityChartDemo = (): ReactElement => {

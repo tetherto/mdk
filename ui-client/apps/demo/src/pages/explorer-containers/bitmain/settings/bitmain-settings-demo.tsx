@@ -1,5 +1,5 @@
-import { Button, Checkbox, Input } from '@mdk/core'
-import { BitMainHydroSettings } from '@mdk/foundation'
+import { Button, Checkbox, Input } from '@tetherto/core'
+import { BitMainHydroSettings } from '@tetherto/foundation'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import type { Device } from '../../../../../../../packages/foundation/src/types/device'

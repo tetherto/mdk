@@ -13,8 +13,8 @@ import {
 } from '../../../../../../utils/device-utils'
 import { CONTAINER_STATUS } from '../../../../../../utils/status-utils'
 
-import type { UnknownRecord } from '@mdk/core'
-import { COLOR } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
+import { COLOR } from '@tetherto/core'
 import { CONTAINER_MODEL } from '../../../../../../constants/container-constants'
 import type { Container, Device } from '../../../../../../types/device'
 import type { ColorAndTooltipResult } from '../../../../../../utils/container-threshold-utils'

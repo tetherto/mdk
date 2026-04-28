@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@mdk/core'
+import { Avatar, AvatarFallback, AvatarImage } from '@tetherto/core'
 
 export const AvatarPage = (): JSX.Element => {
   return (

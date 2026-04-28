@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Typography } from '@mdk/core'
+import { Typography } from '@tetherto/core'
 
 import './demo-page-header.scss'
 

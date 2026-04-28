@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { Input, Label } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
+import { Input, Label } from '@tetherto/core'
 import type { ChangeEvent, ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 

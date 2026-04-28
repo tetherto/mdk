@@ -1,4 +1,4 @@
-import { UNITS } from '@mdk/core'
+import { UNITS } from '@tetherto/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useContainerThresholds } from '../../../../hooks/use-container-thresholds'
@@ -30,8 +30,8 @@ vi.mock('../../../../hooks/use-container-thresholds', () => ({
   })),
 }))
 
-vi.mock('@mdk/core', async () => {
-  const actual = await vi.importActual('@mdk/core')
+vi.mock('@tetherto/core', async () => {
+  const actual = await vi.importActual('@tetherto/core')
   return {
     ...actual,
     DataTable: vi.fn(({ data, columns }) => (

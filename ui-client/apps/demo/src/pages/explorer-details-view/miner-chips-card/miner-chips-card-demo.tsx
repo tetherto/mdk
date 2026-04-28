@@ -1,6 +1,6 @@
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import type { ContainerStats } from '@mdk/foundation'
-import { MinerChipsCard } from '@mdk/foundation'
+import type { ContainerStats } from '@tetherto/foundation'
+import { MinerChipsCard } from '@tetherto/foundation'
 import type { ReactElement } from 'react'
 import './miner-chips-card-demo.scss'
 

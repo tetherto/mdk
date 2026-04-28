@@ -1,11 +1,11 @@
-import { Indicator } from '@mdk/core'
+import { Indicator } from '@tetherto/core'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Device } from '../../../../../../../types/device'
 import { BitMainCoolingSystem } from '../settings/cooling-system/bitmain-cooling-system'
 
 // Mock dependencies
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/core', () => ({
   Indicator: vi.fn(({ color, size, children }) => (
     <div data-testid="indicator" data-color={color} data-size={size}>
       {children}

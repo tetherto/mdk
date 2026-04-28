@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DeviceExplorerToolbar } from '../device-explorer-toolbar'
 import type { DeviceExplorerDeviceType } from '../types'
 
-vi.mock('@mdk/core', async () => {
-  const actual = await vi.importActual('@mdk/core')
+vi.mock('@tetherto/core', async () => {
+  const actual = await vi.importActual('@tetherto/core')
   return {
     ...actual,
     ListViewFilter: vi.fn(({ onChange, className }) => (

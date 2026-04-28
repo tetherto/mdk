@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@mdk/core'
+import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@tetherto/core'
 
 import type { RoleOption } from '../../../../types/settings.types'
 

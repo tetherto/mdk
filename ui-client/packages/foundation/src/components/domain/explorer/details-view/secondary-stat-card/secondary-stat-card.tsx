@@ -1,4 +1,4 @@
-import { cn } from '@mdk/core'
+import { cn } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import './secondary-stat-card.scss'
 

@@ -1,4 +1,4 @@
-import { Button, SimpleTooltip, Switch } from '@mdk/core'
+import { Button, SimpleTooltip, Switch } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import './enabled-disable-toggle.scss'
 

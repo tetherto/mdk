@@ -1,4 +1,4 @@
-import type { IndicatorColor } from '@mdk/core'
+import type { IndicatorColor } from '@tetherto/core'
 import type { DeviceStatus } from '../../../../constants/devices'
 import { DEVICE_STATUS } from '../../../../constants/devices'
 

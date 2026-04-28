@@ -1,4 +1,4 @@
-import { LazyTabWrapper, Tabs, TabsContent, TabsList, TabsTrigger } from '@mdk/core'
+import { LazyTabWrapper, Tabs, TabsContent, TabsList, TabsTrigger } from '@tetherto/core'
 import React from 'react'
 
 const Tab1Content = (): JSX.Element => (

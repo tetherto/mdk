@@ -1,4 +1,4 @@
-import { secondsToMs } from '@mdk/core'
+import { secondsToMs } from '@tetherto/core'
 
 import type { LineChartCardData } from '../../line-chart-card/types'
 

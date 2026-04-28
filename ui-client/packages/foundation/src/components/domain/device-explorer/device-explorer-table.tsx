@@ -1,5 +1,5 @@
-import { DataTable } from '@mdk/core'
-import type { DataTableRowSelectionState, DataTableSortingState } from '@mdk/core'
+import { DataTable } from '@tetherto/core'
+import type { DataTableRowSelectionState, DataTableSortingState } from '@tetherto/core'
 import type { DeviceExplorerDeviceData, DeviceExplorerDeviceType } from './types'
 import { getColumnConfig } from './columns/device-explorer.columns'
 

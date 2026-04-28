@@ -1,9 +1,9 @@
-import type { UnknownRecord } from '@mdk/core'
-import { Button } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/core'
+import { Button } from '@tetherto/core'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 
-import { BitdeerSettings } from '@mdk/foundation'
+import { BitdeerSettings } from '@tetherto/foundation'
 import './bitdeer-settings-page.scss'
 
 /**

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { cn, SkeletonBlock } from '@mdk/core'
+import { cn, SkeletonBlock } from '@tetherto/core'
 import { IncidentRow } from './incident-row'
 import type { TIncidentRowProps } from './incident-row'
 

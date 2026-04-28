@@ -1,4 +1,4 @@
-import { Breadcrumbs } from '@mdk/core'
+import { Breadcrumbs } from '@tetherto/core'
 
 export const BreadcrumbsPage = (): JSX.Element => {
   return (

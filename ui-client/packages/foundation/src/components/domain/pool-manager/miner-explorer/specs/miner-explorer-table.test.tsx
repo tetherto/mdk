@@ -24,8 +24,8 @@ const mockDataTable = vi.fn(({ wrapperClassName, loading, data }) => (
   />
 ))
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const originalModule = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/core', async (importOriginal) => {
+  const originalModule = await importOriginal<typeof import('@tetherto/core')>()
 
   return {
     ...originalModule,

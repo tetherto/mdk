@@ -1,4 +1,4 @@
-import { Spinner } from '@mdk/core'
+import { Spinner } from '@tetherto/core'
 
 export const SpinnerPage = (): JSX.Element => {
   return (

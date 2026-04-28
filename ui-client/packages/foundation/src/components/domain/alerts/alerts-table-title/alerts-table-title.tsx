@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { cn } from '@mdk/core'
+import { cn } from '@tetherto/core'
 
 import './alerts-table-title.scss'
 

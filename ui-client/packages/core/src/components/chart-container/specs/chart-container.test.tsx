@@ -1,4 +1,4 @@
-import { UNITS } from '@mdk/core'
+import { UNITS } from '@tetherto/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ChartContainer } from '../index'

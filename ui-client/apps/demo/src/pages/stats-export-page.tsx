@@ -1,4 +1,4 @@
-import { StatsExport } from '@mdk/foundation'
+import { StatsExport } from '@tetherto/foundation'
 
 import { useDemoToast } from '../utils/use-demo-toast'
 

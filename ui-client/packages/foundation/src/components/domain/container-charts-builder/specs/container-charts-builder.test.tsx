@@ -1,12 +1,12 @@
-import { LineChart } from '@mdk/core'
+import { LineChart } from '@tetherto/core'
 import '@testing-library/jest-dom'
 import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import ContainerChartsBuilder from '../index'
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/core')>()
   return {
     ...actual,
     LineChart: vi.fn(() => <div data-testid="line-chart">Chart</div>),

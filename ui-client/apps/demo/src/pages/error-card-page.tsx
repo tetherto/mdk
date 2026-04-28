@@ -1,4 +1,4 @@
-import { ErrorCard } from '@mdk/core'
+import { ErrorCard } from '@tetherto/core'
 
 export const ErrorCardPage = (): JSX.Element => {
   return (

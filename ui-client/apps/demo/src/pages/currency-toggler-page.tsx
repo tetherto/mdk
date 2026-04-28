@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CurrencyToggler } from '@mdk/core'
+import { CurrencyToggler } from '@tetherto/core'
 
 export const CurrencyTogglerPage = (): JSX.Element => {
   const [currency1, setCurrency1] = useState('USD')

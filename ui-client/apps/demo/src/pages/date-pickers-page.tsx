@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { DateRange } from '@mdk/core'
-import { DatePicker, DateRangePicker } from '@mdk/core'
+import type { DateRange } from '@tetherto/core'
+import { DatePicker, DateRangePicker } from '@tetherto/core'
 
 export const DatePickersPage = (): JSX.Element => {
   const [selectedDate, setSelectedDate] = useState<Date>()

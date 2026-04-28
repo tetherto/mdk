@@ -6,7 +6,7 @@ import {
   getChartAnimationConfig,
   getDataDecimationConfig,
   LABEL_TO_IGNORE,
-} from '@mdk/core'
+} from '@tetherto/core'
 
 // Re-export shared constants
 export {
@@ -63,4 +63,4 @@ export type {
   ChartLegendOpacityValue,
   ChartPerformanceKey,
   LabelToIgnoreValue,
-} from '@mdk/core'
+} from '@tetherto/core'

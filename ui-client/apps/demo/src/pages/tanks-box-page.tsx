@@ -1,4 +1,4 @@
-import { TanksBox } from '@mdk/foundation'
+import { TanksBox } from '@tetherto/foundation'
 
 export const TanksBoxPage = (): JSX.Element => (
   <section className="demo-section">

@@ -57,8 +57,8 @@ vi.mock('../current-alerts/alert-confirmation-modal/alert-confirmation-modal', (
     ) : null,
 }))
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/core')>()
   return {
     ...actual,
     cn: (...args: Array<string | undefined>) => args.filter(Boolean).join(' '),

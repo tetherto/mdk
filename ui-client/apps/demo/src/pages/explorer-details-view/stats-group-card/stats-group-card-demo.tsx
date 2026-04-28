@@ -1,5 +1,5 @@
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { StatsGroupCard } from '@mdk/foundation'
+import { StatsGroupCard } from '@tetherto/foundation'
 import type { ReactElement } from 'react'
 import './stats-group-card-demo.scss'
 

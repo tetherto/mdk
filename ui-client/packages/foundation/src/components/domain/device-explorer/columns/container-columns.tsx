@@ -6,8 +6,8 @@ import {
   SimpleTooltip,
   UNITS,
   unitToKilo,
-} from '@mdk/core'
-import type { DataTableColumnDef } from '@mdk/core'
+} from '@tetherto/core'
+import type { DataTableColumnDef } from '@tetherto/core'
 import type { DeviceExplorerDeviceData, GetColumnConfigParams } from '../types'
 import { getAlarms } from '../device-explorer.utils'
 import { StatusLabel } from '../components/status-label/status-label'

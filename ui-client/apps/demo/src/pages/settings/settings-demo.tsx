@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { DemoPageHeader } from '../../components/demo-page-header'
-import { DEFAULT_HEADER_PREFERENCES, SettingsDashboard, WEBAPP_NAME } from '@mdk/foundation'
+import { DEFAULT_HEADER_PREFERENCES, SettingsDashboard, WEBAPP_NAME } from '@tetherto/foundation'
 import type {
   HeaderPreferences,
   PermLevel,
   RoleOption,
   SettingsExportData,
   SettingsUser,
-} from '@mdk/foundation'
+} from '@tetherto/foundation'
 
 import './settings-demo.scss'
 

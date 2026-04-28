@@ -1,8 +1,8 @@
-import { Button, Checkbox, Input } from '@mdk/core'
+import { Button, Checkbox, Input } from '@tetherto/core'
 import {
   BitMainImmersionPumpStationControlBox,
   BitMainImmersionSystemStatus,
-} from '@mdk/foundation'
+} from '@tetherto/foundation'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import './bitmain-immersion-system-demo.scss'

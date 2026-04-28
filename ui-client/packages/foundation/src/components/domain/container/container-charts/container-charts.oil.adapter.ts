@@ -6,7 +6,7 @@ import _last from 'lodash/last'
 import _replace from 'lodash/replace'
 import _values from 'lodash/values'
 
-import { formatUnit, getTimeRange, UNITS } from '@mdk/core'
+import { formatUnit, getTimeRange, UNITS } from '@tetherto/core'
 
 import { isAntspaceImmersion, isBitdeer } from '../../../../utils/container-utils'
 

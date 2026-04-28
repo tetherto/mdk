@@ -1,4 +1,4 @@
-import { ChartContainer, GaugeChart } from '@mdk/core'
+import { ChartContainer, GaugeChart } from '@tetherto/core'
 
 export const GaugeChartPage = (): JSX.Element => {
   return (

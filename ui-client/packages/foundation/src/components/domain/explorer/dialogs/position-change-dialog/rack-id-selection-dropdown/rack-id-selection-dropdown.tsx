@@ -1,4 +1,4 @@
-import { cn, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@mdk/core'
+import { cn, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tetherto/core'
 import * as React from 'react'
 import { MINER_TYPE_NAME_MAP } from '../../../../../../constants/device-constants'
 import { getRackNameFromId } from '../../../../../../utils/device-utils'

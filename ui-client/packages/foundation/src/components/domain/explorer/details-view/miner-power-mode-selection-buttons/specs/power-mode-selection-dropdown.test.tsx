@@ -10,7 +10,7 @@ vi.mock('../../miner-controls-card/miner-controls-utils', () => ({
   getDefaultSelectedPowerModes: vi.fn((modes) => Object.keys(modes)),
 }))
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/core', () => ({
   cn: (...args: any[]) => args.filter(Boolean).join(' '),
   ArrowIcon: vi.fn(({ isOpen }) => <div data-testid="arrow-icon" data-open={String(isOpen)} />),
   SimpleTooltip: vi.fn(({ children, content }) => (

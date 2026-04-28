@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { TagFilterBar } from '../tag-filter-bar/tag-filter-bar'
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/core')>()
   return {
     ...actual,
     cn: (...args: Array<string | undefined>) => args.filter(Boolean).join(' '),

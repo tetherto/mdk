@@ -1,4 +1,4 @@
-import { Tag } from '@mdk/core'
+import { Tag } from '@tetherto/core'
 
 export const TagsPage = (): JSX.Element => {
   return (

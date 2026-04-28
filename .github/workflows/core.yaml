@@ -84,12 +84,71 @@ jobs:
         run: npm run lint --if-present
 
       - name: Typecheck
-        continue-on-error: true
         run: npm run typecheck --if-present
 
       - name: Test with coverage
-        continue-on-error: true
         run: npm run test:coverage --if-present || npm test --if-present
+
+      - name: Enforce coverage threshold (>=80%)
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIN=80
+
+          if [ -f coverage/lcov.info ]; then
+            LF=$(awk -F: '/^LF:/ {sum+=$2} END {print sum+0}' coverage/lcov.info)
+            LH=$(awk -F: '/^LH:/ {sum+=$2} END {print sum+0}' coverage/lcov.info)
+            FNF=$(awk -F: '/^FNF:/ {sum+=$2} END {print sum+0}' coverage/lcov.info)
+            FNH=$(awk -F: '/^FNH:/ {sum+=$2} END {print sum+0}' coverage/lcov.info)
+            BRF=$(awk -F: '/^BRF:/ {sum+=$2} END {print sum+0}' coverage/lcov.info)
+            BRH=$(awk -F: '/^BRH:/ {sum+=$2} END {print sum+0}' coverage/lcov.info)
+
+            lines_pct=$(awk -v h="$LH" -v f="$LF" 'BEGIN { if (f==0) print 0; else printf "%.2f", (h/f)*100 }')
+            funcs_pct=$(awk -v h="$FNH" -v f="$FNF" 'BEGIN { if (f==0) print 0; else printf "%.2f", (h/f)*100 }')
+            branch_pct=$(awk -v h="$BRH" -v f="$BRF" 'BEGIN { if (f==0) print 0; else printf "%.2f", (h/f)*100 }')
+
+            echo "Coverage summary: lines=${lines_pct}% functions=${funcs_pct}% branches=${branch_pct}% (min=${MIN}%)"
+            {
+              echo "## Core Coverage Summary"
+              echo ""
+              echo "- Threshold: ${MIN}%"
+              echo "- Lines: ${lines_pct}%"
+              echo "- Functions: ${funcs_pct}%"
+              echo "- Branches: ${branch_pct}%"
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            awk -v l="$lines_pct" -v fn="$funcs_pct" -v b="$branch_pct" -v m="$MIN" 'BEGIN {
+              if (l < m || fn < m || b < m) exit 1; else exit 0
+            }' || {
+              echo "::error::Coverage threshold failed. Required >= ${MIN}% for lines/functions/branches."
+              exit 1
+            }
+          elif [ -f coverage/coverage-final.json ]; then
+            rm -rf .nyc_output
+            mkdir -p .nyc_output
+            cp coverage/coverage-final.json .nyc_output/out.json
+            NYC_REPORT="$(npx --yes nyc report --reporter=text-summary 2>&1)"
+            echo "$NYC_REPORT"
+            STMT=$(echo "$NYC_REPORT" | sed -n 's/^Statements[^:]*: *\([0-9.]*\)%.*/\1/p')
+            BRANCH=$(echo "$NYC_REPORT" | sed -n 's/^Branches[^:]*: *\([0-9.]*\)%.*/\1/p')
+            FN=$(echo "$NYC_REPORT" | sed -n 's/^Functions[^:]*: *\([0-9.]*\)%.*/\1/p')
+            LINES=$(echo "$NYC_REPORT" | sed -n 's/^Lines[^:]*: *\([0-9.]*\)%.*/\1/p')
+
+            {
+              echo "## Core Coverage Summary"
+              echo ""
+              echo "- Threshold: ${MIN}%"
+              echo "- Statements: ${STMT:-N/A}%"
+              echo "- Branches: ${BRANCH:-N/A}%"
+              echo "- Functions: ${FN:-N/A}%"
+              echo "- Lines: ${LINES:-N/A}%"
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            npx --yes nyc check-coverage --lines=$MIN --statements=$MIN --functions=$MIN --branches=$MIN
+          else
+            echo "::error::No coverage report found (expected coverage/lcov.info or coverage/coverage-final.json)."
+            exit 1
+          fi
 
       - name: Build
         continue-on-error: true

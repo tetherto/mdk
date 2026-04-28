@@ -127,8 +127,80 @@ jobs:
         run: pnpm run format
 
       - name: Test with coverage
-        continue-on-error: true
         run: pnpm run test:coverage || pnpm test
+
+      - name: Enforce coverage threshold (>=80%)
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIN=80
+
+          mapfile -t LCOV_FILES < <(find . -type f -path '*/coverage/lcov.info')
+          if [ ${#LCOV_FILES[@]} -eq 0 ]; then
+            mapfile -t COVERAGE_JSON_FILES < <(find . -type f -path '*/coverage/coverage-final.json')
+            if [ ${#COVERAGE_JSON_FILES[@]} -eq 0 ]; then
+              echo "::error::No coverage report found (expected lcov.info or coverage-final.json)."
+              exit 1
+            fi
+
+            rm -rf .nyc_output
+            mkdir -p .nyc_output
+            i=0
+            for file in "${COVERAGE_JSON_FILES[@]}"; do
+              cp "$file" ".nyc_output/out-$i.json"
+              i=$((i + 1))
+            done
+
+            npx --yes nyc merge .nyc_output coverage-merged.json >/dev/null
+            cp coverage-merged.json .nyc_output/out.json
+            NYC_REPORT="$(npx --yes nyc report --reporter=text-summary 2>&1)"
+            echo "$NYC_REPORT"
+            STMT=$(echo "$NYC_REPORT" | sed -n 's/^Statements[^:]*: *\([0-9.]*\)%.*/\1/p')
+            BRANCH=$(echo "$NYC_REPORT" | sed -n 's/^Branches[^:]*: *\([0-9.]*\)%.*/\1/p')
+            FN=$(echo "$NYC_REPORT" | sed -n 's/^Functions[^:]*: *\([0-9.]*\)%.*/\1/p')
+            LINES=$(echo "$NYC_REPORT" | sed -n 's/^Lines[^:]*: *\([0-9.]*\)%.*/\1/p')
+
+            {
+              echo "## UI Coverage Summary"
+              echo ""
+              echo "- Threshold: ${MIN}%"
+              echo "- Statements: ${STMT:-N/A}%"
+              echo "- Branches: ${BRANCH:-N/A}%"
+              echo "- Functions: ${FN:-N/A}%"
+              echo "- Lines: ${LINES:-N/A}%"
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            npx --yes nyc check-coverage --lines=$MIN --statements=$MIN --functions=$MIN --branches=$MIN
+            exit 0
+          fi
+
+          LF=$(awk -F: '/^LF:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+          LH=$(awk -F: '/^LH:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+          FNF=$(awk -F: '/^FNF:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+          FNH=$(awk -F: '/^FNH:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+          BRF=$(awk -F: '/^BRF:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+          BRH=$(awk -F: '/^BRH:/ {sum+=$2} END {print sum+0}' "${LCOV_FILES[@]}")
+
+          lines_pct=$(awk -v h="$LH" -v f="$LF" 'BEGIN { if (f==0) print 0; else printf "%.2f", (h/f)*100 }')
+          funcs_pct=$(awk -v h="$FNH" -v f="$FNF" 'BEGIN { if (f==0) print 0; else printf "%.2f", (h/f)*100 }')
+          branch_pct=$(awk -v h="$BRH" -v f="$BRF" 'BEGIN { if (f==0) print 0; else printf "%.2f", (h/f)*100 }')
+
+          echo "Coverage summary: lines=${lines_pct}% functions=${funcs_pct}% branches=${branch_pct}% (min=${MIN}%)"
+          {
+            echo "## UI Coverage Summary"
+            echo ""
+            echo "- Threshold: ${MIN}%"
+            echo "- Lines: ${lines_pct}%"
+            echo "- Functions: ${funcs_pct}%"
+            echo "- Branches: ${branch_pct}%"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          awk -v l="$lines_pct" -v fn="$funcs_pct" -v b="$branch_pct" -v m="$MIN" 'BEGIN {
+            if (l < m || fn < m || b < m) exit 1; else exit 0
+          }' || {
+            echo "::error::Coverage threshold failed. Required >= ${MIN}% for lines/functions/branches."
+            exit 1
+          }
 
   ui-build:
     name: UI Build

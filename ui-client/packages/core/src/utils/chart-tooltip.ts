@@ -141,15 +141,21 @@ export const buildChartTooltip = (
       return
     }
 
-    let innerHtml = '<div style="display: flex; flex-direction: column; gap: 8px;">'
+    const wrapper = document.createElement('div')
+
+    wrapper.style.display = 'flex'
+    wrapper.style.flexDirection = 'column'
+    wrapper.style.gap = '8px'
 
     if (showTitle && tooltip.title?.length) {
-      const titleText = tooltip.title.join(' ')
-      innerHtml += `<div style="
-        font-size: ${fontSize - 2}px;
-        color: ${COLOR.WHITE_ALPHA_05};
-        opacity: 0.7;
-      ">${titleText}</div>`
+      const titleEl = document.createElement('div')
+
+      titleEl.style.fontSize = `${fontSize - 2}px`
+      titleEl.style.color = COLOR.WHITE_ALPHA_05
+      titleEl.style.opacity = '0.7'
+      titleEl.textContent = tooltip.title.join(' ')
+
+      wrapper.appendChild(titleEl)
     }
 
     const bodyItems = tooltip.dataPoints ?? []
@@ -167,21 +173,35 @@ export const buildChartTooltip = (
         ? valueFormatter(Number(rawValue), item)
         : String(rawValue)
 
-      innerHtml += `<div style="
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        font-size: ${fontSize}px;
-        line-height: ${fontSize + 4}px;
-        gap: 16px;
-      ">
-        <span style="color: ${resolvedLabelColor}; white-space: nowrap;">${label}</span>
-        <span style="color: ${resolvedValueColor}; white-space: nowrap; font-weight: 600;">${formattedValue}</span>
-      </div>`
+      const row = document.createElement('div')
+
+      row.style.display = 'flex'
+      row.style.justifyContent = 'space-between'
+      row.style.alignItems = 'baseline'
+      row.style.fontSize = `${fontSize}px`
+      row.style.lineHeight = `${fontSize + 4}px`
+      row.style.gap = '16px'
+
+      const labelSpan = document.createElement('span')
+
+      labelSpan.style.color = resolvedLabelColor
+      labelSpan.style.whiteSpace = 'nowrap'
+      labelSpan.textContent = String(label)
+
+      const valueSpan = document.createElement('span')
+
+      valueSpan.style.color = resolvedValueColor
+      valueSpan.style.whiteSpace = 'nowrap'
+      valueSpan.style.fontWeight = '600'
+      valueSpan.textContent = formattedValue
+
+      row.appendChild(labelSpan)
+      row.appendChild(valueSpan)
+
+      wrapper.appendChild(row)
     }
 
-    innerHtml += '</div>'
-    tooltipEl.innerHTML = innerHtml
+    tooltipEl.replaceChildren(wrapper)
 
     Object.assign(tooltipEl.style, {
       opacity: '1',

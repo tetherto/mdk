@@ -1,4 +1,4 @@
-import { Indicator, SimpleTooltip, UNITS } from '@mdk/core'
+import { Indicator, SimpleTooltip, UNITS } from '@tetherto/mdk-core-ui'
 import { DEVICE_STATUS } from '../../../../constants/devices'
 import _isNil from 'lodash/isNil'
 

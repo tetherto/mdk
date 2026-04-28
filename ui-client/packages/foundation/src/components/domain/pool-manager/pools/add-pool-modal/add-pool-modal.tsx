@@ -3,7 +3,7 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { useDispatch } from 'react-redux'
 import { z } from 'zod'
 
-import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@mdk/core'
+import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@tetherto/mdk-core-ui'
 
 import { TrashIcon } from '@radix-ui/react-icons'
 import { ACTION_TYPES, SUBMIT_ACTION_TYPES } from '../../../../../constants/actions'

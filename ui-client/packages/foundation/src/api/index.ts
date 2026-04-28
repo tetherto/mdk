@@ -1,5 +1,5 @@
 /**
- * @mdk/foundation - API Client
+ * @tetherto/mdk-foundation-ui - API Client
  *
  * API integration with RTK Query for type-safe API calls.
  */

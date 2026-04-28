@@ -1,4 +1,4 @@
-import { cn } from '@mdk/core'
+import { cn } from '@tetherto/mdk-core-ui'
 import type { TIncidentSeverity } from './types'
 
 type TIncidentSeverityProps = {

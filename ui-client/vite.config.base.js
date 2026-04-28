@@ -31,11 +31,11 @@ export const createLibConfig = ({ packageDir }) => {
           api: 'modern-compiler',
           // Add workspace packages to load paths
           loadPaths: [resolve(packageDir, '../../packages')],
-          // Custom importer for @mdk/* packages
+          // Custom importer for @tetherto/* packages
           importers: [
             {
               canonicalize(url) {
-                if (url.startsWith('@mdk/')) {
+                if (url.startsWith('@tetherto/')) {
                   const [, pkgName, ...pathParts] = url.split('/')
                   const pkgPath = resolve(
                     packageDir,
@@ -55,8 +55,8 @@ export const createLibConfig = ({ packageDir }) => {
     },
     resolve: {
       alias: {
-        '@mdk/core': resolve(packageDir, '../core/src'),
-        '@mdk/foundation': resolve(packageDir, '../foundation/src'),
+        '@tetherto/mdk-core-ui': resolve(packageDir, '../core/src'),
+        '@tetherto/mdk-foundation-ui': resolve(packageDir, '../foundation/src'),
       },
     },
   })

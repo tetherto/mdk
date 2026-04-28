@@ -1,11 +1,11 @@
-# @mdk/fonts
+# @tetherto/mdk-fonts-ui
 
 Font assets for MDK (JetBrains Mono).
 
 ## Installation
 
 ```bash
-pnpm add @mdk/fonts
+pnpm add @tetherto/mdk-fonts-ui
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ pnpm add @mdk/fonts
 Import the font CSS once in your application entry point:
 
 ```typescript
-import '@mdk/fonts/jetbrains-mono.css'
+import '@tetherto/mdk-fonts-ui/jetbrains-mono.css'
 ```
 
 This is all you need. The CSS file references the woff2 assets via relative
@@ -24,7 +24,7 @@ no manual copy step required.
 After importing, the package will:
 
 1. Register the JetBrains Mono font family for weights 100, 300, 400, 500, 600, 700.
-2. Override the `--font-mono` CSS variable so `@mdk/core` components pick it up.
+2. Override the `--font-mono` CSS variable so `@tetherto/mdk-core-ui` components pick it up.
 
 ## What's Included
 
@@ -37,7 +37,7 @@ After importing, the package will:
 
 ## Optional
 
-This package is **optional**. If you do not import it, `@mdk/core` falls back
+This package is **optional**. If you do not import it, `@tetherto/mdk-core-ui` falls back
 to the system monospace font stack defined on `--font-mono`.
 
 ## Direct asset access
@@ -46,5 +46,5 @@ If you need to reference an individual font file directly (for example, to
 add a `<link rel="preload">` hint), the woff2 files are also exported:
 
 ```typescript
-import jetBrainsRegular from '@mdk/fonts/fonts/JetBrainsMono-Regular.woff2'
+import jetBrainsRegular from '@tetherto/mdk-fonts-ui/fonts/JetBrainsMono-Regular.woff2'
 ```

@@ -1,5 +1,5 @@
-import type { DataTableRowSelectionState } from '@mdk/core'
-import { DataTable } from '@mdk/core'
+import type { DataTableRowSelectionState } from '@tetherto/mdk-core-ui'
+import { DataTable } from '@tetherto/mdk-core-ui'
 import { MinerStatuses } from '../../../../constants/device-constants'
 import type { MinerRecord } from '../types'
 import { getMinerTableColumns } from './miner-explorer-columns'

@@ -50,7 +50,7 @@
 ┌──────────────────────────┐    ┌──────────────────────────┐
 │ TypeScript Build (tsc)   │    │ SCSS Build (Vite)        │
 │ - Compiles .ts/.tsx      │    │ - Compiles .scss         │
-│ - Generates .d.ts        │    │ - Resolves @mdk/*        │
+│ - Generates .d.ts        │    │ - Resolves @tetherto/*        │
 │ - Type checking          │    │ - Minifies CSS           │
 │ - Output: dist/          │    │ - Output: src/styles.css │
 └──────────────────────────┘    └──────────────────────────┘
@@ -119,23 +119,23 @@ export default defineConfig({
 pnpm build
 
 # Turborepo will:
-# 1. Build @mdk/core first (no dependencies, exports built JS)
-# 2. Build @mdk/fonts in parallel (independent)
-# 3. Build @mdk/foundation (depends on core, exports TS source)
-# 4. Build @mdk/demo app (depends on all packages)
+# 1. Build @tetherto/mdk-core-ui first (no dependencies, exports built JS)
+# 2. Build @tetherto/mdk-fonts-ui in parallel (independent)
+# 3. Build @tetherto/mdk-foundation-ui (depends on core, exports TS source)
+# 4. Build @tetherto/mdk-demo-ui app (depends on all packages)
 ```
 
 ### Selective Build
 
 ```bash
 # Build specific package
-pnpm --filter @mdk/core build
+pnpm --filter @tetherto/mdk-core-ui build
 
 # Build package with dependencies
-pnpm --filter @mdk/foundation... build
+pnpm --filter @tetherto/mdk-foundation-ui... build
 
 # Build package with dependents
-pnpm --filter ...@mdk/core build
+pnpm --filter ...@tetherto/mdk-core-ui build
 ```
 
 ### Incremental Build
@@ -149,9 +149,9 @@ pnpm build
 pnpm build
 # → Takes ~0.1s (everything cached!)
 
-# Change one file in @mdk/core
+# Change one file in @tetherto/mdk-core-ui
 pnpm build
-# → Only rebuilds @mdk/core + packages that depend on it
+# → Only rebuilds @tetherto/mdk-core-ui + packages that depend on it
 ```
 
 ## Caching
@@ -199,10 +199,10 @@ Turborepo automatically parallelizes independent tasks:
 ```
 Time →
 
-@mdk/core         ████████
-@mdk/fonts        ████████ (parallel with core)
-@mdk/foundation                ████████
-@mdk/demo                           ████████
+@tetherto/mdk-core-ui         ████████
+@tetherto/mdk-fonts-ui        ████████ (parallel with core)
+@tetherto/mdk-foundation-ui                ████████
+@tetherto/mdk-demo-ui                           ████████
 
 Total: ~3-4s (vs ~10s sequential)
 ```
@@ -210,12 +210,12 @@ Total: ~3-4s (vs ~10s sequential)
 ## Dependency Graph
 
 ```
-@mdk/core (built JS + CSS)
-└── @mdk/foundation (TS source + CSS)
-    └── @mdk/demo (app)
+@tetherto/mdk-core-ui (built JS + CSS)
+└── @tetherto/mdk-foundation-ui (TS source + CSS)
+    └── @tetherto/mdk-demo-ui (app)
 
-@mdk/fonts (independent, CSS only)
-└── @mdk/demo (app)
+@tetherto/mdk-fonts-ui (independent, CSS only)
+└── @tetherto/mdk-demo-ui (app)
 ```
 
 **Simplified Architecture:**
@@ -226,9 +226,9 @@ Total: ~3-4s (vs ~10s sequential)
 - **Core exports built JavaScript** (requires build step)
 
 Turborepo ensures:
-- `@mdk/core` builds before `@mdk/foundation`
-- `@mdk/fonts` can build in parallel
-- `@mdk/foundation` and `@mdk/fonts` build before `@mdk/demo`
+- `@tetherto/mdk-core-ui` builds before `@tetherto/mdk-foundation-ui`
+- `@tetherto/mdk-fonts-ui` can build in parallel
+- `@tetherto/mdk-foundation-ui` and `@tetherto/mdk-fonts-ui` build before `@tetherto/mdk-demo-ui`
 
 ## Performance
 
@@ -260,7 +260,7 @@ pnpm build
 pnpm build --verbose
 
 # Build specific package to debug
-pnpm --filter @mdk/core build
+pnpm --filter @tetherto/mdk-core-ui build
 ```
 
 ### Cache Issues
@@ -293,8 +293,8 @@ pnpm list --depth=1
 pnpm build
 
 # ❌ Bad - Manual package-by-package
-pnpm --filter @mdk/core build
-pnpm --filter @mdk/theme build
+pnpm --filter @tetherto/mdk-core-ui build
+pnpm --filter @tetherto/theme build
 # ...
 ```
 

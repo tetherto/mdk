@@ -1,4 +1,4 @@
-import { MinersSummaryBox } from '@mdk/foundation'
+import { MinersSummaryBox } from '@tetherto/mdk-foundation-ui'
 import type { ReactNode } from 'react'
 import './miners-summary-box-page.scss'
 

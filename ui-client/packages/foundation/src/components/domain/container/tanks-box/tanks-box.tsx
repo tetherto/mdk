@@ -1,5 +1,5 @@
 import _map from 'lodash/map'
-import { UNITS } from '@mdk/core'
+import { UNITS } from '@tetherto/mdk-core-ui'
 import { TankRow } from './tank-row'
 import './tanks-box.scss'
 

@@ -27,7 +27,7 @@ type UseBeepSoundOptions = {
  *
  * @example
  * ```tsx
- * import { useBeepSound } from '@mdk/foundation/hooks'
+ * import { useBeepSound } from '@tetherto/mdk-foundation-ui/hooks'
  *
  * // Basic usage — beep when temperature is critical
  * useBeepSound({ isAllowed: isCriticalTemp })

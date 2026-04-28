@@ -7,8 +7,8 @@ import { PositionChangeDialog } from '../position-change-dialog'
 import { getDeviceContainerPosText } from '../../../../../../utils/container-utils'
 import { getMinerShortCode } from '../../../../../../utils/device-utils'
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     Dialog: ({ open, onOpenChange, children }: any) =>

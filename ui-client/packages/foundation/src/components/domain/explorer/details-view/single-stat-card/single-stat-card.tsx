@@ -1,4 +1,4 @@
-import { cn, formatValueUnit, SimpleTooltip } from '@mdk/core'
+import { cn, formatValueUnit, SimpleTooltip } from '@tetherto/mdk-core-ui'
 import type { ReactNode } from 'react'
 import './single-stat-card.scss'
 

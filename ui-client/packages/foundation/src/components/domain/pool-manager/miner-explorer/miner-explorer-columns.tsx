@@ -1,5 +1,5 @@
-import type { DataTableColumnDef } from '@mdk/core'
-import { Indicator } from '@mdk/core'
+import type { DataTableColumnDef } from '@tetherto/mdk-core-ui'
+import { Indicator } from '@tetherto/mdk-core-ui'
 
 import { DATE_TIME_FORMAT } from '../../../../constants/dates'
 import { getHashrateString } from '../../../../utils/device-utils'

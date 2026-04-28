@@ -7,8 +7,8 @@ import {
 } from '../../pool-manager-constants'
 import { minersTableColumns } from '../assign-pool-modal-columns'
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     Indicator: ({

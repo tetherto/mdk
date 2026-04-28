@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { Button, SimpleTooltip, Spinner } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { Button, SimpleTooltip, Spinner } from '@tetherto/mdk-core-ui'
 import * as React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 

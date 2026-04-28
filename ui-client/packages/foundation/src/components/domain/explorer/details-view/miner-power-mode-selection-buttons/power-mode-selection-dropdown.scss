@@ -1,4 +1,4 @@
-@use '@mdk/core/styles' as *;
+@use '@tetherto/mdk-core-ui/styles' as *;
 
 .mdk-power-mode-dropdown-button {
   @include flex_align_between;

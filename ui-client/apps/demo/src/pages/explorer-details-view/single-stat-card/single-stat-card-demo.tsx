@@ -1,6 +1,6 @@
-import { COLOR } from '@mdk/core'
+import { COLOR } from '@tetherto/mdk-core-ui'
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { SingleStatCard } from '@mdk/foundation'
+import { SingleStatCard } from '@tetherto/mdk-foundation-ui'
 import type { ReactElement } from 'react'
 import './single-stat-card-demo.scss'
 

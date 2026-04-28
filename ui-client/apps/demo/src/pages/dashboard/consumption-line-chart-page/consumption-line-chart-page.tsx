@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { ConsumptionLineChart } from '@mdk/foundation'
+import { ConsumptionLineChart } from '@tetherto/mdk-foundation-ui'
 import { DemoBlock } from '../../../components/demo-block'
 import '../line-chart-page.scss'
 

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { TankRowProps } from '../tank-row'
 import { TankRow } from '../tank-row'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   Indicator: ({
     color,
     size,

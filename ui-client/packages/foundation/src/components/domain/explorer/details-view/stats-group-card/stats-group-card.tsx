@@ -1,4 +1,4 @@
-import { UNITS } from '@mdk/core'
+import { UNITS } from '@tetherto/mdk-core-ui'
 import { formatDistanceStrict } from 'date-fns/formatDistanceStrict'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'

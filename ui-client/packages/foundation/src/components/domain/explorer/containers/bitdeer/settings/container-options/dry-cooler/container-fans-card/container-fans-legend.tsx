@@ -1,4 +1,4 @@
-import { cn, FanIcon } from '@mdk/core'
+import { cn, FanIcon } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import './container-fans-legend.scss'
 

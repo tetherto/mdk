@@ -15,7 +15,7 @@ import {
   Button,
   validators,
   createFieldNames,
-} from '@mdk/core'
+} from '@tetherto/mdk-core-ui'
 
 // 1. Define schema with validators
 const schema = z.object({
@@ -190,7 +190,7 @@ function MyForm() {
 ## 🔐 Validator Cheat Sheet
 
 ```tsx
-import { validators } from '@mdk/core'
+import { validators } from '@tetherto/mdk-core-ui'
 
 const schema = z.object({
   // Text validators
@@ -329,7 +329,7 @@ import {
   registerSchema,
   profileSchema,
   contactSchema,
-} from '@mdk/core'
+} from '@tetherto/mdk-core-ui'
 
 // Use directly
 const form = useForm({

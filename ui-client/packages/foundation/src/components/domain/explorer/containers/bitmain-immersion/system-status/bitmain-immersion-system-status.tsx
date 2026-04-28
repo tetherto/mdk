@@ -1,4 +1,4 @@
-import { Indicator } from '@mdk/core'
+import { Indicator } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import type { ContainerSnap, Device } from '../../../../../../types/device'
 import { getDeviceData } from '../../../../../../utils/device-utils'

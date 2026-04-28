@@ -1,6 +1,6 @@
 import { TrashIcon } from '@radix-ui/react-icons'
 import { useState } from 'react'
-import { Button, EmptyState, Input, Switch } from '@mdk/core'
+import { Button, EmptyState, Input, Switch } from '@tetherto/mdk-core-ui'
 
 import './feature-flags-settings.scss'
 

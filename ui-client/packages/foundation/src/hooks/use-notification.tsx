@@ -1,5 +1,5 @@
 // hooks/useNotification/useNotification.tsx
-import type { ToastPosition, ToastVariant } from '@mdk/core'
+import type { ToastPosition, ToastVariant } from '@tetherto/mdk-core-ui'
 import * as React from 'react'
 import { useDispatch } from 'react-redux'
 import { decrement, increment } from '../state/slices/notification-slice'
@@ -25,7 +25,7 @@ export type NotificationOptions = {
 
 /**
  * Custom hook for showing notifications with Redux integration.
- * Uses @mdk/core Toast and Toaster components.
+ * Uses @tetherto/mdk-core-ui Toast and Toaster components.
  *
  * @example
  * ```tsx

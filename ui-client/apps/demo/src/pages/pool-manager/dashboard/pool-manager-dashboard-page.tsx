@@ -2,8 +2,8 @@
 import type { ReactElement } from 'react'
 
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import type { Alert, DashboardStats } from '@mdk/foundation'
-import { PoolManagerDashboard } from '@mdk/foundation'
+import type { Alert, DashboardStats } from '@tetherto/mdk-foundation-ui'
+import { PoolManagerDashboard } from '@tetherto/mdk-foundation-ui'
 
 import './pool-manager-dashboard-page.scss'
 

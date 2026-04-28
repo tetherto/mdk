@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import type { TanksBoxProps } from '../tanks-box'
 import { TanksBox } from '../tanks-box'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   Indicator: ({
     color,
     size,

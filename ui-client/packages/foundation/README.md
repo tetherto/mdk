@@ -1,22 +1,22 @@
-# @mdk/foundation
+# @tetherto/mdk-foundation-ui
 
 Complete foundation package with features, state management, API client, hooks, and utilities.
 
 ## Installation
 
 ```bash
-pnpm add @mdk/foundation
+pnpm add @tetherto/mdk-foundation-ui
 ```
 
 ## Usage
 
 ```tsx
-import { /* your imports */ } from '@mdk/foundation'
+import { /* your imports */ } from '@tetherto/mdk-foundation-ui'
 
 // Or import from specific sub-modules
-import { /* hooks */ } from '@mdk/foundation/hooks'
-import { /* API client */ } from '@mdk/foundation/api'
-import { /* state */ } from '@mdk/foundation/state'
+import { /* hooks */ } from '@tetherto/mdk-foundation-ui/hooks'
+import { /* API client */ } from '@tetherto/mdk-foundation-ui/api'
+import { /* state */ } from '@tetherto/mdk-foundation-ui/state'
 ```
 
 ## Structure
@@ -30,4 +30,4 @@ import { /* state */ } from '@mdk/foundation/state'
 
 ## Dependencies
 
-This package depends on `@mdk/core` for base components and utilities.
+This package depends on `@tetherto/mdk-core-ui` for base components and utilities.

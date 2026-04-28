@@ -3,8 +3,8 @@
  * Used by LineChart, BarChart, and AreaChart demos in App.tsx.
  */
 
-import { COLOR } from '@mdk/core'
-import { WEBAPP_DISPLAY_NAME } from '@mdk/foundation'
+import { COLOR } from '@tetherto/mdk-core-ui'
+import { WEBAPP_DISPLAY_NAME } from '@tetherto/mdk-foundation-ui'
 
 export const LINE_CHART_REVENUE_BASIC = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],

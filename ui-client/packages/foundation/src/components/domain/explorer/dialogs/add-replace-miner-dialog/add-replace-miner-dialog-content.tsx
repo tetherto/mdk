@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import {
   Button,
   createFieldNames,
@@ -9,7 +9,7 @@ import {
   FormInput,
   FormTagInput,
   validators,
-} from '@mdk/core'
+} from '@tetherto/mdk-core-ui'
 import * as React from 'react'
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'

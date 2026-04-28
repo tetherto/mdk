@@ -1,6 +1,6 @@
-import { Label, Switch } from '@mdk/core'
+import { Label, Switch } from '@tetherto/mdk-core-ui'
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { Socket } from '@mdk/foundation'
+import { Socket } from '@tetherto/mdk-foundation-ui'
 import type { ReactElement } from 'react'
 import * as React from 'react'
 import './socket-demo.scss'

@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HashRateLogEntry } from '../hash-rate-line-chart-utils'
 import { getHashRateGraphData } from '../hash-rate-line-chart-utils'
 
-import { CHART_COLORS, getTimeRange } from '@mdk/core'
+import { CHART_COLORS, getTimeRange } from '@tetherto/mdk-core-ui'
 import { WEBAPP_DISPLAY_NAME } from '../../../../../constants'
 import { getHashrateString, getHashrateUnit } from '../../../../../utils/device-utils'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   CHART_COLORS: {
     SKY_BLUE: '#00bcd4',
   },

@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import {
   convertUnits,
   FALLBACK,
@@ -7,7 +7,7 @@ import {
   HEATMAP,
   UNIT_LABELS,
   UNITS,
-} from '@mdk/core'
+} from '@tetherto/mdk-core-ui'
 import _capitalize from 'lodash/capitalize'
 import _find from 'lodash/find'
 import _get from 'lodash/get'

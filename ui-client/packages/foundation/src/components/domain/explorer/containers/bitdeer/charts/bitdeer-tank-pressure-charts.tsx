@@ -1,4 +1,4 @@
-import { CHART_COLORS, UNITS } from '@mdk/core'
+import { CHART_COLORS, UNITS } from '@tetherto/mdk-core-ui'
 
 /**
  * Tank Pressure Charts for Bitdeer containers

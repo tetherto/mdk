@@ -1,7 +1,7 @@
-import { Button } from '@mdk/core'
-import type { DataTableRowSelectionState, LocalFilters } from '@mdk/core'
-import { DeviceExplorer } from '@mdk/foundation'
-import type { DeviceExplorerDeviceData, DeviceExplorerDeviceType } from '@mdk/foundation'
+import { Button } from '@tetherto/mdk-core-ui'
+import type { DataTableRowSelectionState, LocalFilters } from '@tetherto/mdk-core-ui'
+import { DeviceExplorer } from '@tetherto/mdk-foundation-ui'
+import type { DeviceExplorerDeviceData, DeviceExplorerDeviceType } from '@tetherto/mdk-foundation-ui'
 import { useState } from 'react'
 import { cabinetData, containerData, minersData } from './mock-data'
 

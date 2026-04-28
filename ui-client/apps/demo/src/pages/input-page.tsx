@@ -1,4 +1,4 @@
-import { Input, TagInput } from '@mdk/core'
+import { Input, TagInput } from '@tetherto/mdk-core-ui'
 import { useState } from 'react'
 
 type InputRowProps = {

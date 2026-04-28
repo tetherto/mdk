@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Input, TagInput } from '@mdk/core'
+import { Input, TagInput } from '@tetherto/mdk-core-ui'
 
 export const FormElementsPage = (): JSX.Element => {
   const [tagInputTags, setTagInputTags] = useState<string[]>([])

@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MinerExplorerToolbarProps } from '../miner-explorer-toolbar'
 import { MinerExplorerToolbar } from '../miner-explorer-toolbar'
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const originalModule = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const originalModule = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...originalModule,
     TagInput: vi.fn(({ value, onTagsChange, placeholder, className }) => (

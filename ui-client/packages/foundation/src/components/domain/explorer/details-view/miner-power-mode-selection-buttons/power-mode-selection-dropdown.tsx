@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { ArrowIcon, cn, DropdownMenu, SimpleTooltip } from '@mdk/core'
+import { ArrowIcon, cn, DropdownMenu, SimpleTooltip } from '@tetherto/mdk-core-ui'
 
 import { getSupportedPowerModes } from '../../../../../utils/device-utils'
 import { getDefaultSelectedPowerModes } from '../miner-controls-card/miner-controls-utils'

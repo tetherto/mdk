@@ -1,4 +1,4 @@
-import { COLOR } from '@mdk/core'
+import { COLOR } from '@tetherto/mdk-core-ui'
 import { describe, expect, it } from 'vitest'
 import { CONTAINER_STATUS, THRESHOLD_LEVEL } from '../status-utils'
 

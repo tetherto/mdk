@@ -1,4 +1,4 @@
-import type { CascaderOption } from '@mdk/core'
+import type { CascaderOption } from '@tetherto/mdk-core-ui'
 import _capitalize from 'lodash/capitalize'
 import _map from 'lodash/map'
 

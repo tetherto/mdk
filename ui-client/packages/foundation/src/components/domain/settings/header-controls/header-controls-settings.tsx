@@ -1,4 +1,4 @@
-import { Button, Spinner, Switch } from '@mdk/core'
+import { Button, Spinner, Switch } from '@tetherto/mdk-core-ui'
 
 import type { HeaderPreferences } from '../../../../constants/header-controls.constants'
 import { HEADER_ITEMS } from '../../../../constants/header-controls.constants'

@@ -1,5 +1,5 @@
-import { BarChart, Button, ChartContainer, computeStats, LineChart, Loader, UNITS } from '@mdk/core'
-import { ChartWrapper } from '@mdk/foundation'
+import { BarChart, Button, ChartContainer, computeStats, LineChart, Loader, UNITS } from '@tetherto/mdk-core-ui'
+import { ChartWrapper } from '@tetherto/mdk-foundation-ui'
 import * as React from 'react'
 
 /**

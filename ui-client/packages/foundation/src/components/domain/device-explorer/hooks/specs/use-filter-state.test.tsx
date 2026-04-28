@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useFilterState } from '../use-filter-state'
-import type { LocalFilters } from '@mdk/core'
+import type { LocalFilters } from '@tetherto/mdk-core-ui'
 
 describe('useFilterState', () => {
   it('should initialize with empty filters', () => {

@@ -1,5 +1,5 @@
 /**
- * @mdk/foundation - State Management
+ * @tetherto/mdk-foundation-ui - State Management
  *
  * State management with Redux Toolkit.
  */

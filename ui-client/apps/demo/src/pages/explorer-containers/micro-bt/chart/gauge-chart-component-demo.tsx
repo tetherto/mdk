@@ -1,5 +1,5 @@
-import { COLOR } from '@mdk/core'
-import { GaugeChartComponent } from '@mdk/foundation'
+import { COLOR } from '@tetherto/mdk-core-ui'
+import { GaugeChartComponent } from '@tetherto/mdk-foundation-ui'
 import type { ReactElement } from 'react'
 import './gauge-chart-component-demo.scss'
 

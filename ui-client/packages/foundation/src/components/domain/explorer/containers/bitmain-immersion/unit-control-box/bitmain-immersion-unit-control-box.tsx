@@ -1,4 +1,4 @@
-import { Indicator, Tag, UNITS } from '@mdk/core'
+import { Indicator, Tag, UNITS } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import { DEVICE_STATUS } from '../../../../../../constants/devices'
 import { BitMainImmersionControlBox } from '../control-box/bitmain-immersion-control-box'

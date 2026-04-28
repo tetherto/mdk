@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 
-import { Button, SimpleTooltip } from '@mdk/core'
+import { Button, SimpleTooltip } from '@tetherto/mdk-core-ui'
 
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { ACTION_TYPES } from '../../../../../constants/actions'

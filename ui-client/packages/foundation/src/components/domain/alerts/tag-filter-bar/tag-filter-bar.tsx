@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
-import type { CascaderOption, CascaderValue } from '@mdk/core'
-import { cn, ListViewFilter, TagInput } from '@mdk/core'
+import type { CascaderOption, CascaderValue } from '@tetherto/mdk-core-ui'
+import { cn, ListViewFilter, TagInput } from '@tetherto/mdk-core-ui'
 import _map from 'lodash/map'
 
 import _capitalize from 'lodash/capitalize'

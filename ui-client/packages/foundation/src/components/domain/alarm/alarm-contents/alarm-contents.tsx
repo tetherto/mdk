@@ -1,4 +1,4 @@
-import { EmptyState } from '@mdk/core'
+import { EmptyState } from '@tetherto/mdk-core-ui'
 import type { ReactNode } from 'react'
 import type { TimelineItemData } from '../alarm-row/alarm-row'
 import { AlarmRow } from '../alarm-row/alarm-row'

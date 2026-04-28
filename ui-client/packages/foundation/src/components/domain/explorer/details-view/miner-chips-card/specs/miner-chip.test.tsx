@@ -1,10 +1,10 @@
-import { formatNumber, UNITS } from '@mdk/core'
+import { formatNumber, UNITS } from '@tetherto/mdk-core-ui'
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MinerChip } from '../miner-chip/miner-chip'
 
-vi.mock('@mdk/core', async () => {
-  const actual = await vi.importActual('@mdk/core')
+vi.mock('@tetherto/mdk-core-ui', async () => {
+  const actual = await vi.importActual('@tetherto/mdk-core-ui')
   return {
     ...actual,
     formatNumber: vi.fn((value) => {

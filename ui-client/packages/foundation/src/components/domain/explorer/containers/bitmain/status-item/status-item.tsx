@@ -1,5 +1,5 @@
-import type { IndicatorColor } from '@mdk/core'
-import { Indicator } from '@mdk/core'
+import type { IndicatorColor } from '@tetherto/mdk-core-ui'
+import { Indicator } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import './status-item.scss'
 

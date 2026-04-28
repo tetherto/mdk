@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { Dialog, DialogContent } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { Dialog, DialogContent } from '@tetherto/mdk-core-ui'
 import { AddReplaceMinerDialogContent } from './add-replace-miner-dialog-content'
 import { getTitle } from './helper'
 

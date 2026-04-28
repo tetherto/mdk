@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
-import { Button, Dialog, DialogContent } from '@mdk/core'
+import { Button, Dialog, DialogContent } from '@tetherto/mdk-core-ui'
 import {
   actionsSlice,
   AddReplaceMinerDialog,
@@ -12,7 +12,7 @@ import {
   POSITION_CHANGE_DIALOG_FLOWS,
   PositionChangeDialog,
   RemoveMinerDialog,
-} from '@mdk/foundation'
+} from '@tetherto/mdk-foundation-ui'
 
 import { DemoBlock } from '../../../components/demo-block'
 import { DemoPageHeader } from '../../../components/demo-page-header'
@@ -22,7 +22,7 @@ import './fleet-management-demo.scss'
  * Fleet Management Demo
  *
  * Standalone demos for each of the five publicly exported dialog components
- * from `@mdk/foundation`'s `explorer/dialogs` barrel. Each block provides
+ * from `@tetherto/mdk-foundation-ui`'s `explorer/dialogs` barrel. Each block provides
  * its own minimal Redux store so dialogs that dispatch actions (e.g.
  * MaintenanceDialogContent, RemoveMinerDialog) work in isolation.
  */

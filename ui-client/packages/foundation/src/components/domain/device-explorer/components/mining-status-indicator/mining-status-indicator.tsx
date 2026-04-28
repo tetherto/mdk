@@ -6,8 +6,8 @@ import {
   OfflineStatusIcon,
   SimpleTooltip,
   SleepStatusIcon,
-} from '@mdk/core'
-import type { UnknownRecord } from '@mdk/core'
+} from '@tetherto/mdk-core-ui'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import { getAlertsString } from '../../../../../utils/alerts-utils'
 import type { Alert } from '../../types'
 import _isObject from 'lodash/isObject'

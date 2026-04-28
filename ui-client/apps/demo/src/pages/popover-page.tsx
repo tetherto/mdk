@@ -1,4 +1,4 @@
-import { Button, Popover, PopoverContent, PopoverTrigger, SimplePopover, Switch } from '@mdk/core'
+import { Button, Popover, PopoverContent, PopoverTrigger, SimplePopover, Switch } from '@tetherto/mdk-core-ui'
 
 export const PopoverPage = (): JSX.Element => {
   return (

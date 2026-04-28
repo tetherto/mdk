@@ -2,12 +2,12 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { UNITS } from '@mdk/core'
+import { UNITS } from '@tetherto/mdk-core-ui'
 import type { MinerRecord } from '../../types'
 import { getMinerTableColumns } from '../miner-explorer-columns'
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...original,
     Indicator: ({ color, children }: { color: string; children: React.ReactNode }) => (

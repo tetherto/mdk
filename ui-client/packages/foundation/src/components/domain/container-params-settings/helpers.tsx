@@ -1,5 +1,5 @@
-import type { IndicatorColor } from '@mdk/core'
-import { COLOR, getDataTableColumnHelper } from '@mdk/core'
+import type { IndicatorColor } from '@tetherto/mdk-core-ui'
+import { COLOR, getDataTableColumnHelper } from '@tetherto/mdk-core-ui'
 import type { ReactNode } from 'react'
 
 export type ThresholdTableRow = {

@@ -1,5 +1,5 @@
 /**
- * @mdk/core - Core UI components, utilities, types, and theme system
+ * @tetherto/mdk-core-ui - Core UI components, utilities, types, and theme system
  *
  * This package provides the foundation for all other packages in the monorepo.
  */

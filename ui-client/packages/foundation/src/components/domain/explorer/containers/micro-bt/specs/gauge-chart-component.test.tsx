@@ -1,9 +1,9 @@
-import { GaugeChart } from '@mdk/core'
+import { GaugeChart } from '@tetherto/mdk-core-ui'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { GaugeChartComponent } from '../gauge-chart/gauge-chart-component'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   GaugeChart: vi.fn(({ percent }) => <div data-testid="gauge" data-percent={percent} />),
   COLOR: { EMERALD: '#00FF00', SOFT_TEAL: '#00FFFF' },
 }))

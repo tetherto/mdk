@@ -1,7 +1,7 @@
 import type { ChangeEvent, FocusEvent, ReactElement, ReactNode, WheelEvent } from 'react'
 import { useMemo } from 'react'
 
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import {
   Button,
   COLOR,
@@ -12,7 +12,7 @@ import {
   Label,
   Spinner,
   UNITS,
-} from '@mdk/core'
+} from '@tetherto/mdk-core-ui'
 
 import { getCommonColorMapping } from './helpers'
 import { FlashStatusIndicator, SoundStatusIndicator } from './status-indicator'

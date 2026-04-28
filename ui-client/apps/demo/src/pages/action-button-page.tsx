@@ -1,4 +1,4 @@
-import { ActionButton } from '@mdk/core'
+import { ActionButton } from '@tetherto/mdk-core-ui'
 
 import { useDemoToast } from '../utils/use-demo-toast'
 

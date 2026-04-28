@@ -1,7 +1,7 @@
 import * as React from 'react'
 
-import { Button, cn, Dialog, DialogContent, DialogTrigger } from '@mdk/core'
-import type { ButtonVariant } from '@mdk/core'
+import { Button, cn, Dialog, DialogContent, DialogTrigger } from '@tetherto/mdk-core-ui'
+import type { ButtonVariant } from '@tetherto/mdk-core-ui'
 import { PoolDetailsCard } from '../pool-details-card'
 import type { PoolDetailItem } from '../pool-details-card'
 

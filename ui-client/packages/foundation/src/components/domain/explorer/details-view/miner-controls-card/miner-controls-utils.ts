@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import { MINER_TYPE, MinerStatuses } from '../../../../../constants/device-constants'
 import type { Device } from '../../../../../types'
 import { getMinerTypeFromContainerType } from '../../../../../utils/container-utils'

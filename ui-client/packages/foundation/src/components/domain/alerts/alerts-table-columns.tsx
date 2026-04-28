@@ -1,5 +1,5 @@
-import type { DataTableColumnDef } from '@mdk/core'
-import { Button, FALLBACK } from '@mdk/core'
+import type { DataTableColumnDef } from '@tetherto/mdk-core-ui'
+import { Button, FALLBACK } from '@tetherto/mdk-core-ui'
 import { ChevronRightIcon } from '@radix-ui/react-icons'
 
 import { SEVERITY_COLORS, SEVERITY_LEVELS } from '../../../constants/alerts'

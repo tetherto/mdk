@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { Button, DialogFooter, Spinner } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { Button, DialogFooter, Spinner } from '@tetherto/mdk-core-ui'
 
 import type { Device } from '../../../../../../types'
 import { getContainerName } from '../../../../../../utils/container-utils'

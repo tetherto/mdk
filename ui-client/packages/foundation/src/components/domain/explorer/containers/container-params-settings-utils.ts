@@ -1,4 +1,4 @@
-import { UNITS } from '@mdk/core'
+import { UNITS } from '@tetherto/mdk-core-ui'
 import type { Device } from '../../../../types'
 import { isBitdeer, isMicroBT } from '../../../../utils/container-utils'
 import { getBitdeerParameterSettingsData } from './bitdeer'

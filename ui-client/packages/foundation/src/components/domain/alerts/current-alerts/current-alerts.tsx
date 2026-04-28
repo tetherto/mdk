@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import type { DataTableSortingState } from '@mdk/core'
-import { cn, DataTable } from '@mdk/core'
+import type { DataTableSortingState } from '@tetherto/mdk-core-ui'
+import { cn, DataTable } from '@tetherto/mdk-core-ui'
 
 import _castArray from 'lodash/castArray'
 import _isEmpty from 'lodash/isEmpty'

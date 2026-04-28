@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { Indicator } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { Indicator } from '@tetherto/mdk-core-ui'
 import type { PumpItem } from '../pump-box/pump-box'
 import { PumpBox } from '../pump-box/pump-box'
 import { ContainerFansCard } from './container-fans-card/container-fans-card'

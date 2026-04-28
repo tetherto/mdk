@@ -15,19 +15,19 @@ MDK (Mining Development Kit) is a reusable UI toolkit for building mining dashbo
 The entire library is split into two packages:
 
 ```
-@mdk/core
+@tetherto/mdk-core-ui
     ↓ (workspace:*)
-@mdk/foundation
+@tetherto/mdk-foundation-ui
 ```
 
-**`@mdk/core`** — generic, domain-agnostic UI layer.
+**`@tetherto/mdk-core-ui`** — generic, domain-agnostic UI layer.
 - ~50 components built on Radix UI primitives, styled with SCSS
 - Chart components (Chart.js, lightweight-charts)
 - Data table (TanStack Table)
 - Form system (React Hook Form + Zod)
 - Design tokens, shared utilities, and constants
 
-**`@mdk/foundation`** — mining domain layer, depends on `core`.
+**`@tetherto/mdk-foundation-ui`** — mining domain layer, depends on `core`.
 - Domain-specific React components (DeviceExplorer, ActiveIncidentsCard, etc.)
 - Custom hooks (permissions, notifications, pagination, chart checks)
 - Redux Toolkit state — two slices: `auth` and `notification`
@@ -35,7 +35,7 @@ The entire library is split into two packages:
 - API barrel export (endpoint definitions live in consuming apps)
 - Test utilities co-located (not a separate package)
 
-A third package, **`@mdk/fonts`**, ships JetBrains Mono font assets independently.
+A third package, **`@tetherto/mdk-fonts-ui`**, ships JetBrains Mono font assets independently.
 
 ---
 
@@ -44,9 +44,9 @@ A third package, **`@mdk/fonts`**, ships JetBrains Mono font assets independentl
 ```
 mdk-ui/
 ├── packages/
-│   ├── core/         # @mdk/core
-│   ├── foundation/   # @mdk/foundation
-│   └── fonts/        # @mdk/fonts
+│   ├── core/         # @tetherto/mdk-core-ui
+│   ├── foundation/   # @tetherto/mdk-foundation-ui
+│   └── fonts/        # @tetherto/mdk-fonts-ui
 ├── apps/
 │   └── demo/         # Interactive component showcase (not published)
 └── docs/
@@ -62,11 +62,11 @@ mdk-ui/
 
 ## Build Strategy
 
-`@mdk/core` is **fully built** before use — tsc emits JS + declarations, Vite compiles SCSS to CSS, Terser minifies.
+`@tetherto/mdk-core-ui` is **fully built** before use — tsc emits JS + declarations, Vite compiles SCSS to CSS, Terser minifies.
 
-`@mdk/foundation` exports **TypeScript source directly** — consuming packages (including the demo) compile it themselves. Vite only builds its CSS. This gives instant feedback in development without a build step.
+`@tetherto/mdk-foundation-ui` exports **TypeScript source directly** — consuming packages (including the demo) compile it themselves. Vite only builds its CSS. This gives instant feedback in development without a build step.
 
-`@mdk/fonts` is a single Vite build producing a CSS file with font-face declarations.
+`@tetherto/mdk-fonts-ui` is a single Vite build producing a CSS file with font-face declarations.
 
 ---
 

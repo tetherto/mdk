@@ -1,4 +1,4 @@
-import { TextArea } from '@mdk/core'
+import { TextArea } from '@tetherto/mdk-core-ui'
 
 import { DemoPageHeader } from '../components/demo-page-header'
 

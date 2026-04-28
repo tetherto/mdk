@@ -5,11 +5,11 @@ import {
   getPowerBEAttribute,
 } from '../consumption-line-chart-helper'
 
-import { formatUnit, UNITS } from '@mdk/core'
+import { formatUnit, UNITS } from '@tetherto/mdk-core-ui'
 import { formatPowerConsumption, removeContainerPrefix } from '../../../../../utils/device-utils'
 
-vi.mock('@mdk/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@mdk/core')>()
+vi.mock('@tetherto/mdk-core-ui', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tetherto/mdk-core-ui')>()
   return {
     ...actual,
     ConsumptionIcon: vi.fn(() => null),

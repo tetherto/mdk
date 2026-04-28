@@ -1,4 +1,4 @@
-import { formatErrors, UNITS } from '@mdk/core'
+import { formatErrors, UNITS } from '@tetherto/mdk-core-ui'
 import { MinerStatuses } from '../../../../constants/device-constants'
 import { HEATMAP_MODE } from '../../../../constants/temperature-constants'
 import type { Alert } from '../../../../types/alerts'

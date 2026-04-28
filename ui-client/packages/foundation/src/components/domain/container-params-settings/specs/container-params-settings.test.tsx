@@ -4,7 +4,7 @@ import { getContainerParametersSettings } from '../../../../utils/container-sett
 import { ContainerParamsSettings } from '../container-params-settings'
 
 // Mock the Input component
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   Label: vi.fn(({ children, className }) => (
     <label data-testid="param-label" className={className}>
       {children}

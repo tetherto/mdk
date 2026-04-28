@@ -1,4 +1,4 @@
-import { CHART_COLORS, UNITS } from '@mdk/core'
+import { CHART_COLORS, UNITS } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 import { CHART_TITLES } from '../../../../../../constants/charts'

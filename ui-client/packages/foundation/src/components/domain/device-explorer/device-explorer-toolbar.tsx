@@ -1,5 +1,5 @@
-import { ListViewFilter, Tabs, TabsList, TabsTrigger, TagInput } from '@mdk/core'
-import type { CascaderValue, LocalFilters } from '@mdk/core'
+import { ListViewFilter, Tabs, TabsList, TabsTrigger, TagInput } from '@tetherto/mdk-core-ui'
+import type { CascaderValue, LocalFilters } from '@tetherto/mdk-core-ui'
 import type {
   DeviceExplorerDeviceType,
   DeviceExplorerFilterOption,

@@ -1,6 +1,6 @@
 // services/notificationService.ts
-import type { ToastPosition, ToastVariant } from '@mdk/core'
-import { Toast, Toaster } from '@mdk/core'
+import type { ToastPosition, ToastVariant } from '@tetherto/mdk-core-ui'
+import { Toast, Toaster } from '@tetherto/mdk-core-ui'
 import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 import { store } from '../state'

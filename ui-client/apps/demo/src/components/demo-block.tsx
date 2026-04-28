@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Typography } from '@mdk/core'
+import { Typography } from '@tetherto/mdk-core-ui'
 
 type DemoBlockProps = {
   title: string

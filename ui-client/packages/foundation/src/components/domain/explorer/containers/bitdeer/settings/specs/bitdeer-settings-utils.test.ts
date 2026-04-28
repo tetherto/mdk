@@ -1,4 +1,4 @@
-import { COLOR } from '@mdk/core'
+import { COLOR } from '@tetherto/mdk-core-ui'
 import { describe, expect, it, vi } from 'vitest'
 import type * as DeviceUtils from '@/utils/device-utils'
 import type { Container } from '@/types/device'

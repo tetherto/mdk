@@ -6,7 +6,7 @@ import type {
   LegendItem,
   LineChartData,
   RangeSelectorOption,
-} from '@mdk/core'
+} from '@tetherto/mdk-core-ui'
 import {
   ChartContainer,
   ChartStatsFooter,
@@ -15,7 +15,7 @@ import {
   getChartDataAvailability,
   LineChart,
   withErrorBoundary,
-} from '@mdk/core'
+} from '@tetherto/mdk-core-ui'
 
 import { ChartWrapper } from '../chart-wrapper'
 

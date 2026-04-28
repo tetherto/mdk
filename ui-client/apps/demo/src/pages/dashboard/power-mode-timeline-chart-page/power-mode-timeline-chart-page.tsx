@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { PowerModeTimelineChart } from '@mdk/foundation'
+import { PowerModeTimelineChart } from '@tetherto/mdk-foundation-ui'
 import {
   DATA_1H,
   DATA_24H,

@@ -1,5 +1,5 @@
-import { AreaChart, ChartContainer } from '@mdk/core'
-import type { ChartTooltipConfig } from '@mdk/core'
+import { AreaChart, ChartContainer } from '@tetherto/mdk-core-ui'
+import type { ChartTooltipConfig } from '@tetherto/mdk-core-ui'
 import React from 'react'
 import { DemoPageHeader } from '../components/demo-page-header'
 import {

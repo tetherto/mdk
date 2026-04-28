@@ -1,6 +1,6 @@
-import type { ToastPosition, ToastVariant } from '@mdk/core'
-import { Button, Toast, TOAST_POSITIONS, Toaster } from '@mdk/core'
-import { useNotification } from '@mdk/foundation'
+import type { ToastPosition, ToastVariant } from '@tetherto/mdk-core-ui'
+import { Button, Toast, TOAST_POSITIONS, Toaster } from '@tetherto/mdk-core-ui'
+import { useNotification } from '@tetherto/mdk-foundation-ui'
 import { useState } from 'react'
 
 type ToastItem = {

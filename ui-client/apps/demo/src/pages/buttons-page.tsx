@@ -1,4 +1,4 @@
-import { Button } from '@mdk/core'
+import { Button } from '@tetherto/mdk-core-ui'
 import { PlusIcon } from '@radix-ui/react-icons'
 
 export const ButtonsPage = (): JSX.Element => {

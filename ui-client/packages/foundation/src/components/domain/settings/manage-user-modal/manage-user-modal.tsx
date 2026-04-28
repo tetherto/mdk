@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@mdk/core'
+import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@tetherto/mdk-core-ui'
 
 import { PERM_LEVEL_LABELS } from '../../../../constants/settings.constants'
 import type { PermLevel, RoleOption, SettingsUser } from '../../../../types/settings.types'

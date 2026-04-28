@@ -1,5 +1,5 @@
-import type { MinMaxAvg, TimeRangeType } from '@mdk/core'
-import { CHART_COLORS, decimalToMegaNumber, getTimeRange } from '@mdk/core'
+import type { MinMaxAvg, TimeRangeType } from '@tetherto/mdk-core-ui'
+import { CHART_COLORS, decimalToMegaNumber, getTimeRange } from '@tetherto/mdk-core-ui'
 import type { DateRangeKey } from '../../../../../constants'
 import { DATE_RANGE, WEBAPP_DISPLAY_NAME } from '../../../../../constants'
 import { getHashrateString } from '../../../../../utils/device-utils'

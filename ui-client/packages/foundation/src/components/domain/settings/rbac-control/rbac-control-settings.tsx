@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Button, Input, SimpleTooltip, Spinner } from '@mdk/core'
+import { Button, Input, SimpleTooltip, Spinner } from '@tetherto/mdk-core-ui'
 
 import type { PermLevel, RoleOption, SettingsUser } from '../../../../types/settings.types'
 import { getRoleBadgeColors } from '../../../../constants/role-colors.constants'

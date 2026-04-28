@@ -3,8 +3,8 @@ import type { ReactElement, ReactNode } from 'react'
 import { Provider } from 'react-redux'
 
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import type { DevicesState, TimelineItemData } from '@mdk/foundation'
-import { actionsSlice, BatchContainerControlsCard, devicesSlice } from '@mdk/foundation'
+import type { DevicesState, TimelineItemData } from '@tetherto/mdk-foundation-ui'
+import { actionsSlice, BatchContainerControlsCard, devicesSlice } from '@tetherto/mdk-foundation-ui'
 
 import './batch-container-controls-card-demo.scss'
 

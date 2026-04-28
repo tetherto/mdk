@@ -1,5 +1,5 @@
-import type { UnknownRecord } from '@mdk/core'
-import { COLOR } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
+import { COLOR } from '@tetherto/mdk-core-ui'
 import { CONTAINER_MODEL } from '../constants/container-constants'
 import { getDefaultThresholdStructure } from './container-settings-utils'
 import { getContainerSettingsModel } from './container-utils'

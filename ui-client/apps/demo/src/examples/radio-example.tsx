@@ -1,4 +1,4 @@
-import { Label, Radio, RadioCard, RadioGroup } from '@mdk/core'
+import { Label, Radio, RadioCard, RadioGroup } from '@tetherto/mdk-core-ui'
 
 export const RadioExample = (): React.ReactElement => {
   return (

@@ -5,7 +5,7 @@ import _isEmpty from 'lodash/isEmpty'
 import _map from 'lodash/map'
 import _split from 'lodash/split'
 
-import { SimpleTooltip } from '@mdk/core'
+import { SimpleTooltip } from '@tetherto/mdk-core-ui'
 
 import type { Alert } from '../../../types/alerts'
 import { useTimezone } from '../../../hooks/use-timezone'

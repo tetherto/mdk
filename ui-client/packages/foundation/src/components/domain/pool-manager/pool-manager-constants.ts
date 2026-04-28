@@ -1,4 +1,4 @@
-import { COLOR, INDICATOR_COLORS } from '@mdk/core'
+import { COLOR, INDICATOR_COLORS } from '@tetherto/mdk-core-ui'
 import { MinerStatuses } from '../../../constants/device-constants'
 
 export const POOL_VALIDATION_STATUSES = {

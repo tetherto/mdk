@@ -1,5 +1,5 @@
-import { ActiveIncidentsCard } from '@mdk/foundation'
-import type { TIncidentRowProps } from '@mdk/foundation'
+import { ActiveIncidentsCard } from '@tetherto/mdk-foundation-ui'
+import type { TIncidentRowProps } from '@tetherto/mdk-foundation-ui'
 
 const mockIncidents: TIncidentRowProps[] = [
   {

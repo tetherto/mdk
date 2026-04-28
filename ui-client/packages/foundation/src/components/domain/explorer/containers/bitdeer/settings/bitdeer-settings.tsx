@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import type { ReactElement } from 'react'
 import {
   getBitdeerOilTemperatureColor,

@@ -5,7 +5,7 @@ import { defineConfig } from 'vite'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
- * Build configuration for `@mdk/fonts`.
+ * Build configuration for `@tetherto/mdk-fonts-ui`.
  *
  * Emits a single CSS file (`dist/jetbrains-mono.css`) along with the woff2
  * font assets it references (`dist/fonts/*.woff2`), so consumers only need

@@ -4,7 +4,7 @@ import { AlarmContents } from '../alarm-contents/alarm-contents'
 import type { TimelineItemData } from '../alarm-row/alarm-row'
 import { AlarmRow } from '../alarm-row/alarm-row'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   EmptyState: vi.fn(({ description, size }) => (
     <div data-testid="empty-state" data-size={size}>
       {description}

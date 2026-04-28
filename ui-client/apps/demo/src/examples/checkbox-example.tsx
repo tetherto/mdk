@@ -1,4 +1,4 @@
-import { Checkbox, Label, Switch } from '@mdk/core'
+import { Checkbox, Label, Switch } from '@tetherto/mdk-core-ui'
 
 export const CheckboxExample = (): React.ReactElement => {
   return (

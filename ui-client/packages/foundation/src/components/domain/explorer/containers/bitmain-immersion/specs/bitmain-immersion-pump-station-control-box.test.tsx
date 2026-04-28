@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { BitMainImmersionPumpStationControlBox } from '../pump-station/bitmain-immersion-pump-station-control-box'
 
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   Tag: vi.fn(({ color, children }) => (
     <span data-testid="tag" data-color={color}>
       {children}

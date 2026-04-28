@@ -1,4 +1,4 @@
-import type { LocalFilters } from '@mdk/core'
+import type { LocalFilters } from '@tetherto/mdk-core-ui'
 import { useControllableState } from '@radix-ui/react-use-controllable-state'
 
 export type useFilterStateParams = {

@@ -1,4 +1,4 @@
-import type { UnknownRecord } from '@mdk/core'
+import type { UnknownRecord } from '@tetherto/mdk-core-ui'
 import { POSITION_CHANGE_DIALOG_FLOWS } from '../../../../../constants/dialog'
 import { AddReplaceMinerDialogContent } from '../add-replace-miner-dialog/add-replace-miner-dialog-content'
 import { ConfirmChangePositionDialogContent } from './confirm-change-position-dialog/confirm-change-position-dialog-content'

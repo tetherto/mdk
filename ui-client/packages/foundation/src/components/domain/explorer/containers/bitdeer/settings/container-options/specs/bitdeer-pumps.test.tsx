@@ -1,4 +1,4 @@
-import { Indicator } from '@mdk/core'
+import { Indicator } from '@tetherto/mdk-core-ui'
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEVICE_STATUS } from '../../../../../../../../constants/devices'
@@ -7,7 +7,7 @@ import { getBitdeerCoolingSystemData } from '../../bitdeer-settings-utils'
 import { BitdeerPumps } from '../bitdeer-pumps'
 
 // Mock Indicator component
-vi.mock('@mdk/core', () => ({
+vi.mock('@tetherto/mdk-core-ui', () => ({
   Indicator: vi.fn(({ color, children }) => (
     <div data-testid="indicator" data-color={color}>
       {children}

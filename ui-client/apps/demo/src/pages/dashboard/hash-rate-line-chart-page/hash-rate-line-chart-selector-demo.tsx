@@ -1,8 +1,8 @@
 import type { ReactElement } from 'react'
 
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import type { HashRateLogEntry, MinerPoolDataItem } from '@mdk/foundation'
-import { HashRateLineChartSelector } from '@mdk/foundation'
+import type { HashRateLogEntry, MinerPoolDataItem } from '@tetherto/mdk-foundation-ui'
+import { HashRateLineChartSelector } from '@tetherto/mdk-foundation-ui'
 import { DemoBlock } from '../../../components/demo-block'
 import '../line-chart-page.scss'
 

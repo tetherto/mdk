@@ -4,7 +4,7 @@ const {
   startApi,
   initType,
   WMTypes
-} = require('../../index') 
+} = require('../../index')
 
 const startClient = async () => {
   // start API server (optional)

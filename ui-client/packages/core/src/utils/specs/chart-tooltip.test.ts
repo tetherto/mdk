@@ -178,7 +178,8 @@ describe('buildChartTooltip', () => {
     externalHandler({ chart: mockChart as any, tooltip: mockTooltipModel as any })
 
     const tooltipEl = mockContainer.querySelector('[data-msdk-chart-tooltip]')
-    expect(tooltipEl?.innerHTML).toContain('#FF00FF')
+    const labelSpan = tooltipEl?.querySelector<HTMLSpanElement>('span')
+    expect(labelSpan?.style.color).toBe('rgb(255, 0, 255)')
 
     document.body.removeChild(mockContainer)
   })
@@ -214,7 +215,8 @@ describe('buildChartTooltip', () => {
     externalHandler({ chart: mockChart as any, tooltip: mockTooltipModel as any })
 
     const tooltipEl = mockContainer.querySelector('[data-msdk-chart-tooltip]')
-    expect(tooltipEl?.innerHTML).toContain('#111111')
+    const valueSpan = tooltipEl?.querySelectorAll<HTMLSpanElement>('span')[1]
+    expect(valueSpan?.style.color).toBe('rgb(17, 17, 17)')
 
     document.body.removeChild(mockContainer)
   })
@@ -384,7 +386,8 @@ describe('buildChartTooltip', () => {
     })
 
     const tooltipEl = container.querySelector('[data-msdk-chart-tooltip]')
-    expect(tooltipEl?.innerHTML).toContain('#888')
+    const labelSpan = tooltipEl?.querySelector<HTMLSpanElement>('span')
+    expect(labelSpan?.style.color).toBe('rgb(136, 136, 136)')
 
     document.body.removeChild(container)
   })

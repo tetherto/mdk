@@ -35,7 +35,6 @@ class AvalonMiner extends Miner {
 
   async _sendCommand (command) {
     try {
-      this.debugError(`Sending command: ${command}`)
       const res = await this.rpc.request(command)
       this.debugError(`Received response: ${res}`)
       this.updateLastSeen()

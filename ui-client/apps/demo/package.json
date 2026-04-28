@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",
+    "@radix-ui/react-icons": "catalog:",
     "@tetherto/mdk-core-ui": "workspace:*",
     "@tetherto/mdk-fonts-ui": "workspace:*",
     "@tetherto/mdk-foundation-ui": "workspace:*",
-    "@radix-ui/react-icons": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",

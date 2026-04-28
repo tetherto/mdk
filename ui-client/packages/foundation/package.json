@@ -62,9 +62,9 @@
   },
   "dependencies": {
     "@hookform/resolvers": "catalog:",
-    "@tetherto/mdk-core-ui": "workspace:*",
     "@radix-ui/react-icons": "catalog:",
     "@radix-ui/react-use-controllable-state": "catalog:",
+    "@tetherto/mdk-core-ui": "workspace:*",
     "date-fns": "catalog:",
     "date-fns-tz": "catalog:",
     "lodash": "catalog:"

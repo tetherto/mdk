@@ -38,11 +38,9 @@ import { MINER_POWER_MODE } from './status-utils'
 
 const FLOAT_PRECISION = 2
 
-// eslint-disable-next-line regexp/no-misleading-capturing-group
-export const separateByHyphenRegExp = /([^_]+)-([^_]+)/
+export const separateByHyphenRegExp = /^([^_]+)-([^_-]+)$/
 
-// eslint-disable-next-line regexp/no-misleading-capturing-group
-export const separateByTwoHyphensRegExp = /([^_]+)-([^_]+)-([^_]+)/
+export const separateByTwoHyphensRegExp = /^([^_]+)-([^_-]+)-([^_-]+)$/
 
 const allUnits = _orderBy(
   _map(HASHRATE_LABEL_DIVISOR, (value, unit) => ({ unit, value })),

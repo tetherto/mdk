@@ -66,6 +66,30 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 }
 
+function getStatus(pkg) {
+  if (!pkg.hasBuild) return '⚠️ No build'
+  if (pkg.gzippedSize > 500 * 1024) return '🔴 > 500KB'
+  if (pkg.gzippedSize > 200 * 1024) return '🟡 > 200KB'
+  return '✅'
+}
+
+function printMarkdownTable(packages) {
+  console.log('| Package | Source | Runtime | Gzipped | Status |')
+  console.log('|---|---:|---:|---:|---|')
+  for (const pkg of packages) {
+    console.log(
+      `| ${pkg.name} | ${formatSize(pkg.sourceSize)} | ${formatSize(pkg.builtSize)} | ${formatSize(pkg.gzippedSize)} | ${getStatus(pkg)} |`,
+    )
+  }
+
+  const totalSource = packages.reduce((sum, p) => sum + p.sourceSize, 0)
+  const totalBuilt = packages.reduce((sum, p) => sum + p.builtSize, 0)
+  const totalGzipped = packages.reduce((sum, p) => sum + p.gzippedSize, 0)
+  console.log(
+    `| **Total** | **${formatSize(totalSource)}** | **${formatSize(totalBuilt)}** | **${formatSize(totalGzipped)}** | |`,
+  )
+}
+
 /**
  * Get package info
  */
@@ -93,6 +117,7 @@ function getPackageInfo(packagePath, packageName) {
  * Main function
  */
 function main() {
+  const markdown = process.argv.includes('--markdown')
   console.log('\n📦 Package Bundle Sizes\n')
 
   const packages = []
@@ -130,6 +155,12 @@ function main() {
   // Sort by gzipped size (largest first)
   packages.sort((a, b) => b.gzippedSize - a.gzippedSize)
 
+  if (markdown) {
+    printMarkdownTable(packages)
+    console.log('')
+    return
+  }
+
   // Calculate max widths for table alignment
   const maxNameWidth = Math.max(...packages.map((p) => p.name.length), 'Package'.length)
   const maxSourceWidth = Math.max(
@@ -164,14 +195,7 @@ function main() {
     const built = formatSize(pkg.builtSize).padStart(maxBuiltWidth)
     const gzipped = formatSize(pkg.gzippedSize).padStart(maxGzippedWidth)
 
-    let status = '✅'
-    if (!pkg.hasBuild) {
-      status = '⚠️  No build'
-    } else if (pkg.gzippedSize > 500 * 1024) {
-      status = '🔴 > 500KB'
-    } else if (pkg.gzippedSize > 200 * 1024) {
-      status = '🟡 > 200KB'
-    }
+    const status = getStatus(pkg)
 
     console.log(`${name}  ${source}  ${built}  ${gzipped}  ${status}`)
   }

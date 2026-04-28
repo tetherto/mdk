@@ -1,0 +1,33 @@
+name: Setup runtime
+description: Setup Node runtime and package manager cache for CI jobs.
+
+inputs:
+  node_version:
+    description: Node.js version or range (for example lts/*).
+    required: true
+  package_manager:
+    description: Package manager to configure cache for (npm or pnpm).
+    required: true
+  cache_dependency_path:
+    description: Lockfile path used by setup-node cache.
+    required: true
+  pnpm_version:
+    description: pnpm version (required only when package_manager=pnpm).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      if: ${{ inputs.package_manager == 'pnpm' }}
+      uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+      with:
+        version: ${{ inputs.pnpm_version }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      with:
+        node-version: ${{ inputs.node_version }}
+        cache: ${{ inputs.package_manager }}
+        cache-dependency-path: ${{ inputs.cache_dependency_path }}

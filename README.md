@@ -12,7 +12,7 @@
 - Collecting telemetry and operational data  
 - Building custom mining applications and integrations  
 
-MDK is released under [Apache License Version 2.0](LICENSE)
+MDK is released under [Apache License Version 2.0](LICENSE).
 
 ## Status
 
@@ -45,6 +45,8 @@ Learn more about [contributing](CONTRIBUTING.md).
 
 For security vulnerability reporting, see the [Security policy](SECURITY.md).
 
-## Documentation 
+## Documentation
 
-End user documentation is available at [docs.mdk.tether.io/](https://docs.mdk.tether.io/).
+End-user documentation is available at [docs.mdk.tether.io/](https://docs.mdk.tether.io/).
+> Request updates to public docs via[`docs-needed` issue](https://github.com/tetherto/mdk/issues/new?template=docs-needed.yml).
+Update documentation in this repository directly via the [contribution flow](CONTRIBUTING.md).

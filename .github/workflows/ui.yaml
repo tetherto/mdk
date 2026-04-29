@@ -248,10 +248,33 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Security audit
-        continue-on-error: true
         run: |
-          pnpm audit --audit-level=moderate 2>&1 || echo "::warning::pnpm audit reported issues"
-          pnpm audit --audit-level=high 2>&1 || echo "::warning::High severity vulnerabilities detected"
+          set +e
+          pnpm audit --audit-level=moderate 2>&1
+          MODERATE_EXIT=$?
+          pnpm audit --audit-level=high 2>&1
+          HIGH_EXIT=$?
+          set -e
+
+          [ $MODERATE_EXIT -eq 0 ] && MODERATE_STATUS="PASS" || MODERATE_STATUS="WARN"
+          [ $HIGH_EXIT -eq 0 ] && HIGH_STATUS="PASS" || HIGH_STATUS="WARN"
+
+          {
+            echo "## UI Security Audit Summary"
+            echo ""
+            echo "| Scope | Moderate Audit | High Audit | Gate |"
+            echo "|---|---|---|---|"
+            echo "| UI | ${MODERATE_STATUS} | ${HIGH_STATUS} | High/Critical blocking |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ $MODERATE_EXIT -ne 0 ]; then
+            echo "::error::pnpm audit reported moderate-level issues"
+          fi
+          if [ $HIGH_EXIT -ne 0 ]; then
+            echo "::error::pnpm audit reported high-level issues"
+          fi
+
+          [ $HIGH_EXIT -eq 0 ]
 
       - name: Build
         run: pnpm run build

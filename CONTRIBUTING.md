@@ -174,7 +174,7 @@ Before submitting your PR, ensure that:
 - [ ] Linting passes (`npm run lint` for `core`, `pnpm lint` for `ui-client`)
 - [ ] Type-check passes for frontend TypeScript changes (`pnpm typecheck`)
 - [ ] New features include tests
-- [ ] Documentation is updated if applicable
+- [ ] Public behaviour or APIs changes have a [`docs-needed` issue](https://github.com/tetherto/mdk/issues/new?template=docs-needed.yml) linked to the PR
 
 ### PR title format
 

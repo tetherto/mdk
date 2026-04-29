@@ -9,7 +9,6 @@ const { promiseTimeout } = require('@bitfinex/lib-js-util-promise')
 const { SystemErrorMap, GeneralErrorMap } = require('./utils/errormap')
 const { CONTAINER_TYPES } = require('./utils/constants')
 const Container = require('../../../tpls/tpl-lib-container/lib/container')
-const debug = require('debug')('container')
 
 class MicroBT extends Container {
   constructor ({ getClient = null, type = CONTAINER_TYPES.WONDERINT, ...opts }) {
@@ -139,13 +138,10 @@ class MicroBT extends Container {
   async _authenticateCDU () {
     // get random numbers
     const randomNumbers = await this._readHoldingRegisters('fcdu', 301, 4, false, true)
-    debug('randomNumbers', randomNumbers)
     // get auth data
     const authData = getAuthData(this.opts.username, this.opts.password, randomNumbers)
-    debug('authData', authData)
     // write auth data
     const resp = await this._writeMultipleRegisters('fcdu', 305, authData, 16, true)
-    debug('resp', resp)
     return {
       success: resp !== undefined
     }

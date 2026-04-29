@@ -1,0 +1,8 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "allowlist": [
+    // Internal package installed from git (github.com/tetherto/tether-wrk-base); GHSA is a false positive for that source.
+    "GHSA-wvh9-3hgj-7f22"
+  ]
+}

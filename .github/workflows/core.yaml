@@ -6,12 +6,14 @@ on:
     paths:
       - "core/**"
       - ".github/workflows/core.yaml"
+      - ".github/scripts/**"
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
     paths:
       - "core/**"
       - ".github/workflows/core.yaml"
+      - ".github/scripts/**"
 
 permissions: {}
 
@@ -46,9 +48,34 @@ jobs:
           license-check: true
           comment-summary-in-pr: always
 
+  core-setup:
+    name: Core Setup Dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ env.CORE_DIR }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup runtime
+        uses: ./.github/actions/setup-runtime
+        with:
+          node_version: ${{ env.NODE_VERSION }}
+          package_manager: npm
+          cache_dependency_path: ${{ env.CORE_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
   core-lint:
     name: Core Lint
     runs-on: ubuntu-latest
+    needs: [core-setup]
     permissions:
       contents: read
     defaults:
@@ -77,6 +104,7 @@ jobs:
   core-typecheck:
     name: Core Typecheck
     runs-on: ubuntu-latest
+    needs: [core-setup]
     permissions:
       contents: read
     defaults:
@@ -104,6 +132,7 @@ jobs:
   core-test:
     name: Core Test
     runs-on: ubuntu-latest
+    needs: [core-setup]
     permissions:
       contents: read
     defaults:
@@ -171,6 +200,7 @@ jobs:
   core-build:
     name: Core Build
     runs-on: ubuntu-latest
+    needs: [core-setup]
     permissions:
       contents: read
     defaults:
@@ -202,11 +232,51 @@ jobs:
           )
 
       - name: Security audit
-        continue-on-error: true
         run: |
-          npm audit signatures 2>&1 || echo "::warning::Signature verification reported issues"
-          npm audit --audit-level=high 2>&1 || echo "::warning::High severity vulnerabilities detected"
+          set +e
+          npm audit signatures 2>&1
+          SIGNATURES_EXIT=$?
+          npm audit --audit-level=moderate 2>&1
+          MODERATE_EXIT=$?
+          npm exec --yes -- audit-ci@7 --config audit-ci.jsonc 2>&1
+          HIGH_EXIT=$?
+          set -e
+
+          [ $SIGNATURES_EXIT -eq 0 ] && SIGNATURES_STATUS="PASS" || SIGNATURES_STATUS="WARN"
+          [ $MODERATE_EXIT -eq 0 ] && MODERATE_STATUS="PASS" || MODERATE_STATUS="WARN"
+          [ $HIGH_EXIT -eq 0 ] && HIGH_STATUS="PASS" || HIGH_STATUS="WARN"
+
+          AUD_JSON="${RUNNER_TEMP:-/tmp}/mdk-core-npm-audit.json"
+          npm audit --json > "${AUD_JSON}" 2>/dev/null || true
+
+          {
+            echo "## Core Security Audit Summary"
+            echo ""
+            echo "| Scope | Signatures Audit | Moderate Audit | High/Critical (audit-ci) | Gate |"
+            echo "|---|---|---|---|---|"
+            echo "| Core | ${SIGNATURES_STATUS} | ${MODERATE_STATUS} | ${HIGH_STATUS} | High/Critical (audit-ci + allowlist) |"
+            echo ""
+            echo "High/Critical gate uses \`audit-ci\` with \`core/audit-ci.jsonc\` (allowlists GHSA-wvh9-3hgj-7f22 for internal \`tether-wrk-base\` from git)."
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          bash "${GITHUB_WORKSPACE}/.github/scripts/github-summary-npm-audit-high-critical.sh" "${AUD_JSON}" >> "$GITHUB_STEP_SUMMARY" || true
+          {
+            echo ""
+            echo "**Note:** Package rows are from **\`npm audit --json\`**. Job success still depends on **audit-ci** (\`audit-ci.jsonc\`); allowlisted GHSA IDs may remain listed."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ $SIGNATURES_EXIT -ne 0 ]; then
+            echo "::warning::npm audit signatures reported issues"
+          fi
+          if [ $MODERATE_EXIT -ne 0 ]; then
+            echo "::warning::npm audit reported moderate-level issues"
+          fi
+          if [ $HIGH_EXIT -ne 0 ]; then
+            echo "::error::audit-ci reported high/critical issues (see core/audit-ci.jsonc allowlist)"
+          fi
+
+          [ $HIGH_EXIT -eq 0 ]
 
       - name: Build
-        continue-on-error: true
         run: npm run build --if-present

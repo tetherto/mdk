@@ -1,6 +1,11 @@
 name: MDK Core CI
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "core/**"
+      - ".github/workflows/core.yaml"
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
@@ -21,6 +26,7 @@ env:
 jobs:
   dependency-review:
     name: Dependency Review
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read

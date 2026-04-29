@@ -9,7 +9,6 @@ const { promiseTimeout } = require('@bitfinex/lib-js-util-promise')
 const { SystemErrorMap, GeneralErrorMap } = require('./utils/errormap')
 const { CONTAINER_TYPES } = require('./utils/constants')
 const Container = require('../../../tpls/tpl-lib-container/lib/container')
-const debug = require('debug')('container')
 
 class MicroBT extends Container {
   constructor ({ getClient = null, type = CONTAINER_TYPES.WONDERINT, ...opts }) {

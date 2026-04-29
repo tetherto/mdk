@@ -1,38 +1,33 @@
-# Contributing to MDK
+# Contribute to MDK
 
-Thank you for your interest in contributing to **MDK**! 
+Thank you for your interest in contributing to **MDK**.
 
 This document outlines the contribution workflow for the MDK repository, from setting up your development environment to submitting pull requests and participating in releases.
 
----
-
-## Monorepo Structure
+## Monorepo structure
 
 MDK is a monorepo with separate backend and frontend workspaces:
 
-- `core/` - Backend services, container modules, and integration/unit tests (npm-based)
-- `ui-client/` - Frontend packages, demo app, and shared UI foundation (pnpm + Turbo-based)
+- `core/`: Backend services, container modules, and integration/unit tests (npm-based)
+- `ui-client/`: Frontend packages, demo app, and shared UI foundation (pnpm + Turbo-based)
 
 Choose the workflow that matches the area you are contributing to.
 
----
-
-## Getting Started
+## Get started
 
 ### Prerequisites
 
-Before contributing, make sure you have the following installed:
+Before contributing, ensure you have the following installed:
 
 - **Node.js** (version 20.0 or higher)
 - **Git** (latest stable version)
 - **npm** (included with Node.js, for `core/`)
 - **pnpm** (version 10 or higher, for `ui-client/`)
 
----
 
 ### Licensing
 
-MDK is released under the **Apache License 2.0**.
+MDK is released under the [**Apache License 2.0**](LICENSE).
 
 By contributing, you agree that:
 
@@ -40,30 +35,39 @@ By contributing, you agree that:
 - You grant a perpetual, worldwide, royalty-free license for their use
 - Contributions are provided **“AS IS”**, without warranty
 
-For full details, see the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html).
+## Development environment setup
 
----
+<details>
+<summary>1. Fork and clone</summary>
 
-## Development Environment Setup
-
-### Fork and Clone :
-
-1. Fork the repository on GitHub.
+1. Fork [the repository](https://github.com/tetherto/mdk.git) on GitHub.
 2. Clone your fork locally and navigate into the project directory:
 ```bash
 git clone https://github.com/username/mdk.git
 cd mdk
 ```
 
-3. Add the upstream remote to keep your fork in sync with the main repository:
+3. Add the upstream remote:
 
 ```bash
 git remote add upstream https://github.com/tetherto/mdk.git
 ```
 
----
+</details>
 
-### Backend Contribution Setup (`core/`)
+<details>
+<summary>2. Stay in sync</summary>
+
+Keep your fork in sync with the main repository. For example:
+
+```bash
+git fetch upstream
+git merge --ff-only upstream/main   # fails loudly if main has diverged
+```
+
+</details>
+
+### Backend contribution setup
 
 Use this workflow when contributing to backend code under `core/`.
 
@@ -72,7 +76,7 @@ cd core
 npm install
 ```
 
-Common commands:
+#### Common commands
 
 ```bash
 # Lint backend code
@@ -83,9 +87,7 @@ npm test
 
 ```
 
----
-
-### Frontend Contribution Setup (`ui-client/`)
+### Frontend contribution setup 
 
 Use this workflow when contributing to frontend code under `ui-client/`.
 
@@ -95,7 +97,7 @@ corepack enable
 pnpm install
 ```
 
-Common commands:
+#### Common commands
 
 ```bash
 # Build packages
@@ -112,27 +114,36 @@ pnpm typecheck
 pnpm test
 ```
 
----
+## Pull request workflow
 
-## Pull Request Workflow
+### Conventional types
 
-### Branch Naming Convention
+MDK uses Conventional Commits-style types for both branch names and PR titles.
+
+| Type | Use for |
+|---|---|
+| `feat` | New features |
+| `fix` | Bug fixes |
+| `docs` | Documentation changes |
+| `refactor` | Code refactoring without behaviour change |
+| `test` | Test additions or changes |
+| `chore` | Tooling, dependencies, repo maintenance |
+| `perf` | Performance improvements |
+| `style` | Formatting only (no logic change) |
+| `ci` | CI configuration changes |
+| `build` | Build system or external dependency changes |
+
+### Branch naming convention
 
 Create branches using the following pattern:
 
-```
+```bash
 {type}/{short-description}
 ```
 
-Supported types:
+Where `{type}` is one of the [conventional types](#conventional-types).
 
-- `feat/` — New features
-- `fix/` — Bug fixes
-- `docs/` — Documentation changes
-- `refactor/` — Code refactoring
-- `test/` — Test additions or changes
-
-#### Examples
+#### Branch naming examples
 
 ```bash
 # New feature
@@ -142,50 +153,38 @@ git checkout -b feat/mdk-new-device
 git checkout -b fix/timeout-handling
 ```
 
----
+### Pull request steps
 
-### Pull Request Steps
-
-1. Create a branch from `main`
-2. Make your code changes
-3. Write or update tests
-4. Run linting and tests locally in the workspace(s) you changed:
+1. Sync your local main with upstream `main`.
+2. Create a branch from local `main`.
+3. Make your code changes.
+4. Write or update tests.
+5. Run linting and tests locally in the workspaces you changed:
    - `core`: `npm run lint && npm test`
    - `ui-client`: `pnpm lint && pnpm test` (and `pnpm typecheck` for TypeScript changes)
-5. Commit changes with meaningful messages
-6. Push your branch and open a Pull Request targeting `main`
+6. Commit changes with meaningful messages.
+7. Push your branch and open a Pull Request targeting the upstream `main`.
 
----
-
-### PR Checklist
+### PR checklist
 
 Before submitting your PR, ensure that:
 
 - [ ] Code builds locally (`pnpm build` for `ui-client` changes)
-- [ ] Tests pass in affected workspace(s) (`npm test` for `core`, `pnpm test` for `ui-client`)
+- [ ] Tests pass in affected workspaces (`npm test` for `core`, `pnpm test` for `ui-client`)
 - [ ] Linting passes (`npm run lint` for `core`, `pnpm lint` for `ui-client`)
 - [ ] Type-check passes for frontend TypeScript changes (`pnpm typecheck`)
 - [ ] New features include tests
 - [ ] Documentation is updated if applicable
 
----
-
-### PR Title Format
+### PR title format
 
 Use the following convention:
 
-```
+```bash
 {type}({scope}): {description}
 ```
 
-Types:
-
-- `feat`
-- `fix`
-- `docs`
-- `refactor`
-- `test`
-- `chore`
+Where `{type}` is one of the [conventional types](#conventional-types) and `{scope}` is the affected area, for example `miner` or `ui-client`.
 
 Examples:
 
@@ -193,31 +192,23 @@ Examples:
 - `fix(timeout): resolve action timeout handling`
 - `docs(api): update stats documentation`
 
----
-
-## PR Review
+## PR review
 
 All pull requests go through the following review steps:
 
-1. **Automated Checks** — Linting and tests must pass
-2. **Code Review** — At least 2 maintainer approvals are required
-3. **Feedback Resolution** — All requested changes must be addressed
-4. **Squash and Merge** — Maintainers squash commits to keep history clean
+1. **Automated checks**: Linting and tests must pass.
+2. **Code review**: At least 2 maintainer approvals are required.
+3. **Feedback resolution**: All requested changes must be addressed.
+4. **Squash and merge**: Maintainers squash commits to keep history clean.
 
----
-
-## Code Standards
+## Code standards
 
 MDK uses **StandardJS** style to keep the codebase consistent and easy to review across repositories.
-
----
 
 ## Security
 
 If you discover a security vulnerability, do not report it in a public issue.
 
 Please follow the private disclosure instructions in [SECURITY.md](SECURITY.md).
-
----
 
 Happy contributing, and thanks for helping improve MDK! 🚀

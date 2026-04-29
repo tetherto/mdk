@@ -139,13 +139,10 @@ class MicroBT extends Container {
   async _authenticateCDU () {
     // get random numbers
     const randomNumbers = await this._readHoldingRegisters('fcdu', 301, 4, false, true)
-    debug('randomNumbers', randomNumbers)
     // get auth data
     const authData = getAuthData(this.opts.username, this.opts.password, randomNumbers)
-    debug('authData', authData)
     // write auth data
     const resp = await this._writeMultipleRegisters('fcdu', 305, authData, 16, true)
-    debug('resp', resp)
     return {
       success: resp !== undefined
     }

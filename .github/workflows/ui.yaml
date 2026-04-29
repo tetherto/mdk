@@ -1,6 +1,11 @@
 name: MDK UI CI
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "ui-client/**"
+      - ".github/workflows/ui.yaml"
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize]
@@ -22,6 +27,7 @@ env:
 jobs:
   dependency-review:
     name: Dependency Review
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read

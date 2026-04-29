@@ -1,6 +1,6 @@
 # MDK
 
-[![Status](https://img.shields.io/badge/status-beta-orange?style=flat-square)](#status)
+[![Status](https://img.shields.io/badge/status-pre--alpha-lightgrey?style=flat-square)](#status)
 [![MDK UI CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/ui.yaml?branch=main&label=UI%20CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/ui.yaml)
 [![MDK Core CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/core.yaml?branch=main&label=Core%20CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/core.yaml)
 [![Documentation](https://img.shields.io/badge/docs-mdk.tether.io-2ea44f?style=flat-square)](https://docs.mdk.tether.io)

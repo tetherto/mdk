@@ -1,0 +1,55 @@
+// Bitdeer container settings
+@forward './containers/bitdeer/settings/bitdeer-settings.scss';
+@forward './containers/bitdeer/settings/container-options/bitdeer-options.scss';
+@forward './containers/bitdeer/settings/container-options/bitdeer-pumps.scss';
+@forward './containers/bitdeer/settings/container-options/dry-cooler/container-fans-card/container-fans-card.scss';
+@forward './containers/bitdeer/settings/container-options/dry-cooler/container-fans-card/container-fans-legend.scss';
+@forward './containers/bitdeer/settings/container-options/dry-cooler/dry-cooler.scss';
+@forward './containers/bitdeer/settings/container-options/pump-box/pump-box.scss';
+
+// Bitmain immersion
+@forward './containers/bitmain-immersion/control-box/bitmain-immersion-control-box.scss';
+@forward './containers/bitmain-immersion/controls-tab/bitmain-immersion-controls-tab.scss';
+@forward './containers/bitmain-immersion/pump-station/bitmain-immersion-pump-station-control-box.scss';
+@forward './containers/bitmain-immersion/system-status/bitmain-immersion-system-status.scss';
+@forward './containers/bitmain-immersion/unit-control-box/bitmain-immersion-compact-unit-control-box.scss';
+@forward './containers/bitmain-immersion/unit-control-box/bitmain-immersion-unit-control-box.scss';
+
+// Bitmain
+@forward './containers/bitmain/bitmain-hydro-settings.scss';
+@forward './containers/bitmain/status-item/settings/bitmain-basic-settings.scss';
+@forward './containers/bitmain/status-item/settings/cooling-system/bitmain-cooling-system.scss';
+@forward './containers/bitmain/status-item/settings/power-and-positioning/bitmain-power-and-positioning.scss';
+@forward './containers/bitmain/status-item/status-item.scss';
+
+// Micro BT
+@forward './containers/micro-bt/cooling/micro-bt-cooling.scss';
+@forward './containers/micro-bt/fire-status-box/fire-status-box.scss';
+@forward './containers/micro-bt/gauge-chart/gauge-chart-component.scss';
+@forward './containers/micro-bt/power-meters/power-meters.scss';
+@forward './containers/micro-bt/settings/micro-bt-settings.scss';
+
+// Details view
+@forward './details-view/batch-container-controls-card/batch-container-controls-card.scss';
+@forward './details-view/container-controls-card/container-controls-card.scss';
+@forward './details-view/miner-chips-card/miner-chip/miner-chip.scss';
+@forward './details-view/miner-chips-card/miner-chips-card.scss';
+@forward './details-view/miner-controls-card/miner-controls-card.scss';
+@forward './details-view/miner-info-card/miner-info-card.scss';
+@forward './details-view/miner-metric-card/miner-metric-card.scss';
+@forward './details-view/miner-power-mode-selection-buttons/miner-power-mode-selection-buttons.scss';
+@forward './details-view/miner-power-mode-selection-buttons/power-mode-selection-dropdown.scss';
+@forward './details-view/miners-activity-chart/miners-activity-chart.scss';
+@forward './details-view/secondary-stat-card/secondary-stat-card.scss';
+@forward './details-view/single-stat-card/single-stat-card.scss';
+@forward './details-view/stats-group-card/stats-group-card.scss';
+
+// Dialogs
+@forward './dialogs/add-replace-miner-dialog/add-replace-miner-dialog-content.scss';
+@forward './dialogs/position-change-dialog/confirm-change-position-dialog/confirm-change-position-dialog-content.scss';
+@forward './dialogs/position-change-dialog/container-selection-dialog-content/container-selection-dialog-content.scss';
+@forward './dialogs/position-change-dialog/default-position-change-dialog-content/default-position-change-dialog-content.scss';
+@forward './dialogs/position-change-dialog/maintenance-dialog-content/maintenance-dialog-content.scss';
+@forward './dialogs/position-change-dialog/position-change-dialog.scss';
+@forward './dialogs/position-change-dialog/rack-id-selection-dropdown/rack-id-selection-dropdown.scss';
+@forward './dialogs/position-change-dialog/static-miner-ip-assigment/static-miner-ip-assigment.scss';

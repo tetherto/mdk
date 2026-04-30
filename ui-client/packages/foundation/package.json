@@ -6,39 +6,47 @@
   "description": "Complete foundation with features, state management, API client, hooks, and utilities",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./domain": {
-      "types": "./src/components/domain/index.ts",
-      "default": "./src/components/domain/index.ts"
+      "types": "./dist/components/domain/index.d.ts",
+      "import": "./dist/components/domain/index.js",
+      "default": "./dist/components/domain/index.js"
     },
     "./styles.css": "./dist/styles.css",
-    "./src/styles/index.scss": "./src/styles/index.scss",
     "./feature": {
-      "types": "./src/components/feature/index.ts",
-      "default": "./src/components/feature/index.ts"
+      "types": "./dist/components/feature/index.d.ts",
+      "import": "./dist/components/feature/index.js",
+      "default": "./dist/components/feature/index.js"
     },
     "./hooks": {
-      "types": "./src/hooks/index.ts",
-      "default": "./src/hooks/index.ts"
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js",
+      "default": "./dist/hooks/index.js"
     },
     "./api": {
-      "types": "./src/api/index.ts",
-      "default": "./src/api/index.ts"
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.js",
+      "default": "./dist/api/index.js"
     },
     "./state": {
-      "types": "./src/state/index.ts",
-      "default": "./src/state/index.ts"
+      "types": "./dist/state/index.d.ts",
+      "import": "./dist/state/index.js",
+      "default": "./dist/state/index.js"
     },
     "./test-utils": {
-      "types": "./src/test-utils/index.ts",
-      "default": "./src/test-utils/index.ts"
+      "types": "./dist/test-utils/index.d.ts",
+      "import": "./dist/test-utils/index.js",
+      "default": "./dist/test-utils/index.js"
     }
   },
+  "files": ["dist"],
   "scripts": {
-    "build": "rimraf dist tsconfig.tsbuildinfo && pnpm build:ts && pnpm build:scss",
+    "build": "rimraf dist tsconfig.tsbuildinfo && pnpm build:ts && pnpm build:scss && pnpm postbuild",
     "build:ts": "tsc",
+    "postbuild": "node scripts/postbuild.mjs",
     "build:scss": "vite build",
     "clean": "rimraf dist node_modules .turbo",
     "dev": "concurrently -n ts,scss -c cyan,magenta \"pnpm dev:ts\" \"pnpm dev:scss\"",

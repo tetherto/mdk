@@ -5,7 +5,7 @@ import { Provider } from 'react-redux'
 
 import { Button, Checkbox, Typography } from '@tetherto/mdk-core-ui'
 import type { Alert, Device } from '@tetherto/mdk-foundation-ui'
-import { Alerts, devicesSlice, SEVERITY, timezoneSlice } from '@tetherto/mdk-foundation-ui'
+import { Alerts, devicesSlice, SEVERITY, timezoneSlice, useBeepSound } from '@tetherto/mdk-foundation-ui'
 
 import './alerts-page.scss'
 
@@ -72,9 +72,22 @@ const DEMO_HISTORICAL_ALERTS: Alert[] = Array.from({ length: 24 }, (_, i) =>
   buildHistoricalAlert(i, DEMO_DEVICES),
 )
 
+const BEEP_DEFAULTS = {
+  VOLUME: 0.5,
+  DELAY_MS: 1_000,
+} as const
+
 const AlertsDemoBody = (): JSX.Element => {
   const [historicalEnabled, setHistoricalEnabled] = useState(true)
   const [selectedAlertId, setSelectedAlertId] = useState<string | undefined>(undefined)
+  const [isBeepEnabled, setIsBeepEnabled] = useState(false)
+  const [beepVolume, setBeepVolume] = useState<number>(BEEP_DEFAULTS.VOLUME)
+  const [beepDelayMs, setBeepDelayMs] = useState<number>(BEEP_DEFAULTS.DELAY_MS)
+
+  // The Alerts component below runs in `isDemoMode`, which suppresses its
+  // internal `useBeepSound` call. We exercise the hook directly here so the
+  // sound can be previewed and the synth-based default behaviour verified.
+  useBeepSound({ isAllowed: isBeepEnabled, volume: beepVolume, delayMs: beepDelayMs })
 
   const header = useMemo(
     () => (
@@ -87,6 +100,39 @@ const AlertsDemoBody = (): JSX.Element => {
           />
           <Typography variant="body">Historical alerts log</Typography>
         </label>
+        <div className="alerts-demo-toolbar__beep">
+          <label className="alerts-demo-toolbar__toggle">
+            <Checkbox
+              checked={isBeepEnabled}
+              onCheckedChange={(checked) => setIsBeepEnabled(checked === true)}
+            />
+            <Typography variant="body">Beep sound preview</Typography>
+          </label>
+          <label className="alerts-demo-toolbar__range">
+            <Typography variant="body">Volume {Math.round(beepVolume * 100)}%</Typography>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={beepVolume}
+              onChange={(event) => setBeepVolume(Number(event.target.value))}
+              disabled={!isBeepEnabled}
+            />
+          </label>
+          <label className="alerts-demo-toolbar__range">
+            <Typography variant="body">Delay {beepDelayMs}ms</Typography>
+            <input
+              type="range"
+              min={250}
+              max={3_000}
+              step={250}
+              value={beepDelayMs}
+              onChange={(event) => setBeepDelayMs(Number(event.target.value))}
+              disabled={!isBeepEnabled}
+            />
+          </label>
+        </div>
         {selectedAlertId ? (
           <Button variant="secondary" size="sm" onClick={() => setSelectedAlertId(undefined)}>
             Clear selected alert ({selectedAlertId})
@@ -94,7 +140,7 @@ const AlertsDemoBody = (): JSX.Element => {
         ) : null}
       </div>
     ),
-    [historicalEnabled, selectedAlertId],
+    [historicalEnabled, selectedAlertId, isBeepEnabled, beepVolume, beepDelayMs],
   )
 
   return (

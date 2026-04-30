@@ -50,9 +50,12 @@ Dependency flow: `demo → foundation → core`.
 
 ### Build strategy
 
-`@tetherto/mdk-core-ui` is **fully pre-built** — tsc emits JS + declarations, Vite compiles SCSS, Terser minifies. Consumers import from `dist/`.
+Both publishable packages are **fully pre-built** — tsc emits JS + declarations, Vite compiles SCSS, Terser minifies (core only). Consumers import from `dist/`.
 
-`@tetherto/mdk-foundation-ui` **exports TypeScript source directly** — no pre-compilation of JS; consuming apps compile it themselves. Only its CSS is Vite-built. This gives instant feedback during development without a rebuild step.
+- `@tetherto/mdk-core-ui`: tsc → `dist/*.js` + `dist/*.d.ts`, Vite → `dist/styles.css`, Terser minifies the JS output.
+- `@tetherto/mdk-foundation-ui`: tsc → `dist/*.js` + `dist/*.d.ts`, Vite → `dist/styles.css`. No minify pass.
+
+The `apps/demo` workspace still consumes foundation through Vite's source resolution for HMR (hence the `additionalData` Sass injection in [`apps/demo/vite.config.ts`](apps/demo/vite.config.ts)) — this is a demo-only convenience and is **not** required for external consumers, who should rely on the package's `exports` map.
 
 ### State management
 
@@ -93,7 +96,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<sc
 
 ### Build outputs
 
-`@tetherto/mdk-core-ui` builds to `dist/` (ESM JS + declarations + CSS). `@tetherto/mdk-foundation-ui` only builds CSS to `dist/`; its TS source is imported directly. Run `pnpm build` before `pnpm dev` on a fresh checkout.
+Both `@tetherto/mdk-core-ui` and `@tetherto/mdk-foundation-ui` build to `dist/` (ESM JS + declarations + CSS). Run `pnpm build` before `pnpm dev` on a fresh checkout, and before publishing — the `exports` map in each `package.json` points at `dist/`, so missing `dist/` artifacts will break consumer resolution.
 
 ### Demo app conventions (`apps/demo`)
 

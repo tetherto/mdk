@@ -1,6 +1,6 @@
 import '@tetherto/mdk-fonts-ui/jetbrains-mono.css'
 import '@tetherto/mdk-core-ui/styles.css'
-import '@tetherto/mdk-foundation-ui/src/styles/index.scss'
+import '@tetherto/mdk-foundation-ui/styles.css'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'

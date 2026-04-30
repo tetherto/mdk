@@ -1,3 +1,5 @@
+@use '@tetherto/mdk-core-ui/styles' as *;
+
 .mdk-settings-rbac {
   @include flex_column;
 

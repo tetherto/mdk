@@ -1,3 +1,5 @@
+@use '@tetherto/mdk-core-ui/styles' as *;
+
 .mdk-settings-import-export {
   @include flex_column;
 

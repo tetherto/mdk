@@ -31,16 +31,16 @@ describe('useHeaderControls', () => {
   it('loads preferences from localStorage on mount', () => {
     const stored = {
       poolMiners: false,
-      mosMiners: true,
+      miners: true,
       poolHashrate: true,
-      mosHashrate: false,
+      hashrate: false,
       consumption: true,
       efficiency: false,
     }
     localStorage.setItem('headerControlsPreferences', JSON.stringify(stored))
     const { result } = renderHook(() => useHeaderControls())
     expect(result.current.preferences.poolMiners).toBe(false)
-    expect(result.current.preferences.mosMiners).toBe(true)
+    expect(result.current.preferences.miners).toBe(true)
   })
 
   it('handleToggle updates a preference and saves to localStorage', () => {

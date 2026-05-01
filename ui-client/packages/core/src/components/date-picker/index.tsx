@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../popover'
 
 /**
  * DatePicker - Single date selection component
- * Built on react-day-picker with mining-os dark theme styling
+ * Built on react-day-picker with app dark theme styling
  *
  * @example
  * ```tsx
@@ -109,7 +109,7 @@ DatePicker.displayName = 'DatePicker'
 
 /**
  * DateRangePicker - Date range selection component with presets
- * Inspired by mining-os PresetDateRangePicker with modal interface
+ * Inspired by app PresetDateRangePicker with modal interface
  *
  * @example
  * ```tsx
@@ -184,7 +184,7 @@ export type DateRangePickerProps = {
   modalClassName?: string
 } & Omit<DayPickerProps, 'mode' | 'selected'>
 
-// Default preset items (matching mining-os)
+// Default preset items (matching app)
 const getDefaultPresets = (): PresetItem[] => {
   const today = new Date()
   const addDays = (date: Date, days: number): Date => {

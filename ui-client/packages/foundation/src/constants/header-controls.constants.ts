@@ -2,27 +2,27 @@ import { WEBAPP_SHORT_NAME } from '.'
 
 export type HeaderPreferences = {
   poolMiners: boolean
-  mosMiners: boolean
+  miners: boolean
   poolHashrate: boolean
-  mosHashrate: boolean
+  hashrate: boolean
   consumption: boolean
   efficiency: boolean
 }
 
 export const DEFAULT_HEADER_PREFERENCES: HeaderPreferences = {
   poolMiners: true,
-  mosMiners: true,
+  miners: true,
   poolHashrate: true,
-  mosHashrate: true,
+  hashrate: true,
   consumption: true,
   efficiency: true,
 }
 
 export const HEADER_ITEMS = [
   { key: 'poolMiners' as keyof HeaderPreferences, label: 'Pool Miners' },
-  { key: 'mosMiners' as keyof HeaderPreferences, label: `${WEBAPP_SHORT_NAME} Miners` },
+  { key: 'miners' as keyof HeaderPreferences, label: `${WEBAPP_SHORT_NAME} Miners` },
   { key: 'poolHashrate' as keyof HeaderPreferences, label: 'Pool Hashrate' },
-  { key: 'mosHashrate' as keyof HeaderPreferences, label: `${WEBAPP_SHORT_NAME} Hashrate` },
+  { key: 'hashrate' as keyof HeaderPreferences, label: `${WEBAPP_SHORT_NAME} Hashrate` },
   { key: 'consumption' as keyof HeaderPreferences, label: 'Consumption' },
   { key: 'efficiency' as keyof HeaderPreferences, label: 'Efficiency' },
 ] as const

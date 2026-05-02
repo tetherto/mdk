@@ -7,7 +7,7 @@
   ],
   "author": "Tether",
   "license": "Apache-2.0",
-  "engine": {
+  "engines": {
     "node": ">=20.0"
   },
   "scripts": {

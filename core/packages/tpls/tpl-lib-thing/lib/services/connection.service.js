@@ -1,6 +1,6 @@
 'use strict'
 
-const utilsStore = require('hp-svc-facs-store/utils')
+const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
 const { getJsonChanges } = require('../utils')
 
 class ConnectionService {

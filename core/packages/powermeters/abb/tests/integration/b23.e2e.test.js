@@ -91,7 +91,7 @@ test('B23 manager registers thing and collects end-to-end snap', async t => {
 
     await stopFacility(manager?.interval_0)
     await stopFacility(manager?.scheduler_0)
-    await stopFacility(manager?.miningosThgWriteCalls_0)
+    await stopFacility(manager?.mdkThgWriteCalls_0)
     await stopFacility(manager?.store_s1)
 
     if (manager) {

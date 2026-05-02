@@ -12,7 +12,7 @@ const startClient = async () => {
 
   // Initialize and register WM56S miner
   const wm56s = await initType(WMTypes.WM_M56S, 'rack-4')
-  console.log('WM56 Miner Type initialized')
+  console.log('WM56S miner type initialized')
   await wm56s.registerThing({
     info: {
       container: 'bitdeer-1',

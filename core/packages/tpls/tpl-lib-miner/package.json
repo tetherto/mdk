@@ -7,7 +7,7 @@
   ],
   "author": "Tether",
   "license": "Apache-2.0",
-  "engine": {
+  "engines": {
     "node": ">=20.0"
   },
   "scripts": {
@@ -19,11 +19,9 @@
     "test:coverage": "brittle --coverage tests/unit/*.js"
   },
   "dependencies": {
-    "async": "3.2.6",
-    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git",
-    "lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
-    "miningos-lib-stats": "git+https://github.com/tetherto/miningos-lib-stats.git",
-    "svc-facs-miningos-net": "git+https://github.com/tetherto/svc-facs-miningos-net.git"
+    "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "@tetherto/hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git#v1.0.0",
+    "async": "3.2.6"
   },
   "devDependencies": {
     "brittle": "3.16.3",

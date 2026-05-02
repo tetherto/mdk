@@ -1,7 +1,7 @@
 'use strict'
 
 const mingo = require('mingo')
-const gLibUtilBase = require('lib-js-util-base')
+const gLibUtilBase = require('@bitfinex/lib-js-util-base')
 const { TIME_PERIODS_MS } = require('./constants')
 
 const isValidSnap = (snap) => {

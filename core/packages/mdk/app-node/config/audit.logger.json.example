@@ -1,0 +1,17 @@
+{
+  "auditLogging": {
+    "enabled": false,
+    "logLevel": "INFO",
+    "sensitiveOperations": [
+      "user.update",
+      "user.create", 
+      "user.delete",
+      "role.change",
+      "global.config.write",
+      "global.data.write",
+      "features.write",
+      "thing.comment.delete",
+      "thing.settings.write"
+    ]
+  }
+}

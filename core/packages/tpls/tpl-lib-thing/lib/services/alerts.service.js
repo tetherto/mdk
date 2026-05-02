@@ -1,7 +1,7 @@
 'use strict'
 
 const { v4: uuidv4 } = require('uuid')
-const utilsStore = require('hp-svc-facs-store/utils')
+const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
 
 const createAlert = ({
   name,

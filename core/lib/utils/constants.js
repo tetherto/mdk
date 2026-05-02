@@ -8,8 +8,8 @@ const WRK_TYPES = {
   APP_NODE: 'wrk-node-http'
 }
 const LIB_TYPES = {
-  ORK: 'miningos-wrk-ork',
-  APP_NODE: 'miningos-app-node',
+  ORK: 'mdk/ork',
+  APP_NODE: 'mdk/app-node',
   ANTMINER: 'miner-antminer',
   AVALON: 'miner-avalon',
   WHATSMINER: 'miner-whatsminer',

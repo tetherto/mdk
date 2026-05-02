@@ -1,6 +1,6 @@
 'use strict'
 
-const TcpFacility = require('svc-facs-tcp')
+const TcpFacility = require('@tetherto/svc-facs-tcp')
 const MinerManager = require('../../../tpls/tpl-lib-miner/lib/miner.manager.js')
 const AvalonMiner = require('./avalon.miner.js')
 

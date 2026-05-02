@@ -1,0 +1,50 @@
+{
+  "minerpool": {
+    "searchAggr": [
+      {"$unwind": "$workers"},
+      {"$group": {"_id": null,"ids": {"$addToSet": "$workers.name"}}},
+      {"$project": {"_id": 0}}
+    ],
+    "searchFields": {"id": 1, "info.container": 1},
+    "crossArrKey": "workers",
+    "crossObjKey": "name",
+    "thgProperty" : ["info", "container"],
+    "groupAggr": [
+      {
+        "$group": {
+          "_id": "$crossThg",
+          "hashrate": {
+            "$sum": "$hashrate"
+          },
+          "hashrate_1h": {
+            "$sum": "$hashrate_1h"
+          },
+          "hashrate_24h": {
+            "$sum": "$hashrate_24h"
+          },
+          "hashrate_stale_1h": {
+            "$sum": "$hashrate_stale_1h"
+          },
+          "hashrate_stale_24h": {
+            "$sum": "$hashrate_stale_24h"
+          },
+          "online": {
+            "$sum": "$online"
+          }
+        }
+      },
+      {
+        "$project": {
+          "container": "$_id",
+          "hashrate": 1,
+          "hashrate_1h": 1,
+          "hashrate_24h": 1,
+          "hashrate_stale_1h": 1,
+          "hashrate_stale_24h": 1,
+          "active_workers_count": "$online",
+          "_id": 0
+        }
+      }
+    ]
+  }
+}

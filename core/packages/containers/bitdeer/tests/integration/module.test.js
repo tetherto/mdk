@@ -76,7 +76,7 @@ test('BitdeerManager init with mocked facs completes', async (t) => {
       },
       interval_0: { add: () => {} },
       scheduler_0: { add: () => {} },
-      miningosThgWriteCalls_0: { whitelistActions: () => {} }
+      mdkThgWriteCalls_0: { whitelistActions: () => {} }
     }
   }
   const manager = new BitdeerManager({}, ctx)

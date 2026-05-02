@@ -47,11 +47,11 @@
         "severity": "critical"
       },
       "wrong_worker_name": {
-        "description": "Worker name does not correspond to MiningOS ID.",
+        "description": "Worker name does not correspond to MDK ID.",
         "severity": "medium"
       },
       "ip_worker_name": {
-        "description": "Worker name corresponds to IP instead of MiningOS ID.",
+        "description": "Worker name corresponds to IP instead of MDK ID.",
         "severity": "medium"
       }
     }

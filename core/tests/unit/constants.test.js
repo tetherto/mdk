@@ -21,7 +21,8 @@ test('WRK_TYPES maps to worker identifiers', (t) => {
 })
 
 test('LIB_TYPES lists supported library package names', (t) => {
-  t.ok(LIB_TYPES.ORK === 'miningos-wrk-ork' && LIB_TYPES.APP_NODE === 'miningos-app-node')
+  t.is(LIB_TYPES.ORK, 'mdk/ork')
+  t.is(LIB_TYPES.APP_NODE, 'mdk/app-node')
   t.ok(LIB_TYPES.ANTMINER && LIB_TYPES.WHATSMINER && LIB_TYPES.ANTSPACE)
   t.ok(Object.keys(LIB_TYPES).length >= 10)
 })

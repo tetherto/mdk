@@ -24,7 +24,7 @@ function makeLog (entries = []) {
   }
 }
 
-const gLibStats = require('miningos-lib-stats')
+const gLibStats = require('../../../../mdk/lib-stats')
 
 function makeService ({
   things = {},

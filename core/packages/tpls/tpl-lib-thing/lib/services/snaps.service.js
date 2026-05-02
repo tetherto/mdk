@@ -1,8 +1,8 @@
 'use strict'
 
 const async = require('async')
-const { promiseTimeout } = require('lib-js-util-promise')
-const utilsStore = require('hp-svc-facs-store/utils')
+const { promiseTimeout } = require('@bitfinex/lib-js-util-promise')
+const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
 
 class SnapsService {
   constructor ({

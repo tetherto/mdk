@@ -2,7 +2,7 @@
 
 const libStats = require('../../../../tpls/tpl-lib-powermeter/lib/templates/stats')
 const { isTransformerPM } = require('./utils')
-const { groupBy } = require('miningos-lib-stats/utils')
+const { groupBy } = require('../../../../mdk/lib-stats/utils')
 
 libStats.specs.powermeter = {
   ...libStats.specs.powermeter_default,

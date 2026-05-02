@@ -22,10 +22,10 @@
   },
   "dependencies": {
     "async": "3.2.6",
-    "bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",
-    "bfx-facs-scheduler": "git+https://github.com/bitfinexcom/bfx-facs-scheduler.git",
-    "bfx-svc-boot-js": "git+https://github.com/bitfinexcom/bfx-svc-boot-js.git",
-    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git",
+    "@bitfinex/bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",
+    "@bitfinex/bfx-facs-scheduler": "git+https://github.com/bitfinexcom/bfx-facs-scheduler.git",
+    "@bitfinex/bfx-svc-boot-js": "git+https://github.com/bitfinexcom/bfx-svc-boot-js.git",
+    "@tetherto/hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git#v1.0.0",
     "mingo": "6.4.6"
   },
   "devDependencies": {

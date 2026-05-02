@@ -5,34 +5,41 @@ const path = require('path')
 const { MDK_ROOT, LIB_TYPES } = require('./constants')
 
 const coreRoot = path.join(__dirname, '..', '..')
-const deps = path.join(__dirname, '..', '..', 'node_modules')
 const localPackages = path.join(__dirname, '..', '..', 'packages')
 const THING_CONFIG_SOURCES = [
   {
     destDir: 'types/AntminerManagerS19xp/config',
-    srcDirs: [path.join(deps, LIB_TYPES.ANTMINER, 'config'), path.join(localPackages, 'miners', 'antminer', 'config')]
+    srcDirs: [path.join(localPackages, LIB_TYPES.ANTMINER, 'config'), path.join(localPackages, 'miners', 'antminer', 'config')]
   },
   {
     destDir: 'types/AvalonMinerManagerA1346/config',
-    srcDirs: [path.join(deps, LIB_TYPES.AVALON, 'config'), path.join(localPackages, 'miners', 'avalon', 'config')]
+    srcDirs: [path.join(localPackages, LIB_TYPES.AVALON, 'config'), path.join(localPackages, 'miners', 'avalon', 'config')]
   },
   {
     destDir: 'types/WhatsminerManagerM56s/config',
-    srcDirs: [path.join(deps, LIB_TYPES.WHATSMINER, 'config'), path.join(localPackages, 'miners', 'whatsminer', 'config')]
+    srcDirs: [path.join(localPackages, LIB_TYPES.WHATSMINER, 'config'), path.join(localPackages, 'miners', 'whatsminer', 'config')]
   },
   {
     destDir: 'types/BitdeerManagerD40M56/config',
-    srcDirs: [path.join(deps, LIB_TYPES.BITDEER, 'config'), path.join(localPackages, 'containers', 'bitdeer', 'config')]
+    srcDirs: [path.join(localPackages, LIB_TYPES.BITDEER, 'config'), path.join(localPackages, 'containers', 'bitdeer', 'config')]
   },
   {
     destDir: 'types/AnstspaceManagerHK3/config',
-    srcDirs: [path.join(deps, LIB_TYPES.ANTSPACE, 'config'), path.join(localPackages, 'containers', 'antspace', 'config')]
+    srcDirs: [path.join(localPackages, LIB_TYPES.ANTSPACE, 'config'), path.join(localPackages, 'containers', 'antspace', 'config')]
   },
   {
     destDir: 'types/B23PowerMeterManager/config',
-    srcDirs: [path.join(deps, LIB_TYPES.ABB, 'config'), path.join(localPackages, 'powermeters', 'abb', 'config')]
+    srcDirs: [path.join(localPackages, LIB_TYPES.ABB, 'config'), path.join(localPackages, 'powermeters', 'abb', 'config')]
+  },
+  {
+    destDir: 'types/TempSenecaSensorManager/config',
+    srcDirs: [path.join(localPackages, LIB_TYPES.SENECA, 'config'), path.join(localPackages, 'sensors', 'seneca', 'config')]
   }
 ]
+
+// Resolved from core/tmp/workers/http.node.wrk.js → core/packages/mdk/app-node/...
+const HTTP_NODE_WRK_STUB =
+  "module.exports = require('../../packages/mdk/app-node/workers/http.node.wrk')\n"
 
 const TEMPLATE = {
   dirs: [
@@ -45,10 +52,11 @@ const TEMPLATE = {
     'types/AnstspaceManagerHK3/config',
     'types/MicroBTManagerHK3/config',
     'types/B23PowerMeterManager/config',
+    'types/TempSenecaSensorManager/config',
     'workers'
   ],
   files: {
-    'workers/http.node.wrk.js': 'module.exports = require(\'miningos-app-node/workers/http.node.wrk\')\n'
+    'workers/http.node.wrk.js': HTTP_NODE_WRK_STUB
   }
 }
 
@@ -84,11 +92,11 @@ module.exports = () => {
 
   const commonDest = path.join(rootStoreDir, 'config', 'common.json')
   if (!fs.existsSync(commonDest)) {
-    const src = resolveSource(path.join(deps, LIB_TYPES.APP_NODE, 'config'), 'common.json')
+    const src = resolveSource(path.join(localPackages, LIB_TYPES.APP_NODE, 'config'), 'common.json')
     if (src) fs.copyFileSync(src, commonDest)
   }
 
-  const orkConfDir = path.join(deps, LIB_TYPES.ORK, 'config')
+  const orkConfDir = path.join(localPackages, LIB_TYPES.ORK, 'config')
   for (const entry of fs.readdirSync(orkConfDir)) {
     if (!entry.endsWith('.example')) continue
     const filename = entry.slice(0, -'.example'.length)
@@ -98,7 +106,7 @@ module.exports = () => {
     }
   }
 
-  const appNodeConfigsDir = path.join(deps, LIB_TYPES.APP_NODE, 'config', 'facs')
+  const appNodeConfigsDir = path.join(localPackages, LIB_TYPES.APP_NODE, 'config', 'facs')
   for (const entry of fs.readdirSync(appNodeConfigsDir)) {
     if (!entry.endsWith('.example')) continue
     const filename = entry.slice(0, -'.example'.length)
@@ -113,12 +121,6 @@ module.exports = () => {
     if (!fs.existsSync(filePath)) {
       fs.writeFileSync(filePath, content, 'utf8')
       continue
-    }
-
-    // Backfill legacy template paths from older MDK initializations.
-    const current = fs.readFileSync(filePath, 'utf8')
-    if (current.includes('require(\'app-node/workers/http.node.wrk\')')) {
-      fs.writeFileSync(filePath, content, 'utf8')
     }
   }
 

@@ -1,7 +1,7 @@
 'use strict'
 
-const utilsStore = require('hp-svc-facs-store/utils')
-const gLibUtilBase = require('lib-js-util-base')
+const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
+const gLibUtilBase = require('@bitfinex/lib-js-util-base')
 const { getLogsCountForTimeRange, getLogMaxHeight, aggregateLogs, applyFilters, projection } = require('../utils')
 
 class LogHistoryService {

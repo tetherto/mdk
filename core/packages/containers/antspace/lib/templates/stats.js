@@ -2,7 +2,7 @@
 
 const libStats = require('../../../../tpls/tpl-lib-container/lib/templates/stats')
 const libUtils = require('../../../../tpls/tpl-lib-container/lib/utils')
-const { groupBy } = require('miningos-lib-stats/utils')
+const { groupBy } = require('../../../../mdk/lib-stats/utils')
 
 const createSrcEntries = (fieldNames) => {
   return fieldNames.map(fieldName => ({

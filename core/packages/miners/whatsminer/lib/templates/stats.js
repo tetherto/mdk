@@ -2,7 +2,7 @@
 
 const libStats = require('../../../../tpls/tpl-lib-miner/lib/templates/stats')
 const { STATUS } = require('../../../../tpls/tpl-lib-miner/lib/utils/constants')
-const { getVal } = require('miningos-lib-stats/utils')
+const { getVal } = require('../../../../mdk/lib-stats/utils')
 
 const MINOR_ERROR_CODES_M56S_M30_SET = new Set(
   [203, 204, 205, 206, 219, 236, 248, 270, 275, 320, 321, 322, 620, 714, 901, 2320, 2330, 2350, 5140, 5141]

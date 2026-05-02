@@ -1,0 +1,24 @@
+{
+  "aggrTailLogTimezones": [
+    {
+      "code": "UTC",
+      "offset": 0
+    }
+  ],
+  "nominalSiteHashrate_MHS": 0,
+  "nominalSiteMinerCapacity": 0,
+  "nominalSiteWeightedAvgEfficiency": 0,
+  "nominalAvailablePowerMWh": 0,
+  "siteEnergyDataThresholdMWh": 0,
+  "consumptionLevels": {
+    "low": 0,
+    "medium": 0,
+    "high": 0,
+    "critical": 0
+  },
+  "transformerThresholds": {
+    "medium": 0,
+    "high": 0
+  },
+  "isAutoSleepAllowed": false
+}

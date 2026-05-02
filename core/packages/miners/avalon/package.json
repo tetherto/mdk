@@ -20,18 +20,14 @@
   },
   "dependencies": {
     "async": "3.2.6",
-    "svc-facs-tcp": "git+https://github.com/tetherto/svc-facs-tcp.git"
+    "@tetherto/svc-facs-tcp": "git+https://github.com/tetherto/svc-facs-tcp.git#v1.0.0"
   },
   "devDependencies": {
     "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
     "@bitfinex/lib-js-util-promise": "git+https://github.com/bitfinexcom/lib-js-util-promise.git",
     "brittle": "3.16.3",
     "debug": "4.4.1",
-    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
     "standard": "17.1.2",
     "yargs": "17.7.2"
-  },
-  "overrides": {
-    "fastify": "5.8.5"
   }
 }

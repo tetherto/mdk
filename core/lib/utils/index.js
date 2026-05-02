@@ -1,8 +1,8 @@
 'use strict'
 
-const IntervalsFacility = require('bfx-facs-interval')
-const StoreFacility = require('hp-svc-facs-store')
-const ActionApproverFacility = require('svc-facs-action-approver')
+const IntervalsFacility = require('@bitfinex/bfx-facs-interval')
+const StoreFacility = require('@tetherto/hp-svc-facs-store')
+const ActionApproverFacility = require('@tetherto/svc-facs-action-approver')
 
 const _startFacility = (facility) => {
   return new Promise((resolve, reject) => {

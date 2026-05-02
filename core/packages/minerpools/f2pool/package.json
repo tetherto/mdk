@@ -22,16 +22,13 @@
   },
   "dependencies": {
     "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
-    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git"
+    "@tetherto/hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git#v1.0.0"
   },
   "devDependencies": {
     "brittle": "3.16.3",
     "date-fns": "3.6.0",
-    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
+    "fastify": "5.8.5",
     "standard": "17.1.2",
     "yargs": "17.7.2"
-  },
-  "overrides": {
-    "fastify": "5.8.5"
   }
 }

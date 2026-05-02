@@ -6,7 +6,7 @@ let utils
 try {
   utils = require('../../lib/utils')
 } catch (e) {
-  test.skip('lib/utils requires miningos-tpl-lib-thing', (t) => {
+  test.skip('lib/utils requires tpl-lib-thing', (t) => {
     t.pass('skipped')
   })
 }

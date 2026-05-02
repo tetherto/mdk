@@ -8,11 +8,11 @@ const stats = require('../../lib/templates/stats')
 const alerts = require('../../lib/templates/alerts')
 const utils = require('../../lib/utils')
 
-test('utils re-exports miningos-tpl-lib-thing utils', (t) => {
+test('utils re-exports tpl-lib-thing utils', (t) => {
   t.is(utils, libThingUtils)
 })
 
-test('alerts re-exports miningos-tpl-lib-thing alerts', (t) => {
+test('alerts re-exports tpl-lib-thing alerts', (t) => {
   t.is(alerts, libThingAlerts)
 })
 

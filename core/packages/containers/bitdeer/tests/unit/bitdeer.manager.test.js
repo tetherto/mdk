@@ -77,7 +77,7 @@ test('BitdeerManager init sets mqtt_m0 and whitelists actions', async (t) => {
       },
       interval_0: { add: () => {} },
       scheduler_0: { add: () => {} },
-      miningosThgWriteCalls_0: {
+      mdkThgWriteCalls_0: {
         whitelistActions: (actions) => {
           whitelistActions = actions
         }

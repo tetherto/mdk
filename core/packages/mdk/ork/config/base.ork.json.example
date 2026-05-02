@@ -1,0 +1,26 @@
+{
+    "actionIntvlMs": 5000,
+    "callTargetsLimit": 500,
+    "automationIntvlMs": 60000,
+    "automationTypes": [],
+    "orkActions": {
+        "registerConfig": {
+            "enabled": true,
+            "reqVotes": 2,
+            "requiredPerms": ["pool_config"],
+            "approvalPerms": ["pool_config_approve"]
+        },
+        "updateConfig": {
+            "enabled": true,
+            "reqVotes": 2,
+            "requiredPerms": ["pool_config"],
+            "approvalPerms": ["pool_config_approve"]
+        },
+        "deleteConfig": {
+            "enabled": true,
+            "reqVotes": 2,
+            "requiredPerms": ["pool_config"],
+            "approvalPerms": ["pool_config_approve"]
+        }
+    }
+}

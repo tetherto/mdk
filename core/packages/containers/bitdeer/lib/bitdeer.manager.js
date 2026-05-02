@@ -14,7 +14,7 @@ class BitdeerManager extends ContainerManager {
       { ns: 'm0' })
     await this.mqtt_m0.startServer()
 
-    this.miningosThgWriteCalls_0.whitelistActions([
+    this.mdkThgWriteCalls_0.whitelistActions([
       ['setTankEnabled', 1],
       ['setAirExhaustEnabled', 1],
       ['resetAlarm', 1],

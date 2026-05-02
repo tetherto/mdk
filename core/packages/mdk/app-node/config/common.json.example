@@ -1,0 +1,47 @@
+{
+  "dir_log": "logs",
+  "debug": 0,
+  "orks": {
+    "cluster-1": {
+      "rpcPublicKey": "RPC_PUBLIC_KEY"
+    }
+  },
+  "staticRootPath": "/home/user/dev/mdk-app-ui/build/",
+  "cacheTiming": {
+    "/auth/list-things": "15s",
+    "/auth/tail-log": "15s",
+    "/auth/actions/batch": "30s",
+    "/auth/actions/:type": "30s",
+    "/auth/actions/:type/:id": "30s",
+    "/auth/global/data": "30s",
+    "/auth/site/status/live": "15s",
+    "/auth/miners": "15s",
+    "/auth/dcs/cooling-system": "15s"
+  },
+  "featureConfig": {
+    "comments": true,
+    "inventory": false,
+    "lvCabinetWidgets": true,
+    "poolStats": true,
+    "powerAvailable": true,
+    "reporting": true,
+    "settings": true,
+    "isOneMinItvEnabled": false,
+    "powerModeTimeline": false,
+    "totalSystemConsumptionChart": false,
+    "exportHistKpiDashboard": false,
+    "showMinerConsumptionDashboard": false,
+    "totalSystemConsumptionHeader": false,
+    "energyProvision": true,
+    "admeStats": true,
+    "alertsHistoricalLogEnabled": true,
+    "isReportingEnabled": true,
+    "centralDCSSetup": {
+      "enabled": false,
+      "tag": "t-dcs"
+    }
+  },
+  "ttl": 300,
+  "site": "SITE_NAME",
+  "rpcTimeout" : 15000
+}

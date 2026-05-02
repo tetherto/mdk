@@ -1,7 +1,7 @@
 'use strict'
 
-const worker = require('bfx-svc-boot-js/lib/worker')
-const OrkBase = require('miningos-wrk-ork/workers/aggr.proc.ork.wrk')
+const worker = require('@bitfinex/bfx-svc-boot-js/lib/worker')
+const OrkBase = require('../packages/mdk/ork/workers/aggr.proc.ork.wrk')
 const { WRK_TYPES, ORK_CLUSTER, MDK_ROOT, MDK_STORE } = require('./utils/constants')
 const { createFacs } = require('./utils')
 const path = require('path')

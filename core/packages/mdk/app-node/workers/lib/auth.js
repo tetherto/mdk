@@ -32,7 +32,7 @@ class AuthLib {
         try {
           await this._userService.createUser({ email: oldUser.email, role })
         } catch (error) {
-          console.error(`Failed to migrate user: ${oldUser.email}`, error)
+          console.error('ERR_USER_MIGRATE', error)
         }
       }))
     } catch (error) {

@@ -1,7 +1,7 @@
 'use strict'
 
 const libStats = require('../../../../tpls/tpl-lib-container/lib/templates/stats')
-const { groupBy } = require('miningos-lib-stats/utils')
+const { groupBy } = require('../../../../mdk/lib-stats/utils')
 
 libStats.specs.container = {
   ...libStats.specs.container_default,

@@ -1,0 +1,430 @@
+{
+  "miner": {
+    "ops": {
+      "pools_accepted_shares_total_aggr": {
+        "op": "sum",
+        "src": "pools_accepted_shares_total"
+      },
+      "pools_rejected_shares_total_aggr": {
+        "op": "sum",
+        "src": "pools_rejected_shares_total"
+      },
+      "pools_stale_shares_total_aggr": {
+        "op": "sum",
+        "src": "pools_stale_shares_total"
+      },
+      "hashrate_mhs_1m_sum_aggr": {
+        "op": "sum",
+        "src": "hashrate_mhs_1m_sum"
+      },
+      "hashrate_mhs_1m_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_1m_group_sum"
+      },
+      "hashrate_mhs_1m_avg_aggr": {
+        "op": "avg",
+        "src": "hashrate_mhs_1m_avg"
+      },
+      "hashrate_mhs_1m_cnt_aggr": {
+        "op": "sum",
+        "src": "hashrate_mhs_1m_cnt"
+      },
+      "hashrate_mhs_1m_cnt_active_aggr": {
+        "op": "sum",
+        "src": "hashrate_mhs_1m_cnt_active"
+      },
+      "offline_or_sleeping_miners_amount_aggr": {
+        "op": "sum",
+        "src": "offline_or_sleeping_miners_cnt"
+      },
+      "online_or_minor_error_miners_amount_aggr": {
+        "op": "sum",
+        "src": "online_or_minor_error_miners_cnt"
+      },
+      "error_miners_amount_aggr": {
+        "op": "sum",
+        "src": "error_miners_cnt"
+      },
+      "not_mining_miners_amount_aggr": {
+        "op": "sum",
+        "src": "not_mining_miners_cnt"
+      },
+      "power_w_sum_aggr": {
+        "op": "sum",
+        "src": "power_w_sum"
+      },
+      "power_w_avg_aggr": {
+        "op": "avg",
+        "src": "power_w_avg"
+      },
+      "power_w_type_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "power_w_type_group_sum"
+      },
+      "power_w_type_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "power_w_type_group_avg"
+      },
+      "power_w_container_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "power_w_container_group_sum"
+      },
+      "power_w_container_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "power_w_container_group_avg"
+      },
+      "uptime_ms_avg_aggr": {
+        "op": "avg",
+        "src": "uptime_ms_avg"
+      },
+      "efficiency_w_ths_avg_aggr": {
+        "op": "avg",
+        "src": "efficiency_w_ths_avg"
+      },
+      "frequency_mhz_avg_aggr": {
+        "op": "avg",
+        "src": "frequency_mhz_avg"
+      },
+      "temperature_c_avg_aggr": {
+        "op": "avg",
+        "src": "temperature_c_avg"
+      },
+      "temperature_c_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "temperature_c_group_avg"
+      },
+      "temperature_c_group_max_aggr": {
+        "op": "obj_concat",
+        "src": "temperature_c_group_max"
+      },
+      "alerts_aggr": {
+        "op": "alerts_aggr",
+        "src": "alerts_cnt"
+      },
+      "offline_cnt": {
+        "op": "obj_concat",
+        "src": "offline_cnt"
+      },
+      "error_cnt": {
+        "op": "obj_concat",
+        "src": "error_cnt"
+      },
+      "not_mining_cnt": {
+        "op": "obj_concat",
+        "src": "not_mining_cnt"
+      },
+      "power_mode_sleep_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_sleep_cnt"
+      },
+      "power_mode_low_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_low_cnt"
+      },
+      "power_mode_normal_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_normal_cnt"
+      },
+      "power_mode_high_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_high_cnt"
+      },
+      "power_mode_low_include_error_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_low_include_error_cnt"
+      },
+      "power_mode_normal_include_error_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_normal_include_error_cnt"
+      },
+      "power_mode_high_include_error_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_high_include_error_cnt"
+      },
+      "type_cnt": {
+        "op": "obj_concat",
+        "src": "type_cnt"
+      },
+      "offline_type_cnt": {
+        "op": "obj_concat",
+        "src": "offline_type_cnt"
+      },
+      "maintenance_type_cnt": {
+        "op": "obj_concat",
+        "src": "maintenance_type_cnt"
+      },
+      "online_positive_hashrate_type_cnt": {
+        "op": "obj_concat",
+        "src": "online_positive_hashrate_type_cnt"
+      },
+      "online_without_hashrate_type_cnt": {
+        "op": "obj_concat",
+        "src": "online_without_hashrate_type_cnt"
+      },
+      "error_type_cnt": {
+        "op": "obj_concat",
+        "src": "error_type_cnt"
+      },
+      "not_mining_type_cnt": {
+        "op": "obj_concat",
+        "src": "not_mining_type_cnt"
+      },
+      "power_mode_sleep_type_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_sleep_type_cnt"
+      },
+      "power_mode_low_type_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_low_type_cnt"
+      },
+      "power_mode_normal_type_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_normal_type_cnt"
+      },
+      "power_mode_high_type_cnt": {
+        "op": "obj_concat",
+        "src": "power_mode_high_type_cnt"
+      },
+      "hashrate_mhs_1m_type_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_1m_type_group_sum"
+      },
+      "hashrate_mhs_1m_type_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_1m_type_group_avg"
+      },
+      "efficiency_w_ths_type_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "efficiency_w_ths_type_group_avg"
+      },
+      "hashrate_mhs_1m_container_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_1m_container_group_sum"
+      },
+      "hashrate_mhs_1m_container_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_1m_container_group_avg"
+      },
+      "efficiency_w_ths_container_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "efficiency_w_ths_container_group_avg"
+      },
+      "hashrate_mhs_5m_active_container_group_cnt": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_5m_active_container_group_cnt"
+      },
+      "hashrate_mhs_5m_pdu_rack_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_5m_pdu_rack_group_sum"
+      },
+      "hashrate_mhs_5m_pdu_rack_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_5m_pdu_rack_group_avg"
+      },
+      "efficiency_w_ths_pdu_rack_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "efficiency_w_ths_pdu_rack_group_avg"
+      },
+      "power_w_pdu_rack_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "power_w_pdu_rack_group_sum"
+      },
+      "nominal_hashrate_mhs_avg_aggr": {
+        "op": "avg",
+        "src": "nominal_hashrate_mhs_avg"
+      },
+      "nominal_efficiency_w_ths_avg_aggr": {
+        "op": "avg",
+        "src": "nominal_efficiency_w_ths_avg"
+      },
+      "nominal_hashrate_mhs_sum_aggr": {
+        "op": "sum",
+        "src": "nominal_hashrate_mhs_sum"
+      },
+      "nominal_efficiency_w_ths_sum_aggr": {
+        "op": "sum",
+        "src": "nominal_efficiency_w_ths_sum"
+      },
+      "hashrate_mhs_1m_group_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_1m_group"
+      },
+      "power_mode_group_aggr": {
+        "op": "obj_concat",
+        "src": "power_mode_group"
+      },
+      "power_w_group_aggr": {
+        "op": "obj_concat",
+        "src": "power_w_group"
+      },
+      "status_group_aggr": {
+        "op": "obj_concat",
+        "src": "status_group"
+      },
+      "hashrate_mhs_5m_sum_aggr": {
+        "op": "sum",
+        "src": "hashrate_mhs_5m_sum"
+      },
+      "hashrate_mhs_5m_avg_aggr": {
+        "op": "avg",
+        "src": "hashrate_mhs_5m_avg"
+      },
+      "hashrate_mhs_5m_cnt_aggr": {
+        "op": "sum",
+        "src": "hashrate_mhs_5m_cnt"
+      },
+      "hashrate_mhs_5m_cnt_active_aggr": {
+        "op": "sum",
+        "src": "hashrate_mhs_5m_cnt_active"
+      },
+      "hashrate_mhs_5m_type_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_5m_type_group_sum"
+      },
+      "hashrate_mhs_5m_type_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_5m_type_group_avg"
+      },
+      "hashrate_mhs_5m_container_group_sum_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_5m_container_group_sum"
+      },
+      "hashrate_mhs_5m_container_group_avg_aggr": {
+        "op": "obj_concat",
+        "src": "hashrate_mhs_5m_container_group_avg"
+      },
+      "full_mining_startup_count": {
+        "op": "sum",
+        "src": "startupStatus"
+      },
+      "miner_inventory_status_group_cnt_aggr": {
+        "op": "obj_concat",
+        "src": "miner_inventory_status_group_cnt"
+      },
+      "miner_inventory_location_group_cnt_aggr": {
+        "op": "obj_concat",
+        "src": "miner_inventory_location_group_cnt"
+      }
+    }
+  },
+  "container": {
+    "ops": {
+      "alerts_aggr": {
+        "op": "alerts_aggr",
+        "src": "alerts_cnt"
+      },
+      "container_status_aggr": {
+        "op": "obj_concat",
+        "src": "container_status"
+      },
+      "container_power_w_aggr": {
+        "op": "obj_concat",
+        "src": "container_power_w"
+      },
+      "container_power_w_sum_aggr": {
+        "op": "sum",
+        "src": "container_power_w_sum"
+      },
+      "container_specific_stats_group_aggr": {
+        "op": "obj_concat",
+        "src": "container_specific_stats_group"
+      },
+      "container_nominal_hashrate_mhs_sum_aggr": {
+        "op": "sum",
+        "src": "container_nominal_hashrate_mhs_sum"
+      },
+      "container_nominal_hashrate_mhs_avg_aggr": {
+        "op": "avg",
+        "src": "container_nominal_hashrate_mhs_avg"
+      },
+      "container_nominal_efficiency_w_ths_avg_aggr": {
+        "op": "avg",
+        "src": "container_nominal_efficiency_w_ths_avg"
+      },
+      "container_nominal_miner_capacity_sum_aggr": {
+        "op": "sum",
+        "src": "container_nominal_miner_capacity_sum"
+      }
+    }
+  },
+  "powermeter": {
+    "ops": {
+      "alerts_aggr": {
+        "op": "alerts_aggr",
+        "src": "alerts_cnt"
+      },
+      "site_power_w": {
+        "op": "sum",
+        "src": "site_power_w"
+      },
+      "transformer_power_w": {
+        "op": "sum",
+        "src": "transformer_power_w"
+      },
+      "power_w_pos_group_aggr": {
+        "op": "obj_concat",
+        "src": "power_w_pos_group"
+      },
+      "powermeter_specific_stats_group_aggr": {
+        "op": "obj_concat",
+        "src": "powermeter_specific_stats_group"
+      },
+      "power_w_container_group_aggr": {
+        "op": "obj_concat",
+        "src": "power_w_container_group"
+      }
+    }
+  },
+  "sensor": {
+    "ops": {
+      "alerts_aggr": {
+        "op": "alerts_aggr",
+        "src": "alerts_cnt"
+      }
+    }
+  },
+  "minerpool": {
+    "ops": {
+      "stats": {
+        "op": "arr_concat",
+        "src": "stats"
+      },
+      "workers": {
+        "op": "arr_concat",
+        "src": "workers"
+      },
+      "transactions":{
+        "op": "arr_concat",
+        "src": "transactions"
+      },     
+      "blocksData":{
+        "op": "obj_concat",
+        "src": "blocksData"
+      },
+      "workersCount":{
+        "op": "sum",
+        "src": "count"
+      }
+    }
+  },
+  "inventory": {
+    "ops": {
+      "spare_parts_cnt_aggr": {
+        "op": "sum",
+        "src": "spare_parts_cnt"
+      },
+      "spare_parts_type_group_cnt_aggr": {
+        "op": "obj_concat",
+        "src": "spare_parts_type_group_cnt"
+      },
+      "spare_part_inventory_status_group_cnt_aggr": {
+        "op": "obj_concat",
+        "src": "spare_part_inventory_status_group_cnt"
+      },
+      "spare_part_inventory_location_group_cnt_aggr": {
+        "op": "obj_concat",
+        "src": "spare_part_inventory_location_group_cnt"
+      }
+    }
+  }
+}

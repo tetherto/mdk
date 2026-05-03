@@ -6,7 +6,7 @@ let MinerManager
 try {
   MinerManager = require('../../lib/miner.manager')
 } catch (e) {
-  test.skip('lib/miner.manager requires deps (miningos-tpl-lib-thing etc.)', (t) => {
+  test.skip('lib/miner.manager requires deps (tpl-lib-thing etc.)', (t) => {
     t.pass('skipped')
   })
 }

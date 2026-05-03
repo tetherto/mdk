@@ -2,7 +2,7 @@
 
 const ThingManager = require('../../../tpls/tpl-lib-thing/lib/thing.manager')
 const { getRandomString } = require('./utils')
-const gLibUtilBase = require('lib-js-util-base')
+const gLibUtilBase = require('@bitfinex/lib-js-util-base')
 const {
   MAINTENANCE,
   MINER_TAG,
@@ -12,8 +12,8 @@ const {
   STAT_STARTUP_STATUS,
   STAT_5M
 } = require('./utils/constants')
-const utilsStore = require('hp-svc-facs-store/utils')
-const { getArrayUniq } = require('lib-js-util-base')
+const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
+const { getArrayUniq } = require('@bitfinex/lib-js-util-base')
 
 class MinerManager extends ThingManager {
   async init () {

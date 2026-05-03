@@ -3,11 +3,11 @@
 const debug = require('debug')('thing:proc')
 const fs = require('fs')
 const path = require('path')
-const gLibStats = require('miningos-lib-stats')
-const StoreFacility = require('hp-svc-facs-store')
-const IntervalsFacility = require('bfx-facs-interval')
-const SchedulerFacility = require('bfx-facs-scheduler')
-const MiningOSThgWriteCallsFacility = require('svc-facs-miningos-thg-write-calls')
+const gLibStats = require('../../../mdk/lib-stats')
+const StoreFacility = require('@tetherto/hp-svc-facs-store')
+const IntervalsFacility = require('@bitfinex/bfx-facs-interval')
+const SchedulerFacility = require('@bitfinex/bfx-facs-scheduler')
+const MDKThgWriteCallsFacility = require('../../../facs/thg-write-calls')
 const { MAIN_DB } = require('./utils/constants')
 const EventEmitter = require('events')
 const SettingsService = require('./services/settings.service')
@@ -153,7 +153,7 @@ class ThingManager extends EventEmitter {
       this.store_s1 = ctx.facs.store_s1
       this.interval_0 = ctx.facs.interval_0
       this.scheduler_0 = ctx.facs.scheduler_0
-      this.miningosThgWriteCalls_0 = ctx.facs.miningosThgWriteCalls_0
+      this.mdkThgWriteCalls_0 = ctx.facs.mdkThgWriteCalls_0
       return
     }
 
@@ -166,8 +166,8 @@ class ThingManager extends EventEmitter {
     this.scheduler_0 = new SchedulerFacility(this, {}, ctx)
     await this._startFacility(this.scheduler_0)
 
-    this.miningosThgWriteCalls_0 = new MiningOSThgWriteCallsFacility(this, {}, ctx)
-    await this._startFacility(this.miningosThgWriteCalls_0)
+    this.mdkThgWriteCalls_0 = new MDKThgWriteCallsFacility(this, {}, ctx)
+    await this._startFacility(this.mdkThgWriteCalls_0)
 
     this._ownsFacilities = true
   }
@@ -378,7 +378,7 @@ class ThingManager extends EventEmitter {
     const facilities = [
       this.interval_0,
       this.scheduler_0,
-      this.miningosThgWriteCalls_0,
+      this.mdkThgWriteCalls_0,
       this.store_s1
     ]
     let i = 0
@@ -405,7 +405,7 @@ class ThingManager extends EventEmitter {
   }
 
   _addWhitelistedActions (actions) {
-    return this.miningosThgWriteCalls_0.whitelistActions(actions)
+    return this.mdkThgWriteCalls_0.whitelistActions(actions)
   }
 
   getSettings () {

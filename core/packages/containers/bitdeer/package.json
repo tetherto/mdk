@@ -7,7 +7,7 @@
   ],
   "author": "Tether",
   "license": "Apache-2.0",
-  "engine": {
+  "engines": {
     "node": ">=20.0"
   },
   "scripts": {
@@ -22,18 +22,15 @@
     "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
     "@bitfinex/lib-js-util-promise": "git+https://github.com/bitfinexcom/lib-js-util-promise.git",
     "@bitfinex/lib-js-util-task-queue": "git+https://github.com/bitfinexcom/lib-js-util-task-queue.git",
-    "miningos-lib-stats": "git+https://github.com/tetherto/miningos-lib-stats.git",
     "svc-facs-mqtt": "git+https://github.com/tetherto/svc-facs-mqtt.git"
   },
   "devDependencies": {
     "aedes": "1.0.2",
     "brittle": "3.16.3",
     "standard": "17.1.2",
-    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
     "yargs": "17.7.2"
   },
   "overrides": {
-    "fastify": "5.8.5",
     "uuid": "14.0.0"
   }
 }

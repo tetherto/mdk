@@ -7,7 +7,7 @@
   ],
   "author": "Tether",
   "license": "Apache-2.0",
-  "engine": {
+  "engines": {
     "node": ">=20.0"
   },
   "scripts": {
@@ -26,12 +26,8 @@
   },
   "devDependencies": {
     "brittle": "3.16.3",
-    "miningos-mock-control-service": "git+https://github.com/tetherto/miningos-mock-control-service.git",
     "modbus-stream": "0.46.0",
     "standard": "17.1.2",
     "yargs": "17.7.2"
-  },
-  "overrides": {
-    "fastify": "5.8.5"
-  }
+  } 
 }

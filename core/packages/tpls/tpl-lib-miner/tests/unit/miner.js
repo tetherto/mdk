@@ -6,7 +6,7 @@ let Miner
 try {
   Miner = require('../../lib/miner')
 } catch (e) {
-  test.skip('lib/miner requires miningos-tpl-lib-thing', (t) => {
+  test.skip('lib/miner requires tpl-lib-thing', (t) => {
     t.pass('skipped')
   })
 }

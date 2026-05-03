@@ -1,0 +1,57 @@
+{
+  "name": "@tetherto/mdk-app-node",
+  "version": "0.0.1",
+  "description": "MDK App Node",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20.0"
+  },
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit && npm run test:integration",
+    "test:unit": "NODE_ENV=test brittle tests/unit/**/*.test.js",
+    "test:integration": "NODE_ENV=test npx brittle tests/integration/*.test.js",
+    "test:api": "NODE_ENV=test npx brittle tests/integration/api.test.js",
+    "test:ws": "NODE_ENV=test npx brittle tests/integration/ws.test.js",
+    "test:watch": "brittle tests/unit/**/*.js --watch",
+    "test:coverage": "brittle --coverage tests/unit/**/*.js",
+    "test:demo-ui": "http-server ./tests/demo-ui -p 3030",
+    "dev": "node worker.js --wtype wrk-node-http --env development --port 3000",
+    "start": "node worker.js --wtype wrk-node-http --env production --port 3000"
+  },
+  "dependencies": {
+    "@fastify/websocket": "11.2.0",
+    "@bitfinex/bfx-svc-boot-js": "1.2.0",
+    "@bitfinex/bfx-facs-db-sqlite": "git+https://github.com/bitfinexcom/bfx-facs-db-sqlite.git",
+    "@bitfinex/bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",
+    "@bitfinex/bfx-facs-interval": "git+https://github.com/bitfinexcom/bfx-facs-interval.git",
+    "@bitfinex/bfx-facs-lru": "git+https://github.com/bitfinexcom/bfx-facs-lru.git",
+    "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "@tetherto/hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git#v1.0.0",
+    "@tetherto/svc-facs-auth": "git+https://github.com/tetherto/svc-facs-auth.git#v1.0.0",
+    "@tetherto/svc-facs-httpd": "git+https://github.com/tetherto/svc-facs-httpd.git#v1.0.0",
+    "@tetherto/svc-facs-httpd-oauth2": "git+https://github.com/tetherto/svc-facs-httpd-oauth2.git#v1.0.0",
+    "@tetherto/tether-wrk-base": "git+https://github.com/tetherto/tether-wrk-base.git#v1.0.0",
+    "async": "3.2.6",
+    "debug": "4.4.1",
+    "mingo": "6.4.6"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0",
+    "http-server": "14.1.1",
+    "standard": "17.1.0",
+    "tether-svc-test-helper": "git+https://github.com/tetherto/tether-svc-test-helper.git"
+  },
+  "overrides": {
+    "@tootallnate/once": "3.0.1",
+    "tar": ">=7.5.4",
+    "fastify": "5.8.5",
+    "@fastify/static": "9.1.3",
+    "@fastify/oauth2": "8.2.0"
+  }
+}

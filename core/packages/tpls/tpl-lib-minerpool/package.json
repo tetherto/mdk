@@ -21,10 +21,10 @@
     "test:coverage": "brittle --coverage tests/unit/*.js"
   },
   "dependencies": {
-    "bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",
-    "bfx-facs-scheduler": "git+https://github.com/bitfinexcom/bfx-facs-scheduler.git",
-    "hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git",
-    "lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "@bitfinex/bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",
+    "@bitfinex/bfx-facs-scheduler": "git+https://github.com/bitfinexcom/bfx-facs-scheduler.git",
+    "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "@tetherto/hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git#v1.0.0",
     "mingo": "6.5.6"
   },
   "devDependencies": {

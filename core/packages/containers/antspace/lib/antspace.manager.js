@@ -1,7 +1,7 @@
 'use strict'
 
 const ContainerManager = require('../../../tpls/tpl-lib-container/lib/container.manager')
-const HttpFacility = require('bfx-facs-http')
+const HttpFacility = require('@bitfinex/bfx-facs-http')
 
 class AnstspaceManager extends ContainerManager {
   async init () {
@@ -9,7 +9,7 @@ class AnstspaceManager extends ContainerManager {
 
     this.http_0 = new HttpFacility(this, {}, {})
 
-    this.miningosThgWriteCalls_0.whitelistActions([
+    this.mdkThgWriteCalls_0.whitelistActions([
       ['resetCoolingSystem', 2],
       ['setLiquidSupplyTemperature', 2]
     ])

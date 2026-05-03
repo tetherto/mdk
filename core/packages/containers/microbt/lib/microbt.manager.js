@@ -10,7 +10,7 @@ class MicroBTManager extends ContainerManager {
 
     this.modbus_0 = new ModbusFacility(this, {}, {})
 
-    this.miningosThgWriteCalls_0.whitelistActions([
+    this.mdkThgWriteCalls_0.whitelistActions([
       ['setCoolingFanThreshold', 1]
     ])
   }

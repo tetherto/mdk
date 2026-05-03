@@ -15,6 +15,7 @@ const run = async (srv, host, port, type) => {
   try {
     mock = srv.createServer({ host, port, type })
   } catch (e) {
+    console.error('mock server failed to start:', e.message || e)
     cleanup()
     process.exit(1)
   }

@@ -102,7 +102,7 @@ test('MicroBTManager _connectThing creates ctrl when opts are complete', async (
       },
       interval_0: { add: () => {} },
       scheduler_0: { add: () => {} },
-      miningosThgWriteCalls_0: { whitelistActions: () => {} }
+      mdkThgWriteCalls_0: { whitelistActions: () => {} }
     }
   }
   const mgr = new MicroBTManager({ thing: { container: {} } }, ctx)
@@ -149,7 +149,7 @@ test('MicroBTManager init sets modbus_0 and whitelists setCoolingFanThreshold', 
       },
       interval_0: { add: () => {} },
       scheduler_0: { add: () => {} },
-      miningosThgWriteCalls_0: {
+      mdkThgWriteCalls_0: {
         whitelistActions: (actions) => {
           whitelistActions = actions
         }

@@ -1,16 +1,16 @@
 'use strict'
 
-const StoreFacility = require('hp-svc-facs-store')
-const HttpFacility = require('bfx-facs-http')
-const SchedulerFacility = require('bfx-facs-scheduler')
+const StoreFacility = require('@tetherto/hp-svc-facs-store')
+const HttpFacility = require('@bitfinex/bfx-facs-http')
+const SchedulerFacility = require('@bitfinex/bfx-facs-scheduler')
 const EventEmitter = require('events')
 const fs = require('fs')
 const path = require('path')
-const gLibUtilBase = require('lib-js-util-base')
+const gLibUtilBase = require('@bitfinex/lib-js-util-base')
 const mingo = require('mingo')
 const { SCHEDULER_TIMES, BTC_SATS, MINUTE_MS, HOUR_MS, HOURS_24_MS } = require('./utils/constants')
 const { getTimeRanges } = require('./utils/time')
-const utilsStore = require('hp-svc-facs-store/utils')
+const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
 
 class MinerpoolManager extends EventEmitter {
   constructor (conf, ctx) {

@@ -1,0 +1,42 @@
+{
+  "tagPrefix": "container-",
+  "crossThingType": "miner",
+  "action": "setPowerMode",
+  "params": [
+    "sleep"
+  ],
+  "authPerms": [
+    "miner:rw"
+  ],
+  "listThingsReq": {
+    "query": {
+      "last.snap.stats.container_specific.primary_circulating_pump": {
+        "$eq": true
+      }
+    },
+    "fields": {
+      "tags": 1
+    }
+  },
+  "minActionTsDiff": 60000,
+  "crossThingsActionReq": {
+    "devicesCondition": [
+      {
+        "last.snap.stats.status": {
+          "$nin": [
+            "offline",
+            "sleeping"
+          ]
+        }
+      },
+      {
+        "last.snap.stats.hashrate_mhs.t_5m": {
+          "$gt": 0
+        }
+      }
+    ],
+    "fields": {
+      "id": 1
+    }
+  }
+}

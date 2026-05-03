@@ -6,7 +6,7 @@ let libAlerts
 try {
   libAlerts = require('../../lib/templates/alerts')
 } catch (e) {
-  test.skip('lib/templates/alerts requires miningos-tpl-lib-thing', (t) => {
+  test.skip('lib/templates/alerts requires tpl-lib-thing', (t) => {
     t.pass('skipped')
   })
 }

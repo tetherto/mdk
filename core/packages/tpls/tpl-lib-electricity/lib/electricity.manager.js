@@ -1,9 +1,9 @@
 'use strict'
 
 const mingo = require('mingo')
-const StoreFacility = require('hp-svc-facs-store')
-const SchedulerFacility = require('bfx-facs-scheduler')
-const HttpFacility = require('bfx-facs-http')
+const StoreFacility = require('@tetherto/hp-svc-facs-store')
+const SchedulerFacility = require('@bitfinex/bfx-facs-scheduler')
+const HttpFacility = require('@bitfinex/bfx-facs-http')
 const EventEmitter = require('events')
 const fs = require('fs')
 const path = require('path')

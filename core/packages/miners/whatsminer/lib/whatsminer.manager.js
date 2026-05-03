@@ -2,7 +2,7 @@
 
 const MinerManager = require('../../../tpls/tpl-lib-miner/lib/miner.manager.js')
 const Whatsminer = require('./whatsminer.js')
-const TcpFacility = require('svc-facs-tcp')
+const TcpFacility = require('@tetherto/svc-facs-tcp')
 
 const DEFAULT_PORT = 4028
 const { DEFAULT_NOMINAL_EFFICIENCY_WTHS } = require('./utils/constants.js')

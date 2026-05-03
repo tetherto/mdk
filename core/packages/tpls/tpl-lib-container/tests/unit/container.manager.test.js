@@ -40,7 +40,7 @@ test('ContainerManager init sets scheduleAddlStatTfs and whitelisted actions', a
       },
       interval_0: { add: () => {} },
       scheduler_0: { add: () => {} },
-      miningosThgWriteCalls_0: {
+      mdkThgWriteCalls_0: {
         whitelistActions: (actions) => {
           whitelistCalled = true
           t.ok(Array.isArray(actions), 'whitelistActions called with array')

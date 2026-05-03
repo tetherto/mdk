@@ -2,8 +2,8 @@
 
 const async = require('async')
 const { STAT_RTD } = require('../utils/constants')
-const utilsStore = require('hp-svc-facs-store/utils')
-const gLibStats = require('miningos-lib-stats')
+const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
+const gLibStats = require('../../../../mdk/lib-stats')
 
 class StatsService {
   constructor ({

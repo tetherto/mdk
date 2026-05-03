@@ -1,7 +1,7 @@
 'use strict'
 
 const { v4: uuidv4 } = require('uuid')
-const gLibUtilBase = require('lib-js-util-base')
+const gLibUtilBase = require('@bitfinex/lib-js-util-base')
 
 class DataService {
   constructor ({

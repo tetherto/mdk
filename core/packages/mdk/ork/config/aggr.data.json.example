@@ -1,0 +1,74 @@
+{
+    "agrrTailLogIntvlMs": 3600000,
+    "aggrTailLogStoreDays": 180,
+    "aggrTailLogApiDelay": 1000,
+    "aggrTailLogKeys": [
+        {
+            "key": "stat-5m",
+            "type": "miner",
+            "tag": "t-miner",
+            "fields": {
+                "hashrate_mhs_5m_avg": 1,
+                "hashrate_mhs_5m_sum": 1,
+                "nominal_hashrate_mhs_avg": 1,
+                "nominal_efficiency_w_ths_avg": 1,
+                "hashrate_mhs_1m_avg": 1,
+                "efficiency_w_ths_avg": 1,
+                "hashrate_mhs_1m_sum": 1,
+                "hashrate_mhs_1m_cnt": 1,
+                "hashrate_mhs_1m_cnt_active": 1,
+                "pools_accepted_shares_total": 1,
+                "pools_rejected_shares_total": 1,
+                "pools_stale_shares_total": 1
+            },
+            "aggrFields": {
+                "hashrate_mhs_5m_avg_aggr": 1,
+                "hashrate_mhs_5m_sum_aggr": 1,
+                "nominal_hashrate_mhs_avg_aggr": 1,
+                "nominal_efficiency_w_ths_avg_aggr": 1,
+                "hashrate_mhs_1m_avg_aggr": 1,
+                "efficiency_w_ths_avg_aggr": 1,
+                "hashrate_mhs_1m_sum_aggr": 1,
+                "hashrate_mhs_1m_cnt_aggr": 1,
+                "hashrate_mhs_1m_cnt_active_aggr": 1,
+                "offline_or_sleeping_miners_amount_aggr": 1,
+                "online_or_minor_error_miners_amount_aggr": 1,
+                "error_miners_amount_aggr": 1,
+                "pools_accepted_shares_total_aggr": 1,
+                "pools_rejected_shares_total_aggr": 1,
+                "pools_stale_shares_total_aggr": 1
+            },
+            "limit": 288
+        },
+        {
+            "key": "stat-5m",
+            "type": "powermeter",
+            "tag": "t-powermeter",
+            "fields": {
+                "site_power_w": 1
+            },
+            "aggrFields": {
+                "site_power_w": 1
+            },
+            "limit": 288
+        },
+        {
+            "key": "stat-5m",
+            "type": "container",
+            "tag": "t-container",
+            "fields": {
+                "container_nominal_hashrate_mhs_sum": 1,
+                "container_nominal_hashrate_mhs_avg": 1,
+                "container_nominal_miner_capacity_sum": 1,
+                "container_power_w_sum": 1
+            },
+            "aggrFields": {
+                "container_nominal_hashrate_mhs_sum_aggr": 1,
+                "container_nominal_hashrate_mhs_avg_aggr": 1,
+                "container_nominal_miner_capacity_sum_aggr": 1,
+                "container_power_w_sum_aggr": 1
+            },
+            "limit": 288
+        }
+    ]
+}

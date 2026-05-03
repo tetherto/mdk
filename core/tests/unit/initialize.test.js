@@ -38,8 +38,8 @@ const ensureInitializeDeps = () => {
     }
   }
 
-  const orkConfigDir = path.join(coreRoot, 'node_modules', 'miningos-wrk-ork', 'config')
-  const appNodeConfigDir = path.join(coreRoot, 'node_modules', 'miningos-app-node', 'config')
+  const orkConfigDir = path.join(coreRoot, 'node_modules', 'mdk-ork', 'config')
+  const appNodeConfigDir = path.join(coreRoot, 'node_modules', 'mdk-app-node', 'config')
   const appNodeFacsDir = path.join(appNodeConfigDir, 'facs')
 
   ensureDir(orkConfigDir)

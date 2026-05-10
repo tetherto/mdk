@@ -22,6 +22,7 @@
     "format": "turbo format",
     "size": "node scripts/bundle-size.mjs",
     "size:check": "pnpm build && pnpm size",
+    "api:surface": "node scripts/generate-public-surface.mjs",
     "test": "turbo test",
     "test:watch": "turbo test:watch",
     "test:coverage": "turbo test:coverage",
@@ -51,6 +52,7 @@
     "rollup-plugin-postcss": "catalog:",
     "sass": "catalog:",
     "turbo": "catalog:",
+    "typedoc": "^0.28.19",
     "typescript": "catalog:",
     "vite": "catalog:"
   },

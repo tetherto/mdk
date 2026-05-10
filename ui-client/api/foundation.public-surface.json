@@ -2,12 +2,13 @@
   "_meta": {
     "status": "experimental",
     "framework": "react",
+    "schemaVersion": "1.0",
     "disclaimer": "Generated. See ui-client/api/README.md before consuming.",
     "generator": "scripts/generate-public-surface.mjs",
     "typedocVersion": "0.28.19"
   },
   "package": "foundation",
-  "generatedAt": "2026-05-10T12:02:01.867Z",
+  "generatedAt": "2026-05-10T13:46:04.152Z",
   "exports": [
     {
       "name": "ACTION_NAMES_MAP",
@@ -16,7 +17,140 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/actions.ts",
       "summary": null,
-      "type": "{ emergencyStop: \"Emergency Stop Container\"; forgetThings: \"Remove Thing\"; maintenance: \"Container Maintenance\"; rackReboot: \"Reboot Appl.\"; reboot: \"Reboot Miner\"; registerThing: \"Register Thing\"; resetAlarm: \"Reset Alarm\"; resetContainer: \"Reset Container\"; resetCoolingSystem: \"Reset Cooling System\"; setAirExhaustEnabled: \"Set Air Exhaust Enabled\"; setCoolingFanThreshold: \"Set Cooling Fan Threshold\"; setLED: \"Set LED\"; setLiquidSupplyTemperature: \"Set Liquid Supply Temperature\"; setPowerMode: \"Set Power Mode\"; setTankEnabled: \"Set Tank Enabled\"; setTemperatureSettings: \"Set Temperature Settings\"; setUpfreqSpeed: \"Set Frequency Settings\"; setupPools: \"Setup Pools\"; switchContainer: \"Switch Container\"; switchCoolingSystem: \"Switch Cooling System\"; switchSocket: \"Switch Socket\"; updateThing: \"Update Thing\" }"
+      "members": [
+        {
+          "name": "emergencyStop",
+          "required": true,
+          "type": "\"Emergency Stop Container\"",
+          "summary": null
+        },
+        {
+          "name": "forgetThings",
+          "required": true,
+          "type": "\"Remove Thing\"",
+          "summary": null
+        },
+        {
+          "name": "maintenance",
+          "required": true,
+          "type": "\"Container Maintenance\"",
+          "summary": null
+        },
+        {
+          "name": "rackReboot",
+          "required": true,
+          "type": "\"Reboot Appl.\"",
+          "summary": null
+        },
+        {
+          "name": "reboot",
+          "required": true,
+          "type": "\"Reboot Miner\"",
+          "summary": null
+        },
+        {
+          "name": "registerThing",
+          "required": true,
+          "type": "\"Register Thing\"",
+          "summary": null
+        },
+        {
+          "name": "resetAlarm",
+          "required": true,
+          "type": "\"Reset Alarm\"",
+          "summary": null
+        },
+        {
+          "name": "resetContainer",
+          "required": true,
+          "type": "\"Reset Container\"",
+          "summary": null
+        },
+        {
+          "name": "resetCoolingSystem",
+          "required": true,
+          "type": "\"Reset Cooling System\"",
+          "summary": null
+        },
+        {
+          "name": "setAirExhaustEnabled",
+          "required": true,
+          "type": "\"Set Air Exhaust Enabled\"",
+          "summary": null
+        },
+        {
+          "name": "setCoolingFanThreshold",
+          "required": true,
+          "type": "\"Set Cooling Fan Threshold\"",
+          "summary": null
+        },
+        {
+          "name": "setLED",
+          "required": true,
+          "type": "\"Set LED\"",
+          "summary": null
+        },
+        {
+          "name": "setLiquidSupplyTemperature",
+          "required": true,
+          "type": "\"Set Liquid Supply Temperature\"",
+          "summary": null
+        },
+        {
+          "name": "setPowerMode",
+          "required": true,
+          "type": "\"Set Power Mode\"",
+          "summary": null
+        },
+        {
+          "name": "setTankEnabled",
+          "required": true,
+          "type": "\"Set Tank Enabled\"",
+          "summary": null
+        },
+        {
+          "name": "setTemperatureSettings",
+          "required": true,
+          "type": "\"Set Temperature Settings\"",
+          "summary": null
+        },
+        {
+          "name": "setUpfreqSpeed",
+          "required": true,
+          "type": "\"Set Frequency Settings\"",
+          "summary": null
+        },
+        {
+          "name": "setupPools",
+          "required": true,
+          "type": "\"Setup Pools\"",
+          "summary": null
+        },
+        {
+          "name": "switchContainer",
+          "required": true,
+          "type": "\"Switch Container\"",
+          "summary": null
+        },
+        {
+          "name": "switchCoolingSystem",
+          "required": true,
+          "type": "\"Switch Cooling System\"",
+          "summary": null
+        },
+        {
+          "name": "switchSocket",
+          "required": true,
+          "type": "\"Switch Socket\"",
+          "summary": null
+        },
+        {
+          "name": "updateThing",
+          "required": true,
+          "type": "\"Update Thing\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ACTION_STATUS_TYPES",
@@ -25,7 +159,44 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/actions.ts",
       "summary": null,
-      "type": "{ APPROVED: \"APPROVED\"; COMPLETED: \"COMPLETED\"; DENIED: \"DENIED\"; EXECUTING: \"EXECUTING\"; FAILED: \"FAILED\"; VOTING: \"VOTING\" }"
+      "members": [
+        {
+          "name": "APPROVED",
+          "required": true,
+          "type": "\"APPROVED\"",
+          "summary": null
+        },
+        {
+          "name": "COMPLETED",
+          "required": true,
+          "type": "\"COMPLETED\"",
+          "summary": null
+        },
+        {
+          "name": "DENIED",
+          "required": true,
+          "type": "\"DENIED\"",
+          "summary": null
+        },
+        {
+          "name": "EXECUTING",
+          "required": true,
+          "type": "\"EXECUTING\"",
+          "summary": null
+        },
+        {
+          "name": "FAILED",
+          "required": true,
+          "type": "\"FAILED\"",
+          "summary": null
+        },
+        {
+          "name": "VOTING",
+          "required": true,
+          "type": "\"VOTING\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ACTION_SUFFIXES",
@@ -34,7 +205,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/actions.ts",
       "summary": null,
-      "type": "{ REPAIR: string }"
+      "members": [
+        {
+          "name": "REPAIR",
+          "required": true,
+          "type": "string",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ACTION_TYPES",
@@ -43,7 +221,152 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/actions.ts",
       "summary": null,
-      "type": "{ EMERGENCY_STOP: \"emergencyStop\"; FORGET_THINGS: \"forgetThings\"; MAINTENANCE: \"maintenance\"; RACK_REBOOT: \"rackReboot\"; REBOOT: \"reboot\"; REGISTER_POOL_CONFIG: \"registerConfig\"; REGISTER_THING: \"registerThing\"; RESET_ALARM: \"resetAlarm\"; RESET_CONTAINER: \"resetContainer\"; RESET_COOLING_SYSTEM: \"resetCoolingSystem\"; SET_AIR_EXHAUST_ENABLED: \"setAirExhaustEnabled\"; SET_COOLING_FAN_THRESHOLD: \"setCoolingFanThreshold\"; SET_LED: \"setLED\"; SET_LIQUID_SUPPLY_TEMPERATURE: \"setLiquidSupplyTemperature\"; SET_POWER_MODE: \"setPowerMode\"; SET_TANK_ENABLED: \"setTankEnabled\"; SET_TEMPERATURE_SETTINGS: \"setTemperatureSettings\"; SETUP_FREQUENCY_SPEED: \"setUpfreqSpeed\"; SETUP_POOLS: \"setupPools\"; SWITCH_CONTAINER: \"switchContainer\"; SWITCH_COOLING_SYSTEM: \"switchCoolingSystem\"; SWITCH_SOCKET: \"switchSocket\"; UPDATE_POOL_CONFIG: \"updateConfig\"; UPDATE_THING: \"updateThing\" }"
+      "members": [
+        {
+          "name": "EMERGENCY_STOP",
+          "required": true,
+          "type": "\"emergencyStop\"",
+          "summary": null
+        },
+        {
+          "name": "FORGET_THINGS",
+          "required": true,
+          "type": "\"forgetThings\"",
+          "summary": null
+        },
+        {
+          "name": "MAINTENANCE",
+          "required": true,
+          "type": "\"maintenance\"",
+          "summary": null
+        },
+        {
+          "name": "RACK_REBOOT",
+          "required": true,
+          "type": "\"rackReboot\"",
+          "summary": null
+        },
+        {
+          "name": "REBOOT",
+          "required": true,
+          "type": "\"reboot\"",
+          "summary": null
+        },
+        {
+          "name": "REGISTER_POOL_CONFIG",
+          "required": true,
+          "type": "\"registerConfig\"",
+          "summary": null
+        },
+        {
+          "name": "REGISTER_THING",
+          "required": true,
+          "type": "\"registerThing\"",
+          "summary": null
+        },
+        {
+          "name": "RESET_ALARM",
+          "required": true,
+          "type": "\"resetAlarm\"",
+          "summary": null
+        },
+        {
+          "name": "RESET_CONTAINER",
+          "required": true,
+          "type": "\"resetContainer\"",
+          "summary": null
+        },
+        {
+          "name": "RESET_COOLING_SYSTEM",
+          "required": true,
+          "type": "\"resetCoolingSystem\"",
+          "summary": null
+        },
+        {
+          "name": "SET_AIR_EXHAUST_ENABLED",
+          "required": true,
+          "type": "\"setAirExhaustEnabled\"",
+          "summary": null
+        },
+        {
+          "name": "SET_COOLING_FAN_THRESHOLD",
+          "required": true,
+          "type": "\"setCoolingFanThreshold\"",
+          "summary": null
+        },
+        {
+          "name": "SET_LED",
+          "required": true,
+          "type": "\"setLED\"",
+          "summary": null
+        },
+        {
+          "name": "SET_LIQUID_SUPPLY_TEMPERATURE",
+          "required": true,
+          "type": "\"setLiquidSupplyTemperature\"",
+          "summary": null
+        },
+        {
+          "name": "SET_POWER_MODE",
+          "required": true,
+          "type": "\"setPowerMode\"",
+          "summary": null
+        },
+        {
+          "name": "SET_TANK_ENABLED",
+          "required": true,
+          "type": "\"setTankEnabled\"",
+          "summary": null
+        },
+        {
+          "name": "SET_TEMPERATURE_SETTINGS",
+          "required": true,
+          "type": "\"setTemperatureSettings\"",
+          "summary": null
+        },
+        {
+          "name": "SETUP_FREQUENCY_SPEED",
+          "required": true,
+          "type": "\"setUpfreqSpeed\"",
+          "summary": null
+        },
+        {
+          "name": "SETUP_POOLS",
+          "required": true,
+          "type": "\"setupPools\"",
+          "summary": null
+        },
+        {
+          "name": "SWITCH_CONTAINER",
+          "required": true,
+          "type": "\"switchContainer\"",
+          "summary": null
+        },
+        {
+          "name": "SWITCH_COOLING_SYSTEM",
+          "required": true,
+          "type": "\"switchCoolingSystem\"",
+          "summary": null
+        },
+        {
+          "name": "SWITCH_SOCKET",
+          "required": true,
+          "type": "\"switchSocket\"",
+          "summary": null
+        },
+        {
+          "name": "UPDATE_POOL_CONFIG",
+          "required": true,
+          "type": "\"updateConfig\"",
+          "summary": null
+        },
+        {
+          "name": "UPDATE_THING",
+          "required": true,
+          "type": "\"updateThing\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ActionErrorMessages",
@@ -52,7 +375,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/actions.ts",
       "summary": null,
-      "type": "{ ERR_WRITE_PERM_REQUIRED: string }"
+      "members": [
+        {
+          "name": "ERR_WRITE_PERM_REQUIRED",
+          "required": true,
+          "type": "string",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ActionNameKey",
@@ -158,7 +488,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "target",
+            "required": true,
+            "type": "ChartDataMap",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "prop",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "color",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "void",
+        "returnSummary": null
+      }
     },
     {
       "name": "addDataPoint",
@@ -166,7 +523,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "target",
+            "required": true,
+            "type": "ChartDataset | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "value",
+            "required": true,
+            "type": "number | null | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "ts",
+            "required": true,
+            "type": "string | number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "void",
+        "returnSummary": null
+      }
     },
     {
       "name": "AddReplaceMinerDialog",
@@ -354,7 +738,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/alerts.ts",
       "summary": null,
-      "type": "{ CRITICAL: \"Critical\"; HIGH: \"High\"; MEDIUM: \"Medium\" }"
+      "members": [
+        {
+          "name": "CRITICAL",
+          "required": true,
+          "type": "\"Critical\"",
+          "summary": null
+        },
+        {
+          "name": "HIGH",
+          "required": true,
+          "type": "\"High\"",
+          "summary": null
+        },
+        {
+          "name": "MEDIUM",
+          "required": true,
+          "type": "\"Medium\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ALERT_STATUS_OPTIONS",
@@ -381,7 +784,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ ip_worker_name: \"IP worker name\"; wrong_miner_pool: \"Wrong miner pool\"; wrong_miner_subaccount: \"Wrong miner subaccount\"; wrong_worker_name: \"Wrong worker name\" }"
+      "members": [
+        {
+          "name": "ip_worker_name",
+          "required": true,
+          "type": "\"IP worker name\"",
+          "summary": null
+        },
+        {
+          "name": "wrong_miner_pool",
+          "required": true,
+          "type": "\"Wrong miner pool\"",
+          "summary": null
+        },
+        {
+          "name": "wrong_miner_subaccount",
+          "required": true,
+          "type": "\"Wrong miner subaccount\"",
+          "summary": null
+        },
+        {
+          "name": "wrong_worker_name",
+          "required": true,
+          "type": "\"Wrong worker name\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ALERT_TYPE_POOL_VALUE",
@@ -390,7 +818,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ IP_WORKER_NAME: \"ip_worker_name\"; WRONG_MINER_POOL: \"wrong_miner_pool\"; WRONG_MINER_SUBACCOUNT: \"wrong_miner_subaccount\"; WRONG_WORKER_NAME: \"wrong_worker_name\" }"
+      "members": [
+        {
+          "name": "IP_WORKER_NAME",
+          "required": true,
+          "type": "\"ip_worker_name\"",
+          "summary": null
+        },
+        {
+          "name": "WRONG_MINER_POOL",
+          "required": true,
+          "type": "\"wrong_miner_pool\"",
+          "summary": null
+        },
+        {
+          "name": "WRONG_MINER_SUBACCOUNT",
+          "required": true,
+          "type": "\"wrong_miner_subaccount\"",
+          "summary": null
+        },
+        {
+          "name": "WRONG_WORKER_NAME",
+          "required": true,
+          "type": "\"wrong_worker_name\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "AlertActions",
@@ -765,7 +1218,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/errors.ts",
       "summary": null,
-      "type": "{ ERR_ORK_ACTION_CALLS_EMPTY: \"ERR_ORK_ACTION_CALLS_EMPTY\" }"
+      "members": [
+        {
+          "name": "ERR_ORK_ACTION_CALLS_EMPTY",
+          "required": true,
+          "type": "\"ERR_ORK_ACTION_CALLS_EMPTY\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ApiErrorKey",
@@ -791,7 +1251,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/alerts/alerts-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "allAlerts",
+            "required": true,
+            "type": "ParsedAlertEntry[]",
+            "defaultValue": "[]",
+            "summary": null
+          },
+          {
+            "name": "localFilters",
+            "required": true,
+            "type": "AlertLocalFilters",
+            "defaultValue": "{}",
+            "summary": null
+          }
+        ],
+        "returnType": "ParsedAlertEntry[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "ASSIGN_POOL_POPUP_ENABLED",
@@ -809,7 +1289,56 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/auth-caps.constants.ts",
       "summary": null,
-      "type": "{ container: \"c\"; electricity: \"e\"; features: \"f\"; miner: \"m\"; minerpool: \"mp\"; powermeter: \"p\"; revenue: \"r\"; temp: \"t\" }"
+      "members": [
+        {
+          "name": "container",
+          "required": true,
+          "type": "\"c\"",
+          "summary": null
+        },
+        {
+          "name": "electricity",
+          "required": true,
+          "type": "\"e\"",
+          "summary": null
+        },
+        {
+          "name": "features",
+          "required": true,
+          "type": "\"f\"",
+          "summary": null
+        },
+        {
+          "name": "miner",
+          "required": true,
+          "type": "\"m\"",
+          "summary": null
+        },
+        {
+          "name": "minerpool",
+          "required": true,
+          "type": "\"mp\"",
+          "summary": null
+        },
+        {
+          "name": "powermeter",
+          "required": true,
+          "type": "\"p\"",
+          "summary": null
+        },
+        {
+          "name": "revenue",
+          "required": true,
+          "type": "\"r\"",
+          "summary": null
+        },
+        {
+          "name": "temp",
+          "required": true,
+          "type": "\"t\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "AUTH_LEVELS",
@@ -818,7 +1347,20 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/permissions.constants.ts",
       "summary": null,
-      "type": "{ READ: \"r\"; WRITE: \"w\" }"
+      "members": [
+        {
+          "name": "READ",
+          "required": true,
+          "type": "\"r\"",
+          "summary": null
+        },
+        {
+          "name": "WRITE",
+          "required": true,
+          "type": "\"w\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "AUTH_PERMISSIONS",
@@ -827,7 +1369,122 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/permissions.constants.ts",
       "summary": null,
-      "type": "{ ACTIONS: \"actions\"; ALERTS: \"alerts\"; CABINETS: \"cabinets\"; COMMENTS: \"comments\"; CONTAINER: \"container\"; ELECTRICITY: \"electricity\"; EXPLORER: \"explorer\"; FEATURES: \"features\"; INVENTORY: \"inventory\"; MINER: \"miner\"; MINERPOOL: \"minerpool\"; POWERMETER: \"powermeter\"; PRODUCTION: \"production\"; REPORTING: \"reporting\"; REVENUE: \"revenue\"; SETTINGS: \"settings\"; TEMP: \"temp\"; TICKETS: \"tickets\"; USERS: \"users\" }"
+      "members": [
+        {
+          "name": "ACTIONS",
+          "required": true,
+          "type": "\"actions\"",
+          "summary": null
+        },
+        {
+          "name": "ALERTS",
+          "required": true,
+          "type": "\"alerts\"",
+          "summary": null
+        },
+        {
+          "name": "CABINETS",
+          "required": true,
+          "type": "\"cabinets\"",
+          "summary": null
+        },
+        {
+          "name": "COMMENTS",
+          "required": true,
+          "type": "\"comments\"",
+          "summary": null
+        },
+        {
+          "name": "CONTAINER",
+          "required": true,
+          "type": "\"container\"",
+          "summary": null
+        },
+        {
+          "name": "ELECTRICITY",
+          "required": true,
+          "type": "\"electricity\"",
+          "summary": null
+        },
+        {
+          "name": "EXPLORER",
+          "required": true,
+          "type": "\"explorer\"",
+          "summary": null
+        },
+        {
+          "name": "FEATURES",
+          "required": true,
+          "type": "\"features\"",
+          "summary": null
+        },
+        {
+          "name": "INVENTORY",
+          "required": true,
+          "type": "\"inventory\"",
+          "summary": null
+        },
+        {
+          "name": "MINER",
+          "required": true,
+          "type": "\"miner\"",
+          "summary": null
+        },
+        {
+          "name": "MINERPOOL",
+          "required": true,
+          "type": "\"minerpool\"",
+          "summary": null
+        },
+        {
+          "name": "POWERMETER",
+          "required": true,
+          "type": "\"powermeter\"",
+          "summary": null
+        },
+        {
+          "name": "PRODUCTION",
+          "required": true,
+          "type": "\"production\"",
+          "summary": null
+        },
+        {
+          "name": "REPORTING",
+          "required": true,
+          "type": "\"reporting\"",
+          "summary": null
+        },
+        {
+          "name": "REVENUE",
+          "required": true,
+          "type": "\"revenue\"",
+          "summary": null
+        },
+        {
+          "name": "SETTINGS",
+          "required": true,
+          "type": "\"settings\"",
+          "summary": null
+        },
+        {
+          "name": "TEMP",
+          "required": true,
+          "type": "\"temp\"",
+          "summary": null
+        },
+        {
+          "name": "TICKETS",
+          "required": true,
+          "type": "\"tickets\"",
+          "summary": null
+        },
+        {
+          "name": "USERS",
+          "required": true,
+          "type": "\"users\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "AuthCapKey",
@@ -899,7 +1556,20 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/ranges.ts",
       "summary": null,
-      "type": "{ LAST14: \"14 days\"; LASTMONTH: \"1 month\" }"
+      "members": [
+        {
+          "name": "LAST14",
+          "required": true,
+          "type": "\"14 days\"",
+          "summary": null
+        },
+        {
+          "name": "LASTMONTH",
+          "required": true,
+          "type": "\"1 month\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "AvgHistoryRangeKey",
@@ -957,7 +1627,44 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/actions.ts",
       "summary": null,
-      "type": "{ ATTACH_SPARE_PARTS: \"attachSpareParts\"; BATCH_MOVE_SPARE_PARTS: \"batchMoveSpareParts\"; BULK_ADD_SPARE_PARTS: \"bulkAddSpareParts\"; DELETE_MINER: \"deleteMiner\"; MOVE_BACK_FROM_MAINTENANCE_TO_CONTAINER: \"moveBackFromMaintenanceToContainer\"; MOVE_MINER: \"moveMiner\" }"
+      "members": [
+        {
+          "name": "ATTACH_SPARE_PARTS",
+          "required": true,
+          "type": "\"attachSpareParts\"",
+          "summary": null
+        },
+        {
+          "name": "BATCH_MOVE_SPARE_PARTS",
+          "required": true,
+          "type": "\"batchMoveSpareParts\"",
+          "summary": null
+        },
+        {
+          "name": "BULK_ADD_SPARE_PARTS",
+          "required": true,
+          "type": "\"bulkAddSpareParts\"",
+          "summary": null
+        },
+        {
+          "name": "DELETE_MINER",
+          "required": true,
+          "type": "\"deleteMiner\"",
+          "summary": null
+        },
+        {
+          "name": "MOVE_BACK_FROM_MAINTENANCE_TO_CONTAINER",
+          "required": true,
+          "type": "\"moveBackFromMaintenanceToContainer\"",
+          "summary": null
+        },
+        {
+          "name": "MOVE_MINER",
+          "required": true,
+          "type": "\"moveMiner\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "BatchActionTypeKey",
@@ -991,7 +1698,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "container",
+            "required": true,
+            "type": "Container",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "{ hasAlarm: boolean; isCriticallyHigh: boolean }",
+        "returnSummary": null
+      }
     },
     {
       "name": "BitdeerOptions",
@@ -1237,7 +1964,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "BuildChartDataProps",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "ChartDataResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "buildLegends",
@@ -1245,7 +1985,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "uniquePoolTypes",
+            "required": true,
+            "type": "string[]",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "hasData",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "Legend[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "CABINET_DEVICES_TYPES_NAME_MAP",
@@ -1254,7 +2014,38 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ powermeter-abb-b24: \"Powermeter ABB B24\"; powermeter-abb-m1m20: \"Powermeter ABB M1M20\"; powermeter-abb-m4m20: \"Powermeter ABB M4M20\"; powermeter-schneider-pm5340: \"Powermeter Schneider PM5340\"; sensor-temp-seneca: \"Sensor Temp Seneca\" }"
+      "members": [
+        {
+          "name": "powermeter-abb-b24",
+          "required": true,
+          "type": "\"Powermeter ABB B24\"",
+          "summary": null
+        },
+        {
+          "name": "powermeter-abb-m1m20",
+          "required": true,
+          "type": "\"Powermeter ABB M1M20\"",
+          "summary": null
+        },
+        {
+          "name": "powermeter-abb-m4m20",
+          "required": true,
+          "type": "\"Powermeter ABB M4M20\"",
+          "summary": null
+        },
+        {
+          "name": "powermeter-schneider-pm5340",
+          "required": true,
+          "type": "\"Powermeter Schneider PM5340\"",
+          "summary": null
+        },
+        {
+          "name": "sensor-temp-seneca",
+          "required": true,
+          "type": "\"Sensor Temp Seneca\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CabinetDevicesTypesNameMapKey",
@@ -1280,7 +2071,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "minerPoolData",
+            "required": true,
+            "type": "MinerPoolDataItem[] | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "HashRateDataPoint[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "calculateMinMaxAvg",
@@ -1288,7 +2092,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "hashRateData",
+            "required": true,
+            "type": "HashRateDataPoint[]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "MinMaxAvg",
+        "returnSummary": null
+      }
     },
     {
       "name": "calculateTimeRange",
@@ -1296,7 +2113,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "hashRateData",
+            "required": true,
+            "type": "HashRateDataPoint[]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "TimeRangeType",
+        "returnSummary": null
+      }
     },
     {
       "name": "ChangeConfirmationModal",
@@ -1374,14 +2204,27 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/charts.ts",
       "summary": null,
-      "type": "{ EFFICIENCY: \"Efficiency\"; HASHRATE: \"Hashrate\" }"
+      "members": [
+        {
+          "name": "EFFICIENCY",
+          "required": true,
+          "type": "\"Efficiency\"",
+          "summary": null
+        },
+        {
+          "name": "HASHRATE",
+          "required": true,
+          "type": "\"Hashrate\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CHART_LEGEND_OPACITY",
       "package": "foundation",
       "kind": "value",
       "namespace": null,
-      "sourcePath": null,
+      "sourcePath": "",
       "summary": null,
       "type": "any"
     },
@@ -1400,7 +2243,80 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/charts.ts",
       "summary": null,
-      "type": "{ EFFICIENCY: \"Efficiency\"; HASH_RATE: \"Hash Rate\"; HASH_RATE_BY_MINER_TYPE: \"Hash Rate By Miner Type\"; MINERS_ONLINE: \"Miners Online\"; POWER_CONSUMED: \"Power Consumed\"; POWER_CONSUMPTION: \"Power Consumption\"; POWER_MODE_TIMELINE: \"Power Mode Timeline\"; REACTIVE_ENERGY: \"Reactive Energy\"; REALTIME_CONSUMPTION: \"Realtime Consumption\"; SPOT_PRICE: \"Spot Price\"; TANK_OIL_TEMP: \"Tank TANK_NUMBER Temperature\"; TANK_PRESSURE: \"Tank Pressure\" }"
+      "members": [
+        {
+          "name": "EFFICIENCY",
+          "required": true,
+          "type": "\"Efficiency\"",
+          "summary": null
+        },
+        {
+          "name": "HASH_RATE",
+          "required": true,
+          "type": "\"Hash Rate\"",
+          "summary": null
+        },
+        {
+          "name": "HASH_RATE_BY_MINER_TYPE",
+          "required": true,
+          "type": "\"Hash Rate By Miner Type\"",
+          "summary": null
+        },
+        {
+          "name": "MINERS_ONLINE",
+          "required": true,
+          "type": "\"Miners Online\"",
+          "summary": null
+        },
+        {
+          "name": "POWER_CONSUMED",
+          "required": true,
+          "type": "\"Power Consumed\"",
+          "summary": null
+        },
+        {
+          "name": "POWER_CONSUMPTION",
+          "required": true,
+          "type": "\"Power Consumption\"",
+          "summary": null
+        },
+        {
+          "name": "POWER_MODE_TIMELINE",
+          "required": true,
+          "type": "\"Power Mode Timeline\"",
+          "summary": null
+        },
+        {
+          "name": "REACTIVE_ENERGY",
+          "required": true,
+          "type": "\"Reactive Energy\"",
+          "summary": null
+        },
+        {
+          "name": "REALTIME_CONSUMPTION",
+          "required": true,
+          "type": "\"Realtime Consumption\"",
+          "summary": null
+        },
+        {
+          "name": "SPOT_PRICE",
+          "required": true,
+          "type": "\"Spot Price\"",
+          "summary": null
+        },
+        {
+          "name": "TANK_OIL_TEMP",
+          "required": true,
+          "type": "\"Tank TANK_NUMBER Temperature\"",
+          "summary": null
+        },
+        {
+          "name": "TANK_PRESSURE",
+          "required": true,
+          "type": "\"Tank Pressure\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CHART_TYPES",
@@ -1409,7 +2325,38 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/charts.ts",
       "summary": null,
-      "type": "{ CONTAINER: \"container\"; ELECTRICITY: \"electricity\"; MINER: \"miner\"; MINERPOOL: \"minerpool\"; POWERMETER: \"powermeter\" }"
+      "members": [
+        {
+          "name": "CONTAINER",
+          "required": true,
+          "type": "\"container\"",
+          "summary": null
+        },
+        {
+          "name": "ELECTRICITY",
+          "required": true,
+          "type": "\"electricity\"",
+          "summary": null
+        },
+        {
+          "name": "MINER",
+          "required": true,
+          "type": "\"miner\"",
+          "summary": null
+        },
+        {
+          "name": "MINERPOOL",
+          "required": true,
+          "type": "\"minerpool\"",
+          "summary": null
+        },
+        {
+          "name": "POWERMETER",
+          "required": true,
+          "type": "\"powermeter\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ChartDataByDevice",
@@ -1631,7 +2578,56 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ BITDEER_A1346: \"container-bd-d40-a1346\"; BITDEER_M30: \"container-bd-d40-m30\"; BITDEER_M56: \"container-bd-d40-m56\"; BITDEER_S19XP: \"container-bd-d40-s19xp\"; BITMAIN_HYDRO: \"container-as-hk3\"; BITMAIN_IMMERSION: \"container-as-immersion\"; MICROBT_KEHUA: \"container-mbt-kehua\"; MICROBT_WONDERINT: \"container-mbt-wonderint\" }"
+      "members": [
+        {
+          "name": "BITDEER_A1346",
+          "required": true,
+          "type": "\"container-bd-d40-a1346\"",
+          "summary": null
+        },
+        {
+          "name": "BITDEER_M30",
+          "required": true,
+          "type": "\"container-bd-d40-m30\"",
+          "summary": null
+        },
+        {
+          "name": "BITDEER_M56",
+          "required": true,
+          "type": "\"container-bd-d40-m56\"",
+          "summary": null
+        },
+        {
+          "name": "BITDEER_S19XP",
+          "required": true,
+          "type": "\"container-bd-d40-s19xp\"",
+          "summary": null
+        },
+        {
+          "name": "BITMAIN_HYDRO",
+          "required": true,
+          "type": "\"container-as-hk3\"",
+          "summary": null
+        },
+        {
+          "name": "BITMAIN_IMMERSION",
+          "required": true,
+          "type": "\"container-as-immersion\"",
+          "summary": null
+        },
+        {
+          "name": "MICROBT_KEHUA",
+          "required": true,
+          "type": "\"container-mbt-kehua\"",
+          "summary": null
+        },
+        {
+          "name": "MICROBT_WONDERINT",
+          "required": true,
+          "type": "\"container-mbt-wonderint\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "COMPLETE_MINER_TYPES",
@@ -1640,7 +2636,74 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ ACME_M1: \"miner-acme-m1\"; ANTMINER_AM_S19XP: \"miner-am-s19xp\"; ANTMINER_AM_S19XP_H: \"miner-am-s19xp_h\"; ANTMINER_AM_S21: \"miner-am-s21\"; ANTMINER_AM_S21PRO: \"miner-am-s21pro\"; AVALON_AV_a1346: \"miner-av-a1346\"; WHATSMINER_WM_30: \"miner-wm-m30sp\"; WHATSMINER_WM_30SPP: \"miner-wm-m30spp\"; WHATSMINER_WM_53: \"miner-wm-m53s\"; WHATSMINER_WM_56: \"miner-wm-m56s\"; WHATSMINER_WM_63: \"miner-wm-m63\" }"
+      "members": [
+        {
+          "name": "ACME_M1",
+          "required": true,
+          "type": "\"miner-acme-m1\"",
+          "summary": null
+        },
+        {
+          "name": "ANTMINER_AM_S19XP",
+          "required": true,
+          "type": "\"miner-am-s19xp\"",
+          "summary": null
+        },
+        {
+          "name": "ANTMINER_AM_S19XP_H",
+          "required": true,
+          "type": "\"miner-am-s19xp_h\"",
+          "summary": null
+        },
+        {
+          "name": "ANTMINER_AM_S21",
+          "required": true,
+          "type": "\"miner-am-s21\"",
+          "summary": null
+        },
+        {
+          "name": "ANTMINER_AM_S21PRO",
+          "required": true,
+          "type": "\"miner-am-s21pro\"",
+          "summary": null
+        },
+        {
+          "name": "AVALON_AV_a1346",
+          "required": true,
+          "type": "\"miner-av-a1346\"",
+          "summary": null
+        },
+        {
+          "name": "WHATSMINER_WM_30",
+          "required": true,
+          "type": "\"miner-wm-m30sp\"",
+          "summary": null
+        },
+        {
+          "name": "WHATSMINER_WM_30SPP",
+          "required": true,
+          "type": "\"miner-wm-m30spp\"",
+          "summary": null
+        },
+        {
+          "name": "WHATSMINER_WM_53",
+          "required": true,
+          "type": "\"miner-wm-m53s\"",
+          "summary": null
+        },
+        {
+          "name": "WHATSMINER_WM_56",
+          "required": true,
+          "type": "\"miner-wm-m56s\"",
+          "summary": null
+        },
+        {
+          "name": "WHATSMINER_WM_63",
+          "required": true,
+          "type": "\"miner-wm-m63\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CompleteContainerTypeKey",
@@ -1685,7 +2748,62 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/actions.ts",
       "summary": null,
-      "type": "{ approve: string; approveAll: string; cancel: string; discard: string; discardAll: string; reject: string; rejectAll: string; submit: string; submitAll: string }"
+      "members": [
+        {
+          "name": "approve",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "approveAll",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "cancel",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "discard",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "discardAll",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "reject",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "rejectAll",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "submit",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "submitAll",
+          "required": true,
+          "type": "string",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CONSUMPTION_NOMINAL_VALUE_W",
@@ -1756,7 +2874,92 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ ANTSPACE: \"antspace\"; ANTSPACE_HYDRO: \"antspace-hydro\"; ANTSPACE_IMMERSION: \"antspace-immersion\"; BITDEER: \"bitdeer\"; BITDEER_THRESHOLD: \"bitdeer\"; BITMAIN: \"bitmain\"; BITMAIN_HYDRO: \"bitmain-hydro\"; BITMAIN_IMM: \"bitmain-imm\"; BITMAIN_IMMERSION: \"bitmain-immersion\"; HYDRO_THRESHOLD: \"hydro\"; IMMERSION_CONTAINER: \"container-as-immersion\"; IMMERSION_THRESHOLD: \"immersion\"; MICROBT: \"microbt\"; MICROBT_THRESHOLD: \"microbt\" }"
+      "members": [
+        {
+          "name": "ANTSPACE",
+          "required": true,
+          "type": "\"antspace\"",
+          "summary": null
+        },
+        {
+          "name": "ANTSPACE_HYDRO",
+          "required": true,
+          "type": "\"antspace-hydro\"",
+          "summary": null
+        },
+        {
+          "name": "ANTSPACE_IMMERSION",
+          "required": true,
+          "type": "\"antspace-immersion\"",
+          "summary": null
+        },
+        {
+          "name": "BITDEER",
+          "required": true,
+          "type": "\"bitdeer\"",
+          "summary": null
+        },
+        {
+          "name": "BITDEER_THRESHOLD",
+          "required": true,
+          "type": "\"bitdeer\"",
+          "summary": null
+        },
+        {
+          "name": "BITMAIN",
+          "required": true,
+          "type": "\"bitmain\"",
+          "summary": null
+        },
+        {
+          "name": "BITMAIN_HYDRO",
+          "required": true,
+          "type": "\"bitmain-hydro\"",
+          "summary": null
+        },
+        {
+          "name": "BITMAIN_IMM",
+          "required": true,
+          "type": "\"bitmain-imm\"",
+          "summary": null
+        },
+        {
+          "name": "BITMAIN_IMMERSION",
+          "required": true,
+          "type": "\"bitmain-immersion\"",
+          "summary": null
+        },
+        {
+          "name": "HYDRO_THRESHOLD",
+          "required": true,
+          "type": "\"hydro\"",
+          "summary": null
+        },
+        {
+          "name": "IMMERSION_CONTAINER",
+          "required": true,
+          "type": "\"container-as-immersion\"",
+          "summary": null
+        },
+        {
+          "name": "IMMERSION_THRESHOLD",
+          "required": true,
+          "type": "\"immersion\"",
+          "summary": null
+        },
+        {
+          "name": "MICROBT",
+          "required": true,
+          "type": "\"microbt\"",
+          "summary": null
+        },
+        {
+          "name": "MICROBT_THRESHOLD",
+          "required": true,
+          "type": "\"microbt\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CONTAINER_SETTINGS_MODEL",
@@ -1765,7 +2968,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ BITDEER: string; HYDRO: string; IMMERSION: string; MICROBT: string }"
+      "members": [
+        {
+          "name": "BITDEER",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "HYDRO",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "IMMERSION",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MICROBT",
+          "required": true,
+          "type": "string",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CONTAINER_TAB",
@@ -1774,7 +3002,38 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ CHARTS: \"charts\"; HEATMAP: \"heatmap\"; HOME: \"home\"; PDU: \"pdu\"; SETTINGS: \"settings\" }"
+      "members": [
+        {
+          "name": "CHARTS",
+          "required": true,
+          "type": "\"charts\"",
+          "summary": null
+        },
+        {
+          "name": "HEATMAP",
+          "required": true,
+          "type": "\"heatmap\"",
+          "summary": null
+        },
+        {
+          "name": "HOME",
+          "required": true,
+          "type": "\"home\"",
+          "summary": null
+        },
+        {
+          "name": "PDU",
+          "required": true,
+          "type": "\"pdu\"",
+          "summary": null
+        },
+        {
+          "name": "SETTINGS",
+          "required": true,
+          "type": "\"settings\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CONTAINER_TACTICS_TYPE",
@@ -1783,7 +3042,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ COIN: \"coin\"; DISABLED: \"disabled\"; ELECTRICITY: \"electricity\" }"
+      "members": [
+        {
+          "name": "COIN",
+          "required": true,
+          "type": "\"coin\"",
+          "summary": null
+        },
+        {
+          "name": "DISABLED",
+          "required": true,
+          "type": "\"disabled\"",
+          "summary": null
+        },
+        {
+          "name": "ELECTRICITY",
+          "required": true,
+          "type": "\"electricity\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CONTAINER_TYPE",
@@ -1792,7 +3070,38 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ ANTSPACE: \"as\"; ANTSPACE_HYDRO: \"as-hk3\"; ANTSPACE_IMMERSION: \"as-immersion\"; BITDEER: \"bd\"; MICROBT: \"mbt\" }"
+      "members": [
+        {
+          "name": "ANTSPACE",
+          "required": true,
+          "type": "\"as\"",
+          "summary": null
+        },
+        {
+          "name": "ANTSPACE_HYDRO",
+          "required": true,
+          "type": "\"as-hk3\"",
+          "summary": null
+        },
+        {
+          "name": "ANTSPACE_IMMERSION",
+          "required": true,
+          "type": "\"as-immersion\"",
+          "summary": null
+        },
+        {
+          "name": "BITDEER",
+          "required": true,
+          "type": "\"bd\"",
+          "summary": null
+        },
+        {
+          "name": "MICROBT",
+          "required": true,
+          "type": "\"mbt\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CONTAINER_TYPE_NAME_MAP",
@@ -1801,7 +3110,56 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ container-as-hk3: \"Bitmain Hydro\"; container-as-immersion: \"Bitmain Imm\"; container-bd-d40-a1346: \"Bitdeer A1346\"; container-bd-d40-m30: \"Bitdeer M30\"; container-bd-d40-m56: \"Bitdeer M56\"; container-bd-d40-s19xp: \"Bitdeer S19XP\"; container-mbt-kehua: \"MicroBT Kehua\"; container-mbt-wonderint: \"MicroBT Wonder\" }"
+      "members": [
+        {
+          "name": "container-as-hk3",
+          "required": true,
+          "type": "\"Bitmain Hydro\"",
+          "summary": null
+        },
+        {
+          "name": "container-as-immersion",
+          "required": true,
+          "type": "\"Bitmain Imm\"",
+          "summary": null
+        },
+        {
+          "name": "container-bd-d40-a1346",
+          "required": true,
+          "type": "\"Bitdeer A1346\"",
+          "summary": null
+        },
+        {
+          "name": "container-bd-d40-m30",
+          "required": true,
+          "type": "\"Bitdeer M30\"",
+          "summary": null
+        },
+        {
+          "name": "container-bd-d40-m56",
+          "required": true,
+          "type": "\"Bitdeer M56\"",
+          "summary": null
+        },
+        {
+          "name": "container-bd-d40-s19xp",
+          "required": true,
+          "type": "\"Bitdeer S19XP\"",
+          "summary": null
+        },
+        {
+          "name": "container-mbt-kehua",
+          "required": true,
+          "type": "\"MicroBT Kehua\"",
+          "summary": null
+        },
+        {
+          "name": "container-mbt-wonderint",
+          "required": true,
+          "type": "\"MicroBT Wonder\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ContainerActionValue",
@@ -2194,7 +3552,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ A1346: \"a1346\"; M30: \"m30\"; M56: \"m56\"; S19XP: \"s19xp\" }"
+      "members": [
+        {
+          "name": "A1346",
+          "required": true,
+          "type": "\"a1346\"",
+          "summary": null
+        },
+        {
+          "name": "M30",
+          "required": true,
+          "type": "\"m30\"",
+          "summary": null
+        },
+        {
+          "name": "M56",
+          "required": true,
+          "type": "\"m56\"",
+          "summary": null
+        },
+        {
+          "name": "S19XP",
+          "required": true,
+          "type": "\"s19xp\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ContainerSelectionDialog",
@@ -2415,7 +3798,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/devices.ts",
       "summary": null,
-      "type": "{ CABINET: \"cabinet\"; CONTAINER: \"container\"; MINER: \"miner\"; POOL: \"pool\" }"
+      "members": [
+        {
+          "name": "CABINET",
+          "required": true,
+          "type": "\"cabinet\"",
+          "summary": null
+        },
+        {
+          "name": "CONTAINER",
+          "required": true,
+          "type": "\"container\"",
+          "summary": null
+        },
+        {
+          "name": "MINER",
+          "required": true,
+          "type": "\"miner\"",
+          "summary": null
+        },
+        {
+          "name": "POOL",
+          "required": true,
+          "type": "\"pool\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CrossThingTypeKey",
@@ -2652,7 +4060,62 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/index.ts",
       "summary": null,
-      "type": "{ D1: \"1D\"; H1: \"1h\"; H3: \"3h\"; M1: \"1m\"; M15: \"15m\"; M30: \"30m\"; M5: \"5m\"; MONTH1: \"1M\"; W1: \"1W\" }"
+      "members": [
+        {
+          "name": "D1",
+          "required": true,
+          "type": "\"1D\"",
+          "summary": null
+        },
+        {
+          "name": "H1",
+          "required": true,
+          "type": "\"1h\"",
+          "summary": null
+        },
+        {
+          "name": "H3",
+          "required": true,
+          "type": "\"3h\"",
+          "summary": null
+        },
+        {
+          "name": "M1",
+          "required": true,
+          "type": "\"1m\"",
+          "summary": null
+        },
+        {
+          "name": "M15",
+          "required": true,
+          "type": "\"15m\"",
+          "summary": null
+        },
+        {
+          "name": "M30",
+          "required": true,
+          "type": "\"30m\"",
+          "summary": null
+        },
+        {
+          "name": "M5",
+          "required": true,
+          "type": "\"5m\"",
+          "summary": null
+        },
+        {
+          "name": "MONTH1",
+          "required": true,
+          "type": "\"1M\"",
+          "summary": null
+        },
+        {
+          "name": "W1",
+          "required": true,
+          "type": "\"1W\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "DATE_RANGE_DURATIONS",
@@ -2661,7 +4124,56 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/index.ts",
       "summary": null,
-      "type": "{ 15m: { minutes: 15 }; 1D: { days: 1 }; 1h: { hours: 1 }; 1m: { minutes: 1 }; 1M: { months: 1 }; 30m: { minutes: 30 }; 3h: { hours: 3 }; 5m: { minutes: 5 } }"
+      "members": [
+        {
+          "name": "15m",
+          "required": true,
+          "type": "{ minutes: 15 }",
+          "summary": null
+        },
+        {
+          "name": "1D",
+          "required": true,
+          "type": "{ days: 1 }",
+          "summary": null
+        },
+        {
+          "name": "1h",
+          "required": true,
+          "type": "{ hours: 1 }",
+          "summary": null
+        },
+        {
+          "name": "1m",
+          "required": true,
+          "type": "{ minutes: 1 }",
+          "summary": null
+        },
+        {
+          "name": "1M",
+          "required": true,
+          "type": "{ months: 1 }",
+          "summary": null
+        },
+        {
+          "name": "30m",
+          "required": true,
+          "type": "{ minutes: 30 }",
+          "summary": null
+        },
+        {
+          "name": "3h",
+          "required": true,
+          "type": "{ hours: 3 }",
+          "summary": null
+        },
+        {
+          "name": "5m",
+          "required": true,
+          "type": "{ minutes: 5 }",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "DATE_RANGE_PER_HOUR",
@@ -2670,7 +4182,62 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/index.ts",
       "summary": null,
-      "type": "{ 15m: 4; 1D: number; 1h: 1; 1m: 60; 1M: number; 1W: number; 30m: 2; 3h: number; 5m: 12 }"
+      "members": [
+        {
+          "name": "15m",
+          "required": true,
+          "type": "4",
+          "summary": null
+        },
+        {
+          "name": "1D",
+          "required": true,
+          "type": "number",
+          "summary": null
+        },
+        {
+          "name": "1h",
+          "required": true,
+          "type": "1",
+          "summary": null
+        },
+        {
+          "name": "1m",
+          "required": true,
+          "type": "60",
+          "summary": null
+        },
+        {
+          "name": "1M",
+          "required": true,
+          "type": "number",
+          "summary": null
+        },
+        {
+          "name": "1W",
+          "required": true,
+          "type": "number",
+          "summary": null
+        },
+        {
+          "name": "30m",
+          "required": true,
+          "type": "2",
+          "summary": null
+        },
+        {
+          "name": "3h",
+          "required": true,
+          "type": "number",
+          "summary": null
+        },
+        {
+          "name": "5m",
+          "required": true,
+          "type": "12",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "DATE_TIME_FORMAT",
@@ -2865,7 +4432,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/devices.ts",
       "summary": null,
-      "type": "{ ERROR: \"Error\"; OFF: \"Off\"; RUNNING: \"Running\"; UNAVAILABLE: \"Unavailable\" }"
+      "members": [
+        {
+          "name": "ERROR",
+          "required": true,
+          "type": "\"Error\"",
+          "summary": null
+        },
+        {
+          "name": "OFF",
+          "required": true,
+          "type": "\"Off\"",
+          "summary": null
+        },
+        {
+          "name": "RUNNING",
+          "required": true,
+          "type": "\"Running\"",
+          "summary": null
+        },
+        {
+          "name": "UNAVAILABLE",
+          "required": true,
+          "type": "\"Unavailable\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "DeviceData",
@@ -3200,7 +4792,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "MinerPoolDataItem[]",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "timeline",
+            "required": true,
+            "type": "Timeline",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "MinerPoolDataItem[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "DryCooler",
@@ -3291,7 +4903,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/utils/settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "SettingsExportData",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "extractUniquePoolTypes",
@@ -3299,7 +4924,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "minerPoolData",
+            "required": true,
+            "type": "MinerPoolDataItem[] | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "FeatureFlagsSettings",
@@ -3370,7 +5008,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "minerPoolData",
+            "required": true,
+            "type": "MinerPoolDataItem[] | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "hashRateTimeRange",
+            "required": true,
+            "type": "HashRateTimeRange | null",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "timeline",
+            "required": true,
+            "type": "Timeline",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "MinerPoolDataItem[] | undefined",
+        "returnSummary": null
+      }
     },
     {
       "name": "FilterSelectionTuple",
@@ -3387,7 +5052,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/utils/settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "FilterUsersParams",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "SettingsUser[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "FireStatusBox",
@@ -3403,7 +5081,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/utils/settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "timestamp",
+            "required": true,
+            "type": "string | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatRoleLabel",
@@ -3411,7 +5102,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/utils/settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "GaugeChartComponent",
@@ -3435,7 +5139,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/alerts/alerts-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "Device[][]",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "localFilters",
+            "required": true,
+            "type": "AlertLocalFilters",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "onAlertClick",
+            "required": false,
+            "type": "(id: string, uuid: string) => void",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "ParsedAlertEntry[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "getAlertsTableColumns",
@@ -3443,7 +5174,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/alerts/alerts-table-columns.tsx",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "GetAlertsTableColumnsOptions",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "DataTableColumnDef<AlertTableRecord>[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "GetAlertsTableColumnsOptions",
@@ -3473,7 +5217,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/alerts/alerts-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "id",
+            "required": false,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "filterTags",
+            "required": false,
+            "type": "string[]",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "allowEmptyArray",
+            "required": false,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerCoolingSystemData",
@@ -3481,7 +5252,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "getBitdeerCoolingSystemDataReturn",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerOilTemperatureColor",
@@ -3489,7 +5273,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "isOilPumpEnabled",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentTemp",
+            "required": true,
+            "type": "number | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerOilTemperatureColorAndTooltip",
@@ -3497,7 +5308,41 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "isOilPumpEnabled",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentTemp",
+            "required": true,
+            "type": "number | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerStatus",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "ColorAndTooltipResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerParameterSettingsData",
@@ -3505,7 +5350,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "{ alarms: unknown; set_temps: { cold_oil_temp_c?: number } | undefined }",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerParametersSettings",
@@ -3513,7 +5371,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/container-params-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "Device",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "ParameterSettings",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerTacticsData",
@@ -3521,7 +5392,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "unknown",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerTankPressureColor",
@@ -3529,7 +5413,41 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "_isOilPumpEnabled",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentPressure",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "_data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerTankPressureColorAndTooltip",
@@ -3537,7 +5455,41 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "isOilPumpEnabled",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentPressure",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerStatus",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "ColorAndTooltipResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "getBitdeerTemperatureColor",
@@ -3545,7 +5497,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentTemp",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getChartAnimationConfig",
@@ -3583,7 +5555,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/power-mode-timeline-chart/power-mode-timeline-chart.helper.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "PowerModeTimelineEntry[]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "Record<string, MinerPowerModeTimeline[]>",
+        "returnSummary": null
+      }
     },
     {
       "name": "getContainerParametersSettings",
@@ -3591,7 +5576,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/container-params-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": false,
+            "type": "Device",
+            "defaultValue": null,
+            "summary": "Device data"
+          }
+        ],
+        "returnType": "ParameterSettings | undefined",
+        "returnSummary": "Parameter settings object or undefined if container type not supported"
+      }
     },
     {
       "name": "getCurrentAlerts",
@@ -3599,7 +5597,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/alerts/alerts-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "Device[][]",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "GetCurrentAlertsArgs",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "ParsedAlertEntry[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "getDataDecimationConfig",
@@ -3615,7 +5633,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "legendName",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "borderColor",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "ChartDataset",
+        "returnSummary": null
+      }
     },
     {
       "name": "getExistedIndex",
@@ -3623,7 +5661,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/state/slices/actions-slice.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "state",
+            "required": true,
+            "type": "ActionsState",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "payloadId",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "getHashRateGraphData",
@@ -3631,7 +5689,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "HashRateLogEntry[]",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "realtimeHashRateData",
+            "required": false,
+            "type": "HashRateLogEntry",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "{ currentValueLabel: { realValue: number; unit: string; value: number | null }; datasets: { borderColor: any; data: HashRateDataPoint[]; label: string; pointRadius: number; type: string }[]; minMaxAvg: { avg: string; max: string; min: string }; timeRange: any; yTicksFormatter: (value: number) => string }",
+        "returnSummary": null
+      }
     },
     {
       "name": "getHashRateTimeRange",
@@ -3639,7 +5717,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "HashRateLogEntry[] | HashRateLogEntry[][]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "HashRateTimeRange | null",
+        "returnSummary": null
+      }
     },
     {
       "name": "getHistoricalAlertsData",
@@ -3647,7 +5738,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/alerts/alerts-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "alerts",
+            "required": true,
+            "type": "Alert[]",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "GetAlertsArgs",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "ParsedAlertEntry[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "getLineColor",
@@ -3655,7 +5766,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "index",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getMajorDatasetItems",
@@ -3663,7 +5787,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "majorData",
+            "required": true,
+            "type": "MinerPoolDataItem[] | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "legend",
+            "required": true,
+            "type": "Legend",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "HashRateDataPoint[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "getMicroBTParametersSettings",
@@ -3671,7 +5815,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/container-params-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "Device",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "ParameterSettings",
+        "returnSummary": null
+      }
     },
     {
       "name": "getOverviewChartOilAdapter",
@@ -3679,7 +5836,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.oil.adapter.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "ChartEntry[] | null | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "OverviewChartResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "getOverviewChartPressureAdapter",
@@ -3687,7 +5857,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.pressure.adapter.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "ChartEntry[] | null | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "OverviewChartResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "getOverviewChartTempAdapter",
@@ -3695,7 +5878,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.temp.adapter.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "ChartEntry[] | null | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "tempPrefix",
+            "required": true,
+            "type": "\"hot\" | \"cold\"",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "OverviewChartResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "getPowerModeTimelineChartData",
@@ -3703,7 +5906,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/power-mode-timeline-chart/power-mode-timeline-chart.helper.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "PowerModeTimelineEntry[] | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "timezone",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "PowerModeTimelineChartData",
+        "returnSummary": null
+      }
     },
     {
       "name": "getPowerModeTimelineDatasetObject",
@@ -3711,7 +5934,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/power-mode-timeline-chart/power-mode-timeline-chart.helper.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "combinedPowerModeTimelineByMiner",
+            "required": true,
+            "type": "Record<string, MinerPowerModeTimeline[]>",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "timezone",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "Record<string, PowerModeTimelineDataset>",
+        "returnSummary": null
+      }
     },
     {
       "name": "getRoleBadgeColors",
@@ -3719,7 +5962,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/role-colors.constants.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "RoleBadgeColors",
+        "returnSummary": null
+      }
     },
     {
       "name": "getThresholdKey",
@@ -3727,7 +5983,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "timeline",
+            "required": true,
+            "type": "Timeline",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "\"M1\" | \"M5\" | \"H1\" | \"H3\" | \"D1\" | \"W1\" | \"M15\" | \"M30\" | \"MONTH1\"",
+        "returnSummary": null
+      }
     },
     {
       "name": "HashRateDataPoint",
@@ -3797,7 +6066,20 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/header-controls.constants.ts",
       "summary": null,
-      "type": "{ PREFERENCES_CHANGED: \"headerPreferencesChanged\"; STORAGE: \"storage\" }"
+      "members": [
+        {
+          "name": "PREFERENCES_CHANGED",
+          "required": true,
+          "type": "\"headerPreferencesChanged\"",
+          "summary": null
+        },
+        {
+          "name": "STORAGE",
+          "required": true,
+          "type": "\"storage\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "HEADER_PREFERENCES_STORAGE_KEY",
@@ -3909,7 +6191,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/temperature-constants.ts",
       "summary": null,
-      "type": "{ CHIP: \"chip\"; HASHRATE: \"hashrate\"; INLET: \"inlet\"; PCB: \"pcb\" }"
+      "members": [
+        {
+          "name": "CHIP",
+          "required": true,
+          "type": "\"chip\"",
+          "summary": null
+        },
+        {
+          "name": "HASHRATE",
+          "required": true,
+          "type": "\"hashrate\"",
+          "summary": null
+        },
+        {
+          "name": "INLET",
+          "required": true,
+          "type": "\"inlet\"",
+          "summary": null
+        },
+        {
+          "name": "PCB",
+          "required": true,
+          "type": "\"pcb\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "HeatmapModeKey",
@@ -4139,7 +6446,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/inventory-pagination.ts",
       "summary": "Constants for Inventory table pagination persistence",
-      "type": "{ MINERS: \"inventory-miners-pagination\"; MOVEMENTS: \"inventory-movements-pagination\"; REPAIRS: \"inventory-repairs-pagination\"; SPARE_PARTS: \"inventory-spare-parts-pagination\" }"
+      "members": [
+        {
+          "name": "MINERS",
+          "required": true,
+          "type": "\"inventory-miners-pagination\"",
+          "summary": null
+        },
+        {
+          "name": "MOVEMENTS",
+          "required": true,
+          "type": "\"inventory-movements-pagination\"",
+          "summary": null
+        },
+        {
+          "name": "REPAIRS",
+          "required": true,
+          "type": "\"inventory-repairs-pagination\"",
+          "summary": null
+        },
+        {
+          "name": "SPARE_PARTS",
+          "required": true,
+          "type": "\"inventory-spare-parts-pagination\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "LABEL_TO_IGNORE",
@@ -4328,7 +6660,20 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ POWERMETER: \"t-powermeter\"; SENSOR_TEMP: \"t-sensor-temp\" }"
+      "members": [
+        {
+          "name": "POWERMETER",
+          "required": true,
+          "type": "\"t-powermeter\"",
+          "summary": null
+        },
+        {
+          "name": "SENSOR_TEMP",
+          "required": true,
+          "type": "\"t-sensor-temp\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "LV_CABINET_DEVICES_TYPE",
@@ -4337,7 +6682,38 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ POWERMETER_ABB_B24: \"powermeter-abb-b24\"; POWERMETER_ABB_M1M20: \"powermeter-abb-m1m20\"; POWERMETER_ABB_M4M20: \"powermeter-abb-m4m20\"; POWERMETER_SCHNEIDER_PM5340: \"powermeter-schneider-pm5340\"; SENSOR_TEMP_SENECA: \"sensor-temp-seneca\" }"
+      "members": [
+        {
+          "name": "POWERMETER_ABB_B24",
+          "required": true,
+          "type": "\"powermeter-abb-b24\"",
+          "summary": null
+        },
+        {
+          "name": "POWERMETER_ABB_M1M20",
+          "required": true,
+          "type": "\"powermeter-abb-m1m20\"",
+          "summary": null
+        },
+        {
+          "name": "POWERMETER_ABB_M4M20",
+          "required": true,
+          "type": "\"powermeter-abb-m4m20\"",
+          "summary": null
+        },
+        {
+          "name": "POWERMETER_SCHNEIDER_PM5340",
+          "required": true,
+          "type": "\"powermeter-schneider-pm5340\"",
+          "summary": null
+        },
+        {
+          "name": "SENSOR_TEMP_SENECA",
+          "required": true,
+          "type": "\"sensor-temp-seneca\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "LvCabinetDevicesTagKey",
@@ -4545,7 +6921,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ am: \"Antminer\"; av: \"Avalon\"; wm: \"Whatsminer\" }"
+      "members": [
+        {
+          "name": "am",
+          "required": true,
+          "type": "\"Antminer\"",
+          "summary": null
+        },
+        {
+          "name": "av",
+          "required": true,
+          "type": "\"Avalon\"",
+          "summary": null
+        },
+        {
+          "name": "wm",
+          "required": true,
+          "type": "\"Whatsminer\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_IN_POOL_STATUS_COLORS",
@@ -4554,7 +6949,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ inactive: any; offline: any; online: any }"
+      "members": [
+        {
+          "name": "inactive",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "offline",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "online",
+          "required": true,
+          "type": "any",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_IN_POOL_STATUSES",
@@ -4563,7 +6977,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ INACTIVE: \"inactive\"; OFFLINE: \"offline\"; ONLINE: \"online\" }"
+      "members": [
+        {
+          "name": "INACTIVE",
+          "required": true,
+          "type": "\"inactive\"",
+          "summary": null
+        },
+        {
+          "name": "OFFLINE",
+          "required": true,
+          "type": "\"offline\"",
+          "summary": null
+        },
+        {
+          "name": "ONLINE",
+          "required": true,
+          "type": "\"online\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_MODEL",
@@ -4572,7 +7005,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ ANTMINER: \"antminer\"; AVALON: \"avalon\"; WHATSMINER: \"whatsminer\" }"
+      "members": [
+        {
+          "name": "ANTMINER",
+          "required": true,
+          "type": "\"antminer\"",
+          "summary": null
+        },
+        {
+          "name": "AVALON",
+          "required": true,
+          "type": "\"avalon\"",
+          "summary": null
+        },
+        {
+          "name": "WHATSMINER",
+          "required": true,
+          "type": "\"whatsminer\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_MODEL_TO_TYPE_MAP",
@@ -4581,7 +7033,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ am: \"antminer\"; av: \"avalon\"; wm: \"whatsminer\" }"
+      "members": [
+        {
+          "name": "am",
+          "required": true,
+          "type": "\"antminer\"",
+          "summary": null
+        },
+        {
+          "name": "av",
+          "required": true,
+          "type": "\"avalon\"",
+          "summary": null
+        },
+        {
+          "name": "wm",
+          "required": true,
+          "type": "\"whatsminer\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_STATUS_TO_IN_POOL_STATUS",
@@ -4590,7 +7061,44 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ alert: \"offline\"; error: \"offline\"; maintenance: \"inactive\"; mining: \"online\"; offline: \"offline\"; sleeping: \"inactive\" }"
+      "members": [
+        {
+          "name": "alert",
+          "required": true,
+          "type": "\"offline\"",
+          "summary": null
+        },
+        {
+          "name": "error",
+          "required": true,
+          "type": "\"offline\"",
+          "summary": null
+        },
+        {
+          "name": "maintenance",
+          "required": true,
+          "type": "\"inactive\"",
+          "summary": null
+        },
+        {
+          "name": "mining",
+          "required": true,
+          "type": "\"online\"",
+          "summary": null
+        },
+        {
+          "name": "offline",
+          "required": true,
+          "type": "\"offline\"",
+          "summary": null
+        },
+        {
+          "name": "sleeping",
+          "required": true,
+          "type": "\"inactive\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_TYPE",
@@ -4599,7 +7107,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ ANTMINER: \"am\"; AVALON: \"av\"; WHATSMINER: \"wm\" }"
+      "members": [
+        {
+          "name": "ANTMINER",
+          "required": true,
+          "type": "\"am\"",
+          "summary": null
+        },
+        {
+          "name": "AVALON",
+          "required": true,
+          "type": "\"av\"",
+          "summary": null
+        },
+        {
+          "name": "WHATSMINER",
+          "required": true,
+          "type": "\"wm\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_TYPE_BAR_CHART_ITEM_STYLE_KEY_DEFAULT",
@@ -4617,7 +7144,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ miner-av-a1346: \"A1346 miners do not report consumption individually, so Avg. efficiency cannot be calculated\" }"
+      "members": [
+        {
+          "name": "miner-av-a1346",
+          "required": true,
+          "type": "\"A1346 miners do not report consumption individually, so Avg. efficiency cannot be calculated\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_TYPE_NAME_MAP",
@@ -4626,7 +7160,74 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ miner-acme-m1: \"Acme M1\"; miner-am-s19xp: \"Antminer S19XP\"; miner-am-s19xp_h: \"Antminer S19XP H\"; miner-am-s21: \"Antminer S21\"; miner-am-s21pro: \"Antminer S21pro\"; miner-av-a1346: \"Avalon A1346\"; miner-wm-m30sp: \"Whatsminer M30SP\"; miner-wm-m30spp: \"Whatsminer M30SPP\"; miner-wm-m53s: \"Whatsminer M53S\"; miner-wm-m56s: \"Whatsminer M56S\"; miner-wm-m63: \"Whatsminer M63\" }"
+      "members": [
+        {
+          "name": "miner-acme-m1",
+          "required": true,
+          "type": "\"Acme M1\"",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s19xp",
+          "required": true,
+          "type": "\"Antminer S19XP\"",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s19xp_h",
+          "required": true,
+          "type": "\"Antminer S19XP H\"",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s21",
+          "required": true,
+          "type": "\"Antminer S21\"",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s21pro",
+          "required": true,
+          "type": "\"Antminer S21pro\"",
+          "summary": null
+        },
+        {
+          "name": "miner-av-a1346",
+          "required": true,
+          "type": "\"Avalon A1346\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m30sp",
+          "required": true,
+          "type": "\"Whatsminer M30SP\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m30spp",
+          "required": true,
+          "type": "\"Whatsminer M30SPP\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m53s",
+          "required": true,
+          "type": "\"Whatsminer M53S\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m56s",
+          "required": true,
+          "type": "\"Whatsminer M56S\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m63",
+          "required": true,
+          "type": "\"Whatsminer M63\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_TYPES_BAR_CHART_ITEM_STYLE_KEY_MAP",
@@ -4635,7 +7236,68 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ miner-am-s19xp: \"RED\"; miner-am-s19xp_h: \"YELLOW\"; miner-am-s21: \"PURPLE\"; miner-am-s21pro: \"VIOLET\"; miner-av-a1346: \"GREEN\"; miner-wm-m30sp: \"BLUE\"; miner-wm-m30spp: \"ORANGE\"; miner-wm-m53s: \"METALLIC_BLUE\"; miner-wm-m56s: \"SKY_BLUE\"; miner-wm-m63: \"VIOLET\" }"
+      "members": [
+        {
+          "name": "miner-am-s19xp",
+          "required": true,
+          "type": "\"RED\"",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s19xp_h",
+          "required": true,
+          "type": "\"YELLOW\"",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s21",
+          "required": true,
+          "type": "\"PURPLE\"",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s21pro",
+          "required": true,
+          "type": "\"VIOLET\"",
+          "summary": null
+        },
+        {
+          "name": "miner-av-a1346",
+          "required": true,
+          "type": "\"GREEN\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m30sp",
+          "required": true,
+          "type": "\"BLUE\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m30spp",
+          "required": true,
+          "type": "\"ORANGE\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m53s",
+          "required": true,
+          "type": "\"METALLIC_BLUE\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m56s",
+          "required": true,
+          "type": "\"SKY_BLUE\"",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m63",
+          "required": true,
+          "type": "\"VIOLET\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MINER_TYPES_COLOR_MAP",
@@ -4644,7 +7306,68 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ miner-am-s19xp: any; miner-am-s19xp_h: any; miner-am-s21: any; miner-am-s21pro: any; miner-av-a1346: any; miner-wm-m30sp: any; miner-wm-m30spp: any; miner-wm-m53s: any; miner-wm-m56s: any; miner-wm-m63: any }"
+      "members": [
+        {
+          "name": "miner-am-s19xp",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s19xp_h",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s21",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-am-s21pro",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-av-a1346",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m30sp",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m30spp",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m53s",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m56s",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "miner-wm-m63",
+          "required": true,
+          "type": "any",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MinerActionValue",
@@ -5118,7 +7841,50 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ ALERT: \"alert\"; ERROR: \"error\"; MAINTENANCE: \"maintenance\"; MINING: \"mining\"; NOT_MINING: \"not_mining\"; OFFLINE: \"offline\"; SLEEPING: \"sleeping\" }"
+      "members": [
+        {
+          "name": "ALERT",
+          "required": true,
+          "type": "\"alert\"",
+          "summary": null
+        },
+        {
+          "name": "ERROR",
+          "required": true,
+          "type": "\"error\"",
+          "summary": null
+        },
+        {
+          "name": "MAINTENANCE",
+          "required": true,
+          "type": "\"maintenance\"",
+          "summary": null
+        },
+        {
+          "name": "MINING",
+          "required": true,
+          "type": "\"mining\"",
+          "summary": null
+        },
+        {
+          "name": "NOT_MINING",
+          "required": true,
+          "type": "\"not_mining\"",
+          "summary": null
+        },
+        {
+          "name": "OFFLINE",
+          "required": true,
+          "type": "\"offline\"",
+          "summary": null
+        },
+        {
+          "name": "SLEEPING",
+          "required": true,
+          "type": "\"sleeping\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MinerTypeKey",
@@ -5265,7 +8031,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "datasets",
+            "required": true,
+            "type": "(Omit<Dataset, \"data\" | \"borderColor\"> & { data?: HashRateDataPoint[] })[]",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "legendHidden",
+            "required": true,
+            "type": "Record<string, boolean>",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "Dataset[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "NotificationOptions",
@@ -5350,7 +8136,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/alerts/alerts-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "navigate",
+            "required": false,
+            "type": "(path: string) => void",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "id",
+            "required": false,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "void",
+        "returnSummary": null
+      }
     },
     {
       "name": "OsTypeKey",
@@ -5368,7 +8174,38 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/platforms.ts",
       "summary": null,
-      "type": "{ Android: \"Android\"; IOS: \"iOS\"; Linux: \"Linux\"; MAC: \"Mac\"; Windows: \"Windows\" }"
+      "members": [
+        {
+          "name": "Android",
+          "required": true,
+          "type": "\"Android\"",
+          "summary": null
+        },
+        {
+          "name": "IOS",
+          "required": true,
+          "type": "\"iOS\"",
+          "summary": null
+        },
+        {
+          "name": "Linux",
+          "required": true,
+          "type": "\"Linux\"",
+          "summary": null
+        },
+        {
+          "name": "MAC",
+          "required": true,
+          "type": "\"Mac\"",
+          "summary": null
+        },
+        {
+          "name": "Windows",
+          "required": true,
+          "type": "\"Windows\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "OsTypeValue",
@@ -5413,7 +8250,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.mappers.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "result",
+            "required": true,
+            "type": "OverviewChartResult",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "LineChartCardData",
+        "returnSummary": null
+      }
     },
     {
       "name": "PaginationArgs",
@@ -5626,7 +8476,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/utils/settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "file",
+            "required": true,
+            "type": "File",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "Promise<SettingsExportData>",
+        "returnSummary": null
+      }
     },
     {
       "name": "PERIOD",
@@ -5635,7 +8498,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/ranges.ts",
       "summary": null,
-      "type": "{ DAILY: \"daily\"; MONTHLY: \"monthly\"; WEEKLY: \"weekly\"; YEARLY: \"yearly\" }"
+      "members": [
+        {
+          "name": "DAILY",
+          "required": true,
+          "type": "\"daily\"",
+          "summary": null
+        },
+        {
+          "name": "MONTHLY",
+          "required": true,
+          "type": "\"monthly\"",
+          "summary": null
+        },
+        {
+          "name": "WEEKLY",
+          "required": true,
+          "type": "\"weekly\"",
+          "summary": null
+        },
+        {
+          "name": "YEARLY",
+          "required": true,
+          "type": "\"yearly\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "PeriodKey",
@@ -5662,7 +8550,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/settings.constants.ts",
       "summary": null,
-      "type": "{ none: \"No Access\"; r: \"Read Only\"; rw: \"Read & Write\" }"
+      "members": [
+        {
+          "name": "none",
+          "required": true,
+          "type": "\"No Access\"",
+          "summary": null
+        },
+        {
+          "name": "r",
+          "required": true,
+          "type": "\"Read Only\"",
+          "summary": null
+        },
+        {
+          "name": "rw",
+          "required": true,
+          "type": "\"Read & Write\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "PermissionRequest",
@@ -5689,7 +8596,68 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/device-constants.ts",
       "summary": null,
-      "type": "{ I1 a: \"Current L1\"; I2 a: \"Current L2\"; I3 a: \"Current L3\"; In a: \"Current Neutral\"; V1 n v: \"Voltage L1-N\"; V1 v2 v: \"Voltage L1-L2\"; V2 n v: \"Voltage L2-N\"; V2 v3 v: \"Voltage L2-L3\"; V3 n v: \"Voltage L3-N\"; V3 v1 v: \"Voltage L3-L1\" }"
+      "members": [
+        {
+          "name": "I1 a",
+          "required": true,
+          "type": "\"Current L1\"",
+          "summary": null
+        },
+        {
+          "name": "I2 a",
+          "required": true,
+          "type": "\"Current L2\"",
+          "summary": null
+        },
+        {
+          "name": "I3 a",
+          "required": true,
+          "type": "\"Current L3\"",
+          "summary": null
+        },
+        {
+          "name": "In a",
+          "required": true,
+          "type": "\"Current Neutral\"",
+          "summary": null
+        },
+        {
+          "name": "V1 n v",
+          "required": true,
+          "type": "\"Voltage L1-N\"",
+          "summary": null
+        },
+        {
+          "name": "V1 v2 v",
+          "required": true,
+          "type": "\"Voltage L1-L2\"",
+          "summary": null
+        },
+        {
+          "name": "V2 n v",
+          "required": true,
+          "type": "\"Voltage L2-N\"",
+          "summary": null
+        },
+        {
+          "name": "V2 v3 v",
+          "required": true,
+          "type": "\"Voltage L2-L3\"",
+          "summary": null
+        },
+        {
+          "name": "V3 n v",
+          "required": true,
+          "type": "\"Voltage L3-N\"",
+          "summary": null
+        },
+        {
+          "name": "V3 v1 v",
+          "required": true,
+          "type": "\"Voltage L3-L1\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "PmAttributeLabelMapKey",
@@ -5788,7 +8756,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ INCREMENTAL: \"INCREMENTAL\" }"
+      "members": [
+        {
+          "name": "INCREMENTAL",
+          "required": true,
+          "type": "\"INCREMENTAL\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_CREDENTIAL_TEMPLATE_SUFFIX_TYPE_LABELS",
@@ -5797,7 +8772,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ INCREMENTAL: \"Incremental\" }"
+      "members": [
+        {
+          "name": "INCREMENTAL",
+          "required": true,
+          "type": "\"Incremental\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_CREDENTIAL_TEMPLATE_SUFFIX_TYPE_OPTIONS",
@@ -5815,7 +8797,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ 0: \"PRIMARY\"; 1: \"FAILOVER_1\"; 2: \"FAILOVER_2\" }"
+      "members": [
+        {
+          "name": "0",
+          "required": true,
+          "type": "\"PRIMARY\"",
+          "summary": null
+        },
+        {
+          "name": "1",
+          "required": true,
+          "type": "\"FAILOVER_1\"",
+          "summary": null
+        },
+        {
+          "name": "2",
+          "required": true,
+          "type": "\"FAILOVER_2\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_ENDPOINT_REGIONS",
@@ -5824,7 +8825,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ EUROPE: \"EUROPE\" }"
+      "members": [
+        {
+          "name": "EUROPE",
+          "required": true,
+          "type": "\"EUROPE\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_ENDPOINT_REGIONS_LABELS",
@@ -5833,7 +8841,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ EUROPE: \"EUROPE\" }"
+      "members": [
+        {
+          "name": "EUROPE",
+          "required": true,
+          "type": "\"EUROPE\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_ENDPOINT_REGIONS_OPTIONS",
@@ -5851,7 +8866,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ FAILOVER_1: any; FAILOVER_2: any; PRIMARY: any }"
+      "members": [
+        {
+          "name": "FAILOVER_1",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "FAILOVER_2",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "PRIMARY",
+          "required": true,
+          "type": "any",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_ENDPOINT_ROLES",
@@ -5860,7 +8894,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ FAILOVER_1: \"FAILOVER_1\"; FAILOVER_2: \"FAILOVER_2\"; PRIMARY: \"PRIMARY\" }"
+      "members": [
+        {
+          "name": "FAILOVER_1",
+          "required": true,
+          "type": "\"FAILOVER_1\"",
+          "summary": null
+        },
+        {
+          "name": "FAILOVER_2",
+          "required": true,
+          "type": "\"FAILOVER_2\"",
+          "summary": null
+        },
+        {
+          "name": "PRIMARY",
+          "required": true,
+          "type": "\"PRIMARY\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_ENDPOINT_ROLES_LABELS",
@@ -5869,7 +8922,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ FAILOVER_1: \"FAILOVER 1\"; FAILOVER_2: \"FAILOVER 2\"; PRIMARY: \"PRIMARY\" }"
+      "members": [
+        {
+          "name": "FAILOVER_1",
+          "required": true,
+          "type": "\"FAILOVER 1\"",
+          "summary": null
+        },
+        {
+          "name": "FAILOVER_2",
+          "required": true,
+          "type": "\"FAILOVER 2\"",
+          "summary": null
+        },
+        {
+          "name": "PRIMARY",
+          "required": true,
+          "type": "\"PRIMARY\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_ENDPOINT_ROLES_OPTIONS",
@@ -5905,7 +8977,20 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ NOT_TESTED: \"Not Tested\"; TESTED: \"Tested\" }"
+      "members": [
+        {
+          "name": "NOT_TESTED",
+          "required": true,
+          "type": "\"Not Tested\"",
+          "summary": null
+        },
+        {
+          "name": "TESTED",
+          "required": true,
+          "type": "\"Tested\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "POOL_VALIDATION_STATUSES",
@@ -5914,7 +8999,20 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ NOT_TESTED: \"NOT_TESTED\"; TESTED: \"TESTED\" }"
+      "members": [
+        {
+          "name": "NOT_TESTED",
+          "required": true,
+          "type": "\"NOT_TESTED\"",
+          "summary": null
+        },
+        {
+          "name": "TESTED",
+          "required": true,
+          "type": "\"TESTED\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "PoolConfigData",
@@ -6096,7 +9194,44 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/dialog.ts",
       "summary": null,
-      "type": "{ CHANGE_INFO: \"changeInfo\"; CONFIRM_CHANGE_POSITION: \"confirmChange\"; CONFIRM_REMOVE: \"remove\"; CONTAINER_SELECTION: \"containerSelection\"; MAINTENANCE: \"maintenance\"; REPLACE_MINER: \"replaceMiner\" }"
+      "members": [
+        {
+          "name": "CHANGE_INFO",
+          "required": true,
+          "type": "\"changeInfo\"",
+          "summary": null
+        },
+        {
+          "name": "CONFIRM_CHANGE_POSITION",
+          "required": true,
+          "type": "\"confirmChange\"",
+          "summary": null
+        },
+        {
+          "name": "CONFIRM_REMOVE",
+          "required": true,
+          "type": "\"remove\"",
+          "summary": null
+        },
+        {
+          "name": "CONTAINER_SELECTION",
+          "required": true,
+          "type": "\"containerSelection\"",
+          "summary": null
+        },
+        {
+          "name": "MAINTENANCE",
+          "required": true,
+          "type": "\"maintenance\"",
+          "summary": null
+        },
+        {
+          "name": "REPLACE_MINER",
+          "required": true,
+          "type": "\"replaceMiner\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "PositionChangeDialog",
@@ -6329,7 +9464,44 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/ranges.ts",
       "summary": null,
-      "type": "{ CUSTOM_RANGE: \"Custom Range\"; LAST14: \"Last 14 Days\"; LAST30: \"Last 30 Days\"; LAST7: \"Last 7 Days\"; LAST90: \"Last 90 Days\"; YESTERDAY: \"Yesterday\" }"
+      "members": [
+        {
+          "name": "CUSTOM_RANGE",
+          "required": true,
+          "type": "\"Custom Range\"",
+          "summary": null
+        },
+        {
+          "name": "LAST14",
+          "required": true,
+          "type": "\"Last 14 Days\"",
+          "summary": null
+        },
+        {
+          "name": "LAST30",
+          "required": true,
+          "type": "\"Last 30 Days\"",
+          "summary": null
+        },
+        {
+          "name": "LAST7",
+          "required": true,
+          "type": "\"Last 7 Days\"",
+          "summary": null
+        },
+        {
+          "name": "LAST90",
+          "required": true,
+          "type": "\"Last 90 Days\"",
+          "summary": null
+        },
+        {
+          "name": "YESTERDAY",
+          "required": true,
+          "type": "\"Yesterday\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "RangeValue",
@@ -6532,7 +9704,38 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/index.ts",
       "summary": null,
-      "type": "{ FORBIDDEN: 403; NOT_FOUND: 404; SERVER_ERROR: 500; SUCCESS: 200; UNAUTHORIZED: 401 }"
+      "members": [
+        {
+          "name": "FORBIDDEN",
+          "required": true,
+          "type": "403",
+          "summary": null
+        },
+        {
+          "name": "NOT_FOUND",
+          "required": true,
+          "type": "404",
+          "summary": null
+        },
+        {
+          "name": "SERVER_ERROR",
+          "required": true,
+          "type": "500",
+          "summary": null
+        },
+        {
+          "name": "SUCCESS",
+          "required": true,
+          "type": "200",
+          "summary": null
+        },
+        {
+          "name": "UNAUTHORIZED",
+          "required": true,
+          "type": "401",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ResponseCodeKey",
@@ -6559,7 +9762,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/index.ts",
       "summary": null,
-      "type": "{ 1D: 24; 1M: number; 1W: number }"
+      "members": [
+        {
+          "name": "1D",
+          "required": true,
+          "type": "24",
+          "summary": null
+        },
+        {
+          "name": "1M",
+          "required": true,
+          "type": "number",
+          "summary": null
+        },
+        {
+          "name": "1W",
+          "required": true,
+          "type": "number",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "RevenueMultiplierKey",
@@ -6621,7 +9843,350 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/routes.ts",
       "summary": null,
-      "type": "{ ALERTS: string; COMMENTS: string; CONTAINERS_PAGE: string; DASHBOARD: string; EXPLORER: string; HOME: string; INVENTORY: string; INVENTORY_DASHBOARD: string; INVENTORY_MINERS: string; INVENTORY_MOVEMENTS: string; INVENTORY_REPAIRS: string; INVENTORY_SPARE_PARTS: string; MULTI_SITE_COST: string; MULTI_SITE_COST_INPUT: string; MULTI_SITE_DASHBOARD: string; MULTI_SITE_OPERATIONS: string; MULTI_SITE_OPERATIONS_EFFICIENCY: string; MULTI_SITE_OPERATIONS_HASHRATE: string; MULTI_SITE_OPERATIONS_MINERS: string; MULTI_SITE_OPERATIONS_POWER_CONSUMPTION: string; MULTI_SITE_REPORTS: string; MULTI_SITE_REVENUE: string; MULTI_SITE_REVENUE_AND_COST: string; OPERATIONS: string; OPERATIONS_ENERGY: string; OPERATIONS_MINING: string; OPERATIONS_MINING_CONTAINER_CHARTS: string; OPERATIONS_MINING_EXPLORER: string; OPERATIONS_MINING_SITE_OVERVIEW: string; POOL_MANAGER: string; POOL_MANAGER_DASHBOARD: string; POOL_MANAGER_MINER_EXPLORER: string; POOL_MANAGER_POOL_ENDPOINTS: string; POOL_MANAGER_SITES: string; POOL_MANAGER_SITES_OVERVIEW: string; REPORTS: string; REPORTS_FINANCIAL: string; REPORTS_FINANCIAL_COST_INPUT: string; REPORTS_FINANCIAL_COST_SUMMARY: string; REPORTS_FINANCIAL_EBITDA: string; REPORTS_FINANCIAL_ENERGY_BALANCE: string; REPORTS_FINANCIAL_ENERGY_REVENUE_COST: string; REPORTS_FINANCIAL_HASH_BALANCE: string; REPORTS_FINANCIAL_REVENUE_SUMMARY: string; REPORTS_FINANCIAL_SUBSIDY_FEE: string; REPORTS_OPERATIONS: string; REPORTS_OPERATIONS_DASHBOARD: string; REPORTS_OPERATIONS_EFFICIENCY: string; REPORTS_OPERATIONS_ENERGY: string; REPORTS_OPERATIONS_HASHRATE: string; REPORTS_OPERATIONS_MINERS: string; REPORTS_OPERATIONS_WORKERS: string; SETTINGS: string; SETTINGS_DASHBOARD: string; SETTINGS_USERS: string; SIGN_IN: string; SIGN_OUT: string }"
+      "members": [
+        {
+          "name": "ALERTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "COMMENTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "CONTAINERS_PAGE",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "DASHBOARD",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "EXPLORER",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "HOME",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "INVENTORY",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "INVENTORY_DASHBOARD",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "INVENTORY_MINERS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "INVENTORY_MOVEMENTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "INVENTORY_REPAIRS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "INVENTORY_SPARE_PARTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_COST",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_COST_INPUT",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_DASHBOARD",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_OPERATIONS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_OPERATIONS_EFFICIENCY",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_OPERATIONS_HASHRATE",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_OPERATIONS_MINERS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_OPERATIONS_POWER_CONSUMPTION",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_REPORTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_REVENUE",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "MULTI_SITE_REVENUE_AND_COST",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "OPERATIONS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "OPERATIONS_ENERGY",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "OPERATIONS_MINING",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "OPERATIONS_MINING_CONTAINER_CHARTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "OPERATIONS_MINING_EXPLORER",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "OPERATIONS_MINING_SITE_OVERVIEW",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "POOL_MANAGER",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "POOL_MANAGER_DASHBOARD",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "POOL_MANAGER_MINER_EXPLORER",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "POOL_MANAGER_POOL_ENDPOINTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "POOL_MANAGER_SITES",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "POOL_MANAGER_SITES_OVERVIEW",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL_COST_INPUT",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL_COST_SUMMARY",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL_EBITDA",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL_ENERGY_BALANCE",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL_ENERGY_REVENUE_COST",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL_HASH_BALANCE",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL_REVENUE_SUMMARY",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_FINANCIAL_SUBSIDY_FEE",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_OPERATIONS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_OPERATIONS_DASHBOARD",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_OPERATIONS_EFFICIENCY",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_OPERATIONS_ENERGY",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_OPERATIONS_HASHRATE",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_OPERATIONS_MINERS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "REPORTS_OPERATIONS_WORKERS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "SETTINGS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "SETTINGS_DASHBOARD",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "SETTINGS_USERS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "SIGN_IN",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "SIGN_OUT",
+          "required": true,
+          "type": "string",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ROUTE_TITLES_MAP",
@@ -6727,7 +10292,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/state/slices/auth-slice.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "state",
+            "required": true,
+            "type": "RootState",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "unknown",
+        "returnSummary": null
+      }
     },
     {
       "name": "selectSelectedContainers",
@@ -6780,7 +10358,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/state/slices/auth-slice.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "state",
+            "required": true,
+            "type": "RootState",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string | null",
+        "returnSummary": null
+      }
     },
     {
       "name": "setFilterTags",
@@ -7003,7 +10594,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/alerts.ts",
       "summary": null,
-      "type": "{ CRITICAL: \"critical\"; HIGH: \"high\"; MEDIUM: \"medium\" }"
+      "members": [
+        {
+          "name": "CRITICAL",
+          "required": true,
+          "type": "\"critical\"",
+          "summary": null
+        },
+        {
+          "name": "HIGH",
+          "required": true,
+          "type": "\"high\"",
+          "summary": null
+        },
+        {
+          "name": "MEDIUM",
+          "required": true,
+          "type": "\"medium\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "SEVERITY_COLORS",
@@ -7012,7 +10622,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/alerts.ts",
       "summary": null,
-      "type": "{ critical: any; high: any; medium: any }"
+      "members": [
+        {
+          "name": "critical",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "high",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "medium",
+          "required": true,
+          "type": "any",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "SEVERITY_KEY",
@@ -7030,7 +10659,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/alerts.ts",
       "summary": null,
-      "type": "{ critical: 2; high: 1; medium: 0 }"
+      "members": [
+        {
+          "name": "critical",
+          "required": true,
+          "type": "2",
+          "summary": null
+        },
+        {
+          "name": "high",
+          "required": true,
+          "type": "1",
+          "summary": null
+        },
+        {
+          "name": "medium",
+          "required": true,
+          "type": "0",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "SeverityColorKey",
@@ -7092,7 +10740,48 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "_isOilPumpEnabled",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentTemp",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "status",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "_data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "shouldBitdeerOilTemperatureSuperflash",
@@ -7100,7 +10789,48 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "_isOilPumpEnabled",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentTemp",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "status",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "_data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "shouldBitdeerTankPressureFlash",
@@ -7108,7 +10838,48 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "isOilPumpEnabled",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentPressure",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerStatus",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "_data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "shouldBitdeerTankPressureSuperflash",
@@ -7116,7 +10887,48 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/explorer/containers/bitdeer/settings/bitdeer-settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "_isOilPumpEnabled",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currentPressure",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "status",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "_data",
+            "required": true,
+            "type": "UnknownRecord",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "containerSettings",
+            "required": true,
+            "type": "any",
+            "defaultValue": "null",
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "SHOW_ADDITIONAL_FIELDS",
@@ -7160,7 +10972,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ empty: any; mining: any; not_mining: any; offline: any }"
+      "members": [
+        {
+          "name": "empty",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "mining",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "not_mining",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "offline",
+          "required": true,
+          "type": "any",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "SITE_OVERVIEW_STATUS_LABELS",
@@ -7169,7 +11006,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ empty: \"Empty\"; mining: \"Online\"; not_mining: \"Not Mining (Sleep + Error)\"; offline: \"Offline\" }"
+      "members": [
+        {
+          "name": "empty",
+          "required": true,
+          "type": "\"Empty\"",
+          "summary": null
+        },
+        {
+          "name": "mining",
+          "required": true,
+          "type": "\"Online\"",
+          "summary": null
+        },
+        {
+          "name": "not_mining",
+          "required": true,
+          "type": "\"Not Mining (Sleep + Error)\"",
+          "summary": null
+        },
+        {
+          "name": "offline",
+          "required": true,
+          "type": "\"Offline\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "SITE_OVERVIEW_STATUSES",
@@ -7178,7 +11040,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ EMPTY: \"empty\"; MINING: \"mining\"; NOT_MINING: \"not_mining\"; OFFLINE: \"offline\" }"
+      "members": [
+        {
+          "name": "EMPTY",
+          "required": true,
+          "type": "\"empty\"",
+          "summary": null
+        },
+        {
+          "name": "MINING",
+          "required": true,
+          "type": "\"mining\"",
+          "summary": null
+        },
+        {
+          "name": "NOT_MINING",
+          "required": true,
+          "type": "\"not_mining\"",
+          "summary": null
+        },
+        {
+          "name": "OFFLINE",
+          "required": true,
+          "type": "\"offline\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "SiteOverviewDetailsLegendColors",
@@ -7187,7 +11074,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/pool-manager-constants.ts",
       "summary": null,
-      "type": "{ empty: any; mining: any; not_mining: any; offline: any }"
+      "members": [
+        {
+          "name": "empty",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "mining",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "not_mining",
+          "required": true,
+          "type": "any",
+          "summary": null
+        },
+        {
+          "name": "offline",
+          "required": true,
+          "type": "any",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "Socket",
@@ -7533,7 +11445,20 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/actions.ts",
       "summary": null,
-      "type": "{ POOL: string; VOTING: string }"
+      "members": [
+        {
+          "name": "POOL",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "VOTING",
+          "required": true,
+          "type": "string",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "SupplyLiquidBox",
@@ -7648,7 +11573,56 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/container/container-charts/container-charts.constants.ts",
       "summary": null,
-      "type": "{ as-hk3_am-s19xp_h: \"Bitmain Hydro S19XP\"; as-immersion_am-s19xp: \"Bitmain Immersion S19XP\"; bd-d40-a1346_av-a1346: \"Bitdeer A1346\"; bd-d40-m30_wm-m30sp: \"Bitdeer M30SP\"; bd-d40-m56_wm-m56s: \"Bitdeer M56S\"; bd-d40-s19xp_am-s19xp: \"Bitdeer S19XP\"; mbt-kehua_wm-m53s: \"MicroBt Kehua M53S\"; mbt-wonderint_wm-m53s: \"MicroBt Wonderint M56S\" }"
+      "members": [
+        {
+          "name": "as-hk3_am-s19xp_h",
+          "required": true,
+          "type": "\"Bitmain Hydro S19XP\"",
+          "summary": null
+        },
+        {
+          "name": "as-immersion_am-s19xp",
+          "required": true,
+          "type": "\"Bitmain Immersion S19XP\"",
+          "summary": null
+        },
+        {
+          "name": "bd-d40-a1346_av-a1346",
+          "required": true,
+          "type": "\"Bitdeer A1346\"",
+          "summary": null
+        },
+        {
+          "name": "bd-d40-m30_wm-m30sp",
+          "required": true,
+          "type": "\"Bitdeer M30SP\"",
+          "summary": null
+        },
+        {
+          "name": "bd-d40-m56_wm-m56s",
+          "required": true,
+          "type": "\"Bitdeer M56S\"",
+          "summary": null
+        },
+        {
+          "name": "bd-d40-s19xp_am-s19xp",
+          "required": true,
+          "type": "\"Bitdeer S19XP\"",
+          "summary": null
+        },
+        {
+          "name": "mbt-kehua_wm-m53s",
+          "required": true,
+          "type": "\"MicroBt Kehua M53S\"",
+          "summary": null
+        },
+        {
+          "name": "mbt-wonderint_wm-m53s",
+          "required": true,
+          "type": "\"MicroBt Wonderint M56S\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "Tank",
@@ -7888,7 +11862,50 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ ALARM: \"alarm\"; ALARM_HIGH: \"alarmHigh\"; ALARM_LOW: \"alarmLow\"; ALERT: \"alert\"; CRITICAL_HIGH: \"criticalHigh\"; CRITICAL_LOW: \"criticalLow\"; NORMAL: \"normal\" }"
+      "members": [
+        {
+          "name": "ALARM",
+          "required": true,
+          "type": "\"alarm\"",
+          "summary": null
+        },
+        {
+          "name": "ALARM_HIGH",
+          "required": true,
+          "type": "\"alarmHigh\"",
+          "summary": null
+        },
+        {
+          "name": "ALARM_LOW",
+          "required": true,
+          "type": "\"alarmLow\"",
+          "summary": null
+        },
+        {
+          "name": "ALERT",
+          "required": true,
+          "type": "\"alert\"",
+          "summary": null
+        },
+        {
+          "name": "CRITICAL_HIGH",
+          "required": true,
+          "type": "\"criticalHigh\"",
+          "summary": null
+        },
+        {
+          "name": "CRITICAL_LOW",
+          "required": true,
+          "type": "\"criticalLow\"",
+          "summary": null
+        },
+        {
+          "name": "NORMAL",
+          "required": true,
+          "type": "\"normal\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "THRESHOLD_TYPE",
@@ -7897,7 +11914,32 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/container-constants.ts",
       "summary": null,
-      "type": "{ OIL_TEMPERATURE: \"oilTemperature\"; SUPPLY_LIQUID_PRESSURE: \"supplyLiquidPressure\"; TANK_PRESSURE: \"tankPressure\"; WATER_TEMPERATURE: \"waterTemperature\" }"
+      "members": [
+        {
+          "name": "OIL_TEMPERATURE",
+          "required": true,
+          "type": "\"oilTemperature\"",
+          "summary": null
+        },
+        {
+          "name": "SUPPLY_LIQUID_PRESSURE",
+          "required": true,
+          "type": "\"supplyLiquidPressure\"",
+          "summary": null
+        },
+        {
+          "name": "TANK_PRESSURE",
+          "required": true,
+          "type": "\"tankPressure\"",
+          "summary": null
+        },
+        {
+          "name": "WATER_TEMPERATURE",
+          "required": true,
+          "type": "\"waterTemperature\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ThresholdLevelKey",
@@ -7942,7 +11984,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/index.ts",
       "summary": null,
-      "type": "{ FIVE_MIN: number; ONE_MIN: 60000; TEN_MINS: 600000 }"
+      "members": [
+        {
+          "name": "FIVE_MIN",
+          "required": true,
+          "type": "number",
+          "summary": null
+        },
+        {
+          "name": "ONE_MIN",
+          "required": true,
+          "type": "60000",
+          "summary": null
+        },
+        {
+          "name": "TEN_MINS",
+          "required": true,
+          "type": "600000",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "TIME_FORMAT",
@@ -7969,7 +12030,26 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/ranges.ts",
       "summary": null,
-      "type": "{ MONTH: \"month\"; WEEK: \"week\"; YEAR: \"year\" }"
+      "members": [
+        {
+          "name": "MONTH",
+          "required": true,
+          "type": "\"month\"",
+          "summary": null
+        },
+        {
+          "name": "WEEK",
+          "required": true,
+          "type": "\"week\"",
+          "summary": null
+        },
+        {
+          "name": "YEAR",
+          "required": true,
+          "type": "\"year\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "TimeframeTypeKey",
@@ -8265,7 +12345,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/hash-rate-line-chart/hash-rate-line-chart-with-pool/hash-rate-line-chart-with-pool-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "HashRateLogEntry[] | HashRateLogEntry[][]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "HashRateDataPoint[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "transformToTimelineChartData",
@@ -8273,15 +12366,41 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/dashboard/power-mode-timeline-chart/power-mode-timeline-chart.helper.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "helperData",
+            "required": true,
+            "type": "PowerModeTimelineChartData",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "TimelineChartData",
+        "returnSummary": null
+      }
     },
     {
       "name": "useBeepSound",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-beep-sound.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "UseBeepSoundOptions",
+            "defaultValue": "{}",
+            "summary": null
+          }
+        ],
+        "returnType": "void",
+        "returnSummary": null
+      }
     },
     {
       "name": "UseBeepSoundOptions",
@@ -8320,58 +12439,125 @@
     {
       "name": "useChartDataCheck",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-chart-data-check.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "dataset",
+            "required": true,
+            "type": "UseChartDataCheckParams",
+            "defaultValue": null,
+            "summary": "Direct dataset for BarChart components"
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": "Boolean indicating if data is empty"
+      }
     },
     {
       "name": "useCheckPerm",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-permissions.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "permissionCheck",
+            "required": true,
+            "type": "PermissionCheck",
+            "defaultValue": null,
+            "summary": "Permission criteria to check"
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": "true if user has the requested permission"
+      }
     },
     {
       "name": "useContextualModal",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-contextual-modal.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "UseContextualModalParams",
+            "defaultValue": "{}",
+            "summary": null
+          }
+        ],
+        "returnType": "{ handleClose: () => void; handleOpen: (sub: T | null) => void; modalOpen: any; setSubject: any; subject: any }",
+        "returnSummary": null
+      }
     },
     {
       "name": "useHasPerms",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-has-perms.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "(req: PermissionRequest) => boolean",
+        "returnSummary": "Function that checks if user has the requested permission(s)"
+      }
     },
     {
       "name": "useHeaderControls",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-header-controls.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "{ error: null; handleReset: () => void; handleToggle: (key: keyof HeaderPreferences, value: boolean) => void; isLoading: boolean; preferences: HeaderPreferences }",
+        "returnSummary": null
+      }
     },
     {
       "name": "useIsFeatureEditingEnabled",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-is-feature-editing-enabled.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "boolean",
+        "returnSummary": "true if the user has the 'features' capability"
+      }
     },
     {
       "name": "useListViewFilters",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-list-view-filters.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "UseListViewFiltersParams",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "{ filters: any; listViewFilterOptions: any[]; onFiltersChange: any; previousFilters: any; setFilters: any; setPreviousFilters: any }",
+        "returnSummary": null
+      }
     },
     {
       "name": "UseListViewFiltersParams",
@@ -8410,26 +12596,64 @@
     {
       "name": "useLocalStorage",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-local-storage.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": "localStorage key"
+          },
+          {
+            "name": "defaultValue",
+            "required": true,
+            "type": "T",
+            "defaultValue": null,
+            "summary": "fallback value when key is missing or invalid"
+          }
+        ],
+        "returnType": "[T, (value: T | ((prev: T) => T)) => void, VoidFunction]",
+        "returnSummary": "[value, setValue, removeValue]"
+      }
     },
     {
       "name": "useNotification",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-notification.tsx",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "{ notifyError: (message: string, description?: string, options?: NotificationOptions) => void; notifyInfo: (message: string, description?: string, options?: NotificationOptions) => void; notifySuccess: (message: string, description?: string, options?: NotificationOptions) => void; notifyWarning: (message: string, description?: string, options?: NotificationOptions) => void }",
+        "returnSummary": null
+      }
     },
     {
       "name": "usePagination",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-pagination.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "args",
+            "required": true,
+            "type": "PaginationArgs",
+            "defaultValue": "{}",
+            "summary": null
+          }
+        ],
+        "returnType": "UsePaginationReturn",
+        "returnSummary": null
+      }
     },
     {
       "name": "UsePaginationReturn",
@@ -8486,10 +12710,23 @@
     {
       "name": "usePoolConfigs",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/components/domain/pool-manager/hooks/use-pool-configs.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "Partial<UsePoolConfigsOptions>",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "UsePoolConfigsResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "UsePoolConfigsResult",
@@ -8532,7 +12769,50 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/permissions.constants.ts",
       "summary": null,
-      "type": "{ ADMIN: \"admin\"; FIELD_OPERATOR: \"field_operator\"; READ_ONLY: \"read_only_user\"; REPAIR_TECHNICIAN: \"repair_technician\"; REPORTING_TOOL_MANAGER: \"reporting_tool_manager\"; SITE_MANAGER: \"site_manager\"; SITE_OPERATOR: \"site_operator\" }"
+      "members": [
+        {
+          "name": "ADMIN",
+          "required": true,
+          "type": "\"admin\"",
+          "summary": null
+        },
+        {
+          "name": "FIELD_OPERATOR",
+          "required": true,
+          "type": "\"field_operator\"",
+          "summary": null
+        },
+        {
+          "name": "READ_ONLY",
+          "required": true,
+          "type": "\"read_only_user\"",
+          "summary": null
+        },
+        {
+          "name": "REPAIR_TECHNICIAN",
+          "required": true,
+          "type": "\"repair_technician\"",
+          "summary": null
+        },
+        {
+          "name": "REPORTING_TOOL_MANAGER",
+          "required": true,
+          "type": "\"reporting_tool_manager\"",
+          "summary": null
+        },
+        {
+          "name": "SITE_MANAGER",
+          "required": true,
+          "type": "\"site_manager\"",
+          "summary": null
+        },
+        {
+          "name": "SITE_OPERATOR",
+          "required": true,
+          "type": "\"site_operator\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "USER_ROLES",
@@ -8582,10 +12862,15 @@
     {
       "name": "useTimezone",
       "package": "foundation",
-      "kind": "function",
+      "kind": "hook",
       "namespace": null,
       "sourcePath": "packages/foundation/src/hooks/use-timezone.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "UseTimezoneReturn",
+        "returnSummary": "Object with timezone state and formatting utilities"
+      }
     },
     {
       "name": "UseTimezoneReturn",
@@ -8621,7 +12906,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/foundation/src/utils/settings-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "data",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "data is SettingsExportData",
+        "returnSummary": null
+      }
     },
     {
       "name": "version",
@@ -8682,7 +12980,14 @@
       "namespace": null,
       "sourcePath": "packages/foundation/src/constants/domains.ts",
       "summary": null,
-      "type": "{ staging: readonly [\"dev-moria.tether.to\", \"localhost\"] }"
+      "members": [
+        {
+          "name": "staging",
+          "required": true,
+          "type": "readonly [\"dev-moria.tether.to\", \"localhost\"]",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "WebappUrlsKey",

@@ -66,12 +66,14 @@ public type, prop, or export changes.
 
 2. **Normalized `*.public-surface.json` (this repo's normalizer).** Hand-written
    classifier on top of TypeDoc. Accurate today, but not yet under test.
-   - **Trust** the `name`, `package`, `namespace`, `sourcePath`, and `members[]`
-     blocks — those are direct passthroughs from TypeDoc.
-   - **Treat as advisory** the `kind` field (`component` / `value` / `type` /
-     `function` / `const` / `class` / `namespace` / `enum`). It uses heuristics
-     (React-component-shaped types, source path under `/components/`, JSX
-     `@example` blocks) that can misclassify edge cases.
+   - **Trust** the `name`, `package`, `namespace`, `sourcePath`, `members[]`, and
+     `signature` blocks — those are direct passthroughs from TypeDoc.
+   - **Treat as advisory** the `kind` field (see [Kind enum](#kind-enum) below).
+     `component` and `hook` use heuristics; edge cases can misclassify.
+   - **Runtime contract** — every file is validated against
+     [`schema.mjs`](schema.mjs) (Zod) before write; TypeScript types live in
+     [`schema.ts`](schema.ts). Downstream tools should treat those files as the
+     canonical shape, not the generator implementation alone.
 
 ## Known limitations
 
@@ -86,10 +88,60 @@ public type, prop, or export changes.
   `react-gauge-chart` precedent for the failure mode.
 - **No CI gate.** Until one is added, regeneration on every public-API change
   is on the contributor. The diff in PR review is the only safety net.
-- **Schema may change.** The shape of `*.public-surface.json` is not yet a
-  stable contract. Expect tweaks as the normalizer is hardened.
+- **Schema bumps.** Breaking shape changes increment `_meta.schemaVersion`
+   (currently `"1.0"`). Consumers can pin on that field.
+- **Function overloads.** Only the **first** overload signature is captured on
+   `function` / `hook` rows.
+- **Generic type aliases.** Bodies like `PaginatedResponse<T>` appear as
+   `aliasOf` without preserving generic parameters in a structured way.
+- **Parameter `required` vs defaults.** TypeDoc sometimes marks parameters with
+   default values as `required: true`; compare `defaultValue` when in doubt.
+
+## Alignment with docs site sections
+
+These JSON files can back automated checks for the same inventory the docs describe:
+
+| Docs area | Example paths | Surface coverage |
+| --- | --- | --- |
+| Core / foundation components | `/ui/react/core/components/*`, foundation feature pages | `kind: "component"` + companion `*Props` rows with `members[]` |
+| UI Kit constants | `/reference/app-toolkit/ui-kit/constants` | Object-literal exports (`COLOR`, `UNITS`, …) get `members[]` per key |
+| UI Kit types | `/reference/app-toolkit/ui-kit/types` | `kind: "type"` with `members[]` or `aliasOf` |
+| UI Kit hooks | `/reference/app-toolkit/ui-kit/hooks/*` | `kind: "hook"` with `signature` |
+| UI Kit utilities | `/reference/app-toolkit/ui-kit/utilities` | `kind: "function"` with `signature` |
+
+Join keys for cross-checking the docs catalog [`components.json`](../../../../forked-mdk-docs/src/data/components.json)
+(if present in your docs checkout): **`name` + `package`**. Catalog-only fields
+(`category`, `demo`, `docUrl`, `publicApiKind`, …) are not duplicated here.
+
+## Alignment with `components.json` (when extended)
+
+| Surface field | Catalog field | Notes |
+| --- | --- | --- |
+| `name` | `name` | 1:1 join key |
+| `package` | `package` | `"core"` / `"foundation"` |
+| `summary` | `summary` | Same sentence-shapedSummary where both exist |
+| `kind` | `publicApiKind` | Overlapping names (`component`, `hook`, `icon`, `slot`) but different semantics: surface = TypeScript role; catalog = docs presentation |
+| `sourcePath`, `members`, `signature`, `aliasOf` | — | Surface-only |
+| — | `category`, `section`, `demo`, `hasDetailPage`, `docUrl` | Catalog-only |
+
+## Kind enum
+
+| Value | Meaning for consumers |
+| --- | --- |
+| `component` | React component (JSX). Heuristic: React-ish type, `/components/` path, or JSX `@example`. |
+| `hook` | React hook: name matches `use[Uppercase]…` **and** file under `/hooks/`. Not merged into `component`. |
+| `function` | Plain function export (utilities, factories). Includes non-hook functions outside `/hooks/`. |
+| `value` | Variable/`const` with PascalCase name that did not match the component heuristic. |
+| `const` | Variable/`const` with non-PascalCase name (typical constants map/literals). |
+| `type` | Interface or type alias. Object shapes use `members[]`; unions/mapped types use `aliasOf`. |
+| `class` | `class` declaration. |
+| `enum` | TypeScript `enum`. |
+| `namespace` | Re-exported namespace (`export * as X`). Children list `namespace: "X"`. |
 
 ## Schema
+
+Canonical validation: [`schema.mjs`](schema.mjs) (Zod). Type-only definitions:
+[`schema.ts`](schema.ts).
 
 Each `*.public-surface.json` document has the form:
 
@@ -98,6 +150,7 @@ Each `*.public-surface.json` document has the form:
   "_meta": {
     "status": "experimental",
     "framework": "react",
+    "schemaVersion": "1.0",
     "disclaimer": "Generated. See ui-client/api/README.md before consuming.",
     "generator": "scripts/generate-public-surface.mjs",
     "typedocVersion": "0.28.19"
@@ -114,39 +167,46 @@ Each `*.public-surface.json` document has the form:
       "summary": "GaugeChart - Presentational gauge/speedometer chart"
     },
     {
-      "name": "GaugeChartProps",
+      "name": "formatNumber",
       "package": "core",
-      "kind": "type",
+      "kind": "function",
       "namespace": null,
-      "sourcePath": "packages/core/src/components/gauge-chart/index.tsx",
+      "sourcePath": "packages/core/src/utils/format.ts",
       "summary": null,
-      "members": [
-        {
-          "name": "percent",
-          "required": true,
-          "type": "number",
-          "summary": "Value between 0 and 1 (e.g. 0.75 = 75%)"
-        }
-        // …
-      ]
+      "signature": {
+        "parameters": [
+          {
+            "name": "number",
+            "required": true,
+            "type": "string | number | null | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     }
   ]
 }
 ```
 
-Field reference (per row):
+### Field reference (per export row)
 
-| Field | Always present | Notes |
-| --- | --- | --- |
-| `name` | yes | Exported name. |
-| `package` | yes | `"core"` or `"foundation"`. |
-| `kind` | yes | Coarse classification (advisory — see "Two layers of trust"). |
-| `namespace` | yes | `null` at top level, namespace name when nested (e.g. `"DropdownMenu"`). |
-| `sourcePath` | yes | Path relative to `ui-client/`. |
-| `summary` | yes | First line of the JSDoc summary, or `null`. |
-| `members` | type/enum rows with object-literal shape | Array of `{ name, required, type, summary }` for each property. |
-| `aliasOf` | type rows without a member breakdown | TypeDoc's stringified type expression. |
-| `type` | const / value rows | TypeDoc's stringified resolved type. |
+**Always present:** `name`, `package`, `kind`, `namespace` (`null` or string),
+`sourcePath` (string; empty string when TypeDoc has no source — e.g. some re-exports),
+`summary` (`null` or string).
+
+**Optional, by kind:**
+
+| Field | When |
+| --- | --- |
+| `members` | Object-like `type` / `enum` rows; object-literal `const` / `value` (e.g. `COLOR`, `UNITS`). Each entry: `name`, `required`, `type`, `summary`. |
+| `signature` | `function` and `hook` rows. `parameters[]` each have `name`, `required`, `type`, `defaultValue`, `summary`; plus `returnType`, `returnSummary` (`@returns`). |
+| `aliasOf` | `type` rows with no `members` (unions, picks, etc.). |
+| `type` | `const` / `value` rows where the export is not a broken-down object literal (fallback stringified type). |
+
+Run `pnpm api:surface` validates each document with Zod before writing.
 
 ## Roadmap to remove the "experimental" tag
 

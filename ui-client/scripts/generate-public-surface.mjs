@@ -10,9 +10,7 @@
  *   - <pkg>.typedoc.json         Full TypeDoc reflection dump (raw, large).
  *   - <pkg>.public-surface.json  Normalized one-row-per-export view.
  *
- * The normalized view is the artifact downstream consumers (docs audits, CI
- * checks, etc.) should read against. The raw TypeDoc dump is committed alongside
- * it so the normalizer can be tuned without re-running TypeDoc.
+ * Schema (Zod): ../api/schema.mjs — validated before writing each JSON file.
  *
  * Run from ui-client/:
  *   pnpm api:surface
@@ -23,6 +21,8 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Application, ReflectionKind, TSConfigReader } from 'typedoc'
+
+import { validatePublicSurface } from '../api/schema.mjs'
 
 const require = createRequire(import.meta.url)
 const typedocPkg = require('typedoc/package.json')
@@ -35,6 +35,7 @@ const API_DIR = path.join(UI_ROOT, 'api')
 const META = {
   status: 'experimental',
   framework: 'react',
+  schemaVersion: '1.0',
   disclaimer: 'Generated. See ui-client/api/README.md before consuming.',
   generator: 'scripts/generate-public-surface.mjs',
   typedocVersion: typedocPkg.version,
@@ -80,6 +81,8 @@ async function generateForPackage(pkg) {
   await app.generateJson(project, rawPath)
 
   const normalized = normalize(project, pkg.name)
+  validatePublicSurface(normalized)
+
   const normalizedPath = path.join(API_DIR, `${pkg.name}.public-surface.json`)
   fs.writeFileSync(
     normalizedPath,
@@ -113,8 +116,11 @@ function classifyKind(refl) {
     case ReflectionKind.Namespace:
     case ReflectionKind.Module:
       return 'namespace'
-    case ReflectionKind.Function:
-      return isPascalName ? 'component' : 'function'
+    case ReflectionKind.Function: {
+      if (looksLikeHook(refl)) return 'hook'
+      if (isPascalName) return 'component'
+      return 'function'
+    }
     case ReflectionKind.Variable: {
       if (isPascalName && looksLikeComponent(refl)) return 'component'
       if (isUpperFirst) return 'value'
@@ -123,6 +129,12 @@ function classifyKind(refl) {
     default:
       return 'value'
   }
+}
+
+function looksLikeHook(refl) {
+  if (!/^use[A-Z]/.test(refl.name)) return false
+  const src = relSource(refl) ?? ''
+  return /(?:^|\/)hooks\//.test(src)
 }
 
 /**
@@ -137,13 +149,13 @@ function classifyKind(refl) {
 function looksLikeComponent(refl) {
   const typeStr = typeString(refl.type) ?? ''
   if (
-    /(ForwardRefExoticComponent|ComponentType|FunctionComponent|FC<|JSX\.Element|ReactElement|MemoExoticComponent)/.test(typeStr)
+    /ForwardRefExoticComponent|ComponentType|FunctionComponent|FC<|JSX\.Element|ReactElement|MemoExoticComponent/.test(typeStr)
   ) {
     return true
   }
 
   const src = relSource(refl) ?? ''
-  if (/(^|\/)components\//.test(src) && /\.(tsx|jsx)$/.test(src)) {
+  if (/(?:^|\/)components\//.test(src) && /\.(?:tsx|jsx)$/.test(src)) {
     return true
   }
 
@@ -173,6 +185,17 @@ function summary(refl) {
   return text.split('\n')[0].trim()
 }
 
+function blockTagSummary(comment, tag) {
+  if (!comment?.blockTags) return null
+  const normalized = tag.startsWith('@') ? tag.slice(1) : tag
+  const t = comment.blockTags.find(
+    b => b.tag === tag || b.tag === `@${normalized}` || b.tag === normalized,
+  )
+  if (!t?.content) return null
+  const text = t.content.map(p => p.text ?? '').join('').trim()
+  return text || null
+}
+
 function typeString(t) {
   if (!t) return null
   try {
@@ -182,16 +205,25 @@ function typeString(t) {
   }
 }
 
+function defaultValueString(v) {
+  if (v == null) return null
+  if (typeof v === 'string') return v
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v)
+  try {
+    return JSON.stringify(v)
+  } catch {
+    return String(v)
+  }
+}
+
 /**
- * Pull the property list off an interface, type-alias-of-object-literal, or a
- * variable typed as an object literal. Returns null when the shape is anything
- * else (union, primitive alias, function signature, etc.) — the type string is
- * captured separately.
+ * Pull the property list off an interface, type-alias-of-object-literal,
+ * variable typed as object literal, or enum. Returns null when not introspectable.
  */
 function extractMembers(refl) {
   if (
     (refl.kind === ReflectionKind.Interface
-      || refl.kind === ReflectionKind.TypeAlias)
+      || refl.kind === ReflectionKind.Enum)
     && Array.isArray(refl.children)
     && refl.children.length > 0
   ) {
@@ -199,6 +231,16 @@ function extractMembers(refl) {
   }
 
   if (refl.kind === ReflectionKind.TypeAlias) {
+    if (Array.isArray(refl.children) && refl.children.length > 0) {
+      return refl.children.map(memberRow)
+    }
+    const t = refl.type
+    if (t?.type === 'reflection' && Array.isArray(t.declaration?.children)) {
+      return t.declaration.children.map(memberRow)
+    }
+  }
+
+  if (refl.kind === ReflectionKind.Variable) {
     const t = refl.type
     if (t?.type === 'reflection' && Array.isArray(t.declaration?.children)) {
       return t.declaration.children.map(memberRow)
@@ -217,6 +259,24 @@ function memberRow(child) {
   }
 }
 
+function extractSignature(refl) {
+  if (refl.kind !== ReflectionKind.Function) return null
+  const sig = Array.isArray(refl.signatures) ? refl.signatures[0] : null
+  if (!sig) return null
+  const parameters = (sig.parameters ?? []).map((p) => ({
+    name: p.name,
+    required: !p.flags?.isOptional,
+    type: typeString(p.type),
+    defaultValue: defaultValueString(p.defaultValue),
+    summary: summary(p),
+  }))
+  return {
+    parameters,
+    returnType: typeString(sig.type),
+    returnSummary: blockTagSummary(sig.comment, 'returns'),
+  }
+}
+
 function emitRow(refl, namespace, packageName) {
   const kind = classifyKind(refl)
   const row = {
@@ -224,7 +284,7 @@ function emitRow(refl, namespace, packageName) {
     package: packageName,
     kind,
     namespace,
-    sourcePath: relSource(refl),
+    sourcePath: relSource(refl) ?? '',
     summary: summary(refl),
   }
 
@@ -232,12 +292,22 @@ function emitRow(refl, namespace, packageName) {
     const members = extractMembers(refl)
     if (members) row.members = members
     const aliasType = refl.kind === ReflectionKind.TypeAlias ? typeString(refl.type) : null
-    if (aliasType && !members) row.aliasOf = aliasType
+    if (aliasType && !row.members) row.aliasOf = aliasType
   }
 
   if (kind === 'const' || kind === 'value') {
-    const t = typeString(refl.type)
-    if (t) row.type = t
+    const members = extractMembers(refl)
+    if (members) {
+      row.members = members
+    } else {
+      const t = typeString(refl.type)
+      if (t) row.type = t
+    }
+  }
+
+  if (kind === 'function' || kind === 'hook') {
+    const sig = extractSignature(refl)
+    if (sig) row.signature = sig
   }
 
   return row

@@ -54,7 +54,8 @@
     "turbo": "catalog:",
     "typedoc": "^0.28.19",
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "zod": "catalog:"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": [

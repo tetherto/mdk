@@ -2,12 +2,13 @@
   "_meta": {
     "status": "experimental",
     "framework": "react",
+    "schemaVersion": "1.0",
     "disclaimer": "Generated. See ui-client/api/README.md before consuming.",
     "generator": "scripts/generate-public-surface.mjs",
     "typedocVersion": "0.28.19"
   },
   "package": "core",
-  "generatedAt": "2026-05-10T12:02:01.498Z",
+  "generatedAt": "2026-05-10T13:46:03.795Z",
   "exports": [
     {
       "name": "Accordion",
@@ -176,7 +177,20 @@
       "namespace": null,
       "sourcePath": "packages/core/src/components/logs/constants.tsx",
       "summary": null,
-      "type": "{ COMPLETED: string; PENDING: string }"
+      "members": [
+        {
+          "name": "COMPLETED",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "PENDING",
+          "required": true,
+          "type": "string",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "AlertDialog",
@@ -350,7 +364,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/theme/utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "theme",
+            "required": true,
+            "type": "Theme",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "void",
+        "returnSummary": null
+      }
     },
     {
       "name": "AreaChart",
@@ -424,7 +451,38 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/colors.ts",
       "summary": null,
-      "type": "{ REBOOT: \"#C90000\"; SET_LED: \"#858585\"; SET_POWER_MODE: \"#A80000\"; SWITCH_COOLING: \"#810000\"; SWITCH_SOCKET: \"#007055\" }"
+      "members": [
+        {
+          "name": "REBOOT",
+          "required": true,
+          "type": "\"#C90000\"",
+          "summary": null
+        },
+        {
+          "name": "SET_LED",
+          "required": true,
+          "type": "\"#858585\"",
+          "summary": null
+        },
+        {
+          "name": "SET_POWER_MODE",
+          "required": true,
+          "type": "\"#A80000\"",
+          "summary": null
+        },
+        {
+          "name": "SWITCH_COOLING",
+          "required": true,
+          "type": "\"#810000\"",
+          "summary": null
+        },
+        {
+          "name": "SWITCH_SOCKET",
+          "required": true,
+          "type": "\"#007055\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "AttentionLevelColorKey",
@@ -577,7 +635,74 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/colors.ts",
       "summary": null,
-      "type": "{ BLUE: \"#1890FF\"; BLUE_SEA: \"#14B8A6\"; GREEN: \"#72F59E\"; LIGHT_BLUE: \"#06B6D4\"; METALLIC_BLUE: \"#23497A\"; ORANGE: \"#FF6A00\"; PURPLE: \"#6366F1\"; RED: \"#FF4D4F\"; SKY_BLUE: \"#59E8E8\"; VIOLET: \"#8B5CF6\"; YELLOW: \"#F7931A\" }"
+      "members": [
+        {
+          "name": "BLUE",
+          "required": true,
+          "type": "\"#1890FF\"",
+          "summary": null
+        },
+        {
+          "name": "BLUE_SEA",
+          "required": true,
+          "type": "\"#14B8A6\"",
+          "summary": null
+        },
+        {
+          "name": "GREEN",
+          "required": true,
+          "type": "\"#72F59E\"",
+          "summary": null
+        },
+        {
+          "name": "LIGHT_BLUE",
+          "required": true,
+          "type": "\"#06B6D4\"",
+          "summary": null
+        },
+        {
+          "name": "METALLIC_BLUE",
+          "required": true,
+          "type": "\"#23497A\"",
+          "summary": null
+        },
+        {
+          "name": "ORANGE",
+          "required": true,
+          "type": "\"#FF6A00\"",
+          "summary": null
+        },
+        {
+          "name": "PURPLE",
+          "required": true,
+          "type": "\"#6366F1\"",
+          "summary": null
+        },
+        {
+          "name": "RED",
+          "required": true,
+          "type": "\"#FF4D4F\"",
+          "summary": null
+        },
+        {
+          "name": "SKY_BLUE",
+          "required": true,
+          "type": "\"#59E8E8\"",
+          "summary": null
+        },
+        {
+          "name": "VIOLET",
+          "required": true,
+          "type": "\"#8B5CF6\"",
+          "summary": null
+        },
+        {
+          "name": "YELLOW",
+          "required": true,
+          "type": "\"#F7931A\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "BarChart",
@@ -869,7 +994,56 @@
       "namespace": null,
       "sourcePath": "packages/core/src/theme/tokens.ts",
       "summary": null,
-      "type": "{ 2xl: \"1rem\"; DEFAULT: \"0.25rem\"; full: \"9999px\"; lg: \"0.5rem\"; md: \"0.375rem\"; none: \"0\"; sm: \"0.125rem\"; xl: \"0.75rem\" }"
+      "members": [
+        {
+          "name": "2xl",
+          "required": true,
+          "type": "\"1rem\"",
+          "summary": null
+        },
+        {
+          "name": "DEFAULT",
+          "required": true,
+          "type": "\"0.25rem\"",
+          "summary": null
+        },
+        {
+          "name": "full",
+          "required": true,
+          "type": "\"9999px\"",
+          "summary": null
+        },
+        {
+          "name": "lg",
+          "required": true,
+          "type": "\"0.5rem\"",
+          "summary": null
+        },
+        {
+          "name": "md",
+          "required": true,
+          "type": "\"0.375rem\"",
+          "summary": null
+        },
+        {
+          "name": "none",
+          "required": true,
+          "type": "\"0\"",
+          "summary": null
+        },
+        {
+          "name": "sm",
+          "required": true,
+          "type": "\"0.125rem\"",
+          "summary": null
+        },
+        {
+          "name": "xl",
+          "required": true,
+          "type": "\"0.75rem\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "BorderRadius",
@@ -980,7 +1154,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/time.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "start",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "Start timestamp in milliseconds"
+          },
+          {
+            "name": "end",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "End timestamp in milliseconds"
+          },
+          {
+            "name": "intervalMs",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "Interval size in milliseconds"
+          }
+        ],
+        "returnType": "TimeInterval[]",
+        "returnSummary": "Array of intervals with start and end timestamps"
+      }
     },
     {
       "name": "BTC_SATS",
@@ -1005,7 +1206,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart-options.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "input",
+            "required": true,
+            "type": "BarChartInput & { barPercentage?: number; barWidth?: number; categoryPercentage?: number; defaultLineAxis?: string }",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "{ datasets: Record<string, unknown>[]; labels: string[] }",
+        "returnSummary": null
+      }
     },
     {
       "name": "buildBarChartOptions",
@@ -1013,7 +1227,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart-options.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "BuildBarChartOptionsInput",
+            "defaultValue": "{}",
+            "summary": null
+          }
+        ],
+        "returnType": "Record<string, unknown>",
+        "returnSummary": null
+      }
     },
     {
       "name": "BuildBarChartOptionsInput",
@@ -1085,7 +1312,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart-tooltip.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "config",
+            "required": true,
+            "type": "ChartTooltipConfig",
+            "defaultValue": "{}",
+            "summary": null
+          }
+        ],
+        "returnType": "TooltipOptions<ChartType>",
+        "returnSummary": null
+      }
     },
     {
       "name": "Button",
@@ -1145,7 +1385,41 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/conversion.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "usedEnergy",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "The actual used energy in Wh"
+          },
+          {
+            "name": "nominalAvailablePowerMWh",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "The nominal available power in MWh for the period"
+          },
+          {
+            "name": "powerConsumptionMW",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "The power consumption in MW"
+          },
+          {
+            "name": "hoursInPeriod",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "The number of hours in the period"
+          }
+        ],
+        "returnType": "CurtailmentResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "calculateTransactionSum",
@@ -1153,7 +1427,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/conversion.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "transactions",
+            "required": true,
+            "type": "TransactionEntry[]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "TransactionSum",
+        "returnSummary": null
+      }
     },
     {
       "name": "Card",
@@ -1357,7 +1644,128 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/colors.ts",
       "summary": null,
-      "type": "{ AGGR_POOL: \"#357AF6\"; axisTicks: \"#FFFFFF99\"; BLACK: \"#17130F\"; blue: \"#357AF6\"; green: \"#34C759\"; grey: \"#87888C\"; gridLine: \"#ffffff1f\"; legendLabel: \"#ffffffb3\"; LIGHT_BLUE: \"#22AFFF\"; METALLIC_BLUE: \"#23497A\"; OCEAN: \"#FF3B30\"; orange: \"#FF6A00\"; purple: \"#A020F0\"; red: \"#FF3B30\"; secondaryOrange: \"#F7931A\"; secondaryYellow: \"#FFC107\"; SKY_BLUE: \"#59E8E8\"; VIOLET: \"#867DF9\"; white: \"#FFFFFF\"; yellow: \"#FFC107\" }"
+      "members": [
+        {
+          "name": "AGGR_POOL",
+          "required": true,
+          "type": "\"#357AF6\"",
+          "summary": null
+        },
+        {
+          "name": "axisTicks",
+          "required": true,
+          "type": "\"#FFFFFF99\"",
+          "summary": null
+        },
+        {
+          "name": "BLACK",
+          "required": true,
+          "type": "\"#17130F\"",
+          "summary": null
+        },
+        {
+          "name": "blue",
+          "required": true,
+          "type": "\"#357AF6\"",
+          "summary": null
+        },
+        {
+          "name": "green",
+          "required": true,
+          "type": "\"#34C759\"",
+          "summary": null
+        },
+        {
+          "name": "grey",
+          "required": true,
+          "type": "\"#87888C\"",
+          "summary": null
+        },
+        {
+          "name": "gridLine",
+          "required": true,
+          "type": "\"#ffffff1f\"",
+          "summary": null
+        },
+        {
+          "name": "legendLabel",
+          "required": true,
+          "type": "\"#ffffffb3\"",
+          "summary": null
+        },
+        {
+          "name": "LIGHT_BLUE",
+          "required": true,
+          "type": "\"#22AFFF\"",
+          "summary": null
+        },
+        {
+          "name": "METALLIC_BLUE",
+          "required": true,
+          "type": "\"#23497A\"",
+          "summary": null
+        },
+        {
+          "name": "OCEAN",
+          "required": true,
+          "type": "\"#FF3B30\"",
+          "summary": null
+        },
+        {
+          "name": "orange",
+          "required": true,
+          "type": "\"#FF6A00\"",
+          "summary": null
+        },
+        {
+          "name": "purple",
+          "required": true,
+          "type": "\"#A020F0\"",
+          "summary": null
+        },
+        {
+          "name": "red",
+          "required": true,
+          "type": "\"#FF3B30\"",
+          "summary": null
+        },
+        {
+          "name": "secondaryOrange",
+          "required": true,
+          "type": "\"#F7931A\"",
+          "summary": null
+        },
+        {
+          "name": "secondaryYellow",
+          "required": true,
+          "type": "\"#FFC107\"",
+          "summary": null
+        },
+        {
+          "name": "SKY_BLUE",
+          "required": true,
+          "type": "\"#59E8E8\"",
+          "summary": null
+        },
+        {
+          "name": "VIOLET",
+          "required": true,
+          "type": "\"#867DF9\"",
+          "summary": null
+        },
+        {
+          "name": "white",
+          "required": true,
+          "type": "\"#FFFFFF\"",
+          "summary": null
+        },
+        {
+          "name": "yellow",
+          "required": true,
+          "type": "\"#FFC107\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CHART_LEGEND_OPACITY",
@@ -1366,7 +1774,26 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/charts.ts",
       "summary": null,
-      "type": "{ FILL_HIDDEN: 0.1; HIDDEN: 0.2; VISIBLE: 1 }"
+      "members": [
+        {
+          "name": "FILL_HIDDEN",
+          "required": true,
+          "type": "0.1",
+          "summary": null
+        },
+        {
+          "name": "HIDDEN",
+          "required": true,
+          "type": "0.2",
+          "summary": null
+        },
+        {
+          "name": "VISIBLE",
+          "required": true,
+          "type": "1",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CHART_PERFORMANCE",
@@ -1375,7 +1802,44 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/charts.ts",
       "summary": null,
-      "type": "{ ANIMATION_DURATION: 300; DECIMATION_THRESHOLD: 200; LARGE_DATASET_THRESHOLD: 100; NO_ANIMATION_THRESHOLD: 500; NORMALIZE_DATA: false; SKIP_PARSING: true }"
+      "members": [
+        {
+          "name": "ANIMATION_DURATION",
+          "required": true,
+          "type": "300",
+          "summary": null
+        },
+        {
+          "name": "DECIMATION_THRESHOLD",
+          "required": true,
+          "type": "200",
+          "summary": null
+        },
+        {
+          "name": "LARGE_DATASET_THRESHOLD",
+          "required": true,
+          "type": "100",
+          "summary": null
+        },
+        {
+          "name": "NO_ANIMATION_THRESHOLD",
+          "required": true,
+          "type": "500",
+          "summary": null
+        },
+        {
+          "name": "NORMALIZE_DATA",
+          "required": true,
+          "type": "false",
+          "summary": null
+        },
+        {
+          "name": "SKIP_PARSING",
+          "required": true,
+          "type": "true",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ChartColorKey",
@@ -1672,7 +2136,7 @@
       "package": "core",
       "kind": "type",
       "namespace": null,
-      "sourcePath": null,
+      "sourcePath": "",
       "summary": null,
       "aliasOf": "any"
     },
@@ -1682,7 +2146,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/array.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "array",
+            "required": true,
+            "type": "T[]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "Generator<T, void, unknown>",
+        "returnSummary": null
+      }
     },
     {
       "name": "clearSidebarState",
@@ -1690,7 +2167,12 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/sidebar/use-sidebar-state.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "void",
+        "returnSummary": null
+      }
     },
     {
       "name": "CloudyIcon",
@@ -1706,7 +2188,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/cn.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "inputs",
+            "required": true,
+            "type": "ClassValue[]",
+            "defaultValue": null,
+            "summary": "Class names to merge"
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": "Merged class string"
+      }
     },
     {
       "name": "COLOR",
@@ -1715,7 +2210,536 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/colors.ts",
       "summary": null,
-      "type": "{ AGED_YELLOW: \"#98887333\"; ALPHA_COLD_ORANGE_08: \"#F7931ACC\"; BLACK: \"#17130F\"; BLACK_ALPHA_03: \"#0000004D\"; BLACK_ALPHA_05: \"#00000080\"; BLUE: \"#357AF6\"; BLUE_SEA: \"#14B8A6\"; BRICK_RED: \"#FF3B30\"; BRIGHT_GREEN: \"#72F69E\"; BRIGHT_RED: \"#FF4444\"; BRIGHT_YELLOW: \"#EAB308\"; CARD_BODY_TEXT: \"#DEB7B7\"; CARD_SUBTITLE_TEXT: \"#9F9E9E\"; COLD_ORANGE: \"#F7931A\"; COLD_ORANGE_ALPHA_02: \"#F7931A33\"; DARK: \"#0E0E0E\"; DARK_BACK: \"#1A1815\"; DARK_BLACK: \"#10100F\"; DARK_CHOCOLATE: \"#422006\"; DARK_GREEN: \"#18251c\"; DARK_GREY: \"#9FA6AC\"; DARK_ORANGE: \"#261b0f\"; DARK_ORANGE_ACCESSIBLE: \"#FF8C00\"; DARK_RED: \"#251313\"; DARK_TEXT_GREEN: \"#008000\"; DARK_YELLOW: \"#251c0e\"; DARKER_GREY: \"#404040\"; EBONY: \"#0f0f0f\"; EMERALD: \"#009393\"; FROST_GRAY: \"#e5e7eb\"; GOLD: \"#FFD700\"; GRASS_GREEN: \"#34C759\"; GRAY: \"#424242\"; GREEN: \"#72F59E\"; GREY: \"#87888C\"; GREY_IDLE: \"#6B7280\"; ICON_GREY: \"#BFBFBF\"; ICON_WRAPPER_GREY: \"#FFFFFF1A\"; INDIGO: \"#5B5FFB\"; JET_BLACK: \"#070707\"; LIGHT: \"#E5E7EB\"; LIGHT_BLUE: \"#22AFFF\"; LIGHT_GREEN: \"#52C41A\"; LIGHT_GREY: \"#D9D9D9\"; LIGHT_ORANGE: \"#f8931a\"; LOW_YELLOW: \"#F6EE5C\"; MEDIUM_BLUE: \"#4289C1\"; MINT_GREEN: \"#6EE7B7\"; OBSIDIAN: \"#161514\"; OCEAN_GREEN: \"#3AFFF2\"; ONYX: \"#141414\"; ORANGE: \"#FF6A00\"; ORANGE_BORDER: \"#f7931a80\"; ORANGE_DIMMEST: \"#1D1914\"; ORANGE_HOVER: \"#c4730f\"; ORANGE_WARNING: \"#F59E0B\"; POOL: \"#00D0D8\"; PURPLE_HIGH: \"#8B5CF6\"; RED: \"#EF4444\"; RESET_YELLOW: \"#B5A40D\"; RICH_BLACK: \"#0b0b0b\"; SELECTED_ITEM_GREY: \"#2D2D2D\"; SIDEBAR_ACTIVE_ITEM: \"#F7931A\"; SIDEBAR_ITEM: \"#898887\"; SIMPLE_BLACK: \"#000000\"; SLATE_GRAY: \"#9CA3AF\"; SLEEP_BLUE: \"#3B82F6\"; SOCKET_ON_GREEN: \"#2C5B3C\"; SOFT_APRICOT: \"#ffecba\"; SOFT_TEAL: \"#0093934D\"; STRONG_GREEN: \"#03C04A\"; TRANSPARENT: \"transparent\"; TRANSPARENT_BLACK: \"#0000000A\"; TRANSPARENT_WHITE: \"#FFFFFF80\"; WHITE: \"#FFFFFF\"; WHITE_ALPHA_005: \"#FFFFFF0D\"; WHITE_ALPHA_01: \"#FFFFFF1A\"; WHITE_ALPHA_012: \"#ffffff1f\"; WHITE_ALPHA_02: \"#FFFFFF33\"; WHITE_ALPHA_021: \"#ffffff21\"; WHITE_ALPHA_026: \"#FFFFFF26\"; WHITE_ALPHA_04: \"#FFFFFF40\"; WHITE_ALPHA_05: \"#FFFFFF80\"; WHITE_ALPHA_06: \"#FFFFFF99\"; WHITE_ALPHA_07: \"#ffffffb3\"; WHITE_ALPHA_08: \"#FFFFFFCC\"; YELLOW: \"#FFC107\"; YELLOW_DARK: \"#C5A600\" }"
+      "members": [
+        {
+          "name": "AGED_YELLOW",
+          "required": true,
+          "type": "\"#98887333\"",
+          "summary": null
+        },
+        {
+          "name": "ALPHA_COLD_ORANGE_08",
+          "required": true,
+          "type": "\"#F7931ACC\"",
+          "summary": null
+        },
+        {
+          "name": "BLACK",
+          "required": true,
+          "type": "\"#17130F\"",
+          "summary": null
+        },
+        {
+          "name": "BLACK_ALPHA_03",
+          "required": true,
+          "type": "\"#0000004D\"",
+          "summary": null
+        },
+        {
+          "name": "BLACK_ALPHA_05",
+          "required": true,
+          "type": "\"#00000080\"",
+          "summary": null
+        },
+        {
+          "name": "BLUE",
+          "required": true,
+          "type": "\"#357AF6\"",
+          "summary": null
+        },
+        {
+          "name": "BLUE_SEA",
+          "required": true,
+          "type": "\"#14B8A6\"",
+          "summary": null
+        },
+        {
+          "name": "BRICK_RED",
+          "required": true,
+          "type": "\"#FF3B30\"",
+          "summary": null
+        },
+        {
+          "name": "BRIGHT_GREEN",
+          "required": true,
+          "type": "\"#72F69E\"",
+          "summary": null
+        },
+        {
+          "name": "BRIGHT_RED",
+          "required": true,
+          "type": "\"#FF4444\"",
+          "summary": null
+        },
+        {
+          "name": "BRIGHT_YELLOW",
+          "required": true,
+          "type": "\"#EAB308\"",
+          "summary": null
+        },
+        {
+          "name": "CARD_BODY_TEXT",
+          "required": true,
+          "type": "\"#DEB7B7\"",
+          "summary": null
+        },
+        {
+          "name": "CARD_SUBTITLE_TEXT",
+          "required": true,
+          "type": "\"#9F9E9E\"",
+          "summary": null
+        },
+        {
+          "name": "COLD_ORANGE",
+          "required": true,
+          "type": "\"#F7931A\"",
+          "summary": null
+        },
+        {
+          "name": "COLD_ORANGE_ALPHA_02",
+          "required": true,
+          "type": "\"#F7931A33\"",
+          "summary": null
+        },
+        {
+          "name": "DARK",
+          "required": true,
+          "type": "\"#0E0E0E\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_BACK",
+          "required": true,
+          "type": "\"#1A1815\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_BLACK",
+          "required": true,
+          "type": "\"#10100F\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_CHOCOLATE",
+          "required": true,
+          "type": "\"#422006\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_GREEN",
+          "required": true,
+          "type": "\"#18251c\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_GREY",
+          "required": true,
+          "type": "\"#9FA6AC\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_ORANGE",
+          "required": true,
+          "type": "\"#261b0f\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_ORANGE_ACCESSIBLE",
+          "required": true,
+          "type": "\"#FF8C00\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_RED",
+          "required": true,
+          "type": "\"#251313\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_TEXT_GREEN",
+          "required": true,
+          "type": "\"#008000\"",
+          "summary": null
+        },
+        {
+          "name": "DARK_YELLOW",
+          "required": true,
+          "type": "\"#251c0e\"",
+          "summary": null
+        },
+        {
+          "name": "DARKER_GREY",
+          "required": true,
+          "type": "\"#404040\"",
+          "summary": null
+        },
+        {
+          "name": "EBONY",
+          "required": true,
+          "type": "\"#0f0f0f\"",
+          "summary": null
+        },
+        {
+          "name": "EMERALD",
+          "required": true,
+          "type": "\"#009393\"",
+          "summary": null
+        },
+        {
+          "name": "FROST_GRAY",
+          "required": true,
+          "type": "\"#e5e7eb\"",
+          "summary": null
+        },
+        {
+          "name": "GOLD",
+          "required": true,
+          "type": "\"#FFD700\"",
+          "summary": null
+        },
+        {
+          "name": "GRASS_GREEN",
+          "required": true,
+          "type": "\"#34C759\"",
+          "summary": null
+        },
+        {
+          "name": "GRAY",
+          "required": true,
+          "type": "\"#424242\"",
+          "summary": null
+        },
+        {
+          "name": "GREEN",
+          "required": true,
+          "type": "\"#72F59E\"",
+          "summary": null
+        },
+        {
+          "name": "GREY",
+          "required": true,
+          "type": "\"#87888C\"",
+          "summary": null
+        },
+        {
+          "name": "GREY_IDLE",
+          "required": true,
+          "type": "\"#6B7280\"",
+          "summary": null
+        },
+        {
+          "name": "ICON_GREY",
+          "required": true,
+          "type": "\"#BFBFBF\"",
+          "summary": null
+        },
+        {
+          "name": "ICON_WRAPPER_GREY",
+          "required": true,
+          "type": "\"#FFFFFF1A\"",
+          "summary": null
+        },
+        {
+          "name": "INDIGO",
+          "required": true,
+          "type": "\"#5B5FFB\"",
+          "summary": null
+        },
+        {
+          "name": "JET_BLACK",
+          "required": true,
+          "type": "\"#070707\"",
+          "summary": null
+        },
+        {
+          "name": "LIGHT",
+          "required": true,
+          "type": "\"#E5E7EB\"",
+          "summary": null
+        },
+        {
+          "name": "LIGHT_BLUE",
+          "required": true,
+          "type": "\"#22AFFF\"",
+          "summary": null
+        },
+        {
+          "name": "LIGHT_GREEN",
+          "required": true,
+          "type": "\"#52C41A\"",
+          "summary": null
+        },
+        {
+          "name": "LIGHT_GREY",
+          "required": true,
+          "type": "\"#D9D9D9\"",
+          "summary": null
+        },
+        {
+          "name": "LIGHT_ORANGE",
+          "required": true,
+          "type": "\"#f8931a\"",
+          "summary": null
+        },
+        {
+          "name": "LOW_YELLOW",
+          "required": true,
+          "type": "\"#F6EE5C\"",
+          "summary": null
+        },
+        {
+          "name": "MEDIUM_BLUE",
+          "required": true,
+          "type": "\"#4289C1\"",
+          "summary": null
+        },
+        {
+          "name": "MINT_GREEN",
+          "required": true,
+          "type": "\"#6EE7B7\"",
+          "summary": null
+        },
+        {
+          "name": "OBSIDIAN",
+          "required": true,
+          "type": "\"#161514\"",
+          "summary": null
+        },
+        {
+          "name": "OCEAN_GREEN",
+          "required": true,
+          "type": "\"#3AFFF2\"",
+          "summary": null
+        },
+        {
+          "name": "ONYX",
+          "required": true,
+          "type": "\"#141414\"",
+          "summary": null
+        },
+        {
+          "name": "ORANGE",
+          "required": true,
+          "type": "\"#FF6A00\"",
+          "summary": null
+        },
+        {
+          "name": "ORANGE_BORDER",
+          "required": true,
+          "type": "\"#f7931a80\"",
+          "summary": null
+        },
+        {
+          "name": "ORANGE_DIMMEST",
+          "required": true,
+          "type": "\"#1D1914\"",
+          "summary": null
+        },
+        {
+          "name": "ORANGE_HOVER",
+          "required": true,
+          "type": "\"#c4730f\"",
+          "summary": null
+        },
+        {
+          "name": "ORANGE_WARNING",
+          "required": true,
+          "type": "\"#F59E0B\"",
+          "summary": null
+        },
+        {
+          "name": "POOL",
+          "required": true,
+          "type": "\"#00D0D8\"",
+          "summary": null
+        },
+        {
+          "name": "PURPLE_HIGH",
+          "required": true,
+          "type": "\"#8B5CF6\"",
+          "summary": null
+        },
+        {
+          "name": "RED",
+          "required": true,
+          "type": "\"#EF4444\"",
+          "summary": null
+        },
+        {
+          "name": "RESET_YELLOW",
+          "required": true,
+          "type": "\"#B5A40D\"",
+          "summary": null
+        },
+        {
+          "name": "RICH_BLACK",
+          "required": true,
+          "type": "\"#0b0b0b\"",
+          "summary": null
+        },
+        {
+          "name": "SELECTED_ITEM_GREY",
+          "required": true,
+          "type": "\"#2D2D2D\"",
+          "summary": null
+        },
+        {
+          "name": "SIDEBAR_ACTIVE_ITEM",
+          "required": true,
+          "type": "\"#F7931A\"",
+          "summary": null
+        },
+        {
+          "name": "SIDEBAR_ITEM",
+          "required": true,
+          "type": "\"#898887\"",
+          "summary": null
+        },
+        {
+          "name": "SIMPLE_BLACK",
+          "required": true,
+          "type": "\"#000000\"",
+          "summary": null
+        },
+        {
+          "name": "SLATE_GRAY",
+          "required": true,
+          "type": "\"#9CA3AF\"",
+          "summary": null
+        },
+        {
+          "name": "SLEEP_BLUE",
+          "required": true,
+          "type": "\"#3B82F6\"",
+          "summary": null
+        },
+        {
+          "name": "SOCKET_ON_GREEN",
+          "required": true,
+          "type": "\"#2C5B3C\"",
+          "summary": null
+        },
+        {
+          "name": "SOFT_APRICOT",
+          "required": true,
+          "type": "\"#ffecba\"",
+          "summary": null
+        },
+        {
+          "name": "SOFT_TEAL",
+          "required": true,
+          "type": "\"#0093934D\"",
+          "summary": null
+        },
+        {
+          "name": "STRONG_GREEN",
+          "required": true,
+          "type": "\"#03C04A\"",
+          "summary": null
+        },
+        {
+          "name": "TRANSPARENT",
+          "required": true,
+          "type": "\"transparent\"",
+          "summary": null
+        },
+        {
+          "name": "TRANSPARENT_BLACK",
+          "required": true,
+          "type": "\"#0000000A\"",
+          "summary": null
+        },
+        {
+          "name": "TRANSPARENT_WHITE",
+          "required": true,
+          "type": "\"#FFFFFF80\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE",
+          "required": true,
+          "type": "\"#FFFFFF\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_005",
+          "required": true,
+          "type": "\"#FFFFFF0D\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_01",
+          "required": true,
+          "type": "\"#FFFFFF1A\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_012",
+          "required": true,
+          "type": "\"#ffffff1f\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_02",
+          "required": true,
+          "type": "\"#FFFFFF33\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_021",
+          "required": true,
+          "type": "\"#ffffff21\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_026",
+          "required": true,
+          "type": "\"#FFFFFF26\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_04",
+          "required": true,
+          "type": "\"#FFFFFF40\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_05",
+          "required": true,
+          "type": "\"#FFFFFF80\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_06",
+          "required": true,
+          "type": "\"#FFFFFF99\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_07",
+          "required": true,
+          "type": "\"#ffffffb3\"",
+          "summary": null
+        },
+        {
+          "name": "WHITE_ALPHA_08",
+          "required": true,
+          "type": "\"#FFFFFFCC\"",
+          "summary": null
+        },
+        {
+          "name": "YELLOW",
+          "required": true,
+          "type": "\"#FFC107\"",
+          "summary": null
+        },
+        {
+          "name": "YELLOW_DARK",
+          "required": true,
+          "type": "\"#C5A600\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ColorKey",
@@ -1733,7 +2757,20 @@
       "namespace": null,
       "sourcePath": "packages/core/src/theme/tokens.ts",
       "summary": "Design tokens",
-      "type": "{ gray: { 100: \"hsl(210, 40%, 96.1%)\"; 200: \"hsl(214, 32%, 91.4%)\"; 300: \"hsl(213, 27%, 84.1%)\"; 400: \"hsl(215, 20%, 65.1%)\"; 50: \"hsl(210, 40%, 98%)\"; 500: \"hsl(215, 16%, 47%)\"; 600: \"hsl(215, 19%, 35%)\"; 700: \"hsl(215, 25%, 27%)\"; 800: \"hsl(217, 33%, 17%)\"; 900: \"hsl(222, 47%, 11%)\" }; primary: { 100: \"hsl(222, 47%, 90%)\"; 200: \"hsl(222, 47%, 80%)\"; 300: \"hsl(222, 47%, 70%)\"; 400: \"hsl(222, 47%, 60%)\"; 50: \"hsl(222, 47%, 95%)\"; 500: \"hsl(222, 47%, 50%)\"; 600: \"hsl(222, 47%, 40%)\"; 700: \"hsl(222, 47%, 30%)\"; 800: \"hsl(222, 47%, 20%)\"; 900: \"hsl(222, 47%, 11.2%)\" } }"
+      "members": [
+        {
+          "name": "gray",
+          "required": true,
+          "type": "{ 100: \"hsl(210, 40%, 96.1%)\"; 200: \"hsl(214, 32%, 91.4%)\"; 300: \"hsl(213, 27%, 84.1%)\"; 400: \"hsl(215, 20%, 65.1%)\"; 50: \"hsl(210, 40%, 98%)\"; 500: \"hsl(215, 16%, 47%)\"; 600: \"hsl(215, 19%, 35%)\"; 700: \"hsl(215, 25%, 27%)\"; 800: \"hsl(217, 33%, 17%)\"; 900: \"hsl(222, 47%, 11%)\" }",
+          "summary": null
+        },
+        {
+          "name": "primary",
+          "required": true,
+          "type": "{ 100: \"hsl(222, 47%, 90%)\"; 200: \"hsl(222, 47%, 80%)\"; 300: \"hsl(222, 47%, 70%)\"; 400: \"hsl(222, 47%, 60%)\"; 50: \"hsl(222, 47%, 95%)\"; 500: \"hsl(222, 47%, 50%)\"; 600: \"hsl(222, 47%, 40%)\"; 700: \"hsl(222, 47%, 30%)\"; 800: \"hsl(222, 47%, 20%)\"; 900: \"hsl(222, 47%, 11.2%)\" }",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "ColorValue",
@@ -1759,7 +2796,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart-options.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "color",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "alpha",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "CommentIcon",
@@ -1801,7 +2858,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart-options.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "values",
+            "required": true,
+            "type": "number[]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "{ avg: number; max: number; min: number }",
+        "returnSummary": null
+      }
     },
     {
       "name": "ConsumptionIcon",
@@ -1818,7 +2888,7 @@
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
       "summary": "Pre-built schema for a contact form",
-      "type": "any"
+      "type": "ZodObject<{ email: ZodString | ZodOptional<ZodString>; message: ZodString; name: ZodString; subject: ZodString }, \"strip\", ZodTypeAny, { email?: string; message: string; name: string; subject: string }, { email?: string; message: string; name: string; subject: string }>"
     },
     {
       "name": "ContainerWidgetsNavIcon",
@@ -1834,7 +2904,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/conversion.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "energyDataItem",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "multiplier",
+            "required": true,
+            "type": "number",
+            "defaultValue": "1",
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "convertKwToW",
@@ -1842,7 +2932,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "valueInKw",
+            "required": true,
+            "type": "string | number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "convertMpaToBar",
@@ -1850,7 +2953,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/conversion.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": "The value in Bar, or 0 if the input is not a valid number"
+      }
     },
     {
       "name": "convertUnits",
@@ -1858,7 +2974,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/number.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "fromUnit",
+            "required": true,
+            "type": "UnitLabel",
+            "defaultValue": "UNIT_LABELS.DECIMAL",
+            "summary": null
+          },
+          {
+            "name": "toUnit",
+            "required": true,
+            "type": "UnitLabel",
+            "defaultValue": "UNIT_LABELS.KILO",
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "CoolingDropIcon",
@@ -1882,7 +3025,41 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "conditionField",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "conditionValue",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "requiredField",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "message",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "[(data: Record<string, unknown>) => boolean, { message: string; path: string[] }]",
+        "returnSummary": null
+      }
     },
     {
       "name": "createDateRange",
@@ -1890,7 +3067,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "startDateField",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "endDateField",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "message",
+            "required": true,
+            "type": "string",
+            "defaultValue": "'End date must be after start date'",
+            "summary": null
+          }
+        ],
+        "returnType": "[(data: Record<string, unknown>) => boolean, { message: string; path: string[] }]",
+        "returnSummary": null
+      }
     },
     {
       "name": "createFieldNames",
@@ -1898,7 +3102,12 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "(name: TName) => TName",
+        "returnSummary": null
+      }
     },
     {
       "name": "createIcon",
@@ -1906,7 +3115,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/icons/create-icon.tsx",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "options",
+            "required": true,
+            "type": "CreateIconOptions",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "ForwardRefExoticComponent<any>",
+        "returnSummary": null
+      }
     },
     {
       "name": "CreateIconOptions",
@@ -1960,7 +3182,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "passwordField",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "confirmPasswordField",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "message",
+            "required": true,
+            "type": "string",
+            "defaultValue": "'Passwords do not match'",
+            "summary": null
+          }
+        ],
+        "returnType": "[(data: Record<string, unknown>) => boolean, { message: string; path: string[] }]",
+        "returnSummary": null
+      }
     },
     {
       "name": "CURRENCY",
@@ -1969,7 +3218,50 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/units.ts",
       "summary": null,
-      "type": "{ BTC: \"₿\"; BTC_LABEL: \"BTC\"; EUR: \"€\"; SAT_LABEL: \"SAT\"; SATS: \"Sats\"; USD: \"$\"; USD_LABEL: \"USD\" }"
+      "members": [
+        {
+          "name": "BTC",
+          "required": true,
+          "type": "\"₿\"",
+          "summary": null
+        },
+        {
+          "name": "BTC_LABEL",
+          "required": true,
+          "type": "\"BTC\"",
+          "summary": null
+        },
+        {
+          "name": "EUR",
+          "required": true,
+          "type": "\"€\"",
+          "summary": null
+        },
+        {
+          "name": "SAT_LABEL",
+          "required": true,
+          "type": "\"SAT\"",
+          "summary": null
+        },
+        {
+          "name": "SATS",
+          "required": true,
+          "type": "\"Sats\"",
+          "summary": null
+        },
+        {
+          "name": "USD",
+          "required": true,
+          "type": "\"$\"",
+          "summary": null
+        },
+        {
+          "name": "USD_LABEL",
+          "required": true,
+          "type": "\"USD\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "CurrencyKey",
@@ -2302,7 +3594,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/number.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "DecreaseIcon",
@@ -2328,7 +3633,44 @@
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart-options.ts",
       "summary": null,
-      "type": "{ elements: { point: { hoverRadius: number; radius: number } }; layout: { padding: number }; maintainAspectRatio: boolean; plugins: { legend: { align: \"start\"; display: boolean; labels: { boxHeight: number; boxWidth: number; color: string; font: { size: number }; generateLabels: (chart: Chart) => LegendLabelItem[] }; onHover: (_event: ChartEvent) => void; onLeave: (_event: ChartEvent) => void; position: \"top\" } }; responsive: boolean; scales: { x: { beginAtZero: boolean; border: { display: boolean }; display: boolean; grid: { color: string; display: boolean }; ticks: { color: string; maxRotation: number } }; y: { beginAtZero: boolean; border: { display: boolean }; display: boolean; grid: { color: string; display: boolean }; ticks: { color: string; padding: number } } } }"
+      "members": [
+        {
+          "name": "elements",
+          "required": true,
+          "type": "{ point: { hoverRadius: number; radius: number } }",
+          "summary": null
+        },
+        {
+          "name": "layout",
+          "required": true,
+          "type": "{ padding: number }",
+          "summary": null
+        },
+        {
+          "name": "maintainAspectRatio",
+          "required": true,
+          "type": "boolean",
+          "summary": null
+        },
+        {
+          "name": "plugins",
+          "required": true,
+          "type": "{ legend: { align: \"start\"; display: boolean; labels: { boxHeight: number; boxWidth: number; color: string; font: { size: number }; generateLabels: (chart: Chart) => LegendLabelItem[] }; onHover: (_event: ChartEvent) => void; onLeave: (_event: ChartEvent) => void; position: \"top\" } }",
+          "summary": null
+        },
+        {
+          "name": "responsive",
+          "required": true,
+          "type": "boolean",
+          "summary": null
+        },
+        {
+          "name": "scales",
+          "required": true,
+          "type": "{ x: { beginAtZero: boolean; border: { display: boolean }; display: boolean; grid: { color: string; display: boolean }; ticks: { color: string; maxRotation: number } }; y: { beginAtZero: boolean; border: { display: boolean }; display: boolean; grid: { color: string; display: boolean }; ticks: { color: string; padding: number } } }",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "DetailLegend",
@@ -3034,7 +4376,62 @@
       "namespace": null,
       "sourcePath": "packages/core/src/theme/tokens.ts",
       "summary": null,
-      "type": "{ 2xl: \"1.5rem\"; 3xl: \"1.875rem\"; 4xl: \"2.25rem\"; 5xl: \"3rem\"; base: \"1rem\"; lg: \"1.125rem\"; sm: \"0.875rem\"; xl: \"1.25rem\"; xs: \"0.75rem\" }"
+      "members": [
+        {
+          "name": "2xl",
+          "required": true,
+          "type": "\"1.5rem\"",
+          "summary": null
+        },
+        {
+          "name": "3xl",
+          "required": true,
+          "type": "\"1.875rem\"",
+          "summary": null
+        },
+        {
+          "name": "4xl",
+          "required": true,
+          "type": "\"2.25rem\"",
+          "summary": null
+        },
+        {
+          "name": "5xl",
+          "required": true,
+          "type": "\"3rem\"",
+          "summary": null
+        },
+        {
+          "name": "base",
+          "required": true,
+          "type": "\"1rem\"",
+          "summary": null
+        },
+        {
+          "name": "lg",
+          "required": true,
+          "type": "\"1.125rem\"",
+          "summary": null
+        },
+        {
+          "name": "sm",
+          "required": true,
+          "type": "\"0.875rem\"",
+          "summary": null
+        },
+        {
+          "name": "xl",
+          "required": true,
+          "type": "\"1.25rem\"",
+          "summary": null
+        },
+        {
+          "name": "xs",
+          "required": true,
+          "type": "\"0.75rem\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "Form",
@@ -3050,7 +4447,41 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "tsRaw",
+            "required": true,
+            "type": "string | number | null | undefined",
+            "defaultValue": null,
+            "summary": "Timestamp (number or string)"
+          },
+          {
+            "name": "withYear",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": "true",
+            "summary": "Whether to include the year (default: true)"
+          },
+          {
+            "name": "customFormatTemplate",
+            "required": false,
+            "type": "string",
+            "defaultValue": null,
+            "summary": "Custom date-fns format template"
+          },
+          {
+            "name": "fallback",
+            "required": true,
+            "type": "string",
+            "defaultValue": "FALLBACK",
+            "summary": "Fallback string for invalid values"
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatCountTo99Plus",
@@ -3058,7 +4489,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatCurrency",
@@ -3066,7 +4510,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "amount",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "currency",
+            "required": true,
+            "type": "string",
+            "defaultValue": "'USD'",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatDate",
@@ -3074,7 +4538,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "type": "string | Date",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "options",
+            "required": false,
+            "type": "DateTimeFormatOptions",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatErrors",
@@ -3082,7 +4566,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "errors",
+            "required": true,
+            "type": "string | ErrorWithTimestamp[] | null | undefined",
+            "defaultValue": null,
+            "summary": "Array of error objects, a plain string, or null"
+          },
+          {
+            "name": "getFormattedDate",
+            "required": false,
+            "type": "(date: Date) => string",
+            "defaultValue": null,
+            "summary": "Optional custom date formatter"
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatHashrate",
@@ -3090,7 +4594,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "number",
+            "required": true,
+            "type": "string | number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "options",
+            "required": false,
+            "type": "NumberFormatOptions",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "fallback",
+            "required": true,
+            "type": "string",
+            "defaultValue": "FALLBACK",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatHashrateUnit",
@@ -3098,7 +4629,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "object",
+            "required": true,
+            "type": "Partial<ValueUnit>",
+            "defaultValue": "{}",
+            "summary": null
+          },
+          {
+            "name": "options",
+            "required": false,
+            "type": "NumberFormatOptions",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "fallback",
+            "required": true,
+            "type": "string",
+            "defaultValue": "FALLBACK",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatMacAddress",
@@ -3106,7 +4664,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "macAddress",
+            "required": false,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatNumber",
@@ -3114,7 +4685,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "number",
+            "required": true,
+            "type": "string | number | null | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "options",
+            "required": true,
+            "type": "NumberFormatOptions",
+            "defaultValue": "{}",
+            "summary": null
+          },
+          {
+            "name": "fallback",
+            "required": true,
+            "type": "string",
+            "defaultValue": "FALLBACK",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatRelativeTime",
@@ -3122,7 +4720,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "type": "string | Date",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatUnit",
@@ -3130,7 +4741,41 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "object",
+            "required": true,
+            "type": "Partial<ValueUnit>",
+            "defaultValue": "{}",
+            "summary": null
+          },
+          {
+            "name": "options",
+            "required": false,
+            "type": "NumberFormatOptions",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "fallback",
+            "required": true,
+            "type": "string",
+            "defaultValue": "FALLBACK",
+            "summary": null
+          },
+          {
+            "name": "formatter",
+            "required": true,
+            "type": "(value: string | number, options?: NumberFormatOptions, fallback?: string) => string",
+            "defaultValue": "formatNumber",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "formatValueUnit",
@@ -3138,7 +4783,48 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "string | number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "unit",
+            "required": false,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "options",
+            "required": false,
+            "type": "NumberFormatOptions",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "fallback",
+            "required": true,
+            "type": "string",
+            "defaultValue": "FALLBACK",
+            "summary": null
+          },
+          {
+            "name": "formatter",
+            "required": true,
+            "type": "(value: string | number, options?: NumberFormatOptions, fallback?: string) => string",
+            "defaultValue": "formatNumber",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "FormCascader",
@@ -3486,7 +5172,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/array.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "avgData",
+            "required": true,
+            "type": "{ avg?: number; totalWeight?: number } | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number | null",
+        "returnSummary": "The computed average, or null if inputs are invalid"
+      }
     },
     {
       "name": "getBeginningOfMonth",
@@ -3494,7 +5193,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/date.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "type": "Date",
+            "defaultValue": "...",
+            "summary": "Reference date (defaults to current date)"
+          }
+        ],
+        "returnType": "Date",
+        "returnSummary": null
+      }
     },
     {
       "name": "getChartAnimationConfig",
@@ -3502,7 +5214,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/constants/charts.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "dataPointCount",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "false | { duration: number }",
+        "returnSummary": null
+      }
     },
     {
       "name": "getChartDataAvailability",
@@ -3510,7 +5235,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "datasets",
+            "required": true,
+            "type": "ChartDataset[]",
+            "defaultValue": null,
+            "summary": "Array of Chart.js datasets"
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": "true if any dataset has data, false otherwise"
+      }
     },
     {
       "name": "getDataDecimationConfig",
@@ -3518,7 +5256,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/constants/charts.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "dataPointCount",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "{ algorithm?: string; enabled: boolean }",
+        "returnSummary": null
+      }
     },
     {
       "name": "getDatasetValues",
@@ -3526,7 +5277,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart-options.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "datasets",
+            "required": true,
+            "type": "{ data: (number | null)[] }[]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "getDataTableColumnHelper",
@@ -3542,7 +5306,12 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/date.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "Date",
+        "returnSummary": null
+      }
     },
     {
       "name": "getLastNDaysEndingYesterday",
@@ -3550,7 +5319,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/time.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "days",
+            "required": true,
+            "type": "number",
+            "defaultValue": "7",
+            "summary": "Number of days to include in the range (default: 7)"
+          },
+          {
+            "name": "referenceDate",
+            "required": true,
+            "type": "Date",
+            "defaultValue": "...",
+            "summary": "Reference date to calculate from (default: current date)"
+          }
+        ],
+        "returnType": "TimeInterval",
+        "returnSummary": null
+      }
     },
     {
       "name": "getLocationLabel",
@@ -3558,7 +5347,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/string.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "location",
+            "required": true,
+            "type": "string | null | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getMajorLocation",
@@ -3566,7 +5368,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/string.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "location",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getMinorLocation",
@@ -3574,7 +5389,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/string.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "location",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getNestedValue",
@@ -3582,7 +5410,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/array.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "obj",
+            "required": true,
+            "type": "Record<string, unknown>",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "path",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "unknown",
+        "returnSummary": null
+      }
     },
     {
       "name": "getPastDateFromDate",
@@ -3590,7 +5438,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/date.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "{ dateTs?: number; days: number }",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "Date",
+        "returnSummary": null
+      }
     },
     {
       "name": "getPercentChange",
@@ -3598,7 +5459,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/number.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "currentValue",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "historicalValue",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number | null",
+        "returnSummary": "The rounded percent change, or null if inputs are invalid"
+      }
     },
     {
       "name": "getPercentFormattedNumber",
@@ -3606,7 +5487,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "number",
+            "required": true,
+            "type": "string | number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "decimals",
+            "required": true,
+            "type": "number",
+            "defaultValue": "2",
+            "summary": null
+          },
+          {
+            "name": "fallback",
+            "required": true,
+            "type": "string",
+            "defaultValue": "FALLBACK",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "getRolesFromAuthToken",
@@ -3614,7 +5522,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/string.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "authToken",
+            "required": false,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string[]",
+        "returnSummary": null
+      }
     },
     {
       "name": "getSmallestAndLargestTs",
@@ -3622,7 +5543,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/time.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "array",
+            "required": true,
+            "type": "TimeInterval[]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "{ end: number | null; start: number | null }",
+        "returnSummary": "Object with `start` (smallest) and `end` (largest), or nulls if empty"
+      }
     },
     {
       "name": "getStoredTheme",
@@ -3630,7 +5564,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/theme/utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "storageKey",
+            "required": true,
+            "type": "string",
+            "defaultValue": "'theme'",
+            "summary": null
+          }
+        ],
+        "returnType": "Theme | null",
+        "returnSummary": null
+      }
     },
     {
       "name": "getSystemTheme",
@@ -3638,7 +5585,12 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/theme/utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "\"dark\" | \"light\"",
+        "returnSummary": null
+      }
     },
     {
       "name": "getTimeRange",
@@ -3646,7 +5598,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/time.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "latestTimeStampMs",
+            "required": true,
+            "type": "number | undefined",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "oldTimeStampMs",
+            "required": true,
+            "type": "number | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "TimeRangeType",
+        "returnSummary": "`'minute'` if range is within 24 hours, otherwise `'day'`"
+      }
     },
     {
       "name": "getTimeRoundedToMinute",
@@ -3654,7 +5626,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/date.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "date",
+            "required": true,
+            "type": "number | Date",
+            "defaultValue": "...",
+            "summary": "Date object or timestamp in ms (defaults to current time)"
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": "Timestamp in milliseconds, rounded to the nearest minute"
+      }
     },
     {
       "name": "getWeightedAverage",
@@ -3662,7 +5647,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/array.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "arr",
+            "required": true,
+            "type": "Record<string, unknown>[]",
+            "defaultValue": null,
+            "summary": "Array of objects containing value and weight data"
+          },
+          {
+            "name": "valueAttribute",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": "Dot-path to the value property"
+          },
+          {
+            "name": "weightAttribute",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": "Dot-path to the weight property"
+          }
+        ],
+        "returnType": "WeightedAverageResult",
+        "returnSummary": null
+      }
     },
     {
       "name": "GoogleIcon",
@@ -3678,7 +5690,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "dataset",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": "The dataset to check (can be array, object, or primitive)"
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": "True if the dataset contains data values, false otherwise"
+      }
     },
     {
       "name": "HASHRATE_LABEL_DIVISOR",
@@ -3687,7 +5712,38 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/units.ts",
       "summary": null,
-      "type": "{ EH/s: 1000000000000; GH/s: 1000; MH/s: 1; PH/s: 1000000000; TH/s: 1000000 }"
+      "members": [
+        {
+          "name": "EH/s",
+          "required": true,
+          "type": "1000000000000",
+          "summary": null
+        },
+        {
+          "name": "GH/s",
+          "required": true,
+          "type": "1000",
+          "summary": null
+        },
+        {
+          "name": "MH/s",
+          "required": true,
+          "type": "1",
+          "summary": null
+        },
+        {
+          "name": "PH/s",
+          "required": true,
+          "type": "1000000000",
+          "summary": null
+        },
+        {
+          "name": "TH/s",
+          "required": true,
+          "type": "1000000",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "HASHRATE_PER_PHS",
@@ -3748,7 +5804,38 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/colors.ts",
       "summary": null,
-      "type": "{ HIGH: \"#EF4444\"; HIGH_MEDIUM: \"#e6e939\"; LOW: \"#002ea3\"; LOW_MEDIUM: \"#00a35e\"; UNKNOWN: \"#000000\" }"
+      "members": [
+        {
+          "name": "HIGH",
+          "required": true,
+          "type": "\"#EF4444\"",
+          "summary": null
+        },
+        {
+          "name": "HIGH_MEDIUM",
+          "required": true,
+          "type": "\"#e6e939\"",
+          "summary": null
+        },
+        {
+          "name": "LOW",
+          "required": true,
+          "type": "\"#002ea3\"",
+          "summary": null
+        },
+        {
+          "name": "LOW_MEDIUM",
+          "required": true,
+          "type": "\"#00a35e\"",
+          "summary": null
+        },
+        {
+          "name": "UNKNOWN",
+          "required": true,
+          "type": "\"#000000\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "HeatmapKey",
@@ -3765,7 +5852,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "hex",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": "Hex color string (e.g. '#FF0000' or '#F00')"
+          },
+          {
+            "name": "opacity",
+            "required": true,
+            "type": "number",
+            "defaultValue": "0.2",
+            "summary": "Opacity value between 0 and 1 (default: 0.2)"
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": "rgba color string"
+      }
     },
     {
       "name": "hexToRgba",
@@ -3773,7 +5880,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/color.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "hex",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "opacity",
+            "required": true,
+            "type": "number",
+            "defaultValue": "1",
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "HighlightedValueProps",
@@ -3927,7 +6054,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/validation.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "isNil",
@@ -3935,7 +6075,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/validation.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "value is null | undefined",
+        "returnSummary": null
+      }
     },
     {
       "name": "isPlainObject",
@@ -3943,7 +6096,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/validation.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "value is Record<string, unknown>",
+        "returnSummary": null
+      }
     },
     {
       "name": "isValidEmail",
@@ -3951,7 +6117,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/validation.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "email",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "isValidTimestamp",
@@ -3959,7 +6138,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/date.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "timestamp",
+            "required": true,
+            "type": "string | number | Date",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "isValidUrl",
@@ -3967,7 +6159,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/validation.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "url",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "Label",
@@ -4364,7 +6569,20 @@
       "namespace": null,
       "sourcePath": "packages/core/src/components/logs/constants.tsx",
       "summary": null,
-      "type": "{ ACTIVITY: string; INCIDENTS: string }"
+      "members": [
+        {
+          "name": "ACTIVITY",
+          "required": true,
+          "type": "string",
+          "summary": null
+        },
+        {
+          "name": "INCIDENTS",
+          "required": true,
+          "type": "string",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "LogActivityIcon",
@@ -4467,7 +6685,7 @@
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
       "summary": "Pre-built schema for a login form",
-      "type": "any"
+      "type": "ZodObject<{ email: ZodString | ZodOptional<ZodString>; password: ZodString; rememberMe: ZodDefault<ZodBoolean> }, \"strip\", ZodTypeAny, { email?: string; password: string; rememberMe: boolean }, { email?: string; password: string; rememberMe?: boolean }>"
     },
     {
       "name": "LogItem",
@@ -4598,7 +6816,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart-options.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "ctx",
+            "required": true,
+            "type": "{ chart: Chart }",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "base",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "{ bottom?: number; top?: number }",
+            "defaultValue": "{}",
+            "summary": null
+          }
+        ],
+        "returnType": "string | CanvasGradient",
+        "returnSummary": null
+      }
     },
     {
       "name": "MAX_UNIT_VALUE",
@@ -4607,7 +6852,20 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/units.ts",
       "summary": null,
-      "type": "{ HUMIDITY_PERCENT: 100; TEMPERATURE_PERCENT: 100 }"
+      "members": [
+        {
+          "name": "HUMIDITY_PERCENT",
+          "required": true,
+          "type": "100",
+          "summary": null
+        },
+        {
+          "name": "TEMPERATURE_PERCENT",
+          "required": true,
+          "type": "100",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "MaxUnitValueKey",
@@ -4724,7 +6982,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/string.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "color",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "NotFoundPage",
@@ -4987,7 +7258,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/date.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "label",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "Date | null",
+        "returnSummary": "The first day of the parsed month, or null if the label is invalid"
+      }
     },
     {
       "name": "PartlyCloudyIcon",
@@ -5003,7 +7287,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/number.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "partialValue",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "The part value"
+          },
+          {
+            "name": "totalValue",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "The total value"
+          },
+          {
+            "name": "keepOriginalRelation",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": "false",
+            "summary": "If true, returns decimal (0-1) instead of percentage (0-100)"
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": "The percentage value"
+      }
     },
     {
       "name": "PIE_CHART_COLORS",
@@ -5147,7 +7458,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/chart.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "newData",
+            "required": true,
+            "type": "Record<string, unknown[]>",
+            "defaultValue": null,
+            "summary": "Object keyed by dataset name, each value is an array of data points with `ts`"
+          },
+          {
+            "name": "existingData",
+            "required": true,
+            "type": "Record<string, unknown[]>",
+            "defaultValue": null,
+            "summary": "Previously accumulated dataset in the same shape"
+          },
+          {
+            "name": "processor",
+            "required": true,
+            "type": "ProcessDataProcessor",
+            "defaultValue": "null",
+            "summary": "Optional transform applied to each newData array before merging"
+          }
+        ],
+        "returnType": "Record<string, unknown[]>",
+        "returnSummary": "Merged dataset"
+      }
     },
     {
       "name": "ProductionDataIcon",
@@ -5164,7 +7502,7 @@
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
       "summary": "Pre-built schema for a profile form",
-      "type": "any"
+      "type": "ZodObject<{ bio: ZodOptional<ZodString>; email: ZodString | ZodOptional<ZodString>; phone: ZodEffects<ZodString, string, string> | ZodOptional<ZodEffects<ZodString, string, string>>; username: ZodString; website: ZodString | ZodOptional<ZodString> }, \"strip\", ZodTypeAny, { bio?: string; email?: string; phone?: string; username: string; website?: string }, { bio?: string; email?: string; phone?: string; username: string; website?: string }>"
     },
     {
       "name": "ProfitArrowIcon",
@@ -5188,7 +7526,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/async.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "fn",
+            "required": true,
+            "type": "CallbackFunction<T>",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "(args: unknown[]) => Promise<T>",
+        "returnSummary": null
+      }
     },
     {
       "name": "Radio",
@@ -5323,7 +7674,7 @@
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
       "summary": "Pre-built schema for a registration form",
-      "type": "any"
+      "type": "ZodEffects<ZodObject<{ confirmPassword: ZodString; email: ZodString | ZodOptional<ZodString>; password: ZodString; terms: ZodLiteral<true>; username: ZodString }, \"strip\", ZodTypeAny, { confirmPassword: string; email?: string; password: string; terms: true; username: string }, { confirmPassword: string; email?: string; password: string; terms: true; username: string }>, { confirmPassword: string; email?: string; password: string; terms: true; username: string }, { confirmPassword: string; email?: string; password: string; terms: true; username: string }>"
     },
     {
       "name": "ReportingNavIcon",
@@ -5355,7 +7706,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/number.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "safeString",
@@ -5363,7 +7727,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/string.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "unknown",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "ScaleControlIcon",
@@ -5410,7 +7787,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/time.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "seconds",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "Number of seconds"
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": "Equivalent number of milliseconds"
+      }
     },
     {
       "name": "Select",
@@ -5526,7 +7916,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/theme/utils.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "theme",
+            "required": true,
+            "type": "Theme",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "storageKey",
+            "required": true,
+            "type": "string",
+            "defaultValue": "'theme'",
+            "summary": null
+          }
+        ],
+        "returnType": "void",
+        "returnSummary": null
+      }
     },
     {
       "name": "SettingsHeaderIcon",
@@ -5550,7 +7960,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/number.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "number | null | undefined",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "boolean",
+        "returnSummary": null
+      }
     },
     {
       "name": "showTotalTableCount",
@@ -5558,7 +7981,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "total",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "range",
+            "required": true,
+            "type": "[number, number]",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "Sidebar",
@@ -5740,7 +8183,26 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/colors.ts",
       "summary": null,
-      "type": "{ DISABLED: \"#D9D9D9\"; ENABLED: \"#72F59E\"; SELECTED: \"#FFC107\" }"
+      "members": [
+        {
+          "name": "DISABLED",
+          "required": true,
+          "type": "\"#D9D9D9\"",
+          "summary": null
+        },
+        {
+          "name": "ENABLED",
+          "required": true,
+          "type": "\"#72F59E\"",
+          "summary": null
+        },
+        {
+          "name": "SELECTED",
+          "required": true,
+          "type": "\"#FFC107\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "SocketBorderColorKey",
@@ -5758,7 +8220,86 @@
       "namespace": null,
       "sourcePath": "packages/core/src/theme/tokens.ts",
       "summary": null,
-      "type": "{ 0: \"0\"; 1: \"0.25rem\"; 10: \"2.5rem\"; 12: \"3rem\"; 16: \"4rem\"; 2: \"0.5rem\"; 20: \"5rem\"; 24: \"6rem\"; 3: \"0.75rem\"; 4: \"1rem\"; 5: \"1.25rem\"; 6: \"1.5rem\"; 8: \"2rem\" }"
+      "members": [
+        {
+          "name": "0",
+          "required": true,
+          "type": "\"0\"",
+          "summary": null
+        },
+        {
+          "name": "1",
+          "required": true,
+          "type": "\"0.25rem\"",
+          "summary": null
+        },
+        {
+          "name": "10",
+          "required": true,
+          "type": "\"2.5rem\"",
+          "summary": null
+        },
+        {
+          "name": "12",
+          "required": true,
+          "type": "\"3rem\"",
+          "summary": null
+        },
+        {
+          "name": "16",
+          "required": true,
+          "type": "\"4rem\"",
+          "summary": null
+        },
+        {
+          "name": "2",
+          "required": true,
+          "type": "\"0.5rem\"",
+          "summary": null
+        },
+        {
+          "name": "20",
+          "required": true,
+          "type": "\"5rem\"",
+          "summary": null
+        },
+        {
+          "name": "24",
+          "required": true,
+          "type": "\"6rem\"",
+          "summary": null
+        },
+        {
+          "name": "3",
+          "required": true,
+          "type": "\"0.75rem\"",
+          "summary": null
+        },
+        {
+          "name": "4",
+          "required": true,
+          "type": "\"1rem\"",
+          "summary": null
+        },
+        {
+          "name": "5",
+          "required": true,
+          "type": "\"1.25rem\"",
+          "summary": null
+        },
+        {
+          "name": "6",
+          "required": true,
+          "type": "\"1.5rem\"",
+          "summary": null
+        },
+        {
+          "name": "8",
+          "required": true,
+          "type": "\"2rem\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "Spinner",
@@ -5827,7 +8368,26 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/colors.ts",
       "summary": null,
-      "type": "{ BACKGROUND: \"#363636\"; BORDER: \"#5B5B5B\"; HEADER_BACKGROUND: \"#404040\" }"
+      "members": [
+        {
+          "name": "BACKGROUND",
+          "required": true,
+          "type": "\"#363636\"",
+          "summary": null
+        },
+        {
+          "name": "BORDER",
+          "required": true,
+          "type": "\"#5B5B5B\"",
+          "summary": null
+        },
+        {
+          "name": "HEADER_BACKGROUND",
+          "required": true,
+          "type": "\"#404040\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "TableColorKey",
@@ -6145,7 +8705,44 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/colors.ts",
       "summary": null,
-      "type": "{ COLD: \"#EF4444\"; EXPECTED: \"#72F59E\"; HOT: \"#FF6A00\"; LIGHT_WARM: \"#FFD700\"; SUPERHOT: \"#EF4444\"; WARM: \"#FFFFFF\" }"
+      "members": [
+        {
+          "name": "COLD",
+          "required": true,
+          "type": "\"#EF4444\"",
+          "summary": null
+        },
+        {
+          "name": "EXPECTED",
+          "required": true,
+          "type": "\"#72F59E\"",
+          "summary": null
+        },
+        {
+          "name": "HOT",
+          "required": true,
+          "type": "\"#FF6A00\"",
+          "summary": null
+        },
+        {
+          "name": "LIGHT_WARM",
+          "required": true,
+          "type": "\"#FFD700\"",
+          "summary": null
+        },
+        {
+          "name": "SUPERHOT",
+          "required": true,
+          "type": "\"#EF4444\"",
+          "summary": null
+        },
+        {
+          "name": "WARM",
+          "required": true,
+          "type": "\"#FFFFFF\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "TemperatureAlarmIcon",
@@ -6311,7 +8908,20 @@
       "namespace": null,
       "sourcePath": "packages/core/src/utils/time.ts",
       "summary": null,
-      "type": "{ DAY: \"day\"; MINUTE: \"minute\" }"
+      "members": [
+        {
+          "name": "DAY",
+          "required": true,
+          "type": "\"day\"",
+          "summary": null
+        },
+        {
+          "name": "MINUTE",
+          "required": true,
+          "type": "\"minute\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "timeRangeWalker",
@@ -6319,7 +8929,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/time.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "startTs",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "Start timestamp in milliseconds"
+          },
+          {
+            "name": "endTs",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": "End timestamp in milliseconds"
+          },
+          {
+            "name": "duration",
+            "required": true,
+            "type": "any",
+            "defaultValue": null,
+            "summary": "date-fns Duration object"
+          }
+        ],
+        "returnType": "Generator<number>",
+        "returnSummary": null
+      }
     },
     {
       "name": "Toast",
@@ -6386,7 +9023,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": false,
+            "type": "string | number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string | undefined",
+        "returnSummary": null
+      }
     },
     {
       "name": "toMW",
@@ -6394,7 +9044,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/conversion.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "watts",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "toMWh",
@@ -6402,7 +9065,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/conversion.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "watts",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "Tooltip",
@@ -6458,7 +9134,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/conversion.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "hashrate",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "toTitleCase",
@@ -6466,7 +9155,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/format.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "string",
+        "returnSummary": null
+      }
     },
     {
       "name": "TransactionEntry",
@@ -6566,7 +9268,44 @@
       "namespace": null,
       "sourcePath": "packages/core/src/utils/number.ts",
       "summary": "Unit label constants for SI-prefix conversions",
-      "type": "{ DECIMAL: \"decimal\"; GIGA: \"G\"; KILO: \"k\"; MEGA: \"M\"; PETA: \"P\"; TERA: \"T\" }"
+      "members": [
+        {
+          "name": "DECIMAL",
+          "required": true,
+          "type": "\"decimal\"",
+          "summary": null
+        },
+        {
+          "name": "GIGA",
+          "required": true,
+          "type": "\"G\"",
+          "summary": null
+        },
+        {
+          "name": "KILO",
+          "required": true,
+          "type": "\"k\"",
+          "summary": null
+        },
+        {
+          "name": "MEGA",
+          "required": true,
+          "type": "\"M\"",
+          "summary": null
+        },
+        {
+          "name": "PETA",
+          "required": true,
+          "type": "\"P\"",
+          "summary": null
+        },
+        {
+          "name": "TERA",
+          "required": true,
+          "type": "\"T\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "UnitKey",
@@ -6593,7 +9332,164 @@
       "namespace": null,
       "sourcePath": "packages/core/src/constants/units.ts",
       "summary": null,
-      "type": "{ AMPERE: \"A\"; APPARENT_POWER_KVA: \"kVA\"; EFFICIENCY_W_PER_TH: \"W/TH\"; EFFICIENCY_W_PER_TH_S: \"W/TH/S\"; ENERGY_GWH: \"GWh\"; ENERGY_KWH: \"kWh\"; ENERGY_MW: \"MW\"; ENERGY_MWH: \"MWh\"; ENERGY_WH: \"Wh\"; FLOW_M3H: \"m3/h\"; FLOW_M3H_UNICODE: \"m³/h\"; FREQUENCY_HERTZ: \"Hz\"; FREQUENCY_MHZ: \"MHz\"; HASHRATE_EH_S: \"EH/s\"; HASHRATE_MH_S: \"MH/s\"; HASHRATE_PH_S: \"PH/s\"; HASHRATE_TH_S: \"TH/s\"; HUMIDITY_PERCENT: \"%RH\"; PERCENT: \"%\"; POWER_KW: \"kW\"; POWER_W: \"W\"; PRESSURE_BAR: \"bar\"; SATS: \"Sats\"; TEMPERATURE_C: \"°C\"; VBYTE: \"vByte\"; VOLTAGE_V: \"V\" }"
+      "members": [
+        {
+          "name": "AMPERE",
+          "required": true,
+          "type": "\"A\"",
+          "summary": null
+        },
+        {
+          "name": "APPARENT_POWER_KVA",
+          "required": true,
+          "type": "\"kVA\"",
+          "summary": null
+        },
+        {
+          "name": "EFFICIENCY_W_PER_TH",
+          "required": true,
+          "type": "\"W/TH\"",
+          "summary": null
+        },
+        {
+          "name": "EFFICIENCY_W_PER_TH_S",
+          "required": true,
+          "type": "\"W/TH/S\"",
+          "summary": null
+        },
+        {
+          "name": "ENERGY_GWH",
+          "required": true,
+          "type": "\"GWh\"",
+          "summary": null
+        },
+        {
+          "name": "ENERGY_KWH",
+          "required": true,
+          "type": "\"kWh\"",
+          "summary": null
+        },
+        {
+          "name": "ENERGY_MW",
+          "required": true,
+          "type": "\"MW\"",
+          "summary": null
+        },
+        {
+          "name": "ENERGY_MWH",
+          "required": true,
+          "type": "\"MWh\"",
+          "summary": null
+        },
+        {
+          "name": "ENERGY_WH",
+          "required": true,
+          "type": "\"Wh\"",
+          "summary": null
+        },
+        {
+          "name": "FLOW_M3H",
+          "required": true,
+          "type": "\"m3/h\"",
+          "summary": null
+        },
+        {
+          "name": "FLOW_M3H_UNICODE",
+          "required": true,
+          "type": "\"m³/h\"",
+          "summary": null
+        },
+        {
+          "name": "FREQUENCY_HERTZ",
+          "required": true,
+          "type": "\"Hz\"",
+          "summary": null
+        },
+        {
+          "name": "FREQUENCY_MHZ",
+          "required": true,
+          "type": "\"MHz\"",
+          "summary": null
+        },
+        {
+          "name": "HASHRATE_EH_S",
+          "required": true,
+          "type": "\"EH/s\"",
+          "summary": null
+        },
+        {
+          "name": "HASHRATE_MH_S",
+          "required": true,
+          "type": "\"MH/s\"",
+          "summary": null
+        },
+        {
+          "name": "HASHRATE_PH_S",
+          "required": true,
+          "type": "\"PH/s\"",
+          "summary": null
+        },
+        {
+          "name": "HASHRATE_TH_S",
+          "required": true,
+          "type": "\"TH/s\"",
+          "summary": null
+        },
+        {
+          "name": "HUMIDITY_PERCENT",
+          "required": true,
+          "type": "\"%RH\"",
+          "summary": null
+        },
+        {
+          "name": "PERCENT",
+          "required": true,
+          "type": "\"%\"",
+          "summary": null
+        },
+        {
+          "name": "POWER_KW",
+          "required": true,
+          "type": "\"kW\"",
+          "summary": null
+        },
+        {
+          "name": "POWER_W",
+          "required": true,
+          "type": "\"W\"",
+          "summary": null
+        },
+        {
+          "name": "PRESSURE_BAR",
+          "required": true,
+          "type": "\"bar\"",
+          "summary": null
+        },
+        {
+          "name": "SATS",
+          "required": true,
+          "type": "\"Sats\"",
+          "summary": null
+        },
+        {
+          "name": "TEMPERATURE_C",
+          "required": true,
+          "type": "\"°C\"",
+          "summary": null
+        },
+        {
+          "name": "VBYTE",
+          "required": true,
+          "type": "\"vByte\"",
+          "summary": null
+        },
+        {
+          "name": "VOLTAGE_V",
+          "required": true,
+          "type": "\"V\"",
+          "summary": null
+        }
+      ]
     },
     {
       "name": "unitToKilo",
@@ -6601,7 +9497,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/utils/conversion.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "value",
+            "required": true,
+            "type": "number",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "number",
+        "returnSummary": null
+      }
     },
     {
       "name": "UnitValue",
@@ -6635,7 +9544,12 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/index.tsx",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [],
+        "returnType": "any",
+        "returnSummary": null
+      }
     },
     {
       "name": "UseFormFieldReturn",
@@ -6652,7 +9566,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-hooks.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "__namedParameters",
+            "required": true,
+            "type": "UseFormResetOptions<TFieldValues>",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "UseFormResetReturn",
+        "returnSummary": null
+      }
     },
     {
       "name": "UseFormResetOptions",
@@ -6726,7 +9653,20 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/sidebar/use-sidebar-state.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "defaultExpanded",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "[boolean, (expanded: boolean) => void]",
+        "returnSummary": null
+      }
     },
     {
       "name": "useSidebarSectionState",
@@ -6734,7 +9674,27 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/sidebar/use-sidebar-state.ts",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "sectionId",
+            "required": true,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "defaultOpen",
+            "required": true,
+            "type": "boolean",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "[boolean, (open: boolean) => void]",
+        "returnSummary": null
+      }
     },
     {
       "name": "validators",
@@ -6743,7 +9703,86 @@
       "namespace": null,
       "sourcePath": "packages/core/src/components/form/form-utils.ts",
       "summary": "Common validation schemas for frequently used form fields.",
-      "type": "{ date: (options?: { max?: Date; min?: Date; required?: boolean }) => any; email: (options?: { message?: string; required?: boolean }) => any; enum: (values: T, message: string) => any; ipAddress: (options?: { message?: string; required?: boolean }) => any; macAddress: (options?: { message?: string; required?: boolean }) => any; number: (options?: { max?: number; message?: string; min?: number }) => any; optionalString: (options?: { maxLength?: number }) => any; password: (options?: { message?: string; minLength?: number }) => any; phone: (options?: { message?: string; required?: boolean }) => any; requiredBoolean: (message: string) => any; requiredString: (options?: { maxLength?: number; minLength?: number }) => any; url: (options?: { message?: string; required?: boolean }) => any; username: (options?: { maxLength?: number; message?: string; minLength?: number }) => any }"
+      "members": [
+        {
+          "name": "date",
+          "required": true,
+          "type": "(options?: { max?: Date; min?: Date; required?: boolean }) => ZodDate | ZodOptional<ZodDate>",
+          "summary": "Date validation"
+        },
+        {
+          "name": "email",
+          "required": true,
+          "type": "(options?: { message?: string; required?: boolean }) => ZodString | ZodOptional<ZodString>",
+          "summary": "Email validation with custom error message"
+        },
+        {
+          "name": "enum",
+          "required": true,
+          "type": "(values: T, message: string) => ZodEnum<Writeable<T>>",
+          "summary": "Enum validation with custom error"
+        },
+        {
+          "name": "ipAddress",
+          "required": true,
+          "type": "(options?: { message?: string; required?: boolean }) => ZodString | ZodOptional<ZodString>",
+          "summary": "IP address validation (IPv4)"
+        },
+        {
+          "name": "macAddress",
+          "required": true,
+          "type": "(options?: { message?: string; required?: boolean }) => ZodString | ZodOptional<ZodString>",
+          "summary": "MAC address validation"
+        },
+        {
+          "name": "number",
+          "required": true,
+          "type": "(options?: { max?: number; message?: string; min?: number }) => ZodNumber",
+          "summary": "Number within a range"
+        },
+        {
+          "name": "optionalString",
+          "required": true,
+          "type": "(options?: { maxLength?: number }) => ZodOptional<ZodString>",
+          "summary": "Optional string with maximum length"
+        },
+        {
+          "name": "password",
+          "required": true,
+          "type": "(options?: { message?: string; minLength?: number }) => ZodString",
+          "summary": "Password validation with minimum length"
+        },
+        {
+          "name": "phone",
+          "required": true,
+          "type": "(options?: { message?: string; required?: boolean }) => ZodEffects<ZodString, string, string> | ZodOptional<ZodEffects<ZodString, string, string>>",
+          "summary": "Phone number validation (basic format)"
+        },
+        {
+          "name": "requiredBoolean",
+          "required": true,
+          "type": "(message: string) => ZodLiteral<true>",
+          "summary": "Boolean with required true (e.g., for terms acceptance)"
+        },
+        {
+          "name": "requiredString",
+          "required": true,
+          "type": "(options?: { maxLength?: number; minLength?: number }) => ZodString",
+          "summary": "Required string with minimum length"
+        },
+        {
+          "name": "url",
+          "required": true,
+          "type": "(options?: { message?: string; required?: boolean }) => ZodString | ZodOptional<ZodString>",
+          "summary": "URL validation"
+        },
+        {
+          "name": "username",
+          "required": true,
+          "type": "(options?: { maxLength?: number; message?: string; minLength?: number }) => ZodString",
+          "summary": "Username validation (alphanumeric with underscores/hyphens)"
+        }
+      ]
     },
     {
       "name": "ValueUnit",
@@ -6863,7 +9902,34 @@
       "kind": "function",
       "namespace": null,
       "sourcePath": "packages/core/src/components/error-boundary/index.tsx",
-      "summary": null
+      "summary": null,
+      "signature": {
+        "parameters": [
+          {
+            "name": "WrappedComponent",
+            "required": true,
+            "type": "ComponentType<P>",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "componentName",
+            "required": false,
+            "type": "string",
+            "defaultValue": null,
+            "summary": null
+          },
+          {
+            "name": "onError",
+            "required": false,
+            "type": "(error: Error, errorInfo: ErrorInfo) => void",
+            "defaultValue": null,
+            "summary": null
+          }
+        ],
+        "returnType": "FC<P>",
+        "returnSummary": null
+      }
     },
     {
       "name": "CheckboxItem",

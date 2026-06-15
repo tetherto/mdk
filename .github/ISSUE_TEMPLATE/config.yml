@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ":speech_balloon: Discord"
+    url: https://discord.com/invite/tetherdev
+    about: "Ask questions, share ideas, or discuss MDK with the community."
+  - name: ":speech_balloon: Discussions"
+    url: https://github.com/tetherto/mdk/discussions
+    about: "Ask questions, share ideas, or discuss MDK."
+  - name: ":book: Documentation"
+    url: https://docs.mdk.tether.io/
+    about: "Check the docs before opening an issue."

@@ -1,0 +1,37 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
+@layer app {
+  .batch-container-controls-card-demo {
+    &__header {
+      margin-bottom: 40px;
+      text-align: center;
+
+      code {
+        font-size: 13px;
+        opacity: 0.7;
+      }
+    }
+
+    &__examples {
+      @include flex_wrap;
+
+      gap: 70px;
+    }
+
+    &__section {
+      @include flex_column;
+
+      gap: 8px;
+
+      p {
+        margin: 0;
+        font-size: 13px;
+        opacity: 0.6;
+      }
+    }
+
+    &__card {
+      width: 380px;
+    }
+  }
+}

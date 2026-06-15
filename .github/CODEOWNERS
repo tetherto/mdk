@@ -1,2 +1,2 @@
-/core/** @tetherto/moria-bk-merge
-/ui-client/** @tetherto/moria-ui-merge
+# Private MDK monorepo — match github-ops team access
+* @tetherto/moria-bk-merge @tetherto/moria-ui-merge

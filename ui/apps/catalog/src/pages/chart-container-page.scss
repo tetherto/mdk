@@ -1,0 +1,13 @@
+@layer app {
+  .chart-container-page {
+    &__states {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    &__placeholder {
+      height: 200px;
+    }
+  }
+}

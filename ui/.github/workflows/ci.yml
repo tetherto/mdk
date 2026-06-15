@@ -1,0 +1,465 @@
+name: MDK CI Pipeline
+on:
+  push:
+    branches: [main, develop, staging]
+  pull_request:
+    branches: [main, develop, staging]
+
+
+# Global permissions - restrict to minimum required
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  NPM_VERSION: '11'
+  TURBO_TELEMETRY_DISABLED: '1'
+  DO_NOT_TRACK: '1'
+
+jobs:
+  # 🔐 Supply Chain Security (Runs first)
+  security:
+    name: 🔐 Supply Chain Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: "${{ github.sha }}"
+          clean: true
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📦 Upgrade npm
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+
+      - name: 📥 Install dependencies (scripts suppressed for pre-scan safety)
+        run: npm ci --ignore-scripts
+
+      - name: 🔍 Supply Chain IOC Scan
+        run: |
+          echo "🔍 Scanning for supply chain attack indicators (Mini Shai-Hulud / GHSA-g7cv-rxg3-hmpx)..."
+          FAILED=0
+
+          # Known malicious payload filenames from the TanStack compromise and prior campaign waves
+          echo "--- Checking for known IOC files in node_modules ---"
+          IOC_FILES="router_init.js router_runtime.js tanstack_runner.js execution.js vite_setup.mjs"
+          for f in $IOC_FILES; do
+            FOUND=$(find node_modules -name "$f" -not -path "*/\.bin/*" 2>/dev/null)
+            if [ -n "$FOUND" ]; then
+              echo "::error::CRITICAL — IOC file found: $FOUND"
+              FAILED=1
+            fi
+          done
+
+          # Any package.json in node_modules with a github:-ref entry inside
+          # `optionalDependencies` is anomalous — legitimate packages use semver
+          # ranges there. We parse the JSON properly so that benign shorthands
+          # like `"repository": "github:owner/name"` (and the same in `homepage`,
+          # `bugs`, `funding`, `author`, `contributors`, devDependencies, …) do
+          # not trip the scan.
+          echo "--- Checking for github:-ref optionalDependencies ---"
+          SCAN_OUTPUT=$(node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            import { execSync } from "node:child_process";
+            const files = execSync(
+              "find node_modules -maxdepth 4 -name package.json -not -path \"*/.bin/*\"",
+              { encoding: "utf8" }
+            ).split("\n").filter(Boolean);
+            let failed = 0;
+            for (const f of files) {
+              let pkg;
+              try { pkg = JSON.parse(readFileSync(f, "utf8")); } catch { continue; }
+              const opt = pkg.optionalDependencies;
+              if (!opt || typeof opt !== "object") continue;
+              for (const [name, spec] of Object.entries(opt)) {
+                if (typeof spec === "string" && /^github:/i.test(spec)) {
+                  console.log(`::error::CRITICAL — GitHub-ref optionalDependency in ${f}: ${name} -> ${spec}`);
+                  failed = 1;
+                }
+              }
+            }
+            process.exit(failed);
+          ' 2>&1) || FAILED=1
+          if [ -n "$SCAN_OUTPUT" ]; then
+            echo "$SCAN_OUTPUT"
+          fi
+
+          # The specific orphan commit used in this campaign wave
+          echo "--- Checking for Mini Shai-Hulud orphan commit reference ---"
+          POISON_COMMIT="79ac49eedf774dd4b0cfa308722bc463cfe5885c"
+          if grep -rq "$POISON_COMMIT" node_modules/ 2>/dev/null; then
+            echo "::error::CRITICAL — Mini Shai-Hulud poison commit reference found in node_modules"
+            grep -rl "$POISON_COMMIT" node_modules/ | head -5
+            FAILED=1
+          fi
+
+          # Persistence artifacts written by the worm to developer tooling directories
+          echo "--- Checking for workspace persistence IOCs ---"
+          for f in .claude/router_runtime.js .claude/setup.mjs .vscode/setup.mjs; do
+            if [ -f "$f" ]; then
+              echo "::error::CRITICAL — Persistence IOC found: $f"
+              FAILED=1
+            fi
+          done
+          # .claude/settings.json hooks hijack — detect suspicious keys added by the worm
+          if [ -f ".claude/settings.json" ]; then
+            if grep -q "router_runtime\|setup\.mjs\|tanstack_runner" .claude/settings.json; then
+              echo "::error::CRITICAL — Suspicious hook entry found in .claude/settings.json"
+              FAILED=1
+            fi
+          fi
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "::error::Supply chain IOC scan FAILED. Do NOT proceed with this build."
+            echo "Immediate actions: rotate npm tokens, GitHub PATs, AWS credentials, Vault tokens."
+            exit 1
+          fi
+          echo "✅ No supply chain IOCs detected"
+
+      - name: 🔏 Verify npm package signatures
+        run: |
+          echo "🔏 Verifying npm registry package signatures..."
+          npm audit signatures
+          echo "✅ Package signatures verified"
+
+      - name: 🛡️ Audit for known vulnerabilities
+        run: |
+          echo "🛡️ Checking for known vulnerabilities..."
+          npm audit --audit-level=high
+          echo "✅ Vulnerability audit complete"
+
+  # 🔍 Code Quality & Security (Parallel with others)
+  quality:
+    name: 🔍 Code Quality & Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: security
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: "${{ github.sha }}"
+          clean: true
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📦 Upgrade npm
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🧹 Linting
+        run: |
+          echo "⚡ Running linter with zero tolerance for warnings..."
+          time npm run lint
+          echo "✅ Linting passed with no warnings or errors"
+
+      - name: 🔷 TypeScript Type Check
+        run: |
+          echo "🔷 Running TypeScript type checking..."
+          time npm run typecheck
+          echo "✅ TypeScript type checking passed"
+
+      - name: 🎨 Code Formatting Check
+        run: |
+          echo "🎨 Checking code formatting..."
+          time npm run format
+          echo "✅ Code formatting check passed"
+
+      - name: 🤖 Agent-readiness contract
+        run: |
+          echo "🤖 Building registry and validating the agent-readiness contract..."
+          # `check:agent-ready` runs `build:registry` first; that step needs the
+          # devkit's TS build outputs, which Turbo will pull from cache when
+          # warm. The baseline file gates strict-for-new-code: only NEW
+          # violations fail; pre-existing debt is reported and tracked.
+          npm run check:agent-ready --workspace @tetherto/mdk-react-devkit
+          echo "✅ Agent-readiness contract satisfied"
+
+  # 🧪 Test Coverage — sharded matrix
+  # react-devkit (the bottleneck, 296 test files) is split across 4 parallel runners
+  # via `vitest --shard`. Each shard writes a blob report; the coverage job merges
+  # them and enforces thresholds. Other packages (ui-core, react-adapter, cli) run
+  # only in shard 1 since they're small and not worth sharding.
+  test:
+    name: 🧪 Test (shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    needs: [security, build]
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: "${{ github.sha }}"
+          clean: true
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📦 Upgrade npm
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 📦 Cache Turbo
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+        with:
+          path: .turbo
+          key: turbo-test-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}-shard-${{ matrix.shard }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+            turbo-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: 📦 Cache Vitest transforms
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+        with:
+          path: |
+            packages/react-devkit/.cache/vitest
+            packages/ui-core/.cache/vitest
+            packages/react-adapter/.cache/vitest
+            packages/cli/.cache/vitest
+          key: vitest-${{ runner.os }}-${{ hashFiles('packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/vitest.config.js') }}-shard-${{ matrix.shard }}
+          restore-keys: |
+            vitest-${{ runner.os }}-
+
+      - name: 🏗️ Restore package builds from Turbo cache
+        run: |
+          echo "🏗️ Replaying cached builds so vitest can resolve workspace dist/..."
+          npx turbo run build --filter=@tetherto/mdk-react-devkit
+
+      - name: 🧪 Run smaller packages (shard 1 only)
+        if: matrix.shard == 1
+        run: |
+          echo "🧪 Running ui-core, react-adapter, cli tests with coverage..."
+          time npx turbo run test:coverage --filter='!@tetherto/mdk-react-devkit' --filter='!@tetherto/mdk-fonts' --filter='!@tetherto/mdk-catalog-ui'
+
+      - name: 🧪 Run react-devkit shard ${{ matrix.shard }}/4
+        working-directory: packages/react-devkit
+        # Disable thresholds per-shard (each shard only covers a subset of files).
+        # Thresholds are enforced on the merged report in the coverage job.
+        run: |
+          echo "🧪 Running react-devkit shard ${{ matrix.shard }}/4 (coverage, blob output)..."
+          time npx vitest run \
+            --shard=${{ matrix.shard }}/4 \
+            --coverage \
+            --reporter=blob \
+            --coverage.thresholds.lines=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.branches=0 \
+            --coverage.thresholds.statements=0
+
+      - name: 📤 Upload blob report
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: packages/react-devkit/.vitest-reports/
+          retention-days: 1
+          if-no-files-found: error
+          include-hidden-files: true
+
+  # 📊 Coverage Merge — aggregate blob reports and enforce thresholds
+  coverage:
+    name: 📊 Coverage Merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    needs: test
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: "${{ github.sha }}"
+          clean: true
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📦 Upgrade npm
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 📥 Download all blob reports
+        uses: actions/download-artifact@v4
+        with:
+          path: packages/react-devkit/.vitest-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: 📊 Merge coverage and enforce thresholds
+        working-directory: packages/react-devkit
+        run: |
+          echo "📊 Merging shard blobs and checking coverage thresholds..."
+          ls -la .vitest-reports/
+          time npx vitest run --mergeReports --coverage --coverage.reporter=text-summary --reporter=default
+
+  # 🏗️ Build (Parallel with quality and test)
+  build:
+    name: 🏗️ Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    needs: security
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: "${{ github.sha }}"
+          clean: true
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📦 Upgrade npm
+        run: npm install -g npm@${{ env.NPM_VERSION }}
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 📦 Cache Turbo
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: 🏗️ Production Build
+        run: |
+          echo "🏗️ Building production bundle..."
+          time npm run build
+          echo "✅ Build completed successfully"
+
+      - name: 📊 Bundle Size Analysis
+        run: |
+          echo "📊 Analyzing bundle size..."
+          if [ -d "packages/react-devkit/dist" ]; then
+            echo "📦 React devkit package:"
+            du -sh packages/react-devkit/dist/
+            find packages/react-devkit/dist/ -type f \( -name "*.js" -o -name "*.css" \) | head -10 | xargs ls -lh
+          fi
+          if [ -d "packages/ui-core/dist" ]; then
+            echo "📦 UI Core (headless) package:"
+            du -sh packages/ui-core/dist/
+          fi
+          if [ -d "packages/react-adapter/dist" ]; then
+            echo "📦 React adapter package:"
+            du -sh packages/react-adapter/dist/
+          fi
+          if [ -d "apps/catalog/dist" ]; then
+            echo "📦 Catalog app:"
+            du -sh apps/catalog/dist/
+          fi
+
+  # 📋 Summary & Performance Stats (Runs after all parallel jobs complete)
+  summary:
+    name: 📋 Summary & Performance Stats
+    runs-on: ubuntu-latest
+    needs: [security, quality, test, coverage, build]
+    if: always()
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout code for summary
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          ref: "${{ github.sha }}"
+          clean: true
+
+      - name: 📊 Performance Summary
+        run: |
+          echo "📊 CI Pipeline Performance Summary"
+          echo "===================================="
+          echo ""
+          echo "📋 Commit Information:"
+          echo "  Commit: $(git rev-parse HEAD)"
+          echo "  Message: $(git log -1 --pretty=format:'%s')"
+          echo "  Author: $(git log -1 --pretty=format:'%an <%ae>')"
+          echo "  Date: $(git log -1 --pretty=format:'%ad' --date=short)"
+          echo ""
+          echo "🎯 Job Results:"
+          echo "  🔐 Supply Chain Security: ${{ needs.security.result }}"
+          echo "  🔍 Code Quality: ${{ needs.quality.result }}"
+          echo "  🧪 Test (sharded): ${{ needs.test.result }}"
+          echo "  📊 Coverage Merge: ${{ needs.coverage.result }}"
+          echo "  🏗️ Build: ${{ needs.build.result }}"
+          echo ""
+          echo "⚡ Performance Metrics:"
+          echo "  📝 Linting: Optimized with Turbo cache strategy"
+          echo "  🔷 TypeScript: Type checking enabled"
+          echo "  🏗️ Build: Monorepo packages built with Turbo"
+          echo "  🚀 Total CI Time: Parallel execution enabled"
+          echo ""
+          echo "🔧 Optimizations Applied:"
+          echo "  ✅ Supply chain security checks (npm audit)"
+          echo "  ✅ ESLint cache strategy optimized"
+          echo "  ✅ Zero tolerance for linter warnings"
+          echo "  ✅ TypeScript strict type checking"
+          echo "  ✅ Turbo build + test caching (local + optional remote)"
+          echo "  ✅ test:coverage runs every workspace in parallel (no ^dependsOn)"
+          echo "  ✅ Vitest projects split inside react-devkit: node, core-dom, foundation-dom"
+          echo "  ✅ Parallel job execution"
+          echo "  ✅ Reduced timeouts and redundant steps"
+
+      - name: 🎉 Success Notification
+        if: ${{ needs.security.result == 'success' && needs.quality.result == 'success' && needs.test.result == 'success' && needs.coverage.result == 'success' && needs.build.result == 'success' }}
+        run: |
+          echo "🎉 All checks passed! Ready for merge."
+          echo ""
+          echo "🚀 Performance Highlights:"
+          echo "  • Linting: Zero tolerance for warnings"
+          echo "  • TypeScript: Type checking passed"
+          echo "  • Test Coverage: ui-core ≥85%, react-adapter ≥80%, react-devkit ≥80% (thresholds enforced)"
+          echo "  • Build: Production ready"
+          echo "  • CI: Optimized for speed and reliability"
+          echo "  • Monorepo: Turbo build caching enabled"

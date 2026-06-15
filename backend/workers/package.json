@@ -1,0 +1,29 @@
+{
+  "name": "@tetherto/mdk-core-workers",
+  "version": "0.0.1",
+  "private": true,
+  "description": "MDK Core Workers",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "install:packages": "./install-packages.sh",
+    "ci:packages": "./install-packages.sh ci",
+    "clean:packages": "./clean-workspaces.sh",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "generate:catalogue": "node scripts/generate-catalogue.js",
+    "test": "npm run lint && npm run test:packages",
+    "test:packages": "./test-packages.sh"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1",
+    "standard": "17.1.0"
+  }
+}

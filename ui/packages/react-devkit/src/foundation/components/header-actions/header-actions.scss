@@ -1,0 +1,179 @@
+@use '@core/styles/mixins' as *;
+
+@layer mdk {
+  .mdk-header-action-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 2.8125rem; /* 45px — matches the Mining OS reference */
+    height: 2.8125rem;
+    padding: 0.5rem;
+    background: color-mix(in srgb, var(--mdk-color-primary, #f7931a) 20%, transparent);
+    border: none;
+    color: var(--mdk-color-text-primary, #f5f5f0);
+    cursor: pointer;
+    /* Diagonal notches on the top-left and bottom-right corners — the
+     * Mining OS action-tile shape. The polygon traces the 8 vertices
+     * around two 11px chamfers (proportional to the 45px tile). */
+    clip-path: polygon(
+      11px 0,
+      100% 0,
+      100% calc(100% - 11px),
+      calc(100% - 11px) 100%,
+      0 100%,
+      0 11px
+    );
+    transition: color 120ms ease, background 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--mdk-color-text-primary, #f5f5f0);
+      background: color-mix(in srgb, var(--mdk-color-primary, #f7931a) 32%, transparent);
+      outline: none;
+    }
+
+    &__icon {
+      display: inline-grid;
+      place-items: center;
+      font-size: 1.25rem;
+      color: currentColor;
+    }
+  }
+
+  .mdk-alarms-bell-button {
+    /* The badge column on the left needs extra room beyond the standard
+     * tile width — override the square shape so both badge and bell breathe.
+     * `max-width: max-content` keeps the button from stretching when a
+     * flex parent applies `align-items: stretch`. */
+    width: auto;
+    min-width: 3.5rem;
+    max-width: max-content;
+    padding-right: 0.5rem;
+    padding-left: 1.75rem;
+    /* Bell icon picks up BTC orange instead of the default white, to
+     * match the Mining OS reference. */
+    color: var(--mdk-color-primary, #f7931a);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--mdk-color-primary, #f7931a);
+    }
+
+    .mdk-header-action-button__icon {
+      font-size: 1.125rem;
+    }
+
+    &__badge {
+      position: absolute;
+      left: 0.375rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.05rem;
+      font-family: var(--mdk-font-mono, "JetBrains Mono", ui-monospace, monospace);
+      font-size: 0.5625rem;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.025em;
+      pointer-events: none;
+
+      /* Per-row text colors only — no background tints. The numbers float
+       * directly on the tile's translucent orange surface. */
+      &-row {
+        background: transparent;
+
+        &--critical {
+          color: var(--mdk-color-danger, #ef4444);
+        }
+
+        &--high {
+          color: var(--mdk-color-primary, #f7931a);
+        }
+
+        &--medium {
+          color: var(--mdk-color-warning, #ffc107);
+        }
+      }
+    }
+  }
+
+  .mdk-profile-menu {
+    /* The profile tile is the "active" action tile — full BTC orange fill
+     * matching the Mining OS reference (versus the translucent fill on the
+     * sibling alert/clipboard tiles). */
+    &__trigger {
+      width: 2.8125rem;
+      min-width: 0;
+      height: 2.8125rem;
+      background: var(--mdk-color-primary, #f7931a);
+      color: #11100f;
+
+      &:hover,
+      &:focus-visible {
+        background: var(--mdk-color-primary, #f7931a);
+        color: #11100f;
+      }
+    }
+
+    &__user {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      padding: 0.5rem 0.625rem 0.625rem;
+      color: var(--mdk-color-text-primary, #f5f5f0);
+
+      &-email {
+        font-weight: 700;
+      }
+
+      &-role {
+        font-size: 0.8125rem;
+        color: rgba(255, 255, 255, 0.5);
+      }
+    }
+
+    &__item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.625rem;
+
+      &--two-line {
+        align-items: flex-start;
+      }
+
+      &--danger {
+        color: var(--mdk-color-danger, #ff5a5a);
+      }
+    }
+
+    &__item-icon {
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      width: 1.25rem;
+      color: currentColor;
+    }
+
+    &__item-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      min-width: 0;
+    }
+
+    &__item-label {
+      font-weight: 500;
+      color: currentColor;
+    }
+
+    &__item-description {
+      font-size: 0.8125rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}

@@ -1,0 +1,50 @@
+'use strict'
+
+/**
+ * Command State Machine — States
+ *
+ * QUEUED → DISPATCHED → EXECUTING → SUCCESS | FAILED | TIMEOUT
+ *
+ * Terminal states: SUCCESS, FAILED
+ * TIMEOUT is semi-terminal: if retries remain, transitions back to QUEUED
+ */
+
+const COMMAND_STATES = {
+  QUEUED: 'QUEUED',
+  DISPATCHED: 'DISPATCHED',
+  EXECUTING: 'EXECUTING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  TIMEOUT: 'TIMEOUT'
+}
+
+const TERMINAL_STATES = [
+  COMMAND_STATES.SUCCESS,
+  COMMAND_STATES.FAILED
+]
+
+const COMMAND_TRANSITIONS = {
+  [COMMAND_STATES.QUEUED]: [COMMAND_STATES.DISPATCHED, COMMAND_STATES.FAILED],
+  [COMMAND_STATES.DISPATCHED]: [COMMAND_STATES.EXECUTING, COMMAND_STATES.TIMEOUT],
+  [COMMAND_STATES.EXECUTING]: [COMMAND_STATES.SUCCESS, COMMAND_STATES.FAILED, COMMAND_STATES.TIMEOUT],
+  [COMMAND_STATES.TIMEOUT]: [COMMAND_STATES.QUEUED, COMMAND_STATES.FAILED],
+  [COMMAND_STATES.SUCCESS]: [],
+  [COMMAND_STATES.FAILED]: []
+}
+
+function isTerminal (state) {
+  return TERMINAL_STATES.includes(state)
+}
+
+function isValidTransition (from, to) {
+  const allowed = COMMAND_TRANSITIONS[from]
+  return allowed ? allowed.includes(to) : false
+}
+
+module.exports = {
+  COMMAND_STATES,
+  TERMINAL_STATES,
+  COMMAND_TRANSITIONS,
+  isTerminal,
+  isValidTransition
+}

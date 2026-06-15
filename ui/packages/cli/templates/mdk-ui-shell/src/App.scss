@@ -1,0 +1,195 @@
+@layer app {
+  .mdk-ui-shell-root {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    /* Fixed viewport height + clip together pin the header and sidebar:
+     * the document never scrolls, only .mdk-ui-shell-main does. `clip`
+     * (not `hidden`) avoids creating a scroll container that would
+     * break position:sticky descendants and adds a safety belt against
+     * any inner content overflowing horizontally. */
+    height: 100vh;
+    overflow: clip;
+  }
+
+  .mdk-ui-shell-content {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .mdk-ui-shell-loader {
+    padding: 2rem;
+  }
+
+  .mdk-ui-shell-main {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2rem 2.5rem;
+    background: var(--mdk-color-surface, #0a0a09);
+    overflow-y: auto;
+
+    @media (max-width: 768px) {
+      padding: 1rem;
+    }
+  }
+
+  .mdk-ui-shell-signin {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.875rem;
+    padding: 2rem;
+    background: var(--mdk-color-surface, #0a0a09);
+    color: var(--mdk-color-text-primary, #f5f5f0);
+
+    &__brand {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--mdk-color-primary, #c4ff52);
+      transition: filter 0.4s ease;
+
+      &:hover {
+        filter: brightness(120%);
+      }
+    }
+
+    &__wordmark {
+      width: min(360px, 80vw);
+      height: auto;
+      display: block;
+    }
+
+    &__appname {
+      font-size: 0.85rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--mdk-color-text-tertiary, #6c6c66);
+    }
+
+    &__title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin: 0;
+      color: var(--mdk-color-text-primary, #f5f5f0);
+    }
+
+    &__cta {
+      width: 320px;
+      max-width: 100%;
+      height: 45px;
+      gap: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      background-color: #000000;
+      border: 1px solid #ff6a00;
+      border-radius: 0;
+      transition: color 0.2s ease;
+
+      &:hover,
+      &:focus-visible {
+        color: #ff6a00;
+        background-color: #000000;
+        border-color: #ff6a00;
+      }
+    }
+
+    &__error {
+      margin: 0;
+      font-weight: 600;
+      color: var(--mdk-color-danger, #ff5a5a);
+      text-align: center;
+    }
+  }
+
+  .mdk-ui-shell-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    &__title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--mdk-color-text-primary, #f5f5f0);
+    }
+
+    &__topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    &__topline-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    &__row {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: 1fr;
+
+      @media (min-width: 960px) {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    &__toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+  }
+
+  .mdk-ui-shell-user-menu {
+    &__user-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    &__user-role {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--mdk-color-primary, #f7931a);
+    }
+  }
+
+  .mdk-ui-shell-tz-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(360px, calc(100vw - 48px));
+    padding: 12px 16px 16px;
+
+    &__label {
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--mdk-color-text-muted, #888);
+    }
+
+    &__select {
+      appearance: none;
+      padding: 10px 12px;
+      font-size: 14px;
+      color: var(--mdk-color-text-secondary, #d9d9d9);
+      background-color: var(--mdk-color-background-dark, #17130f);
+      border: 1px solid var(--mdk-dialog-border-color, #3b2b20);
+      border-radius: 6px;
+      font-family: inherit;
+    }
+  }
+}

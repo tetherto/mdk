@@ -1,0 +1,58 @@
+{
+  "name": "@tetherto/mdk-ui-core",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Framework-agnostic headless core for the MDK Devkit. Currently exposes Zustand vanilla stores and a TanStack QueryClient factory. No React.",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./store": {
+      "types": "./dist/store/index.d.ts",
+      "import": "./dist/store/index.js",
+      "default": "./dist/store/index.js"
+    },
+    "./query": {
+      "types": "./dist/query/index.d.ts",
+      "import": "./dist/query/index.js",
+      "default": "./dist/query/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "default": "./dist/types/index.js"
+    },
+    "./stores.json": "./dist/stores.json"
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "rimraf dist tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json && npm run build:stores",
+    "build:ts": "tsc -p tsconfig.build.json",
+    "build:stores": "tsx scripts/generate-stores.mts",
+    "clean": "rimraf dist node_modules .turbo",
+    "dev": "tsc --watch -p tsconfig.build.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "eslint . --fix",
+    "test": "vitest run --config vitest.config.js",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --config vitest.config.js --coverage",
+    "typecheck": "tsc --noEmit",
+    "watch": "npm run dev",
+    "watch:ts": "npm run dev"
+  },
+  "dependencies": {
+    "@tanstack/query-core": "^5.59.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.2",
+    "ts-morph": "^24.0.0",
+    "tsx": "^4.19.2",
+    "vitest": "^4.1.2"
+  }
+}

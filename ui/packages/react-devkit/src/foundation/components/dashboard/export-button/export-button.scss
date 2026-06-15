@@ -1,0 +1,42 @@
+@use "@core/styles/mixins" as *;
+
+@layer mdk {
+  /* The compound selector outranks the bare `.mdk-button` so we override
+   * the default `width: 100%` / stretch behaviour without `!important`. */
+  .mdk-button.mdk-export-button {
+    display: inline-flex;
+    width: auto;
+    min-width: 0;
+    max-width: max-content;
+    gap: 0.5rem;
+  }
+
+  .mdk-export-button {
+    &__label {
+      flex: 0 0 auto;
+    }
+
+    &__chevron {
+      flex: 0 0 auto;
+      width: 0.875rem;
+      height: 0.875rem;
+      margin-left: 0.5rem;
+      padding-left: 0.625rem;
+      border-left: 1px solid color-mix(
+        in srgb,
+        var(--mdk-color-text-secondary, #b7b7af) 30%,
+        transparent
+      );
+      box-sizing: content-box;
+      opacity: 0.85;
+    }
+
+    /* Radix exposes the trigger width as `--radix-dropdown-menu-trigger-width`
+     * on the content element — wire it through so the menu matches the
+     * trigger width visually. */
+    &__menu {
+      width: var(--radix-dropdown-menu-trigger-width);
+      min-width: var(--radix-dropdown-menu-trigger-width);
+    }
+  }
+}

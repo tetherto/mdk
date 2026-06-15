@@ -1,0 +1,11 @@
+/// Shared chart-panel chrome for financial reporting views (padding, background, min-width).
+@mixin reporting-panel-base {
+  min-width: 0;
+  padding: 20px;
+  background: var(--mdk-chart-container-bg);
+}
+
+/// Standalone utility when markup should not use a feature-specific `__panel` block.
+.mdk-reporting-panel {
+  @include reporting-panel-base;
+}

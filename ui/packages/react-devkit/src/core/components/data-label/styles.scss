@@ -1,0 +1,16 @@
+@use '../../styles/mixins' as *;
+
+.mdk-data-label {
+  @include flex_row;
+
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  align-items: center;
+  color: var(--mdk-color-white);
+}
+
+.mdk-data-label__header {
+  text-transform: uppercase;
+  color: rgb(var(--mdk-color-grey-idle));
+}

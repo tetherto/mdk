@@ -1,0 +1,22 @@
+@use '../../styles/mixins' as *;
+
+.mdk-btc-average-price {
+  @include flex_row;
+
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  align-items: center;
+  box-sizing: border-box;
+  text-transform: uppercase;
+  color: var(--mdk-color-white);
+}
+
+.mdk-btc-average-price__header {
+  color: rgb(var(--mdk-color-grey-idle));
+}
+
+.mdk-btc-average-price__value {
+  color: var(--mdk-color-primary);
+}

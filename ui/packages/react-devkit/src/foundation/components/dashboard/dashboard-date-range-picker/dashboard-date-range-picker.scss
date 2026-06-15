@@ -1,0 +1,31 @@
+@use "@core/styles/mixins" as *;
+
+@layer mdk {
+  /* The dashboard trigger needs a wider cap than the core default (245px)
+   * because formatted ranges like "May 20, 2026 - May 21, 2026" overflow
+   * at 245px. The compound selector outranks the bare core rule so this
+   * wins regardless of stylesheet load order. We also force the inner
+   * text span to shrink within the button so it ellipses instead of
+   * bleeding past the right border. */
+  .mdk-date-picker__trigger.mdk-dashboard-date-range-picker__trigger {
+    overflow: hidden;
+    min-width: 0;
+    max-width: min(20rem, calc(100% - 1rem));
+
+    .mdk-date-picker__text {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+
+  /* Cap the popover so it never overflows the viewport, even on narrow
+   * windows where Radix's avoidCollisions cannot fit a two-month grid. */
+  .mdk-popover__content.mdk-dashboard-date-range-picker__modal {
+    max-width: min(720px, calc(100vw - 2rem));
+    max-height: calc(100vh - 6rem);
+    overflow: auto;
+  }
+}

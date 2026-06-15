@@ -1,0 +1,20 @@
+@use '@core/styles/mixins' as *;
+
+.mdk-operations-efficiency {
+  @include flex_column;
+
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mdk-efficiency-bar-view {
+  &__loading,
+  &__empty {
+    @include flex_align;
+
+    height: 320px;
+    font-size: 14px;
+    color: rgba(var(--mdk-color-white-rgb), 0.4);
+  }
+}

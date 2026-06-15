@@ -1,0 +1,155 @@
+# Link verification for the monorepo's .md files.
+#   - Nightly (+ manual): full sweep of every .md, opens/updates a tracking issue.
+#   - Pull request: fast gate over only the .md files in the diff, fails the check.
+# Config lives at linkinator.config.json; rationale + skip-list policy in docs/maintainers/linters.md.
+name: Link check
+
+on:
+  schedule:
+    # 02:00 UTC nightly — deliberately off the midnight cron rush.
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+  pull_request:
+    branches: [main, develop, staging, "release/**"]
+    types: [opened, reopened, synchronize]
+    paths:
+      - "**/*.md"
+      - "linkinator.config.json"
+      - ".github/workflows/link-check.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: link-check-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linkinator:
+    name: Verify markdown links
+    # Full sweep on the nightly cron and manual runs only; PRs use the
+    # diff-scoped job below.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Run linkinator
+        id: linkinator
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run link-check | tee link-report.txt
+
+      - name: Compose issue body
+        if: ${{ steps.linkinator.outcome == 'failure' && github.event_name == 'schedule' }}
+        run: |
+          {
+            echo "Nightly link check at ${{ github.workflow }} reported broken links."
+            echo
+            echo "**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo "**Skip-list policy and fragment-check rollout:** see [\`docs/maintainers/linters.md\`](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/docs/maintainers/linters.md)."
+            echo
+            echo "### Report"
+            echo
+            echo '```'
+            tail -c 50000 link-report.txt
+            echo '```'
+          } > issue-body.md
+
+      - name: Open or update tracking issue
+        if: ${{ steps.linkinator.outcome == 'failure' && github.event_name == 'schedule' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list \
+            --label "link-check" \
+            --state open \
+            --json number \
+            --jq 'if length > 0 then .[0].number else "" end' \
+            --repo "${{ github.repository }}")
+          if [ -n "$existing" ]; then
+            echo "Appending to existing tracking issue #$existing"
+            gh issue comment "$existing" \
+              --body-file issue-body.md \
+              --repo "${{ github.repository }}"
+          else
+            echo "Opening new tracking issue"
+            gh issue create \
+              --title "Nightly link check — broken links found ($(date -u +%Y-%m-%d))" \
+              --body-file issue-body.md \
+              --label "docs,link-check" \
+              --repo "${{ github.repository }}"
+          fi
+
+      - name: Surface failure in the run history
+        if: ${{ steps.linkinator.outcome == 'failure' }}
+        run: |
+          echo "linkinator reported broken links — see link-report.txt in the run log above"
+          exit 1
+
+  link-check-diff:
+    name: Verify changed markdown links
+    # PR-only fast gate. Scans just the .md files in the diff and fails the
+    # check on a broken link (no issue is opened — that's the nightly's job).
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Full history so the PR base commit is available to diff against.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Lint changed markdown links
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin "$BASE_SHA" --depth=1 2>/dev/null || true
+
+          # If the config or this workflow changed, skip semantics or the
+          # fragment setting may shift repo-wide — a diff-scoped run could miss
+          # newly-exposed breakage, so fall back to a full sweep.
+          if git diff --name-only "${BASE_SHA}...${HEAD_SHA}" \
+               | grep -qE '^(linkinator\.config\.json|\.github/workflows/link-check\.yml)$'; then
+            echo "Config or workflow changed — running full markdown sweep."
+            exec npm run link-check
+          fi
+
+          # Added/Copied/Modified/Renamed .md files only — Deleted excluded
+          # (can't link-check a file that no longer exists).
+          mapfile -t FILES < <(
+            git diff --name-only --diff-filter=ACMR "${BASE_SHA}...${HEAD_SHA}" -- '*.md'
+          )
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "No added/modified markdown to check."
+            exit 0
+          fi
+          printf 'Checking %d changed file(s):\n' "${#FILES[@]}"
+          printf '  %s\n' "${FILES[@]}"
+
+          # Explicit file list (not the **/*.md glob); the config still supplies
+          # fragment checking and the skip list.
+          #
+          # README.md is always prepended as an anchor: linkinator roots its
+          # local server at the common ancestor of the inputs, so a diff of only
+          # deep files (e.g. docs/reference/.../x.md) would root the server in
+          # that subtree and report every `../`-escaping relative link as a false
+          # 404. Including a repo-root file pins the server root to the repo root.
+          # It only adds README's own links to the scan (no full-tree crawl);
+          # de-duped if README itself is in the diff.
+          npx --yes linkinator@^7.6.0 \
+            --config linkinator.config.json \
+            README.md "${FILES[@]}"

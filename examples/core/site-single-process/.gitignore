@@ -1,0 +1,4 @@
+node_modules
+data
+!config/*.json.example
+config/*.json

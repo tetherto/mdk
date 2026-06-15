@@ -1,0 +1,22 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+@use '../../../../reporting-tool/utils/reporting-panel' as reporting-panel;
+
+.mdk-energy-report-bar-view {
+  @include flex_column;
+
+  gap: 16px;
+
+  &__controls {
+    @include flex_align;
+
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  &__panel {
+    @include reporting-panel.reporting-panel-base;
+
+    margin-bottom: 20px;
+  }
+}

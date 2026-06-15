@@ -1,0 +1,156 @@
+{
+  "metadata": {
+    "provider": "bitdeer",
+    "deviceFamily": "container",
+    "brand": "Bitdeer",
+    "modelsSupported": [
+      "D40-A1346",
+      "D40-M30",
+      "D40-M56",
+      "D40-S19XP"
+    ],
+    "overview": "Controls Bitdeer D40 containers via MQTT."
+  },
+  "capabilities": {
+    "telemetry": [
+      {
+        "name": "container_power",
+        "unit": "W",
+        "type": "number",
+        "description": "Container power draw."
+      },
+      {
+        "name": "temperature",
+        "unit": "C",
+        "type": "number",
+        "description": "Container temperature."
+      },
+      {
+        "name": "tank_status",
+        "unit": "",
+        "type": "string",
+        "description": "Tank status."
+      },
+      {
+        "name": "exhaust_status",
+        "unit": "",
+        "type": "string",
+        "description": "Exhaust fan status."
+      }
+    ],
+    "commands": [
+      {
+        "name": "setTankEnabled",
+        "description": "Enable/disable tank.",
+        "params": [
+          {
+            "name": "enabled",
+            "type": "boolean"
+          }
+        ]
+      },
+      {
+        "name": "setAirExhaustEnabled",
+        "description": "Enable/disable exhaust.",
+        "params": [
+          {
+            "name": "enabled",
+            "type": "boolean"
+          }
+        ]
+      },
+      {
+        "name": "resetAlarm",
+        "description": "Reset alarm.",
+        "params": []
+      },
+      {
+        "name": "setTemperatureSettings",
+        "description": "Set temperature settings.",
+        "params": [
+          {
+            "name": "settings",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "registerThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          },
+          {
+            "name": "opts",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "updateThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "forgetThings",
+        "params": [
+          {
+            "name": "ids",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "saveSettings",
+        "params": []
+      },
+      {
+        "name": "saveComment",
+        "params": [
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "editComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          },
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "deleteComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "health": {
+      "supportedStates": [
+        "OK",
+        "DEGRADED",
+        "OFFLINE"
+      ]
+    },
+    "errors": {
+      "E_TANK_FAIL": "Tank system failure",
+      "E_EXHAUST_FAIL": "Exhaust system failure"
+    }
+  }
+}

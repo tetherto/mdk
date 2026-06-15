@@ -1,0 +1,49 @@
+// The trigger-side wrapper. Just makes the button sit inline; the dialog
+// surface itself is portaled out of this tree by Radix, so all surface
+// styles live under `.mdk-pool-details-popover-content` below.
+.mdk-pool-details-popover {
+  display: inline-block;
+}
+
+// Portaled dialog surface. Matches the warm-dark Moria confirm-dialog
+// language (Figma 10407-35765): narrow, bold title, single divider
+// under the header, flush key/value list — no nested card chrome.
+.mdk-pool-details-popover-content {
+  &.mdk-dialog__content {
+    max-width: 26rem;
+    gap: 16px;
+    padding: 20px 24px 24px;
+    background-color: rgb(var(--mdk-color-dark-black));
+  }
+
+  .mdk-dialog__header {
+    padding-bottom: 16px;
+
+    &__close {
+      background: transparent !important;
+      color: var(--mdk-color-white-60) !important;
+    }
+  }
+
+  .mdk-dialog__title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+    text-transform: none;
+    color: var(--mdk-color-white);
+  }
+
+  &__body {
+    margin: 0;
+    padding: 0;
+
+    // Strip the embedded card chrome — the dialog is the surface; the
+    // key/value list sits flush inside it instead of in a sub-box.
+    .mdk-pool-details-card {
+      padding: 0;
+      background: transparent;
+      border: none;
+    }
+  }
+}

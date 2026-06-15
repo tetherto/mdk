@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "provider": "bitmain",
+    "deviceFamily": "container",
+    "brand": "Antspace",
+    "modelsSupported": [
+      "HK3",
+      "IMM"
+    ],
+    "overview": "Controls Antspace container cooling systems."
+  },
+  "capabilities": {
+    "telemetry": [
+      {
+        "name": "inlet_temp",
+        "unit": "C",
+        "type": "number",
+        "description": "Inlet temperature."
+      },
+      {
+        "name": "outlet_temp",
+        "unit": "C",
+        "type": "number",
+        "description": "Outlet temperature."
+      },
+      {
+        "name": "liquid_supply_temp",
+        "unit": "C",
+        "type": "number",
+        "description": "Liquid supply temperature."
+      },
+      {
+        "name": "cooling_status",
+        "unit": "",
+        "type": "string",
+        "description": "Cooling system status."
+      }
+    ],
+    "commands": [
+      {
+        "name": "resetCoolingSystem",
+        "description": "Reset cooling system.",
+        "params": []
+      },
+      {
+        "name": "setLiquidSupplyTemperature",
+        "description": "Set supply temperature.",
+        "params": [
+          {
+            "name": "temperature",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "name": "registerThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          },
+          {
+            "name": "opts",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "updateThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "forgetThings",
+        "params": [
+          {
+            "name": "ids",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "saveSettings",
+        "params": []
+      },
+      {
+        "name": "saveComment",
+        "params": [
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "editComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          },
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "deleteComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "health": {
+      "supportedStates": [
+        "OK",
+        "DEGRADED",
+        "OFFLINE"
+      ]
+    },
+    "errors": {
+      "E_COOLING_FAIL": "Cooling system failure"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "recurse": true,
+  "markdown": true,
+  "checkFragments": true,
+  "verbosity": "warning",
+  "concurrency": 50,
+  "timeout": 30000,
+  "retry": true,
+  "retryErrors": true,
+  "retryErrorsCount": 3,
+  "skip": [
+    "node_modules",
+    "(^|/)dist/",
+    "(^|/)coverage/",
+    "^https://github\\.com/tetherto/mdk/blob/main/",
+    "workers/miners/[^/]+/examples/?$",
+    "workers/[^/]+/base/?$"
+  ],
+  "statusCodes": {
+    "403": "warn",
+    "429": "warn"
+  }
+}

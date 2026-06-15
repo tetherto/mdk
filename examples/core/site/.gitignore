@@ -1,0 +1,6 @@
+mdk
+ecosystem.config.js
+docker-compose.generated.yml
+data
+!config/*.json.example
+config/*.json

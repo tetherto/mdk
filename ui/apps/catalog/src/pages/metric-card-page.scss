@@ -1,0 +1,19 @@
+@layer app {
+  .metric-card-page {
+    &__content {
+      @include flex_column;
+
+      gap: 2rem;
+      max-width: 960px;
+    }
+
+    &__row {
+      @include flex_wrap;
+      gap: 1rem;
+
+      &--dense {
+        max-width: 480px;
+      }
+    }
+  }
+}

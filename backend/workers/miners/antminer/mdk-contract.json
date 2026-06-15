@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "provider": "bitmain",
+    "deviceFamily": "miner",
+    "brand": "Antminer",
+    "modelsSupported": ["S19XP", "S19XPH", "S21", "S21PRO"],
+    "overview": "Controls Bitmain Antminer Bitcoin miners via HTTP API."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate_avg", "unit": "TH/s", "type": "number", "description": "Average hashrate." },
+      { "name": "power", "unit": "W", "type": "number", "description": "Power draw." },
+      { "name": "temperature", "unit": "C", "type": "number", "description": "Outlet temperature." },
+      { "name": "status", "unit": "", "type": "string", "description": "Device status." },
+      { "name": "efficiency", "unit": "W/TH", "type": "number", "description": "Power efficiency." },
+      { "name": "uptime", "unit": "ms", "type": "number", "description": "Uptime." },
+      { "name": "accepted_shares", "unit": "", "type": "number", "description": "Accepted shares." },
+      { "name": "rejected_shares", "unit": "", "type": "number", "description": "Rejected shares." },
+      { "name": "power_mode", "unit": "", "type": "string", "description": "Current power mode." }
+    ],
+    "commands": [
+      { "name": "reboot", "description": "Restart miner.", "params": [] },
+      { "name": "setPowerMode", "description": "Change power mode.", "params": [{ "name": "mode", "type": "string" }] },
+      { "name": "setLED", "description": "Toggle LED.", "params": [{ "name": "enabled", "type": "boolean" }] },
+      { "name": "setupPools", "description": "Configure pools.", "params": [{ "name": "pools", "type": "object" }] },
+      { "name": "registerThing", "params": [{ "name": "info", "type": "object" }, { "name": "opts", "type": "object" }] },
+      { "name": "updateThing", "params": [{ "name": "info", "type": "object" }] },
+      { "name": "forgetThings", "params": [{ "name": "ids", "type": "object" }] },
+      { "name": "saveSettings", "params": [] },
+      { "name": "saveComment", "params": [{ "name": "text", "type": "string" }] },
+      { "name": "editComment", "params": [{ "name": "commentId", "type": "string" }, { "name": "text", "type": "string" }] },
+      { "name": "deleteComment", "params": [{ "name": "commentId", "type": "string" }] }
+    ],
+    "health": { "supportedStates": ["OK", "DEGRADED", "OFFLINE"] },
+    "errors": { "E_TEMP_HIGH": "Temperature exceeded threshold", "E_HASHBOARD_FAIL": "Hashboard failure" }
+  }
+}

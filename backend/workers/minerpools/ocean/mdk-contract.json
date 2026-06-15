@@ -1,0 +1,115 @@
+{
+  "metadata": {
+    "provider": "ocean",
+    "deviceFamily": "minerpool",
+    "brand": "Ocean",
+    "modelsSupported": [
+      "ocean-btc"
+    ],
+    "overview": "Fetches mining pool data from Ocean.xyz API."
+  },
+  "capabilities": {
+    "telemetry": [
+      {
+        "name": "hashrate",
+        "unit": "TH/s",
+        "type": "number",
+        "description": "Current hashrate."
+      },
+      {
+        "name": "workers_online",
+        "unit": "",
+        "type": "number",
+        "description": "Active workers."
+      },
+      {
+        "name": "balance",
+        "unit": "BTC",
+        "type": "number",
+        "description": "Pool balance."
+      },
+      {
+        "name": "estimated_earnings",
+        "unit": "BTC",
+        "type": "number",
+        "description": "Estimated daily earnings."
+      }
+    ],
+    "commands": [
+      {
+        "name": "registerThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          },
+          {
+            "name": "opts",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "updateThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "forgetThings",
+        "params": [
+          {
+            "name": "ids",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "saveSettings",
+        "params": []
+      },
+      {
+        "name": "saveComment",
+        "params": [
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "editComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          },
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "deleteComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "health": {
+      "supportedStates": [
+        "OK",
+        "DEGRADED",
+        "OFFLINE"
+      ]
+    },
+    "errors": {}
+  }
+}

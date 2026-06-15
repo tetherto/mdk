@@ -1,0 +1,134 @@
+{
+  "$schema": "../../mdk-contract.schema.json",
+  "metadata": {
+    "provider": "microbt",
+    "deviceFamily": "miner",
+    "brand": "Whatsminer",
+    "modelsSupported": ["M30S", "M50S", "M56S", "M60S", "M63"],
+    "overview": "Provides orchestration capabilities to control and read data from MicroBT Whatsminer Bitcoin miners. Operations here affect physical hardware. Always prioritize thermal safety and verify telemetry changes after issuing commands."
+  },
+  "devices": [],
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate_rt", "unit": "TH/s", "type": "number", "description": "Real-time hashrate. A value of 0 implies the miner is offline, booting, or experiencing a catastrophic failure." },
+      { "name": "hashrate_avg", "unit": "TH/s", "type": "number", "description": "Average hashrate over the session." },
+      { "name": "power_draw", "unit": "W", "type": "number", "description": "Current power draw. If dramatically lower than limit_watts, a hashboard might be dead." },
+      { "name": "temperature_in", "unit": "C", "type": "number", "description": "Ambient air temperature entering the miner." },
+      { "name": "temperature_out", "unit": "C", "type": "number", "description": "Outlet temperature. Critical metric. If this exceeds 85C, intervention is required." },
+      { "name": "fan_speed_in", "unit": "RPM", "type": "number", "description": "Inlet fan speed. Below 2000 RPM usually indicates a broken fan." },
+      { "name": "fan_speed_out", "unit": "RPM", "type": "number", "description": "Outlet fan speed. Below 2000 RPM usually indicates a broken fan." },
+      { "name": "status", "unit": "", "type": "string", "description": "Device status: online, offline, rebooting, degraded." },
+      { "name": "uptime_seconds", "unit": "s", "type": "number", "description": "Seconds since last boot." },
+      { "name": "accepted_shares", "unit": "", "type": "number", "description": "Total accepted shares this session." },
+      { "name": "rejected_shares", "unit": "", "type": "number", "description": "Total rejected shares this session." },
+      { "name": "pool_url", "unit": "", "type": "string", "description": "Currently active pool URL." }
+    ],
+    "commands": [
+      {
+        "name": "reboot",
+        "description": "Safely restarts the miner controller. Takes 2-3 minutes for telemetry to resume.",
+        "constraints": "Do not call more than once in a 5-minute window per device.",
+        "params": []
+      },
+      {
+        "name": "setPowerLimit",
+        "description": "Adjusts PSU output wattage.",
+        "constraints": "Never set below 2000W or hashboards may fail to initialize. Max is model-dependent (3500W-4000W).",
+        "params": [
+          { "name": "limit_watts", "type": "number", "min": 2000, "max": 4000 }
+        ]
+      },
+      {
+        "name": "setPools",
+        "description": "Updates the mining pool configuration.",
+        "params": [
+          { "name": "pool1_url", "type": "string" },
+          { "name": "pool1_user", "type": "string" },
+          { "name": "pool1_pass", "type": "string" }
+        ]
+      },
+      {
+        "name": "setLED",
+        "description": "Toggle the physical LED indicator on the device.",
+        "params": [
+          { "name": "enabled", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "setPowerMode",
+        "description": "Set the device power mode: normal, low, high.",
+        "params": [
+          { "name": "mode", "type": "string" }
+        ]
+      },
+      {
+        "name": "registerThing",
+        "description": "Register a new device in this worker's rack.",
+        "params": [
+          { "name": "info", "type": "object" },
+          { "name": "opts", "type": "object" }
+        ]
+      },
+      {
+        "name": "updateThing",
+        "description": "Update an existing device's info or options.",
+        "params": [
+          { "name": "info", "type": "object" },
+          { "name": "opts", "type": "object" }
+        ]
+      },
+      {
+        "name": "forgetThings",
+        "description": "Remove devices from the worker.",
+        "params": [
+          { "name": "ids", "type": "object" }
+        ]
+      },
+      {
+        "name": "saveSettings",
+        "description": "Update worker-level settings.",
+        "params": []
+      },
+      {
+        "name": "saveComment",
+        "description": "Add a comment to a device.",
+        "params": [
+          { "name": "text", "type": "string" },
+          { "name": "author", "type": "string" }
+        ]
+      },
+      {
+        "name": "editComment",
+        "description": "Edit an existing comment on a device.",
+        "params": [
+          { "name": "commentId", "type": "string" },
+          { "name": "text", "type": "string" }
+        ]
+      },
+      {
+        "name": "deleteComment",
+        "description": "Delete a comment from a device.",
+        "params": [
+          { "name": "commentId", "type": "string" }
+        ]
+      }
+    ],
+    "config": {
+      "schema": "whatsminer_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.overheat", "alert.fan_failure", "alert.psu_failure", "alert.hashrate_low"],
+      "troubleshooting": [
+        "If alert.overheat, verify fan_speed_in and fan_speed_out. A fan speed of 0 is a mechanical failure.",
+        "If alert.hashrate_low, the miner might be tuning boards (expected after power change, wait ~15 minutes).",
+        "If status is OFFLINE, do not attempt reboot — telemetry layer cannot reach device. Escalate to human."
+      ]
+    },
+    "errors": {
+      "E_TEMP_HIGH": "Chip temperature exceeded safe thresholds",
+      "E_FAN_FAIL": "Fan RPM below required threshold",
+      "E_PSU_ERR": "Power supply unit reporting error or unstable output"
+    }
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "metadata": {
+    "provider": "microbt",
+    "deviceFamily": "container",
+    "brand": "MicroBT",
+    "modelsSupported": [
+      "KEHUA",
+      "WONDERINT"
+    ],
+    "overview": "Controls MicroBT container cooling via Modbus."
+  },
+  "capabilities": {
+    "telemetry": [
+      {
+        "name": "fan_threshold",
+        "unit": "",
+        "type": "number",
+        "description": "Cooling fan threshold."
+      },
+      {
+        "name": "operating_status",
+        "unit": "",
+        "type": "string",
+        "description": "Operating status."
+      },
+      {
+        "name": "power",
+        "unit": "W",
+        "type": "number",
+        "description": "Power draw."
+      }
+    ],
+    "commands": [
+      {
+        "name": "setCoolingFanThreshold",
+        "description": "Set fan threshold.",
+        "params": [
+          {
+            "name": "threshold",
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "name": "registerThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          },
+          {
+            "name": "opts",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "updateThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "forgetThings",
+        "params": [
+          {
+            "name": "ids",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "saveSettings",
+        "params": []
+      },
+      {
+        "name": "saveComment",
+        "params": [
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "editComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          },
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "deleteComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "health": {
+      "supportedStates": [
+        "OK",
+        "DEGRADED",
+        "OFFLINE"
+      ]
+    },
+    "errors": {}
+  }
+}

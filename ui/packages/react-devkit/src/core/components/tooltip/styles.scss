@@ -1,0 +1,103 @@
+/**
+ * Tooltip Component Styles (mining-os theme)
+ */
+
+.mdk-tooltip__content {
+  --mdk-tooltip-border-color: var(--mdk-color-primary);
+  --mdk-tooltip-surface-color: var(--mdk-popover-bg);
+
+  max-width: 200px;
+  padding: 6px 10px;
+  z-index: 10001;
+  word-wrap: break-word;
+  position: relative;
+
+  color: var(--mdk-color-white);
+  background-color: var(--mdk-tooltip-surface-color);
+  border: 1px solid var(--mdk-tooltip-border-color);
+
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+
+  border-radius: 2px;
+
+  animation-duration: 0.09s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+
+  &[data-state='delayed-open'],
+  &[data-state='instant-open'] {
+    animation-name: mdk-tooltip-fade-in;
+  }
+
+  &[data-state='closed'] {
+    animation-name: mdk-tooltip-fade-out;
+    animation-duration: 0.15s;
+    animation-timing-function: ease-in;
+  }
+
+  &-main {
+    overflow-y: auto;
+    max-height: 300px;
+  }
+
+  @media (max-height: 400px) {
+    max-height: 300px;
+  }
+
+  @media (min-width: 768px) {
+    max-width: 250px;
+    padding: 8px 12px;
+  }
+}
+
+.mdk-tooltip__arrow {
+  display: block;
+  width: 14px;
+  height: 7px;
+  position: relative;
+  overflow: visible;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: polygon(0 0, 50% 100%, 100% 0);
+    background: var(--mdk-tooltip-border-color);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--mdk-tooltip-surface-color);
+    clip-path: polygon(0 0, 100% 0, 82.8% 25%, 50% 82.3%, 17.2% 25%);
+  }
+}
+
+@keyframes mdk-tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mdk-tooltip-fade-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}

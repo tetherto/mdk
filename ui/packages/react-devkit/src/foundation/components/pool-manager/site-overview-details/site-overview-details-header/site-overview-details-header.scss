@@ -1,0 +1,55 @@
+@use '@core/styles/mixins' as *;
+
+$breakpoint-row: 730px;
+
+.mdk-sod-header {
+  @include flex_column;
+
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  @media (min-width: $breakpoint-row) {
+    @include flex_row;
+  }
+
+  &__info {
+    @include flex_row;
+
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 14px;
+  }
+
+  &__col {
+    @include flex_column;
+
+    margin-right: 15px;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: var(--mdk-color-text-disabled);
+  }
+
+  &__value {
+    font-size: 16px;
+    color: var(--mdk-color-white);
+    margin-top: 10px;
+
+    &--active {
+      color: var(--mdk-color-primary);
+    }
+  }
+
+  &__actions {
+    @include flex_row;
+
+    gap: 10px;
+    margin-top: 10px;
+
+    @media (min-width: $breakpoint-row) {
+      margin-top: 0;
+    }
+  }
+}

@@ -6,8 +6,6 @@ MDK is committed to fostering an open, professional, and respectful community.
 
 We welcome contributors of all backgrounds and experience levels. Participation in the MDK community should be harassment-free and inclusive for everyone.
 
----
-
 ## Expected Behavior
 
 All participants in the MDK community are expected to:
@@ -17,8 +15,6 @@ All participants in the MDK community are expected to:
 - Assume good intent
 - Focus on what is best for the project
 - Accept constructive criticism gracefully
-
----
 
 ## Unacceptable Behavior
 
@@ -31,8 +27,6 @@ The following behaviors are not tolerated:
 - Publishing private information without consent
 - Any conduct that would be considered unprofessional in a workplace setting
 
----
-
 ## Scope
 
 This Code of Conduct applies to:
@@ -42,8 +36,6 @@ This Code of Conduct applies to:
 - Discussions and community channels
 - Official MDK communication platforms
 - Any other space officially associated with the MDK project
-
----
 
 ## Enforcement
 
@@ -55,8 +47,6 @@ If you experience or witness unacceptable behavior, report it privately to the C
 
 Reports will be handled confidentially and reviewed in coordination with the MDK team.
 
----
-
 ## Enforcement Guidelines
 
 The MDK team may take any action deemed appropriate, including:
@@ -67,8 +57,6 @@ The MDK team may take any action deemed appropriate, including:
 - Removing content that violates this Code of Conduct
 
 Decisions regarding enforcement are final.
-
----
 
 ## Amendments
 

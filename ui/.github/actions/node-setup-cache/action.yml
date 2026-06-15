@@ -1,0 +1,72 @@
+name: 'Node.js Setup with Cache'
+description: 'Sets up Node.js with dependency caching for the initial setup job'
+author: 'mdk-devops'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '24.x'
+  install-dependencies:
+    description: 'Whether to install dependencies on cache miss'
+    required: false
+    default: 'true'
+  additional-packages:
+    description: 'Additional system packages to install (space-separated)'
+    required: false
+    default: ''
+
+outputs:
+  cache-key:
+    description: 'The generated cache key for node_modules'
+    value: ${{ steps.cache-keys.outputs.cache-key }}
+  cache-hit:
+    description: 'Whether the cache was hit'
+    value: ${{ steps.cache-node-modules.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Generate cache keys
+      id: cache-keys
+      shell: bash
+      run: |
+        NODE_VERSION="${{ inputs.node-version }}"
+        BASE_KEY="node-modules-${{ runner.os }}-${NODE_VERSION}"
+        HASH_KEY="${BASE_KEY}-${{ hashFiles('package-lock.json', 'package.json') }}"
+        echo "cache-key=${HASH_KEY}" >> $GITHUB_OUTPUT
+        echo "base-key=${BASE_KEY}" >> $GITHUB_OUTPUT
+
+    - name: Setup Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install additional system packages
+      if: inputs.additional-packages != ''
+      shell: bash
+      run: |
+        echo "Installing additional packages: ${{ inputs.additional-packages }}"
+        sudo apt update
+        sudo apt install -y ${{ inputs.additional-packages }}
+
+    - name: Install dependencies
+      if: inputs.install-dependencies == 'true'
+      shell: bash
+      run: |
+        if [ -f package-lock.json ]; then
+          echo "Found package-lock.json, using npm ci for deterministic installs"
+          npm ci
+        else
+          echo "No package-lock.json found, using npm install"
+          npm install
+        fi
+
+    - name: Cache node modules
+      id: cache-node-modules
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+      with:
+        path: node_modules
+        key: ${{ steps.cache-keys.outputs.cache-key }}
+        restore-keys: |
+          ${{ steps.cache-keys.outputs.base-key }}-

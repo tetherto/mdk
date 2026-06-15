@@ -1,0 +1,52 @@
+@layer app {
+  .demo-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    &__title {
+      margin: 0;
+    }
+
+    &__description {
+      margin: 0;
+      max-width: 80ch;
+    }
+
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+      margin-top: 0.25rem;
+
+      > p {
+        margin: 0;
+      }
+
+      pre {
+        margin: 0;
+        padding: 0.875rem 1rem;
+        overflow: auto;
+        border-radius: 8px;
+        background: var(--mdk-color-white-4, rgba(255, 255, 255, 0.04));
+        font-size: 0.8125rem;
+        line-height: 1.5;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 1.25rem;
+
+        li + li {
+          margin-top: 0.5rem;
+        }
+      }
+    }
+  }
+}

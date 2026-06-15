@@ -1,0 +1,39 @@
+@use '@core/styles/mixins' as *;
+
+.mdk-mining-report-metric-card {
+  @include flex_column;
+
+  gap: 4px;
+  padding: 20px;
+  min-width: 140px;
+  background-color: rgba(var(--mdk-color-black), 0.5);
+}
+
+.mdk-mining-report-metric-card--no-min-width {
+  min-width: unset;
+}
+
+.mdk-mining-report-metric-card__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mdk-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mdk-mining-report-metric-card__value {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--mdk-color-white);
+  word-break: break-word;
+}
+
+.mdk-mining-report-metric-card__value--highlighted {
+  color: rgb(var(--mdk-color-orange-warning));
+}
+
+.mdk-mining-report-metric-card__value--medium {
+  font-size: 16px;
+}

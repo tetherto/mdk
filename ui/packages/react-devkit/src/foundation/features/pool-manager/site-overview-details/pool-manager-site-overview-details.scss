@@ -1,0 +1,26 @@
+@use '@core/styles/mixins' as *;
+
+.mdk-pm-sod {
+  &__header {
+    @include flex_align_between;
+
+    margin-bottom: 24px;
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--mdk-color-white);
+    margin-bottom: 10px;
+  }
+
+  &__subtitle {
+    @include flex_align;
+
+    gap: 4px;
+    font-size: 13px;
+    color: var(--mdk-color-primary);
+    margin-top: 4px;
+  }
+}

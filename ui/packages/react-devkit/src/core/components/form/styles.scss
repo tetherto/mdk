@@ -1,0 +1,58 @@
+@use '../../styles/mixins' as *;
+/**
+ * Form Component Styles (mining-os theme)
+ */
+
+.mdk-form {
+  @include flex_column;
+
+  gap: 1.5rem;
+}
+
+.mdk-form-item {
+  @include flex_column;
+
+  gap: 0.5rem;
+  
+  // Prevent layout shift when errors appear/disappear
+  min-height: fit-content;
+}
+
+.mdk-form-label {
+  &--error {
+    color: rgb(var(--mdk-color-error, #ef4444));
+  }
+}
+
+.mdk-form-description {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: var(--mdk-input-placeholder-color, #999999);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.mdk-form-message {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: rgb(var(--mdk-color-error, #ef4444));
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  
+  // Reserve space to prevent layout shift when errors appear
+  min-height: 1.25rem;
+  
+  // When empty, take up space but be invisible (prevents layout shift)
+  &--empty {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+}

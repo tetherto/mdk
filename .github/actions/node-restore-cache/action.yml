@@ -1,0 +1,61 @@
+name: Restore node_modules cache
+description: Restore node_modules from cache; npm ci only on cache miss.
+
+inputs:
+  cache-key:
+    description: cache-key from node-setup-cache
+    required: true
+  node-version:
+    description: Node.js version (must match setup job)
+    required: true
+  working-directory:
+    description: Directory containing package.json (use . for repo root)
+    required: false
+    default: '.'
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve node_modules path
+      id: paths
+      shell: bash
+      env:
+        PKG_DIR: ${{ inputs.working-directory }}
+      run: |
+        WD="${PKG_DIR:-.}"
+        if [ "$WD" = "." ]; then
+          echo "node-modules-path=node_modules" >> "$GITHUB_OUTPUT"
+        else
+          echo "node-modules-path=${WD}/node_modules" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Restore node_modules cache
+      id: cache-node-modules
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.paths.outputs.node-modules-path }}
+        key: ${{ inputs.cache-key }}
+        restore-keys: |
+          node-modules-${{ runner.os }}-
+
+    - name: Setup Node.js
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install dependencies
+      if: steps.cache-node-modules.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        PKG_DIR: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        WD="${PKG_DIR:-.}"
+        if [ "$WD" != "." ]; then
+          cd "$WD"
+        fi
+        if [ -f package-lock.json ]; then
+          npm ci --ignore-scripts --no-audit --no-fund
+        else
+          npm install --ignore-scripts --no-audit --no-fund
+        fi

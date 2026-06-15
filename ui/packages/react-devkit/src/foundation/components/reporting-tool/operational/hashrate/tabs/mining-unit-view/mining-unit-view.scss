@@ -1,0 +1,25 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
+.mdk-hashrate-mining-unit-view {
+  @include flex_column;
+
+  gap: 16px;
+}
+
+.mdk-hashrate-mining-unit-view__header {
+  @include flex_align_between;
+}
+
+.mdk-hashrate-mining-unit-view__title {
+  font-size: 16px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--mdk-color-white);
+}
+
+.mdk-hashrate-mining-unit-view__controls {
+  @include flex_align;
+
+  gap: 12px;
+  flex-wrap: wrap;
+}

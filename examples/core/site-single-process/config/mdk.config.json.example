@@ -1,0 +1,29 @@
+{
+  "mode": "single-process",
+  "noAuth": false,
+  "services": [
+    {
+      "name": "ork",
+      "kind": "ork"
+    },
+    {
+      "name": "app-node",
+      "kind": "app-node",
+      "port": 3000
+    },
+    {
+      "name": "wm-m56s",
+      "kind": "worker",
+      "worker": "miner-whatsminer",
+      "type": "M56S",
+      "rack": "rack-m56s"
+    },
+    {
+      "name": "am-s19xp",
+      "kind": "worker",
+      "worker": "miner-antminer",
+      "type": "S19XP",
+      "rack": "rack-s19xp"
+    }
+  ]
+}

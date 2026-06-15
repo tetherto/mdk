@@ -1,0 +1,27 @@
+{
+  "name": "@tetherto/mdk-core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "MDK Core",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "install:packages": "./install-packages.sh",
+    "ci:packages": "./install-packages.sh ci",
+    "clean:packages": "./clean-workspaces.sh",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:packages",
+    "test:packages": "for pkg in app-node client mdk mock-control-service ork; do if [ -f \"$pkg/package.json\" ]; then npm test --prefix \"$pkg\" || exit 1; fi; done"
+  },
+  "devDependencies": {
+    "standard": "17.1.0"
+  }
+}

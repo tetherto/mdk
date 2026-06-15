@@ -1,0 +1,72 @@
+# @tetherto/mdk-catalog-ui
+
+Catalog application showcasing the `@tetherto/mdk-react-devkit` component
+library along with the headless core (`@tetherto/mdk-ui-core`) and its
+React bindings (`@tetherto/mdk-react-adapter`).
+
+## Getting Started
+
+```bash
+# Install dependencies (from root)
+npm install
+
+# Run the catalog app
+npm run --workspace @tetherto/mdk-catalog-ui dev
+```
+
+## Features
+
+This catalog showcases:
+
+- Button variants and sizes
+- Dialog components
+- Checkboxes and switches
+- Dropdown menus and tooltips
+- Avatars
+- Accordions
+- Dashboard components (Active Incidents, Pool Details)
+- Charts and data visualization
+- And more!
+
+## Development
+
+```bash
+# Type check
+npm run --workspace @tetherto/mdk-catalog-ui typecheck
+
+# Lint
+npm run --workspace @tetherto/mdk-catalog-ui lint
+
+# Build
+npm run --workspace @tetherto/mdk-catalog-ui build
+```
+
+## Build info
+
+The production bundle is aggressively minified with Terser, which strips
+all `console.*` calls (`drop_console: true` in `vite.config.ts`). To keep
+build metadata available in deployed environments without weakening that
+setting, build info is attached to the global `window` object and
+appended to the document title at bootstrap.
+
+### Inspecting a deployed build
+
+Open the browser devtools console on any deployed page and run:
+
+```js
+window.__MDK_BUILD__
+// → { version, branch, commit, commitDate, buildDate }
+
+copy(window.__MDK_BUILD__)
+// copies the full object to the clipboard for bug reports
+```
+
+The page title also carries the version suffix (for example,
+`MDK UI Toolkit Catalog · v0.0.1`), so you can identify the running build at a glance
+without opening devtools.
+
+### Shape
+
+`window.__MDK_BUILD__` matches the `__BUILD_INFO__` define injected by
+Vite — see `vite.config.ts` for how each field is populated, and
+`src/vite-env.d.ts` for the TypeScript declaration.

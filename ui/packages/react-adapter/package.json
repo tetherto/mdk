@@ -1,0 +1,68 @@
+{
+  "name": "@tetherto/mdk-react-adapter",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "React framework adapter for @tetherto/mdk-ui-core. Binds Zustand vanilla stores and TanStack QueryClient to React-native hooks. No Redux.",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js",
+      "default": "./dist/hooks/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider/index.d.ts",
+      "import": "./dist/provider/index.js",
+      "default": "./dist/provider/index.js"
+    },
+    "./hooks.json": "./dist/hooks.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "rimraf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json && npm run build:hooks",
+    "build:ts": "tsc -p tsconfig.build.json",
+    "build:hooks": "tsx scripts/generate-hooks.mts",
+    "clean": "rimraf dist node_modules .turbo",
+    "dev": "tsc --watch -p tsconfig.build.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "eslint . --fix",
+    "test": "vitest run --config vitest.config.js",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --config vitest.config.js --coverage",
+    "typecheck": "tsc --noEmit",
+    "watch": "npm run dev",
+    "watch:ts": "npm run dev"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.59.0",
+    "@tetherto/mdk-ui-core": "*",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.1.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "@vitest/coverage-v8": "^4.1.2",
+    "happy-dom": "^20.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "ts-morph": "^24.0.0",
+    "tsx": "^4.19.2",
+    "vitest": "^4.1.2"
+  }
+}

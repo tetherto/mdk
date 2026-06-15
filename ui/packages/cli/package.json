@@ -1,0 +1,49 @@
+{
+  "name": "@tetherto/mdk-ui-cli",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Agent-first command-line interface for the MDK Devkit. Provides registry discovery, doc/example fetching, page scaffolding, and typecheck commands for AI agents and humans.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./cli-manifest.json": "./dist/cli-manifest.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "mdk-ui": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json && node scripts/copy-templates.mjs && chmod +x dist/bin.js && npm run build:manifest",
+    "build:manifest": "node dist/bin.js --json-help > dist/cli-manifest.json",
+    "build:ts": "npm run build",
+    "clean": "rimraf dist node_modules .turbo",
+    "dev": "tsc --watch -p tsconfig.build.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "eslint . --fix",
+    "test": "vitest run --config vitest.config.js",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --config vitest.config.js --coverage",
+    "typecheck": "tsc --noEmit",
+    "watch": "npm run dev",
+    "watch:ts": "npm run dev"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@tetherto/mdk-react-devkit": "^0.0.1",
+    "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^4.1.2",
+    "execa": "^9.5.2",
+    "vitest": "^4.1.2"
+  }
+}

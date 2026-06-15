@@ -1,0 +1,28 @@
+@layer app {
+  .btc-average-price-page {
+    &__content {
+      @include flex_column;
+
+      gap: 2rem;
+      max-width: 960px;
+    }
+
+    &__variants {
+      @include flex_column;
+
+      gap: 1rem;
+    }
+
+    &__case {
+      @include flex_column;
+
+      gap: 0.35rem;
+    }
+
+    &__case-label {
+      margin: 0;
+      font-size: 13px;
+      color: rgb(var(--mdk-color-grey-idle));
+    }
+  }
+}

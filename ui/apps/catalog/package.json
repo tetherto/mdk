@@ -1,0 +1,36 @@
+{
+  "name": "@tetherto/mdk-catalog-ui",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "clean": "rimraf dist node_modules .turbo",
+    "dev": "vite",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^4.1.0",
+    "@radix-ui/react-icons": "^1.3.2",
+    "@tetherto/mdk-fonts": "*",
+    "@tetherto/mdk-react-adapter": "*",
+    "@tetherto/mdk-react-devkit": "*",
+    "@tetherto/mdk-ui-core": "*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.54.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
+    "react-router-dom": "^7.13.0",
+    "terser": "^5.46.0",
+    "vite": "^8.0.16"
+  }
+}

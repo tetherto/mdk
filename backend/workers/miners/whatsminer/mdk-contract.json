@@ -1,0 +1,142 @@
+{
+  "$schema": "../../base/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "microbt",
+    "deviceFamily": "miner",
+    "brand": "Whatsminer",
+    "modelsSupported": ["M30SP", "M30SPP", "M53S", "M56S", "M63"],
+    "overview": "Controls MicroBT Whatsminer Bitcoin miners. Operations affect physical hardware — prioritize thermal safety."
+  },
+  "devices": [],
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate_rt", "unit": "TH/s", "type": "number", "description": "Real-time hashrate." },
+      { "name": "hashrate_avg", "unit": "TH/s", "type": "number", "description": "Average hashrate." },
+      { "name": "power", "unit": "W", "type": "number", "description": "Current power draw." },
+      { "name": "temperature", "unit": "C", "type": "number", "description": "Chip temperature." },
+      { "name": "fan_speed_in", "unit": "RPM", "type": "number", "description": "Inlet fan speed." },
+      { "name": "fan_speed_out", "unit": "RPM", "type": "number", "description": "Outlet fan speed." },
+      { "name": "status", "unit": "", "type": "string", "description": "Device status." },
+      { "name": "uptime", "unit": "s", "type": "number", "description": "Seconds since last boot." },
+      { "name": "accepted_shares", "unit": "", "type": "number", "description": "Total accepted shares." },
+      { "name": "rejected_shares", "unit": "", "type": "number", "description": "Total rejected shares." },
+      { "name": "pool_url", "unit": "", "type": "string", "description": "Active pool URL." },
+      { "name": "efficiency", "unit": "W/TH", "type": "number", "description": "Power efficiency." },
+      { "name": "power_mode", "unit": "", "type": "string", "description": "Current power mode." }
+    ],
+    "commands": [
+      {
+        "name": "reboot",
+        "description": "Restarts the miner controller. Takes 2-3 minutes to resume.",
+        "constraints": "Do not call more than once per 5 minutes.",
+        "params": []
+      },
+      {
+        "name": "setPowerMode",
+        "description": "Changes the power mode.",
+        "params": [
+          { "name": "mode", "type": "string" }
+        ]
+      },
+      {
+        "name": "setLED",
+        "description": "Toggle the physical LED indicator.",
+        "params": [
+          { "name": "enabled", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "setupPools",
+        "description": "Configure mining pools.",
+        "params": [
+          { "name": "pools", "type": "object" }
+        ]
+      },
+      {
+        "name": "setPowerPct",
+        "description": "Set power percentage.",
+        "params": [
+          { "name": "pct", "type": "number", "min": 0, "max": 100 }
+        ]
+      },
+      {
+        "name": "registerThing",
+        "description": "Register a new miner device.",
+        "params": [
+          { "name": "info", "type": "object" },
+          { "name": "opts", "type": "object" }
+        ]
+      },
+      {
+        "name": "updateThing",
+        "description": "Update miner device info or options.",
+        "params": [
+          { "name": "info", "type": "object" },
+          { "name": "opts", "type": "object" }
+        ]
+      },
+      {
+        "name": "forgetThings",
+        "description": "Remove miner devices.",
+        "params": [
+          { "name": "ids", "type": "object" }
+        ]
+      },
+      {
+        "name": "saveSettings",
+        "description": "Update worker settings.",
+        "params": []
+      },
+      {
+        "name": "saveComment",
+        "description": "Add a comment to a device.",
+        "params": [
+          { "name": "text", "type": "string" }
+        ]
+      },
+      {
+        "name": "editComment",
+        "description": "Edit an existing comment.",
+        "params": [
+          { "name": "commentId", "type": "string" },
+          { "name": "text", "type": "string" }
+        ]
+      },
+      {
+        "name": "deleteComment",
+        "description": "Delete a comment.",
+        "params": [
+          { "name": "commentId", "type": "string" }
+        ]
+      },
+      {
+        "name": "rackReboot",
+        "description": "Restart the worker process managing this rack. All device connections drop and reconnect.",
+        "constraints": "Do not call more than once per 5 minutes. Telemetry collection pauses until reconnect.",
+        "params": []
+      },
+      {
+        "name": "downloadLogs",
+        "description": "Download raw diagnostic log data directly from miner hardware.",
+        "params": []
+      }
+    ],
+    "config": {
+      "schema": "whatsminer_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.overheat", "alert.fan_failure", "alert.psu_failure", "alert.hashrate_low"],
+      "troubleshooting": [
+        "If alert.overheat, verify fan speeds. Fan speed of 0 is a mechanical failure.",
+        "If alert.hashrate_low, miner may be tuning boards — wait 15 minutes.",
+        "If status is OFFLINE, do not attempt reboot. Escalate to operator."
+      ]
+    },
+    "errors": {
+      "E_TEMP_HIGH": "Chip temperature exceeded safe thresholds",
+      "E_FAN_FAIL": "Fan RPM below required threshold",
+      "E_PSU_ERR": "Power supply unit reporting error"
+    }
+  }
+}

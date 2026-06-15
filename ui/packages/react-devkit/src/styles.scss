@@ -1,0 +1,5 @@
+// Top-level SCSS entry for the devkit.
+// Builds to dist/styles.css and is exported as `@tetherto/mdk-react-devkit/styles.css`.
+
+@forward "./core/styles/index";
+@forward "./foundation/styles/index";

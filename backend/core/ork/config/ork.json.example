@@ -1,0 +1,17 @@
+{
+  "hrpc": {
+    "whitelist": []
+  },
+  "ipc": {
+    "path": ""
+  },
+  "discovery": {
+    "topic": null
+  },
+  "telemetryPullMs": 10000,
+  "statePullMs": 60000,
+  "healthPingMs": 5000,
+  "healthFailureThreshold": 3,
+  "commandMaxRetries": 3,
+  "commandTimeoutMs": 30000
+}

@@ -1,0 +1,122 @@
+{
+  "metadata": {
+    "provider": "schneider",
+    "deviceFamily": "power-meter",
+    "brand": "Schneider Electric",
+    "modelsSupported": [
+      "P3U30",
+      "PM5340"
+    ],
+    "overview": "Reads Schneider Electric power meters via Modbus TCP."
+  },
+  "capabilities": {
+    "telemetry": [
+      {
+        "name": "voltage",
+        "unit": "V",
+        "type": "number",
+        "description": "3-phase voltage."
+      },
+      {
+        "name": "current",
+        "unit": "A",
+        "type": "number",
+        "description": "3-phase current."
+      },
+      {
+        "name": "active_power",
+        "unit": "W",
+        "type": "number",
+        "description": "Active power."
+      },
+      {
+        "name": "power_factor",
+        "unit": "",
+        "type": "number",
+        "description": "Power factor."
+      },
+      {
+        "name": "frequency",
+        "unit": "Hz",
+        "type": "number",
+        "description": "Line frequency."
+      }
+    ],
+    "commands": [
+      {
+        "name": "registerThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          },
+          {
+            "name": "opts",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "updateThing",
+        "params": [
+          {
+            "name": "info",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "forgetThings",
+        "params": [
+          {
+            "name": "ids",
+            "type": "object"
+          }
+        ]
+      },
+      {
+        "name": "saveSettings",
+        "params": []
+      },
+      {
+        "name": "saveComment",
+        "params": [
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "editComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          },
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "name": "deleteComment",
+        "params": [
+          {
+            "name": "commentId",
+            "type": "string"
+          }
+        ]
+      }
+    ],
+    "health": {
+      "supportedStates": [
+        "OK",
+        "DEGRADED",
+        "OFFLINE"
+      ]
+    },
+    "errors": {}
+  }
+}

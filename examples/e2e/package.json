@@ -1,0 +1,14 @@
+{
+  "name": "@tetherto/mdk-site-monitor-example",
+  "version": "0.0.1",
+  "private": true,
+  "description": "MDK end-to-end example — mock worker, ORK, app-node, and site hashrate UI",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "postinstall": "npm install --prefix ./ui",
+    "start": "node start.js"
+  }
+}

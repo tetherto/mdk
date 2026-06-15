@@ -1,0 +1,155 @@
+# Tag vocabulary — presentation overlay
+#
+# This file does NOT define what tags are allowed. The constraint surfaces
+# are engineer-owned and live with the code:
+#
+#   mdk-contract.schema.json  → constrains worker contract metadata
+#                               (metadata.deviceFamily, etc.)
+#   JSDoc + registry generator → constrains UI tags
+#                               (@tier, @category, @domain, @orkCapability)
+#
+# This file does two things:
+#
+#   1. Slug → display-label mappings, so the docs catalogue can pretty-print
+#      values that appear in contracts and JSDoc (e.g. "microbt" → "MicroBT").
+#      Adding a new contract or a new UI export does NOT require touching
+#      this file. A missing label falls back to the slug.
+#
+#   2. integration-kinds — a docs-only roll-up over metadata.deviceFamily
+#      for browse pages under docs/maintainers/integrations/. This is the
+#      one section that is genuinely authored here.
+#
+# Target end state: the slug → label mappings are extracted from contracts
+# and JSDoc by a build step, and this file shrinks to integration-kinds.
+# See docs/maintainers/ia.md#derived-vocabulary.
+
+# ─────────────────────────────────────────────
+# Display labels — workers (mirror mdk-contract.json fields)
+# ─────────────────────────────────────────────
+
+# metadata.deviceFamily
+device-families:
+  miner:
+    label: Miner
+  minerpool:
+    label: Mining pool integration
+  container:
+    label: Mining container
+  power-meter:
+    label: Power meter
+  sensor:
+    label: Sensor
+
+# metadata.provider — covers hardware vendors, pool operators, and external
+# service providers. Distinguished by deviceFamily, not by name. Entries
+# here only set non-default display labels; missing entries fall back to
+# the raw slug.
+providers:
+  bitmain:
+    label: Bitmain
+  microbt:
+    label: MicroBT
+  canaan:
+    label: Canaan Creative
+  abb:
+    label: ABB
+  schneider:
+    label: Schneider Electric
+  satec:
+    label: SATEC
+  seneca:
+    label: SENECA
+  bitdeer:
+    label: Bitdeer
+  ocean:
+    label: Ocean
+  f2pool:
+    label: F2Pool
+
+# metadata.modelsSupported[] is per-contract. No central overlay — each
+# mdk-contract.json declares the models it supports, and the docs catalogue
+# aggregates them at build time.
+
+# ─────────────────────────────────────────────
+# Display labels — UI (mirror react-devkit JSDoc tags)
+# ─────────────────────────────────────────────
+
+# @tier
+tiers:
+  agent-ready:
+    label: Agent-ready (LLM-pickable)
+  advanced:
+    label: Advanced (engineer composition)
+  internal:
+    label: Internal (hidden from registry)
+
+# @category
+categories:
+  charts:
+    label: Charts
+  tables:
+    label: Tables
+  cards:
+    label: Cards
+  forms:
+    label: Forms
+  dialogs:
+    label: Dialogs
+  navigation:
+    label: Navigation
+  layout:
+    label: Layout
+  widgets:
+    label: Widgets
+  dashboards:
+    label: Dashboards
+  actions:
+    label: Actions
+  feedback:
+    label: Feedback
+  misc:
+    label: Misc
+
+# @domain
+domains:
+  mining-operations:
+    label: Mining operations
+  financial-reporting:
+    label: Financial reporting
+  device-management:
+    label: Device management
+  generic:
+    label: Generic (no mining domain)
+
+# @orkCapability
+ork-capabilities:
+  hashrate-monitoring:
+    label: Hashrate monitoring
+  pool-performance:
+    label: Pool performance
+  energy-consumption:
+    label: Energy consumption
+  incident-alerts:
+    label: Incident alerts
+  device-telemetry:
+    label: Device telemetry
+  device-management:
+    label: Device management
+
+# ─────────────────────────────────────────────
+# Catalogue browse — docs-only roll-ups
+# ─────────────────────────────────────────────
+
+# Faceted-browse groupings used under docs/maintainers/integrations/. This
+# section IS authored here — it's a presentation concept that does not exist
+# in any contract or JSDoc tag.
+integration-kinds:
+  hardware:
+    label: Hardware
+    includes: [miner, container, power-meter, sensor]
+  pool:
+    label: Pool integrations
+    includes: [minerpool]
+  external:
+    label: External services
+    includes: []  # future: weather, mempool, ...

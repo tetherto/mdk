@@ -1,0 +1,14 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
+.mdk-hashrate-site-view {
+  @include flex_column;
+
+  gap: 16px;
+}
+
+.mdk-hashrate-site-view__controls {
+  @include flex_align;
+
+  gap: 12px;
+  flex-wrap: wrap;
+}

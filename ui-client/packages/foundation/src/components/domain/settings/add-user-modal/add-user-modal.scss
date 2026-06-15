@@ -1,9 +1,0 @@
-@use '@tetherto/mdk-core-ui/styles' as *;
-
-.mdk-settings-add-user-modal {
-  &__form {
-    @include flex_column;
-
-    gap: 20px;
-  }
-}

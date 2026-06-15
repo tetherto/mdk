@@ -1,0 +1,5 @@
+{
+  "id": "starter",
+  "label": "Starter",
+  "description": "Minimal Vite + React + MDK app with routing wired for `mdk-ui add page`."
+}

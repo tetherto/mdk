@@ -1,0 +1,40 @@
+# Root .gitignore is SHARED across domains (ui/ + backend/). Keep every pattern
+# domain-aware: anchor anything that targets one domain's build or runtime
+# output (`/name/` for the repo root, `domain/**/name/` for a subtree) so it can
+# never silently match another domain's source. Per-domain ignores (dist,
+# .turbo, ...) live in that domain's own .gitignore. See CONTRIBUTING.md.
+
+# Universal
+node_modules
+coverage
+.scannerwork
+.idea
+.DS_Store
+*.swp
+*.swo
+npm-debug.log
+
+# Editor / agent scratch
+.cursor/plans/
+.cursor/rules/
+
+# Generated config: each domain commits *.json.example and the real *.json is
+# generated and ignored. Deliberate shared convention across ui/ and backend/.
+!config/*.json.example
+config/*.json
+
+# Backend + repo-root runtime output. ANCHORED: the bare `status` / `store` /
+# `tmp` patterns previously matched UI source dirs of the same name and swallowed
+# them (the mdk-prv#13 regression). MDK runtime root is repo-root/tmp (MDK_ROOT).
+/tmp/
+/status/
+/store/
+backend/**/tmp/
+backend/**/status/
+backend/**/store/
+
+# WIP work. `/Checklist*` is anchored to the repo root so it cannot match UI
+# component files (e.g. ui/.../ChecklistCard.tsx).
+/Checklist*
+docs/how-to/security
+backend/workers/docs/Documents.code-workspace

@@ -1,0 +1,16 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
+.mdk-hashrate {
+  @include flex_column;
+
+  gap: 16px;
+
+  // MultiSelect ships width: 100% (designed for form rows). On this filter
+  // bar we want a compact dropdown matching the date-range picker beside it -
+  // shrink-wrap to content with a usable minimum. Track the core default
+  // fix separately once the mdk-prv migration lands.
+  .mdk-multi-select__trigger {
+    width: auto;
+    min-width: 160px;
+  }
+}

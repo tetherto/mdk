@@ -1,0 +1,9 @@
+@use '../../utils/reporting-panel' as reporting-panel;
+
+.mdk-subsidy-fee__panel {
+  @include reporting-panel.reporting-panel-base;
+
+  &--primary {
+    margin-bottom: 20px;
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "generatedAt": "2026-05-14T13:38:53.716Z",
+  "description": "Baseline of pre-existing agent-readiness violations. Only `--update-baseline` writes here; PRs that grow it MUST fail CI. Shrink at will by fixing JSDoc / docs.",
+  "violations": []
+}

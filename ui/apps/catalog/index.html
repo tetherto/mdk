@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="MDK UI Toolkit Catalog" />
+    <meta
+      property="og:description"
+      content="Interactive catalog for the MDK UI toolkit (@tetherto/mdk-ui-core, @tetherto/mdk-react-adapter, @tetherto/mdk-react-devkit). Explore buttons, forms, charts, navigation, and mining-domain components."
+    />
+    <meta property="og:image" content="/social-preview.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MDK UI Toolkit Catalog" />
+    <meta name="twitter:description" content="Interactive catalog for the MDK UI toolkit." />
+    <meta name="twitter:image" content="/social-preview.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interactive catalog for the MDK UI toolkit (@tetherto/mdk-ui-core, @tetherto/mdk-react-adapter, @tetherto/mdk-react-devkit). Explore buttons, forms, charts, navigation, and mining-domain components."
+    />
+    <title>MDK UI Toolkit Catalog</title>
+    <script>
+      // SPA deep-link restore for static hosts (GitHub Pages):
+      // 404.html stashes the original URL into sessionStorage, then redirects
+      // here. We restore it via replaceState before React Router boots, so the
+      // app sees the original path instead of just the base path.
+      (function () {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, "", redirect);
+        }
+      })();
+    </script>
+    <style>
+      /*
+       * Critical CSS - inline minimal styles for initial render.
+       *
+       * MUST live inside `@layer base`: the devkit stylesheet declares
+       * `@layer base, mdk, app;`, and any *unlayered* rule outranks every
+       * layered rule. An unlayered `* { padding: 0; margin: 0 }` here would
+       * strip the padding/margin from every `.mdk-*` component (sidebar,
+       * accordion, button, etc.) regardless of what their SCSS sets, because
+       * those component rules live in `@layer mdk`.
+       */
+      @layer base {
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;width:100%}
+        body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-height:1.5}
+        #root{min-height:100vh;display:flex;flex-direction:column}
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

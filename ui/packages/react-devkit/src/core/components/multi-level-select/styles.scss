@@ -1,0 +1,45 @@
+@use '../../styles/mixins' as *;
+
+.mdk-multi-level-select__section {
+  border-bottom: 1px solid var(--mdk-color-white-transparent);
+}
+
+.mdk-multi-level-select__section-header {
+  @include flex_align_between;
+
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  user-select: none;
+  padding: 9px 16px;
+  letter-spacing: -0.5px;
+  font-family: inherit;
+  color: var(--mdk-color-white-alpha-08c, var(--mdk-color-white-7));
+}
+
+.mdk-multi-level-select__section-title {
+  min-width: 0;
+}
+
+.mdk-multi-level-select__section-body--collapsed {
+  display: none;
+}
+
+.mdk-multi-level-select__section-toggle {
+  @include flex_center;
+
+  width: 16px;
+  height: 16px;
+  font: inherit;
+  color: inherit;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background-color: var(--mdk-color-white-transparent);
+
+  &:hover {
+    transition: background-color 0.3s ease;
+    background-color: var(--mdk-color-primary-10);
+  }
+}

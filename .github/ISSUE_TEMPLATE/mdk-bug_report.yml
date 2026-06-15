@@ -29,12 +29,13 @@ body:
       description: "Minimal steps to reproduce the behavior. The more specific, the faster we can help."
       placeholder: |
         1. Initialize MDK with `...`
-        2. Call `loadModel(...)` with params `...`
+        2. Connect a worker / device with config ...
         3. Execute `...`
         4. See error
 
         ```typescript
         // Minimal code to reproduce
+        import { ... } from "@tetherto/mdk";
 
         // Bug occurs here
         ```
@@ -66,9 +67,22 @@ body:
       description: "Full error message and stack trace (auto-formatted as code)."
       render: shell
       placeholder: |
-        Error: ModelLoadFailedError [52201]: Failed to ...
+        Error: WorkerLoadFailedError [52201]: Failed to ...
         Caused by: Error: ENOENT: no such file or directory
             at Object.openSync (fs.js:476:3)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: "🧩 Affected Component"
+      description: "Which MDK package is affected?"
+      options:
+        - "core (ORK, App-node, MDK SDK, IPC client)"
+        - "workers (protocol translators for miners, pools, power meters, sensors, containers)"
+        - "ui-client (headless UI Core and framework adapters)"
+        - "Multiple / unsure"
     validations:
       required: true
 

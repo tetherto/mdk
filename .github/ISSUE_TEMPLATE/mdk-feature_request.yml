@@ -52,6 +52,19 @@ body:
       required: true
 
   - type: dropdown
+    id: component
+    attributes:
+      label: "🧩 Target Component"
+      description: "Which MDK package would this feature affect?"
+      options:
+        - "core (ORK, App-node, MDK SDK, IPC client)"
+        - "workers (protocol translators for miners, pools, power meters, sensors, containers)"
+        - "ui-client (headless UI Core and framework adapters)"
+        - "Multiple / unsure"
+    validations:
+      required: true
+
+  - type: dropdown
     id: impact
     attributes:
       label: "📊 Expected Impact"

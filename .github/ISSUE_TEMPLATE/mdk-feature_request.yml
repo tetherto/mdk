@@ -1,7 +1,7 @@
-name: "🚀 SDK Feature Request"
-description: "Propose a new feature or enhancement for the SDK"
+name: "🚀 MDK Feature Request"
+description: "Propose a new feature or enhancement for MDK"
 title: "[Feature]: "
-labels: ["enhancement", "triage", "SDK"]
+labels: ["enhancement", "triage", "MDK"]
 body:
   - type: markdown
     attributes:
@@ -10,7 +10,7 @@ body:
 
         - Search existing issues to avoid duplicates
         - Remember: **The best code is the code you don't write**
-        - Features should solve a specific problem, not just add code to MDK
+        - Features should solve a specific problem, not just add code to the MDK
 
   - type: textarea
     id: problem
@@ -52,23 +52,10 @@ body:
       required: true
 
   - type: dropdown
-    id: component
-    attributes:
-      label: "🧩 Target Component"
-      description: "Which MDK package would this feature affect?"
-      options:
-        - "core (ORK, App-node, MDK SDK, IPC client)"
-        - "workers (protocol translators for miners, pools, power meters, sensors, containers)"
-        - "ui-client (headless UI Core and framework adapters)"
-        - "Multiple / unsure"
-    validations:
-      required: true
-
-  - type: dropdown
     id: impact
     attributes:
       label: "📊 Expected Impact"
-      description: "How broadly would this feature benefit SDK users?"
+      description: "How broadly would this feature benefit MDK users?"
       options:
         - "Critical - Enables major functionality currently impossible"
         - "High - Improves common workflows"
@@ -95,7 +82,7 @@ body:
       label: "⚠️ Constraints & Considerations"
       description: "Any technical constraints, breaking changes, or compatibility concerns?"
       placeholder: |
-        - Runtime compatibility (Node, Bare)?
+        - Platform compatibility (Node, Bare, Expo)?
         - Performance implications?
         - Breaking changes to existing APIs?
         - Dependencies required?
@@ -118,4 +105,3 @@ body:
       description: "Any other context, screenshots, links, or references?"
     validations:
       required: false
-

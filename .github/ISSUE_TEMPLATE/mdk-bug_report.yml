@@ -1,16 +1,17 @@
-name: "🐛 SDK Bug Report"
-description: "Report a bug or unexpected behavior in the SDK"
+name: "🐛 MDK Bug Report"
+description: "Report a bug or unexpected behavior in the MDK"
 title: "[Bug]: "
-labels: ["bug", "triage", "SDK"]
+labels: ["bug", "triage", "MDK"]
 body:
   - type: markdown
     attributes:
       value: |
         ## Before submitting
 
+        - Do NOT report security issues as a bug
         - Search existing issues to avoid duplicates
         - Ensure you're using a supported MDK version
-        - Check the [documentation](https://docs.mdk.tether.io/) for correct usage
+        - Check the [documentation](https://docs.mdk.tether.io) for correct usage
 
   - type: textarea
     id: description
@@ -28,13 +29,12 @@ body:
       description: "Minimal steps to reproduce the behavior. The more specific, the faster we can help."
       placeholder: |
         1. Initialize MDK with `...`
-        2. Connect a worker / device with config `...`
+        2. Call `loadModel(...)` with params `...`
         3. Execute `...`
         4. See error
 
         ```typescript
         // Minimal code to reproduce
-        import { ... } from "@tetherto/mdk";
 
         // Bug occurs here
         ```
@@ -46,7 +46,7 @@ body:
     attributes:
       label: "✅ Expected Behavior"
       description: "What did you expect to happen?"
-      placeholder: "The model should load successfully and return a valid modelId."
+      placeholder: "Worker should successfully register ..."
     validations:
       required: true
 
@@ -55,7 +55,7 @@ body:
     attributes:
       label: "❌ Actual Behavior"
       description: "What actually happened?"
-      placeholder: "The SDK throws an error after 30 seconds with message '...'"
+      placeholder: "ORK throws an error after 30 seconds with message '...'"
     validations:
       required: true
 
@@ -66,24 +66,9 @@ body:
       description: "Full error message and stack trace (auto-formatted as code)."
       render: shell
       placeholder: |
-        Error: ConnectionFailedError: Failed to reach device
-            at connect (/node_modules/@tetherto/mdk/dist/index.js:123:45)
-            at async main (/app/index.ts:10:5)
-        Caused by: Error: ETIMEDOUT
-            at Socket._onTimeout (net.js:476:3)
-    validations:
-      required: true
-
-  - type: dropdown
-    id: component
-    attributes:
-      label: "🧩 Affected Component"
-      description: "Which MDK package is affected?"
-      options:
-        - "core (ORK, App-node, MDK SDK, IPC client)"
-        - "workers (protocol translators for miners, pools, power meters, sensors, containers)"
-        - "ui-client (headless UI Core and framework adapters)"
-        - "Multiple / unsure"
+        Error: ModelLoadFailedError [52201]: Failed to ...
+        Caused by: Error: ENOENT: no such file or directory
+            at Object.openSync (fs.js:476:3)
     validations:
       required: true
 
@@ -98,6 +83,8 @@ body:
         - "Linux (x64)"
         - "Linux (ARM64)"
         - "Windows (x64)"
+        - "iOS (Expo)"
+        - "Android (Expo)"
         - "Other (specify in additional context)"
     validations:
       required: true
@@ -118,6 +105,8 @@ body:
       description: "What runtime are you using?"
       options:
         - "Node.js"
+        - "Bun"
+        - "Expo (React Native)"
         - "Bare"
         - "Other (specify in additional context)"
     validations:
@@ -127,17 +116,17 @@ body:
     id: runtime-version
     attributes:
       label: "📦 Runtime Version"
-      description: "Version of your runtime (MDK requires Node >=24, e.g., Node 24.0.0)"
-      placeholder: "Node 24.0.0"
+      description: "Version of your runtime (e.g., Node 24.10.0)"
+      placeholder: "Node 24.10.0"
     validations:
       required: true
 
   - type: input
-    id: sdk-version
+    id: mdk-version
     attributes:
       label: "🏷️ MDK Version"
-      description: "Version of @tetherto/mdk (or the affected package) you're using"
-      placeholder: "0.2.0"
+      description: "Version of MDK you're using"
+      placeholder: "0.3.0"
     validations:
       required: true
 
@@ -149,7 +138,7 @@ body:
       render: json
       placeholder: |
         {
-          "@tetherto/mdk": "0.2.0",
+          "@tetherto/mdk": "0.3.0",
           "typescript": "5.3.0",
           "other-relevant-package": "1.2.3"
         }
@@ -198,9 +187,8 @@ body:
       label: "📎 Additional Context"
       description: "Any other context, screenshots, logs, or configuration details?"
       placeholder: |
-        - SDK config used
-        - Model being loaded
-        - Network conditions
+        - MDK config used
+        - Deployment configuration
         - Screenshots/recordings
     validations:
       required: false
@@ -217,4 +205,3 @@ body:
           required: true
         - label: "I am using a supported MDK version"
           required: true
-

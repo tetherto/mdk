@@ -28,9 +28,9 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
+    "@vitejs/plugin-react": "^6.0.2",
     "react-router-dom": "^7.13.0",
     "terser": "^5.46.0",
-    "vite": "^7.3.2"
+    "vite": "^8.0.16"
   }
 }

@@ -42,6 +42,14 @@
     }
   }
 
+  /* Wraps the bell tile + the severity badge so the badge rows can be their
+   * own buttons (severity deep-link) without nesting interactive elements
+   * inside the bell button. The badge is positioned relative to this group. */
+  .mdk-alarms-bell-button-group {
+    position: relative;
+    display: inline-flex;
+  }
+
   .mdk-alarms-bell-button {
     /* The badge column on the left needs extra room beyond the standard
      * tile width — override the square shape so both badge and bell breathe.
@@ -54,11 +62,11 @@
     padding-left: 1.75rem;
     /* Bell icon picks up BTC orange instead of the default white, to
      * match the Mining OS reference. */
-    color: var(--mdk-color-primary, #f7931a);
+    color: var(--mdk-color-primary);
 
     &:hover,
     &:focus-visible {
-      color: var(--mdk-color-primary, #f7931a);
+      color: var(--mdk-color-primary);
     }
 
     .mdk-header-action-button__icon {
@@ -70,6 +78,8 @@
       left: 0.375rem;
       top: 50%;
       transform: translateY(-50%);
+      /* Sit above the bell tile so interactive rows are clickable. */
+      z-index: 1;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -80,6 +90,8 @@
       line-height: 1;
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.025em;
+      /* Non-interactive rows let clicks fall through to the bell; interactive
+       * rows re-enable pointer events below. */
       pointer-events: none;
 
       /* Per-row text colors only — no background tints. The numbers float
@@ -87,16 +99,38 @@
       &-row {
         background: transparent;
 
+        /* Canonical alert-severity palette (matches the table badges and the
+         * legacy Mining OS bell): critical red, high orange, medium yellow. */
         &--critical {
-          color: var(--mdk-color-danger, #ef4444);
+          color: var(--mdk-color-severity-critical);
         }
 
         &--high {
-          color: var(--mdk-color-primary, #f7931a);
+          color: var(--mdk-color-severity-high);
         }
 
         &--medium {
-          color: var(--mdk-color-warning, #ffc107);
+          color: var(--mdk-color-severity-medium);
+        }
+
+        /* When the row is its own button (onSeverityClick provided). Note:
+         * no `color` here — the per-severity rules above own the text color,
+         * so the button keeps its red/orange/yellow instead of inheriting. */
+        &--interactive {
+          margin: 0;
+          padding: 0;
+          border: 0;
+          font: inherit;
+          background: none;
+          text-align: left;
+          cursor: pointer;
+          pointer-events: auto;
+
+          &:hover,
+          &:focus-visible {
+            text-decoration: underline;
+            outline: none;
+          }
         }
       }
     }

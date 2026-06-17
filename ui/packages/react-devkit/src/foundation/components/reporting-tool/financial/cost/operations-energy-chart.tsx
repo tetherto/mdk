@@ -1,9 +1,13 @@
-import { ChartContainer, CURRENCY, DoughnutChart, UNITS } from '@core'
+import { ChartContainer, DoughnutChart } from '@core'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
 import type { CostSummaryMonetaryTotals } from './build-cost-summary-view-model'
-import { COST_DOUGHNUT_HEIGHT } from './cost-chart-shared'
+import {
+  COST_DOUGHNUT_HEIGHT,
+  operationsEnergyChartUnit,
+  operationsEnergyDoughnutTooltip,
+} from './cost-chart-shared'
 import { buildOperationsEnergySlices } from './operations-energy-chart-slices'
 
 export type OperationsEnergyChartProps = {
@@ -28,13 +32,21 @@ export const OperationsEnergyChart = ({
   isLoading = false,
 }: OperationsEnergyChartProps): ReactElement => {
   const slices = useMemo(() => buildOperationsEnergySlices(totals), [totals])
+  const tooltip = useMemo(() => operationsEnergyDoughnutTooltip(operationsEnergyChartUnit), [])
 
   return (
     <div className="mdk-cost__chart mdk-cost__chart--doughnut">
       <h2 className="mdk-cost__chart-title">Operations vs Energy Cost</h2>
-      <div className="mdk-cost__chart-unit">{`${CURRENCY.USD}/${UNITS.ENERGY_MWH}`}</div>
+      <div className="mdk-cost__chart-unit">{operationsEnergyChartUnit}</div>
       <ChartContainer loading={isLoading} empty={!isLoading && slices.length === 0}>
-        <DoughnutChart data={slices} unit={CURRENCY.USD} height={COST_DOUGHNUT_HEIGHT} />
+        <DoughnutChart
+          data={slices}
+          unit={operationsEnergyChartUnit}
+          height={COST_DOUGHNUT_HEIGHT}
+          tooltip={tooltip}
+          formatValue={(value) => value.toFixed(2)}
+          legendPosition="bottom"
+        />
       </ChartContainer>
     </div>
   )

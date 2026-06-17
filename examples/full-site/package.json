@@ -1,0 +1,18 @@
+{
+  "name": "@tetherto/mdk-full-site-example",
+  "version": "0.2.0",
+  "description": "MDK full-site example — 100 miners + container + powermeter + pool over the RPC gateway",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node start.js",
+    "lint": "standard",
+    "test": "NODE_ENV=test brittle tests/unit/*.test.js"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0",
+    "standard": "17.1.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@tetherto/mdk-example-minerpool-f2pool",
+  "version": "0.2.0",
+  "description": "MDK F2Pool minerpool example (standalone, mock-backed)",
+  "keywords": ["tether", "mdk", "f2pool", "minerpool", "example"],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=24" },
+  "type": "commonjs",
+  "scripts": { "start": "node index.js", "lint": "standard", "lint:fix": "standard --fix" }
+}

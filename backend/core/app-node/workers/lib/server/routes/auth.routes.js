@@ -1,16 +1,9 @@
 'use strict'
+
 const {
   ENDPOINTS,
   HTTP_METHODS
 } = require('../../constants')
-
-const {
-  getUserInfo,
-  newAuthToken,
-  getUserPermissions,
-  extDataRoute
-} = require('../handlers/auth.handlers')
-const { createAuthRoute, createCachedAuthRoute } = require('../lib/routeHelpers')
 
 module.exports = (ctx) => [
   {
@@ -46,41 +39,5 @@ module.exports = (ctx) => [
       const redirectUri = ctx.httpdOauth2_h1?.callbackUriUI?.() + '?' + qs.toString()
       return rep.redirect(redirectUri)
     }
-  },
-  {
-    method: HTTP_METHODS.GET,
-    url: ENDPOINTS.USERINFO,
-    ...createAuthRoute(ctx, getUserInfo)
-  },
-  {
-    method: HTTP_METHODS.POST,
-    url: ENDPOINTS.TOKEN,
-    ...createAuthRoute(ctx, async (ctx, req) => ({ token: await newAuthToken(ctx, req) }))
-  },
-  {
-    method: HTTP_METHODS.GET,
-    url: ENDPOINTS.PERMISSIONS,
-    ...createAuthRoute(ctx, async (ctx, req) => ({ permissions: await getUserPermissions(ctx, req) }))
-  },
-  {
-    method: HTTP_METHODS.GET,
-    url: ENDPOINTS.EXT_DATA,
-    schema: {
-      querystring: {
-        type: 'object',
-        properties: {
-          type: { type: 'string' },
-          query: { type: 'string' },
-          overwriteCache: { type: 'boolean' }
-        },
-        required: ['type']
-      }
-    },
-    ...createCachedAuthRoute(
-      ctx,
-      (req) => ['ext-data', req.query.type, req.query.query],
-      ENDPOINTS.EXT_DATA,
-      extDataRoute
-    )
   }
 ]

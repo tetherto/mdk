@@ -233,32 +233,6 @@ export const SingleStatCardDemo = (): ReactElement => {
         </div>
 
         <div className="single-stat-card-demo__section">
-          <h3>Custom Tooltips</h3>
-          <div className="single-stat-card-demo__grid">
-            <SingleStatCard
-              name="Temp"
-              value={42}
-              unit={UNITS.TEMPERATURE_C}
-              tooltipText="Ambient Temperature Reading"
-            />
-            <SingleStatCard
-              name="Power"
-              value={1500}
-              unit={UNITS.POWER_W}
-              tooltipText="Total Power Consumption"
-              variant="secondary"
-            />
-            <SingleStatCard
-              name="Status"
-              value="OK"
-              tooltipText="System Health Status"
-              variant="tertiary"
-              color={COLOR.GREEN}
-            />
-          </div>
-        </div>
-
-        <div className="single-stat-card-demo__section">
           <h3>Null/Empty Values</h3>
           <div className="single-stat-card-demo__grid">
             <SingleStatCard name="No Data" value={null} />

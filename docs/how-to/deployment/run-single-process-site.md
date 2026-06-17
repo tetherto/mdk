@@ -45,11 +45,11 @@ Follow the [single-process site example][single-example]:
 [miner-how-to]: ../miners/index.md
 <!-- docs@tether.io: miner-how-to → how-to/miners -->
 
-[single-example]: ../../../examples/core/site-single-process/README.md
-<!-- docs@tether.io: single-example → https://github.com/tetherto/mdk/tree/main/examples/core/site-single-process -->
+[single-example]: ../../../examples/backend/site-single-process/README.md
+<!-- docs@tether.io: single-example → https://github.com/tetherto/mdk/tree/main/examples/backend/site-single-process -->
 
-[single-example-prerequisites]: ../../../examples/core/site-single-process/README.md#prerequisites
-<!-- docs@tether.io: single-example-prerequisites → https://github.com/tetherto/mdk/tree/main/examples/core/site-single-process#prerequisites -->
+[single-example-prerequisites]: ../../../examples/backend/site-single-process/README.md#prerequisites
+<!-- docs@tether.io: single-example-prerequisites → https://github.com/tetherto/mdk/tree/main/examples/backend/site-single-process#prerequisites -->
 
-[single-example-quickstart]: ../../../examples/core/site-single-process/README.md#quickstart
-<!-- docs@tether.io: single-example-quickstart → https://github.com/tetherto/mdk/tree/main/examples/core/site-single-process#quickstart -->
+[single-example-quickstart]: ../../../examples/backend/site-single-process/README.md#quickstart
+<!-- docs@tether.io: single-example-quickstart → https://github.com/tetherto/mdk/tree/main/examples/backend/site-single-process#quickstart -->

@@ -60,11 +60,11 @@ describe('runRegistry', () => {
       out: sink,
     })
     const parsed = JSON.parse(out.join('\n'))
-    expect(parsed.components.length).toBe(6)
+    expect(parsed.components.length).toBe(11)
     expect(parsed.components.every((c: { tier?: string }) => c.tier === 'advanced')).toBe(true)
     expect(
       parsed.components.every((component: { name?: string }) =>
-        /^(?:EnergyReport(?:MinerTypeView|MinerUnitView|SiteView)|MiningReport(?:Cover)?|SiteReports)$/.test(
+        /^(?:EnergyReport(?:MinerTypeView|MinerUnitView|SiteView)|MiningReport(?:Cover)?|SiteReports|Operational(?:HashrateChart|PowerConsumptionChart|SiteEfficiencyChart|MinersStatusChart)|ChartExpandAction)$/.test(
           component.name ?? '',
         ),
       ),

@@ -4,6 +4,7 @@ import type { Row, Table } from '@tanstack/react-table'
 import { cn } from '../../utils'
 import { Fragment, type JSX, type ReactNode } from 'react'
 
+import { SkeletonBlock } from '../skeleton'
 import { getTableCellAlignClassName } from './data-table-cell-align'
 
 export type TableBodyProps<I = unknown> = {
@@ -44,6 +45,33 @@ export const TableBody = <I = unknown,>({
           </tr>
         )}
       </Fragment>
+    ))}
+  </tbody>
+)
+
+// Cycled so adjacent cells get different bar lengths — reads as "text of
+// varying width" rather than a uniform grid.
+const SKELETON_CELL_WIDTHS = ['85%', '55%', '70%', '45%']
+
+export const SkeletonTableBody = ({
+  columnCount,
+  rowCount = 5,
+}: {
+  columnCount: number
+  rowCount?: number
+}): JSX.Element => (
+  <tbody aria-hidden>
+    {Array.from({ length: rowCount }, (_, rowIndex) => (
+      <tr key={rowIndex} className="mdk-table__body-row mdk-table__body-row--skeleton">
+        {Array.from({ length: columnCount }, (_, cellIndex) => (
+          <td key={cellIndex}>
+            <SkeletonBlock
+              height={14}
+              width={SKELETON_CELL_WIDTHS[(rowIndex + cellIndex) % SKELETON_CELL_WIDTHS.length]}
+            />
+          </td>
+        ))}
+      </tr>
     ))}
   </tbody>
 )

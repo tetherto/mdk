@@ -1,0 +1,23 @@
+{
+  "name": "@tetherto/mdk-example-powermeter-abb",
+  "version": "0.2.0",
+  "description": "MDK ABB B23 power meter example (mock-backed)",
+  "keywords": [
+    "tether",
+    "mdk",
+    "abb",
+    "powermeter",
+    "example"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix"
+  }
+}

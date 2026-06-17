@@ -1,13 +1,11 @@
+import type { MinMaxAvgValues } from '../min-max-avg/types'
+
+export type { MinMaxAvgValues as MinMaxAvg }
+
 export type ChartStatsFooterItem = {
   label: string
   value: string | number
 }
-
-export type MinMaxAvg = Partial<{
-  min: string
-  max: string
-  avg: string
-}>
 
 export type SecondaryLabel = {
   title: string
@@ -16,7 +14,7 @@ export type SecondaryLabel = {
 
 export type ChartStatsFooterProps = Partial<{
   /** Min/Max/Avg values row */
-  minMaxAvg: MinMaxAvg
+  minMaxAvg: MinMaxAvgValues
   /** Additional stats displayed in a columnar grid */
   stats: ChartStatsFooterItem[]
   /** Number of stat items per column (default: 1) */

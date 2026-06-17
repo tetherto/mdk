@@ -67,15 +67,15 @@
     background-color 0.2s;
 
   &::placeholder {
-    color: var(--mdk-input-placeholder-color, #999999);
+    color: var(--mdk-input-placeholder-color);
   }
 
   &:hover:not(:disabled):not(:focus) {
-    border-color: var(--mdk-input-border-hover, #777777);
+    border-color: var(--mdk-input-border-hover);
   }
 
   &:focus {
-    border-color: var(--mdk-color-primary, #f7931a);
+    border-color: var(--mdk-color-primary);
   }
 
   &:disabled {

@@ -9,8 +9,11 @@ const { DEFAULT_NOMINAL_EFFICIENCY_WTHS } = require('./utils/constants.js')
 
 class WhatsminerManager extends MinerManager {
   async init () {
-    await super.init()
+    // The transport facility must exist before super.init(), which calls
+    // setupThings() to reconnect persisted things on restart — connectThing()
+    // needs tcp_0.getRPC. Creating it afterwards loses every device on reload.
     this.tcp_0 = new TcpFacility(this, {}, {})
+    await super.init()
     this._addWhitelistedActions([
       ['setPowerPct', 1]
     ])

@@ -16,7 +16,7 @@ npm run dev        # watch everything and start the catalog app
 ## Stack
 
 - **Monorepo tool**: Turborepo
-- **Package manager**: npm 10+ workspaces (no pnpm, no yarn)
+- **Package manager**: npm >=11 workspaces (no pnpm, no yarn)
 - **Build tools**:
   - TypeScript compiler (`tsc`) for `.ts/.tsx`. All three TypeScript
     packages are **pre-built** — `tsc` emits ESM JS + `.d.ts`

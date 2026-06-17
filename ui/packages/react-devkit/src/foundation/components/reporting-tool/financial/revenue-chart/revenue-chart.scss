@@ -1,0 +1,22 @@
+@layer app {
+  .mdk-revenue-chart {
+    &__header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    &__title {
+      font-size: 14px;
+      font-weight: 500;
+      color: hsl(var(--foreground));
+      font-family: var(--font-mono);
+    }
+
+    &__unit {
+      font-size: 12px;
+      color: var(--mdk-color-text-disabled);
+      font-family: var(--font-mono);
+    }
+  }
+}

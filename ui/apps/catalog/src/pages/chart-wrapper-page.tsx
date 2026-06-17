@@ -2,29 +2,27 @@ import {
   BarChart,
   Button,
   ChartContainer,
+  COLOR,
   computeStats,
   CURRENCY,
+  formatMinMaxAvg,
   LineChart,
   Loader,
   UNITS,
 } from '@tetherto/mdk-react-devkit/core'
+import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/core'
 import { ChartWrapper } from '@tetherto/mdk-react-devkit/foundation'
-import { type ReactElement, useCallback, useState } from 'react'
+import { type ReactElement, type ReactNode, useCallback, useState } from 'react'
 
-/**
- * Mock chart data
- */
-const BAR_CHART_MINING_OUTPUT = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-  datasets: [
-    {
-      label: `Mining Output (${UNITS.HASHRATE_TH_S})`,
-      data: [120, 190, 150, 175, 210, 185],
-      backgroundColor: 'rgba(255, 147, 0, 0.6)',
-      borderColor: 'rgba(255, 147, 0, 1)',
-      borderWidth: 1,
-    },
-  ],
+import { BAR_CHART_MINING_OUTPUT } from '../constants/demo-chart-data'
+import './chart-wrapper-page.scss'
+
+const miningOutputTooltip: ChartTooltipConfig = {
+  valueFormatter: (value) => `${value.toLocaleString()} ${UNITS.HASHRATE_TH_S}`,
+}
+
+const revenueTooltip: ChartTooltipConfig = {
+  valueFormatter: (value) => `${CURRENCY.USD}${value.toLocaleString()}`,
 }
 
 const BAR_CHART_REVENUE = {
@@ -33,9 +31,8 @@ const BAR_CHART_REVENUE = {
     {
       label: `Revenue (${CURRENCY.USD_LABEL})`,
       data: [45000, 52000, 48000, 61000],
-      backgroundColor: 'rgba(34, 197, 94, 0.6)',
-      borderColor: 'rgba(34, 197, 94, 1)',
-      borderWidth: 1,
+      backgroundColor: COLOR.GREEN,
+      borderColor: COLOR.GREEN,
     },
   ],
 }
@@ -48,8 +45,8 @@ const LINE_CHART_HASHRATE = {
         x: new Date(`2026-01-0${i + 1}`).valueOf(),
         y,
       })),
-      borderColor: 'rgb(34, 197, 94)',
-      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      borderColor: COLOR.GRASS_GREEN,
+      backgroundColor: 'rgba(52, 199, 89, 0.1)',
       tension: 0.4,
     },
   ],
@@ -63,7 +60,7 @@ const LINE_CHART_TEMPERATURE = {
         x: new Date(`2026-01-0${i + 1}`).valueOf(),
         y,
       })),
-      borderColor: 'rgb(239, 68, 68)',
+      borderColor: COLOR.RED,
       backgroundColor: 'rgba(239, 68, 68, 0.1)',
       tension: 0.4,
     },
@@ -78,12 +75,74 @@ const LINE_CHART_DAILY_REVENUE = {
         x: new Date(`2026-01-0${i + 1}`).valueOf(),
         y,
       })),
-      borderColor: 'rgb(59, 130, 246)',
+      borderColor: COLOR.BLUE,
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
       tension: 0.4,
     },
   ],
 }
+
+type LineChartDemoData = {
+  datasets: Array<{
+    label?: string
+    borderColor: string
+    backgroundColor?: string
+    tension?: number
+    visible?: boolean
+    data: Array<{ x: number; y: number }>
+  }>
+}
+
+const withVisibleDatasets = (data: LineChartDemoData): LineChartDemoData => ({
+  datasets: data.datasets.map((ds) => ({ ...ds, visible: true })),
+})
+
+const lineChartLegend = (data: LineChartDemoData) =>
+  data.datasets.map((ds) => ({
+    label: ds.label ?? '',
+    color: String(ds.borderColor),
+    hidden: ds.visible === false,
+  }))
+
+const hashrateMinMaxAvg = (stats: ReturnType<typeof computeStats>) =>
+  formatMinMaxAvg(stats, (value, key) =>
+    key === 'avg' ? `${value.toFixed(1)} ${UNITS.HASHRATE_TH_S}` : `${value} ${UNITS.HASHRATE_TH_S}`,
+  )
+
+const temperatureMinMaxAvg = (stats: ReturnType<typeof computeStats>) =>
+  formatMinMaxAvg(stats, (value, key) =>
+    key === 'avg' ? `${value.toFixed(1)}${UNITS.TEMPERATURE_C}` : `${value}${UNITS.TEMPERATURE_C}`,
+  )
+
+const revenueMinMaxAvg = (stats: ReturnType<typeof computeStats>) =>
+  formatMinMaxAvg(stats, (value, key) =>
+    key === 'avg'
+      ? `${CURRENCY.USD}${value.toFixed(0)}`
+      : `${CURRENCY.USD}${value.toLocaleString()}`,
+  )
+
+const ChartWrapperDemoCard = ({
+  title,
+  children,
+  withPanelBackground = true,
+}: {
+  title: string
+  children: ReactNode
+  withPanelBackground?: boolean
+}): ReactElement => (
+  <div className="chart-wrapper-page__card">
+    <h4 className="chart-wrapper-page__card-title">{title}</h4>
+    <div
+      className={
+        withPanelBackground
+          ? 'chart-wrapper-page__chart-panel'
+          : 'chart-wrapper-page__chart-slot'
+      }
+    >
+      {children}
+    </div>
+  </div>
+)
 
 const EMPTY_DATA = {
   labels: [],
@@ -98,6 +157,27 @@ export const ChartWrapperPage = (): ReactElement => {
   const [isLoadingLine, setIsLoadingLine] = useState(false)
   const [showBarData, setShowBarData] = useState(true)
   const [showLineData, setShowLineData] = useState(true)
+
+  const [hashrateChartData, setHashrateChartData] = useState(() =>
+    withVisibleDatasets(LINE_CHART_HASHRATE),
+  )
+  const [temperatureChartData, setTemperatureChartData] = useState(() =>
+    withVisibleDatasets(LINE_CHART_TEMPERATURE),
+  )
+  const [dailyRevenueChartData, setDailyRevenueChartData] = useState(() =>
+    withVisibleDatasets(LINE_CHART_DAILY_REVENUE),
+  )
+
+  const toggleLineDataset = useCallback(
+    (setData: React.Dispatch<React.SetStateAction<LineChartDemoData>>, index: number) => {
+      setData((prev) => ({
+        datasets: prev.datasets.map((ds, i) =>
+          i === index ? { ...ds, visible: ds.visible === false } : ds,
+        ),
+      }))
+    },
+    [],
+  )
 
   // Simulate loading for bar charts
   const handleLoadBarData = useCallback(() => {
@@ -141,30 +221,12 @@ export const ChartWrapperPage = (): ReactElement => {
   const revenueStats = computeStats(revenueData)
 
   return (
-    <section className="demo-section">
+    <section className="demo-section chart-wrapper-page">
       <h2 className="demo-section__title">Chart Wrapper</h2>
 
-      {/* Bar Chart Controls */}
-      <div
-        style={{
-          margin: '2rem 0',
-          padding: '1.5rem',
-          backgroundColor: '#1a1a1a',
-          border: '1px solid #333',
-          borderRadius: '0.5rem',
-        }}
-      >
-        <h3
-          style={{
-            fontSize: '1.25rem',
-            fontWeight: 600,
-            color: '#e5e5e5',
-            marginBottom: '1rem',
-          }}
-        >
-          Bar Chart Controls
-        </h3>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+      <div className="chart-wrapper-page__controls">
+        <h3 className="chart-wrapper-page__controls-title">Bar Chart Controls</h3>
+        <div className="chart-wrapper-page__controls-actions">
           <Button onClick={handleLoadBarData} disabled={isLoadingBar}>
             {isLoadingBar ? 'Loading...' : 'Load Bar Charts'}
           </Button>
@@ -174,40 +236,13 @@ export const ChartWrapperPage = (): ReactElement => {
         </div>
       </div>
 
-      {/* BAR CHART EXAMPLES */}
-      <section style={{ marginBottom: '4rem' }}>
-        <h3
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 600,
-            color: '#e5e5e5',
-            marginBottom: '1.5rem',
-            paddingBottom: '0.75rem',
-            borderBottom: '2px solid #333',
-          }}
-        >
+      <section className="chart-wrapper-page__section">
+        <h3 className="chart-wrapper-page__section-title">
           Bar Charts with ChartWrapper + ChartContainer
         </h3>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-            gap: '2rem',
-          }}
-        >
-          {/* Example 1: Bar Chart - Mining Output with Title and Footer */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Mining Output (Title + Footer)
-            </h4>
+        <div className="chart-wrapper-page__grid">
+          <ChartWrapperDemoCard title="Mining Output (Title + Footer)">
             <ChartWrapper
               data={showBarData ? BAR_CHART_MINING_OUTPUT : EMPTY_DATA}
               isLoading={isLoadingBar}
@@ -215,31 +250,19 @@ export const ChartWrapperPage = (): ReactElement => {
             >
               <ChartContainer
                 title="Mining Output"
-                footer={
-                  <span>
-                    Min {miningOutputStats.min} ${UNITS.HASHRATE_TH_S} · Max {miningOutputStats.max}{' '}
-                    ${UNITS.HASHRATE_TH_S} · Avg {miningOutputStats.avg.toFixed(1)} $
-                    {UNITS.HASHRATE_TH_S}
-                  </span>
-                }
+                minMaxAvg={hashrateMinMaxAvg(miningOutputStats)}
               >
-                <BarChart height={300} data={BAR_CHART_MINING_OUTPUT} />
+                <BarChart
+                  height={300}
+                  data={BAR_CHART_MINING_OUTPUT}
+                  tooltip={miningOutputTooltip}
+                  legendAlign="start"
+                />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
 
-          {/* Example 2: Bar Chart - Mining Output with Custom Loader */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Chart with custom loader
-            </h4>
+          <ChartWrapperDemoCard title="Chart with custom loader">
             <ChartWrapper
               data={showBarData ? BAR_CHART_MINING_OUTPUT : EMPTY_DATA}
               isLoading={isLoadingBar}
@@ -248,31 +271,19 @@ export const ChartWrapperPage = (): ReactElement => {
             >
               <ChartContainer
                 title="Mining Output"
-                footer={
-                  <span>
-                    Min {miningOutputStats.min} ${UNITS.HASHRATE_TH_S} · Max {miningOutputStats.max}{' '}
-                    ${UNITS.HASHRATE_TH_S} · Avg {miningOutputStats.avg.toFixed(1)} $
-                    {UNITS.HASHRATE_TH_S}
-                  </span>
-                }
+                minMaxAvg={hashrateMinMaxAvg(miningOutputStats)}
               >
-                <BarChart height={300} data={BAR_CHART_MINING_OUTPUT} />
+                <BarChart
+                  height={300}
+                  data={BAR_CHART_MINING_OUTPUT}
+                  tooltip={miningOutputTooltip}
+                  legendAlign="start"
+                />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
 
-          {/* Example 2: Bar Chart - Revenue with Custom Empty */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Revenue (Custom Empty Message)
-            </h4>
+          <ChartWrapperDemoCard title="Revenue (Custom Empty Message)">
             <ChartWrapper
               data={showBarData ? BAR_CHART_REVENUE : EMPTY_DATA}
               isLoading={isLoadingBar}
@@ -280,72 +291,42 @@ export const ChartWrapperPage = (): ReactElement => {
               minHeight={300}
             >
               <ChartContainer title="Quarterly Revenue">
-                <BarChart height={300} data={BAR_CHART_REVENUE} />
+                <BarChart
+                  height={300}
+                  data={BAR_CHART_REVENUE}
+                  tooltip={revenueTooltip}
+                  legendAlign="start"
+                />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
 
-          {/* Example 3: Bar Chart - Without Title */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Mining Output (No Title)
-            </h4>
+          <ChartWrapperDemoCard title="Mining Output (No Title)">
             <ChartWrapper
               data={showBarData ? BAR_CHART_MINING_OUTPUT : EMPTY_DATA}
               isLoading={isLoadingBar}
               minHeight={300}
             >
               <ChartContainer>
-                <BarChart height={300} data={BAR_CHART_MINING_OUTPUT} />
+                <BarChart
+                  height={300}
+                  data={BAR_CHART_MINING_OUTPUT}
+                  tooltip={miningOutputTooltip}
+                  legendAlign="start"
+                />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
 
-          {/* Example 4: Bar Chart - Custom Empty Component */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Revenue (Custom Empty Component)
-            </h4>
+          <ChartWrapperDemoCard title="Revenue (Custom Empty Component)">
             <ChartWrapper
               data={showBarData ? BAR_CHART_REVENUE : EMPTY_DATA}
               isLoading={isLoadingBar}
               customNoDataMessage={
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    padding: '2rem',
-                  }}
-                >
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.6 }}>💰</div>
-                  <h4
-                    style={{
-                      fontSize: '1.25rem',
-                      fontWeight: 600,
-                      color: '#e5e5e5',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    No Revenue Data
-                  </h4>
-                  <p style={{ color: '#999', marginBottom: '1.5rem' }}>
+                <div className="chart-wrapper-page__empty-custom">
+                  <div className="chart-wrapper-page__empty-custom-icon">💰</div>
+                  <h4 className="chart-wrapper-page__empty-custom-title">No Revenue Data</h4>
+                  <p className="chart-wrapper-page__empty-custom-text">
                     Revenue data will be available soon
                   </p>
                   <Button onClick={() => setShowBarData(true)}>Load Data</Button>
@@ -354,34 +335,21 @@ export const ChartWrapperPage = (): ReactElement => {
               minHeight={300}
             >
               <ChartContainer title="Revenue">
-                <BarChart height={300} data={BAR_CHART_REVENUE} />
+                <BarChart
+                  height={300}
+                  data={BAR_CHART_REVENUE}
+                  tooltip={revenueTooltip}
+                  legendAlign="start"
+                />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
         </div>
       </section>
 
-      {/* Line Chart Controls */}
-      <div
-        style={{
-          marginBottom: '2rem',
-          padding: '1.5rem',
-          backgroundColor: '#1a1a1a',
-          border: '1px solid #333',
-          borderRadius: '0.5rem',
-        }}
-      >
-        <h3
-          style={{
-            fontSize: '1.25rem',
-            fontWeight: 600,
-            color: '#e5e5e5',
-            marginBottom: '1rem',
-          }}
-        >
-          Line Chart Controls
-        </h3>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+      <div className="chart-wrapper-page__controls">
+        <h3 className="chart-wrapper-page__controls-title">Line Chart Controls</h3>
+        <div className="chart-wrapper-page__controls-actions">
           <Button onClick={handleLoadLineData} disabled={isLoadingLine}>
             {isLoadingLine ? 'Loading...' : 'Load Line Charts'}
           </Button>
@@ -391,150 +359,78 @@ export const ChartWrapperPage = (): ReactElement => {
         </div>
       </div>
 
-      {/* LINE CHART EXAMPLES */}
-      <section style={{ marginBottom: '4rem' }}>
-        <h3
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 600,
-            color: '#e5e5e5',
-            marginBottom: '1.5rem',
-            paddingBottom: '0.75rem',
-            borderBottom: '2px solid #333',
-          }}
-        >
+      <section className="chart-wrapper-page__section">
+        <h3 className="chart-wrapper-page__section-title">
           Line Charts with ChartWrapper + ChartContainer
         </h3>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-            gap: '2rem',
-          }}
-        >
-          {/* Example 5: Line Chart - Hashrate with Footer */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Hashrate (Title + Footer)
-            </h4>
+        <div className="chart-wrapper-page__grid">
+          <ChartWrapperDemoCard title="Hashrate (Title + Footer)">
             <ChartWrapper
-              data={showLineData ? LINE_CHART_HASHRATE : EMPTY_DATA}
+              data={showLineData ? hashrateChartData : EMPTY_DATA}
               isLoading={isLoadingLine}
               minHeight={300}
             >
               <ChartContainer
                 title="Hash Rate"
-                footer={
-                  <span>
-                    Min {hashrateStats.min} ${UNITS.HASHRATE_TH_S} · Max {hashrateStats.max} $
-                    {UNITS.HASHRATE_TH_S} · Avg {hashrateStats.avg.toFixed(1)} $
-                    {UNITS.HASHRATE_TH_S}
-                  </span>
-                }
+                legendData={lineChartLegend(hashrateChartData)}
+                onToggleDataset={(index) => toggleLineDataset(setHashrateChartData, index)}
+                minMaxAvg={hashrateMinMaxAvg(hashrateStats)}
               >
                 <LineChart
                   height={300}
                   yTicksFormatter={(value) => `${value} ${UNITS.HASHRATE_TH_S}`}
-                  data={LINE_CHART_HASHRATE}
+                  data={hashrateChartData}
                 />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
 
-          {/* Example 6: Line Chart - Temperature with Points */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Temperature (With Points)
-            </h4>
+          <ChartWrapperDemoCard title="Temperature (With Points)">
             <ChartWrapper
-              data={showLineData ? LINE_CHART_TEMPERATURE : EMPTY_DATA}
+              data={showLineData ? temperatureChartData : EMPTY_DATA}
               isLoading={isLoadingLine}
               minHeight={300}
             >
               <ChartContainer
                 title="Temperature"
-                footer={
-                  <span>
-                    Min {temperatureStats.min}
-                    {UNITS.TEMPERATURE_C} · Max {temperatureStats.max}
-                    {UNITS.TEMPERATURE_C} · Avg {temperatureStats.avg.toFixed(1)}
-                    {UNITS.TEMPERATURE_C}
-                  </span>
-                }
+                legendData={lineChartLegend(temperatureChartData)}
+                onToggleDataset={(index) => toggleLineDataset(setTemperatureChartData, index)}
+                minMaxAvg={temperatureMinMaxAvg(temperatureStats)}
               >
                 <LineChart
                   height={300}
                   showPointMarkers
                   yTicksFormatter={(value) => `${value}${UNITS.TEMPERATURE_C}`}
-                  data={LINE_CHART_TEMPERATURE}
+                  data={temperatureChartData}
                 />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
 
-          {/* Example 7: Line Chart - Daily Revenue */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Daily Revenue (Currency Format)
-            </h4>
+          <ChartWrapperDemoCard title="Daily Revenue (Currency Format)">
             <ChartWrapper
-              data={showLineData ? LINE_CHART_DAILY_REVENUE : EMPTY_DATA}
+              data={showLineData ? dailyRevenueChartData : EMPTY_DATA}
               isLoading={isLoadingLine}
               customNoDataMessage="No daily revenue data available"
               minHeight={300}
             >
               <ChartContainer
                 title="Daily Revenue"
-                footer={
-                  <span>
-                    Min ${revenueStats.min.toLocaleString()} · Max $
-                    {revenueStats.max.toLocaleString()} · Avg ${revenueStats.avg.toFixed(0)}
-                  </span>
-                }
+                legendData={lineChartLegend(dailyRevenueChartData)}
+                onToggleDataset={(index) => toggleLineDataset(setDailyRevenueChartData, index)}
+                minMaxAvg={revenueMinMaxAvg(revenueStats)}
               >
                 <LineChart
                   height={300}
                   yTicksFormatter={(value) => `${CURRENCY.USD}${(value / 1000).toFixed(1)}k`}
-                  data={LINE_CHART_DAILY_REVENUE}
+                  data={dailyRevenueChartData}
                 />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
 
-          {/* Example 8: Line Chart - Hashrate without Legend */}
-          <div>
-            <h4
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: '#ff9300',
-                marginBottom: '1rem',
-              }}
-            >
-              Hashrate (No Legend)
-            </h4>
+          <ChartWrapperDemoCard title="Hashrate (No Legend)">
             <ChartWrapper
               data={showLineData ? LINE_CHART_HASHRATE : EMPTY_DATA}
               isLoading={isLoadingLine}
@@ -544,11 +440,11 @@ export const ChartWrapperPage = (): ReactElement => {
                 <LineChart
                   height={300}
                   yTicksFormatter={(value) => `${value} ${UNITS.HASHRATE_TH_S}`}
-                  data={LINE_CHART_HASHRATE}
+                  data={hashrateChartData}
                 />
               </ChartContainer>
             </ChartWrapper>
-          </div>
+          </ChartWrapperDemoCard>
         </div>
       </section>
     </section>

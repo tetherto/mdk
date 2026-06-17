@@ -7,7 +7,7 @@ export const EnergyBalanceExample = () => (
         revenueMetrics: null,
         costMetrics: null,
         energyRevenueChartInput: { datasets: [], threshold: null } as never,
-        downtimeChartInput: { datasets: [], threshold: null } as never,
+        averageDowntimeData: { labels: [], curtailment: [], operationalIssues: [] },
         powerChartInput: { datasets: [], threshold: null } as never,
         powerChartCostInput: { datasets: [], threshold: null } as never,
         energyCostChartInput: { datasets: [], btcUnit: 'BTC', threshold: null } as never,

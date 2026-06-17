@@ -1,9 +1,22 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { AlertTableRecord } from '../alerts-types'
 import { getAlertsTableColumns } from '../alerts-table-columns'
 import { FALLBACK } from '@core/index'
+
+vi.mock('@core/index', async () => {
+  const actual = await vi.importActual<typeof import('@core/index')>('@core/index')
+  return {
+    ...actual,
+    SimpleTooltip: vi.fn(({ content, children }) => (
+      <div data-testid="tooltip">
+        <div data-testid="tooltip-content">{content}</div>
+        {children}
+      </div>
+    )),
+  }
+})
 
 const formatDate = vi.fn((d: Date) => `formatted:${d.toISOString()}`)
 
@@ -42,7 +55,7 @@ const renderCell = (
 describe('getAlertsTableColumns', () => {
   it('returns the expected list of columns', () => {
     const columns = getAlertsTableColumns({ getFormattedDate: formatDate })
-    expect(columns).toHaveLength(7)
+    expect(columns).toHaveLength(6)
     expect(columns.map((c) => c.header)).toEqual([
       'Code',
       'Position',
@@ -50,13 +63,32 @@ describe('getAlertsTableColumns', () => {
       'Description',
       'Severity',
       'Created at',
-      'Actions',
     ])
+  })
+
+  it('does not include an actions column', () => {
+    const columns = getAlertsTableColumns({ getFormattedDate: formatDate })
+    expect(columns.find((c) => c.id === 'actions')).toBeUndefined()
   })
 
   it('renders shortCode column with fallback when value is missing', () => {
     renderCell('shortCode', buildRecord({ shortCode: undefined as unknown as string }))
     expect(screen.getByText(FALLBACK)).toBeInTheDocument()
+  })
+
+  it('surfaces the matched-on hint as a tooltip on the code when present', () => {
+    renderCell('shortCode', buildRecord({ matchedOn: ['sn-SN333', 'ip-10.0.33.1'] }))
+    const code = screen.getByText('M-001')
+    expect(code).toHaveClass('mdk-alerts-code-cell--matched')
+    expect(screen.getByTestId('tooltip-content')).toHaveTextContent(
+      'Matched on sn-SN333, ip-10.0.33.1',
+    )
+  })
+
+  it('renders the bare code without a tooltip when matchedOn is absent', () => {
+    renderCell('shortCode', buildRecord())
+    expect(screen.getByText('M-001')).toBeInTheDocument()
+    expect(screen.queryByTestId('tooltip')).not.toBeInTheDocument()
   })
 
   it('renders alertName column value', () => {
@@ -96,27 +128,6 @@ describe('getAlertsTableColumns', () => {
   it('renders fallback when createdAt is missing', () => {
     renderCell('createdAt', buildRecord({ createdAt: 0 }))
     expect(screen.getByText(FALLBACK)).toBeInTheDocument()
-  })
-
-  it('actions column triggers onAlertClick when icon button is clicked', () => {
-    const onAlertClick = vi.fn()
-    renderCell(
-      'actions',
-      buildRecord({ actions: { uuid: 'alert-uuid-2', id: 'device-2', onAlertClick } }),
-    )
-    fireEvent.click(screen.getByRole('button', { name: /open alert/i }))
-    expect(onAlertClick).toHaveBeenCalledWith('device-2', 'alert-uuid-2')
-  })
-
-  it('actions column renders nothing when actions are missing', () => {
-    const columns = getAlertsTableColumns({ getFormattedDate: formatDate })
-    const actions = columns.find((c) => c.id === 'actions')!
-    const cell = (actions.cell as unknown as (info: unknown) => React.ReactNode)({
-      getValue: () => undefined,
-      row: { original: { ...buildRecord(), actions: undefined } },
-    })
-    const { container } = render(<>{cell as React.ReactElement}</>)
-    expect(container).toBeEmptyDOMElement()
   })
 
   it('severity sorting compares level rank', () => {

@@ -14,17 +14,27 @@
   &__chart {
     position: relative;
     width: 100%;
+
+    .mdk-gauge-chart {
+      position: relative;
+      z-index: 0;
+    }
   }
 
   &__value {
     @include flex_center;
 
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    bottom: 0.25rem;
+    left: 0;
     gap: 0.25rem;
-    margin-top: -2.5rem;
     font-size: 1.3125rem;
     font-weight: 500;
     line-height: 1;
     text-align: center;
+    pointer-events: none;
   }
 
   &__value-number {

@@ -1,4 +1,5 @@
 import { useDevices } from '@tetherto/mdk-react-adapter'
+import { getDefaultHistoricalAlertsRange } from '@tetherto/mdk-ui-core'
 import { useCallback, useEffect, useState } from 'react'
 import type { JSX } from 'react'
 
@@ -14,13 +15,6 @@ import { HistoricalAlerts } from '../../../components/alerts/historical-alerts/h
 import type { HistoricalAlertsRange } from '../../../components/alerts/historical-alerts/historical-alerts'
 
 import './alerts.scss'
-
-const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1_000
-
-const getDefaultRange = (): HistoricalAlertsRange => {
-  const end = Date.now()
-  return { start: end - FOURTEEN_DAYS_MS, end }
-}
 
 export type AlertsProps = {
   /**
@@ -148,7 +142,7 @@ export const Alerts = ({
     }
   }, [initialSeverity])
 
-  const [internalRange, setInternalRange] = useState<HistoricalAlertsRange>(() => getDefaultRange())
+  const [internalRange, setInternalRange] = useState<HistoricalAlertsRange>(() => getDefaultHistoricalAlertsRange())
   const dateRange = providedDateRange ?? internalRange
   const handleDateRangeChange = useCallback(
     (next: HistoricalAlertsRange): void => {

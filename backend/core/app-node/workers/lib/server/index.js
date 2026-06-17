@@ -13,7 +13,6 @@ const poolsRoutes = require('./routes/pools.routes')
 const siteRoutes = require('./routes/site.routes')
 const configsRoutes = require('./routes/configs.routes')
 const devicesRoutes = require('./routes/devices.routes')
-const metricsRoutes = require('./routes/metrics.routes')
 const alertsRoutes = require('./routes/alerts.routes')
 const minersRoutes = require('./routes/miners.routes')
 const groupsRoutes = require('./routes/groups.routes')
@@ -22,10 +21,6 @@ const energySystemRoutes = require('./routes/energySystem.routes')
 const explorerRoutes = require('./routes/explorer.routes')
 const siteMonitorRoutes = require('./routes/site-monitor.routes')
 
-/**
- * Collect all routes into a flat array for server injection.
- * Each route is a Fastify-style object: { method, url, handler, ... }
- */
 function routes (ctx) {
   return [
     ...authRoutes(ctx),
@@ -41,7 +36,6 @@ function routes (ctx) {
     ...siteRoutes(ctx),
     ...configsRoutes(ctx),
     ...devicesRoutes(ctx),
-    ...metricsRoutes(ctx),
     ...alertsRoutes(ctx),
     ...minersRoutes(ctx),
     ...groupsRoutes(ctx),

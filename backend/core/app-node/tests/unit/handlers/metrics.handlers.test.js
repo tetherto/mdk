@@ -1,40 +1,14 @@
 'use strict'
 
 const test = require('brittle')
-const {
-  getHashrate,
-  processHashrateData,
-  calculateHashrateSummary,
-  getConsumption,
-  processConsumptionData,
-  calculateConsumptionSummary,
-  calculateGroupedConsumptionSummary,
-  getEfficiency,
-  processEfficiencyData,
-  calculateEfficiencySummary,
-  getMinerStatus,
-  processMinerStatusData,
-  calculateMinerStatusSummary,
-  sumObjectValues,
-  parseEntryTs,
-  resolveInterval,
-  getIntervalConfig,
-  getPowerMode,
-  processPowerModeData,
-  calculatePowerModeSummary,
-  categorizeMiner,
-  getPowerModeTimeline,
-  processPowerModeTimelineData,
-  getTemperature,
-  processTemperatureData,
-  calculateTemperatureSummary,
-  forEachRangeAggrItem,
-  getContainerTelemetry,
-  processContainerMiners,
-  processContainerSensorSnapshot,
-  getContainerHistory,
-  processContainerHistoryData
-} = require('../../../workers/lib/server/handlers/metrics.handlers')
+const { getHashrate, processHashrateData, calculateHashrateSummary } = require('../../../../plugins/telemetry/controllers/hashrate')
+const { getConsumption, processConsumptionData, calculateConsumptionSummary, calculateGroupedConsumptionSummary } = require('../../../../plugins/telemetry/controllers/consumption')
+const { getEfficiency, processEfficiencyData, calculateEfficiencySummary } = require('../../../../plugins/telemetry/controllers/efficiency')
+const { getMinerStatus, processMinerStatusData, calculateMinerStatusSummary } = require('../../../../plugins/telemetry/controllers/miner-status')
+const { getPowerMode, processPowerModeData, calculatePowerModeSummary, categorizeMiner, getPowerModeTimeline, processPowerModeTimelineData } = require('../../../../plugins/telemetry/controllers/power-mode')
+const { getTemperature, processTemperatureData, calculateTemperatureSummary } = require('../../../../plugins/telemetry/controllers/temperature')
+const { getContainerTelemetry, processContainerMiners, processContainerSensorSnapshot, getContainerHistory, processContainerHistoryData } = require('../../../../plugins/telemetry/controllers/containers')
+const { sumObjectValues, parseEntryTs, resolveInterval, getIntervalConfig, forEachRangeAggrItem } = require('../../../workers/lib/metrics.utils')
 const { withDataProxy } = require('../helpers/mockHelpers')
 
 // ==================== Hashrate Tests ====================

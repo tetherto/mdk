@@ -1,0 +1,27 @@
+{
+  "name": "@tetherto/mdk-full-site-ui",
+  "type": "module",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tetherto/mdk-fonts": "file:../../../ui/packages/fonts",
+    "@tetherto/mdk-react-adapter": "file:../../../ui/packages/react-adapter",
+    "@tetherto/mdk-react-devkit": "file:../../../ui/packages/react-devkit",
+    "@tetherto/mdk-ui-core": "file:../../../ui/packages/ui-core",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.3.5"
+  }
+}

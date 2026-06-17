@@ -27,7 +27,7 @@ What you'll have at the end:
 
 ## Prerequisites
 
-- Node.js >=24 or newer (LTS)
+- Node.js >=24 (LTS)
 - npm >=11
 
 > [!IMPORTANT]
@@ -218,8 +218,8 @@ You've climbed the whole ladder: observed a stack, driven it from a CLI, and bui
 
 - The full example, including the OAuth setup and how to add a new data panel — [`examples/e2e/README.md`][site-monitor-readme]
 - The MDK UI toolkit (components, hooks, theming) — [`ui/README.md`][ui-usage]
-- Run a full site (5 workers, 26 devices) — [`backend/core/examples/mdk-site/site.js`][site-example]
-- Read all runnable examples in one place — [`backend/core/examples/README.md`][examples-readme]
+- Run a full site (5 workers, 26 devices) — [`examples/backend/mdk-site/site.js`][site-example]
+- Read all runnable examples in one place — [`examples/backend/README.md`][examples-readme]
 
 ## Links
 
@@ -244,8 +244,8 @@ You've climbed the whole ladder: observed a stack, driven it from a CLI, and bui
 [ui-usage]: ../../../ui/README.md
 <!-- docs@tether.io: ui-usage → https://github.com/tetherto/mdk/blob/main/ui/README.md -->
 
-[site-example]: ../../../backend/core/examples/mdk-site/site.js
-<!-- docs@tether.io: site-example → https://github.com/tetherto/mdk/blob/main/backend/core/examples/mdk-site/site.js -->
+[site-example]: ../../../examples/backend/mdk-site/site.js
+<!-- docs@tether.io: site-example → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-site/site.js -->
 
-[examples-readme]: ../../../backend/core/examples/README.md
-<!-- docs@tether.io: examples-readme → https://github.com/tetherto/mdk/blob/main/backend/core/examples/README.md -->
+[examples-readme]: ../../../examples/backend/README.md
+<!-- docs@tether.io: examples-readme → https://github.com/tetherto/mdk/blob/main/examples/backend/README.md -->

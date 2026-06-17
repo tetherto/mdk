@@ -32,6 +32,10 @@
     width: 100%;
     min-width: 0;
     height: 100%;
+    /* content-box so the 20px vertical padding adds to (not eats into) the
+     * canvas height — a global border-box reset would otherwise shrink the
+     * canvas and clip the top Y-axis label. */
+    box-sizing: content-box;
     overflow: hidden;
     padding: 20px 0;
     min-height: 200px;

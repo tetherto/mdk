@@ -111,20 +111,22 @@ export const GaugeSvg = forwardRef<SVGSVGElement, GaugeSvgProps>(
             <path key={segment.key} d={segment.d} fill={segment.color} />
           ))}
         </g>
-        <polygon
-          points={[
-            `${needleTip.x.toFixed(3)},${needleTip.y.toFixed(3)}`,
-            `${needleBaseLeft.x.toFixed(3)},${needleBaseLeft.y.toFixed(3)}`,
-            `${needleBaseRight.x.toFixed(3)},${needleBaseRight.y.toFixed(3)}`,
-          ].join(' ')}
-          fill={needleColor}
-        />
-        <circle
-          cx={GAUGE_CENTER_X}
-          cy={GAUGE_CENTER_Y}
-          r={GAUGE_NEEDLE_HUB_RADIUS}
-          fill={needleColor}
-        />
+        <g aria-hidden="true">
+          <polygon
+            points={[
+              `${needleTip.x.toFixed(3)},${needleTip.y.toFixed(3)}`,
+              `${needleBaseLeft.x.toFixed(3)},${needleBaseLeft.y.toFixed(3)}`,
+              `${needleBaseRight.x.toFixed(3)},${needleBaseRight.y.toFixed(3)}`,
+            ].join(' ')}
+            fill={needleColor}
+          />
+          <circle
+            cx={GAUGE_CENTER_X}
+            cy={GAUGE_CENTER_Y}
+            r={GAUGE_NEEDLE_HUB_RADIUS}
+            fill={needleColor}
+          />
+        </g>
         {!hideText && (
           <text
             x={GAUGE_CENTER_X}

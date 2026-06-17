@@ -181,3 +181,22 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/** Min / Max / Avg label (orange, extra-bold, 14px) */
+@mixin chart_stat_label {
+  color: var(--mdk-color-primary);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+/** Min / Max / Avg value (#9FA6AC, 14px) */
+@mixin chart_stat_value {
+  color: #9fa6ac;
+  color: rgb(var(--mdk-color-dark-grey));
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.25;
+}

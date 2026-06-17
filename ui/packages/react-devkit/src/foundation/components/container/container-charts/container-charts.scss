@@ -41,22 +41,14 @@
 }
 
 .mdk-container-charts__chart-block {
-  @include flex_column;
-
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.mdk-container-charts__chart-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  opacity: 0.9;
+  min-width: 0;
+  width: 100%;
 }
 
 .mdk-container-charts__layout {
   @include flex_column;
 
-  gap: 20px;
+  gap: 16px;
 }
 
 .mdk-container-charts__loading {

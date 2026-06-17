@@ -12,7 +12,14 @@
      * 0.5px bottom border plus 1rem horizontal padding added on top
      * of the 100% width). */
     box-sizing: border-box;
-    min-height: 4.5rem;
+    /* As a grid/flex item (the shell places the header in a grid row),
+     * the default min-width: auto floors the track at the header's
+     * min-content width — logo + full stats strip + actions. On narrow
+     * windows that pushes the track past the viewport and clips the
+     * actions cluster with no way to scroll to it. min-width: 0 lets
+     * the header shrink so the __main slot absorbs the squeeze. */
+    min-width: 0;
+    min-height: 4.6875rem; /* 75px — matches the Mining OS reference header */
     padding: 0 1rem;
     background: var(--mdk-color-surface, #0a0a09);
     color: var(--mdk-color-text-primary, #f5f5f0);
@@ -39,7 +46,7 @@
       width: var(--mdk-shell-sidebar-width, 220px);
       box-sizing: border-box;
       padding: 0 0.75rem 0 0.25rem;
-      color: var(--mdk-color-primary, #f7931a);
+      color: var(--mdk-color-primary);
       flex: 0 0 auto;
     }
 

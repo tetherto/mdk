@@ -16,10 +16,15 @@ class MDKWorkerAdapter {
     this.workerId = opts.workerId || manager.rackId
     this.orkTopic = opts.orkTopic || null
     this.store = opts.store || null
+    // Optional DHT bootstrap override. Defaults to hyperdht's public bootstrap;
+    // set only for a custom DHT network or hermetic tests (hyperdht/testnet).
+    this._bootstrap = opts.bootstrap || null
 
     this._rpc = null
     this._server = null
     this._swarm = null
+    this._discovery = null
+    this._announceTimer = null
     this._dht = null
     this._confBee = null
   }
@@ -28,7 +33,7 @@ class MDKWorkerAdapter {
     const seedDht = await this._getOrCreateSeed('seedDht')
     const seedRpc = await this._getOrCreateSeed('seedRpc')
 
-    this._dht = new DHT({ keyPair: DHT.keyPair(seedDht) })
+    this._dht = new DHT({ keyPair: DHT.keyPair(seedDht), ...(this._bootstrap ? { bootstrap: this._bootstrap } : {}) })
     this._rpc = new HyperswarmRPC({ dht: this._dht, seed: seedRpc })
     this._server = this._rpc.createServer()
 
@@ -54,6 +59,8 @@ class MDKWorkerAdapter {
   }
 
   async stop () {
+    if (this._announceTimer) { clearInterval(this._announceTimer); this._announceTimer = null }
+    this._discovery = null
     if (this._swarm) { await this._swarm.destroy(); this._swarm = null }
     if (this._server) { await this._server.close(); this._server = null }
     if (this._rpc) { await this._rpc.destroy(); this._rpc = null }
@@ -92,15 +99,31 @@ class MDKWorkerAdapter {
       ? this.orkTopic
       : Buffer.from(this.orkTopic, 'hex')
 
-    this._swarm.join(topicBuf, { server: true, client: false })
-    await this._swarm.flush()
-
+    // Attach the handler BEFORE join. A Hyperswarm connection is persistent and
+    // its `connection` event fires once, immediately on open — if the ORK client
+    // connects before this is attached (e.g. during an awaited flush), the event
+    // is missed and the worker never writes its key on that long-lived socket,
+    // so the ORK times out and discovery hangs.
     this._swarm.on('connection', (stream) => {
       stream.write(this._server.publicKey)
       stream.on('error', () => {})
     })
 
-    debug(`joined discovery topic: ${topicBuf.toString('hex').slice(0, 16)}...`)
+    // Server join: announce this keypair under the topic. `discovery.flushed()`
+    // is the server-mode wait — it resolves once we are announced on the DHT and
+    // reachable (swarm.flush() is the client "connect to pending peers" wait, the
+    // wrong semantics here). Hold the handle so we can re-announce and leave it.
+    this._discovery = this._swarm.join(topicBuf, { server: true, client: false })
+    await this._discovery.flushed()
+
+    // Announce/lookup is an ongoing process; re-announce periodically so an ORK
+    // that joins later (or after our announce expires) still finds us.
+    this._announceTimer = setInterval(() => {
+      if (this._discovery) this._discovery.refresh({ server: true }).catch(() => {})
+    }, 30000)
+    this._announceTimer.unref()
+
+    debug(`joined discovery topic: ${topicBuf.toString('hex').slice(0, 16)}... (announced)`)
   }
 
   async handleRequest (envelope) {
@@ -124,11 +147,22 @@ class MDKWorkerAdapter {
     }
   }
 
+  // Things map for ThingManager-backed workers; empty for scheduler/EventEmitter
+  // workers (e.g. minerpools) that expose data through getWrkExtData instead.
+  _thingsMem () {
+    return (this.manager.mem && this.manager.mem.things) || {}
+  }
+
   _handleIdentity (envelope) {
-    const things = this.manager.listThings({})
-    const devices = (Array.isArray(things) ? things : []).map(t => ({
-      deviceId: t.id
-    }))
+    let devices
+    if (typeof this.manager.listThings === 'function') {
+      const things = this.manager.listThings({})
+      devices = (Array.isArray(things) ? things : []).map(t => ({ deviceId: t.id }))
+    } else {
+      // Non-thing worker (scheduler/EventEmitter, e.g. a minerpool): expose a
+      // single routable device so ORK can address it for ext_data telemetry.
+      devices = [{ deviceId: this.workerId }]
+    }
 
     return buildResponse(envelope, ACTIONS.IDENTITY_RESPONSE, {
       workerId: this.workerId,
@@ -150,10 +184,10 @@ class MDKWorkerAdapter {
       let result
       switch (query.type) {
         case 'list':
-          result = { things: this.manager.listThings(query) }
+          result = { things: typeof this.manager.listThings === 'function' ? this.manager.listThings(query) : [] }
           break
         case 'count':
-          result = { count: Object.keys(this.manager.mem.things).length }
+          result = { count: Object.keys(this._thingsMem()).length }
           break
         case 'logs':
           result = { logs: await this.manager.tailLog({ thingId: deviceId, ...query }) }
@@ -162,7 +196,7 @@ class MDKWorkerAdapter {
           result = { logs: await this.manager.getHistoricalLogs({ thingId: deviceId, ...query }) }
           break
         case 'logs_multi': {
-          const deviceIds = query.deviceIds || (deviceId ? [deviceId] : Object.keys(this.manager.mem.things))
+          const deviceIds = query.deviceIds || (deviceId ? [deviceId] : Object.keys(this._thingsMem()))
           const allLogs = []
           for (const id of deviceIds) {
             try {
@@ -188,14 +222,21 @@ class MDKWorkerAdapter {
           result = { stats: await this.manager.aggrStats(query.deviceIds, query.opts || {}) }
           break
         case 'ext_data':
-          result = { extData: this.manager._getWrkExtData ? this.manager._getWrkExtData(query) : {} }
+          if (typeof this.manager.getWrkExtData === 'function') {
+            result = { extData: await this.manager.getWrkExtData({ query }) }
+          } else if (typeof this.manager._getWrkExtData === 'function') {
+            result = { extData: await this.manager._getWrkExtData(query) }
+          } else {
+            result = { extData: {} }
+          }
           break
         case 'metrics':
         default: {
           if (!deviceId) {
             const all = []
-            for (const id of Object.keys(this.manager.mem.things)) {
-              const thg = this.manager.mem.things[id]
+            const things = this._thingsMem()
+            for (const id of Object.keys(things)) {
+              const thg = things[id]
               try {
                 const snap = await this.manager.collectThingSnap(thg)
                 all.push({ deviceId: id, ...snap })
@@ -205,7 +246,7 @@ class MDKWorkerAdapter {
             }
             result = { devices: all }
           } else {
-            const thg = this.manager.mem.things[deviceId]
+            const thg = this._thingsMem()[deviceId]
             if (!thg) {
               result = { error: 'ERR_DEVICE_NOT_FOUND' }
             } else {
@@ -267,7 +308,7 @@ class MDKWorkerAdapter {
           result = await this.manager.applyThings({
             method: 'rackReboot',
             params: [],
-            thingIds: Object.keys(this.manager.mem.things)
+            thingIds: Object.keys(this._thingsMem())
           })
           break
         default: {
@@ -275,7 +316,10 @@ class MDKWorkerAdapter {
           result = await this.manager.applyThings({
             method: command,
             params: params ? Object.values(params) : [],
-            thingIds
+            thingIds,
+            // applyThings filters via req.query (mingo), not thingIds — without
+            // this a device-scoped command matches every thing and broadcasts.
+            query: thingIds.length ? { id: { $in: thingIds } } : undefined
           })
           break
         }
@@ -303,7 +347,7 @@ class MDKWorkerAdapter {
 
   _handleStatePull (envelope) {
     const states = {}
-    for (const [id, thg] of Object.entries(this.manager.mem.things)) {
+    for (const [id, thg] of Object.entries(this._thingsMem())) {
       states[id] = {
         status: thg.ctrl && thg.ctrl.isThingOnline ? (thg.ctrl.isThingOnline() ? 'online' : 'offline') : 'unknown',
         type: thg.type,

@@ -6,8 +6,8 @@ const { createWorker } = require('tether-svc-test-helper').worker
 const { setTimeout: sleep } = require('timers/promises')
 const HttpFacility = require('@bitfinex/bfx-facs-http')
 const { ENDPOINTS } = require('../../workers/lib/constants')
-const path = require('path')
 const { MOCK_MINERS: mockMiners } = require('./helpers/mock-data')
+const path = require('path')
 
 test('Api', { timeout: 90000 }, async (main) => {
   const baseDir = 'tests/integration'

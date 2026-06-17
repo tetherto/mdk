@@ -14,7 +14,6 @@ const {
   getGlobalConfig,
   setGlobalConfig
 } = require('../handlers/global.handlers')
-const { getSiteName } = require('../handlers/auth.handlers')
 const { createAuthRoute, createCachedAuthRoute } = require('../lib/routeHelpers')
 
 module.exports = (ctx) => {
@@ -115,7 +114,7 @@ module.exports = (ctx) => {
     {
       method: HTTP_METHODS.GET,
       url: ENDPOINTS.SITE,
-      ...createAuthRoute(ctx, () => getSiteName(ctx))
+      ...createAuthRoute(ctx, () => ({ site: ctx.conf.site }))
     }
   ]
 

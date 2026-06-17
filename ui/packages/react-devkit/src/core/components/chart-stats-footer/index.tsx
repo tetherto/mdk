@@ -1,30 +1,7 @@
+import { MinMaxAvg } from '../min-max-avg'
 import { cn } from '../../utils'
 
-import type { ChartStatsFooterProps, MinMaxAvg } from './types'
-
-type MinMaxAvgRowProps = { minMaxAvg: MinMaxAvg }
-
-const MinMaxAvgRow = ({ minMaxAvg }: MinMaxAvgRowProps) => {
-  const { min, max, avg } = minMaxAvg
-  const items = [
-    { label: 'Min', value: min },
-    { label: 'Max', value: max },
-    { label: 'Avg', value: avg },
-  ].filter((item) => item.value !== undefined && item.value !== '')
-
-  return (
-    <>
-      {items.map((item) => (
-        <div key={item.label} className="mdk-chart-stats-footer__row">
-          <div className="mdk-chart-stats-footer__primary-text">{item.label}</div>
-          <div className="mdk-chart-stats-footer__secondary-text">
-            {avg === '-' ? '-' : item.value}
-          </div>
-        </div>
-      ))}
-    </>
-  )
-}
+import type { ChartStatsFooterProps } from './types'
 
 /**
  * ChartStatsFooter - Displays Min/Max/Avg values and optional stats grid below a chart
@@ -65,7 +42,7 @@ export const ChartStatsFooter = ({
     >
       {hasMinMaxAvg && (
         <div className="mdk-chart-stats-footer__min-max-avg">
-          <MinMaxAvgRow minMaxAvg={minMaxAvg!} />
+          <MinMaxAvg {...minMaxAvg!} />
         </div>
       )}
       {hasStats && (

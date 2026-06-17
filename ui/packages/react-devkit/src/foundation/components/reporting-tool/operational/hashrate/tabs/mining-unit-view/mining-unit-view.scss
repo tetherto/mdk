@@ -1,4 +1,5 @@
 @use '@tetherto/mdk-react-devkit/styles' as *;
+@use '../../../../utils/reporting-panel' as reporting-panel;
 
 .mdk-hashrate-mining-unit-view {
   @include flex_column;
@@ -8,6 +9,9 @@
 
 .mdk-hashrate-mining-unit-view__header {
   @include flex_align_between;
+
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(var(--mdk-color-white-rgb), 0.1);
 }
 
 .mdk-hashrate-mining-unit-view__title {
@@ -22,4 +26,8 @@
 
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.mdk-hashrate-mining-unit-view__panel {
+  @include reporting-panel.reporting-panel-base;
 }

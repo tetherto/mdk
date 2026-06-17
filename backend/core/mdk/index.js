@@ -4,6 +4,7 @@ const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
 const os = require('os')
+const debug = require('debug')('mdk:lifecycle')
 const { setTimeout: sleep } = require('timers/promises')
 const { OrkManager } = require('../ork')
 const { MDKWorkerAdapter } = require('../../workers/base/lib/mdk-worker-adapter')
@@ -11,6 +12,7 @@ const StoreFacility = require('@tetherto/hp-svc-facs-store')
 const { MDK_STORE } = require('./utils/constants')
 const initialize = require('./utils/initialize')
 const { startServices } = require('./services')
+const { keysDir, publishWorkerKey, discoverWorkerKeys } = require('./lib/local-discovery')
 
 const defaultRoot = path.join(os.tmpdir(), 'mdk')
 
@@ -132,25 +134,38 @@ function _findWorkerPackagePath (ManagerClass) {
  * @param {string} [opts.topicFile]   - Path to topic file (default: DEFAULT_TOPIC_FILE)
  * @param {object} [opts.ipc]         - IPC config; pass `false` to disable
  * @param {object} [opts.hrpc]        - HRPC config (default: enabled)
+ * @param {object} [opts.discovery]   - Discovery config: { mode: 'dht' | 'local', dir? }.
+ *                                       Default 'dht' (Hyperswarm topic; works on one host or
+ *                                       across machines). 'local' is a faster same-machine option:
+ *                                       the ORK registers workers by the RPC keys they publish to a
+ *                                       shared dir (default: <root>/.worker-keys), skipping the topic.
  */
 async function getOrk (opts = {}) {
   const root = opts.root || defaultRoot
   const storeDir = opts.storeDir || path.join(root, MDK_STORE, 'ork-db')
   _ensureDirs(storeDir)
 
-  let topic = opts.topic
-  if (!topic) {
-    const topicFile = opts.topicFile || DEFAULT_TOPIC_FILE
-    topic = fs.existsSync(topicFile)
-      ? fs.readFileSync(topicFile, 'utf8').trim()
-      : crypto.randomBytes(32).toString('hex')
+  const mode = (opts.discovery && opts.discovery.mode) || 'dht'
+
+  let topic
+  let localKeysDir
+  if (mode === 'local') {
+    localKeysDir = opts.discovery.dir || keysDir(root)
+  } else {
+    topic = opts.topic
+    if (!topic) {
+      const topicFile = opts.topicFile || DEFAULT_TOPIC_FILE
+      topic = fs.existsSync(topicFile)
+        ? fs.readFileSync(topicFile, 'utf8').trim()
+        : crypto.randomBytes(32).toString('hex')
+    }
   }
 
   const conf = { ork: {} }
   if (opts.hrpc !== false) conf.ork.hrpc = opts.hrpc || { whitelist: [] }
   if (opts.telemetryPullMs) conf.ork.telemetryPullMs = opts.telemetryPullMs
   if (opts.healthPingMs) conf.ork.healthPingMs = opts.healthPingMs
-  conf.ork.discovery = opts.discovery || { topic }
+  conf.ork.discovery = mode === 'local' ? { mode: 'local', dir: localKeysDir } : (opts.discovery || { topic })
 
   const ipc = opts.ipc !== false ? (opts.ipc || { path: DEFAULT_IPC_SOCK }) : null
   if (ipc) conf.ork.ipc = ipc
@@ -162,14 +177,18 @@ async function getOrk (opts = {}) {
   ork.topic = topic
   ork._cleanup = []
 
-  process.once('SIGINT', async () => {
-    const forceExit = setTimeout(() => process.exit(0), 3000).unref()
+  // Local mode: register workers by the RPC keys they publish to the shared dir,
+  // skipping the DHT topic — immediate discovery for same-machine setups.
+  if (mode === 'local') {
+    const watcher = discoverWorkerKeys(ork, localKeysDir)
+    ork._cleanup.push(async () => watcher.stop())
+  }
+
+  onShutdown(async () => {
     for (const fn of ork._cleanup) {
       try { await fn() } catch {}
     }
-    try { await ork.stop() } catch {}
-    clearTimeout(forceExit)
-    process.exit(0)
+    await ork.stop()
   })
 
   return ork
@@ -215,10 +234,15 @@ async function startOrk (opts = {}) {
  * @param {string}   [opts.workerId]          - Override worker ID
  * @param {string}   [opts.workerPackagePath] - Path to package with mdk-contract.json
  * @param {object}   [opts.contract]          - Override contract object
+ * @param {object}   [opts.discovery]          - { mode: 'dht' | 'local', dir? }. Default 'dht'.
+ *                                                In 'local' mode the worker skips the swarm topic
+ *                                                join and publishes its RPC key to a shared dir
+ *                                                (default: <root>/.worker-keys) for the ORK to pick up.
  */
 async function startWorker (ManagerClass, opts = {}) {
   const rack = opts.rack || 'rack-1'
   const root = opts.root || defaultRoot
+  const mode = (opts.discovery && opts.discovery.mode) || 'dht'
 
   const workerPackagePath = opts.workerPackagePath || _findWorkerPackagePath(ManagerClass)
 
@@ -243,12 +267,16 @@ async function startWorker (ManagerClass, opts = {}) {
 
   // Standalone DHT mode: generate topic and write to the well-known file
   // so getOrk() can pick it up without any coordination code in the caller.
-  let orkTopic = opts.orkTopic || (opts.ork ? opts.ork.topic : null)
-  if (!opts.ork) {
-    if (!orkTopic) orkTopic = crypto.randomBytes(32).toString('hex')
-    const topicFile = opts.topicFile || DEFAULT_TOPIC_FILE
-    _ensureDirs(path.dirname(topicFile))
-    fs.writeFileSync(topicFile, orkTopic, 'utf8')
+  // Local mode has no topic — orkTopic stays null and the adapter skips the join.
+  let orkTopic = null
+  if (mode !== 'local') {
+    orkTopic = opts.orkTopic || (opts.ork ? opts.ork.topic : null)
+    if (!opts.ork) {
+      if (!orkTopic) orkTopic = crypto.randomBytes(32).toString('hex')
+      const topicFile = opts.topicFile || DEFAULT_TOPIC_FILE
+      _ensureDirs(path.dirname(topicFile))
+      fs.writeFileSync(topicFile, orkTopic, 'utf8')
+    }
   }
 
   const contract = opts.contract || (workerPackagePath ? _loadContract(workerPackagePath) : null)
@@ -257,21 +285,27 @@ async function startWorker (ManagerClass, opts = {}) {
   const adapterStore = new StoreFacility(null, { storeDir: adapterStoreDir }, {})
   await _startFacility(adapterStore)
 
+  const workerId = opts.workerId || `${manager.getThingType()}-${rack}`
   const adapter = new MDKWorkerAdapter(manager, contract, {
-    workerId: opts.workerId || `${manager.getThingType()}-${rack}`,
+    workerId,
     orkTopic,
     store: adapterStore
   })
   await adapter.start()
 
+  // Local mode: publish our stable RPC key so the ORK can connect by key
+  // directly, skipping the DHT topic announce/lookup.
+  if (mode === 'local') {
+    const dir = opts.discovery.dir || keysDir(root)
+    publishWorkerKey(dir, workerId, adapter.getPublicKey().toString('hex'))
+  }
+
   if (opts.ork && opts.ork.registerWorker) {
     await opts.ork.registerWorker(adapter.getPublicKey())
   }
 
-  // manager.stop is callback-based — wait for it so RocksDB/Corestore flush
-  // before adapter.stop() and the surrounding process exit. Fire-and-forget
-  // here leaves a half-written MANIFEST that crashes the next boot with
-  // "IO error: No such file or directory ... MANIFEST-NNNN may be corrupted".
+  // Await the callback-based manager.stop so RocksDB/Corestore flush before
+  // adapter.stop() and process exit.
   const stopManager = () => new Promise((resolve) => manager.stop(() => resolve()))
 
   if (opts.ork && Array.isArray(opts.ork._cleanup)) {
@@ -280,11 +314,9 @@ async function startWorker (ManagerClass, opts = {}) {
       await adapter.stop()
     })
   } else if (!opts.ork) {
-    process.once('SIGINT', async () => {
-      setTimeout(() => process.exit(0), 3000).unref()
+    onShutdown(async () => {
       try { await stopManager() } catch {}
       try { await adapter.stop() } catch {}
-      process.exit(0)
     })
   }
 
@@ -303,9 +335,13 @@ async function startWorker (ManagerClass, opts = {}) {
  * @param {string}  [opts.root]          - Config/data root dir (default: os.tmpdir()/mdk/app-node)
  * @param {number}  [opts.port]          - HTTP port (default: 3000)
  * @param {string}  [opts.env]           - Environment string (default: 'development')
+ * @param {string}  [opts.tmpdir]        - Isolate the corestore under this dir instead of a
+ *                                         CWD-relative path (defaults to root when env==='test')
  * @param {boolean} [opts.noAuth]        - Skip OAuth plugins; write stub oauth2 config (default: false)
  * @param {object}  [opts.ork]           - ORK instance; cleanup is registered on opts.ork._cleanup
+ * @param {*}       [opts.orkKey]        - ORK HRPC gateway public key (hex/Buffer); selects HRPC transport (no IPC)
  * @param {*}       [opts.orkIpc]        - IPC socket path, or false to disable MDK client connection
+ * @param {Array}   [opts.extraPluginDirs] - Extra plugin package dirs to load + register at boot
  * @param {object}  [opts.common]        - Overrides for common.json
  * @param {object}  [opts.auth]          - Overrides for auth.config.json
  * @param {object}  [opts.httpd]         - Overrides for httpd.config.json
@@ -371,9 +407,25 @@ async function startAppNode (opts = {}) {
     port: opts.port || 3000,
     shard: opts.shard || 0
   }
+  // tether-wrk-base resolves the corestore to a CWD-relative `store/<storeDir>`
+  // unless env==='test' AND ctx.tmpdir is set, in which case it lives under
+  // tmpdir. The CWD-relative default makes every app-node sharing a working dir
+  // contend for one RocksDB lock (ERR: "File descriptor could not be locked" →
+  // a half-open corestore that later surfaces as "Corestore is closed"). Honour
+  // an explicit tmpdir, and in test env default it to root so each instance is
+  // hermetic under its own data dir.
+  if (opts.tmpdir) ctx.tmpdir = opts.tmpdir
+  else if (ctx.env === 'test') ctx.tmpdir = root
   if (opts.noAuth) ctx.noauth = true
   if (opts.ork) ctx.ork = opts.ork
-  if (opts.orkIpc !== undefined) ctx.orkIpc = opts.orkIpc
+  if (opts.orkKey) {
+    ctx.orkKey = opts.orkKey
+    // HRPC transport selected; never open the IPC socket unless explicitly asked.
+    ctx.orkIpc = opts.orkIpc !== undefined ? opts.orkIpc : false
+  } else if (opts.orkIpc !== undefined) {
+    ctx.orkIpc = opts.orkIpc
+  }
+  if (opts.extraPluginDirs) ctx.extraPluginDirs = opts.extraPluginDirs
   if (opts.additionalRoutes) ctx.additionalRoutes = opts.additionalRoutes
 
   // WrkServerHttp constructor calls this.init() + this.start() automatically.
@@ -383,20 +435,75 @@ async function startAppNode (opts = {}) {
 
   if (opts.ork && Array.isArray(opts.ork._cleanup)) {
     opts.ork._cleanup.push(() => new Promise((resolve) => hnd.stop(resolve)))
+  } else if (!opts.ork) {
+    // No ork to register cleanup onto (standalone app-node): own the signal.
+    onShutdown(() => new Promise((resolve) => hnd.stop(resolve)))
   }
 
   return hnd
 }
 
-async function waitForDiscovery (ork, timeout = 30000) {
+// Wait until the registry holds `minWorkers` READY workers (with ≥1 device unless
+// requireDevices is false); return the worker list (current list on timeout).
+// Back-compat: a numeric second arg is read as timeoutMs.
+async function waitForDiscovery (ork, opts = {}) {
+  const o = (typeof opts === 'number') ? { timeoutMs: opts } : opts
+  const { minWorkers = 1, requireDevices = true, timeoutMs = 30000, intervalMs = 500 } = o
+  const ready = () => ork.registry.listWorkers()
+    .filter(w => w.state === 'READY' && (!requireDevices || (w.deviceIds || []).length > 0))
   const start = Date.now()
-  while (Date.now() - start < timeout) {
-    const w = ork.registry.listWorkers()
-    const ready = w.filter(wk => wk.state === 'READY' && wk.deviceIds.length > 0)
-    if (ready.length > 0) return w
-    await sleep(500)
+  while (Date.now() - start < timeoutMs) {
+    if (ready().length >= minWorkers) return ork.registry.listWorkers()
+    await sleep(intervalMs)
   }
   return ork.registry.listWorkers()
+}
+
+// Run cleanupFn once on the first of `signals`, then exit. The unref'd force
+// timer bounds a hung cleanup. Idempotent; returns the handler so tests can
+// invoke or removeListener it.
+function onShutdown (cleanupFn, { signals = ['SIGINT', 'SIGTERM'], forceMs = 3000 } = {}) {
+  let ran = false
+  const handler = async () => {
+    if (ran) return
+    ran = true
+    const force = setTimeout(() => process.exit(0), forceMs).unref()
+    try { await cleanupFn() } catch (err) { debug('shutdown cleanup error: %s', err && err.message) }
+    clearTimeout(force)
+    process.exit(0)
+  }
+  for (const sig of signals) process.once(sig, handler)
+  return handler
+}
+
+// Tear down any boot handle without the caller knowing its shape: drain
+// _cleanup, then stop via the handle's top-level stop() (ork/app-node) or, for a
+// worker handle, manager-then-adapter. Idempotent and partial-handle safe.
+async function shutdown (handle) {
+  if (!handle || handle.__mdkShutdownDone) return
+
+  if (Array.isArray(handle._cleanup)) {
+    for (const fn of handle._cleanup) {
+      try { await fn() } catch (err) { debug('cleanup error: %s', err && err.message) }
+    }
+  }
+
+  if (typeof handle.stop === 'function') {
+    // ork.stop() resolves a promise; app-node hnd.stop(cb) calls back.
+    await new Promise((resolve) => {
+      const r = handle.stop(resolve)
+      if (r && typeof r.then === 'function') r.then(resolve, resolve)
+    })
+  } else if (handle.manager || handle.adapter) {
+    if (handle.manager && typeof handle.manager.stop === 'function') {
+      await new Promise((resolve) => handle.manager.stop(() => resolve()))
+    }
+    if (handle.adapter && typeof handle.adapter.stop === 'function') {
+      try { await handle.adapter.stop() } catch (err) { debug('adapter stop: %s', err && err.message) }
+    }
+  }
+
+  handle.__mdkShutdownDone = true
 }
 
 module.exports = {
@@ -406,6 +513,8 @@ module.exports = {
   startWorker,
   startAppNode,
   waitForDiscovery,
+  onShutdown,
+  shutdown,
   DEFAULT_TOPIC_FILE,
   DEFAULT_IPC_SOCK,
   startServices

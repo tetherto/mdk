@@ -6,7 +6,7 @@ Framework-agnostic headless core for the MDK Devkit.
 
 Only the primitives needed by code currently in this repo:
 
-- **Zustand vanilla stores** for the five slices currently in scope: `auth`, `devices`, `timezone`, `notifications`, `actions`
+- **Zustand vanilla stores** currently in scope: `authStore`, `devicesStore`, `notificationStore`, `timezoneStore`, `actionsStore`
 - **TanStack Query Core** `QueryClient` factory with environment-aware base URL resolution (HLD §5)
 
 This package contains **no React imports**. It is consumed by framework adapters (`@tetherto/mdk-react-adapter`, future `@tetherto/mdk-vue-adapter`, etc.) which bind these primitives to the host framework.

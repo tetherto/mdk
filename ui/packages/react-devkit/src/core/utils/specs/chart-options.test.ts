@@ -6,9 +6,24 @@ import {
   colorWithAlpha,
   computeStats,
   defaultChartOptions,
+  formatMinMaxAvg,
+  getChartLegendItemStyles,
   getDatasetValues,
   makeBarGradient,
+  resolveChartLegendStrokeColor,
+  resolveCssColor,
+  resolveLineSeriesColor,
+  standardBarChartScalesXY,
 } from '../chart-options'
+
+describe('standardBarChartScalesXY', () => {
+  it('enables both axes with expected layout flags', () => {
+    expect(standardBarChartScalesXY.x.display).toBe(true)
+    expect(standardBarChartScalesXY.x.beginAtZero).toBe(true)
+    expect(standardBarChartScalesXY.y.display).toBe(true)
+    expect(standardBarChartScalesXY.y.grid?.display).toBe(true)
+  })
+})
 
 describe('computeStats', () => {
   it('computes min, max, avg from array', () => {
@@ -44,6 +59,19 @@ describe('computeStats', () => {
   })
 })
 
+describe('formatMinMaxAvg', () => {
+  it('formats each stat with the provided formatter', () => {
+    const stats = computeStats([10, 20, 30])
+    expect(
+      formatMinMaxAvg(stats, (value, key) => (key === 'avg' ? `~${value}` : String(value))),
+    ).toEqual({
+      min: '10',
+      max: '30',
+      avg: '~20',
+    })
+  })
+})
+
 describe('getDatasetValues', () => {
   it('extracts all numeric values from datasets', () => {
     const datasets = [{ data: [1, 2, null, 3] }, { data: [4, null, 5] }]
@@ -60,6 +88,65 @@ describe('getDatasetValues', () => {
   })
 })
 
+describe('getChartLegendItemStyles', () => {
+  it('matches BarChart legend swatch and label colors when visible', () => {
+    expect(getChartLegendItemStyles('#59E8E8')).toEqual({
+      fill: 'rgba(89, 232, 232, 0.2)',
+      stroke: '#59E8E8',
+      labelColor: 'rgba(255, 255, 255, 0.7)',
+    })
+  })
+
+  it('dims swatch and label when hidden', () => {
+    const hidden = getChartLegendItemStyles('rgb(34, 197, 94)', true)
+    expect(hidden.stroke).toBe('rgba(34, 197, 94, 0.3)')
+    expect(hidden.fill).toBe('rgba(34, 197, 94, 0.06)')
+    expect(hidden.labelColor).toBe('rgba(255, 255, 255, 0.21)')
+  })
+
+  it('applies semi-transparent fill for CSS named colors when visible', () => {
+    expect(getChartLegendItemStyles('red')).toEqual({
+      fill: 'rgba(255, 0, 0, 0.2)',
+      stroke: '#ff0000',
+      labelColor: 'rgba(255, 255, 255, 0.7)',
+    })
+  })
+})
+
+describe('resolveChartLegendStrokeColor', () => {
+  it('matches visible legend stroke', () => {
+    expect(resolveChartLegendStrokeColor('#4ade80')).toBe(
+      getChartLegendItemStyles('#4ade80', false).stroke,
+    )
+  })
+})
+
+describe('resolveLineSeriesColor', () => {
+  it('returns undefined for empty input', () => {
+    expect(resolveLineSeriesColor(undefined)).toBeUndefined()
+    expect(resolveLineSeriesColor('   ')).toBeUndefined()
+  })
+
+  it('matches legend stroke for hex colors', () => {
+    const color = '#4ade80'
+    expect(resolveLineSeriesColor(color)).toBe(
+      getChartLegendItemStyles(color).stroke,
+    )
+  })
+})
+
+describe('resolveCssColor', () => {
+  it('resolves common named colors to hex', () => {
+    expect(resolveCssColor('red')).toBe('#ff0000')
+    expect(resolveCssColor('lightblue')).toBe('#add8e6')
+  })
+
+  it('passes through hex and rgb', () => {
+    expect(resolveCssColor('#59E8E8')).toBe('#59E8E8')
+    expect(resolveCssColor('rgb(1, 2, 3)')).toBe('rgb(1, 2, 3)')
+  })
+})
+
 describe('colorWithAlpha', () => {
   it('adds alpha to hex color (6 digits)', () => {
     expect(colorWithAlpha('#FF0000', 0.5)).toBe('#FF000080')
@@ -70,11 +157,19 @@ describe('colorWithAlpha', () => {
   })
 
   it('adds alpha to hsl color', () => {
-    expect(colorWithAlpha('hsl(0, 100%, 50%)', 0.5)).toBe('hsl(0, 100%, 50% / 0.5)')
+    expect(colorWithAlpha('hsl(0, 100%, 50%)', 0.5)).toBe('hsla(0, 100%, 50%, 0.5)')
   })
 
   it('adds alpha to rgb color', () => {
-    expect(colorWithAlpha('rgb(255, 0, 0)', 0.75)).toBe('rgb(255, 0, 0 / 0.75)')
+    expect(colorWithAlpha('rgb(255, 0, 0)', 0.75)).toBe('rgba(255, 0, 0, 0.75)')
+  })
+
+  it('adds alpha to space-separated hsl', () => {
+    expect(colorWithAlpha('hsl(180 70% 50%)', 0.25)).toBe('hsla(180, 70%, 50%, 0.25)')
+  })
+
+  it('adds alpha to rgba and drops existing alpha', () => {
+    expect(colorWithAlpha('rgba(34, 197, 94, 0.1)', 0.25)).toBe('rgba(34, 197, 94, 0.25)')
   })
 
   it('returns original for non-string input', () => {

@@ -20,7 +20,13 @@ export default defineConfig(({ mode }) => ({
     },
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: false,
-    cssCodeSplit: false,
+    // Must stay `true`: the entry is a pure-CSS chunk and, under Vite 8 /
+    // rolldown, the internal `vite:css-post` plugin only registers entry CSS
+    // assets in its lookup map when code splitting is enabled. With
+    // `cssCodeSplit: false` that map is empty and its pure-CSS-chunk cleanup
+    // crashes (`Cannot read properties of undefined (reading 'referenceId')`).
+    // There is only one CSS entry, so the output is still a single `styles.css`.
+    cssCodeSplit: true,
     sourcemap: mode === 'development',
     rollupOptions: {
       output: {

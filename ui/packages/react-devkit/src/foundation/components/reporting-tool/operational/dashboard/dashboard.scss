@@ -1,0 +1,73 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
+.mdk-operational-dashboard {
+  @include flex_column;
+
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+
+  &__controls {
+    @include flex_align;
+
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    width: 100%;
+
+    @media (min-width: 1200px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  &__cell {
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 26px 24px;
+    border-radius: 8px;
+    background: rgba(var(--mdk-color-black), 0.5);
+    border: 1px solid rgba(var(--mdk-color-white), 0.06);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+
+    // Expanded cards span the full grid width (parity with the OSS dashboard).
+    &--expanded {
+      @media (min-width: 1200px) {
+        grid-column: 1 / -1;
+      }
+    }
+  }
+
+  &__expand {
+    @include flex_center;
+
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--mdk-color-white-5);
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--mdk-color-primary);
+    }
+  }
+
+  &__info {
+    @include flex_center;
+
+    color: var(--mdk-color-white-5);
+    cursor: help;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--mdk-color-primary);
+    }
+  }
+}

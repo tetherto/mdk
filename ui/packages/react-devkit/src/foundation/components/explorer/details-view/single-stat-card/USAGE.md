@@ -1,6 +1,6 @@
 # SingleStatCard
 
-Prominent stat tile for displaying a single key metric. Supports flash animations, tooltips, and four visual variants.
+Prominent stat tile for displaying a single key metric. Supports flash animations and four visual variants.
 
 ## Props
 
@@ -13,7 +13,6 @@ Prominent stat tile for displaying a single key metric. Supports flash animation
 | `color` | `string` | no | — | Accent color for the border or flash effect. |
 | `flash` | `boolean` | no | — | Enable flash animation on value change. |
 | `superflash` | `boolean` | no | — | Faster flash animation. |
-| `tooltipText` | `string` | no | — | Tooltip content. |
 | `variant` | `"primary" \| "secondary" \| "tertiary" \| "highlighted"` | no | `"primary"` | Visual style variant. |
 | `row` | `boolean` | no | — | Use row layout instead of column. |
 

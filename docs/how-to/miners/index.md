@@ -48,7 +48,7 @@ For the deployment path:
 - Browse [supported hardware][supported-hardware]
 - New to the moving parts? Read [terminology][terminology] (ORK, worker, manager, thing, mock)
 - If an example does not start or a mock port is busy, use [troubleshooting][troubleshooting]
-- Drive the registered device from the CLI or dashboard — [Get started][get-started]
+- Drive the registered device from the CLI or dashboard: [Get started][get-started]
 
 ## Links
 

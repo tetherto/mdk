@@ -24,12 +24,36 @@ export type ChartTooltipConfig = {
 
 const TOOLTIP_ATTR = 'data-msdk-chart-tooltip'
 const TRACKING_ATTR = 'data-msdk-mouse'
+const CURSOR_X_ATTR = 'data-msdk-tooltip-cursor-x'
+const CURSOR_Y_ATTR = 'data-msdk-tooltip-cursor-y'
 const GAP = 10
 const OFFSET = 5
+
+const storeCursor = (container: HTMLElement, cursorX: number, cursorY: number): void => {
+  container.setAttribute(CURSOR_X_ATTR, String(cursorX))
+  container.setAttribute(CURSOR_Y_ATTR, String(cursorY))
+}
+
+const readStoredCursor = (container: HTMLElement): { x: number; y: number } | null => {
+  const xAttr = container.getAttribute(CURSOR_X_ATTR)
+  const yAttr = container.getAttribute(CURSOR_Y_ATTR)
+  if (xAttr == null || yAttr == null) return null
+  const x = Number(xAttr)
+  const y = Number(yAttr)
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  return { x, y }
+}
+
+const clearStoredCursor = (container: HTMLElement): void => {
+  container.removeAttribute(CURSOR_X_ATTR)
+  container.removeAttribute(CURSOR_Y_ATTR)
+}
 
 const positionTooltip = (container: HTMLElement, cursorX: number, cursorY: number): void => {
   const tooltipEl = container.querySelector<HTMLDivElement>(`[${TOOLTIP_ATTR}]`)
   if (!tooltipEl || tooltipEl.style.opacity === '0') return
+
+  tooltipEl.style.visibility = 'hidden'
 
   const tooltipWidth = tooltipEl.offsetWidth
   const tooltipHeight = tooltipEl.offsetHeight
@@ -48,6 +72,7 @@ const positionTooltip = (container: HTMLElement, cursorX: number, cursorY: numbe
 
   tooltipEl.style.left = `${left}px`
   tooltipEl.style.top = `${top}px`
+  if (tooltipEl.style.opacity !== '0') tooltipEl.style.visibility = 'visible'
 }
 
 // Listeners are intentionally not cleaned up — they're bound to the container element,
@@ -57,14 +82,30 @@ const ensureMouseTracking = (container: HTMLElement): void => {
   if (container.getAttribute(TRACKING_ATTR)) return
   container.setAttribute(TRACKING_ATTR, '1')
 
-  container.addEventListener('mousemove', (e: MouseEvent) => {
-    const rect = container.getBoundingClientRect()
-    positionTooltip(container, e.clientX - rect.left, e.clientY - rect.top)
-  })
+  container.addEventListener(
+    'mousemove',
+    (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect()
+      const cursorX = e.clientX - rect.left
+      const cursorY = e.clientY - rect.top
+      storeCursor(container, cursorX, cursorY)
+
+      const tooltipEl = container.querySelector<HTMLDivElement>(`[${TOOLTIP_ATTR}]`)
+      if (!tooltipEl || tooltipEl.childElementCount === 0) return
+
+      if (tooltipEl.style.opacity === '0') tooltipEl.style.opacity = '1'
+      positionTooltip(container, cursorX, cursorY)
+    },
+    { capture: true },
+  )
 
   container.addEventListener('mouseleave', () => {
+    clearStoredCursor(container)
     const tooltipEl = container.querySelector<HTMLDivElement>(`[${TOOLTIP_ATTR}]`)
-    if (tooltipEl) tooltipEl.style.opacity = '0'
+    if (tooltipEl) {
+      tooltipEl.style.opacity = '0'
+      tooltipEl.style.visibility = 'hidden'
+    }
   })
 }
 
@@ -80,7 +121,7 @@ const getOrCreateTooltipEl = (chart: Chart): HTMLDivElement => {
     tooltipEl.setAttribute(TOOLTIP_ATTR, '')
     tooltipEl.style.position = 'absolute'
     tooltipEl.style.pointerEvents = 'none'
-    tooltipEl.style.transition = 'opacity 0.15s ease'
+    tooltipEl.style.transition = 'none'
     container.style.position = 'relative'
     container.appendChild(tooltipEl)
   }
@@ -203,8 +244,10 @@ export const buildChartTooltip = (
 
     tooltipEl.replaceChildren(wrapper)
 
+    const container = chart.canvas.parentElement
+    if (!container) return
+
     Object.assign(tooltipEl.style, {
-      opacity: '1',
       background: backgroundColor,
       color: COLOR.WHITE_ALPHA_05,
       clipPath: 'polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px)',
@@ -214,6 +257,16 @@ export const buildChartTooltip = (
       minWidth: `${minWidth}px`,
       zIndex: '10',
     })
+
+    const cursor = readStoredCursor(container)
+    if (!cursor) {
+      tooltipEl.style.opacity = '0'
+      tooltipEl.style.visibility = 'hidden'
+      return
+    }
+
+    tooltipEl.style.opacity = '1'
+    positionTooltip(container, cursor.x, cursor.y)
   }
 
   return {

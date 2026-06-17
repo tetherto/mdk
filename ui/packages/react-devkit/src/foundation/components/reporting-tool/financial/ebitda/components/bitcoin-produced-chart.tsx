@@ -1,11 +1,8 @@
-import { BarChart, ChartContainer, CURRENCY, formatValueUnit } from '@core'
+import { BarChart, ChartContainer, CURRENCY, formatValueUnit, standardBarChartScalesXY } from '@core'
 import type { ReactElement } from 'react'
 
 import type { BarChartDataResult } from '../../../utils/to-bar-chart-data'
-import {
-  btcChartTooltip,
-  financialBarChartScalesXY,
-} from '../../../utils/financial-bar-chart.constants'
+import { btcChartTooltip } from '../../../utils/financial-bar-chart.constants'
 
 export type BitcoinProducedChartProps = {
   chartData: BarChartDataResult
@@ -41,7 +38,7 @@ export const BitcoinProducedChart = ({
         tooltip={btcChartTooltip}
         formatYLabel={(value) => formatValueUnit(value, CURRENCY.BTC)}
         height={height}
-        options={{ scales: financialBarChartScalesXY }}
+        options={{ scales: standardBarChartScalesXY }}
       />
     </ChartContainer>
   </div>

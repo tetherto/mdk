@@ -1,4 +1,3 @@
-export * from './downtime-chart'
 export * from './energy-balance-power-chart'
 export * from './energy-cost-chart'
 export * from './energy-metric-card'

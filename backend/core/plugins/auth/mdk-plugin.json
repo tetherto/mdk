@@ -1,0 +1,73 @@
+{
+  "name": "@tetherto/mdk-plugin-auth",
+  "version": "0.1.0",
+  "description": "Auth and identity APIs: userinfo, token refresh, permissions, and external data lookups.",
+  "routes": [
+    {
+      "id": "auth.userinfo.read",
+      "handler": "./controllers/userinfo.js",
+      "auth": true,
+      "http": {
+        "method": "GET",
+        "path": "/auth/userinfo",
+        "responses": {
+          "200": { "description": "Authenticated user profile from the validated JWT." }
+        }
+      },
+      "description": "Returns the authenticated user's profile from the validated JWT.",
+      "constraints": ["Requires a valid Bearer token in the Authorization header."],
+      "errors": ["ERR_AUTH_FAIL"]
+    },
+    {
+      "id": "auth.token.refresh",
+      "handler": "./controllers/token.js",
+      "auth": true,
+      "http": {
+        "method": "POST",
+        "path": "/auth/token",
+        "responses": {
+          "200": { "description": "New JWT token." }
+        }
+      },
+      "description": "Issues a new JWT from an existing valid token, optionally scoping TTL and roles.",
+      "constraints": ["Requires a valid Bearer token. New token inherits original IPs unless overridden."],
+      "errors": ["ERR_AUTH_FAIL"]
+    },
+    {
+      "id": "auth.permissions.read",
+      "handler": "./controllers/permissions.js",
+      "auth": true,
+      "http": {
+        "method": "GET",
+        "path": "/auth/permissions",
+        "responses": {
+          "200": { "description": "Permission set encoded in the current token." }
+        }
+      },
+      "description": "Returns the permission set encoded in the current token.",
+      "constraints": ["Requires a valid Bearer token."],
+      "errors": ["ERR_AUTH_FAIL"]
+    },
+    {
+      "id": "auth.ext-data.read",
+      "handler": "./controllers/ext-data.js",
+      "auth": true,
+      "http": {
+        "method": "GET",
+        "path": "/auth/ext-data",
+        "parameters": [
+          { "in": "query", "name": "type", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "query", "required": false, "schema": { "type": "string" } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "External data result from the ORK network." },
+          "400": { "description": "Invalid query JSON or missing type parameter." }
+        }
+      },
+      "description": "Proxies an external data request to the ORK network by type and optional query filter.",
+      "constraints": ["Requires a valid Bearer token. type is mandatory."],
+      "errors": ["ERR_AUTH_FAIL", "ERR_QUERY_INVALID_JSON"]
+    }
+  ]
+}

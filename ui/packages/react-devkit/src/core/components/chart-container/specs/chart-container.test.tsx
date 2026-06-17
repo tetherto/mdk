@@ -88,36 +88,6 @@ describe('ChartContainer', () => {
     })
   })
 
-  describe('grid layout', () => {
-    it('applies grid class when legendData is provided', () => {
-      const { container } = render(<ChartContainer {...defaultProps} legendData={legendData} />)
-
-      expect(container.querySelector('.mdk-chart-container--grid')).toBeInTheDocument()
-    })
-
-    it('applies grid class when highlightedValue is provided', () => {
-      const { container } = render(
-        <ChartContainer {...defaultProps} highlightedValue={{ value: '3.59', unit: 'PH/s' }} />,
-      )
-
-      expect(container.querySelector('.mdk-chart-container--grid')).toBeInTheDocument()
-    })
-
-    it('applies grid class when rangeSelector is provided', () => {
-      const { container } = render(
-        <ChartContainer {...defaultProps} rangeSelector={rangeSelector} />,
-      )
-
-      expect(container.querySelector('.mdk-chart-container--grid')).toBeInTheDocument()
-    })
-
-    it('does not apply grid class without grid-triggering props', () => {
-      const { container } = render(<ChartContainer {...defaultProps} title="My Chart" />)
-
-      expect(container.querySelector('.mdk-chart-container--grid')).not.toBeInTheDocument()
-    })
-  })
-
   describe('title and header', () => {
     it('renders title as h3', () => {
       render(<ChartContainer {...defaultProps} title="Revenue" />)
@@ -144,12 +114,13 @@ describe('ChartContainer', () => {
       expect(container.querySelector('.mdk-chart-container__header-row')).toBeInTheDocument()
     })
 
-    it('renders title-area in grid layout', () => {
+    it('renders range selector in header-right when provided', () => {
       const { container } = render(
         <ChartContainer {...defaultProps} title="Revenue" rangeSelector={rangeSelector} />,
       )
 
-      expect(container.querySelector('.mdk-chart-container__title-area')).toBeInTheDocument()
+      expect(container.querySelector('.mdk-chart-container__header-right')).toBeInTheDocument()
+      expect(container.querySelector('[aria-label="Time range"]')).toBeInTheDocument()
     })
   })
 
@@ -186,20 +157,34 @@ describe('ChartContainer', () => {
       expect(screen.getByText('Series B')).toBeInTheDocument()
     })
 
-    it('reduces opacity for hidden legend items', () => {
+    it('dims swatch and label for hidden legend items (same as BarChart legend)', () => {
       render(<ChartContainer {...defaultProps} legendData={legendData} />)
 
       const buttons = screen.getAllByRole('button', { name: /Series/ })
       const hiddenButton = buttons.find((b) => b.textContent?.includes('Series B'))
-      expect(hiddenButton).toHaveStyle({ opacity: '0.3' })
+      const hiddenBox = hiddenButton?.querySelector('.mdk-chart-container__legend-box')
+      const hiddenLabel = hiddenButton?.querySelector('.mdk-chart-container__legend-label')
+
+      expect(hiddenBox).toHaveStyle({
+        backgroundColor: 'rgba(0, 255, 0, 0.06)',
+        borderColor: 'rgba(0, 255, 0, 0.3)',
+      })
+      expect(hiddenLabel).toHaveStyle({ color: 'rgba(255, 255, 255, 0.21)' })
     })
 
-    it('applies full opacity for visible legend items', () => {
+    it('uses BarChart legend fill and label colors for visible items', () => {
       render(<ChartContainer {...defaultProps} legendData={legendData} />)
 
       const buttons = screen.getAllByRole('button', { name: /Series/ })
       const visibleButton = buttons.find((b) => b.textContent?.includes('Series A'))
-      expect(visibleButton).toHaveStyle({ opacity: '1' })
+      const visibleBox = visibleButton?.querySelector('.mdk-chart-container__legend-box')
+      const visibleLabel = visibleButton?.querySelector('.mdk-chart-container__legend-label')
+
+      expect(visibleBox).toHaveStyle({
+        backgroundColor: 'rgba(255, 0, 0, 0.2)',
+        borderColor: '#ff0000',
+      })
+      expect(visibleLabel).toHaveStyle({ color: 'rgba(255, 255, 255, 0.7)' })
     })
 
     it('calls onToggleDataset with correct index when legend item clicked', () => {
@@ -215,6 +200,31 @@ describe('ChartContainer', () => {
       fireEvent.click(screen.getByText('Series B'))
 
       expect(onToggleDataset).toHaveBeenCalledWith(1)
+    })
+
+    it('uses the latest onToggleDataset after rerender', () => {
+      const first = vi.fn()
+      const second = vi.fn()
+      const { rerender } = render(
+        <ChartContainer
+          {...defaultProps}
+          legendData={legendData}
+          onToggleDataset={first}
+        />,
+      )
+
+      rerender(
+        <ChartContainer
+          {...defaultProps}
+          legendData={legendData}
+          onToggleDataset={second}
+        />,
+      )
+
+      fireEvent.click(screen.getByText('Series A'))
+
+      expect(first).not.toHaveBeenCalled()
+      expect(second).toHaveBeenCalledWith(0)
     })
 
     it('does not render legend area when legendData is empty', () => {
@@ -272,7 +282,7 @@ describe('ChartContainer', () => {
       expect(el).toHaveStyle({ color: 'rgb(255, 0, 0)' })
     })
 
-    it('renders inside highlight-area in grid layout', () => {
+    it('renders inside highlight-area', () => {
       const { container } = render(
         <ChartContainer {...defaultProps} highlightedValue={{ value: '3.59', unit: 'PH/s' }} />,
       )
@@ -315,7 +325,25 @@ describe('ChartContainer', () => {
       )
 
       expect(container.querySelector('.mdk-chart-container__footer-area')).toBeInTheDocument()
-      expect(container.querySelector('.mdk-chart-container__stats')).toBeInTheDocument()
+      expect(container.querySelector('.mdk-min-max-avg')).toBeInTheDocument()
+    })
+
+    it('uses combined panel when legend and minMaxAvg are both present', () => {
+      const { container } = render(
+        <ChartContainer
+          {...defaultProps}
+          legendData={legendData}
+          minMaxAvg={minMaxAvg}
+          rangeSelector={rangeSelector}
+        />,
+      )
+
+      expect(container.querySelector('.mdk-chart-container--combined-panel')).toBeInTheDocument()
+      const panel = container.querySelector('.mdk-chart-container__panel')
+      expect(panel).toBeInTheDocument()
+      expect(panel?.querySelector('.mdk-chart-container__legend')).toBeInTheDocument()
+      expect(panel?.querySelector('.mdk-min-max-avg')).toBeInTheDocument()
+      expect(panel?.querySelector('.mdk-chart-container__chart-area')).toBeInTheDocument()
     })
 
     it('does not render stats when loading', () => {
@@ -361,8 +389,8 @@ describe('ChartContainer', () => {
         <ChartContainer {...defaultProps} minMaxAvg={minMaxAvg} rangeSelector={rangeSelector} />,
       )
 
-      expect(container.querySelectorAll('.mdk-chart-container__stats-label')).toHaveLength(3)
-      expect(container.querySelectorAll('.mdk-chart-container__stats-value')).toHaveLength(3)
+      expect(container.querySelectorAll('.mdk-min-max-avg__label')).toHaveLength(3)
+      expect(container.querySelectorAll('.mdk-min-max-avg__value')).toHaveLength(3)
     })
   })
 

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/container-bitdeer",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "MiniContainer Bitdeer",
   "keywords": [
     "tether"

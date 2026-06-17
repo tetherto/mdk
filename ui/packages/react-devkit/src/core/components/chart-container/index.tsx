@@ -1,16 +1,10 @@
-import { type CSSProperties, forwardRef, type ReactNode } from 'react'
+import { type CSSProperties, forwardRef, type ReactNode, useCallback } from 'react'
+import { getChartLegendItemStyles } from '../../utils/chart-options'
 import { cn } from '../../utils'
-import type { MinMaxAvg } from '../chart-stats-footer/types'
+import { MinMaxAvg } from '../min-max-avg'
+import type { MinMaxAvgValues } from '../min-max-avg/types'
 import { Loader } from '../loader'
 import { RadioCard, RadioGroup } from '../radio'
-
-const legendFillColor = (color: string): string => {
-  if (color.startsWith('hsl')) {
-    return color.replace(')', ' / 0.25)')
-  }
-
-  return `${color}40`
-}
 
 export type RangeSelectorOption = {
   label: string
@@ -41,14 +35,26 @@ export type LegendItem = {
 
 export type ChartContainerProps = {
   title?: string
+  /**
+   * Optional node rendered immediately after the title text (e.g. an info
+   * tooltip). Only shown when `title` is set and `header` is not. Additive -
+   * omit it and the title renders exactly as before.
+   */
+  titleExtra?: ReactNode
   header?: ReactNode
+  /**
+   * Optional action rendered on the right side of the header row (e.g. an
+   * expand/fullscreen toggle). Sits alongside the range selector when both are
+   * present. Purely additive - omit it and the header renders exactly as before.
+   */
+  headerAction?: ReactNode
   legendData?: LegendItem[]
   highlightedValue?: HighlightedValueProps
   rangeSelector?: RangeSelectorProps
   loading?: boolean
   empty?: boolean
   emptyMessage?: string
-  minMaxAvg?: MinMaxAvg
+  minMaxAvg?: MinMaxAvgValues
   timeRange?: string
   footer?: ReactNode
   footerClassName?: string
@@ -83,7 +89,9 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
   (
     {
       title,
+      titleExtra,
       header,
+      headerAction,
       legendData,
       highlightedValue,
       rangeSelector,
@@ -100,153 +108,165 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
     },
     ref,
   ) => {
-    const useGridLayout = (legendData && legendData.length > 0) || highlightedValue || rangeSelector
-    const hasHeaderRow1 = header ?? title ?? (rangeSelector && rangeSelector.options.length > 0)
+    const toggleDataset = useCallback(
+      (index: number) => {
+        onToggleDataset?.(index)
+      },
+      [onToggleDataset],
+    )
+
+    const hasRangeSelector = !!(rangeSelector && rangeSelector.options.length > 0)
+    const hasHeaderRight = hasRangeSelector || !!headerAction
+    const hasHeaderRow1 = header ?? title ?? hasHeaderRight
     const hasLegendRow = legendData && legendData.length > 0
 
     const isContentVisible = !empty && !loading
     const hasBuiltInFooter = (minMaxAvg || timeRange) && isContentVisible
+    const hasMinMaxAvgContent =
+      minMaxAvg && (minMaxAvg.min || minMaxAvg.max || minMaxAvg.avg)
+    const useCombinedPanel = hasLegendRow && hasMinMaxAvgContent && isContentVisible
     const hasFooter = (footer || hasBuiltInFooter) && isContentVisible
 
     const builtInFooter = hasBuiltInFooter ? (
-      <div className="mdk-chart-container__stats">
-        {minMaxAvg && (
-          <>
-            <span className="mdk-chart-container__stats-item">
-              <span className="mdk-chart-container__stats-label">Min</span>
-              <span className="mdk-chart-container__stats-value">{minMaxAvg.min}</span>
-            </span>
-            <span className="mdk-chart-container__stats-item">
-              <span className="mdk-chart-container__stats-label">Avg</span>
-              <span className="mdk-chart-container__stats-value">{minMaxAvg.avg}</span>
-            </span>
-            <span className="mdk-chart-container__stats-item">
-              <span className="mdk-chart-container__stats-label">Max</span>
-              <span className="mdk-chart-container__stats-value">{minMaxAvg.max}</span>
-            </span>
-          </>
-        )}
-      </div>
+      <>
+        {minMaxAvg && <MinMaxAvg {...minMaxAvg} />}
+        {timeRange && <span className="mdk-chart-container__time-range">{timeRange}</span>}
+      </>
     ) : null
+
+    const legend = hasLegendRow && isContentVisible && (
+      <div className="mdk-chart-container__legend">
+        {legendData!.map((item, i) => {
+          const isHidden = item.hidden
+          const swatch = getChartLegendItemStyles(item.color, isHidden)
+          return (
+            <button
+              key={i}
+              type="button"
+              className="mdk-chart-container__legend-item"
+              onClick={() => toggleDataset(i)}
+            >
+              <span
+                className="mdk-chart-container__legend-box"
+                style={{
+                  backgroundColor: swatch.fill,
+                  borderColor: swatch.stroke,
+                }}
+              />
+              <span
+                className="mdk-chart-container__legend-label"
+                style={{ color: swatch.labelColor }}
+              >
+                {item.label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+
+    const highlightedValueBlock = highlightedValue && isContentVisible && (
+      <div className="mdk-chart-container__highlight-area">
+        <div
+          className={cn('mdk-chart-container__highlighted-value', highlightedValue.className)}
+          style={highlightedValue.style}
+        >
+          <span className="mdk-chart-container__highlighted-value__number">
+            {highlightedValue.value}
+          </span>
+          {highlightedValue.unit && (
+            <span className="mdk-chart-container__highlighted-value__unit">
+              {highlightedValue.unit}
+            </span>
+          )}
+        </div>
+      </div>
+    )
+
+    const chartArea = (
+      <div className="mdk-chart-container__chart-area">
+        {loading && (
+          <div className="mdk-chart-container__loading-overlay">
+            <Loader />
+          </div>
+        )}
+        {empty && !loading && (
+          <div className="mdk-chart-container__empty">{emptyMessage}</div>
+        )}
+        {isContentVisible && children}
+      </div>
+    )
+
+    const footerArea = hasFooter && (
+      <div className={cn('mdk-chart-container__footer-area', footerClassName)}>
+        {builtInFooter}
+        {footer}
+      </div>
+    )
+
+    const rangeSelectorBlock = rangeSelector && rangeSelector.options.length > 0 && (
+      <div role="group" aria-label="Time range">
+        <RadioGroup defaultValue={rangeSelector.value} orientation="horizontal" noGap>
+          {rangeSelector.options.map(({ value, label }) => (
+            <RadioCard
+              value={value}
+              label={label}
+              key={value}
+              aria-pressed={rangeSelector.value === value}
+              onClick={() => rangeSelector.onChange(value)}
+            />
+          ))}
+        </RadioGroup>
+      </div>
+    )
+
+    const legendHighlightRow = (legend || highlightedValueBlock) && (
+      <div className="mdk-chart-container__panel-header">
+        {legend && <div className="mdk-chart-container__legend-area">{legend}</div>}
+        {highlightedValueBlock}
+      </div>
+    )
 
     return (
       <div
         ref={ref}
         className={cn(
           'mdk-chart-container',
-          useGridLayout && 'mdk-chart-container--grid',
+          useCombinedPanel && 'mdk-chart-container--combined-panel',
           className,
         )}
       >
-        {useGridLayout ? (
-          <>
-            <div className="mdk-chart-container__title-area">
-              {hasHeaderRow1 &&
-                (header ?? (title && <h3 className="mdk-chart-container__title">{title}</h3>))}
+        {hasHeaderRow1 && (
+          <div className="mdk-chart-container__header-row">
+            <div className="mdk-chart-container__header-left">
+              {header ??
+                (title && (
+                  <h3 className="mdk-chart-container__title">
+                    {title}
+                    {titleExtra}
+                  </h3>
+                ))}
             </div>
-            <div className="mdk-chart-container__range-area">
-              {rangeSelector && rangeSelector.options.length > 0 && (
-                <div role="group" aria-label="Time range">
-                  <RadioGroup defaultValue={rangeSelector.value} orientation="horizontal" noGap>
-                    {rangeSelector.options.map(({ value, label }) => (
-                      <RadioCard
-                        value={value}
-                        label={label}
-                        key={value}
-                        aria-pressed={rangeSelector.value === value}
-                        onClick={() => rangeSelector.onChange(value)}
-                      />
-                    ))}
-                  </RadioGroup>
-                </div>
-              )}
-            </div>
-            <div className="mdk-chart-container__legend-area">
-              {hasLegendRow && isContentVisible && (
-                <div className="mdk-chart-container__legend">
-                  {legendData!.map((item, i) => {
-                    const isHidden = item.hidden
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        className="mdk-chart-container__legend-item"
-                        style={{ opacity: isHidden ? 0.3 : 1 }}
-                        onClick={() => onToggleDataset?.(i)}
-                      >
-                        <span
-                          className="mdk-chart-container__legend-box"
-                          style={{
-                            backgroundColor: legendFillColor(item.color),
-                            borderColor: item.color,
-                          }}
-                        />
-                        <span className="mdk-chart-container__legend-label">{item.label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-            {highlightedValue && isContentVisible && (
-              <div className="mdk-chart-container__highlight-area">
-                <div
-                  className={cn(
-                    'mdk-chart-container__highlighted-value',
-                    highlightedValue.className,
-                  )}
-                  style={highlightedValue.style}
-                >
-                  <span className="mdk-chart-container__highlighted-value__number">
-                    {highlightedValue.value}
-                  </span>
-                  {highlightedValue.unit && (
-                    <span className="mdk-chart-container__highlighted-value__unit">
-                      {highlightedValue.unit}
-                    </span>
-                  )}
-                </div>
+            {hasHeaderRight && (
+              <div className="mdk-chart-container__header-right">
+                {rangeSelectorBlock}
+                {headerAction}
               </div>
             )}
-            <div className="mdk-chart-container__chart-area">
-              {loading && (
-                <div className="mdk-chart-container__loading-overlay">
-                  <Loader />
-                </div>
-              )}
-              {empty && !loading && (
-                <div className="mdk-chart-container__empty">{emptyMessage}</div>
-              )}
-              {isContentVisible && children}
-            </div>
-          </>
+          </div>
+        )}
+        {useCombinedPanel ? (
+          <div className="mdk-chart-container__panel">
+            {legendHighlightRow}
+            {chartArea}
+            {footerArea}
+          </div>
         ) : (
           <>
-            {hasHeaderRow1 && (
-              <div className="mdk-chart-container__header-row">
-                <div className="mdk-chart-container__header-left">
-                  {header ?? (title && <h3 className="mdk-chart-container__title">{title}</h3>)}
-                </div>
-              </div>
-            )}
-            <div className="mdk-chart-container__body">
-              {loading && (
-                <div className="mdk-chart-container__loading-overlay">
-                  <Loader />
-                </div>
-              )}
-              {empty && !loading && (
-                <div className="mdk-chart-container__empty">{emptyMessage}</div>
-              )}
-              {!empty && children}
-            </div>
+            {legendHighlightRow}
+            {chartArea}
+            {footerArea}
           </>
-        )}
-        {hasFooter && (
-          <div className={cn('mdk-chart-container__footer-area', footerClassName)}>
-            {builtInFooter}
-            {footer}
-          </div>
         )}
       </div>
     )

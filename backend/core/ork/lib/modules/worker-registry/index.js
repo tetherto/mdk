@@ -180,7 +180,8 @@ class WorkerRegistry {
         workerId,
         deviceIds: worker.deviceIds,
         state: worker.state,
-        healthState: worker.healthState || 'UNKNOWN'
+        healthState: worker.healthState || 'UNKNOWN',
+        rpcKey: worker.rpcKey
       })
     }
     return workers

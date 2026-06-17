@@ -26,6 +26,8 @@ class DHTListener {
     this.workerChannel = opts.workerChannel
     this._swarmOpts = opts.swarmOpts || {}
     this._swarm = null
+    this._discovery = null
+    this._refreshTimer = null
     this._dht = null
     this._ownsDht = false
     this._orkId = 'ork:kernel:default'
@@ -53,15 +55,21 @@ class DHTListener {
       ? this.topic
       : Buffer.from(this.topic, 'hex')
 
+    // Handler before join: connections are emitted immediately on open, so a
+    // late handler would miss a worker that connects during join.
     this._swarm.on('connection', (stream, info) => {
       this._handleSwarmConnection(stream, info)
     })
 
-    this._swarm.join(topicBuf, { server: false, client: true })
+    // Client join: query the topic for announcing workers and connect to them.
+    this._discovery = this._swarm.join(topicBuf, { server: false, client: true })
+    await this._swarm.flush()
 
-    // Periodically re-flush to discover workers that joined after us
+    // Re-query periodically so workers that announce later are discovered.
+    // discovery.refresh({ client: true }) is the topic-scoped re-lookup;
+    // swarm.flush() is documented as heavyweight (every pending DHT op + conn).
     this._refreshTimer = setInterval(() => {
-      if (this._swarm) this._swarm.flush().catch(() => {})
+      if (this._discovery) this._discovery.refresh({ client: true }).catch(() => {})
     }, 10000)
 
     debug(`DHT listener started (topic: ${topicBuf.toString('hex').slice(0, 16)}...)`)
@@ -72,6 +80,7 @@ class DHTListener {
       clearInterval(this._refreshTimer)
       this._refreshTimer = null
     }
+    this._discovery = null
     if (this._swarm) {
       await this._swarm.destroy()
       this._swarm = null
@@ -128,6 +137,20 @@ class DHTListener {
         debug(`identity refresh failed for ${worker.workerId}: ${err.message}`)
       }
     }
+  }
+
+  /**
+   * Register a worker by its RPC public key, bypassing swarm key-exchange.
+   *
+   * The swarm topic only exists to deliver a worker's RPC key to the ORK; the
+   * registration itself (identity → capability → Ready) runs over HRPC against
+   * that key. When the key is already known by other means — e.g. the in-process
+   * registerWorker() path, or same-machine local discovery where workers publish
+   * their key directly — callers hand it in here. Idempotent: a key already
+   * discovered is a no-op.
+   */
+  discoverWorker (rpcKey) {
+    return this._onWorkerKeyReceived(rpcKey)
   }
 
   async _onWorkerKeyReceived (rpcKey) {

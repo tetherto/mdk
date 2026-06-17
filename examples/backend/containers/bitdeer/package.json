@@ -1,0 +1,23 @@
+{
+  "name": "@tetherto/mdk-example-container-bitdeer",
+  "version": "0.2.0",
+  "description": "MDK Bitdeer D40 container example (mock-backed)",
+  "keywords": [
+    "tether",
+    "mdk",
+    "bitdeer",
+    "container",
+    "example"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix"
+  }
+}

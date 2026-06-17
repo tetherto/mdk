@@ -49,7 +49,7 @@ export const EnergyBalance = ({
     revenueMetrics,
     costMetrics,
     energyRevenueChartInput,
-    downtimeChartInput,
+    averageDowntimeData,
     powerChartInput,
     powerChartCostInput,
     energyCostChartInput,
@@ -69,11 +69,6 @@ export const EnergyBalance = ({
   const revenueChartData = useMemo(
     () => toBarChartData({ ...energyRevenueChartInput, barWidth: 45 }),
     [energyRevenueChartInput],
-  )
-
-  const downtimeChartData = useMemo(
-    () => toBarChartData({ ...downtimeChartInput, barWidth: 45 }),
-    [downtimeChartInput],
   )
 
   const costChartData = useMemo(
@@ -155,7 +150,7 @@ export const EnergyBalance = ({
                 revenueChartData={
                   revenueNoData ? { labels: [], datasets: [], isEmpty: true } : revenueChartData
                 }
-                downtimeChartData={downtimeChartData}
+                averageDowntimeData={averageDowntimeData}
                 powerChartInput={powerChartInput}
                 displayMode={revenueDisplayMode}
                 barLabelFormatter={revenueBarLabelFormatter}

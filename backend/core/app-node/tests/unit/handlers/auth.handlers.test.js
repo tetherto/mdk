@@ -1,20 +1,11 @@
 'use strict'
 
 const test = require('brittle')
-const { getSiteName, extDataRoute, getUserInfo, newAuthToken, getUserPermissions } = require('../../../workers/lib/server/handlers/auth.handlers')
+const { getUserInfo } = require('../../../../plugins/auth/controllers/userinfo')
+const { newAuthToken } = require('../../../../plugins/auth/controllers/token')
+const { getUserPermissions } = require('../../../../plugins/auth/controllers/permissions')
+const { extDataRoute } = require('../../../../plugins/auth/controllers/ext-data')
 const { createMockCtxWithOrks } = require('../helpers/mockHelpers')
-
-test('getSiteName - returns site from context', (t) => {
-  const mockCtx = {
-    conf: {
-      site: 'test-site'
-    }
-  }
-
-  const result = getSiteName(mockCtx)
-  t.is(result.site, 'test-site', 'should return site from context')
-  t.pass()
-})
 
 test('extDataRoute - with query param', async (t) => {
   const mockCtx = createMockCtxWithOrks(

@@ -5,8 +5,8 @@ const fs = require('fs')
 const WebSocket = require('ws')
 const { createWorker } = require('tether-svc-test-helper').worker
 const { setTimeout: sleep } = require('timers/promises')
-const path = require('path')
 const { ENDPOINTS } = require('../../workers/lib/constants')
+const path = require('path')
 
 const createTimeout = (ms, message) => {
   return new Promise((resolve, reject) => {

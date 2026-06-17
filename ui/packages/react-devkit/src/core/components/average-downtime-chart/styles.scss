@@ -1,0 +1,15 @@
+@use '../../styles/mixins' as *;
+
+.mdk-average-downtime-chart {
+  &__header {
+    @include flex_column;
+
+    gap: 4px;
+  }
+
+  &__unit {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: rgb(var(--mdk-color-grey-idle));
+  }
+}

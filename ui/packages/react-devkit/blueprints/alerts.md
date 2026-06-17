@@ -11,8 +11,7 @@ orkCapabilities:
   - incident-alerts
   - device-telemetry
 components:
-  - CurrentAlerts
-  - HistoricalAlerts
+  - Alerts
 hooks: []
 demoRoute: /alerts
 ---
@@ -20,97 +19,70 @@ demoRoute: /alerts
 ## When to use
 
 Pick this blueprint when the user wants the canonical alerts view from a
-mining operator UI — split into "Current" (live, dismissable) and
-"Historical" (filterable, paginated) sections, both driven off the same
-device list.
+mining operator UI — the live "Current Alerts" table on top, the filterable,
+paginated "Historical Alerts Log" below, both driven off the real backend.
 
-The blueprint recreates the look and behaviour of the legacy operator
-alerts page using only MDK components and hooks — no copying of host-app
-code required.
+The blueprint recreates the look and behaviour of the legacy operator alerts
+page using only MDK components and hooks — no copying of host-app code
+required. The single `<Alerts>` feature composes both sections and owns the
+shared filter / date-range state internally.
 
 ## Page composition
 
 ```tsx
 import { useState } from "react";
-import type { Alert } from "@tetherto/mdk-react-devkit";
-import { CurrentAlerts, HistoricalAlerts } from "@tetherto/mdk-react-devkit";
+import { useCurrentAlertDevices, useHistoricalAlerts } from "@tetherto/mdk-react-adapter";
+import { Alerts } from "@tetherto/mdk-react-devkit";
+import type { Alert, Device } from "@tetherto/mdk-react-devkit";
 
-const NOW = Date.now();
-const DAY = 24 * 60 * 60 * 1000;
-
-const MOCK_ALERTS: Alert[] = [
-  {
-    id: "1",
-    uuid: "alrt-1",
-    severity: "critical",
-    name: "miner_offline",
-    description: "Miner 0xA1 has stopped reporting.",
-    code: "001",
-    createdAt: NOW - 2 * DAY,
-    thing: { id: "miner-A1" },
-  },
-  {
-    id: "2",
-    uuid: "alrt-2",
-    severity: "warning",
-    name: "temp_high",
-    description: "Container 03 exceeded 78°C.",
-    code: "002",
-    createdAt: NOW - 5 * DAY,
-    thing: { id: "container-03" },
-  },
-];
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
 export default function AlertsPage() {
-  const [localFilters, setLocalFilters] = useState<Record<string, string>>({});
-  const [filterTags, setFilterTags] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState({ start: NOW - 7 * DAY, end: NOW });
+  const [range, setRange] = useState(() => {
+    const end = Date.now();
+    return { start: end - FOURTEEN_DAYS_MS, end };
+  });
+
+  // Live current alerts (20s poll) + chunked historical-alerts fetch.
+  const devices = useCurrentAlertDevices();
+  const historical = useHistoricalAlerts(range);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-      <CurrentAlerts
-        devices={[] as never}
-        isLoading={false}
-        localFilters={localFilters}
-        onLocalFiltersChange={setLocalFilters}
-        filterTags={filterTags}
-        onFilterTagsChange={setFilterTags}
-        isDemoMode
-      />
-      <HistoricalAlerts
-        alerts={MOCK_ALERTS}
-        isLoading={false}
-        localFilters={localFilters}
-        filterTags={filterTags}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-      />
-    </div>
+    <Alerts
+      devices={devices.data as Device[][] | undefined}
+      isCurrentAlertsLoading={devices.isLoading}
+      historicalAlerts={historical.data as Alert[] | undefined}
+      isHistoricalAlertsLoading={historical.isLoading}
+      isHistoricalAlertsEnabled
+      onDateRangeChange={setRange}
+    />
   );
 }
 ```
 
 ## State / data flow
 
-- `CurrentAlerts` derives rows from a `devices` prop (`device.last.alerts`).
-  Pass the real `Device[][]` from your API layer when available; use `isDemoMode`
-  for development or demo environments.
-- `HistoricalAlerts` takes a flat `alerts: Alert[]` array fetched from the API.
-  Swap the `MOCK_ALERTS` constant for a real `useQuery` call when you wire up the
-  API layer.
-- Filters (`localFilters`, `filterTags`) and `dateRange` live in local state and
-  are shared between both sections for a consistent operator view.
-- Wrap the app in `<MdkProvider>` once at the root — the starter template already
-  does this.
+- `useCurrentAlertDevices()` polls `list-things` (every 20s) and returns the raw
+  `Device[][]` the current-alerts table reads `last.alerts` from. No mock data —
+  it hits the real backend through `<MdkProvider>`.
+- `useHistoricalAlerts({ start, end })` fetches the historical log in sequential
+  24-hour windows, merges them by `uuid`, and shapes the rows for the table.
+- The `<Alerts>` feature owns the shared filter tags / local filters / date range
+  internally — the page only supplies data and the `onDateRangeChange` callback.
+- Wrap the app in `<MdkProvider>` once at the root — the starter and shell
+  templates already do this.
 
 ## Routing
 
 - The page registers itself at `/alerts` when scaffolded with
   `mdk-ui add feature alerts`. Override with `--route /something-else`.
+- The `mdk-ui-shell` template ships this page **by default** (alongside the
+  Dashboard) — `mdk-ui create mdk-ui-shell` includes it out of the box.
 
 ## Going further
 
-- Add severity-aware drill-in by reading `?severity=` from the URL and
-  feeding it into `localFilters` on mount.
-- Wire row clicks to the device explorer route via the router's
-  `useNavigate` so an operator can jump from an alert to the offending miner.
+- Pass `selectedAlertId` (from a `/alerts/:uuid` route param) and an
+  `onAlertClick` that updates the URL to deep-link a single alert.
+- Pass `initialSeverity` (read from a `?severity=` URL param) to pre-filter the
+  table — the shell's header bell deep-links here per severity via
+  `AlarmsBellButton`'s `onSeverityClick`.

@@ -60,11 +60,11 @@ The multi-process pattern is demonstrated end-to-end in [`dht-worker.js`][dht-wo
 [multi-how-to]: ../how-to/deployment/run-microservices-site.md
 <!-- docs@tether.io: multi-how-to → how-to/deployment/run-microservices-site -->
 
-[dht-worker]: ../../../backend/core/examples/mdk-e2e/dht-worker.js
-<!-- docs@tether.io: dht-worker → https://github.com/tetherto/mdk/blob/main/backend/core/examples/mdk-e2e/dht-worker.js -->
+[dht-worker]: ../../../examples/backend/mdk-e2e/dht-worker.js
+<!-- docs@tether.io: dht-worker → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/dht-worker.js -->
 
-[dht-ork]: ../../../backend/core/examples/mdk-e2e/dht-ork.js
-<!-- docs@tether.io: dht-ork → https://github.com/tetherto/mdk/blob/main/backend/core/examples/mdk-e2e/dht-ork.js -->
+[dht-ork]: ../../../examples/backend/mdk-e2e/dht-ork.js
+<!-- docs@tether.io: dht-ork → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/dht-ork.js -->
 
 [worker-adapter]: ../../../backend/workers/base/lib/mdk-worker-adapter.js
 <!-- docs@tether.io: worker-adapter → https://github.com/tetherto/mdk/blob/main/backend/workers/base/lib/mdk-worker-adapter.js -->

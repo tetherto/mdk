@@ -65,7 +65,6 @@ export const EnergyBalancePowerChart = ({
           height={fillHeight ? ENERGY_BALANCE_MOSAIC_FILL_CHART_HEIGHT : height}
           data={dataWithVisibility}
           unit={UNITS.ENERGY_MW}
-          backgroundColor="transparent"
           customDateFormat={periodType === 'month' ? 'MM-yy' : undefined}
         />
       </ChartContainer>

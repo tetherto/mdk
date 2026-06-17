@@ -17,7 +17,6 @@
 
       position: relative;
       padding: 16px 12px;
-      background: var(--mdk-sidebar-bg, var(--mdk-color-surface));
     }
 
     &__search-icon {
@@ -47,7 +46,7 @@
 
       &:focus {
         background: var(--mdk-color-white-8);
-        border-color: var(--mdk-color-primary, #f7931a);
+        border-color: var(--mdk-color-primary);
       }
     }
 
@@ -203,7 +202,7 @@
       &--2-col {
         grid-template-columns: 1fr;
 
-        @media (min-width: 640px) {
+        @media (min-width: 1200px) {
           grid-template-columns: repeat(2, 1fr);
         }
       }
@@ -587,7 +586,7 @@
     flex-shrink: 0;
     width: 1rem;
     height: 1rem;
-    color: var(--mdk-color-primary, #f7931a);
+    color: var(--mdk-color-primary);
   }
 
   // Override NotFoundPage in demo to not take full viewport height

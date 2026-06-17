@@ -71,7 +71,7 @@ describe('gaugeChart', () => {
 
   it('renders a needle and a hub element', () => {
     const { container } = render(<GaugeChart percent={0.5} id="gauge" />)
-    expect(container.querySelector('svg > polygon')).toBeInTheDocument()
-    expect(container.querySelector('svg > circle')).toBeInTheDocument()
+    expect(container.querySelector('svg polygon')).toBeInTheDocument()
+    expect(container.querySelector('svg circle')).toBeInTheDocument()
   })
 })

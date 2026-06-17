@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-site-monitor-ui",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -10,10 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tetherto/mdk-fonts": "file:../../../ui-client/packages/fonts",
-    "@tetherto/mdk-react-adapter": "file:../../../ui-client/packages/react-adapter",
-    "@tetherto/mdk-react-devkit": "file:../../../ui-client/packages/react-devkit",
-    "@tetherto/mdk-ui-core": "file:../../../ui-client/packages/ui-core",
+    "@tetherto/mdk-fonts": "file:../../../ui/packages/fonts",
+    "@tetherto/mdk-react-adapter": "file:../../../ui/packages/react-adapter",
+    "@tetherto/mdk-react-devkit": "file:../../../ui/packages/react-devkit",
+    "@tetherto/mdk-ui-core": "file:../../../ui/packages/ui-core",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

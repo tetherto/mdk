@@ -12,7 +12,7 @@ Core infrastructure packages for MDK. These packages form the coordination layer
 | [`client/`](./client/README.md) | `@tetherto/mdk-client` | IPC client — connects App Node to ORK over Unix socket |
 | [`lib-stats/`](./lib-stats/README.md) | _(internal)_ | Telemetry aggregation operations (count, sum, avg, groupBy, …) |
 | [`mock-control-service/`](./mock-control-service/README.md) | `@tetherto/mdk-mock-control-service` | Mock vendor APIs for development and testing |
-| [`examples/`](./examples/README.md) | _(runnable demos)_ | End-to-end examples — single worker, full site, DHT multi-process |
+| [`examples/`](../../examples/backend/README.md) | _(runnable demos)_ | End-to-end examples — single worker, full site, DHT multi-process |
 
 ## Dependency Graph
 

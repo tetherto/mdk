@@ -1,5 +1,6 @@
 'use strict'
 
+const path = require('path')
 const async = require('async')
 const WebsocketPlugin = require('@fastify/websocket')
 const TetherWrkBase = require('@tetherto/tether-wrk-base/workers/base.wrk.tether')
@@ -14,6 +15,10 @@ const { createDataProxy } = require('./lib/data.proxy')
 const { AUTH_CACHE_TTL } = require('./lib/constants')
 const { createMdkClient } = require('@tetherto/mdk-client')
 const { DEFAULT_IPC_SOCK } = require('@tetherto/mdk')
+const { loadPlugin } = require('./lib/plugin-loader')
+const { buildFastifyRoutes } = require('./lib/plugin-adapter')
+
+const MDK_PLUGINS_ROOT = path.dirname(require.resolve('@tetherto/mdk-plugins/package.json'))
 
 class WrkServerHttp extends TetherWrkBase {
   constructor (conf, ctx) {
@@ -67,9 +72,37 @@ class WrkServerHttp extends TetherWrkBase {
       }), 3]
     ])
 
+    this._plugins = []
+    const wrk = this
+    this._pluginServices = {
+      get dataProxy () { return wrk.dataProxy },
+      get authLib () { return wrk.authLib },
+      get mdkClient () { return wrk.mdkClient || null },
+      get conf () { return wrk.conf }
+    }
+
+    this.registerPlugin(path.join(MDK_PLUGINS_ROOT, 'auth'))
+    this.registerPlugin(path.join(MDK_PLUGINS_ROOT, 'telemetry'))
+    this.registerPlugin(path.join(MDK_PLUGINS_ROOT, 'site-hashrate'))
+
+    for (const dir of this.ctx.extraPluginDirs || []) {
+      this.registerPlugin(dir)
+    }
+
     this.mem = {
       log: {}
     }
+  }
+
+  registerPlugin (pluginDir) {
+    const plugin = loadPlugin(pluginDir)
+    const services = this._pluginServices
+    for (const route of plugin.routes) {
+      const handler = route._handler
+      route._handler = (req) => handler(req, services)
+    }
+    this._plugins.push(plugin)
+    debug('registered plugin %s (%d routes)', plugin.manifest.name, plugin.routes.length)
   }
 
   _loadOptionalConfig () {
@@ -110,6 +143,12 @@ class WrkServerHttp extends TetherWrkBase {
           httpd.addRoute(r)
         })
 
+        for (const plugin of this._plugins) {
+          buildFastifyRoutes(plugin, this).forEach(r => {
+            httpd.addRoute(r)
+          })
+        }
+
         httpd.addHook('onError', async (request, reply, error) => {
           const isSafe = error.message && error.message.startsWith('ERR_')
           const message = isSafe ? error.message : 'Bad Request'
@@ -141,7 +180,17 @@ class WrkServerHttp extends TetherWrkBase {
 
         await httpd.startServer()
 
-        if (this.ctx.orkIpc !== false) {
+        if (this.ctx.orkKey) {
+          const key = Buffer.isBuffer(this.ctx.orkKey) ? this.ctx.orkKey.toString('hex') : this.ctx.orkKey
+          this.mdkClient = createMdkClient({ hrpc: { key } })
+          try {
+            await this.mdkClient.connect()
+            debug('MDK client connected to ORK over HRPC: %s...', key.slice(0, 16))
+          } catch (err) {
+            debug('MDK client could not connect to ORK over HRPC: %s', err.message)
+            this.mdkClient = null
+          }
+        } else if (this.ctx.orkIpc !== false) {
           const sockPath = this.ctx.orkIpc || DEFAULT_IPC_SOCK
           this.mdkClient = createMdkClient({ ipc: sockPath })
           try {

@@ -13,7 +13,10 @@ import { startOfDay } from 'date-fns/startOfDay'
 import { useMemo, useState } from 'react'
 
 import { toBarChartData } from '../../../../utils/to-bar-chart-data'
-import { HASHRATE_BAR_WIDTH, HASHRATE_CHART_HEIGHT } from '../../hashrate-chart-shared'
+import { useSingleSeriesBarLegend } from '../../../../utils/use-single-series-bar-legend'
+import { hashrateBarChartTooltip } from '../../hashrate-chart.constants'
+import { BAR_HASHRATE_COLOR, HASHRATE_BAR_WIDTH, HASHRATE_CHART_HEIGHT } from '../../hashrate-chart-shared'
+import { MINER_TYPE_BAR_SERIES_LABEL } from '../../hashrate.constants'
 import type { HashrateDateRange } from '../../hashrate.constants'
 import { getMinerTypeOptionsFromLog, transformToMinerTypeBarData } from '../../hashrate-utils'
 import type { HashrateGroupedLog } from '../../hashrate.types'
@@ -50,17 +53,28 @@ export const HashrateMinerTypeView = ({
   onReset,
 }: HashrateMinerTypeViewProps) => {
   const [selectedMinerTypes, setSelectedMinerTypes] = useState<string[]>([])
+  const { legendData, handleToggleDataset, isSeriesHidden } = useSingleSeriesBarLegend({
+    seriesLabel: MINER_TYPE_BAR_SERIES_LABEL,
+    color: BAR_HASHRATE_COLOR,
+  })
 
   const minerTypeOptions = useMemo(() => getMinerTypeOptionsFromLog(log), [log])
 
   const chartData = useMemo(() => {
     const barData = transformToMinerTypeBarData(log, selectedMinerTypes)
-    return toBarChartData({
+    const base = toBarChartData({
       labels: barData.labels,
       barWidth: HASHRATE_BAR_WIDTH,
-      series: barData.series,
+      series: barData.series.map((series) => ({
+        ...series,
+        label: MINER_TYPE_BAR_SERIES_LABEL,
+      })),
     })
-  }, [log, selectedMinerTypes])
+    return {
+      ...base,
+      datasets: base.datasets.map((dataset) => ({ ...dataset, hidden: isSeriesHidden })),
+    }
+  }, [log, selectedMinerTypes, isSeriesHidden])
 
   const handleRangeSelect = (selected: DateRange | undefined) => {
     if (!selected?.from || !onDateRangeChange) return
@@ -93,15 +107,23 @@ export const HashrateMinerTypeView = ({
           </Button>
         )}
       </div>
-      <ChartContainer loading={isLoading} empty={!isLoading && chartData.isEmpty}>
-        <BarChart
-          data={chartData}
-          showDataLabels
-          showLegend={false}
-          formatYLabel={(value) => formatValueUnit(value, UNITS.HASHRATE_TH_S)}
-          height={HASHRATE_CHART_HEIGHT}
-        />
-      </ChartContainer>
+      <section className="mdk-hashrate-miner-type-view__panel">
+        <ChartContainer
+          legendData={chartData.isEmpty ? undefined : legendData}
+          onToggleDataset={handleToggleDataset}
+          loading={isLoading}
+          empty={!isLoading && chartData.isEmpty}
+        >
+          <BarChart
+            data={chartData}
+            showDataLabels
+            showLegend={false}
+            tooltip={hashrateBarChartTooltip}
+            formatYLabel={(value) => formatValueUnit(value, UNITS.HASHRATE_TH_S)}
+            height={HASHRATE_CHART_HEIGHT}
+          />
+        </ChartContainer>
+      </section>
     </div>
   )
 }

@@ -1,0 +1,23 @@
+{
+  "name": "@tetherto/mdk-example-avalon",
+  "version": "0.2.0",
+  "description": "MDK Avalon miner example site (single-process, mock-backed)",
+  "keywords": [
+    "tether",
+    "mdk",
+    "avalon",
+    "miner",
+    "example"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix"
+  }
+}

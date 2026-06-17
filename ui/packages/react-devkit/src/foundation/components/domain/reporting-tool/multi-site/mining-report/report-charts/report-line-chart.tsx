@@ -103,7 +103,6 @@ export const ReportLineChart = ({
               height={fullHeight ? 360 : 280}
               unit={unit ?? ''}
               yTicksFormatter={axisFormatter}
-              backgroundColor="transparent"
             />
           )}
         </ChartContainer>

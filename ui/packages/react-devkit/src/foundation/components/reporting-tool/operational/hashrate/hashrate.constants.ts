@@ -29,3 +29,5 @@ export const HASHRATE_TABS = [
 
 export const SITE_VIEW_SERIES_LABEL = 'Site Hashrate'
 export const HASHRATE_BAR_SERIES_LABEL = 'Hashrate'
+export const MINER_TYPE_BAR_SERIES_LABEL = 'Hashrate by Miner Type'
+export const MINING_UNIT_BAR_SERIES_LABEL = 'Hashrate by Mining Unit'

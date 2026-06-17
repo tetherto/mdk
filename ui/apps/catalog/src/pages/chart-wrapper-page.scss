@@ -1,0 +1,98 @@
+@layer app {
+  .chart-wrapper-page {
+    &__controls {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: var(--mdk-color-white-4, rgba(255, 255, 255, 0.04));
+      border: 1px solid var(--mdk-color-white-12, rgba(255, 255, 255, 0.12));
+      border-radius: 0.5rem;
+    }
+
+    &__controls-title {
+      margin: 0 0 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--mdk-color-white);
+    }
+
+    &__controls-actions {
+      @include flex_wrap;
+
+      gap: 1rem;
+    }
+
+    &__section {
+      margin-bottom: 4rem;
+    }
+
+    &__section-title {
+      margin: 0 0 1.5rem;
+      padding-bottom: 0.75rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--mdk-color-white);
+      border-bottom: 2px solid var(--mdk-color-white-12);
+    }
+
+    &__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      align-items: start;
+
+      @media (min-width: 1200px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    &__card {
+      @include flex_column;
+
+      gap: 1rem;
+      min-width: 0;
+    }
+
+    &__card-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--mdk-color-primary);
+    }
+
+    &__chart-panel {
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    &__chart-slot {
+      min-width: 0;
+    }
+
+    &__empty-custom {
+      @include flex_column;
+
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    &__empty-custom-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.6;
+    }
+
+    &__empty-custom-title {
+      margin: 0 0 0.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--mdk-color-white);
+    }
+
+    &__empty-custom-text {
+      margin: 0 0 1.5rem;
+      color: var(--mdk-color-white-5);
+    }
+  }
+}

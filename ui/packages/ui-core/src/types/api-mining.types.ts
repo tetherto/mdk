@@ -167,6 +167,48 @@ export type HistoryLogParams = {
 }
 
 /**
+ * A single historical alert row returned by `GET /auth/history-log?logType=alerts`.
+ *
+ * The backend may return the owning device either nested under `thing`
+ * (`{ id, type, info, tags }`) or flattened onto the row (`deviceId`,
+ * `deviceType`, `container`, `position`, `tags`). {@link mapHistoryLogToAlerts}
+ * normalises both shapes into a `thing` object so the devkit `<Alerts>` /
+ * `<HistoricalAlerts>` tables can derive the device label, short code, and
+ * filter tokens the same way they do for current alerts.
+ *
+ * @category api
+ */
+export type HistoricalAlert = {
+  uuid?: string
+  name: string
+  description: string
+  message?: string
+  severity: string
+  createdAt: number | string
+  code?: string | number
+  /** Owning device, when the backend nests it. */
+  thing?: {
+    id?: string
+    type?: string
+    code?: string
+    info?: {
+      container?: string
+      pos?: string
+      [key: string]: unknown
+    }
+    tags?: string[]
+    [key: string]: unknown
+  }
+  /** Flattened device fields, when the backend does not nest `thing`. */
+  deviceId?: string
+  deviceType?: string
+  container?: string
+  position?: string
+  tags?: string[]
+  [key: string]: unknown
+}
+
+/**
  * Query parameters for `GET /auth/ext-data` — a small key-value gateway the
  * backend exposes for non-tail-log data sources (minerpool, mempool, etc.).
  *

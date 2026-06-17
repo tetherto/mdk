@@ -1,4 +1,4 @@
-import { BarChart, ChartContainer, CURRENCY, UNITS } from '@core'
+import { BarChart, ChartContainer, CURRENCY, standardBarChartScalesXY, UNITS } from '@core'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
@@ -8,7 +8,6 @@ import { toBarChartData } from '../../utils/to-bar-chart-data'
 import type { AvgAllInCostDataPoint } from './avg-all-in-cost-chart-input'
 import { buildAvgAllInCostInput } from './avg-all-in-cost-chart-input'
 import {
-  financialBarChartScalesXY,
   usdPerMwhChartTooltip,
 } from '../../utils/financial-bar-chart.constants'
 import { COST_BAR_CHART_HEIGHT, usdFormatter } from './cost-chart-shared'
@@ -55,7 +54,7 @@ export const AvgAllInCostChart = ({
             tooltip={usdPerMwhChartTooltip}
             formatYLabel={usdFormatter}
             height={COST_BAR_CHART_HEIGHT}
-            options={{ scales: financialBarChartScalesXY }}
+            options={{ scales: standardBarChartScalesXY }}
           />
         ) : null}
       </ChartContainer>

@@ -6,9 +6,12 @@ const ModbusFacility = require('svc-facs-modbus')
 
 class MicroBTManager extends ContainerManager {
   async init () {
-    await super.init()
-
+    // The transport facility must exist before super.init(), which calls
+    // setupThings() to reconnect persisted things on restart — connectThing()
+    // needs modbus_0.getClient. Creating it afterwards loses every device on reload.
     this.modbus_0 = new ModbusFacility(this, {}, {})
+
+    await super.init()
 
     this.mdkThgWriteCalls_0.whitelistActions([
       ['setCoolingFanThreshold', 1]

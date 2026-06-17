@@ -24,6 +24,12 @@ export type AlertTableRecord = {
   id?: string
   uuid: string
   actions?: AlertActions
+  /**
+   * Hidden tokens (uuid, ip-/mac-/sn-/firmware- tags, …) that a search chip
+   * matched when no visible column did — surfaced as a "Matched on" tooltip
+   * on the code so the row's presence in filtered results is self-explanatory.
+   */
+  matchedOn?: string[]
   [key: string]: unknown
 }
 
@@ -42,5 +48,7 @@ export type ParsedAlertEntry = {
   id?: string
   type?: string
   actions: AlertActions
+  /** See {@link AlertTableRecord.matchedOn}. */
+  matchedOn?: string[]
   [key: string]: unknown
 }

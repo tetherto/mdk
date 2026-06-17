@@ -127,7 +127,7 @@ Drift detector for the hand-maintained catalogue tables under [`integrations/`](
 
 ### `check:tutorial-commands-fresh`
 
-Drift detector for hardwired command lists in tutorial prose. Specifically, the full command reference in [`docs/tutorials/get-started/cli.md`](../../tutorials/get-started/cli.md) is a verbatim copy of the `help` block in [`backend/core/examples/mdk-e2e/client.js`](../../../backend/core/examples/mdk-e2e/client.js) (lines 132–153). A CI script that runs `echo -e 'help\nquit' | node backend/core/examples/mdk-e2e/client.js` and diffs the output against the hardwired block in the tutorial would catch drift whenever a command is added, removed, or renamed.
+Drift detector for hardwired command lists in tutorial prose. Specifically, the full command reference in [`docs/tutorials/get-started/cli.md`](../../tutorials/get-started/cli.md) is a verbatim copy of the `help` block in [`examples/backend/mdk-e2e/client.js`](../../../examples/backend/mdk-e2e/client.js) (lines 132–153). A CI script that runs `echo -e 'help\nquit' | node examples/backend/mdk-e2e/client.js` and diffs the output against the hardwired block in the tutorial would catch drift whenever a command is added, removed, or renamed.
 
 **Why it matters:** the command list is collapsed inside a `<details>` block and easy to miss during review. A new command added to `client.js` without a docs update is silently absent from the tutorial.
 

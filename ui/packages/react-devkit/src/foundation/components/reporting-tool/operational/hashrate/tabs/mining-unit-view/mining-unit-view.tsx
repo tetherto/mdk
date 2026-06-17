@@ -13,8 +13,10 @@ import { startOfDay } from 'date-fns/startOfDay'
 import { useMemo, useState } from 'react'
 
 import { toBarChartData } from '../../../../utils/to-bar-chart-data'
-import { HASHRATE_BAR_WIDTH, HASHRATE_CHART_HEIGHT } from '../../hashrate-chart-shared'
-import type { HashrateDateRange } from '../../hashrate.constants'
+import { useSingleSeriesBarLegend } from '../../../../utils/use-single-series-bar-legend'
+import { hashrateBarChartTooltip } from '../../hashrate-chart.constants'
+import { BAR_HASHRATE_COLOR, HASHRATE_BAR_WIDTH, HASHRATE_CHART_HEIGHT } from '../../hashrate-chart-shared'
+import { type HashrateDateRange, MINING_UNIT_BAR_SERIES_LABEL } from '../../hashrate.constants'
 import { getMiningUnitOptionsFromLog, transformToMiningUnitBarData } from '../../hashrate-utils'
 import type { HashrateGroupedLog } from '../../hashrate.types'
 import './mining-unit-view.scss'
@@ -51,17 +53,28 @@ export const HashrateMiningUnitView = ({
   onReset,
 }: HashrateMiningUnitViewProps) => {
   const [selectedMiningUnits, setSelectedMiningUnits] = useState<string[]>([])
+  const { legendData, handleToggleDataset, isSeriesHidden } = useSingleSeriesBarLegend({
+    seriesLabel: MINING_UNIT_BAR_SERIES_LABEL,
+    color: BAR_HASHRATE_COLOR,
+  })
 
   const miningUnitOptions = useMemo(() => getMiningUnitOptionsFromLog(log), [log])
 
   const chartData = useMemo(() => {
     const barData = transformToMiningUnitBarData(log, selectedMiningUnits)
-    return toBarChartData({
+    const base = toBarChartData({
       labels: barData.labels,
       barWidth: HASHRATE_BAR_WIDTH,
-      series: barData.series,
+      series: barData.series.map((series) => ({
+        ...series,
+        label: MINING_UNIT_BAR_SERIES_LABEL,
+      })),
     })
-  }, [log, selectedMiningUnits])
+    return {
+      ...base,
+      datasets: base.datasets.map((dataset) => ({ ...dataset, hidden: isSeriesHidden })),
+    }
+  }, [log, selectedMiningUnits, isSeriesHidden])
 
   const handleRangeSelect = (selected: DateRange | undefined) => {
     if (!selected?.from || !onDateRangeChange) return
@@ -94,15 +107,23 @@ export const HashrateMiningUnitView = ({
           </Button>
         )}
       </div>
-      <ChartContainer loading={isLoading} empty={!isLoading && chartData.isEmpty}>
-        <BarChart
-          data={chartData}
-          showDataLabels
-          showLegend={false}
-          formatYLabel={(value) => formatValueUnit(value, UNITS.HASHRATE_TH_S)}
-          height={HASHRATE_CHART_HEIGHT}
-        />
-      </ChartContainer>
+      <section className="mdk-hashrate-mining-unit-view__panel">
+        <ChartContainer
+          legendData={chartData.isEmpty ? undefined : legendData}
+          onToggleDataset={handleToggleDataset}
+          loading={isLoading}
+          empty={!isLoading && chartData.isEmpty}
+        >
+          <BarChart
+            data={chartData}
+            showDataLabels
+            showLegend={false}
+            tooltip={hashrateBarChartTooltip}
+            formatYLabel={(value) => formatValueUnit(value, UNITS.HASHRATE_TH_S)}
+            height={HASHRATE_CHART_HEIGHT}
+          />
+        </ChartContainer>
+      </section>
     </div>
   )
 }

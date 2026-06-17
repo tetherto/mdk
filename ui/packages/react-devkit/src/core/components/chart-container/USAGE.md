@@ -67,5 +67,4 @@ import { ChartContainer, BarChart } from "@tetherto/mdk-core-ui"
 
 ## Notes
 
-- When any of `legendData`, `highlightedValue`, or `rangeSelector` is present, the component switches to a CSS grid layout that positions title, range selector, legend, and chart in named areas.
 - `minMaxAvg` and `timeRange` are only rendered when the chart is not loading or empty.

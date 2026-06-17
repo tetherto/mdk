@@ -1,13 +1,11 @@
-import type { DateRange, IChartApi, LineChartData } from '@core'
+import type { DateRange } from '@core'
 import { Button, ChartContainer, DateRangePicker, LineChart, MultiSelect, UNITS } from '@core'
-import { endOfDay } from 'date-fns/endOfDay'
-import { startOfDay } from 'date-fns/startOfDay'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 
-import { SITE_HASHRATE_COLOR } from '../../hashrate-chart-shared'
 import type { HashrateDateRange } from '../../hashrate.constants'
-import { getMinerTypeOptionsFromLog, transformToSiteViewData } from '../../hashrate-utils'
+import { getMinerTypeOptionsFromLog } from '../../hashrate-utils'
 import type { HashrateGroupedLog } from '../../hashrate.types'
+import { useHashrateSiteView } from './use-hashrate-site-view'
 import './site-view.scss'
 
 export type HashrateSiteViewProps = {
@@ -45,36 +43,18 @@ export const HashrateSiteView = ({
   onDateRangeChange,
   onReset,
 }: HashrateSiteViewProps) => {
-  const chartRef = useRef<IChartApi | null>(null)
   const [selectedMinerTypes, setSelectedMinerTypes] = useState<string[]>([])
 
   const minerTypeOptions = useMemo(() => getMinerTypeOptionsFromLog(log), [log])
 
-  const lineChartData = useMemo((): LineChartData => {
-    const result = transformToSiteViewData(log, selectedMinerTypes)
-    const series = result.series[0]
-    if (!series) return { datasets: [] }
-    return {
-      datasets: [
-        {
-          label: series.label,
-          borderColor: series.color ?? SITE_HASHRATE_COLOR,
-          data: series.points.map((p) => ({ x: new Date(p.ts).getTime(), y: p.value })),
-        },
-      ],
-    }
-  }, [log, selectedMinerTypes])
-
-  const isEmpty =
-    lineChartData.datasets.length === 0 || lineChartData.datasets[0]?.data.length === 0
-
-  const handleRangeSelect = (selected: DateRange | undefined) => {
-    if (!selected?.from || !onDateRangeChange) return
-    onDateRangeChange({
-      start: startOfDay(selected.from).getTime(),
-      end: endOfDay(selected.to ?? selected.from).getTime(),
-    })
-  }
+  const {
+    chartRef,
+    legendData,
+    lineChartData,
+    isEmpty,
+    handleRangeSelect,
+    handleToggleDataset,
+  } = useHashrateSiteView({ log, selectedMinerTypes, onDateRangeChange })
 
   return (
     <div className="mdk-hashrate-site-view">
@@ -96,14 +76,21 @@ export const HashrateSiteView = ({
           </Button>
         )}
       </div>
-      <ChartContainer loading={isLoading} empty={!isLoading && isEmpty}>
-        <LineChart
-          chartRef={chartRef}
-          data={lineChartData}
-          unit={UNITS.HASHRATE_TH_S}
-          yTicksFormatter={(value) => value.toFixed(2)}
-        />
-      </ChartContainer>
+      <section className="mdk-hashrate-site-view__panel">
+        <ChartContainer
+          legendData={isEmpty ? undefined : legendData}
+          onToggleDataset={handleToggleDataset}
+          loading={isLoading}
+          empty={!isLoading && isEmpty}
+        >
+          <LineChart
+            chartRef={chartRef}
+            data={lineChartData}
+            unit={UNITS.HASHRATE_TH_S}
+            yTicksFormatter={(value) => value.toFixed(2)}
+          />
+        </ChartContainer>
+      </section>
     </div>
   )
 }

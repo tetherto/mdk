@@ -26,32 +26,35 @@ vi.mock('date-fns/formatDistance', () => ({
   formatDistance: vi.fn(() => 'about 5 minutes'),
 }))
 
-vi.mock('@/components/pool-manager/dashboard/dashboard-constants', () => ({
-  MAX_ALERTS_DISPLAYED: 5,
-  navigationBlocks: [
-    {
-      icon: <svg data-testid="pools-icon" />,
-      title: 'Pools',
-      description: 'Manage pool configurations',
-      navText: 'Configure Pools',
-      url: '/pool-manager/pools',
-    },
-    {
-      icon: <svg data-testid="site-icon" />,
-      title: 'Site Overview',
-      description: 'View site layout and assign pools at site/unit/miner level',
-      navText: 'View Layout',
-      url: '/pool-manager/sites-overview',
-    },
-    {
-      icon: <svg data-testid="miner-icon" />,
-      title: 'Miner Explorer',
-      description: 'Search and bulk-assign pools to miners',
-      navText: 'Explore Miners',
-      url: '/pool-manager/miner-explorer',
-    },
-  ],
-}))
+vi.mock('@/components/pool-manager/dashboard/dashboard-constants', async () => {
+  const { createElement } = await import('react')
+  return {
+    MAX_ALERTS_DISPLAYED: 5,
+    navigationBlocks: [
+      {
+        icon: createElement('svg', { 'data-testid': 'pools-icon' }),
+        title: 'Pools',
+        description: 'Manage pool configurations',
+        navText: 'Configure Pools',
+        url: '/pool-manager/pools',
+      },
+      {
+        icon: createElement('svg', { 'data-testid': 'site-icon' }),
+        title: 'Site Overview',
+        description: 'View site layout and assign pools at site/unit/miner level',
+        navText: 'View Layout',
+        url: '/pool-manager/sites-overview',
+      },
+      {
+        icon: createElement('svg', { 'data-testid': 'miner-icon' }),
+        title: 'Miner Explorer',
+        description: 'Search and bulk-assign pools to miners',
+        navText: 'Explore Miners',
+        url: '/pool-manager/miner-explorer',
+      },
+    ],
+  }
+})
 
 const STATS: DashboardStats = {
   items: [

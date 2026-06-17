@@ -1,0 +1,19 @@
+@layer app {
+  .repair-log-changes-page {
+    &__blocks {
+      @include flex_column;
+
+      gap: 2rem;
+    }
+
+    &__description {
+      margin: 0.5rem 0;
+      color: var(--mdk-color-text-disabled);
+    }
+
+    &__content {
+      margin-top: 1rem;
+      max-width: 700px;
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { cn, formatValueUnit, SimpleTooltip } from '@core'
+import { cn, formatValueUnit } from '@core'
 import type { ReactNode } from 'react'
 import './single-stat-card.scss'
 
@@ -21,8 +21,6 @@ type SingleStatCardProps = {
   flash?: boolean
   /** Enable superflash animation (faster) */
   superflash?: boolean
-  /** Custom tooltip text */
-  tooltipText?: string
   /** Card variant */
   variant?: SingleStatCardVariant
   /** Row layout */
@@ -53,7 +51,6 @@ export const SingleStatCard = ({
   color = 'inherit',
   flash = false,
   superflash = false,
-  tooltipText = '',
   variant = 'primary',
   row = false,
 }: SingleStatCardProps): ReactNode => {
@@ -61,45 +58,31 @@ export const SingleStatCard = ({
 
   const isLongValue = String(value || '').length > LONG_VALUE_THRESHOLD
 
-  const renderContent = (): ReactNode => {
-    const textContent = (
-      <>
-        <div className="mdk-single-stat-card__name">{name}</div>
-        {subtitle && <div className="mdk-single-stat-card__subtitle">{subtitle}</div>}
-      </>
-    )
-
-    return (
-      <div
-        className={cn(
-          'mdk-single-stat-card',
-          variant && `mdk-single-stat-card--${variant}`,
-          flash && 'mdk-single-stat-card--flash',
-          superflash && 'mdk-single-stat-card--superflash',
-          row && 'mdk-single-stat-card--row',
-          isLongValue && 'mdk-single-stat-card--long-value',
-        )}
-        style={{ '--stat-color': color } as React.CSSProperties}
-      >
-        {variant === 'primary' ? (
-          textContent
-        ) : (
-          <div className="mdk-single-stat-card__text">{textContent}</div>
-        )}
-        <div className="mdk-single-stat-card__value">{valueFormatted}</div>
-      </div>
-    )
-  }
-
-  if (value === null || value === undefined) {
-    return renderContent()
-  }
+  const textContent = (
+    <>
+      <div className="mdk-single-stat-card__name">{name}</div>
+      {subtitle && <div className="mdk-single-stat-card__subtitle">{subtitle}</div>}
+    </>
+  )
 
   return (
-    <SimpleTooltip
-      content={`${tooltipText || name}${subtitle ? ` (${subtitle})` : ''}: ${valueFormatted}`}
+    <div
+      className={cn(
+        'mdk-single-stat-card',
+        variant && `mdk-single-stat-card--${variant}`,
+        flash && 'mdk-single-stat-card--flash',
+        superflash && 'mdk-single-stat-card--superflash',
+        row && 'mdk-single-stat-card--row',
+        isLongValue && 'mdk-single-stat-card--long-value',
+      )}
+      style={{ '--stat-color': color } as React.CSSProperties}
     >
-      {renderContent()}
-    </SimpleTooltip>
+      {variant === 'primary' ? (
+        textContent
+      ) : (
+        <div className="mdk-single-stat-card__text">{textContent}</div>
+      )}
+      <div className="mdk-single-stat-card__value">{valueFormatted}</div>
+    </div>
   )
 }

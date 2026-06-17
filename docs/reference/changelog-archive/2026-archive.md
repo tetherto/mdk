@@ -1,3 +1,4 @@
 ---
-notes: Old changelog cuts can be stored here.
+notes: Old changelog cuts can be stored here
 ---
+

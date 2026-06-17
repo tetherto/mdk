@@ -1,0 +1,78 @@
+.mdk-movement-details-modal {
+  min-width: 660px;
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  &__device {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  &__attribute {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__attribute-name {
+    font-weight: 700;
+  }
+
+  &__attribute-value {
+    margin: 0 2px;
+  }
+
+  &__preview {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  &__side {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  &__field {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  &__field-name {
+    min-width: 72px;
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    height: 40px;
+    padding: 0 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    font-size: 16px;
+    line-height: 22px;
+  }
+
+  &__arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: hsl(var(--foreground));
+  }
+
+  &__comments {
+    line-height: 1.5;
+  }
+}

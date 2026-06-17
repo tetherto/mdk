@@ -13,6 +13,7 @@ import {
   hashCostLegendLabel,
   hashRevenueLegendLabel,
   hashRevenueUsdLegendLabel,
+  NETWORK_HASHRATE_LINE_LABEL,
   networkHashpriceLegendLabel,
   networkHashpriceUsdLegendLabel,
 } from './hash-balance.constants'
@@ -117,7 +118,7 @@ export const buildNetworkHashrateLineData = (log: HashRevenueLogEntry[]) => {
   return {
     datasets: [
       {
-        label: 'Network Hashrate',
+        label: NETWORK_HASHRATE_LINE_LABEL,
         borderColor: HASH_BALANCE_COLORS.networkHashrateLine,
         borderWidth: HASH_BALANCE_NETWORK_HASHRATE_LINE_WIDTH,
         data: _map(ordered, (entry) => ({

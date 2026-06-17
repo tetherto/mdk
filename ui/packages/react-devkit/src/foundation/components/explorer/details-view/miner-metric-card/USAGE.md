@@ -10,7 +10,7 @@ Card showing primary and secondary statistics for a single miner: efficiency, ha
 | `secondaryStats` | `StatItem[]` | yes | — | Secondary statistics displayed in a grid below. |
 | `showSecondaryStats` | `boolean` | yes | — | Whether to show the secondary stats section. |
 
-**StatItem shape:** `{ name?: string; value?: number | string; unit?: string; tooltipText?: string }`
+**StatItem shape:** `{ name?: string; value?: number | string; unit?: string }`
 
 ## Minimal example
 

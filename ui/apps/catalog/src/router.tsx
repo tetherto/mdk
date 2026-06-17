@@ -104,6 +104,21 @@ const FormElementsPage = lazy(() =>
 const GaugeChartPage = lazy(() =>
   import('./pages/gauge-chart-page').then((module) => ({ default: module.GaugeChartPage })),
 )
+const ThresholdLineChartPage = lazy(() =>
+  import('./pages/threshold-line-chart-page').then((module) => ({
+    default: module.ThresholdLineChartPage,
+  })),
+)
+const OperationsEnergyCostChartPage = lazy(() =>
+  import('./pages/operations-energy-cost-chart-page').then((module) => ({
+    default: module.OperationsEnergyCostChartPage,
+  })),
+)
+const AverageDowntimeChartPage = lazy(() =>
+  import('./pages/average-downtime-chart-page').then((module) => ({
+    default: module.AverageDowntimeChartPage,
+  })),
+)
 const InputPage = lazy(() =>
   import('./pages/input-page').then((module) => ({ default: module.InputPage })),
 )
@@ -118,6 +133,16 @@ const NotFoundPage = lazy(() =>
 )
 const PopoverPage = lazy(() =>
   import('./pages/popover-page').then((module) => ({ default: module.PopoverPage })),
+)
+const RepairLogChangesPage = lazy(() =>
+  import('./pages/repair-log-changes-page').then((module) => ({
+    default: module.RepairLogChangesPage,
+  })),
+)
+const RevenueChartDemo = lazy(() =>
+  import('./pages/reporting-tool/financial/revenue-chart/revenue-chart-demo').then((module) => ({
+    default: module.RevenueChartDemo,
+  })),
 )
 const SelectPage = lazy(() =>
   import('./pages/select-page').then((module) => ({ default: module.SelectPage })),
@@ -279,6 +304,13 @@ const OperationalHashrateDemo = lazy(() =>
     }),
   ),
 )
+const OperationalDashboardDemo = lazy(() =>
+  import('./pages/reporting-tool/operational-dashboard/operational-dashboard-demo').then(
+    (module) => ({
+      default: module.OperationalDashboardDemo,
+    }),
+  ),
+)
 
 const EnergyReportDemo = lazy(() =>
   import('./pages/reporting-tool/operational/energy-report/energy-report-demo').then(
@@ -321,6 +353,12 @@ const MinersSummaryBoxPage = lazy(() =>
 const EnergyBalanceDemo = lazy(() =>
   import('./pages/reporting-tool/financial/energy-balance/energy-balance-demo').then((m) => ({
     default: m.EnergyBalanceDemo,
+  })),
+)
+
+const MovementDetailsModalDemo = lazy(() =>
+  import('./pages/inventory/movement-details-modal/movement-details-modal-demo').then((m) => ({
+    default: m.MovementDetailsModalDemo,
   })),
 )
 
@@ -423,6 +461,9 @@ export const router = createBrowserRouter(
         { path: 'area-chart', element: withSuspense(AreaChartExample) },
         { path: 'doughnut-chart', element: withSuspense(DoughnutChartPage) },
         { path: 'gauge-chart', element: withSuspense(GaugeChartPage) },
+        { path: 'threshold-line-chart', element: withSuspense(ThresholdLineChartPage) },
+        { path: 'operations-energy-cost-chart', element: withSuspense(OperationsEnergyCostChartPage) },
+        { path: 'average-downtime-chart', element: withSuspense(AverageDowntimeChartPage) },
         { path: 'chart-container', element: withSuspense(ChartContainerPage) },
         { path: 'chart-wrapper', element: withSuspense(ChartWrapperPage) },
         { path: 'line-chart-card', element: withSuspense(LineChartCardPage) },
@@ -434,6 +475,7 @@ export const router = createBrowserRouter(
         { path: 'spinner', element: withSuspense(SpinnerPage) },
         { path: 'loader', element: withSuspense(LoaderPage) },
         { path: 'logs-card', element: withSuspense(LogsCardPage) },
+        { path: 'repair-log-changes', element: withSuspense(RepairLogChangesPage) },
         { path: 'stats-export', element: withSuspense(StateExportsPage) },
         { path: 'widget-top-row', element: withSuspense(WidgetTopRowPage) },
         { path: 'tanks-box', element: withSuspense(TanksBoxPage) },
@@ -492,6 +534,7 @@ export const router = createBrowserRouter(
         { path: 'timeline-chart', element: withSuspense(TimelineChartDemo) },
         { path: 'miner-socket', element: withSuspense(SocketDemo) },
         { path: 'settings', element: withSuspense(SettingsDemoPage) },
+        { path: 'movement-details-modal', element: withSuspense(MovementDetailsModalDemo) },
         { path: 'pool-manager-assign-pool-modal', element: withSuspense(PoolManagerAssignPoolModalPage) },
         { path: 'pool-manager-dashboard', element: withSuspense(PoolManagerDashboardPage) },
         {
@@ -512,10 +555,12 @@ export const router = createBrowserRouter(
         },
         { path: 'operational-efficiency', element: withSuspense(OperationalEfficiencyDemo) },
         { path: 'operational-hashrate', element: withSuspense(OperationalHashrateDemo) },
+        { path: 'operational-dashboard', element: withSuspense(OperationalDashboardDemo) },
         { path: 'operational-energy', element: withSuspense(EnergyReportDemo) },
         { path: 'subsidy-fee', element: withSuspense(SubsidyFeeDemo) },
         { path: 'hash-balance', element: withSuspense(HashBalanceDemo) },
         { path: 'ebitda', element: withSuspense(EbitdaDemo) },
+        { path: 'revenue-chart', element: withSuspense(RevenueChartDemo) },
         { path: 'cost', element: withSuspense(CostDemo) },
         { path: 'alerts-view', element: withSuspense(AlertsPageDemo) },
         {

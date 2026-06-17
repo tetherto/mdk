@@ -83,7 +83,7 @@ The Avalon CGMiner API is unauthenticated, so no username or password is require
 node backend/workers/miners/avalon/examples/run-a1346.js
 ```
 
-This is the Avalon mirror of [`backend/core/examples/miners/mdk.client.miner.js`](../../../core/examples/miners/mdk.client.miner.js), which uses Whatsminer.
+This is the Avalon mirror of [`examples/backend/miners/mdk.client.miner.js`](../../../../examples/backend/miners/mdk.client.miner.js), which uses Whatsminer.
 
 ## Capabilities
 

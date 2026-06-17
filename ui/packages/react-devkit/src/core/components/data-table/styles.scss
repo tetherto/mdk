@@ -14,17 +14,28 @@ $_prefix: mdk-table;
       border: 1px solid var(--mdk-table-border);
       border-top: none;
 
+      &.#{$_prefix}__empty-body--hidden {
+        min-height: 200px;
+      }
+
       .#{$_prefix}__empty-body {
         @include flex_column_align_center;
 
         gap: 10px;
         padding: 30px;
         color: var(--mdk-table-text-secondary);
-
-        &--hidden {
-          min-height: 200px;
-        }
       }
+    }
+
+    .#{$_prefix}__loader-overlay {
+      @include flex_center;
+
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--mdk-table-loader-overlay-bg);
     }
   }
 
@@ -68,18 +79,6 @@ $_prefix: mdk-table;
 
     &--bordered {
       border: 1px solid var(--mdk-table-border);
-    }
-
-    .#{$_prefix}__loader-overlay {
-      @include flex_center;
-
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      backdrop-filter: blur(1px);
-      background: var(--mdk-table-loader-overlay-bg);
     }
 
     .#{$_prefix}__element {
@@ -178,6 +177,10 @@ $_prefix: mdk-table;
         .#{$_prefix}__body-row {
           &:hover {
             background-color: var(--mdk-table-body-hover-bg);
+          }
+
+          &--skeleton:hover {
+            background-color: transparent;
           }
 
           &--selected {

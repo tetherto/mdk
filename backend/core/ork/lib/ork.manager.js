@@ -271,7 +271,10 @@ class OrkManager extends EventEmitter {
       })
     }
 
-    if (orkConf.discovery && orkConf.discovery.topic) {
+    // Local mode has no topic — the listener is still needed for its
+    // discoverWorker(rpcKey) hook (connect-by-key over HRPC). start() no-ops the
+    // swarm when topic is undefined, so the only change here is to instantiate it.
+    if (orkConf.discovery && (orkConf.discovery.topic || orkConf.discovery.mode === 'local')) {
       this.dhtListener = new DHTListener({
         topic: orkConf.discovery.topic,
         registry: this.registry,

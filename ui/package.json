@@ -25,7 +25,7 @@
     "size": "node scripts/bundle-size.mjs",
     "size:check": "npm run build && npm run size",
     "api:surface": "node scripts/generate-public-surface.mjs",
-    "generate:shell": "rimraf apps/mdk-ui-shell && node packages/cli/dist/bin.js create mdk-ui-shell",
+    "generate:shell": "npm run build && rimraf apps/mdk-ui-shell && node packages/cli/dist/bin.js create mdk-ui-shell",
     "test": "turbo test",
     "test:watch": "turbo test:watch",
     "test:coverage": "turbo test:coverage",

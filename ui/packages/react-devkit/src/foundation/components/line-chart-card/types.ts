@@ -87,4 +87,15 @@ export type LineChartCardProps = Partial<{
   minHeight: number | string
   /** Custom class name */
   className: string
+  /**
+   * Optional action rendered on the right of the card header (e.g. an
+   * expand toggle). Passed straight through to `ChartContainer`. Additive -
+   * omit it and the card header is unchanged.
+   */
+  headerAction: ReactNode
+  /**
+   * Optional node rendered next to the title (e.g. an info tooltip). Passed
+   * straight through to `ChartContainer`. Additive.
+   */
+  titleExtra: ReactNode
 }>

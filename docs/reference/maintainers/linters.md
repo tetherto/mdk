@@ -38,7 +38,7 @@ Add new entries only when the broken target can't be fixed in the source — a t
 
 ### Known false positive: bare directory targets
 
-Markdown links that point at a bare directory (for example ``[`backend/core/app-node/`](backend/core/app-node/)``) are reported as `404` by linkinator. They are not actually broken — GitHub renders directory URLs as a tree view — but linkinator serves the repo via an ephemeral local HTTP server, and there is no `index.html` inside those folders for the server to return.
+Markdown links that point at a bare directory (for example ``[`backend/core/app-node/`](../../../backend/core/app-node/)``) are reported as `404` by linkinator. They are not actually broken — GitHub renders directory URLs as a tree view — but linkinator serves the repo via an ephemeral local HTTP server, and there is no `index.html` inside those folders for the server to return.
 
 Do **not** silence these by adding the directory prefix to `skip`. Skip patterns are regex matched against link targets without implicit anchoring; an entry like `ui/` would also silence every deeper link (`ui/README.md`, `ui/docs/USAGE.md`, ...), creating false negatives that hide real breakage. Anchored exact-match patterns (`^http://localhost:[0-9]+/ui/$`) work in theory but are fragile across linkinator versions and accumulate.
 

@@ -2,13 +2,8 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { SingleStatCard } from '../single-stat-card'
 
-vi.mock('@core/index', () => ({
+vi.mock('@core', () => ({
   cn: vi.fn((...args) => args.filter(Boolean).join(' ')),
-  SimpleTooltip: vi.fn(({ content, children }) => (
-    <div data-testid="tooltip" content={content}>
-      {children}
-    </div>
-  )),
   formatValueUnit: vi.fn((value, unit) => `${value}${unit}`),
 }))
 
@@ -30,30 +25,6 @@ describe('SingleStatCard', () => {
     render(<SingleStatCard name="Temp" subtitle="Inlet" value={42} unit="°C" />)
 
     expect(screen.getByText('Inlet')).toBeInTheDocument()
-  })
-
-  it('renders without tooltip when value is null', () => {
-    render(<SingleStatCard name="Temp" value={null} />)
-
-    expect(screen.queryByTestId('tooltip')).not.toBeInTheDocument()
-  })
-
-  it('renders with tooltip when value exists', () => {
-    render(<SingleStatCard name="Temp" value={42} unit="°C" />)
-
-    expect(screen.getByTestId('tooltip')).toHaveAttribute('content', 'Temp: 42°C')
-  })
-
-  it('includes subtitle in tooltip', () => {
-    render(<SingleStatCard name="Temp" subtitle="Inlet" value={42} unit="°C" />)
-
-    expect(screen.getByTestId('tooltip')).toHaveAttribute('content', 'Temp (Inlet): 42°C')
-  })
-
-  it('uses custom tooltip text', () => {
-    render(<SingleStatCard name="Temp" value={42} unit="°C" tooltipText="Custom Tooltip" />)
-
-    expect(screen.getByTestId('tooltip')).toHaveAttribute('content', 'Custom Tooltip: 42°C')
   })
 
   it('applies primary variant class', () => {
@@ -132,6 +103,6 @@ describe('SingleStatCard', () => {
   it('handles undefined value', () => {
     render(<SingleStatCard name="Test" value={undefined} />)
 
-    expect(screen.queryByTestId('tooltip')).not.toBeInTheDocument()
+    expect(screen.getByText('Test')).toBeInTheDocument()
   })
 })

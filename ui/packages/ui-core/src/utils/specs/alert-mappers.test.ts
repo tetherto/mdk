@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { ListThingsDevice } from '@/types/api-mining.types'
+import type { HistoricalAlert, ListThingsDevice } from '@/types/api-mining.types'
 import {
   getAlertsForDevices,
   mapDevicesToIncidents,
+  mapHistoryLogToAlerts,
   sortIncidentsBySeverity,
 } from '../alert-mappers'
 
@@ -132,5 +133,50 @@ describe('mapDevicesToIncidents', () => {
     )
     expect(rows[0]!.severity).toBe('critical')
     expect(rows[1]!.severity).toBe('medium')
+  })
+})
+
+describe('mapHistoryLogToAlerts', () => {
+  it('keeps an already-nested thing untouched', () => {
+    const row: HistoricalAlert = {
+      uuid: 'a1',
+      name: 'temp_high',
+      description: 'hot',
+      severity: 'warning',
+      createdAt: 1,
+      thing: { id: 'miner-1', type: 'miner', tags: ['t-miner'] },
+    }
+    const [mapped] = mapHistoryLogToAlerts([row])
+    expect(mapped!.thing).toEqual({ id: 'miner-1', type: 'miner', tags: ['t-miner'] })
+    expect(mapped!.severity).toBe('warning')
+  })
+
+  it('rebuilds thing from flattened device fields', () => {
+    const row: HistoricalAlert = {
+      uuid: 'a2',
+      name: 'offline',
+      description: 'gone',
+      severity: 'critical',
+      createdAt: 2,
+      deviceId: 'miner-9',
+      deviceType: 'miner',
+      container: 'C3',
+      position: 'r1',
+      tags: ['site-a'],
+      code: '001',
+    }
+    const [mapped] = mapHistoryLogToAlerts([row])
+    expect(mapped!.thing).toEqual({
+      id: 'miner-9',
+      type: 'miner',
+      code: '001',
+      info: { container: 'C3', pos: 'r1' },
+      tags: ['site-a'],
+    })
+  })
+
+  it('returns [] for empty input', () => {
+    expect(mapHistoryLogToAlerts()).toEqual([])
+    expect(mapHistoryLogToAlerts([])).toEqual([])
   })
 })

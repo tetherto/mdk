@@ -1,9 +1,8 @@
-import { BarChart, ChartContainer, CURRENCY, formatValueUnit } from '@core'
+import { BarChart, ChartContainer, CURRENCY, formatValueUnit, standardBarChartScalesXY } from '@core'
 import type { ReactElement } from 'react'
 
 import type { BarChartDataResult } from '../../../utils/to-bar-chart-data'
 import {
-  financialBarChartScalesXY,
   usdChartTooltip,
 } from '../../../utils/financial-bar-chart.constants'
 
@@ -37,7 +36,7 @@ export const MonthlyEbitdaChart = ({
         tooltip={usdChartTooltip}
         formatYLabel={(value) => formatValueUnit(value, CURRENCY.USD)}
         height={height}
-        options={{ scales: financialBarChartScalesXY }}
+        options={{ scales: standardBarChartScalesXY }}
       />
     </ChartContainer>
   </div>

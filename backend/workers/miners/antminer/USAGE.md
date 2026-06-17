@@ -105,7 +105,7 @@ One runnable file per model — each starts an ORK, registers one mock device, a
 node backend/workers/miners/antminer/examples/run-s19xp.js
 ```
 
-These are the Antminer mirror of [`backend/core/examples/miners/mdk.client.miner.js`](../../../core/examples/miners/mdk.client.miner.js), which uses Whatsminer.
+These are the Antminer mirror of [`examples/backend/miners/mdk.client.miner.js`](../../../../examples/backend/miners/mdk.client.miner.js), which uses Whatsminer.
 
 ## Capabilities
 

@@ -1,0 +1,82 @@
+{
+  "name": "@tetherto/mdk-plugin-full-site",
+  "version": "0.1.0",
+  "description": "Full-site example plugin: aggregates the site (container, miners, powermeter, pool) via the MDK protocol client over the RPC gateway.",
+  "routes": [
+    {
+      "id": "site.overview",
+      "handler": "./controllers/overview.js",
+      "auth": false,
+      "http": {
+        "method": "GET",
+        "path": "/site/overview",
+        "responses": {
+          "200": {
+            "description": "Live site snapshot: container, linked miners, site power and pool.",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      },
+      "description": "Live site snapshot assembled from telemetry.pull across all workers: the container with its linked miners (info.container / info.pos), site power consumption from the powermeter, and pool data.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE"],
+      "safety": "read-only"
+    },
+    {
+      "id": "site.history",
+      "handler": "./controllers/history.js",
+      "auth": false,
+      "http": {
+        "method": "GET",
+        "path": "/site/history",
+        "parameters": [
+          { "in": "query", "name": "metric", "required": false, "schema": { "type": "string", "enum": ["hashrate", "power"] } },
+          { "in": "query", "name": "start", "required": false, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": false, "schema": { "type": "integer", "minimum": 0 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historical time-series read from a worker tail-log.",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      },
+      "description": "Historical telemetry from the workers' persisted tail-logs (telemetry.pull type 'logs'). metric=hashrate reads the pool device series; metric=power reads the site powermeter series. Defaults to the last hour.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_UNKNOWN_METRIC", "ERR_INVALID_DATE_RANGE"],
+      "safety": "read-only"
+    },
+    {
+      "id": "site.miner-command",
+      "handler": "./controllers/command.js",
+      "auth": false,
+      "http": {
+        "method": "POST",
+        "path": "/site/miners/{deviceId}/command",
+        "parameters": [
+          { "in": "path", "name": "deviceId", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["mode"],
+                "properties": { "mode": { "type": "string", "enum": ["low", "normal", "high"] } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command dispatched to the miner via ORK.",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      },
+      "description": "Dispatches the setPowerMode capability command to a single miner through ORK. The new mode appears on the next telemetry poll.",
+      "constraints": ["mode must be one of low | normal | high."],
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_DEVICE_ID_REQUIRED", "ERR_INVALID_POWER_MODE"],
+      "safety": "write"
+    }
+  ]
+}

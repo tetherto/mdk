@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { App } from './App'
 import { ROUTE_PATHS } from './constants/routes'
+import Alerts from './pages/Alerts'
 import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
 import SignIn from './pages/SignIn'
@@ -26,6 +27,11 @@ export const router = createBrowserRouter([
       {
         path: ROUTE_PATHS.DASHBOARD.replace(/^\//, ''),
         element: <Dashboard />,
+      },
+      {
+        // Optional `:uuid` segment supports deep-linking to a single alert.
+        path: `${ROUTE_PATHS.ALERTS.replace(/^\//, '')}/:uuid?`,
+        element: <Alerts />,
       },
       ...ROUTES.map((route) => {
         const Page = lazy(route.page)

@@ -2,14 +2,9 @@
 
 ## Supported versions
 
-MDK is currently in active development and has not reached a stable (`x.y.z`) release yet.
+MDK is in the `0.y.z` initial-development range; the public API is not considered stable until `1.0.0`.
 
-Until stable releases are available, security support is provided for:
-
-- The latest commit on `main`
-- The most recent pre-release tags (`*-beta`, `*-rc`)
-
-Older pre-release versions may not receive security fixes.
+Security fixes are handled on a best-effort basis for the latest commit on `main`. Tagged releases and older commits may not receive security fixes.
 
 ## Reporting a vulnerability
 

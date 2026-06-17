@@ -53,7 +53,7 @@ You build applications on MDK, or integrate a new device / pool / data feed.
 | --- | --- |
 | Getting started — first runnable example | [`tutorials/get-started/`](tutorials/get-started/index.md) |
 | Deployment: single process vs. many (deployment topology) | [`concepts/deployment-topologies.md`](concepts/deployment-topologies.md) |
-| Runnable site examples | [`examples/core/site/`](../examples/core/site/README.md), [`examples/core/site-single-process/`](../examples/core/site-single-process/README.md), [`examples/e2e/`](../examples/e2e/README.md) |
+| Runnable site examples | [`examples/backend/site/`](../examples/backend/site/README.md), [`examples/backend/site-single-process/`](../examples/backend/site-single-process/README.md), [`examples/e2e/`](../examples/e2e/README.md) |
 | Worker runtime contracts (telemetry, commands, health, errors) | `backend/workers/<family>/<provider>/mdk-contract.json` + `USAGE.md` + `examples/` |
 | Core SDK | [`../backend/core/docs/architecture.md`](../backend/core/docs/architecture.md) |
 | Workers (lifecycle, install pattern) | [`../backend/workers/docs/install-pattern.md`](../backend/workers/docs/install-pattern.md) |

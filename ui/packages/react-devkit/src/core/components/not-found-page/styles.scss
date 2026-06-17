@@ -2,9 +2,8 @@
 .mdk-not-found-page {
   @include flex_column_center;
   
-  min-height: 100vh;
-  background: var(--mdk-color-surface);
   padding: 24px;
+  min-height: 100vh;
 
   &__title {
     font-family: var(--font-mono);

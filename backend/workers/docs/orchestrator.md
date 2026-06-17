@@ -8,8 +8,8 @@ ORK — the Orchestration Kernel, distributed as `@tetherto/mdk-ork` — is the 
 | --- | --- |
 | [`backend/core/ork/index.js`](../../core/ork/index.js) | The `OrkManager` class, protocol envelopes, IPC and HRPC gateways, the registry. |
 | [`backend/core/mdk/index.js`](../../core/mdk/index.js) | `getOrk()` and `startWorker()` bootstrap helpers — the SDK surface most code uses. |
-| [`backend/core/examples/ork/mdk.client.ork.js`](../../core/examples/ork/mdk.client.ork.js) | Low-level example: instantiates `OrkManager` directly, useful for seeing the raw config shape. |
-| [`backend/core/examples/mdk-e2e/run.js`](../../core/examples/mdk-e2e/run.js) | End-to-end example: ORK + worker in one process, exits cleanly after exercising telemetry and capabilities. |
+| [`examples/backend/ork/demo.js`](../../../examples/backend/ork/demo.js) | Low-level example: instantiates `OrkManager` directly, useful for seeing the raw config shape. |
+| [`examples/backend/mdk-e2e/run.js`](../../../examples/backend/mdk-e2e/run.js) | End-to-end example: ORK + worker in one process, exits cleanly after exercising telemetry and capabilities. |
 
 ## The two entry points
 
@@ -24,7 +24,7 @@ const ork = await getOrk()
 // ork.getPublicKey() — HRPC public key
 ```
 
-See [`backend/core/examples/miners/mdk.client.miner.js`](../../core/examples/miners/mdk.client.miner.js) for the simplest end-to-end use.
+See [`examples/backend/miners/mdk.client.miner.js`](../../../examples/backend/miners/mdk.client.miner.js) for the simplest end-to-end use.
 
 ### `new OrkManager({}, { storeDir, root })` — low-level
 
@@ -37,7 +37,7 @@ await ork.init()
 await ork.start()
 ```
 
-See [`backend/core/examples/ork/mdk.client.ork.js`](../../core/examples/ork/mdk.client.ork.js) for the full bootstrap including config file generation and SIGINT handling.
+See [`examples/backend/ork/demo.js`](../../../examples/backend/ork/demo.js) for the full bootstrap including config file generation and SIGINT handling.
 
 ## How workers connect
 
@@ -50,7 +50,7 @@ Workers join the same DHT topic as ORK. ORK pulls — workers never push. Once a
 
 Commands flow back along the same channel: ORK → worker → device. The worker translates the MDK Protocol envelope into the device's native API call.
 
-For multi-process discovery (worker and ORK in separate Node processes), see [`backend/core/examples/mdk-e2e/dht-worker.js`](../../core/examples/mdk-e2e/dht-worker.js) and [`dht-ork.js`](../../core/examples/mdk-e2e/dht-ork.js).
+For multi-process discovery (worker and ORK in separate Node processes), see [`examples/backend/mdk-e2e/dht-worker.js`](../../../examples/backend/mdk-e2e/dht-worker.js) and [`dht-ork.js`](../../../examples/backend/mdk-e2e/dht-ork.js).
 
 ## Storage and lifecycle
 

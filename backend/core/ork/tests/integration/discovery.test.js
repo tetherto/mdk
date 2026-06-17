@@ -6,6 +6,7 @@ const createTestnet = require('hyperdht/testnet')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const Hyperswarm = require('hyperswarm')
 const { DHTListener } = require('../../lib/discovery/dht-listener')
+const { MDKWorkerAdapter } = require('../../../../workers/base/lib/mdk-worker-adapter')
 const { WorkerRegistry } = require('../../lib/modules/worker-registry')
 const { WorkerChannel } = require('../../lib/transport/worker-channel')
 const { ACTIONS } = require('../../lib/protocol/actions')
@@ -135,6 +136,64 @@ test('discovery - DHTListener discovers worker and registers it', async (t) => {
   t.ok(caps.commands, 'has commands')
 
   t.ok(registry.isRoutable('wm-rack-1'), 'worker is routable')
+})
+
+test('discovery - real adapter announces and listener registers (ork joins first)', async (t) => {
+  const testnet = await createTestnet(3, t.teardown)
+  const bootstrap = testnet.bootstrap
+  const topic = crypto.randomBytes(32)
+
+  const contract = {
+    metadata: { provider: 'test', deviceFamily: 'miner', brand: 'TestMiner', modelsSupported: ['T1'], overview: 'Test' },
+    capabilities: {
+      telemetry: [{ name: 'hashrate', type: 'number', unit: 'TH/s', description: 'test' }],
+      commands: [{ name: 'reboot', params: [] }],
+      health: { supportedStates: ['OK'] },
+      errors: {}
+    }
+  }
+
+  const manager = {
+    mem: { things: { d1: { id: 'd1', type: 'test' }, d2: { id: 'd2', type: 'test' } } },
+    listThings () { return [{ id: 'd1', type: 'test' }, { id: 'd2', type: 'test' }] },
+    async collectThingSnap () { return { hashrate: 1 } }
+  }
+
+  // ORK side joins FIRST (client querying). The worker announces afterwards, so
+  // the ORK connects during the worker's join window — the timing that left the
+  // worker's connection without a key before the fix.
+  const orkRpc = new HyperswarmRPC({ bootstrap })
+  const workerChannel = new WorkerChannel({ timeout: 10000, rpc: orkRpc })
+  const registry = new WorkerRegistry({ store: createMockStore(), capabilityStore: createMockStore() })
+  const listener = new DHTListener({ topic: topic.toString('hex'), registry, workerChannel, swarmOpts: { bootstrap } })
+  await listener.start()
+
+  // Real worker adapter — exercises _joinDiscoveryTopic (handler-before-join,
+  // discovery.flushed(), re-announce) end-to-end, not a hand-rolled swarm.
+  const adapter = new MDKWorkerAdapter(manager, contract, {
+    workerId: 'wm-rack-1',
+    orkTopic: topic.toString('hex'),
+    bootstrap
+  })
+  await adapter.start()
+
+  t.teardown(async () => {
+    await adapter.stop()
+    await listener.stop()
+    await orkRpc.destroy()
+  })
+
+  let attempts = 0
+  while (registry.listWorkers().filter((w) => w.state === 'READY').length === 0 && attempts < 60) {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    attempts++
+  }
+
+  const workers = registry.listWorkers()
+  t.is(workers.length, 1, 'one worker registered via real announce -> key-exchange -> register')
+  t.is(workers[0].workerId, 'wm-rack-1')
+  t.is(workers[0].state, 'READY', 'reached READY')
+  t.is(workers[0].deviceIds.length, 2, 'devices synced from identity')
 })
 
 test('discovery - contract validation', (t) => {

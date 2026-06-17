@@ -8,6 +8,7 @@ import _map from 'lodash/map'
 import _reduce from 'lodash/reduce'
 import _some from 'lodash/some'
 import _toLower from 'lodash/toLower'
+import _uniq from 'lodash/uniq'
 
 import type { Alert } from '../../types/alerts'
 import type { Device } from '../../types/device'
@@ -169,6 +170,51 @@ export const applyAlertsLocalFilters = (
   return filteredAlerts
 }
 
+/**
+ * For each search chip that matched the alert only through fields the table
+ * doesn't display (uuid, alert code, device type, or the derived ip-/mac-/
+ * sn-/firmware- tags), collect the hidden tokens it matched. Chips that
+ * match a visible column (code, position, alert name) produce no hint —
+ * those matches are self-explanatory.
+ */
+export const getAlertMatchHints = (
+  alert: ParsedAlertEntry,
+  filterTags: string[] = [],
+): string[] => {
+  const hints: string[] = []
+
+  for (const searchLookup of filterTags) {
+    const lowerLookup = _toLower(searchLookup)
+    if (!lowerLookup) continue
+
+    const visibleValues = [alert.shortCode, alert.device, alert.alertName]
+    if (_some(visibleValues, (value) => _includes(_toLower(value), lowerLookup))) continue
+
+    if (_includes(_toLower(alert.uuid), lowerLookup)) hints.push(`uuid ${alert.uuid}`)
+    if (_includes(_toLower(alert.alertCode), lowerLookup)) hints.push(`code ${alert.alertCode}`)
+    if (alert.type && _includes(_toLower(alert.type), lowerLookup)) {
+      hints.push(`type ${alert.type}`)
+    }
+
+    for (const tag of alert.tags ?? []) {
+      if (_includes(_toLower(tag), lowerLookup)) hints.push(tag)
+    }
+  }
+
+  return _uniq(hints)
+}
+
+const withMatchHints = (
+  alerts: ParsedAlertEntry[],
+  filterTags: string[] = [],
+): ParsedAlertEntry[] => {
+  if (_isEmpty(filterTags)) return alerts
+  return _map(alerts, (alert) => {
+    const matchedOn = getAlertMatchHints(alert, filterTags)
+    return matchedOn.length > 0 ? { ...alert, matchedOn } : alert
+  })
+}
+
 const composeFilters = (
   localFilters: AlertLocalFilters,
   filterTags?: string[],
@@ -191,7 +237,7 @@ export const getHistoricalAlertsData = (
     _map(alerts, (alert) => parseAlertEntry(alert, alert?.thing as Device, onAlertClick)),
   )
   const filters = composeFilters(localFilters, filterTags)
-  return applyAlertsLocalFilters(allAlerts, filters)
+  return withMatchHints(applyAlertsLocalFilters(allAlerts, filters), filterTags)
 }
 
 export const getAlertsForDevices = (
@@ -232,7 +278,11 @@ export const getCurrentAlerts = (
   data: Device[][],
   { filterTags, localFilters, onAlertClick, id }: GetCurrentAlertsArgs,
 ): ParsedAlertEntry[] => {
-  const alertFilters = composeFilters(localFilters, id ? [] : filterTags)
-  const devicesAlerts = getAlertsForDevices(data, alertFilters, onAlertClick)
+  const effectiveTags = id ? [] : filterTags
+  const alertFilters = composeFilters(localFilters, effectiveTags)
+  const devicesAlerts = withMatchHints(
+    getAlertsForDevices(data, alertFilters, onAlertClick),
+    effectiveTags,
+  )
   return id ? _filter(devicesAlerts, { uuid: id }) : devicesAlerts
 }

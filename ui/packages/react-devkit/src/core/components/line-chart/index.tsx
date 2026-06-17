@@ -6,7 +6,6 @@ import _forEach from 'lodash/forEach'
 import _isArray from 'lodash/isArray'
 import _isEqual from 'lodash/isEqual'
 import _isNil from 'lodash/isNil'
-import _isObject from 'lodash/isObject'
 import _map from 'lodash/map'
 import _max from 'lodash/max'
 import _round from 'lodash/round'
@@ -23,6 +22,7 @@ import type { LineDataset, LineSeriesApi } from './line-chart.utils'
 import { CHART_COLORS, GAP, OFFSET } from './line-chart.constants'
 import { withErrorBoundary } from '../error-boundary'
 import { cn } from '../../utils'
+import { resolveChartLegendStrokeColor } from '../../utils/chart-options'
 import type { LightWeightLineChartProps } from './types'
 
 /**
@@ -52,7 +52,7 @@ const LightWeightLineChart = ({
   shouldResetZoom = true,
   skipRound = true,
   skipMinWidth = false,
-  backgroundColor = CHART_COLORS.EBONY,
+  backgroundColor = 'transparent',
   customDateFormat,
   verticalLineLabelVisible = true,
   horizontalLineLabelVisible = false,
@@ -213,69 +213,92 @@ const LightWeightLineChart = ({
       }
     }
 
-    const existingSeriesCount = lineSeriesRef.current.length
+    if (!chartRef?.current) {
+      return
+    }
+
     const datasetCount = _size(data.datasets)
 
-    if (existingSeriesCount === datasetCount) {
+    const seriesMatchesData = (): boolean => {
+      if (lineSeriesRef.current.length !== datasetCount) {
+        return false
+      }
       for (let i = 0; i < datasetCount; i++) {
-        const currentDataset = data.datasets[i]
-        if (!currentDataset) {
-          continue
+        const ds = data.datasets[i]
+        const series = lineSeriesRef.current[i]
+        if (!ds || !series) {
+          return false
         }
-
-        let matchingSeries
-        for (const [series, dataset] of seriesToDatasetMap.current.entries()) {
-          if (dataset.label === currentDataset.label) {
-            matchingSeries = series
-            break
-          }
+        const mapped = seriesToDatasetMap.current.get(series)
+        if (!mapped) {
+          return false
         }
-
-        if (matchingSeries) {
-          matchingSeries.applyOptions({ visible: currentDataset.visible })
-          seriesToDatasetMap.current.set(matchingSeries, currentDataset)
+        if (mapped.label !== ds.label) {
+          return false
+        }
+        if (
+          resolveChartLegendStrokeColor(mapped.borderColor) !==
+          resolveChartLegendStrokeColor(ds.borderColor)
+        ) {
+          return false
         }
       }
+      return true
     }
 
-    if (existingSeriesCount > datasetCount && chartRef?.current) {
-      _forEach(lineSeriesRef.current.slice(datasetCount), (series: unknown) => {
-        if (series && _isObject(series)) {
-          chartRef.current?.removeSeries(series as Parameters<IChartApi['removeSeries']>[0])
-          // Also remove from seriesToDatasetMap to prevent duplicate tooltip entries
-          seriesToDatasetMap.current.delete(series as LineSeriesApi)
-        }
-      })
-      lineSeriesRef.current = lineSeriesRef.current.slice(0, datasetCount)
+    const removeAllSeries = (): void => {
+      if (!chartRef.current) {
+        return
+      }
+      for (const series of [...lineSeriesRef.current]) {
+        chartRef.current.removeSeries(series)
+        seriesToDatasetMap.current.delete(series)
+      }
+      lineSeriesRef.current = []
     }
 
-    if (existingSeriesCount < datasetCount && chartRef?.current) {
-      for (let i = existingSeriesCount; i < datasetCount; i++) {
+    const addSeriesForDataset = (dataset: LineDataset): void => {
+      if (!chartRef.current) {
+        return
+      }
+      const lineColor = resolveChartLegendStrokeColor(dataset.borderColor)
+      const lineSeriesOptions: Parameters<IChartApi['addLineSeries']>[0] = {
+        color: lineColor,
+        ...(dataset.borderWidth && { lineWidth: dataset.borderWidth as 1 | 2 | 3 | 4 }),
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+        priceLineVisible: false,
+        pointMarkersVisible: showPointMarkers,
+      }
+      lineSeriesOptions.autoscaleInfoProvider = autoscaleProvider(beginAtZero)
+      const lineSeries = chartRef.current.addLineSeries(lineSeriesOptions)
+      lineSeriesRef.current.push(lineSeries)
+      seriesToDatasetMap.current.set(lineSeries, dataset)
+    }
+
+    if (!seriesMatchesData()) {
+      removeAllSeries()
+      for (let i = 0; i < datasetCount; i++) {
         const dataset = data.datasets[i]
-        if (!dataset) {
+        if (dataset) {
+          addSeriesForDataset(dataset)
+        }
+      }
+    } else {
+      for (let i = 0; i < datasetCount; i++) {
+        const ds = data.datasets[i]
+        const series = lineSeriesRef.current[i]
+        if (!ds || !series) {
           continue
         }
-
-        const { borderColor, borderWidth } = dataset
-
-        const lineSeriesOptions: Parameters<IChartApi['addLineSeries']>[0] = {
-          color: borderColor,
-          ...(borderWidth && { lineWidth: borderWidth as 1 | 2 | 3 | 4 }),
-          lastValueVisible: false,
-          crosshairMarkerVisible: false,
-          priceLineVisible: false,
-          pointMarkersVisible: showPointMarkers,
-        }
-
-        lineSeriesOptions.autoscaleInfoProvider = autoscaleProvider(beginAtZero)
-
-        const lineSeries = chartRef.current.addLineSeries(lineSeriesOptions)
-
-        lineSeriesRef.current.push(lineSeries)
-        seriesToDatasetMap.current.set(lineSeries, dataset)
+        series.applyOptions({
+          visible: ds.visible !== false,
+          color: resolveChartLegendStrokeColor(ds.borderColor),
+        })
+        seriesToDatasetMap.current.set(series, ds)
       }
     }
-  }, [chartRef, data.datasets, priceFormatter, yTicksFormatter, chartOptions, beginAtZero])
+  }, [chartRef, data.datasets, data, priceFormatter, yTicksFormatter, chartOptions, beginAtZero, showPointMarkers])
 
   const resetPriceScaleWidth = (): void => {
     lastAppliedPriceScaleWidth.current = 0
@@ -464,15 +487,19 @@ const LightWeightLineChart = ({
     // Only apply offset if fixedTimezone is provided, otherwise timestamps are already in local time
     const currentTimezoneOffset = fixedTimezone ? getTimezoneOffset(fixedTimezone) : 0
 
-    _forEach(data.datasets, ({ data: datasetData, visible }, index) => {
+    _forEach(data.datasets, ({ data: datasetData, visible, borderColor }, index) => {
       if (_isArray(datasetData)) {
         const formattedData = _map(datasetData, ({ x, y }) => ({
           time: _round((x + currentTimezoneOffset) / 1000) as Time,
 
           value: _isNil(y) ? undefined : skipRound ? y : _round(y, roundPrecision || 0),
         }))
+        const lineColor = resolveChartLegendStrokeColor(borderColor)
         lineSeriesRef.current[index]?.setData(formattedData as LineData<Time>[])
-        lineSeriesRef.current[index]?.applyOptions({ visible })
+        lineSeriesRef.current[index]?.applyOptions({
+          visible,
+          color: lineColor,
+        })
       }
     })
 

@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-client",
-  "version": "0.0.1",
-  "description": "MDK protocol client — IPC transport for ORK",
+  "version": "0.2.0",
+  "description": "MDK protocol client — IPC and HRPC (RPC gateway) transports for ORK",
   "main": "index.js",
   "keywords": ["tether", "mdk", "client"],
   "author": "Tether",
@@ -16,7 +16,9 @@
     "test:unit": "NODE_ENV=test brittle tests/unit/*.js"
   },
   "dependencies": {
-    "debug": "^4.4.1"
+    "@hyperswarm/rpc": "^3.5.0",
+    "debug": "^4.4.1",
+    "hyperdht": "^6.32.0"
   },
   "devDependencies": {
     "brittle": "3.18.0",

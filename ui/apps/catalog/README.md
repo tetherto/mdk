@@ -62,7 +62,7 @@ copy(window.__MDK_BUILD__)
 ```
 
 The page title also carries the version suffix (for example,
-`MDK UI Toolkit Catalog · v0.0.1`), so you can identify the running build at a glance
+`MDK UI Toolkit Catalog · v0.2.0`), so you can identify the running build at a glance
 without opening devtools.
 
 ### Shape

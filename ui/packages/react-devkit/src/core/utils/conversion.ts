@@ -34,6 +34,11 @@ export const toMWh = (watts: number): number => toMW(watts) * HOURS_IN_DAY
 export const toPHS = (hashrate: number): number => hashrate / HASHRATE_PER_PHS
 
 /**
+ * Convert hashrate from MH/s to TH/s
+ */
+export const mhsToThs = (hashrateMhs: number): number => hashrateMhs / 1_000_000
+
+/**
  * Convert a value to kilo units (divide by 1000)
  */
 export const unitToKilo = (value: number): number => value / 1_000

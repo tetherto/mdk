@@ -97,7 +97,7 @@ One runnable file per model — each starts an ORK, registers one mock device, a
 node backend/workers/miners/whatsminer/examples/run-m56s.js
 ```
 
-The M56S example is the per-worker mirror of [`backend/core/examples/miners/mdk.client.miner.js`](../../../core/examples/miners/mdk.client.miner.js).
+The M56S example is the per-worker mirror of [`examples/backend/miners/mdk.client.miner.js`](../../../../examples/backend/miners/mdk.client.miner.js).
 
 ## Capabilities
 

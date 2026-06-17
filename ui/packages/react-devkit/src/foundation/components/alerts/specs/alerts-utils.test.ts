@@ -6,6 +6,7 @@ import { DEVICE_NOT_FOUND_MESSAGE } from '@/utils/device-utils'
 import type { ParsedAlertEntry } from '../alerts-types'
 import {
   applyAlertsLocalFilters,
+  getAlertMatchHints,
   getAlertsForDevices,
   getAlertsThingsQuery,
   getCurrentAlerts,
@@ -299,5 +300,67 @@ describe('getCurrentAlerts', () => {
       filterTags: ['nothing-matches'],
     })
     expect(result).toEqual([])
+  })
+
+  it('annotates rows with matchedOn when a chip matched only hidden tokens', () => {
+    const device = makeDevice()
+    // '10.0.0' is not in the code, position, or alert name — it only matches
+    // the derived ip- tag, so the row must say so.
+    const result = getCurrentAlerts([[device]], {
+      localFilters: {},
+      filterTags: ['10.0.0'],
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0]?.matchedOn).toEqual(['ip-10.0.0.1'])
+  })
+
+  it('reports uuid matches in matchedOn', () => {
+    const device = makeDevice()
+    const result = getCurrentAlerts([[device]], {
+      localFilters: {},
+      filterTags: ['uuid-1'],
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0]?.matchedOn).toEqual(['uuid alert-uuid-1'])
+  })
+
+  it('omits matchedOn when the chip matches a visible column', () => {
+    const device = makeDevice()
+    const result = getCurrentAlerts([[device]], {
+      localFilters: {},
+      filterTags: ['M-001'],
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0]?.matchedOn).toBeUndefined()
+  })
+})
+
+describe('getAlertMatchHints', () => {
+  const baseAlert: ParsedAlertEntry = {
+    shortCode: 'M-001',
+    device: 'unit-01 1-1',
+    tags: ['t-miner', 'ip-10.0.33.1', 'sn-SN333'],
+    alertName: 'Overheating',
+    alertCode: 'OVERHEAT',
+    severity: 'critical',
+    createdAt: 1,
+    uuid: 'ab33cd',
+    actions: { uuid: 'ab33cd' },
+  }
+
+  it('collects every hidden token a chip matched', () => {
+    expect(getAlertMatchHints(baseAlert, ['33'])).toEqual([
+      'uuid ab33cd',
+      'ip-10.0.33.1',
+      'sn-SN333',
+    ])
+  })
+
+  it('returns nothing for chips matching visible columns', () => {
+    expect(getAlertMatchHints(baseAlert, ['M-001', 'overheating', 'unit-01'])).toEqual([])
+  })
+
+  it('dedupes hints across chips', () => {
+    expect(getAlertMatchHints(baseAlert, ['SN333', 'sn-sn333'])).toEqual(['sn-SN333'])
   })
 })

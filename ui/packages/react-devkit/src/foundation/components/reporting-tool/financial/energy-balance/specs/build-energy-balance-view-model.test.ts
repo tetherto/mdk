@@ -143,7 +143,9 @@ describe('buildEnergyBalanceViewModel', () => {
       costDisplayMode: usdMode,
     })
     expect(vm.energyRevenueChartInput.labels).toHaveLength(2)
-    expect(vm.downtimeChartInput.series).toHaveLength(2)
+    expect(vm.averageDowntimeData.labels).toHaveLength(2)
+    expect(vm.averageDowntimeData.curtailment).toHaveLength(2)
+    expect(vm.averageDowntimeData.operationalIssues).toHaveLength(2)
     expect(vm.powerChartInput.series).toHaveLength(1)
     expect(vm.powerChartInput.constants).toHaveLength(1)
   })

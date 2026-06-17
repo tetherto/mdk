@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-ork",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "MDK ORK - Orchestration Kernel",
   "main": "index.js",
   "keywords": [

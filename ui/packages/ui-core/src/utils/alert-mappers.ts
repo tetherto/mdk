@@ -7,7 +7,12 @@
  * classification.
  */
 
-import type { AlertSeverity, DeviceAlert, ListThingsDevice } from '../types/api-mining.types'
+import type {
+  AlertSeverity,
+  DeviceAlert,
+  HistoricalAlert,
+  ListThingsDevice,
+} from '../types/api-mining.types'
 import { normalizeAlertSeverity, SEVERITY_WEIGHT } from './dashboard-mappers'
 
 /**
@@ -96,3 +101,28 @@ export const mapDevicesToIncidents = (
   devices: ListThingsDevice[],
   formatDate?: (d: Date) => string,
 ): IncidentRow[] => sortIncidentsBySeverity(getAlertsForDevices(devices, formatDate))
+
+/**
+ * Normalise raw `history-log` alert rows into the shape the devkit
+ * `<HistoricalAlerts>` table consumes. The table derives its device label,
+ * short code, and filter tokens from each row's `thing` (treated as a device),
+ * so this guarantees `thing` is present: if the backend already nests it we
+ * keep it, otherwise we rebuild it from the flattened `deviceId` / `deviceType`
+ * / `container` / `position` / `tags` fields.
+ *
+ * Severity is passed through untouched (the historical log carries severities
+ * like `warning` that {@link normalizeAlertSeverity} would otherwise collapse).
+ *
+ * @category alerts
+ */
+export const mapHistoryLogToAlerts = (rows: HistoricalAlert[] = []): HistoricalAlert[] =>
+  rows.map((row) => {
+    const thing = row.thing ?? {
+      id: row.deviceId,
+      type: row.deviceType,
+      code: typeof row.code === 'string' ? row.code : undefined,
+      info: { container: row.container, pos: row.position },
+      tags: row.tags,
+    }
+    return { ...row, thing }
+  })

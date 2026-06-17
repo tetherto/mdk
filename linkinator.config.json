@@ -13,8 +13,10 @@
     "(^|/)dist/",
     "(^|/)coverage/",
     "^https://github\\.com/tetherto/mdk/blob/main/",
+    "https://github.com/tetherto/mdk/releases/tag/v0.2.0",
     "workers/miners/[^/]+/examples/?$",
-    "workers/[^/]+/base/?$"
+    "workers/[^/]+/base/?$",
+    "docs/reference/release-notes/?$"
   ],
   "statusCodes": {
     "403": "warn",

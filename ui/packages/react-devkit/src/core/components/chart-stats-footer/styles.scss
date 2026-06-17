@@ -30,14 +30,11 @@
   }
 
   &__primary-text {
-    color: var(--mdk-color-primary);
-    font-weight: 800;
-    font-size: 14px;
+    @include chart_stat_label;
   }
 
   &__secondary-text {
-    color: rgba(var(--mdk-color-white-rgb), 0.5);
-    font-size: 14px;
+    @include chart_stat_value;
   }
 
   &__stats {
@@ -75,17 +72,12 @@
 
   &__stat-label {
     @include flex_row;
-
-    color: var(--mdk-color-primary);
-    font-weight: 800;
-    font-size: 14px;
+    @include chart_stat_label;
   }
 
   &__stat-value {
     @include flex_row;
-
-    color: var(--mdk-color-white);
-    font-size: 14px;
+    @include chart_stat_value;
   }
 
   &__secondary-label-value {

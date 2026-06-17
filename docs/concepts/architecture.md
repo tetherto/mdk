@@ -82,7 +82,7 @@ This choice satisfies all storage requirements without the operational baggage o
 
 ## The MDK Protocol
 
-The MDK Protocol is the contract that crosses every layer of the stack. Version 0.0.1 is pull-based: Workers passively join a
+The MDK Protocol is the contract that crosses every layer of the stack. Version 0.2.0 is pull-based: Workers passively join a
 known DHT topic and `@tetherto/mdk-ork` initiates every RPC call. Workers issue no callbacks, emit no fan-out events, and make no
 exceptions to the direction of flow. For the full [envelope schema][envelope-impl], [action catalogue][actions-catalogue], and 
 [base command set][schemas-impl], see the [Protocol reference][protocol-reference].

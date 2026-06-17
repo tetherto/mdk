@@ -6,7 +6,6 @@ export type StatItem = {
   name?: string
   value?: number | string
   unit?: string
-  tooltipText?: string
 }
 
 type MinerMetricCardProps = {

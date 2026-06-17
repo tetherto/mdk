@@ -285,6 +285,7 @@ describe('buildChartTooltip', () => {
       new MouseEvent('mousemove', { bubbles: true, clientX: 50, clientY: 30 }),
     )
 
+    expect(tooltipEl.style.opacity).toBe('1')
     expect(tooltipEl.style.left).toMatch(/px$/)
     expect(tooltipEl.style.top).toMatch(/px$/)
 
@@ -296,7 +297,7 @@ describe('buildChartTooltip', () => {
     document.body.removeChild(container)
   })
 
-  it('positionTooltip skips when tooltip is hidden (opacity === 0)', () => {
+  it('does not show tooltip from external handler until mousemove stores cursor', () => {
     const tooltip = buildChartTooltip()
     const externalHandler = tooltip.external!
 
@@ -315,15 +316,14 @@ describe('buildChartTooltip', () => {
     })
 
     const tooltipEl = container.querySelector<HTMLElement>('[data-msdk-chart-tooltip]')!
-    tooltipEl.style.opacity = '0'
-    const prevLeft = tooltipEl.style.left
+    expect(tooltipEl.style.opacity).toBe('0')
 
-    // with opacity='0' positionTooltip should return early without changing left/top
     container.dispatchEvent(
       new MouseEvent('mousemove', { bubbles: true, clientX: 50, clientY: 30 }),
     )
 
-    expect(tooltipEl.style.left).toBe(prevLeft)
+    expect(tooltipEl.style.opacity).toBe('1')
+    expect(tooltipEl.style.left).toMatch(/px$/)
 
     document.body.removeChild(container)
   })
@@ -347,6 +347,9 @@ describe('buildChartTooltip', () => {
     })
 
     const tooltipEl = container.querySelector<HTMLElement>('[data-msdk-chart-tooltip]')!
+    container.dispatchEvent(
+      new MouseEvent('mousemove', { bubbles: true, clientX: 50, clientY: 30 }),
+    )
     expect(tooltipEl.style.opacity).toBe('1')
 
     container.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }))
@@ -420,7 +423,9 @@ describe('buildChartTooltip', () => {
 
     externalHandler({ chart: mockChart as any, tooltip: mockTooltipModel as any })
 
-    expect(addEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function))
+    expect(addEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function), {
+      capture: true,
+    })
     expect(addEventListenerSpy).toHaveBeenCalledWith('mouseleave', expect.any(Function))
     expect(mockContainer.getAttribute('data-msdk-mouse')).toBe('1')
 

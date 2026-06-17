@@ -1,0 +1,26 @@
+@use '../../styles/mixins' as *;
+
+@layer mdk {
+  .mdk-min-max-avg {
+    @include flex_row;
+
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    &__item {
+      @include flex_row;
+
+      gap: 10px;
+      align-items: center;
+    }
+
+    &__label {
+      @include chart_stat_label;
+    }
+
+    &__value {
+      @include chart_stat_value;
+    }
+  }
+}

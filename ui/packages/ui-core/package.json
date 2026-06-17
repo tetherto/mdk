@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-ui-core",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Framework-agnostic headless core for the MDK Devkit. Currently exposes Zustand vanilla stores and a TanStack QueryClient factory. No React.",
   "sideEffects": false,

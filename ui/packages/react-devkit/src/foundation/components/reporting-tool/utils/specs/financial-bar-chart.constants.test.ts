@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   btcChartTooltip,
-  financialBarChartScalesXY,
   usdChartTooltip,
   usdPerMwhChartTooltip,
 } from '../financial-bar-chart.constants'
@@ -11,15 +10,6 @@ import {
 const sampleValue = 1234.56
 
 describe('financial-bar-chart.constants', () => {
-  describe('financialBarChartScalesXY', () => {
-    it('enables both axes with expected layout flags', () => {
-      expect(financialBarChartScalesXY.x.display).toBe(true)
-      expect(financialBarChartScalesXY.x.beginAtZero).toBe(true)
-      expect(financialBarChartScalesXY.y.display).toBe(true)
-      expect(financialBarChartScalesXY.y.grid?.display).toBe(true)
-    })
-  })
-
   describe('usdChartTooltip', () => {
     it('formats values with USD via formatValueUnit', () => {
       const text = usdChartTooltip.valueFormatter?.(sampleValue)

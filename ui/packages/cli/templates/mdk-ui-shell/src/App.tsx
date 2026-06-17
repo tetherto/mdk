@@ -72,6 +72,7 @@ export const App = () => {
   const sidebarItems = useMemo(
     () => [
       { id: ROUTE_PATHS.DASHBOARD, label: 'Dashboard', icon: getNavIcon(ROUTE_PATHS.DASHBOARD) },
+      { id: ROUTE_PATHS.ALERTS, label: 'Alerts', icon: getNavIcon(ROUTE_PATHS.ALERTS) },
       ...ROUTES.map((route) => ({
         id: route.path,
         label: route.label,
@@ -87,7 +88,15 @@ export const App = () => {
         logo={<MdkWordmark size="md" />}
         actions={
           <>
-            <AlarmsBellButton counts={incidentCounts} />
+            <AlarmsBellButton
+              counts={incidentCounts}
+              onClick={() => {
+                void navigate(ROUTE_PATHS.ALERTS)
+              }}
+              onSeverityClick={(severity) => {
+                void navigate(`${ROUTE_PATHS.ALERTS}?severity=${severity}`)
+              }}
+            />
             <UserMenu
               onSignOut={() => {
                 void navigate(ROUTE_PATHS.SIGN_IN, { replace: true })

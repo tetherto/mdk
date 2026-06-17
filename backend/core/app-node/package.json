@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-app-node",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "MDK App Node",
   "keywords": [
     "tether"
@@ -28,6 +28,7 @@
     "@fastify/websocket": "11.2.0",
     "@tetherto/mdk-client": "file:../client",
     "@tetherto/mdk": "file:../mdk",
+    "@tetherto/mdk-plugins": "file:../plugins",
     "@bitfinex/bfx-svc-boot-js": "1.2.0",
     "@bitfinex/bfx-facs-db-sqlite": "git+https://github.com/bitfinexcom/bfx-facs-db-sqlite.git",
     "@bitfinex/bfx-facs-http": "git+https://github.com/bitfinexcom/bfx-facs-http.git",

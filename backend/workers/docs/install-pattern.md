@@ -42,7 +42,7 @@ await manager.registerThing({
 })
 ```
 
-This is what every example under [`backend/core/examples/README.md`](../../core/examples/README.md) does. The per-package `USAGE.md` documents which 
+This is what every example under [`examples/backend/README.md`](../../../examples/backend/README.md) does. The per-package `USAGE.md` documents which 
 manager class names a given worker exports and what `opts` it needs.
 
 ### Standalone via `worker.js`
@@ -94,7 +94,7 @@ The example files are checked in; the copied actives are gitignored, leaving roo
 | `miners/antminer` | [USAGE.md](../miners/antminer/USAGE.md) | [examples/](../miners/antminer/examples/) | [workers-manifest.yaml](workers-manifest.yaml) |
 | `miners/whatsminer` | [USAGE.md](../miners/whatsminer/USAGE.md) | [examples/](../miners/whatsminer/examples/)  | [workers-manifest.yaml](workers-manifest.yaml) |
 | `miners/avalon` | [USAGE.md](../miners/avalon/USAGE.md) | [examples/](../miners/avalon/examples/)| [workers-manifest.yaml](workers-manifest.yaml) |
-| containers, minerpools, power-meter, temperature | _Phase 3+_ | varies under `backend/core/examples/` | _Phase 3+_ |
+| containers, minerpools, power-meter, temperature | _Phase 3+_ | varies under `examples/backend/` | _Phase 3+_ |
 
 The full model coverage for every worker (all families) is generated from the contracts: see [`docs/supported-hardware.md`](supported-hardware.md).
 

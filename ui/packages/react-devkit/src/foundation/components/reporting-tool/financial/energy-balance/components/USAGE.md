@@ -12,22 +12,15 @@ Individual stat cards and charts used inside the Energy Balance section.
 | `AvgPowerConsumptionCard` | Average power consumption in MW for the selected period. |
 | `CurtailmentRateCard` | Curtailment rate percentage for the selected period. |
 | `OpIssuesRateCard` | Operational issues rate percentage for the selected period. |
-| `DowntimeChart` | Bar chart of average downtime percentage over time. |
 | `EnergyCostChart` | Bar chart comparing site revenue vs cost per MWh with USD/BTC toggle. |
 | `EnergyRevenueChart` | Bar chart of site energy revenue per MWh with USD/BTC toggle. |
 | `EnergyBalancePowerChart` | Line chart of power consumption against threshold. |
 
+Downtime in the revenue mosaic uses core `AverageDowntimeChart` (see `mdk-ui docs AverageDowntimeChart`).
+
 ## Stat card props
 
 All stat cards accept a single `value: number` prop.
-
-## DowntimeChart props
-
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `chartData` | `BarChartDataResult` | yes | — | Labels and datasets for the stacked downtime bars. |
-| `height` | `number` | no | `260` | Chart height when `fillHeight` is false. |
-| `fillHeight` | `boolean` | no | `false` | Stretch the panel and chart to fill a mosaic cell (uses height `320` and `mdk-energy-balance__panel--fill`). Used on the revenue tab left column below metrics. |
 
 ## EnergyBalancePowerChart props
 
@@ -54,5 +47,6 @@ import {
 
 ## Notes
 
-- Set `fillHeight` when placing `DowntimeChart` or `EnergyBalancePowerChart` inside the energy balance revenue mosaic (`EnergyBalanceRevenueCharts`). Parent layout should use `mdk-energy-balance__revenue-mosaic` (or equivalent flex column with `min-height: 0`) so `--fill` panels can grow.
+- The revenue tab left column wraps `AverageDowntimeChart` in `mdk-energy-balance__panel--fill` inside `EnergyBalanceRevenueCharts`. Parent layout should use `mdk-energy-balance__revenue-mosaic` (or equivalent flex column with `min-height: 0`) so `--fill` panels can grow.
+- Set `fillHeight` on `EnergyBalancePowerChart` in the same mosaic when it should stretch with the layout.
 - Other charts in this folder (`EnergyCostChart`, `EnergyRevenueChart`) do not expose `fillHeight`; they use a fixed default height.

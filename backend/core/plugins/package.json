@@ -1,0 +1,13 @@
+{
+  "name": "@tetherto/mdk-plugins",
+  "version": "0.2.0",
+  "description": "MDK App Node Plugins",
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git"
+  }
+}

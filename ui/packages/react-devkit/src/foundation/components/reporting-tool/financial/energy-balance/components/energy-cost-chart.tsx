@@ -1,8 +1,7 @@
-import { BarChart, ChartContainer, CURRENCY, CurrencyToggler, formatValueUnit, UNITS } from '@core'
+import { BarChart, ChartContainer, CURRENCY, CurrencyToggler, formatValueUnit, standardBarChartScalesXY, UNITS } from '@core'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
-import { financialBarChartScalesXY } from '../../../utils/financial-bar-chart.constants'
 import { energyCostChartTooltip } from '../energy-balance-chart.constants'
 
 import type { BarChartDataResult } from '../../../utils/to-bar-chart-data'
@@ -72,7 +71,7 @@ export const EnergyCostChart = ({
           legendAlign="start"
           tooltip={tooltip}
           showDataLabels
-          options={{ scales: financialBarChartScalesXY }}
+          options={{ scales: standardBarChartScalesXY }}
         />
       </ChartContainer>
     </section>

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-site-monitor-example",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "private": true,
   "description": "MDK end-to-end example — mock worker, ORK, app-node, and site hashrate UI",
   "license": "Apache-2.0",

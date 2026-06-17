@@ -1,4 +1,4 @@
-import { CHART_COLORS, CURRENCY, formatNumber } from '@core'
+import { type AverageDowntimeChartData, CHART_COLORS, CURRENCY, formatNumber } from '@core'
 import _isNil from 'lodash/isNil'
 import _map from 'lodash/map'
 import _meanBy from 'lodash/meanBy'
@@ -75,7 +75,7 @@ export type EnergyBalanceData = {
   revenueMetrics: EnergyRevenueMetrics | null
   costMetrics: EnergyCostMetrics | null
   energyRevenueChartInput: ThresholdBarChartInput
-  downtimeChartInput: ThresholdBarChartInput
+  averageDowntimeData: AverageDowntimeChartData
   powerChartInput: ThresholdLineChartInput
   powerChartCostInput: ThresholdLineChartInput
   energyCostChartInput: EnergyCostChartInput
@@ -236,22 +236,10 @@ export const buildEnergyBalanceViewModel = ({
     ],
   }
 
-  const downtimeChartInput: ThresholdBarChartInput = {
+  const averageDowntimeData: AverageDowntimeChartData = {
     labels,
-    series: [
-      {
-        label: 'Curtailment',
-        values: _map(rows, 'curtailmentRate'),
-        color: CHART_COLORS.purple,
-        stack: 'stack1',
-      },
-      {
-        label: 'Op. Issues',
-        values: _map(rows, 'operationalIssuesRate'),
-        color: CHART_COLORS.blue,
-        stack: 'stack1',
-      },
-    ],
+    curtailment: _map(rows, 'curtailmentRate'),
+    operationalIssues: _map(rows, 'operationalIssuesRate'),
   }
 
   const powerPoints = _map(rows, (r) => ({ ts: r.ts, value: r.sitePowerMW }))
@@ -292,7 +280,7 @@ export const buildEnergyBalanceViewModel = ({
     revenueMetrics,
     costMetrics,
     energyRevenueChartInput,
-    downtimeChartInput,
+    averageDowntimeData,
     powerChartInput,
     powerChartCostInput,
     energyCostChartInput: buildEnergyCostChartInput(rows, labels, costDisplayMode),

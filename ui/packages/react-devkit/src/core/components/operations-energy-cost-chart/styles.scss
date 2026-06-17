@@ -1,0 +1,22 @@
+@use '../../styles/mixins' as *;
+
+.mdk-operations-energy-cost-chart {
+  &__header {
+    @include flex_column;
+
+    gap: 4px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--mdk-chart-container-title);
+  }
+
+  &__unit {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: rgb(var(--mdk-color-grey-idle));
+  }
+}

@@ -47,10 +47,35 @@ describe('dataTable', () => {
     expect(screen.getByText('No data present')).toBeInTheDocument()
   })
 
-  it('shows loading overlay when loading is true', () => {
+  it('hides column headers when data is empty', () => {
+    const { container } = render(<DataTable data={[]} columns={basicColumns} />)
+
+    expect(container.querySelector('thead')).not.toBeInTheDocument()
+    expect(screen.queryByText('Name')).not.toBeInTheDocument()
+  })
+
+  it('keeps column headers while loading with no data', () => {
+    const { container } = render(<DataTable data={[]} columns={basicColumns} loading />)
+
+    expect(container.querySelector('thead')).toBeInTheDocument()
+  })
+
+  it('shows loading overlay when refreshing with rows on screen', () => {
     const { container } = render(<DataTable data={sampleData} columns={basicColumns} loading />)
 
     expect(container.querySelector('.mdk-table__loader-overlay')).toBeInTheDocument()
+    expect(container.querySelector('.mdk-table__body-row--skeleton')).not.toBeInTheDocument()
+  })
+
+  it('shows skeleton rows instead of overlay on initial load with no data', () => {
+    const { container } = render(<DataTable data={[]} columns={basicColumns} loading />)
+
+    const skeletonRows = container.querySelectorAll('.mdk-table__body-row--skeleton')
+    expect(skeletonRows.length).toBeGreaterThan(0)
+    // One shimmer cell per column keeps the table's final geometry.
+    expect(skeletonRows[0]?.querySelectorAll('td').length).toBe(basicColumns.length)
+    expect(container.querySelector('.mdk-table__loader-overlay')).not.toBeInTheDocument()
+    expect(container.querySelector('.mdk-table__empty-body-wrapper')).not.toBeInTheDocument()
   })
 
   it('applies fullWidth class when fullWidth is true', () => {

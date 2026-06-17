@@ -4,7 +4,7 @@ export const EnergyBalanceRevenueChartsExample = () => (
   <div className="mdk-example-row">
     <EnergyBalanceRevenueCharts
       revenueChartData={{ labels: [], datasets: [] } as never}
-      downtimeChartData={{ labels: [], datasets: [] } as never}
+      averageDowntimeData={{ labels: [], curtailment: [], operationalIssues: [] }}
       powerChartInput={{ datasets: [], threshold: null } as never}
       displayMode="USD"
       barLabelFormatter={(value) => String(value)}

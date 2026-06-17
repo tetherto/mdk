@@ -18,6 +18,8 @@ export { useBeepSound } from './use-beep-sound'
 export type { UseConsumptionChartDataParams } from './use-consumption-chart-data'
 export { useConsumptionChartData } from './use-consumption-chart-data'
 export { useContextualModal } from './use-contextual-modal'
+export type { UseCurrentAlertDevicesOptions } from './use-current-alert-devices'
+export { useCurrentAlertDevices } from './use-current-alert-devices'
 export type {
   DashboardDateRange,
   UseDashboardDateRangeOptions,
@@ -45,6 +47,8 @@ export type { PermissionRequest } from './use-has-perms'
 export { useHasPerms } from './use-has-perms'
 export type { UseHashrateChartDataParams } from './use-hashrate-chart-data'
 export { useHashrateChartData } from './use-hashrate-chart-data'
+export type { UseHistoricalAlertsOptions } from './use-historical-alerts'
+export { useHistoricalAlerts } from './use-historical-alerts'
 export { useIsFeatureEditingEnabled } from './use-is-feature-editing-enabled'
 export { useKeyDown } from './use-key-down'
 export { useLocalStorage } from './use-local-storage'

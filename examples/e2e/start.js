@@ -25,7 +25,7 @@ const C = {
 }
 
 // ── Paths ─────────────────────────────────────────────────────────────────────
-const E2E_DIR = path.resolve(__dirname, '../../backend/core/examples/mdk-e2e')
+const E2E_DIR = path.resolve(__dirname, '../backend/mdk-e2e')
 const SERVER_JS = path.resolve(E2E_DIR, 'server.js')
 const UI_DIR = path.join(__dirname, 'ui')
 

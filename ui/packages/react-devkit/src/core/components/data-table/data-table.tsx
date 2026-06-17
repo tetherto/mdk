@@ -16,7 +16,7 @@ import { Button } from '../button'
 import { Checkbox } from '../checkbox'
 import { Pagination } from '../pagination'
 import { Spinner } from '../spinner'
-import { EmptyTableBody, TableBody } from './data-table-body'
+import { EmptyTableBody, SkeletonTableBody, TableBody } from './data-table-body'
 import { TableHeader } from './data-table-header'
 import { columnIds } from './data-table.constants'
 import type {
@@ -359,18 +359,24 @@ export const DataTable = <I = unknown,>({
               minWidth: tableBackend.getCenterTotalSize(),
             }}
           >
-            <TableHeader table={tableBackend} />
+            {(hasData || loading) && <TableHeader table={tableBackend} />}
             {hasData && (
               <TableBody table={tableBackend} renderExpandedContent={renderExpandedContent} />
             )}
+            {/* Initial load: shimmer rows shaped like real rows, so the table
+              * keeps its final geometry and nothing jumps when data lands. */}
+            {loading && !hasData && (
+              <SkeletonTableBody columnCount={tableBackend.getAllLeafColumns().length} />
+            )}
           </table>
-          {loading && (
-            <div className="mdk-table__loader-overlay">
-              <Spinner />
-            </div>
-          )}
         </div>
-        {!hasData && <EmptyTableBody hideContent={loading} />}
+        {!hasData && !loading && <EmptyTableBody />}
+        {/* Refresh with rows already on screen: translucent mask + spinner. */}
+        {loading && hasData && (
+          <div className="mdk-table__loader-overlay">
+            <Spinner />
+          </div>
+        )}
       </div>
       {showPagination && (
         <div className="mdk-table__pagination-section">

@@ -155,7 +155,6 @@ export const StatsGroupCard = ({
         name: 'Temperature',
         value: temperature !== Number.MIN_SAFE_INTEGER ? temperature : '-',
         unit: UNITS.TEMPERATURE_C,
-        tooltipText: 'Max Miners Temperature',
       },
       {
         name: 'Frequency',

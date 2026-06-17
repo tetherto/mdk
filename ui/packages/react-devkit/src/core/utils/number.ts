@@ -36,6 +36,22 @@ export const percentage = (
 }
 
 /**
+ * Formats `value` as a share of `total` on a 0–100 scale (two decimal places, no “%” suffix).
+ * Returns `"0"` when `total` is zero.
+ *
+ * @example
+ * ```ts
+ * formatPercentShare(500, 1500) // "33.33"
+ * formatPercentShare(0, 0)      // "0"
+ * ```
+ */
+export const formatPercentShare = (value: number, total: number): string => {
+  if (total === 0) return '0'
+
+  return ((value / total) * 100).toFixed(2)
+}
+
+/**
  * Unit label constants for SI-prefix conversions
  * @category utilities
  * @domain generic

@@ -5,11 +5,12 @@ import {
   CurrencyToggler,
   formatNumber,
   type IChartApi,
+  type LegendItem,
   LineChart,
   UNITS,
 } from '@core'
 import type { ReactElement } from 'react'
-import { useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import _map from 'lodash/map'
 import { getHashrateUnit } from '../../../../../utils/device-utils'
@@ -20,6 +21,7 @@ import {
   HASH_BALANCE_LINE_CHART_HEIGHT,
   hashBalanceBarChartScalesXY,
   hashBalancePhDayTooltip,
+  NETWORK_HASHRATE_LINE_LABEL,
 } from './hash-balance.constants'
 import { formatHashBalanceValue, getHashBalancePerPhDayUnit } from './hash-balance-format.utils'
 import type { HashBalanceCurrency, HashBalanceRevenuePanelProps } from './hash-balance.types'
@@ -75,6 +77,34 @@ export const HashBalanceRevenuePanel = ({
   const phDayTooltip = hashBalancePhDayTooltip(currency)
   const formatAxisValue = (v: number) => formatHashBalanceValue(v, currency, { forAxis: true })
 
+  const [networkHashrateLegendHidden, setNetworkHashrateLegendHidden] = useState(false)
+
+  const networkHashrateLegend = useMemo(
+    (): LegendItem[] => [
+      {
+        label: NETWORK_HASHRATE_LINE_LABEL,
+        color: HASH_BALANCE_COLORS.networkHashrateLine,
+        hidden: networkHashrateLegendHidden,
+      },
+    ],
+    [networkHashrateLegendHidden],
+  )
+
+  const networkHashrateChartData = useMemo(
+    () => ({
+      datasets: networkHashrateLineData.datasets.map((dataset) => ({
+        ...dataset,
+        visible: !networkHashrateLegendHidden,
+      })),
+    }),
+    [networkHashrateLineData, networkHashrateLegendHidden],
+  )
+
+  const handleNetworkHashrateLegendToggle = useCallback((index: number) => {
+    if (networkHashrateLegend[index]?.label !== NETWORK_HASHRATE_LINE_LABEL) return
+    setNetworkHashrateLegendHidden((prev) => !prev)
+  }, [networkHashrateLegend])
+
   return (
     <div className="mdk-hash-balance__revenue">
       <section className="mdk-hash-balance__panel mdk-hash-balance__panel--primary">
@@ -118,13 +148,16 @@ export const HashBalanceRevenuePanel = ({
             <h2 className="mdk-hash-balance__chart-title">Network Hashrate</h2>
             <span className="mdk-hash-balance__chart-unit">{UNITS.HASHRATE_EH_S}</span>
             <ChartContainer
+              className="mdk-hash-balance__network-hashrate-chart"
+              legendData={isNetworkHashrateEmpty ? undefined : networkHashrateLegend}
+              onToggleDataset={handleNetworkHashrateLegendToggle}
               loading={isLoading}
               empty={!isLoading && isNetworkHashrateEmpty}
               emptyMessage="No network hashrate data available for the selected period."
             >
               <LineChart
                 chartRef={chartRef}
-                data={networkHashrateLineData}
+                data={networkHashrateChartData}
                 height={HASH_BALANCE_LINE_CHART_HEIGHT}
                 yTicksFormatter={(value) => {
                   const { value: formattedValue, unit } = getHashrateUnit(

@@ -1,0 +1,13 @@
+/**
+ * Alerts table cell styles — when a search chip matched only hidden tokens
+ * (uuid, ip-/mac-/sn-/firmware- tags) the "matched on" hint surfaces as a
+ * tooltip on the device code; the dotted underline marks the affordance.
+ */
+
+@layer mdk {
+  .mdk-alerts-code-cell--matched {
+    cursor: help;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+  }
+}

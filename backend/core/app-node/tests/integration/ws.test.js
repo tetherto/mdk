@@ -5,7 +5,6 @@ const fs = require('fs')
 const WebSocket = require('ws')
 const { createWorker } = require('tether-svc-test-helper').worker
 const { setTimeout: sleep } = require('timers/promises')
-const path = require('path')
 const { ENDPOINTS } = require('../../workers/lib/constants')
 
 const createTimeout = (ms, message) => {
@@ -120,7 +119,7 @@ test('WebSocket endpoint', { timeout: 90000 }, async (main) => {
       h0: { method: 'google', credentials: { client: { id: 'i', secret: 's' } }, users: [{ email: readonlyUser }, { email: siteOperatorUser, write: true }] },
       h1: { method: 'microsoft', credentials: { client: { id: 'i', secret: 's' }, tenant: 'test-tenant' }, users: [] }
     }
-    const authConf = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/facs/auth.config.json.example'), 'utf8'))
+    const authConf = require('../../config/facs/auth.config.json')
     superadminUser = authConf.a0.superAdmin
 
     fs.writeFileSync(`./${baseDir}/config/common.json`, JSON.stringify(commonConf))

@@ -1,10 +1,11 @@
 import type { DataTableColumnDef } from '@core'
-import { Button, FALLBACK } from '@core'
-import { ChevronRightIcon } from '@radix-ui/react-icons'
+import { FALLBACK, SimpleTooltip } from '@core'
 
 import { SEVERITY_COLORS, SEVERITY_LEVELS } from '../../constants/alerts'
 
 import type { AlertTableRecord } from './alerts-types'
+
+import './alerts-table-columns.scss'
 
 const CELL_MIN_WIDTH = 160
 
@@ -19,7 +20,17 @@ export const getAlertsTableColumns = ({
     header: 'Code',
     accessorKey: 'shortCode',
     minSize: 180,
-    cell: (info) => (info.getValue() as string) ?? FALLBACK,
+    cell: (info) => {
+      const code = (info.getValue() as string) ?? FALLBACK
+      const { matchedOn } = info.row.original
+      if (!matchedOn?.length) return code
+
+      return (
+        <SimpleTooltip content={`Matched on ${matchedOn.join(', ')}`}>
+          <span className="mdk-alerts-code-cell--matched">{code}</span>
+        </SimpleTooltip>
+      )
+    },
     sortingFn: (a, b) => (a.original.shortCode ?? '').localeCompare(b.original.shortCode ?? ''),
   },
   {
@@ -85,24 +96,10 @@ export const getAlertsTableColumns = ({
     sortingFn: (a, b) =>
       new Date(a.original.createdAt).getTime() - new Date(b.original.createdAt).getTime(),
   },
-  {
-    id: 'actions',
-    header: 'Actions',
-    cell: (info) => {
-      const actions = info.row.original.actions
-      if (!actions) return null
-
-      const { onAlertClick, id, uuid } = actions
-
-      return (
-        <Button
-          variant="icon"
-          aria-label="Open alert"
-          icon={<ChevronRightIcon />}
-          onClick={() => onAlertClick?.(id || '', uuid)}
-        />
-      )
-    },
-    enableSorting: false,
-  },
+  // NOTE: The "Actions" column (right-arrow → open alert) is intentionally
+  // omitted. In the source app it navigates to the mining explorer, which
+  // does not exist in this shell yet, so the button had no meaningful
+  // destination. The `actions` / `onAlertClick` plumbing is kept on the
+  // records so the column can be reinstated once an explorer/detail view
+  // lands. See AlertActions in alerts-types.ts.
 ]

@@ -131,11 +131,11 @@ Next: [2. Control devices from the CLI][cli-tutorial] — keep a stack running a
 ## Next steps
 
 - For the four supported Antminer models (`AM_S19XP`, `AM_S19XPH`, `AM_S21`, `AM_S21PRO`) and how to swap them, see [`backend/workers/miners/antminer/USAGE.md`][antminer-usage]
-- Run a full site (5 workers, 26 devices) — [`backend/core/examples/mdk-site/site.js`][site-example]
+- Run a full site (5 workers, 26 devices) — [`examples/backend/mdk-site/site.js`][site-example]
 - See ORK and a worker as separate OS processes — [`dht-worker.js`][dht-worker] + [`dht-ork.js`][dht-ork] + [`client.js`][dht-client]
 - Understand the install pattern for any worker — [`backend/workers/docs/install-pattern.md`][worker-install]
 - Use ORK directly without `getOrk()` — [`backend/workers/docs/orchestrator.md`][worker-orchestrator]
-- Read all runnable examples in one place — [`backend/core/examples/README.md`][examples-readme]
+- Read all runnable examples in one place — [`examples/backend/README.md`][examples-readme]
 
 ## Links
 
@@ -160,17 +160,17 @@ Next: [2. Control devices from the CLI][cli-tutorial] — keep a stack running a
 [antminer-usage]: ../../../backend/workers/miners/antminer/USAGE.md
 <!-- docs@tether.io: antminer-usage → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/USAGE.md -->
 
-[site-example]: ../../../backend/core/examples/mdk-site/site.js
-<!-- docs@tether.io: site-example → https://github.com/tetherto/mdk/blob/main/backend/core/examples/mdk-site/site.js -->
+[site-example]: ../../../examples/backend/mdk-site/site.js
+<!-- docs@tether.io: site-example → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-site/site.js -->
 
-[dht-worker]: ../../../backend/core/examples/mdk-e2e/dht-worker.js
-<!-- docs@tether.io: dht-worker → https://github.com/tetherto/mdk/blob/main/backend/core/examples/mdk-e2e/dht-worker.js -->
+[dht-worker]: ../../../examples/backend/mdk-e2e/dht-worker.js
+<!-- docs@tether.io: dht-worker → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/dht-worker.js -->
 
-[dht-ork]: ../../../backend/core/examples/mdk-e2e/dht-ork.js
-<!-- docs@tether.io: dht-ork → https://github.com/tetherto/mdk/blob/main/backend/core/examples/mdk-e2e/dht-ork.js -->
+[dht-ork]: ../../../examples/backend/mdk-e2e/dht-ork.js
+<!-- docs@tether.io: dht-ork → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/dht-ork.js -->
 
-[dht-client]: ../../../backend/core/examples/mdk-e2e/client.js
-<!-- docs@tether.io: dht-client → https://github.com/tetherto/mdk/blob/main/backend/core/examples/mdk-e2e/client.js -->
+[dht-client]: ../../../examples/backend/mdk-e2e/client.js
+<!-- docs@tether.io: dht-client → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/client.js -->
 
 [worker-install]: ../../../backend/workers/docs/install-pattern.md
 <!-- docs@tether.io: worker-install → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->
@@ -178,5 +178,5 @@ Next: [2. Control devices from the CLI][cli-tutorial] — keep a stack running a
 [worker-orchestrator]: ../../../backend/workers/docs/orchestrator.md
 <!-- docs@tether.io: worker-orchestrator → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/orchestrator.md -->
 
-[examples-readme]: ../../../backend/core/examples/README.md
-<!-- docs@tether.io: examples-readme → https://github.com/tetherto/mdk/blob/main/backend/core/examples/README.md -->
+[examples-readme]: ../../../examples/backend/README.md
+<!-- docs@tether.io: examples-readme → https://github.com/tetherto/mdk/blob/main/examples/backend/README.md -->

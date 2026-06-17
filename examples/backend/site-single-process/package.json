@@ -1,0 +1,19 @@
+{
+  "name": "@tetherto/mdk-site-single-process",
+  "version": "0.2.0",
+  "description": "MDK Site (single-process)",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix"
+  }
+}

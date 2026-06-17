@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   convertUnits,
+  formatPercentShare,
   getPercentChange,
   percentage,
   safeNumber,
@@ -21,6 +22,16 @@ describe('percentage', () => {
   it('returns 0 for zero or falsy inputs', () => {
     expect(percentage(0, 100)).toBe(0)
     expect(percentage(50, 0)).toBe(0)
+  })
+})
+
+describe('formatPercentShare', () => {
+  it('formats share of total with two decimals', () => {
+    expect(formatPercentShare(500, 1500)).toBe('33.33')
+  })
+
+  it('returns "0" when total is zero', () => {
+    expect(formatPercentShare(0, 0)).toBe('0')
   })
 })
 

@@ -61,14 +61,13 @@ export const GaugeChartComponent = ({
 
       <div className="mdk-gauge-chart-component__chart" style={chartStyle}>
         <GaugeChart percent={percentage} colors={colors} hideText={hideText} height={height} />
+        {hideText && (
+          <div className="mdk-gauge-chart-component__value">
+            <span className="mdk-gauge-chart-component__value-number">{value}</span>
+            <span className="mdk-gauge-chart-component__value-unit">{unit}</span>
+          </div>
+        )}
       </div>
-
-      {hideText && (
-        <div className="mdk-gauge-chart-component__value">
-          <span className="mdk-gauge-chart-component__value-number">{value}</span>
-          <span className="mdk-gauge-chart-component__value-unit">{unit}</span>
-        </div>
-      )}
     </div>
   )
 }

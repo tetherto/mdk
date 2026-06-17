@@ -1,4 +1,4 @@
-import { BarChart, ChartContainer, CURRENCY } from '@core'
+import { BarChart, ChartContainer, CURRENCY, standardBarChartScalesXY } from '@core'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 
@@ -7,7 +7,6 @@ import { toBarChartData } from '../../utils/to-bar-chart-data'
 
 import type { BtcPriceTimeSeriesEntry, CostTimeSeriesEntry } from './build-cost-summary-view-model'
 import {
-  financialBarChartScalesXY,
   usdChartTooltip,
 } from '../../utils/financial-bar-chart.constants'
 import { COST_BAR_CHART_HEIGHT, usdFormatter } from './cost-chart-shared'
@@ -55,7 +54,7 @@ export const ProductionCostChart = ({
           tooltip={usdChartTooltip}
           formatYLabel={usdFormatter}
           height={COST_BAR_CHART_HEIGHT}
-          options={{ scales: financialBarChartScalesXY }}
+          options={{ scales: standardBarChartScalesXY }}
         />
       </ChartContainer>
     </div>

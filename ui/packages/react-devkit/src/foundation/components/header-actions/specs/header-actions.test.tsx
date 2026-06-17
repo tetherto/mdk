@@ -24,16 +24,48 @@ describe('AlarmsBellButton', () => {
     expect(container.querySelector('.mdk-alarms-bell-button__badge-row--medium')).toBeNull()
   })
 
-  it('invokes onClick when the button is clicked', () => {
+  it('invokes onClick when the bell is clicked', () => {
     const onClick = vi.fn()
     render(<AlarmsBellButton counts={{ critical: 1 }} onClick={onClick} />)
-    fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByRole('button', { name: 'Active alarms' }))
     expect(onClick).toHaveBeenCalledTimes(1)
   })
 
   it('applies a custom aria-label', () => {
     render(<AlarmsBellButton label="Open alerts" />)
     expect(screen.getByRole('button', { name: 'Open alerts' })).toBeInTheDocument()
+  })
+
+  it('renders counts as plain text (single button) when onSeverityClick is omitted', () => {
+    render(<AlarmsBellButton counts={{ critical: 2, high: 5, medium: 11 }} />)
+    // Only the bell itself is a button.
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+  })
+
+  it('makes each severity count its own button when onSeverityClick is provided', () => {
+    const onSeverityClick = vi.fn()
+    render(
+      <AlarmsBellButton counts={{ critical: 2, high: 5, medium: 11 }} onSeverityClick={onSeverityClick} />,
+    )
+    // Bell + three severity buttons.
+    expect(screen.getAllByRole('button')).toHaveLength(4)
+    fireEvent.click(screen.getByRole('button', { name: 'critical alarms' }))
+    expect(onSeverityClick).toHaveBeenCalledWith('critical', expect.anything())
+  })
+
+  it('does not fire the bell onClick when a severity is clicked', () => {
+    const onClick = vi.fn()
+    const onSeverityClick = vi.fn()
+    render(
+      <AlarmsBellButton
+        counts={{ high: 3 }}
+        onClick={onClick}
+        onSeverityClick={onSeverityClick}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'high alarms' }))
+    expect(onSeverityClick).toHaveBeenCalledTimes(1)
+    expect(onClick).not.toHaveBeenCalled()
   })
 })
 

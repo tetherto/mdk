@@ -1,4 +1,4 @@
-import { type ChartTooltipConfig, COLOR } from '@core'
+import { type ChartTooltipConfig, COLOR, UNITS } from '@core'
 
 import { formatDataLabel } from '../lib/chart-builders'
 
@@ -36,6 +36,7 @@ export const miningReportDoughnutChartTooltip = (unit: string): ChartTooltipConf
       : 0
     const numericValue = Number(value)
     const pct = total > 0 ? ((numericValue / total) * 100).toFixed(2) : '0.00'
-    return `${numericValue.toFixed(2)} ${unit} (${pct}%)`
+
+    return `${numericValue.toFixed(2)} ${unit} (${pct}${UNITS.PERCENT})`
   },
 })

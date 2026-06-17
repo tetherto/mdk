@@ -19,6 +19,7 @@ export const HASH_BALANCE_BAR_CHART_HEIGHT = 320
 export const HASH_BALANCE_LINE_CHART_HEIGHT = 280
 export const HASH_BALANCE_BAR_WIDTH = 45
 export const HASH_BALANCE_NETWORK_HASHRATE_LINE_WIDTH = 1.5
+export const NETWORK_HASHRATE_LINE_LABEL = 'Network Hashrate'
 
 export const hashBalanceBarChartScalesXY = {
   x: {

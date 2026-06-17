@@ -25,10 +25,12 @@
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
     height: 100vh;
+    background-color: var(--mdk-color-surface-elevated);
   }
 
   #root {
     height: 100%;
+    background-color: var(--mdk-color-surface-elevated);
   }
 }
 

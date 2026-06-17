@@ -11,6 +11,7 @@ import {
   cn,
   DetailLegend,
   getChartDataAvailability,
+  getChartLegendItemStyles,
   LineChart,
   withErrorBoundary,
 } from '@core'
@@ -31,6 +32,9 @@ const mapToRangeSelectorOptions = (options: TimelineOption[]): RangeSelectorOpti
     value,
   }))
 
+const legendStrokeColor = (borderColor: string): string =>
+  getChartLegendItemStyles(borderColor, false).stroke
+
 const mapToLegendItems = (
   datasets: LineChartCardDataset[],
   hiddenMap: Record<string, boolean>,
@@ -39,7 +43,7 @@ const mapToLegendItems = (
     .filter((ds) => ds.label)
     .map((ds) => ({
       label: ds.label!,
-      color: ds.borderColor,
+      color: legendStrokeColor(ds.borderColor),
       hidden: !!hiddenMap[ds.label!],
     }))
 
@@ -64,7 +68,7 @@ const mapToLineChartData = (
 ): LineChartData => ({
   datasets: datasets.map((ds) => ({
     label: ds.label,
-    borderColor: ds.borderColor,
+    borderColor: legendStrokeColor(ds.borderColor),
     data: ds.data,
     visible: !hiddenMap[ds.label ?? ''],
   })),
@@ -86,6 +90,8 @@ const LineChartCardInner = ({
   chartRef: externalChartRef,
   minHeight = 350,
   className,
+  headerAction,
+  titleExtra,
 }: LineChartCardProps) => {
   const [legendHidden, setLegendHidden] = useState<Record<string, boolean>>({})
   const [internalTimeline, setInternalTimeline] = useState(
@@ -122,18 +128,22 @@ const LineChartCardInner = ({
     }))
   }, [])
 
+  const datasets = chartData?.datasets ?? []
+  const labeledDatasets = useMemo(
+    () => datasets.filter((ds) => ds.label),
+    [datasets],
+  )
+
   const handleLegendToggleByIndex = useCallback(
     (index: number) => {
-      const dataset = chartData?.datasets[index]
+      const dataset = labeledDatasets[index]
       if (dataset?.label) {
         handleLegendToggle(dataset.label)
       }
     },
-    [chartData, handleLegendToggle],
+    [labeledDatasets, handleLegendToggle],
   )
 
-  // Build visible data (apply legend hidden state)
-  const datasets = chartData?.datasets ?? []
   const lineChartData = mapToLineChartData(datasets, legendHidden)
 
   const hasData = getChartDataAvailability(
@@ -185,6 +195,8 @@ const LineChartCardInner = ({
     >
       <ChartContainer
         title={title}
+        titleExtra={titleExtra}
+        headerAction={headerAction}
         legendData={legendData}
         highlightedValue={chartData?.highlightedValue}
         rangeSelector={rangeSelector}

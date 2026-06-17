@@ -23,7 +23,7 @@ What you'll have at the end:
 > [!NOTE]
 > Same shape as [rung 1][run-tutorial]: the stack still boots with `getOrk()`, `startWorker()`, and `registerThing()`. Only the worker class (`WM_M56S`) and the mock hardware (Whatsminer instead of Antminer) change. What's new here is a second process — `client.js` — that connects over IPC and drives the running stack.
 
-The example lives in [`backend/core/examples/mdk-e2e/`][examples-e2e] and contains six runnable scripts. This tutorial uses three of them: `run.js` for a smoke test, `server.js` for the long-running stack, and `client.js` for interactive control.
+The example lives in [`examples/backend/mdk-e2e/`][examples-e2e] and contains six runnable scripts. This tutorial uses three of them: `run.js` for a smoke test, `server.js` for the long-running stack, and `client.js` for interactive control.
 
 ## Prerequisites
 
@@ -70,7 +70,7 @@ Before going interactive, prove the wiring works. `run.js` starts a mock Whatsmi
 results, and exits cleanly:
 
 ```bash
-node backend/core/examples/mdk-e2e/run.js
+node examples/backend/mdk-e2e/run.js
 ```
 
 Expected output (the UUID and metric values vary):
@@ -100,7 +100,7 @@ DHT topic, and IPC routing is delivering envelopes both ways. The script tears i
 In your terminal:
 
 ```bash
-node backend/core/examples/mdk-e2e/server.js
+node examples/backend/mdk-e2e/server.js
 ```
 
 `server.js` starts the same mock + worker + ORK as `run.js`, but stays running and prints the IDs you'll need:
@@ -118,14 +118,14 @@ node backend/core/examples/mdk-e2e/server.js
 The `ORK key` is a 64-char hex public key. `Device` is a UUIDv4 generated at registration time. Both vary per run — note the device UUID for the next step.
 
 The two `hp-rpc-cli` lines are paste-ready commands for inspecting ORK over HRPC from another machine. You don't need them for this tutorial — they're
-there if you have [`hp-rpc-cli`](https://www.npmjs.com/package/hyperswarm-rpc-cli) installed and want to go off-script.
+there if you have [`hp-rpc-cli`](https://github.com/holepunchto/hp-rpc-cli) installed and want to go off-script.
 
 #### 3.2 Connect the interactive client
 
 Open a second terminal in the same `mdk` directory:
 
 ```bash
-node backend/core/examples/mdk-e2e/client.js
+node examples/backend/mdk-e2e/client.js
 ```
 
 `client.js` connects to ORK's default IPC socket and gives you an MDK REPL:
@@ -156,7 +156,7 @@ mdk> metrics <deviceId>
 
 After `setpower ... low` the second `metrics` call should reflect the power mode change.
 
-<!-- sync with backend/core/examples/mdk-e2e/client.js help block -->
+<!-- sync with examples/backend/mdk-e2e/client.js help block -->
 <details>
 <summary>Full command reference</summary>
 
@@ -208,7 +208,7 @@ Then `Ctrl+C` in Terminal 1.
 In **Terminal 1**, `Ctrl+C` the running stack, then restart with `--app-node`:
 
 ```bash
-node backend/core/examples/mdk-e2e/server.js --app-node
+node examples/backend/mdk-e2e/server.js --app-node
 ```
 
 You'll see an extra line in the startup banner:
@@ -270,9 +270,9 @@ Next: [3. Run the dashboard demo][dashboard-tutorial] — put a browser dashboar
 ## Go deeper
 
 - Walk the simpler single-script Antminer path — [1. Run the stack][run-tutorial]
-- Run a full site (5 workers, 26 devices) — [`backend/core/examples/mdk-site/site.js`][site-example]
+- Run a full site (5 workers, 26 devices) — [`examples/backend/mdk-site/site.js`][site-example]
 - Understand the install pattern for any worker — [`backend/workers/docs/install-pattern.md`][worker-install]
-- Read all runnable examples in one place — [`backend/core/examples/README.md`][examples-readme]
+- Read all runnable examples in one place — [`examples/backend/README.md`][examples-readme]
 
 ## Links
 
@@ -294,17 +294,17 @@ Next: [3. Run the dashboard demo][dashboard-tutorial] — put a browser dashboar
 [workers-connect]: ../../concepts/worker-discovery.md
 <!-- docs@tether.io: workers-connect → concepts/worker-discovery -->
 
-[examples-e2e]: ../../../backend/core/examples/README.md#end-to-end-mdk-e2e
-<!-- docs@tether.io: examples-e2e → https://github.com/tetherto/mdk/blob/main/backend/core/examples/README.md#end-to-end-mdk-e2e -->
+[examples-e2e]: ../../../examples/backend/README.md#end-to-end-mdk-e2e
+<!-- docs@tether.io: examples-e2e → https://github.com/tetherto/mdk/blob/main/examples/backend/README.md#end-to-end-mdk-e2e -->
 
 [app-node-readme]: ../../../backend/core/app-node/README.md
 <!-- docs@tether.io: app-node-readme → https://github.com/tetherto/mdk/blob/main/backend/core/app-node/README.md -->
 
-[site-example]: ../../../backend/core/examples/mdk-site/site.js
-<!-- docs@tether.io: site-example → https://github.com/tetherto/mdk/blob/main/backend/core/examples/mdk-site/site.js -->
+[site-example]: ../../../examples/backend/mdk-site/site.js
+<!-- docs@tether.io: site-example → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-site/site.js -->
 
 [worker-install]: ../../../backend/workers/docs/install-pattern.md
 <!-- docs@tether.io: worker-install → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->
 
-[examples-readme]: ../../../backend/core/examples/README.md
-<!-- docs@tether.io: examples-readme → https://github.com/tetherto/mdk/blob/main/backend/core/examples/README.md -->
+[examples-readme]: ../../../examples/backend/README.md
+<!-- docs@tether.io: examples-readme → https://github.com/tetherto/mdk/blob/main/examples/backend/README.md -->

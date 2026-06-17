@@ -1,5 +1,17 @@
 @layer base, mdk, app;
 
+@layer base {
+  /* Load-bearing border-box reset: the devkit components (data tables, cards,
+   * header tiles) are authored assuming padding/borders are included in the
+   * element width, so without this their sizing drifts. Intentionally does
+   * NOT reset margins/padding — that wiped spacing elements rely on. */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
 @layer app {
   html,
   body,

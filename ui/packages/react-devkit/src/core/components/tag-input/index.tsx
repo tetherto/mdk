@@ -549,6 +549,7 @@ const TagInput = forwardRef<TagInputRef | HTMLInputElement, TagInputProps>(
           align="start"
           side="bottom"
           sideOffset={4}
+          avoidCollisions={false}
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
           className="mdk-tag-input__dropdown"

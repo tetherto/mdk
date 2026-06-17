@@ -1,0 +1,9 @@
+node_modules/
+.mdk-data/
+ui/node_modules/
+ui/dist/
+# transient runtime dirs created by app-node facilities (cwd-relative)
+store/
+status/
+logs/
+db/

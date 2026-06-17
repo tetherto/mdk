@@ -1,5 +1,5 @@
 {
   "id": "mdk-ui-shell",
   "label": "MDK UI Shell Dashboard",
-  "description": "Operations Dashboard wired for Google OAuth + the miningos-app-node backend. Live hashrate, consumption, power-mode timeline, active incidents."
+  "description": "Operations shell wired for Google OAuth + the miningos-app-node backend. Includes a live Dashboard (hashrate, consumption, power-mode timeline, active incidents) and an Alerts page (current + historical alerts, severity deep-link from the header bell)."
 }

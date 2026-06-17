@@ -1,4 +1,4 @@
-import { BarChart, ChartContainer, formatValueUnit, UNITS } from '@core'
+import { BarChart, CHART_COLORS, ChartContainer, type ChartTooltipConfig, formatValueUnit, UNITS } from '@core'
 import { useEffect, useMemo, useRef } from 'react'
 import {
   ReportTimeFrameSelector,
@@ -6,7 +6,12 @@ import {
 } from '../../../report-time-frame-selector'
 import type { ToBarChartDataInput } from '../../../utils/to-bar-chart-data'
 import { toBarChartData } from '../../../utils/to-bar-chart-data'
+import { useSingleSeriesBarLegend } from '../../../utils/use-single-series-bar-legend'
 import './efficiency-bar-view.scss'
+
+const efficiencyBarChartTooltip: ChartTooltipConfig = {
+  valueFormatter: (value) => formatValueUnit(value, UNITS.EFFICIENCY_W_PER_TH_S),
+}
 
 export type EfficiencyBarViewProps = {
   title: string
@@ -25,7 +30,22 @@ export const EfficiencyBarView = ({
 }: EfficiencyBarViewProps) => {
   const { presetTimeFrame, dateRange, setPresetTimeFrame, setDateRange, start, end } =
     useReportTimeFrameSelectorState()
-  const chartData = useMemo(() => toBarChartData(chartInput), [chartInput])
+
+  const legendSeriesLabel = chartInput.series?.[0]?.label ?? title
+  const { legendData, handleToggleDataset, isSeriesHidden } = useSingleSeriesBarLegend({
+    seriesLabel: legendSeriesLabel,
+    color: CHART_COLORS.blue,
+  })
+
+  const chartData = useMemo(() => {
+    const base = toBarChartData(chartInput)
+    return {
+      ...base,
+      datasets: base.datasets.map((dataset) => ({ ...dataset, hidden: isSeriesHidden })),
+    }
+  }, [chartInput, isSeriesHidden])
+
+  const isChartEmpty = isEmpty || chartData.isEmpty
   const startMs = start.getTime()
   const endMs = end.getTime()
 
@@ -49,15 +69,24 @@ export const EfficiencyBarView = ({
           setDateRange={setDateRange}
         />
       </div>
-      <ChartContainer loading={isLoading} empty={!isLoading && (isEmpty || chartData.isEmpty)}>
-        <BarChart
-          data={chartData}
-          showDataLabels
-          showLegend={false}
-          formatYLabel={(value) => formatValueUnit(value, UNITS.EFFICIENCY_W_PER_TH_S)}
-          height={320}
-        />
-      </ChartContainer>
+      <section className="mdk-efficiency-bar-view__panel">
+        <ChartContainer
+          className="mdk-efficiency-bar-view__chart"
+          legendData={isChartEmpty ? undefined : legendData}
+          onToggleDataset={handleToggleDataset}
+          loading={isLoading}
+          empty={!isLoading && isChartEmpty}
+        >
+          <BarChart
+            data={chartData}
+            showDataLabels
+            showLegend={false}
+            tooltip={efficiencyBarChartTooltip}
+            formatYLabel={(value) => formatValueUnit(value, UNITS.EFFICIENCY_W_PER_TH_S)}
+            height={320}
+          />
+        </ChartContainer>
+      </section>
     </div>
   )
 }

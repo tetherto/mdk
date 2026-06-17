@@ -4,7 +4,8 @@
 
 import type { Chart, ChartEvent, Plugin } from 'chart.js'
 import { defaultChartColors } from '../constants/charts'
-import { CHART_COLORS } from '../constants/colors'
+import { CHART_COLORS, COLOR } from '../constants/colors'
+import { hexToOpacity } from './chart'
 import { buildChartTooltip } from './chart-tooltip'
 import type { ChartTooltipConfig } from './chart-tooltip'
 
@@ -19,25 +20,173 @@ export const computeStats = (values: number[]): { min: number; max: number; avg:
   return { min, max, avg }
 }
 
+export type MinMaxAvgFormatted = Partial<{
+  min: string
+  max: string
+  avg: string
+}>
+
+/** Turn numeric stats into pre-formatted strings for {@link MinMaxAvg} / ChartContainer. */
+export const formatMinMaxAvg = (
+  stats: { min: number; max: number; avg: number },
+  format: (value: number, key: 'min' | 'max' | 'avg') => string,
+): MinMaxAvgFormatted => ({
+  min: format(stats.min, 'min'),
+  max: format(stats.max, 'max'),
+  avg: format(stats.avg, 'avg'),
+})
+
 /** Get all numeric values from chart datasets */
 export const getDatasetValues = (datasets: Array<{ data: (number | null)[] }>): number[] =>
   datasets.flatMap((ds) => ds.data.filter((v): v is number => typeof v === 'number'))
 
-/** Add opacity to a CSS color string (supports hex, hsl, rgb) */
+const parseRgbChannels = (color: string): [number, number, number] | null => {
+  const comma = color.match(
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*[,/]\s*[\d.]+\s*)?\)$/i,
+  )
+  if (comma) return [Number(comma[1]), Number(comma[2]), Number(comma[3])]
+  const space = color.match(/^rgba?\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/i)
+  if (space) return [Number(space[1]), Number(space[2]), Number(space[3])]
+  return null
+}
+
+type HslChannels = { h: number; s: string; l: string }
+
+const formatHslChannel = (value: string): string => (value.includes('%') ? value : `${value}%`)
+
+const parseHslChannels = (color: string): HslChannels | null => {
+  const comma = color.match(/^hsla?\(\s*([\d.]+)\s*,\s*([\d.]+%?)\s*,\s*([\d.]+%?)/i)
+  if (comma?.[1] && comma[2] && comma[3]) {
+    return {
+      h: Number(comma[1]),
+      s: formatHslChannel(comma[2]),
+      l: formatHslChannel(comma[3]),
+    }
+  }
+  const space = color.match(/^hsla?\(\s*([\d.]+)\s+([\d.]+%?)\s+([\d.]+%?)/i)
+  if (space?.[1] && space[2] && space[3]) {
+    return {
+      h: Number(space[1]),
+      s: formatHslChannel(space[2]),
+      l: formatHslChannel(space[3]),
+    }
+  }
+  return null
+}
+
+/** Common CSS named colors (fallback when DOM color resolution is unavailable). */
+const NAMED_COLOR_HEX: Readonly<Record<string, string>> = {
+  black: '#000000',
+  blue: '#0000ff',
+  green: '#008000',
+  lightblue: '#add8e6',
+  lightgreen: '#90ee90',
+  orange: '#ffa500',
+  red: '#ff0000',
+  white: '#ffffff',
+  yellow: '#ffff00',
+}
+
+/** Resolve hex / rgb / hsl / named CSS colors to a form {@link colorWithAlpha} understands. */
+export const resolveCssColor = (color: string): string => {
+  const trimmed = color.trim()
+  if (!trimmed) return trimmed
+  if (
+    trimmed.startsWith('#') ||
+    trimmed.startsWith('rgb') ||
+    trimmed.startsWith('hsl')
+  ) {
+    return trimmed
+  }
+  const fromMap = NAMED_COLOR_HEX[trimmed.toLowerCase()]
+  if (fromMap) return fromMap
+  if (typeof document !== 'undefined') {
+    try {
+      const el = document.createElement('div')
+      el.style.color = trimmed
+      if (el.style.color) return el.style.color
+    } catch {
+      // ignore
+    }
+  }
+  return trimmed
+}
+
+/** Add opacity to a CSS color string (supports hex, hsl, rgb, named colors) */
 export const colorWithAlpha = (color: string, alpha: number): string => {
   if (typeof color !== 'string') return color
-  if (color.startsWith('#')) {
+  const normalized = resolveCssColor(color)
+  if (normalized.startsWith('#')) {
     const hex = Math.round(alpha * 255)
       .toString(16)
       .padStart(2, '0')
-    const base = color.length === 9 ? color.slice(0, 7) : color
+    const base = normalized.length === 9 ? normalized.slice(0, 7) : normalized
     return `${base}${hex}`
   }
-  if (color.startsWith('hsl') || color.startsWith('rgb')) {
-    return color.replace(/\)$/, ` / ${alpha})`)
-  }
-  return color
+  const rgb = parseRgbChannels(normalized)
+  if (rgb) return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`
+  const hsl = parseHslChannels(normalized)
+  if (hsl) return `hsla(${hsl.h}, ${hsl.s}, ${hsl.l}, ${alpha})`
+  return normalized
 }
+
+/** Legend swatch fill alpha (Moria `hexToOpacity` default) */
+const CHART_LEGEND_FILL_ALPHA = 0.2
+const CHART_LEGEND_DISABLED_OPACITY = 0.3
+const CHART_LEGEND_LABEL_COLOR = 'rgba(255, 255, 255, 0.7)'
+
+/** Fill / dimmed stroke using Moria-style `rgba` for hex, {@link colorWithAlpha} for rgb/hsl */
+const legendColorWithAlpha = (color: string, alpha: number): string => {
+  const normalized = resolveCssColor(color)
+  if (normalized.startsWith('#')) {
+    return hexToOpacity(normalized, alpha)
+  }
+  return colorWithAlpha(normalized, alpha)
+}
+
+/** Swatch + label colors aligned with `buildLegendLabels` (BarChart legend) */
+export const getChartLegendItemStyles = (
+  color: string,
+  hidden = false,
+): { fill: string; stroke: string; labelColor: string } => {
+  const strokeStyle = resolveCssColor(color)
+  const fill = hidden
+    ? legendColorWithAlpha(strokeStyle, CHART_LEGEND_FILL_ALPHA * CHART_LEGEND_DISABLED_OPACITY)
+    : legendColorWithAlpha(strokeStyle, CHART_LEGEND_FILL_ALPHA)
+  const stroke = hidden
+    ? legendColorWithAlpha(strokeStyle, CHART_LEGEND_DISABLED_OPACITY)
+    : strokeStyle
+  const labelColor = hidden
+    ? `rgba(255, 255, 255, ${0.7 * CHART_LEGEND_DISABLED_OPACITY})`
+    : CHART_LEGEND_LABEL_COLOR
+  return { fill, stroke, labelColor }
+}
+
+/**
+ * Line color for lightweight-charts series — uses the same resolved stroke as
+ * {@link getChartLegendItemStyles} (including hsl → rgb when the runtime can compute it).
+ */
+export const resolveLineSeriesColor = (color: string | undefined): string | undefined => {
+  if (!color?.trim()) return undefined
+  const strokeStyle = resolveCssColor(color.trim())
+  if (strokeStyle.startsWith('hsl') && typeof document !== 'undefined') {
+    try {
+      const el = document.createElement('div')
+      el.style.color = strokeStyle
+      document.documentElement.appendChild(el)
+      const rgb = getComputedStyle(el).color
+      el.remove()
+      if (rgb?.startsWith('rgb')) return rgb
+    } catch {
+      // ignore
+    }
+  }
+  return strokeStyle
+}
+
+/** Visible legend stroke — use for line series color so swatch and line always match. */
+export const resolveChartLegendStrokeColor = (color: string): string =>
+  getChartLegendItemStyles(color, false).stroke
 
 type LegendLabelItem = {
   text: string
@@ -59,19 +208,12 @@ const buildLegendLabels = (chart: Chart): LegendLabelItem[] => {
   return datasets.map((dataset, i) => {
     const meta = chart.getDatasetMeta(i)
     const isHidden = meta.hidden === true
-    const disabledOpacity = 0.3
 
     const strokeStyleRaw = dataset.borderColor ?? dataset.backgroundColor ?? '#888'
     const strokeStyle = typeof strokeStyleRaw === 'string' ? strokeStyleRaw : '#888'
 
-    const fillStyle = isHidden
-      ? colorWithAlpha(strokeStyle, 0.25 * disabledOpacity)
-      : colorWithAlpha(strokeStyle, 0.25)
-
-    const dimmedStrokeStyle = isHidden ? colorWithAlpha(strokeStyle, disabledOpacity) : strokeStyle
-    const fontColor = isHidden
-      ? `rgba(255, 255, 255, ${0.7 * disabledOpacity})`
-      : 'rgba(255, 255, 255, 0.7)'
+    const { fill: fillStyle, stroke: dimmedStrokeStyle, labelColor: fontColor } =
+      getChartLegendItemStyles(strokeStyle, isHidden)
 
     const ds = dataset as unknown as Record<string, unknown>
     return {
@@ -424,6 +566,23 @@ export const buildBarChartOptions = ({
     scales,
   }
 }
+
+export const standardBarChartScalesXY = {
+  x: {
+    display: true,
+    beginAtZero: true,
+    border: { display: false },
+    grid: { display: false, color: COLOR.GRAY },
+    ticks: { color: COLOR.WHITE_ALPHA_07, maxRotation: 0 },
+  },
+  y: {
+    display: true,
+    beginAtZero: true,
+    border: { display: false },
+    grid: { display: true, color: CHART_COLORS.gridLine },
+    ticks: { color: COLOR.WHITE_ALPHA_07, padding: 8 },
+  },
+} as const
 
 export const defaultChartOptions = {
   responsive: true,

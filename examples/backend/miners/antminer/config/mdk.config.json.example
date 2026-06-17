@@ -1,0 +1,76 @@
+{
+  "mode": "single-process",
+  "noAuth": true,
+  "env": "development",
+  "services": [
+    {
+      "name": "ork",
+      "kind": "ork"
+    },
+    {
+      "name": "app-node",
+      "kind": "app-node",
+      "port": 3000
+    },
+    {
+      "name": "am-s19xp",
+      "kind": "worker",
+      "worker": "miner-antminer",
+      "type": "S19XP",
+      "rack": "rack-s19xp",
+      "mock": {
+        "port": 14021,
+        "container": "site-1",
+        "serialNum": "AM-S19XP-001",
+        "pos": "A01",
+        "username": "root",
+        "password": "root"
+      }
+    },
+    {
+      "name": "am-s19xph",
+      "kind": "worker",
+      "worker": "miner-antminer",
+      "type": "S19XPH",
+      "rack": "rack-s19xph",
+      "mock": {
+        "port": 14022,
+        "container": "site-1",
+        "serialNum": "AM-S19XPH-001",
+        "pos": "A02",
+        "username": "root",
+        "password": "root"
+      }
+    },
+    {
+      "name": "am-s21",
+      "kind": "worker",
+      "worker": "miner-antminer",
+      "type": "S21",
+      "rack": "rack-s21",
+      "mock": {
+        "port": 14023,
+        "container": "site-1",
+        "serialNum": "AM-S21-001",
+        "pos": "A03",
+        "username": "root",
+        "password": "root"
+      }
+    },
+    {
+      "name": "am-s21pro",
+      "kind": "worker",
+      "worker": "miner-antminer",
+      "type": "S21PRO",
+      "rack": "rack-s21pro",
+      "mock": {
+        "port": 14024,
+        "container": "site-1",
+        "serialNum": "AM-S21PRO-001",
+        "pos": "A04",
+        "username": "root",
+        "password": "root"
+      }
+    }
+  ]
+}

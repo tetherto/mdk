@@ -9,15 +9,21 @@
     gap: 0;
     /* Cells carry tabular data and don't truncate gracefully — when the
      * viewport is narrower than the natural width of the strip, scroll
-     * horizontally instead of letting cells overlap their dividers. */
-    overflow-x: auto;
-    scrollbar-width: thin;
+     * horizontally instead of letting cells overlap their dividers.
+     * Scrollbar is hidden to match the original Mining OS header
+     * (StatsWrapper: overflow auto hidden + scrollbar-width none). */
+    overflow: auto hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     &__divider {
       flex: 0 0 auto;
       width: 1.5rem;
       height: 4.375rem;
-      color: var(--mdk-color-primary, #f7931a);
+      color: var(--mdk-color-primary);
       pointer-events: none;
     }
   }
@@ -70,19 +76,19 @@
     &__value {
       font-weight: 800;
       font-size: 0.875rem;
-      color: var(--mdk-color-text-primary, #f5f5f0);
+      color: var(--mdk-color-text-primary);
       font-variant-numeric: tabular-nums;
     }
 
     &__accent {
       font-weight: 800;
       font-size: 0.875rem;
-      color: var(--mdk-color-primary, #f7931a);
+      color: var(--mdk-color-primary);
       font-variant-numeric: tabular-nums;
     }
 
     &__danger {
-      color: var(--mdk-color-danger, #ef4444);
+      color: var(--mdk-color-danger);
       font-variant-numeric: tabular-nums;
     }
 
@@ -92,7 +98,7 @@
     }
 
     &__warning {
-      color: var(--mdk-color-warning, #ffc107);
+      color: var(--mdk-color-warning);
       font-variant-numeric: tabular-nums;
     }
 
@@ -102,7 +108,7 @@
     }
 
     &--accent &__value {
-      color: var(--mdk-color-primary, #f7931a);
+      color: var(--mdk-color-primary);
     }
   }
 }

@@ -251,7 +251,7 @@
       min-height: 0;
     }
 
-    .mdk-chart-container--grid .mdk-chart-container__chart-area,
+    .mdk-chart-container__chart-area,
     .mdk-chart-container__body,
     .mdk-chart-container__chart-slot {
       flex: 1;
@@ -296,22 +296,13 @@
   }
 
   /* Stack ChartContainer legend on top of the line chart (same cell as downtime bar legend placement). */
-  .mdk-chart-container--grid {
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-      'title title'
-      'chart chart';
+  .mdk-chart-container__panel-header {
+    position: relative;
+    z-index: 1;
+    margin-bottom: -2.25rem;
+  }
 
-    .mdk-chart-container__legend-area {
-      grid-area: chart;
-      align-self: start;
-      z-index: 1;
-    }
-
-    .mdk-chart-container__chart-area {
-      grid-area: chart;
-      align-self: stretch;
-      padding-top: 2.25rem;
-    }
+  .mdk-chart-container__chart-area {
+    padding-top: 2.25rem;
   }
 }

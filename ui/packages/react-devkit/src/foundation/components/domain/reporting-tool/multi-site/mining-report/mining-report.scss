@@ -10,7 +10,6 @@
   @include flex_column;
 
   gap: 24px;
-  background-color: var(--mdk-color-dark-black);
 }
 
 .mdk-mining-report__page-wrapper {
@@ -21,7 +20,6 @@
   box-sizing: border-box;
   overflow: hidden;
   color: var(--mdk-color-white);
-  background: var(--mdk-color-dark-black);
 }
 
 .mdk-mining-report__page-content {
@@ -130,7 +128,6 @@
 .mdk-mining-report__chart-panel {
   min-width: 0;
   padding: 20px;
-  background: var(--mdk-chart-container-bg);
   box-sizing: border-box;
 }
 
@@ -151,11 +148,10 @@
 }
 
 .mdk-mining-report__header {
+  font-size: 14px;
   position: relative;
   padding: 16px 24px;
   color: var(--mdk-color-white);
-  background-color: rgba(var(--mdk-color-black), 0.5);
-  font-size: 14px;
 }
 
 .mdk-mining-report__header-content {
@@ -255,14 +251,20 @@
 }
 
 .mdk-mining-report__cover {
+  --mdk-report-cover-frame: clamp(16px, 2.5vw, 24px);
+  --mdk-report-cover-inner-x: clamp(32px, 6vw, 64px);
+  --mdk-report-cover-inner-y: clamp(32px, 4vw, 48px);
+  --mdk-report-cover-logo-to-title: clamp(48px, 10vw, 96px);
+  --mdk-report-cover-title-subtitle-gap: clamp(8px, 1.5vw, 12px);
+  --mdk-report-cover-frame-right: calc(var(--mdk-report-cover-frame) + 16px);
+
   @include flex_column;
 
   position: relative;
   overflow: hidden;
-  min-height: 700px;
+  min-height: clamp(520px, 85vh, 700px);
   max-width: 100%;
-  padding: 3rem;
-  border-radius: 0 12px 12px;
+  border-radius: 12px;
   background-color: var(--mdk-color-dark-black);
   font-family: var(--font-mono);
   z-index: 1;
@@ -286,16 +288,16 @@
   @include flex_column;
 
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: var(--mdk-report-cover-frame) var(--mdk-report-cover-frame-right)
+    var(--mdk-report-cover-frame) var(--mdk-report-cover-frame);
   z-index: 1;
-  width: 97%;
-  height: 86%;
-  border: 1px solid color-mix(in srgb, var(--mdk-color-primary) 50%, transparent);
+  box-sizing: border-box;
+  padding: var(--mdk-report-cover-inner-y) var(--mdk-report-cover-inner-x);
   border-radius: 8px;
-  background: rgba(var(--mdk-color-black), 0.25);
-  -webkit-backdrop-filter: blur(40px);
   backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(40px);
+  background: rgba(var(--mdk-color-black), 0.25);
+  border: 1px solid color-mix(in srgb, var(--mdk-color-primary) 50%, transparent);
 }
 
 .mdk-mining-report__cover-panel--back {
@@ -309,10 +311,14 @@
 }
 
 .mdk-mining-report__cover-logo {
-  position: absolute;
-  top: 2rem;
-  left: 2rem;
-  z-index: 2;
+  flex-shrink: 0;
+  align-self: flex-start;
+
+  svg {
+    display: block;
+    width: min(143px, 36vw);
+    height: auto;
+  }
 }
 
 .mdk-mining-report__cover-loading {
@@ -324,9 +330,9 @@
 .mdk-mining-report__cover-content {
   @include flex_column;
 
-  gap: 2px;
-  margin-top: 6rem;
-  padding: 2rem 4rem;
+  gap: var(--mdk-report-cover-title-subtitle-gap);
+  margin-top: var(--mdk-report-cover-logo-to-title);
+  padding: 0;
   text-align: left;
 }
 
@@ -339,19 +345,17 @@
 
 .mdk-mining-report__cover-title {
   margin: 0;
-  font-size: 60px;
+  font-size: clamp(2.25rem, 7vw, 3.75rem);
   font-weight: 700;
+  line-height: 1.05;
   color: var(--mdk-color-background-light);
   letter-spacing: -0.025em;
 }
 
 .mdk-mining-report__cover-subtitle {
-  margin: 0.75rem 0 0;
-  font-size: 1.25rem;
+  margin: 0;
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
   font-weight: 300;
+  line-height: 1.35;
   color: var(--mdk-color-dark-grey);
-
-  @media (width >= 640px) {
-    font-size: 1.5rem;
-  }
 }

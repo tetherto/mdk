@@ -88,7 +88,6 @@
   &__panel {
     min-width: 0;
     padding: 20px;
-    background: var(--mdk-chart-container-bg);
 
     &--primary {
       margin-bottom: 20px;
@@ -204,6 +203,20 @@
     .mdk-bar-chart {
       flex: 1;
       min-height: 280px;
+    }
+  }
+
+  &__network-hashrate-chart {
+    .mdk-chart-container__legend-area {
+      display: flex;
+      align-items: start;
+      width: 100%;
+    }
+
+    .mdk-chart-container__legend {
+      display: flex;
+      align-items: start;
+      width: 100%;
     }
   }
 }

@@ -1,29 +1,4 @@
-import {
-  CHART_COLORS,
-  type ChartTooltipConfig,
-  COLOR,
-  CURRENCY,
-  formatValueUnit,
-  UNITS,
-} from '@core'
-
-/** Shared axis styling for financial reporting bar charts (Subsidy/Fee, Hash Balance, Cost, EBITDA, Energy). */
-export const financialBarChartScalesXY = {
-  x: {
-    display: true,
-    beginAtZero: true,
-    border: { display: false },
-    grid: { display: false, color: COLOR.GRAY },
-    ticks: { color: COLOR.WHITE_ALPHA_07, maxRotation: 0 },
-  },
-  y: {
-    display: true,
-    beginAtZero: true,
-    border: { display: false },
-    grid: { display: true, color: CHART_COLORS.gridLine },
-    ticks: { color: COLOR.WHITE_ALPHA_07, padding: 8 },
-  },
-} as const
+import { type ChartTooltipConfig, CURRENCY, formatValueUnit, UNITS } from '@core'
 
 /** Tooltip values as USD only — use for EBITDA, production cost, and other dollar-denominated bar series. */
 export const usdChartTooltip: ChartTooltipConfig = {

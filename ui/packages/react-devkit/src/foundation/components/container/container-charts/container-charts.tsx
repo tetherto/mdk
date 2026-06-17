@@ -157,8 +157,8 @@ export const ContainerCharts = ({
         <div className="mdk-container-charts__layout" data-testid="container-charts-panel">
           {isBitdeer(selectedCombination) ? (
             <div className="mdk-container-charts__chart-block">
-              <div className="mdk-container-charts__chart-title">Liquid Temp H</div>
               <LineChartCard
+                key={`liquid-temp-h-${selectedCombination}`}
                 title="Liquid Temp H"
                 rawData={chartRawData}
                 dataAdapter={(raw) =>
@@ -178,8 +178,8 @@ export const ContainerCharts = ({
           ) : null}
 
           <div className="mdk-container-charts__chart-block">
-            <div className="mdk-container-charts__chart-title">Liquid Temp L</div>
             <LineChartCard
+              key={`liquid-temp-l-${selectedCombination}`}
               title="Liquid Temp L"
               rawData={chartRawData}
               dataAdapter={(raw) =>
@@ -199,8 +199,8 @@ export const ContainerCharts = ({
 
           {!isMicroBT(selectedCombination) && !isAntspaceHydro(selectedCombination) ? (
             <div className="mdk-container-charts__chart-block">
-              <div className="mdk-container-charts__chart-title">Oil Temp</div>
               <LineChartCard
+                key={`oil-temp-${selectedCombination}`}
                 title="Oil Temp"
                 rawData={chartRawData}
                 dataAdapter={(raw) =>
@@ -221,8 +221,8 @@ export const ContainerCharts = ({
 
           {!isAntspaceImmersion(_replace(selectedCombination, '_', '-')) ? (
             <div className="mdk-container-charts__chart-block">
-              <div className="mdk-container-charts__chart-title">Pressure</div>
               <LineChartCard
+                key={`pressure-${selectedCombination}`}
                 title="Pressure"
                 rawData={chartRawData}
                 dataAdapter={(raw) =>

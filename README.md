@@ -1,6 +1,6 @@
 # MDK
 
-[![Status](https://img.shields.io/badge/status-pre--alpha-lightgrey?style=flat-square)](#status)
+[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.2.0)
 [![MDK UI CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/ui.yaml?branch=main&label=UI%20CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/ui.yaml)
 [![MDK Core CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/core.yaml?branch=main&label=Core%20CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/core.yaml)
 [![CodeQL](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql)
@@ -10,8 +10,9 @@
 
 ⚠️ **Work in Progress**
 
-MDK is currently under active development and is **not yet considered stable**. To test the SDK or explore the latest 
-functionality, use the **[`main` branch](https://github.com/tetherto/mdk/tree/main)**.
+MDK is under active development and is **not yet considered stable**. 
+
+Current release: [v0.2.0](https://github.com/tetherto/mdk/releases/tag/v0.2.0). 
 
 ## Table of Contents
 
@@ -87,7 +88,7 @@ Each worker has:
 via [`startWorker()`](backend/core/mdk/index.js).
 - **A [`mdk-contract.json`](backend/workers/miners/antminer/mdk-contract.json)**, the engineering source of truth. Declares every telemetry field 
 (name, unit, type) and every command (name, params).
-- **A [mock server](backend/core/examples/mdk-e2e/server.js)**, a local HTTP server with canned responses for hardware-free development.
+- **A [mock server](examples/backend/mdk-e2e/server.js)**, a local HTTP server with canned responses for hardware-free development.
 
 ## Layer 2: Orchestration Kernel
 
@@ -129,11 +130,10 @@ leverage the packages provided for React (Vue, Svelte, and Web Components on the
 
 ## Releases
 
-The latest development code is available on the `main` branch, with pre-release versions tagged as `*-beta` and `*-rc`. Stable releases will be tagged 
-using semantic versioning without suffixes (e.g., `1.0.0`).
+The latest development code is available on the [`main`](https://github.com/tetherto/mdk/tree/main) branch. MDK follows [Semantic Versioning 2.0.0](https://semver.org/): `0.y.z` versions are initial development (public API not stable until `1.0.0`).
 
-- `*-beta`, `*-rc` → Active development tags (latest features and changes)  
-- `x.y.z` → Reserved for stable releases  
+- [`/docs/reference/release-notes/`](./docs/reference/release-notes)
+- Full [`CHANGELOG.md`](./CHANGELOG.md)
 
 ## Get started
 
@@ -166,9 +166,9 @@ Full snippet in [`ui/README.md`](ui/README.md#use-the-toolkit-in-your-app).
 
 ### Run the backend stack locally (no hardware)
 
-The [end-to-end demo](backend/core/examples/README.md#end-to-end-mdk-e2e) starts a mock data source + worker + ORK in one process. Browse
-[`backend/core/examples/`](backend/core/examples/README.md) for the full catalogue, including the [full-site demo](examples/core/site/README.md),
-the [single-process site demo](examples/core/site-single-process/README.md), and the [site-monitor UI example](examples/e2e/README.md).
+The [end-to-end demo](examples/backend/README.md#end-to-end-mdk-e2e) starts a mock data source + worker + ORK in one process. Browse
+[`examples/backend/`](examples/backend/README.md) for the full catalogue, including the [full-site demo](examples/backend/site/README.md),
+the [single-process site demo](examples/backend/site-single-process/README.md), and the [site-monitor UI example](examples/e2e/README.md).
 
 ### Integrate a new device, pool, or data feed
 
@@ -181,7 +181,7 @@ If you're an LLM being pointed at this repo, read these three first:
 
 - [`ui/AGENTS.md`](ui/AGENTS.md) — contract overview and a quick recipe
 - [`ui/docs/AGENT_FIRST.md`](ui/docs/AGENT_FIRST.md) — manifests, blueprints, registry
-- [`backend/core/examples/README.md`](backend/core/examples/README.md) — runnable shapes of the backend
+- [`examples/backend/README.md`](examples/backend/README.md) — runnable shapes of the backend
 
 ## Build and develop
 

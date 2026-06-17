@@ -46,14 +46,14 @@ Follow the [microservices site example][microservices-example]:
 [miner-how-to]: ../miners/index.md
 <!-- docs@tether.io: miner-how-to → how-to/miners -->
 
-[microservices-example]: ../../../examples/core/site/README.md
-<!-- docs@tether.io: microservices-example → https://github.com/tetherto/mdk/tree/main/examples/core/site -->
+[microservices-example]: ../../../examples/backend/site/README.md
+<!-- docs@tether.io: microservices-example → https://github.com/tetherto/mdk/tree/main/examples/backend/site -->
 
-[microservices-example-prerequisites]: ../../../examples/core/site/README.md#prerequisites
-<!-- docs@tether.io: microservices-example-prerequisites → https://github.com/tetherto/mdk/tree/main/examples/core/site#prerequisites -->
+[microservices-example-prerequisites]: ../../../examples/backend/site/README.md#prerequisites
+<!-- docs@tether.io: microservices-example-prerequisites → https://github.com/tetherto/mdk/tree/main/examples/backend/site#prerequisites -->
 
-[microservices-example-pm2]: ../../../examples/core/site/README.md#pm2
-<!-- docs@tether.io: microservices-example-pm2 → https://github.com/tetherto/mdk/tree/main/examples/core/site#pm2 -->
+[microservices-example-pm2]: ../../../examples/backend/site/README.md#pm2
+<!-- docs@tether.io: microservices-example-pm2 → https://github.com/tetherto/mdk/tree/main/examples/backend/site#pm2 -->
 
-[microservices-example-docker]: ../../../examples/core/site/README.md#docker
-<!-- docs@tether.io: microservices-example-docker → https://github.com/tetherto/mdk/tree/main/examples/core/site#docker -->
+[microservices-example-docker]: ../../../examples/backend/site/README.md#docker
+<!-- docs@tether.io: microservices-example-docker → https://github.com/tetherto/mdk/tree/main/examples/backend/site#docker -->

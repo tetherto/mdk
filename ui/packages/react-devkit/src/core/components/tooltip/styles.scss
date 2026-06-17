@@ -3,7 +3,7 @@
  */
 
 .mdk-tooltip__content {
-  --mdk-tooltip-border-color: var(--mdk-color-primary);
+  --mdk-tooltip-border-color: var(--mdk-color-white-alpha-04);
   --mdk-tooltip-surface-color: var(--mdk-popover-bg);
 
   max-width: 200px;
@@ -60,23 +60,19 @@
   position: relative;
   overflow: visible;
 
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    clip-path: polygon(0 0, 50% 100%, 100% 0);
-    background: var(--mdk-tooltip-border-color);
-  }
-
+  /* 1px borders on two sides of a rotated square — matches the box border weight */
   &::after {
     content: '';
     position: absolute;
-    top: -1px;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: -4px;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    box-sizing: border-box;
+    transform: translateX(-50%) rotate(45deg);
     background: var(--mdk-tooltip-surface-color);
-    clip-path: polygon(0 0, 100% 0, 82.8% 25%, 50% 82.3%, 17.2% 25%);
+    border-right: 1px solid var(--mdk-tooltip-border-color);
+    border-bottom: 1px solid var(--mdk-tooltip-border-color);
   }
 }
 

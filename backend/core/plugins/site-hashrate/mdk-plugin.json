@@ -1,0 +1,62 @@
+{
+  "name": "@tetherto/mdk-plugin-site-hashrate",
+  "version": "0.1.0",
+  "description": "Example plugin: aggregates hashrate history across all workers via the MDK protocol client.",
+  "routes": [
+    {
+      "id": "site.hashrate-history",
+      "handler": "./controllers/hashrate-history.js",
+      "auth": true,
+      "http": {
+        "method": "GET",
+        "path": "/api/site/hashrate-history",
+        "parameters": [
+          { "in": "query", "name": "start", "required": false, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": false, "schema": { "type": "integer", "minimum": 0 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site-level hashrate history aggregated by timestamp.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "log": { "type": "array" },
+                    "summary": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid date range or MDK client unavailable." }
+        }
+      },
+      "description": "Fans out telemetry.pull to every registered worker and returns site-level hashrate history aggregated by timestamp. Defaults to last 7 days when start/end are omitted.",
+      "constraints": [
+        "Requires the MDK client to be connected to an ORK instance.",
+        "Workers must expose a hashrate_history telemetry type.",
+        "start and end are optional Unix millisecond timestamps; defaults to last 7 days."
+      ],
+      "examples": [
+        {
+          "description": "Get last 7 days of site hashrate",
+          "request": "GET /api/site/hashrate-history",
+          "response": {
+            "log": [{ "ts": 1700006400000, "hashrateMhs": 500000 }],
+            "summary": { "avgHashrateMhs": 500000, "totalHashrateMhs": 3500000 }
+          }
+        },
+        {
+          "description": "Get hashrate for a specific range",
+          "request": "GET /api/site/hashrate-history?start=1700000000000&end=1700100000000"
+        }
+      ],
+      "errors": [
+        "ERR_MDK_CLIENT_UNAVAILABLE",
+        "ERR_INVALID_DATE_RANGE"
+      ],
+      "safety": "read-only"
+    }
+  ]
+}

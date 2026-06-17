@@ -1,0 +1,214 @@
+{
+  "name": "@tetherto/mdk-plugin-telemetry",
+  "version": "0.1.0",
+  "description": "Site-level telemetry APIs: hashrate, power consumption, efficiency, miner status, power mode, temperature, and container metrics.",
+  "routes": [
+    {
+      "id": "telemetry.hashrate",
+      "handler": "./controllers/hashrate.js",
+      "auth": true,
+      "cache": ["query.start", "query.end", "query.groupBy"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/hashrate",
+        "parameters": [
+          { "in": "query", "name": "start", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "groupBy", "required": false, "schema": { "type": "string", "enum": ["miner", "container"] } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Daily hashrate history log and summary." },
+          "400": { "description": "Missing or invalid start/end timestamps." }
+        }
+      },
+      "description": "Returns daily hashrate history and summary for the site. Optionally groups by miner type or container.",
+      "constraints": [
+        "start and end are required Unix millisecond timestamps.",
+        "groupBy is optional: miner aggregates by type, container by container id."
+      ],
+      "errors": ["ERR_MISSING_START_END", "ERR_INVALID_DATE_RANGE"]
+    },
+    {
+      "id": "telemetry.consumption",
+      "handler": "./controllers/consumption.js",
+      "auth": true,
+      "cache": ["query.start", "query.end", "query.groupBy"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/consumption",
+        "parameters": [
+          { "in": "query", "name": "start", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "groupBy", "required": false, "schema": { "type": "string", "enum": ["miner", "container"] } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Daily power consumption (W and MWh) history and summary." },
+          "400": { "description": "Missing or invalid start/end timestamps." }
+        }
+      },
+      "description": "Returns daily power consumption (W and MWh) history and summary for the site.",
+      "constraints": ["start and end are required Unix millisecond timestamps."],
+      "errors": ["ERR_MISSING_START_END", "ERR_INVALID_DATE_RANGE"]
+    },
+    {
+      "id": "telemetry.efficiency",
+      "handler": "./controllers/efficiency.js",
+      "auth": true,
+      "cache": ["query.start", "query.end"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/efficiency",
+        "parameters": [
+          { "in": "query", "name": "start", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Daily mining efficiency (W/TH) history and summary." },
+          "400": { "description": "Missing or invalid start/end timestamps." }
+        }
+      },
+      "description": "Returns daily mining efficiency (W/TH) history and summary for the site.",
+      "constraints": ["start and end are required Unix millisecond timestamps."],
+      "errors": ["ERR_MISSING_START_END", "ERR_INVALID_DATE_RANGE"]
+    },
+    {
+      "id": "telemetry.miner-status",
+      "handler": "./controllers/miner-status.js",
+      "auth": true,
+      "cache": ["query.start", "query.end"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/miner-status",
+        "parameters": [
+          { "in": "query", "name": "start", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Daily online/offline/sleep/maintenance miner counts and averages." },
+          "400": { "description": "Missing or invalid start/end timestamps." }
+        }
+      },
+      "description": "Returns daily online/offline/sleep/maintenance miner counts and averages.",
+      "constraints": ["start and end are required Unix millisecond timestamps."],
+      "errors": ["ERR_MISSING_START_END", "ERR_INVALID_DATE_RANGE"]
+    },
+    {
+      "id": "telemetry.power-mode",
+      "handler": "./controllers/power-mode.js",
+      "auth": true,
+      "cache": ["query.start", "query.end", "query.interval"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/power-mode",
+        "parameters": [
+          { "in": "query", "name": "start", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "interval", "required": false, "schema": { "type": "string", "enum": ["1h", "1d", "1w"] } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Miner count by power mode category over time." },
+          "400": { "description": "Missing or invalid start/end timestamps." }
+        }
+      },
+      "description": "Returns miner count by power mode category (low/normal/high/sleep/offline) over time.",
+      "constraints": ["start and end are required Unix millisecond timestamps."],
+      "errors": ["ERR_MISSING_START_END", "ERR_INVALID_DATE_RANGE"]
+    },
+    {
+      "id": "telemetry.power-mode-timeline",
+      "handler": "./controllers/power-mode.js#timeline",
+      "auth": true,
+      "cache": ["query.start", "query.end", "query.container"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/power-mode/timeline",
+        "parameters": [
+          { "in": "query", "name": "start", "required": false, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": false, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "container", "required": false, "schema": { "type": "string" } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Per-miner power mode segments over a time range." },
+          "400": { "description": "Invalid date range." }
+        }
+      },
+      "description": "Returns per-miner power mode segments over a time range, optionally filtered by container.",
+      "errors": ["ERR_INVALID_DATE_RANGE"]
+    },
+    {
+      "id": "telemetry.temperature",
+      "handler": "./controllers/temperature.js",
+      "auth": true,
+      "cache": ["query.start", "query.end", "query.interval", "query.container"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/temperature",
+        "parameters": [
+          { "in": "query", "name": "start", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": true, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "interval", "required": false, "schema": { "type": "string", "enum": ["1h", "1d", "1w"] } },
+          { "in": "query", "name": "container", "required": false, "schema": { "type": "string" } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Max and average temperature per container with site-level aggregates." },
+          "400": { "description": "Missing or invalid start/end timestamps." }
+        }
+      },
+      "description": "Returns max and average temperature per container over time, with site-level aggregates.",
+      "constraints": ["start and end are required Unix millisecond timestamps."],
+      "errors": ["ERR_MISSING_START_END", "ERR_INVALID_DATE_RANGE"]
+    },
+    {
+      "id": "telemetry.container-telemetry",
+      "handler": "./controllers/containers.js",
+      "auth": true,
+      "cache": ["params.id"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/containers/{id}",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Latest telemetry snapshot and miner list for the container." },
+          "400": { "description": "Missing container id." }
+        }
+      },
+      "description": "Returns latest telemetry snapshot and miner list for a specific container.",
+      "constraints": ["id is the container identifier."],
+      "errors": ["ERR_MISSING_CONTAINER_ID"]
+    },
+    {
+      "id": "telemetry.container-history",
+      "handler": "./controllers/containers.js#history",
+      "auth": true,
+      "cache": ["params.id", "query.start", "query.end", "query.limit"],
+      "http": {
+        "method": "GET",
+        "path": "/auth/metrics/containers/{id}/history",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "start", "required": false, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "end", "required": false, "schema": { "type": "integer", "minimum": 0 } },
+          { "in": "query", "name": "limit", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 1000 } },
+          { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": { "description": "Historical telemetry log for the container." },
+          "400": { "description": "Missing container id or invalid date range." }
+        }
+      },
+      "description": "Returns historical telemetry log for a specific container.",
+      "constraints": ["id is the container identifier. Defaults to last 24 hours if start/end omitted."],
+      "errors": ["ERR_MISSING_CONTAINER_ID", "ERR_INVALID_DATE_RANGE"]
+    }
+  ]
+}

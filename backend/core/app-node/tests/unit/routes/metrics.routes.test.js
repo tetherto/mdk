@@ -1,65 +1,62 @@
 'use strict'
 
 const test = require('brittle')
-const { testModuleStructure, testHandlerFunctions, testOnRequestFunctions } = require('../helpers/routeTestHelpers')
-const { createRoutesForTest } = require('../helpers/mockHelpers')
+const path = require('path')
+const { loadPlugin } = require('../../../workers/lib/plugin-loader')
 
-const ROUTES_PATH = '../../../workers/lib/server/routes/metrics.routes.js'
+const PLUGIN_DIR = path.join(__dirname, '../../../../plugins/telemetry')
 
-test('metrics routes - module structure', (t) => {
-  testModuleStructure(t, ROUTES_PATH, 'metrics')
+test('telemetry plugin - loads without error', (t) => {
+  const plugin = loadPlugin(PLUGIN_DIR)
+  t.ok(plugin.manifest.name, 'should have name')
+  t.ok(Array.isArray(plugin.routes), 'should have routes array')
   t.pass()
 })
 
-test('metrics routes - route definitions', (t) => {
-  const routes = createRoutesForTest(ROUTES_PATH)
+test('telemetry plugin - declares all expected routes', (t) => {
+  const plugin = loadPlugin(PLUGIN_DIR)
+  const routePaths = plugin.routes.map(r => r.path)
 
-  const routeUrls = routes.map(route => route.url)
-  t.ok(routeUrls.includes('/auth/metrics/hashrate'), 'should have hashrate route')
-  t.ok(routeUrls.includes('/auth/metrics/consumption'), 'should have consumption route')
-  t.ok(routeUrls.includes('/auth/metrics/efficiency'), 'should have efficiency route')
-  t.ok(routeUrls.includes('/auth/metrics/miner-status'), 'should have miner-status route')
-  t.ok(routeUrls.includes('/auth/metrics/power-mode'), 'should have power-mode route')
-  t.ok(routeUrls.includes('/auth/metrics/power-mode/timeline'), 'should have power-mode/timeline route')
-  t.ok(routeUrls.includes('/auth/metrics/temperature'), 'should have temperature route')
-  t.ok(routeUrls.includes('/auth/metrics/containers/:id'), 'should have container telemetry route')
-  t.ok(routeUrls.includes('/auth/metrics/containers/:id/history'), 'should have container history route')
-
+  t.ok(routePaths.includes('/auth/metrics/hashrate'), 'should have hashrate route')
+  t.ok(routePaths.includes('/auth/metrics/consumption'), 'should have consumption route')
+  t.ok(routePaths.includes('/auth/metrics/efficiency'), 'should have efficiency route')
+  t.ok(routePaths.includes('/auth/metrics/miner-status'), 'should have miner-status route')
+  t.ok(routePaths.includes('/auth/metrics/power-mode'), 'should have power-mode route')
+  t.ok(routePaths.includes('/auth/metrics/power-mode/timeline'), 'should have power-mode/timeline route')
+  t.ok(routePaths.includes('/auth/metrics/temperature'), 'should have temperature route')
+  t.ok(routePaths.includes('/auth/metrics/containers/:id'), 'should have container telemetry route')
+  t.ok(routePaths.includes('/auth/metrics/containers/:id/history'), 'should have container history route')
   t.pass()
 })
 
-test('metrics routes - HTTP methods', (t) => {
-  const routes = createRoutesForTest(ROUTES_PATH)
-
-  routes.forEach(route => {
-    t.is(route.method, 'GET', `route ${route.url} should be GET`)
-  })
-
+test('telemetry plugin - all routes use GET', (t) => {
+  const plugin = loadPlugin(PLUGIN_DIR)
+  for (const route of plugin.routes) {
+    t.is(route.method, 'GET', `route ${route.path} should be GET`)
+  }
   t.pass()
 })
 
-test('metrics routes - schema integration', (t) => {
-  const routes = createRoutesForTest(ROUTES_PATH)
-
-  const routesWithSchemas = routes.filter(route => route.schema)
-  routesWithSchemas.forEach(route => {
-    t.ok(route.schema, `route ${route.url} should have schema`)
-    if (route.schema.querystring) {
-      t.ok(typeof route.schema.querystring === 'object', `route ${route.url} querystring should be object`)
-    }
-  })
-
+test('telemetry plugin - all routes have auth enabled', (t) => {
+  const plugin = loadPlugin(PLUGIN_DIR)
+  for (const route of plugin.routes) {
+    t.ok(route.auth, `route ${route.path} should require auth`)
+  }
   t.pass()
 })
 
-test('metrics routes - handler functions', (t) => {
-  const routes = createRoutesForTest(ROUTES_PATH)
-  testHandlerFunctions(t, routes, 'metrics')
+test('telemetry plugin - all routes have a loaded handler function', (t) => {
+  const plugin = loadPlugin(PLUGIN_DIR)
+  for (const route of plugin.routes) {
+    t.is(typeof route._handler, 'function', `route ${route.id} should have a loaded handler`)
+  }
   t.pass()
 })
 
-test('metrics routes - onRequest functions', (t) => {
-  const routes = createRoutesForTest(ROUTES_PATH)
-  testOnRequestFunctions(t, routes, 'metrics')
+test('telemetry plugin - all routes have cache config', (t) => {
+  const plugin = loadPlugin(PLUGIN_DIR)
+  for (const route of plugin.routes) {
+    t.ok(Array.isArray(route.cache), `route ${route.id} should have cache field list`)
+  }
   t.pass()
 })

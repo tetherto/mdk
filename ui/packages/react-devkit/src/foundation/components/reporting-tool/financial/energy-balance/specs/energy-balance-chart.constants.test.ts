@@ -3,11 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   btcBarLabelFormatter,
-  rateLabelFormatter,
   usdBarLabelFormatterWithDecimals,
 } from '../build-energy-balance-view-model'
 import {
-  downtimeRateChartTooltip,
   energyCostChartTooltip,
   energyPerMwTooltip,
 } from '../energy-balance-chart.constants'
@@ -66,14 +64,6 @@ describe('energy-balance-chart.constants', () => {
       ).valueFormatter?.(sampleValue)
 
       expect(text).toBe(`${customBarLabel(sampleValue)} ${CURRENCY.BTC_LABEL}/${UNITS.ENERGY_MWH}`)
-    })
-  })
-
-  describe('downtimeRateChartTooltip', () => {
-    it('uses the shared rate label formatter', () => {
-      const text = downtimeRateChartTooltip.valueFormatter?.(0.05123)
-
-      expect(text).toBe(rateLabelFormatter(0.05123))
     })
   })
 })

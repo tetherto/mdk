@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { DashboardNavIcon, ExplorerNavIcon } from '@tetherto/mdk-react-devkit'
+import { AlertsNavIcon, DashboardNavIcon, ExplorerNavIcon } from '@tetherto/mdk-react-devkit'
 
 import { ROUTE_PATHS } from './routes'
 
@@ -13,6 +13,7 @@ import { ROUTE_PATHS } from './routes'
  */
 const NAV_ICONS: Record<string, ReactNode> = {
   [ROUTE_PATHS.DASHBOARD]: <DashboardNavIcon />,
+  [ROUTE_PATHS.ALERTS]: <AlertsNavIcon />,
 }
 
 const DEFAULT_NAV_ICON: ReactNode = <ExplorerNavIcon />

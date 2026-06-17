@@ -8,6 +8,7 @@ import { colorWithAlpha } from '../../utils/chart-options'
 import { buildChartTooltip } from '../../utils/chart-tooltip'
 import type { ChartTooltipConfig } from '../../utils/chart-tooltip'
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { formatPercentShare } from '../../utils/number'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -41,11 +42,6 @@ export type DoughnutChartProps = {
   /** Formats slice values in the built-in legend and default tooltip (default: raw number). */
   formatValue?: (value: number) => string
   className?: string
-}
-
-const formatPct = (value: number, total: number): string => {
-  if (total === 0) return '0'
-  return ((value / total) * 100).toFixed(2)
 }
 
 /**
@@ -125,7 +121,7 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
               title: () => '',
               label: (ctx: TooltipItem<'doughnut'>) => {
                 const v = ctx.parsed ?? 0
-                const pct = formatPct(v, total)
+                const pct = formatPercentShare(v, total)
                 const suffix = unit ? ` ${unit}` : ''
                 return [`${ctx.label}`, `${formatDisplayValue(v)}${suffix} (${pct}%)`]
               },
@@ -164,7 +160,7 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
       <div className="mdk-doughnut-chart__legend">
         {data.map((item, i) => {
           const isHidden = !!hiddenItems[i]
-          const pct = formatPct(item.value, total)
+          const pct = formatPercentShare(item.value, total)
           return (
             <button
               key={`${item.label}-${i}`}

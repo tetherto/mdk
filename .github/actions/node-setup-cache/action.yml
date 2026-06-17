@@ -82,5 +82,3 @@ runs:
       with:
         path: ${{ steps.cache-keys.outputs.node-modules-path }}
         key: ${{ steps.cache-keys.outputs.cache-key }}
-        restore-keys: |
-          ${{ steps.cache-keys.outputs.base-key }}-

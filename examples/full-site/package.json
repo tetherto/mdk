@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-full-site-example",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "MDK full-site example — 100 miners + container + powermeter + pool over the RPC gateway",
   "private": true,
   "engines": {

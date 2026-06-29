@@ -1,18 +1,28 @@
 # @tetherto/mdk-ork
 
-The **Orchestration Kernel** (ORK). ORK is the trusted coordination daemon at the center of the MDK stack. It discovers workers via Hyperswarm DHT, maintains a live registry of devices, dispatches commands, collects telemetry on a schedule, and monitors worker health.
+## Overview
 
-ORK does **not** extend any worker base class. It is a standalone `EventEmitter`-based lib — the same pattern as `ThingManager` and `MinerManager` used by device workers.
+The **Orchestration Kernel** (ORK). ORK is the trusted coordination daemon at the center of the [MDK stack](../../../docs/concepts/architecture.md).
+It discovers [workers](../../../docs/concepts/stack/workers.md) via Hyperswarm DHT, maintains a live registry of devices, dispatches commands, collects
+telemetry on a schedule, and monitors worker health.
+
+ORK does **not** extend any worker base class. It is a standalone `EventEmitter`-based lib — the same pattern as
+`ThingManager` and `MinerManager` used by [device workers](../../../docs/concepts/stack/workers.md).
+
+> [!TIP]
+> New to ORK? Read the [ORK concept page](../../../docs/concepts/stack/ork.md) for the developer model: what ORK owns, the pull-only model, transports, 
+> and what it deliberately does not handle.
+> For deployment shapes and the active/passive connection model, see [deployment topologies](../../../docs/concepts/deployment-topologies.md).
+
+## Prerequisites
+
+- Node.js >= 24
 
 ## Install
 
 ```bash
 npm install @tetherto/mdk-ork
 ```
-
-## Prerequisites
-
-- Node.js >= 24
 
 ## Quick Start
 
@@ -96,11 +106,13 @@ Workers progress through this lifecycle automatically as ORK pulls their identit
 
 ### CommandDispatcher
 
-Validates incoming command envelopes, resolves the owning worker from the registry, checks that the command exists in the worker's declared capabilities, then enqueues via the state machine.
+Validates incoming command envelopes, resolves the owning worker from the registry, checks that the command exists in the worker's declared 
+capabilities, then enqueues via the state machine.
 
 ### CommandStateMachine
 
-Tracks every command's full execution lifecycle. Backed by a Write-Ahead Log (WAL) in Hyperbee — every state transition is written to WAL before it takes effect. On restart, `recover()` sweeps non-terminal states and retries or fails them.
+Tracks every command's full execution lifecycle. Backed by a Write-Ahead Log (WAL) in Hyperbee — every state transition is written to WAL before it 
+takes effect. On restart, `recover()` sweeps non-terminal states and retries or fails them.
 
 **State machine:**
 ```
@@ -111,13 +123,16 @@ QUEUED → DISPATCHED → EXECUTING → SUCCESS
 
 ### TelemetryCollector
 
-Stateless proxy. Routes `telemetry.pull` queries to the appropriate worker and passes the response back to the caller. Workers own all aggregation and storage — ORK is a thin router.
+Stateless proxy. Routes `telemetry.pull` queries to the appropriate worker and passes the response back to the caller. Workers own
+all aggregation and storage — ORK is a thin router.
 
-**Supported query types:** `metrics`, `list`, `count`, `logs`, `logs_multi`, `historical_logs`, `settings`, `config`, `thing_config`, `stats`, `ext_data`
+**Supported query types:** `metrics`, `list`, `count`, `logs`, `logs_multi`, `historical_logs`, `settings`, `config`, 
+`thing_config`, `stats`, `ext_data`
 
 ### Scheduler
 
-System metronome. Runs non-overlapping interval jobs for telemetry pulls, health pings, and state pulls. Jobs are idempotent — safe to restart with no state.
+System metronome. Runs non-overlapping interval jobs for telemetry pulls, health pings, and state pulls. Jobs are idempotent 
+— safe to restart with no state.
 
 ### HealthMonitor
 
@@ -232,3 +247,11 @@ ork/
     ├── unit/                 # 50+ unit tests
     └── integration/          # 20+ integration tests (real Hyperbee)
 ```
+
+## Next steps
+
+- [Start ORK and wire it to the App Node](../../../docs/how-to/app-node/run.md)
+- Understand ORK's [pull-only model](../../../docs/concepts/stack/ork.md)
+- Learn how [Workers discover ORK, register devices, and expose capabilities](../../../docs/concepts/stack/workers.md)
+- Choose a [deployment shape](../../../docs/concepts/deployment-topologies.md)
+- See the [full MDK layer model](../../../docs/concepts/architecture.md)

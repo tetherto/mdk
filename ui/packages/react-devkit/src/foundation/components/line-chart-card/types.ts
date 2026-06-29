@@ -1,6 +1,6 @@
 import type { MutableRefObject, ReactNode } from 'react'
 
-import type { ChartStatsFooterItem, IChartApi, LightWeightLineChartProps, MinMaxAvg } from '@core'
+import type { ChartStatsFooterItem, IChartApi, LightWeightLineChartProps, MinMaxAvgValues } from '@core'
 
 export type LineChartCardDataset = {
   /** Label for the dataset (used in legend) */
@@ -33,7 +33,7 @@ export type LineChartCardData = {
   /** Whether to skip value rounding */
   skipRound: boolean
   /** Min/Max/Avg stats for footer */
-  minMaxAvg: MinMaxAvg
+  minMaxAvg: MinMaxAvgValues
   /** Additional footer stats */
   footerStats: ChartStatsFooterItem[]
   /** Stats items per column in footer grid */

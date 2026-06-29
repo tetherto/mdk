@@ -7,7 +7,6 @@ const { setTimeout: sleep } = require('timers/promises')
 const HttpFacility = require('@bitfinex/bfx-facs-http')
 const { ENDPOINTS } = require('../../workers/lib/constants')
 const { MOCK_MINERS: mockMiners } = require('./helpers/mock-data')
-const path = require('path')
 
 test('Api', { timeout: 90000 }, async (main) => {
   const baseDir = 'tests/integration'
@@ -57,7 +56,7 @@ test('Api', { timeout: 90000 }, async (main) => {
       h0: { method: 'google', credentials: { client: { id: 'i', secret: 's' } }, users: [{ email: readonlyUser }, { email: tokenExpiredUser }, { email: siteOperatorUser, write: true }] },
       h1: { method: 'microsoft', credentials: { client: { id: 'i', secret: 's' }, tenant: 'test-tenant' }, users: [] }
     }
-    const authConf = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/facs/auth.config.json.example'), 'utf8'))
+    const authConf = require('../../config/facs/auth.config.json')
     superadminUser = authConf.a0.superAdmin
 
     fs.writeFileSync(`./${baseDir}/config/common.json`, JSON.stringify(commonConf))

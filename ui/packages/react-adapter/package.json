@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-react-adapter",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "private": true,
   "description": "React framework adapter for @tetherto/mdk-ui-core. Binds Zustand vanilla stores and TanStack QueryClient to React-native hooks. No Redux.",
   "sideEffects": false,

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-client",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "MDK protocol client — IPC and HRPC (RPC gateway) transports for ORK",
   "main": "index.js",
   "keywords": ["tether", "mdk", "client"],

@@ -126,6 +126,8 @@ const DESCRIPTIONS = {
     'Single tank-list row used inside `<TanksBox>` to display per-tank temperature and pressure.',
   TanksBox:
     'Card listing all tanks inside an immersion container with per-tank temperature and pressure rows.',
+  HashRateLineChartWithPool:
+    'Hashrate line chart with an overlaid pool-side hashrate series for reconciliation checks.',
   useGetAvailableDevices:
     'TanStack-Query hook returning the available device list filtered by the active site selection.',
   BitdeerOptions:

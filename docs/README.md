@@ -55,6 +55,7 @@ You build applications on MDK, or integrate a new device / pool / data feed.
 | Deployment: single process vs. many (deployment topology) | [`concepts/deployment-topologies.md`](concepts/deployment-topologies.md) |
 | Runnable site examples | [`examples/backend/site/`](../examples/backend/site/README.md), [`examples/backend/site-single-process/`](../examples/backend/site-single-process/README.md), [`examples/e2e/`](../examples/e2e/README.md) |
 | Worker runtime contracts (telemetry, commands, health, errors) | `backend/workers/<family>/<provider>/mdk-contract.json` + `USAGE.md` + `examples/` |
+| Build an App Node plugin | [`how-to/app-node/plugins.md`](how-to/app-node/plugins.md) |
 | Core SDK | [`../backend/core/docs/architecture.md`](../backend/core/docs/architecture.md) |
 | Workers (lifecycle, install pattern) | [`../backend/workers/docs/install-pattern.md`](../backend/workers/docs/install-pattern.md) |
 | UI toolkit | [`../ui/README.md`](../ui/README.md) |
@@ -64,3 +65,4 @@ You build applications on MDK, or integrate a new device / pool / data feed.
 You change documentation, conventions, or the source-of-truth IA in this repo, see [`reference/maintainers/README.md`](reference/maintainers/README.md).
 
 Alternatively, browse the published end-user documentation at [docs.mdk.tether.io](https://docs.mdk.tether.io/).
+

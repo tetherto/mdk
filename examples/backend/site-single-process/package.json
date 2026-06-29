@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-site-single-process",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "MDK Site (single-process)",
   "keywords": [
     "tether"

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-powermeter-abb",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "MDK ABB B23 power meter example (mock-backed)",
   "keywords": [
     "tether",

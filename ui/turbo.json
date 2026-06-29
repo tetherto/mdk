@@ -64,7 +64,7 @@
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^test"]
     },
     "test:watch": {
       "cache": false,
@@ -73,9 +73,6 @@
     "test:coverage": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
-    },
-    "@tetherto/mdk-ui-cli#test": {
-      "dependsOn": ["^build", "build"]
     },
     "@tetherto/mdk-ui-cli#test:coverage": {
       "dependsOn": ["^build", "build"],

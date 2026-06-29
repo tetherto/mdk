@@ -19,7 +19,11 @@ Deployment-specific requirements:
 - The miner API reachable over HTTP, typically port `80`
 - Digest-auth credentials for the miner. Antminer devices commonly default to username `root` and password `root`, but use your site's configured credentials
 
-## Development
+<Steps>
+
+<Step>
+
+### Development
 
 <details>
 <summary>Run against a mock</summary>
@@ -34,13 +38,17 @@ It prints the ORK HRPC key and the registered device ID, then stays running unti
 
 </details>
 
-## Connect a miner
+</Step>
 
-### Pick your model
+<Step>
+
+### Connect a miner
+
+#### 2.1 Pick your model
 
 Use the Antminer worker's [USAGE.md][antminer-usage] to choose the manager class and mock example for your model. This guide uses `AM_S21` and `run-s21.js` as the example; replace them with the values for your miner.
 
-### Register your miner
+#### 2.2 Register your miner
 
 Antminer devices use an HTTP API with digest authentication. Add this code to the Node.js service or script that runs the MDK worker in your deployment. The snippet shows the minimum `registerThing` call for one Antminer device; replace the example IP address and credentials with your miner's values:
 
@@ -68,6 +76,10 @@ cd backend/workers/miners/antminer
 ```
 
 For the full `registerThing` option reference, the mock `createServer` options, and the per-model alert blocks, see the worker's [USAGE.md][antminer-usage] and the shared [install pattern][install-pattern].
+
+</Step>
+
+</Steps>
 
 ## Troubleshooting
 

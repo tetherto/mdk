@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-fonts",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Font assets for MDK",
   "exports": {
@@ -12,9 +12,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build",
+    "build": "node scripts/build.mjs",
     "clean": "rimraf dist node_modules .turbo",
-    "dev": "vite build --watch"
+    "dev": "sass --watch src/jetbrains-mono.scss:dist/jetbrains-mono.css"
   },
   "devDependencies": {}
 }

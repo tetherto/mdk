@@ -13,11 +13,18 @@
     "(^|/)dist/",
     "(^|/)coverage/",
     "^https://github\\.com/tetherto/mdk/blob/main/",
-    "https://github.com/tetherto/mdk/releases/tag/v0.2.0",
     "workers/miners/[^/]+/examples/?$",
     "workers/[^/]+/base/?$",
-    "docs/reference/release-notes/?$"
+    "docs/reference/release-notes/?$",
+    "https://github.com/tetherto/mdk/releases/tag/v0.3.0",
+    "https://github.com/tetherto/mdk/releases/tag/v0.2.0",
+    "examples/full-site/plugins/site/?$",
+    "backend/core/plugins/telemetry/controllers/?$"
   ],
+  "_skip_notes": {
+    "examples/full-site/plugins/site/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
+    "backend/core/plugins/telemetry/controllers/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file"
+  },
   "statusCodes": {
     "403": "warn",
     "429": "warn"

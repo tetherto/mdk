@@ -62,20 +62,20 @@ The same shape repeats for every other device family (Whatsminer, container vend
 [architecture-scaling]: architecture.md#scaling
 <!-- docs@tether.io: architecture-scaling → concepts/architecture#scaling -->
 
-[ork-package]: https://github.com/tetherto/mdk/blob/main/backend/core/ork/index.js
-<!-- docs@tether.io: external link -->
+[ork-package]: ../../backend/core/ork/index.js
+<!-- docs@tether.io: ork-package → https://github.com/tetherto/mdk/blob/main/backend/core/ork/index.js -->
 
-[app-node-package]: https://github.com/tetherto/mdk/blob/main/backend/core/app-node/worker.js
-<!-- docs@tether.io: external link -->
+[app-node-package]: ../../backend/core/app-node/worker.js
+<!-- docs@tether.io: app-node-package → https://github.com/tetherto/mdk/blob/main/backend/core/app-node/worker.js -->
 
-[worker-install]: https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md
-<!-- docs@tether.io: external link -->
+[worker-install]: ../../backend/workers/docs/install-pattern.md
+<!-- docs@tether.io: worker-install → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->
 
-[antminer-worker]: https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/index.js
-<!-- docs@tether.io: external link -->
+[antminer-worker]: ../../backend/workers/miners/antminer/index.js
+<!-- docs@tether.io: antminer-worker → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/index.js -->
 
-[worker-discovery]: worker-discovery.md
-<!-- docs@tether.io: worker-discovery → concepts/worker-discovery -->
+[worker-discovery]: stack/workers.md
+<!-- docs@tether.io: worker-discovery → concepts/stack/workers -->
 
-[antminer-contract]: https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/mdk-contract.json
-<!-- docs@tether.io: external link -->
+[antminer-contract]: ../../backend/workers/miners/antminer/mdk-contract.json
+<!-- docs@tether.io: antminer-contract → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/mdk-contract.json -->

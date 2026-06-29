@@ -23,6 +23,9 @@ ThingManager (EventEmitter)
     └── ActionsService       — Hardware command execution
 ```
 
+> [!TIP]
+> New to Workers? Read the [Workers concept page](../../../docs/concepts/stack/workers.md) for the discovery model, capability contract, and how to add hardware for a new device type.
+
 ## Lifecycle
 
 ```js

@@ -1,9 +1,13 @@
 {
   "name": "@tetherto/mdk-client",
   "version": "0.3.0",
-  "description": "MDK protocol client — IPC and HRPC (RPC gateway) transports for ORK",
+  "description": "MDK protocol client HRPC (RPC gateway) transports for ORK",
   "main": "index.js",
-  "keywords": ["tether", "mdk", "client"],
+  "keywords": [
+    "tether",
+    "mdk",
+    "client"
+  ],
   "author": "Tether",
   "license": "Apache-2.0",
   "engines": {
@@ -23,5 +27,13 @@
   "devDependencies": {
     "brittle": "3.18.0",
     "standard": "17.1.0"
+  },
+  "overrides": {
+    "acorn": ">=8.17.0",
+    "js-yaml": ">=4.3.0",
+    "minimatch": ">=10.2.1",
+    "qs": ">=6.15.3",
+    "semver": ">=7.8.5",
+    "tar": ">=7.5.19"
   }
 }

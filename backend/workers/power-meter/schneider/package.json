@@ -30,6 +30,12 @@
     "yargs": "17.7.2"
   },
   "overrides": {
-    "serialport": "npm:noop@1.0.0"
+    "acorn": ">=8.17.0",
+    "js-yaml": ">=4.3.0",
+    "minimatch": ">=10.2.1",
+    "qs": ">=6.15.3",
+    "semver": ">=7.8.5",
+    "serialport": "npm:noop@1.0.0",
+    "tar": ">=7.5.19"
   }
 }

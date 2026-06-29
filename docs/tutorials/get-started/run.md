@@ -151,8 +151,8 @@ Next: [2. Control devices from the CLI][cli-tutorial] — keep a stack running a
 [architecture-app-node]: ../../concepts/architecture.md#app-node
 <!-- docs@tether.io: architecture-app-node → concepts/architecture#app-node -->
 
-[workers-connect]: ../../concepts/worker-discovery.md
-<!-- docs@tether.io: workers-connect → concepts/worker-discovery -->
+[workers-connect]: ../../concepts/stack/workers.md
+<!-- docs@tether.io: workers-connect → concepts/stack/workers -->
 
 [run-s19xp-example]: ../../../backend/workers/miners/antminer/examples/run-s19xp.js
 <!-- docs@tether.io: run-s19xp-example → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/examples/run-s19xp.js -->

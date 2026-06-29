@@ -1,7 +1,5 @@
 import type { MinMaxAvgValues } from '../min-max-avg/types'
 
-export type { MinMaxAvgValues as MinMaxAvg }
-
 export type ChartStatsFooterItem = {
   label: string
   value: string | number

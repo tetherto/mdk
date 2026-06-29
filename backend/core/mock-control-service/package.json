@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-mock-control-service",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "MDK Mock Control Service",
   "author": "Tether",
   "license": "Apache-2.0",

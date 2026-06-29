@@ -202,7 +202,8 @@ In `backend/core/app-node/config/facs/auth.config.json`, set `superAdmin` to you
 
 **4. Run with auth**
 
-Start App Node and the UI without the `VITE_NO_AUTH` shortcut (run them directly rather than via `start all`), open `http://localhost:3030`, click **Sign in with Google**, and authorise with the super-admin email. The dashboard then shows live data behind the token.
+Start App Node and the UI without the `VITE_NO_AUTH` shortcut (run them directly rather than via `start all`), open `http://localhost:3030`, 
+click **Sign in with Google**, and authorise with the super-admin email. The dashboard then shows live data behind the token.
 
 For the full setup, see the example's [`README.md`][site-monitor-readme].
 
@@ -216,10 +217,10 @@ You've climbed the whole ladder: observed a stack, driven it from a CLI, and bui
 
 ## Go deeper
 
-- The full example, including the OAuth setup and how to add a new data panel — [`examples/e2e/README.md`][site-monitor-readme]
-- The MDK UI toolkit (components, hooks, theming) — [`ui/README.md`][ui-usage]
-- Run a full site (5 workers, 26 devices) — [`examples/backend/mdk-site/site.js`][site-example]
-- Read all runnable examples in one place — [`examples/backend/README.md`][examples-readme]
+- The [full example, including the OAuth setup and how to add a new data panel][site-monitor-readme]
+- Learn more about [MDK UI toolkit (components, hooks, theming)][ui-usage]
+- Run a full site (multiple workers and devices)[site-example]
+- Read [all runnable examples in one place][examples-readme]
 
 ## Links
 
@@ -232,8 +233,8 @@ You've climbed the whole ladder: observed a stack, driven it from a CLI, and bui
 [cli-tutorial]: cli.md
 <!-- docs@tether.io: cli-tutorial → tutorials/backend-stack/cli -->
 
-[workers-connect]: ../../concepts/worker-discovery.md
-<!-- docs@tether.io: workers-connect → concepts/worker-discovery -->
+[workers-connect]: ../../concepts/stack/workers.md
+<!-- docs@tether.io: workers-connect → concepts/stack/workers -->
 
 [site-monitor-readme]: ../../../examples/e2e/README.md
 <!-- docs@tether.io: site-monitor-readme → https://github.com/tetherto/mdk/tree/main/examples/e2e -->

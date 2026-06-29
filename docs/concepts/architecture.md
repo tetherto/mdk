@@ -2,7 +2,7 @@
 title: Architecture
 description: How @tetherto/mdk-ork works, the MDK Protocol, kernel modules, Workers, and the @tetherto/mdk-client SDK
 docs@tether_slug: concepts/architecture/index
-notes: This page was synced with the upstream **MDK HLD v0.4.0** on 2026-04-26
+notes: This page was synced with the upstream **MDK HLD v0.4.0** on 2026-04-26 and has been edited since
 ---
 
 > [!NOTE]
@@ -80,25 +80,28 @@ The MDK components that compose those layers:
 [Hyperbee][hyperbee]) are recommended across the `@tetherto/mdk-ork`, Worker, and App Node layers.
 This choice satisfies all storage requirements without the operational baggage of a centralized database.
 
-## The MDK Protocol
+## The MDK protocol
 
-The MDK Protocol is the contract that crosses every layer of the stack. Version 0.2.0 is pull-based: Workers passively join a
-known DHT topic and `@tetherto/mdk-ork` initiates every RPC call. Workers issue no callbacks, emit no fan-out events, and make no
-exceptions to the direction of flow. For the full [envelope schema][envelope-impl], [action catalogue][actions-catalogue], and 
-[base command set][schemas-impl], see the [Protocol reference][protocol-reference].
+The MDK protocol is the contract that crosses every layer of the stack. Workers become reachable — via a 
+[DHT topic][worker-discovery-dht] or [same-machine discovery][worker-discovery-local], and `@tetherto/mdk-ork` 
+initiates every RPC call. Workers issue no callbacks, emit no fan-out events, and make no exceptions to the direction of flow. 
+
+> [!NOTE]
+> For the full [envelope schema][envelope-impl], [action catalogue][actions-catalogue], and 
+> [base command set][schemas-impl], see the [Protocol reference][protocol-reference].
 
 ### Design principles
 
-- **Transport-agnostic**: identical messages over [in-process calls][ipc-gateway], [Holepunch RPC (HRPC)][hrpc-gateway], or API calls
-- **Strictly unidirectional**: Workers never initiate RPC calls to `@tetherto/mdk-ork`. They join a known [Distributed Hash Table
-(DHT) topic][dht-listener]; `@tetherto/mdk-ork` discovers their presence passively and initiates all subsequent communication downwards (identity,
-capabilities, telemetry, commands).
+- **Transport-agnostic**: identical messages over [in-process calls][ipc-gateway], [Holepunch RPC (HRPC)][hrpc-gateway], 
+or API calls
+- **Strictly unidirectional**: [Workers][workers-concept] never initiate RPC calls to `@tetherto/mdk-ork`; `@tetherto/mdk-ork`
+discovers their presence and initiates all subsequent communication downwards (identity, capabilities, telemetry, commands)
 - **Generic interface**: the accepted interface is defined dynamically at the Worker level via a self-describing capabilities
 schema containing both structure and semantic context for AI agents
 
 ### Governance
 
-To maintain structural integrity and contract stability across `@tetherto/mdk-ork`, App Node, and Workers, MDK Protocol messages are
+To maintain structural integrity and contract stability across `@tetherto/mdk-ork`, App Node, and Workers, MDK protocol messages are
 governed and strictly validated using [Hyperschema][hyperschema]. Hyperschema also aligns
 natively with the system's underlying Hyperbee storage.
 
@@ -116,7 +119,7 @@ sequenceDiagram
     O-->>DHT: Detects new peer connection
     O->>W: identity.request
     W-->>O: identity.response (devices)
-    O->>O: Save Worker to Registry
+    O->>O: Save Worker to registry
     O->>W: capability.request
     W-->>O: capability.response (schema)
 
@@ -133,52 +136,20 @@ sequenceDiagram
 
 ## The ORK kernel
 
-[`@tetherto/mdk-ork`][ork-package] is the trusted coordination layer at the heart of MDK. It [routes commands][command-dispatcher], [monitors device health][health-monitor], [registers
-Workers][worker-registry], and [pulls telemetry][telemetry-collector] — all on a [pull-only model][scheduler-module], so the kernel cannot be overwhelmed by upstream pressure.
+[ORK][ork-concept], [`@tetherto/mdk-ork`][ork-package], is the trusted coordination layer at the heart of MDK. It [routes commands][command-dispatcher],
+[monitors device health][health-monitor], [registers Workers][worker-registry], and [pulls telemetry][telemetry-collector] — all on a
+[pull-only model][scheduler-module], so the kernel cannot be overwhelmed by upstream pressure.
+
+When a command arrives, callers only need to provide a `deviceId`; `@tetherto/mdk-ork` resolves the owning Worker internally via
+the [`CommandDispatcher`][command-dispatcher] and dispatches the `command.request`.
 
 ## Workers
-
-Workers wrap a device library and expose it via the MDK Protocol. They are the integration handlers between physical hardware
-and `@tetherto/mdk-ork`, and the unyielding source of truth for that hardware: `@tetherto/mdk-ork` itself operates purely as a synchronised state
+[Workers][workers-concept] wrap a device library and expose it via the MDK protocol. They are the integration handlers between physical hardware
+and `@tetherto/mdk-ork`, and the unyielding source of truth for that hardware: `@tetherto/mdk-ork` itself operates purely as a synchronized state
 machine over Worker-reported state.
 
-### Discovery model
-
-1. **DHT presence**: the Worker joins a known [Hyperswarm][hyperswarm] DHT topic. It does not
-send any RPC messages; it becomes a reachable peer.
-2. **Peer detection**: `@tetherto/mdk-ork` continuously listens on the same DHT topic and detects the new peer connection automatically.
-3. **Identity request**: `@tetherto/mdk-ork` initiates the first RPC call, requesting the Worker's identity and managed devices.
-4. **Registration**: after receiving the identity, `@tetherto/mdk-ork` saves the Worker and its RPC keys into its registry.
-5. **Capability declaration**: `@tetherto/mdk-ork` then explicitly queries the Worker to declare its full capabilities
-(`mdk-contract.json`).
-
-> [!NOTE]
-> Communication initiation is **strictly unidirectional**: `@tetherto/mdk-ork` initiates every RPC call; Workers only ever respond.
-
-### Responsibilities and the capability contract
-
-`mdk-contract.json` is the canonical source of truth for a Worker's programmatic capabilities **and** its AI context. MDK
-deliberately merges formal validation and semantic guidance into a single JSON contract:
-
-- `description` does double duty as the human UI label and AI edge-case rule (for example, *"Outlet temperature > 85C requires
-  intervention"*)
-- `constraints` governs orchestration limits
-- `troubleshooting` provides if/then recovery behaviours alongside the payload it evaluates
-
-The exhaustive JSON Schema is `mdk-contract.schema.json`, with a [reference instance at `mdk-contract.json`][capability-contract-example].
-
-### Adding new hardware
-
-External integrators add new hardware by building a Worker package that conforms to the strict Device-Lib Contract:
-
-1. Reference `mdk-contract.schema.json` to author the `mdk-contract.json`, validating strict data schemas while injecting
-   explanations, constraints, and troubleshooting directly into the relevant nodes.
-2. Subclass [`@tetherto/worker-base`][worker-base] and implement the two translation hooks, `onTelemetryPull` and `onCommand`, in `src/hardware.js`.
-   All HRPC plumbing is inherited from [the base class][worker-adapter].
-3. Boot the Worker instance, connect to devices, and join the known DHT topic. `@tetherto/mdk-ork` detects the peer and pulls its
-   identity and capabilities.
-
-*(See [`mdk-whatsminer-worker.js`][worker-example] for a reference subclass implementing both hooks against a real device.)*
+Workers are passive — ORK initiates every RPC call; Workers only ever respond. ORK discovers Workers according to the
+[discovery model][workers-discovery-model], then requests identity and capabilities.
 
 ## The SDK
 
@@ -192,47 +163,24 @@ It is the essential glue between the kernel and any consumer layer developers ch
 developer.
   - `hrpc://` connects over encrypted Hyperswarm streams for remote server-to-server production.
   - `ipc://` connects via direct local sockets for low-latency local testing.
-- **Major language support**: `@tetherto/mdk-client` will be built for all major languages (Node.js, Python, Go, and others), allowing
+- **Major language support**: `@tetherto/mdk-client` is intended to support all major languages (Node.js, Python, Go, and others), allowing
 developers to dispatch commands, subscribe to live streams, or pull status snapshots from any stack.
 
 ## App Node
 
-The [App Node][app-node-package] is the developer-owned API boundary, the mandatory gateway between the client-facing world and `@tetherto/mdk-ork`.
+The [App Node][app-node-package] wraps `@tetherto/mdk-client` — the MDK protocol connector to ORK — to add an authenticated
+HTTP, WebSocket, and MCP interface on top. Consumers that need those capabilities connect through the App Node.
 
-The UI never connects to `@tetherto/mdk-ork` directly; an App Node must act as the gateway. Developers have two paths:
+The supported development path is the [MDK App Toolkit][app-toolkit], which ships backend middleware (JWT auth, RBAC, and command
+proxying), frontend tools, and an `mdk-plugin.json`-based plugin system for declarative HTTP route extensions
+([plugin guide][app-node-plugins]).
 
-- **Direct**: [write business logic, aggregation routes, and authentication][app-node-http-worker] directly in the App Node using `@tetherto/mdk-client` in any
-language (Node.js, Go, Python, and others).
-- **Toolkit**: adopt the [MDK App Toolkit][app-toolkit], which ships backend tools middleware (drops into Fastify or Express,
-handles JWT auth, RBAC, and command proxying), frontend tools, and a plugins shell for plug-and-play extensions.
-
-Both approaches are fully supported; the choice depends on the team's preference for control versus convention.
-
-### Responsibilities
-
-- **Fleet aggregation**: computes site hashrate, average temperature, cross-rack efficiency
-- **Auth and RBAC**: [guards all access][app-node-auth] to `@tetherto/mdk-ork` with JWTs and session management
-- **API surface**: exposes REST or GraphQL to the UI
-
-### Routing contract
-
-UI and AI agents should only provide `deviceId`; the App Node (via `@tetherto/mdk-client`) passes this down. `@tetherto/mdk-ork` resolves the
-owning Worker internally and dispatches the `command.request`.
-
-### Authentication
-
-The App Node validates a JWT (Bearer Token) (signature, expiry, claims) before proxying any traffic into `@tetherto/mdk-ork`.
-
-**Allowlisting at the kernel**: `@tetherto/mdk-ork` does not perform user-level authentication. Instead, it maintains a strict allowlist
-of approved App Node and client connections. Once allowlisted securely (for example, via HRPC keys), `@tetherto/mdk-ork` implicitly
-trusts the origin of HRPC messages.
+For the full developer model — extension patterns, data access, auth design, and ORK connection — read the [App Node concept page][app-node-concept].
 
 ## AI agents and the MCP server
 
-AI agents connect to MDK through an **MCP endpoint** on the App Node, not directly to `@tetherto/mdk-ork`. They are treated as ordinary
-authenticated clients and subject to the same JWT validation, rate limits, and RBAC as a human user. This is intentional: the
-kernel does not perform user-level [authentication][authentication-section], so routing agents through the App Node keeps them inside
-the same security envelope as every other consumer.
+AI agents connect to MDK through an **MCP endpoint** on the App Node, not directly to `@tetherto/mdk-ork`. By routing agents through the App Node, 
+developers can keep them inside the same security envelope as every other consumer: they are ordinary authenticated clients; subject to the same JWT validation, rate limits, and RBAC as a human user. This is intentional: the kernel does not perform user-level [authentication][authentication-section]. 
 
 What makes the integration distinctive is **[runtime tool derivation][agent-ready-contract]**. The tools exposed to an agent (for example,
 `get_device_telemetry` or `reboot_device`) are not hardcoded; they are parsed at runtime from each registered Worker's
@@ -290,12 +238,12 @@ sequenceDiagram
     participant Worker as Generic Worker
 
     User->>UI: Click "Reboot" on wm001
-    UI->>Node: POST { deviceId, action, payload }
+    UI->>Node: POST { `deviceId`, action, payload }
 
     Note over Node,ORK: Delegation
     Node->>ORK: dispatch generic protocol message
     ORK->>ORK: Verify against capabilities
-    ORK->>ORK: Resolve Worker for deviceId
+    ORK->>ORK: Resolve Worker for `deviceId`
 
     Note over ORK,Worker: Execution
     ORK->>Worker: command.request (HRPC)
@@ -318,7 +266,8 @@ As MDK deployments scale to large mining sites (5,000+ devices), the system must
 cross-regional business logic.
 
 > [!NOTE]
-> Scaling here means *how many* Workers and kernels you run. That is independent of [deployment topology][deployment-topologies] — *how those processes are packaged* on a host (one process vs many).
+> Scaling here means *how many* Workers and kernels you run. That is independent of [deployment topology][deployment-topologies] — 
+*how those processes are packaged* on a host (one process vs many).
 
 ### Parallel Workers
 
@@ -345,7 +294,7 @@ flowchart TD
 ```
 
 **Device-level routing and ownership**: Workers never share devices. When a Worker connects, its `identity.register` payload
-explicitly lists the `deviceId`s it exclusively manages. The Worker Registry maintains this strict mapping and deterministically
+explicitly lists the `deviceId`s it exclusively manages. The Worker registry maintains this strict mapping and deterministically
 routes arriving commands to the designated Worker.
 
 ### Multi-site deployments
@@ -400,13 +349,30 @@ the responses before returning them to the UI or Agent.
 [ork-section]: #the-ork-kernel
 [sdk-section]: #the-sdk
 [protocol-section]: #the-mdk-protocol
-[authentication-section]: #authentication
-[capability-contract-section]: #responsibilities-and-the-capability-contract
+[authentication-section]: stack/app-node.md#authentication-design
+<!-- docs@tether.io: authentication-section → concepts/stack/app-node#authentication-design -->
+[capability-contract-section]: stack/workers.md#capability-contract
+<!-- docs@tether.io: capability-contract-section → concepts/stack/workers#capability-contract -->
 [human-ui-scenario]: #human-ui-scenario
 [ai-agent-scenario]: #ai-agent-scenario
 
 [deployment-topologies]: deployment-topologies.md
 <!-- docs@tether.io: deployment-topologies → concepts/deployment-topologies -->
+
+[worker-discovery]: stack/workers.md
+<!-- docs@tether.io: worker-discovery → concepts/stack/workers -->
+
+[worker-discovery-dht]: stack/workers.md#dht-mode
+<!-- docs@tether.io: worker-discovery-dht → concepts/stack/workers#dht-mode -->
+
+[worker-discovery-local]: stack/workers.md#local-mode
+<!-- docs@tether.io: worker-discovery-local → concepts/stack/workers#local-mode -->
+
+[workers-concept]: stack/workers.md
+<!-- docs@tether.io: workers-concept → concepts/stack/workers -->
+
+[workers-discovery-model]: stack/workers.md#discovery-model
+<!-- docs@tether.io: workers-discovery-model → concepts/stack/workers#discovery-model -->
 
 [hypercore]: https://github.com/holepunchto/hypercore
 <!-- docs@tether.io: external link — preserve URL -->
@@ -421,23 +387,32 @@ the responses before returning them to the UI or Agent.
 <!-- docs@tether.io: external link — preserve URL -->
 
 [app-toolkit]: ../../ui/docs/ARCHITECTURE.md
-<!-- docs@tether.io: app-toolkit → concepts/architecture/app-toolkit -->
+<!-- docs@tether.io: app-toolkit → concepts/stack/app-toolkit -->
 <!-- mdk-monorepo: temp — ARCHITECTURE.md is a stub until ui/ is populated -->
+
+[app-node-plugins]: ../how-to/app-node/plugins.md
+<!-- docs@tether.io: app-node-plugins → how-to/app-node/plugins -->
 
 [protocol-reference]: ../../backend/core/ork/README.md
 <!-- docs@tether.io: protocol-reference → https://github.com/tetherto/mdk/blob/main/backend/core/ork/README.md -->
 
-[ork-package]: ../../backend/core/ork/index.js
-<!-- docs@tether.io: ork-package → https://github.com/tetherto/mdk/blob/main/backend/core/ork/index.js -->
+[ork-package]: ../../backend/core/ork/README.md
+<!-- docs@tether.io: ork-package → https://github.com/tetherto/mdk/blob/main/backend/core/ork/README.md -->
+
+[ork-concept]: stack/ork.md
+<!-- docs@tether.io: ork-concept → concepts/stack/ork -->
 
 [worker-base]: ../../backend/workers/base/README.md
 <!-- docs@tether.io: worker-base → https://github.com/tetherto/mdk/blob/main/backend/workers/base/README.md -->
 
-[app-node-package]: ../../backend/core/app-node/worker.js
-<!-- docs@tether.io: app-node-package → https://github.com/tetherto/mdk/blob/main/backend/core/app-node/worker.js -->
+[app-node-package]: ../../backend/core/app-node/README.md
+<!-- docs@tether.io: app-node-package → https://github.com/tetherto/mdk/blob/main/backend/core/app-node/README.md -->
 
-[client-package]: ../../backend/core/client/index.js
-<!-- docs@tether.io: client-package → https://github.com/tetherto/mdk/blob/main/backend/core/client/index.js -->
+[app-node-concept]: stack/app-node.md
+<!-- docs@tether.io: app-node-concept → concepts/stack/app-node -->
+
+[client-package]: ../../backend/core/client/README.md
+<!-- docs@tether.io: client-package → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md -->
 
 <!-- Engineer / maintainer deep links (public repo targets) -->
 
@@ -459,23 +434,23 @@ the responses before returning them to the UI or Agent.
 [dht-listener]: ../../backend/core/ork/lib/discovery/dht-listener.js
 <!-- docs@tether.io: dht-listener → https://github.com/tetherto/mdk/blob/main/backend/core/ork/lib/discovery/dht-listener.js -->
 
-[command-dispatcher]: ../../backend/core/ork/lib/modules/command-dispatcher/index.js
-<!-- docs@tether.io: command-dispatcher → https://github.com/tetherto/mdk/blob/main/backend/core/ork/lib/modules/command-dispatcher/index.js -->
+[command-dispatcher]: ../../backend/core/ork/README.md#commanddispatcher
+<!-- docs@tether.io: command-dispatcher → https://github.com/tetherto/mdk/blob/main/backend/core/ork/README.md#commanddispatcher -->
 
-[health-monitor]: ../../backend/core/ork/lib/modules/health-monitor/index.js
-<!-- docs@tether.io: health-monitor → https://github.com/tetherto/mdk/blob/main/backend/core/ork/lib/modules/health-monitor/index.js -->
+[health-monitor]: ../../backend/core/ork/README.md#healthmonitor
+<!-- docs@tether.io: health-monitor → https://github.com/tetherto/mdk/blob/main/backend/core/ork/README.md#healthmonitor -->
 
-[worker-registry]: ../../backend/core/ork/lib/modules/worker-registry/index.js
-<!-- docs@tether.io: worker-registry → https://github.com/tetherto/mdk/blob/main/backend/core/ork/lib/modules/worker-registry/index.js -->
+[worker-registry]: ../../backend/core/ork/README.md#workerregistry
+<!-- docs@tether.io: worker-registry → https://github.com/tetherto/mdk/blob/main/backend/core/ork/README.md#workerregistry -->
 
-[telemetry-collector]: ../../backend/core/ork/lib/modules/telemetry-collector/index.js
-<!-- docs@tether.io: telemetry-collector → https://github.com/tetherto/mdk/blob/main/backend/core/ork/lib/modules/telemetry-collector/index.js -->
+[telemetry-collector]: ../../backend/core/ork/README.md#telemetrycollector
+<!-- docs@tether.io: telemetry-collector → https://github.com/tetherto/mdk/blob/main/backend/core/ork/README.md#telemetrycollector -->
 
-[scheduler-module]: ../../backend/core/ork/lib/modules/scheduler/index.js
-<!-- docs@tether.io: scheduler-module → https://github.com/tetherto/mdk/blob/main/backend/core/ork/lib/modules/scheduler/index.js -->
+[scheduler-module]: ../../backend/core/ork/README.md#scheduler
+<!-- docs@tether.io: scheduler-module → https://github.com/tetherto/mdk/blob/main/backend/core/ork/README.md#scheduler -->
 
-[worker-adapter]: ../../backend/workers/base/lib/mdk-worker-adapter.js
-<!-- docs@tether.io: worker-adapter → https://github.com/tetherto/mdk/blob/main/backend/workers/base/lib/mdk-worker-adapter.js -->
+[worker-adapter]: ../../backend/workers/base/README.md#mdkworkeradapter
+<!-- docs@tether.io: worker-adapter → https://github.com/tetherto/mdk/blob/main/backend/workers/base/README.md#mdkworkeradapter -->
 
 [worker-example]: ../../backend/workers/miners/whatsminer/lib/mdk-whatsminer-worker.js
 <!-- docs@tether.io: worker-example → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/whatsminer/lib/mdk-whatsminer-worker.js -->
@@ -483,11 +458,11 @@ the responses before returning them to the UI or Agent.
 [capability-contract-example]: ../../backend/workers/miners/whatsminer/mdk-contract.json
 <!-- docs@tether.io: capability-contract-example → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/whatsminer/mdk-contract.json -->
 
-[app-node-http-worker]: ../../backend/core/app-node/workers/http.node.wrk.js
-<!-- docs@tether.io: app-node-http-worker → https://github.com/tetherto/mdk/blob/main/backend/core/app-node/workers/http.node.wrk.js -->
+[app-node-http-worker]: ../../backend/core/app-node/README.md#http-api-overview
+<!-- docs@tether.io: app-node-http-worker → https://github.com/tetherto/mdk/blob/main/backend/core/app-node/README.md#http-api-overview -->
 
-[app-node-auth]: ../../backend/core/app-node/workers/lib/auth.js
-<!-- docs@tether.io: app-node-auth → https://github.com/tetherto/mdk/blob/main/backend/core/app-node/workers/lib/auth.js -->
+[app-node-auth]: ../../backend/core/app-node/README.md#security-model
+<!-- docs@tether.io: app-node-auth → https://github.com/tetherto/mdk/blob/main/backend/core/app-node/README.md#security-model -->
 
 [agent-ready-contract]: ../reference/maintainers/agent-ready-sdk.md
 <!-- docs@tether.io: agent-ready-contract → https://github.com/tetherto/mdk/blob/main/docs/reference/maintainers/agent-ready-sdk.md -->

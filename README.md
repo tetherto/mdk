@@ -1,6 +1,6 @@
 # MDK
 
-[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.2.0)
+[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.3.0)
 [![MDK UI CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/ui.yaml?branch=main&label=UI%20CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/ui.yaml)
 [![MDK Core CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/core.yaml?branch=main&label=Core%20CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/core.yaml)
 [![CodeQL](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql)
@@ -12,7 +12,7 @@
 
 MDK is under active development and is **not yet considered stable**. 
 
-Current release: [v0.2.0](https://github.com/tetherto/mdk/releases/tag/v0.2.0). 
+Current release: [v0.3.0](https://github.com/tetherto/mdk/releases/tag/v0.3.0). 
 
 ## Table of Contents
 
@@ -130,10 +130,10 @@ leverage the packages provided for React (Vue, Svelte, and Web Components on the
 
 ## Releases
 
-The latest development code is available on the [`main`](https://github.com/tetherto/mdk/tree/main) branch. MDK follows [Semantic Versioning 2.0.0](https://semver.org/): `0.y.z` versions are initial development (public API not stable until `1.0.0`).
+The latest development code is available on the [`main`](https://github.com/tetherto/mdk/tree/main) branch. MDK follows [Semantic Versioning 2.0.0](https://semver.org/): `0.y.z` versions are initial development (public API not stable until `1.0.0`); `1.0.0` and above denote a stable public API.
 
-- [`/docs/reference/release-notes/`](./docs/reference/release-notes)
-- Full [`CHANGELOG.md`](./CHANGELOG.md)
+Releases have notes [`docs/reference/release-notes/](docs/reference/release-notes/) and the full version history is
+detailed in the [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Get started
 

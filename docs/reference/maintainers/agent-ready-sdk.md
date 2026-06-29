@@ -109,6 +109,12 @@ This mirrors how the UI workspace already handles components: read source-of-tru
 
 Once `dist/index.json` is shipping, it would also unlock [`check:integrations-fresh`](ia.md#checkintegrations-fresh) if engineering adopts it: the gate would compare shipping workers against the hand-maintained catalogue tables under [`integrations/`](integrations/index.md) and fail the build on drift. Until then (and indefinitely if not adopted), the catalogue is docs-maintainer-owned (see Tag rules above).
 
+## App Node plugin reference
+
+The default App Node plugins in `backend/core/plugins/` each ship an `mdk-plugin.json` manifest — the source of truth for their HTTP routes. [`docs/scripts/generate-plugin-reference.js`](../../scripts/generate-plugin-reference.js) (`npm run generate:plugin-reference` in `backend/core/plugins`) reads those manifests and regenerates the route tables inside the marked region of [`backend/core/plugins/README.md`](../../../backend/core/plugins/README.md), so the published route list never drifts from the manifests. This is the same read-source-of-truth, generate, ship pattern as the worker catalogue.
+
+Only the default plugins are generated — plugins mounted at runtime via `startAppNode({ extraPluginDirs })` live outside the repo and document their own routes. A [`check:plugin-reference-fresh`](ia.md#checkplugin-reference-fresh) gate would keep the generated tables honest; it is not wired today, so regenerate and commit when a default plugin's routes change.
+
 ## Decisions deferred
 
 - **JSDoc parity for core exports.** Whether `backend/core/` adopts UI's JSDoc shape (`@tier`, `@category`, `@domain`, `@orkCapability`) for non-UI exports, or stays contract-free. Do not introduce a third format alongside `mdk-contract.json` and JSDoc — no `manifest.yaml` for core.

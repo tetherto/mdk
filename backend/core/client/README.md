@@ -1,6 +1,20 @@
 # @tetherto/mdk-client
 
-MDK Protocol client for ORK. Encodes MDK Protocol envelopes and sends them to ORK over **HRPC** (the `@hyperswarm/rpc` gateway, by public key) or **IPC** (a local Unix socket). This is the transport layer used by the App Node (and any other process) to talk to ORK — and, by key, directly to a worker's RPC server.
+## Overview
+
+MDK Protocol client for [ORK](../ork/README.md). Encodes MDK Protocol envelopes and sends them to ORK over **HRPC** (the
+`@hyperswarm/rpc` gateway, by public key) or **IPC** (a local Unix socket). This is the transport layer
+used by the [App Node](../app-node/README.md) (and any other process) to talk to ORK — and, by key, directly to a 
+[worker's](../../../docs/concepts/stack/workers.md) RPC server.
+
+> [!TIP]
+> `@tetherto/mdk-client` is the protocol connector every ORK caller uses — the [App Node](../app-node/README.md) wraps
+> it internally. For the full layer model, read the [App Node concept page](../../../docs/concepts/stack/app-node.md)
+> and/or the [architecture overview](../../../docs/concepts/architecture.md).
+
+## Prerequisites
+
+- Node.js >= 24
 
 ## Install
 
@@ -48,7 +62,9 @@ Throws `ERR_MDK_CLIENT_TRANSPORT_REQUIRED` if none is given, or `ERR_MDK_CLIENT_
 
 ### `createWorkerClient(rpcKey, hrpcOpts?)` → client
 
-Convenience factory for a client bound **directly to a worker** by its RPC public key (resolve the key with [`getWorkerKey`](#getworkerkeyworkerid--promisestring--null)). Same client surface as `createMdkClient`; use it for ops the worker adapter handles directly (`registerThing`, `forgetThings`, …) rather than ORK contract commands. `hrpcOpts` forwards `seed`/`bootstrap`/`dht`/`rpc` to the transport.
+Convenience factory for a client bound **directly to a worker** by its RPC public key (resolve the key with [`getWorkerKey`](#getworkerkeyworkerid--promisestring--null)). 
+Same client surface as `createMdkClient`; use it for ops the worker adapter handles directly (`registerThing`, `forgetThings`, …) rather 
+than ORK contract commands. `hrpcOpts` forwards `seed`/`bootstrap`/`dht`/`rpc` to the transport.
 
 ```js
 const { createWorkerClient } = require('@tetherto/mdk-client')
@@ -78,7 +94,8 @@ Close the connection.
 
 #### `getStatus(opts?)` → `Promise<{ workers, totalDevices }>`
 
-Read-only status aggregator over `listWorkers()` with built-in **first-request retry** and a timeout. Safe to retry because it only reads. Returns a stable, shaped result for tooling.
+Read-only status aggregator over `listWorkers()` with built-in **first-request retry** and a timeout. Safe to retry because it only reads. 
+Returns a stable, shaped result for tooling.
 
 ```js
 const { workers, totalDevices } = await client.getStatus()
@@ -102,7 +119,8 @@ const { workers } = await client.listWorkers()
 
 #### `waitForWorkers(opts?)` → `Promise<worker[]>`
 
-Poll `getStatus()` until `count` workers are READY, then resolve the matching workers. Out-of-process readiness wait for callers holding only the ORK key (the in-process equivalent is `@tetherto/mdk`'s `waitForDiscovery`). Throws `ERR_MDK_WAIT_WORKERS_TIMEOUT` on timeout.
+Poll `getStatus()` until `count` workers are READY, then resolve the matching workers. Out-of-process readiness wait for callers holding 
+only the ORK key (the in-process equivalent is `@tetherto/mdk`'s `waitForDiscovery`). Throws `ERR_MDK_WAIT_WORKERS_TIMEOUT` on timeout.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -113,7 +131,8 @@ Poll `getStatus()` until `count` workers are READY, then resolve the matching wo
 
 #### `waitForDevice(deviceId, opts?)` → `Promise<true>`
 
-Poll until `deviceId` appears in the ORK registry (optionally under a specific `workerId`). Used after provisioning to confirm the device synced. Throws `ERR_MDK_WAIT_DEVICE_TIMEOUT` on timeout.
+Poll until `deviceId` appears in the ORK registry (optionally under a specific `workerId`). Used after provisioning to confirm the device synced. 
+Throws `ERR_MDK_WAIT_DEVICE_TIMEOUT` on timeout.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -127,7 +146,8 @@ Fetch the `mdk-contract.json` capabilities for a device as declared by its worke
 
 #### `pullTelemetry(deviceId, queryType?)` → `Promise<object>`
 
-Pull telemetry from the worker managing the given device. `queryType` defaults to `'metrics'`, and may be a string or a full query object (`{ type, key, tag, start, end, limit, ... }`).
+Pull telemetry from the worker managing the given device. `queryType` defaults to `'metrics'`, and may be a string or a full query 
+object (`{ type, key, tag, start, end, limit, ... }`).
 
 Available query types:
 | Type | Returns |
@@ -150,7 +170,9 @@ Fetch a snapshot of the worker's state machine status for the given device.
 
 #### `sendCommand(deviceId, command, params?)` → `Promise<object>`
 
-Dispatch a command to the worker managing `deviceId`. When the client is connected to the **ORK**, the command must be declared in the worker's `mdk-contract.json`. When connected **directly to a worker** (see `createWorkerClient`), this also reaches adapter-handled ops like `registerThing`/`forgetThings`. Commands are **never auto-retried** (the ORK, not the transport, dedups command IDs).
+Dispatch a command to the worker managing `deviceId`. When the client is connected to the **ORK**, the command must be declared in 
+the worker's `mdk-contract.json`. When connected **directly to a worker** (see `createWorkerClient`), this also reaches adapter-handled 
+ops like `registerThing`/`forgetThings`. Commands are **never auto-retried** (the ORK, not the transport, dedups command IDs).
 
 ```js
 await client.sendCommand('wm-001', 'reboot', {})
@@ -160,13 +182,32 @@ await client.sendCommand('wm-001', 'setupPools', {
 })
 ```
 
+**Return value:**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `commandId` | `string` | Correlation ID generated by ORK. Echo this to your caller to allow tracking. |
+| `status` | `string` | `'SUCCESS'` or `'FAILED'` |
+| `result` | `object` | Command-specific response payload (present when `status` is `'SUCCESS'`) |
+| `error` | `string` | Error message (present when `status` is `'FAILED'`) |
+
+```js
+const res = await client.sendCommand('wm-001', 'setPowerMode', { mode: 'low' })
+// res.commandId  — 'a3f7...'
+// res.status     — 'SUCCESS'
+// res.result     — {}
+```
+
 #### `getWorkerKey(workerId)` → `Promise<string | null>`
 
-Resolve a worker's RPC public key (hex) from the ORK registry (the ORK learned it via discovery), or `null` if the worker isn't registered. Pair with `createWorkerClient`/`sendWorkerCommand` for worker-direct ops.
+Resolve a worker's RPC public key (hex) from the ORK registry (the ORK learned it via discovery), or `null` if the worker isn't 
+registered. Pair with `createWorkerClient`/`sendWorkerCommand` for worker-direct ops.
 
 #### `sendWorkerCommand(workerId, deviceId, command, params?, opts?)` → `Promise<object>`
 
-Send a worker-direct command (e.g. `registerThing`) by `workerId` in one call: resolve the worker's key via the ORK, open a short-lived worker client, send, and close it. Returns the command response. Throws `ERR_MDK_WORKER_KEY_UNKNOWN` if the worker isn't in the registry. `opts.hrpc` forwards `seed`/`bootstrap`/`dht`/`rpc` to the worker client's transport.
+Send a worker-direct command (e.g. `registerThing`) by `workerId` in one call: resolve the worker's key via the ORK, open a 
+short-lived worker client, send, and close it. Returns the command response. Throws `ERR_MDK_WORKER_KEY_UNKNOWN` if the worker 
+isn't in the registry. `opts.hrpc` forwards `seed`/`bootstrap`/`dht`/`rpc` to the worker client's transport.
 
 ```js
 // Provision a device on a running worker, then wait for the ORK to sync it.
@@ -180,14 +221,17 @@ Signal ORK to evict a worker from the registry. The worker process itself contin
 
 ## Transport details
 
-- **HRPC** — each request is an independent `@hyperswarm/rpc` call to the gateway's `mdk` responder, so concurrent requests are multiplexed by the RPC layer (no FIFO queue). The same transport addresses the ORK gateway or any worker's RPC server by public key. The first request after `connect()` can flake while the DHT route settles — use `getStatus()` (built-in retry) or `connect({ warmup: true })`.
+- **HRPC** — each request is an independent `@hyperswarm/rpc` call to the gateway's `mdk` responder, so concurrent requests are 
+multiplexed by the RPC layer (no FIFO queue). The same transport addresses the ORK gateway or any worker's RPC server by public key. 
+The first request after `connect()` can flake while the DHT route settles — use `getStatus()` (built-in retry) or `connect({ warmup: true })`.
 - **IPC** — a Unix socket (`net.Socket`) exchanging newline-delimited JSON envelopes, one request in-flight per socket.
 
 Either way, every message is a fully-formed MDK Protocol envelope and the model is request/response (one response per request).
 
 ## Use in App Node
 
-The App Node uses `createMdkClient` internally. If you are writing a custom App Node or a standalone tool that needs to talk to ORK, this is the correct package to use.
+The App Node uses `createMdkClient` internally. If you are writing a custom App Node or a standalone tool that needs to talk to ORK, this 
+is the correct package to use.
 
 ```js
 const { createMdkClient } = require('@tetherto/mdk-client')
@@ -210,3 +254,11 @@ client/
     ├── hrpc-client.js     # HRPCClient — @hyperswarm/rpc transport (by key)
     └── ipc-client.js      # IPCClient  — Unix socket transport
 ```
+
+## Next steps
+
+- [Run ORK and the App Node](../../../docs/how-to/app-node/run.md) — ORK must be running before `client.connect()` can succeed
+- [Understand how the App Node wraps `mdk-client` and what it adds](../../../docs/concepts/stack/app-node.md)
+- [Understand the MDK Protocol and ORK's role as the kernel](../../../docs/concepts/architecture.md)
+- [Backend site example](../../../examples/backend/site/README.md) — see `createMdkClient` used end-to-end with ORK and workers
+- [`startAppNode()` option reference](../mdk/README.md) — if you are wiring `mdk-client` into a custom App Node

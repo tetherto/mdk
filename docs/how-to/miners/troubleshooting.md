@@ -77,7 +77,7 @@ Check:
 
 ## File lock or socket errors
 
-The examples call `getOrk()` with default local paths. If another ORK, app-node, or example is already running with the same defaults, you may see file lock or local socket errors.
+The examples call `getOrk()` with default local paths. By default, the topic file is `os.tmpdir()/mdk/.dht-topic` and the IPC socket is `os.tmpdir()/mdk/ork.sock`. If another ORK, app-node, or example is already running with the same defaults, you may see file lock or local socket errors.
 
 Stop stale example processes before starting another example. If you need to run several examples side by side for development, run each process with a different temporary directory so each ORK gets separate local state:
 

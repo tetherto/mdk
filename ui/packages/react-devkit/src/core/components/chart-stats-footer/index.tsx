@@ -93,6 +93,5 @@ ChartStatsFooter.displayName = 'ChartStatsFooter'
 export type {
   ChartStatsFooterItem,
   ChartStatsFooterProps,
-  MinMaxAvg,
   SecondaryLabel,
 } from './types'

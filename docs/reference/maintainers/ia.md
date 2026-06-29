@@ -125,6 +125,36 @@ Drift detector for the hand-maintained catalogue tables under [`integrations/`](
 
 **If not adopted:** docs maintainers walk the workers tree on each integration audit and update the catalogue tables manually. The tables stay under `maintainers/` and never graduate to user-facing `docs/integrations/`.
 
+### `check:plugin-reference-fresh`
+
+> Partially implemented. [`docs/scripts/generate-plugin-reference.js`](../../scripts/generate-plugin-reference.js) (run `npm run generate:plugin-reference` in `backend/core/plugins`) reads each default plugin's `mdk-plugin.json` and regenerates the route tables in [`backend/core/plugins/README.md`](../../../backend/core/plugins/README.md). The generator exists; the CI gate does not.
+
+Freshness gate for the generated default-plugin route tables. Would run `npm run generate:plugin-reference` in CI and fail on a non-empty `git diff` in `backend/core/plugins/README.md` — the same regen-and-diff pattern as `check:integrations-fresh`. It would catch one kind of drift:
+
+1. **Tables stale after a manifest change** — a route added, removed, or re-described in a default plugin's `mdk-plugin.json` is not reflected in the generated tables.
+
+**Why it matters:** the default-plugin route tables are the published API surface for the App Node's built-in endpoints. A table that lags the manifest documents routes that no longer exist or omits ones that do. Only the default plugins in `backend/core/plugins/` are covered; plugins mounted via `extraPluginDirs` are external and document their own routes.
+
+**If not adopted:** docs maintainers re-run `npm run generate:plugin-reference` and commit the output whenever a default plugin's routes change.
+
+### `check:plugin-manifest`
+
+There is no `mdk-plugin.schema.json` today. The manifest format is enforced imperatively by `_validateManifest` in
+[`backend/core/app-node/workers/lib/plugin-loader.js`](../../../backend/core/app-node/workers/lib/plugin-loader.js) and documented
+by example (the shipping manifests) and by the loader rather than as a generated field table.
+
+A machine-readable schema would enable two things:
+
+1. **Generated field-table docs** — the manifest format section in [`backend/core/plugins/README.md`](../../../backend/core/plugins/README.md)
+   could be generated from the schema the same way route tables are generated from manifests
+2. **Well-formedness validation (`check:plugin-manifest`)** — a CI gate that validates every `mdk-plugin.json` in the repo against
+   the schema, catching malformed manifests before they reach the loader at startup
+
+This is a docs-maintainer recommendation, not currently on the engineering roadmap. Until the schema exists, the manifest format
+remains documented by example and the loader is the authoritative validator.
+
+**If not adopted:** docs maintainers keep the manifest format section in the README in step with `_validateManifest` manually.
+
 ### `check:tutorial-commands-fresh`
 
 Drift detector for hardwired command lists in tutorial prose. Specifically, the full command reference in [`docs/tutorials/get-started/cli.md`](../../tutorials/get-started/cli.md) is a verbatim copy of the `help` block in [`examples/backend/mdk-e2e/client.js`](../../../examples/backend/mdk-e2e/client.js) (lines 132–153). A CI script that runs `echo -e 'help\nquit' | node examples/backend/mdk-e2e/client.js` and diffs the output against the hardwired block in the tutorial would catch drift whenever a command is added, removed, or renamed.
@@ -135,14 +165,16 @@ Drift detector for hardwired command lists in tutorial prose. Specifically, the 
 
 ### Combined effect
 
-With all six wired, an LLM browsing the catalogue can rely on six guarantees:
+With all eight wired, an LLM browsing the catalogue can rely on eight guarantees:
 
 1. Every worker contract parses cleanly against the engineer-owned schema (`check:contract`).
 2. Every UI export carries the JSDoc and co-located prose the catalogue expects (`check:agent-ready`).
 3. The presentation overlay does not silently drift from what actually ships (`check:facets-fresh`).
 4. Every cross-reference in user-facing Markdown carries a port-time routing hint (`check:port-signals`).
 5. The hand-maintained integration catalogue tables stay in step with shipping workers (`check:integrations-fresh`).
-6. Hardwired command lists in tutorial prose stay in step with the source code they document (`check:tutorial-commands-fresh`).
+6. The generated default-plugin route tables stay in step with each plugin's `mdk-plugin.json` (`check:plugin-reference-fresh`).
+7. Every `mdk-plugin.json` in the repo is well-formed against the machine-readable schema (`check:plugin-manifest`).
+8. Hardwired command lists in tutorial prose stay in step with the source code they document (`check:tutorial-commands-fresh`).
 
 Without these gates, docs maintainers chase drift manually — the IA still describes the shape, only the enforcement is missing. With them, the constraint surface stays where it belongs (schema + JSDoc validator) and the docs layer stays an overlay, never a gatekeeper.
 

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-antminer",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "MDK Antminer example site (single-process, mock-backed)",
   "keywords": [
     "tether",

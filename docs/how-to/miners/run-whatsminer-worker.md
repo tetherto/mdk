@@ -19,7 +19,11 @@ Deployment-specific requirements:
 - The miner API reachable over encrypted TCP, typically port `14028`
 - The Whatsminer API password. The worker negotiates a session token from it; there is no separate username
 
-## Development
+<Steps>
+
+<Step>
+
+### Development
 
 <details>
 <summary>Run against a mock</summary>
@@ -34,13 +38,17 @@ It prints the ORK HRPC key and the registered device ID, then stays running unti
 
 </details>
 
-## Connect a miner
+</Step>
 
-### Pick your model
+<Step>
+
+### Connect a miner
+
+#### 2.1 Pick your model
 
 Use the Whatsminer worker's [USAGE.md][whatsminer-usage] to choose the manager class and mock example for your model. This guide uses `WM_M56S` and `run-m56s.js` as the example; replace them with the values for your miner.
 
-### Register your miner
+#### 2.2 Register your miner
 
 Whatsminer devices use an encrypted TCP API on port 14028 with token-based authentication; the worker negotiates a session token from the device password (there is no separate username). Add this code to the Node.js service or script that runs the MDK worker in your deployment. The snippet shows the minimum `registerThing` call for one Whatsminer device; replace the example IP address and password with your miner's values:
 
@@ -68,6 +76,10 @@ cd backend/workers/miners/whatsminer
 ```
 
 For the full `registerThing` option reference, the mock `createServer` options, and the per-model alert blocks, see the worker's [USAGE.md][whatsminer-usage] and the shared [install pattern][install-pattern].
+
+</Step>
+
+</Steps>
 
 ## Troubleshooting
 

@@ -40,7 +40,6 @@ import {
   LiveIcon,
   MenuIcon,
   MinerExplorerIcon,
-  MinerOverviewIcon,
   MinersOverviewNavIcon,
   MinersStatIcon,
   // Miner status
@@ -218,7 +217,6 @@ const ICON_CATEGORIES: { title: string; icons: IconEntry[] }[] = [
       { name: 'FarmStarIcon', component: FarmStarIcon },
       { name: 'ScaleControlIcon', component: ScaleControlIcon },
       { name: 'MinerExplorerIcon', component: MinerExplorerIcon },
-      { name: 'MinerOverviewIcon', component: MinerOverviewIcon },
       { name: 'PoolsIcon', component: PoolsIcon },
       { name: 'SiteOverviewIcon', component: SiteOverviewIcon },
       { name: 'LiveIcon', component: LiveIcon, multiColor: true },

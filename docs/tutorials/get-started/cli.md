@@ -11,7 +11,8 @@ docs@tether_slug: tutorials/backend-stack/cli/
 
 ## Overview
 
-This is rung 2 of the [Get started][get-started] ladder: **interact**. It walks the shortest path from a fresh clone to a fully wired MDK stack you can drive interactively from a CLI. Everything runs in one Node process, no real hardware required.
+This is rung 2 of the [Get started][get-started] ladder: **interact**. It walks the shortest path from a fresh clone to a fully wired MDK stack 
+you can drive interactively from a CLI. Everything runs in one Node process, no real hardware required.
 
 What you'll have at the end:
 
@@ -21,9 +22,12 @@ What you'll have at the end:
 - (Optional) An App Node HTTP API on `:3000` so non-Node consumers (browsers, AI agents over MCP) can hit the same stack over REST
 
 > [!NOTE]
-> Same shape as [rung 1][run-tutorial]: the stack still boots with `getOrk()`, `startWorker()`, and `registerThing()`. Only the worker class (`WM_M56S`) and the mock hardware (Whatsminer instead of Antminer) change. What's new here is a second process — `client.js` — that connects over IPC and drives the running stack.
+> Same shape as [rung 1][run-tutorial]: the stack still boots with `getOrk()`, `startWorker()`, and `registerThing()`. Only the worker 
+> class (`WM_M56S`) and the mock hardware (Whatsminer instead of Antminer) change. What's new here is a second process — `client.js` — that connects 
+> over IPC and drives the running stack.
 
-The example lives in [`examples/backend/mdk-e2e/`][examples-e2e] and contains six runnable scripts. This tutorial uses three of them: `run.js` for a smoke test, `server.js` for the long-running stack, and `client.js` for interactive control.
+The example lives in [`examples/backend/mdk-e2e/`][examples-e2e] and contains six runnable scripts. This tutorial uses 
+three of them: `run.js` for a smoke test, `server.js` for the long-running stack, and `client.js` for interactive control.
 
 ## Prerequisites
 
@@ -31,7 +35,8 @@ The example lives in [`examples/backend/mdk-e2e/`][examples-e2e] and contains si
 - npm >=11
 
 > [!IMPORTANT]
-> The stack starts an ORK whose control plane is peer-to-peer over a Hyperswarm DHT, so it needs outbound network access. Without it the stack stalls at startup while the ORK tries to reach DHT bootstrap nodes. See [how workers connect][workers-connect] for the ORK/DHT mechanics.
+> The stack starts an ORK whose control plane is peer-to-peer over a Hyperswarm DHT, so it needs outbound network access. Without it, 
+> the stack stalls at startup while the ORK tries to reach DHT bootstrap nodes. See [how workers connect][workers-connect] for the ORK/DHT mechanics.
 
 <Steps>
 
@@ -257,7 +262,8 @@ ORK routes them to the worker, the worker hits the mock, and the response flows 
 
 ## Cleanup
 
-`Ctrl+C` in Terminal 1 stops the worker, ORK, and mock cleanly. `run.js` deletes its own state directory on exit. `server.js` leaves data under `os.tmpdir()/mdk/` — safe to ignore, or remove with:
+`Ctrl+C` in Terminal 1 stops the worker, ORK, and mock cleanly. `run.js` deletes its own state directory on exit. `server.js` leaves data 
+under `os.tmpdir()/mdk/` — safe to ignore, or remove with:
 
 ```bash
 rm -rf "$TMPDIR/mdk" /tmp/mdk
@@ -265,14 +271,14 @@ rm -rf "$TMPDIR/mdk" /tmp/mdk
 
 ## Continue
 
-Next: [3. Run the dashboard demo][dashboard-tutorial] — put a browser dashboard on a running stack with live charts.
+Next: [3. Run the dashboard demo][dashboard-tutorial]: put a browser dashboard on a running stack with live charts.
 
 ## Go deeper
 
-- Walk the simpler single-script Antminer path — [1. Run the stack][run-tutorial]
-- Run a full site (5 workers, 26 devices) — [`examples/backend/mdk-site/site.js`][site-example]
-- Understand the install pattern for any worker — [`backend/workers/docs/install-pattern.md`][worker-install]
-- Read all runnable examples in one place — [`examples/backend/README.md`][examples-readme]
+- Walk the simpler single-script Antminer path: [1. Run the stack][run-tutorial]
+- Run a [full site (multiple workers and devices):][site-example]
+- Understand the [install pattern for any worker][worker-install]
+- Read all [runnable examples in one place][examples-readme]
 
 ## Links
 
@@ -291,8 +297,8 @@ Next: [3. Run the dashboard demo][dashboard-tutorial] — put a browser dashboar
 [architecture-app-node]: ../../concepts/architecture.md#app-node
 <!-- docs@tether.io: architecture-app-node → concepts/architecture#app-node -->
 
-[workers-connect]: ../../concepts/worker-discovery.md
-<!-- docs@tether.io: workers-connect → concepts/worker-discovery -->
+[workers-connect]: ../../concepts/stack/workers.md
+<!-- docs@tether.io: workers-connect → concepts/stack/workers -->
 
 [examples-e2e]: ../../../examples/backend/README.md#end-to-end-mdk-e2e
 <!-- docs@tether.io: examples-e2e → https://github.com/tetherto/mdk/blob/main/examples/backend/README.md#end-to-end-mdk-e2e -->

@@ -19,7 +19,11 @@ Deployment-specific requirements:
 - The miner API reachable over the native CGMiner TCP API, typically port `4028`
 - No API username or password. The Avalon CGMiner API is unauthenticated
 
-## Development
+<Steps>
+
+<Step>
+
+### Development
 
 <details>
 <summary>Run against a mock</summary>
@@ -34,13 +38,17 @@ It prints the ORK HRPC key and the registered device ID, then stays running unti
 
 </details>
 
-## Connect a miner
+</Step>
 
-### Pick your model
+<Step>
+
+### Connect a miner
+
+#### 2.1 Pick your model
 
 Use the Avalon worker's [USAGE.md][avalon-usage] to confirm the manager class and mock example for your model. This guide uses `AV_A1346` and `run-a1346.js` as the example.
 
-### Register your miner
+#### 2.2 Register your miner
 
 Avalon devices use the native CGMiner TCP API on port 4028, which is unauthenticated (no username or password). Add this code to the Node.js service or script that runs the MDK worker in your deployment. The snippet shows the minimum `registerThing` call for one Avalon device; replace the example IP address with your miner's value:
 
@@ -68,6 +76,10 @@ cd backend/workers/miners/avalon
 ```
 
 For the full `registerThing` option reference, the mock `createServer` options, and the per-model alert blocks, see the worker's [USAGE.md][avalon-usage] and the shared [install pattern][install-pattern].
+
+</Step>
+
+</Steps>
 
 ## Troubleshooting
 

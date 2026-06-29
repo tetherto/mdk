@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-ui-cli",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "private": true,
   "description": "Agent-first command-line interface for the MDK Devkit. Provides registry discovery, doc/example fetching, page scaffolding, and typecheck commands for AI agents and humans.",
   "exports": {
@@ -40,7 +40,7 @@
     "commander": "^12.1.0"
   },
   "devDependencies": {
-    "@tetherto/mdk-react-devkit": "^0.0.1",
+    "@tetherto/mdk-react-devkit": "^0.3.0",
     "@types/node": "^22.10.5",
     "@vitest/coverage-v8": "^4.1.2",
     "execa": "^9.5.2",

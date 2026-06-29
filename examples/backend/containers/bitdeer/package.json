@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-container-bitdeer",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "MDK Bitdeer D40 container example (mock-backed)",
   "keywords": [
     "tether",

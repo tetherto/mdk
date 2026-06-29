@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-react-devkit",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "private": true,
   "description": "MDK Devkit (React) — generic UI primitives (src/core) plus mining-domain components, hooks, and state bindings (src/foundation)",
   "sideEffects": [
@@ -104,8 +104,8 @@
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.25",
-    "@tetherto/mdk-react-adapter": "^0.0.1",
-    "@tetherto/mdk-ui-core": "^0.0.1",
+    "@tetherto/mdk-react-adapter": "^0.3.0",
+    "@tetherto/mdk-ui-core": "^0.3.0",
     "chart.js": "^4.4.9",
     "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-datalabels": "^2.2.0",

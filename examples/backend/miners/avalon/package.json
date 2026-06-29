@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-avalon",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "MDK Avalon miner example site (single-process, mock-backed)",
   "keywords": [
     "tether",

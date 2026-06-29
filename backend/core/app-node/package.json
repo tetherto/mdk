@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-app-node",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "MDK App Node",
   "keywords": [
     "tether"

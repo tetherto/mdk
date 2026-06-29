@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-core-workers",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "private": true,
   "description": "MDK Core Workers",
   "keywords": [

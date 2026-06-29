@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/powermeter-abb",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "PowerMeter ABB",
   "keywords": [
     "tether"

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-minerpool-ocean",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "MDK Ocean minerpool example (standalone, mock-backed)",
   "keywords": [
     "tether",

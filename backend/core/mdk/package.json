@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "MDK bootstrap utilities",
   "main": "index.js",
   "keywords": [

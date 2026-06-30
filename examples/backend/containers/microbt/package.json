@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-microbt",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "MDK MicroBT container example site (single-process, mock-backed)",
   "keywords": [
     "tether",

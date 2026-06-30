@@ -35,7 +35,7 @@ function findPlugins () {
 }
 
 function cell (value) {
-  return String(value == null ? '' : value).replace(/\|/g, '\\|')
+  return String(value == null ? '' : value).replace(/\\/g, '\\\\').replace(/\|/g, '\\|')
 }
 
 function pluginSection (plugin) {

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-core-workers",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "private": true,
   "description": "MDK Core Workers",
   "keywords": [
@@ -23,7 +23,15 @@
     "test:packages": "./test-packages.sh"
   },
   "devDependencies": {
-    "ajv": "8.17.1",
+    "ajv": "8.20.0",
     "standard": "17.1.0"
+  },
+  "overrides": {
+    "acorn": ">=8.17.0",
+    "js-yaml": ">=4.3.0",
+    "minimatch": ">=10.2.1",
+    "qs": ">=6.15.3",
+    "semver": ">=7.8.5",
+    "tar": ">=7.5.19"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-minerpool-f2pool",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "MDK F2Pool minerpool example (standalone, mock-backed)",
   "keywords": ["tether", "mdk", "f2pool", "minerpool", "example"],
   "author": "Tether",

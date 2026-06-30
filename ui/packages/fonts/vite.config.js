@@ -16,6 +16,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
  * inlining of all referenced assets as base64 (which would balloon the CSS
  * to ~750 kB). Using `rollupOptions.input` instead keeps assets as separate
  * files emitted alongside the CSS.
+ *
+ * `cssCodeSplit` MUST stay `true` (Vite's default). With a stylesheet as the
+ * direct entry, Vite 8 / rolldown's `vite:css-post` plugin only registers the
+ * CSS entry in its internal `cssEntriesMap` when code-splitting is enabled,
+ * yet it unconditionally reads that reference back for the resulting pure-CSS
+ * chunk — so `cssCodeSplit: false` makes the build crash with
+ * "Cannot read properties of undefined (reading 'referenceId')". Splitting is
+ * a no-op for this single-entry build, so the emitted output is unchanged.
  */
 export default defineConfig({
   publicDir: false,
@@ -23,7 +31,7 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: true,
-    cssCodeSplit: false,
+    cssCodeSplit: true,
     assetsInlineLimit: 0,
     copyPublicDir: false,
     rollupOptions: {

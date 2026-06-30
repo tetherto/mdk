@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-sensor-seneca",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "MDK Seneca temperature sensor example (mock-backed)",
   "keywords": [
     "tether",

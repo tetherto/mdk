@@ -1,8 +1,7 @@
 # MDK
 
 [![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.3.0)
-[![MDK UI CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/ui.yaml?branch=main&label=UI%20CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/ui.yaml)
-[![MDK Core CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/core.yaml?branch=main&label=Core%20CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/core.yaml)
+[![CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/ci.yml?branch=main&label=CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql)
 [![Documentation](https://img.shields.io/badge/docs-mdk.tether.io-2ea44f?style=flat-square)](https://docs.mdk.tether.io)
 

@@ -1,5 +1,5 @@
-import type { RepairBatchAction, RepairDevice } from '@tetherto/mdk-react-devkit/foundation'
-import { RepairLogChangesSubRow } from '@tetherto/mdk-react-devkit/foundation'
+import type { RepairBatchAction, RepairDevice } from '@tetherto/mdk-react-devkit/domain'
+import { RepairLogChangesSubRow } from '@tetherto/mdk-react-devkit/domain'
 
 import type { JSX } from 'react'
 

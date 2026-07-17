@@ -1,43 +1,58 @@
-# @tetherto/miner-antminer
+# @tetherto/mdk-worker-antminer
 
-MDK worker for Bitmain Antminer Bitcoin miners. Supports the S19XP family.
+MDK Worker for Bitmain Antminer Bitcoin miners. Supports S19XP, S19XP Hydro, S21, and S21 Pro.
 
 ## Supported Models
 
-| Export | Model |
+| `model` value | Model |
 |--------|-------|
-| `AM_S19XP` | Antminer S19 XP |
+| `s19xp` | Antminer S19 XP |
+| `s19xp_h` | Antminer S19 XP Hydro |
+| `s21` | Antminer S21 |
+| `s21pro` | Antminer S21 Pro |
 
 ## Install
 
 ```bash
-npm install @tetherto/miner-antminer
+npm install @tetherto/mdk-worker-antminer
 ```
 
 ## Usage
 
 ```js
-const { AM_S19XP } = require('@tetherto/miner-antminer')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startAntminerWorker } = require('@tetherto/mdk-worker-antminer')
 
-const { manager } = await startWorker(AM_S19XP, { ork, rack: 'rack-2' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: {
-    serialNum: 'S19XP-001',
-    container: 'container-B',
-    pos: 'B1'
-  },
-  opts: {
-    address: '192.168.1.20',
-    port: 4028             // Antminer CGMiner API port
-  }
+const worker = await startAntminerWorker({
+  workerId: 'antminer-rack-2',
+  model: 's19xp',
+  storeDir: './store/antminer-rack-2',
+  seedDevices: [{
+    info: {
+      serialNum: 'S19XP-001',
+      container: 'container-B',
+      pos: 'B1'
+    },
+    opts: {
+      address: '192.168.1.20',
+      port: 80,             // Antminer HTTP API port
+      username: 'root',
+      password: 'root'
+    }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
+`registerThing` command over HRPC instead — see [USAGE.md](USAGE.md#registering-devices) for the full pattern and the
+restart-required caveat.
 
 ## Protocol
 
-Antminer uses the **CGMiner API** over HTTP on port 4028. The worker uses **Digest authentication** (`digest-fetch`) for authenticated requests to the device.
+Antminer uses the **CGMiner-derived HTTP API** with **Digest authentication** for authenticated requests to the device.
 
 ## Telemetry
 
@@ -71,7 +86,7 @@ Antminer uses the **CGMiner API** over HTTP on port 4028. The worker uses **Dige
 | `saveComment` | `text` | Add annotation |
 | `editComment` | `commentId, text` | Edit annotation |
 | `deleteComment` | `commentId` | Delete annotation |
-| `rackReboot` | — | Restart worker process |
+| `rackReboot` | — | Restart Worker process |
 | `downloadLogs` | — | Fetch hardware logs |
 
 ## Health
@@ -82,13 +97,23 @@ Antminer uses the **CGMiner API** over HTTP on port 4028. The worker uses **Dige
 
 ## Development with Mock Server
 
+Run the mock standalone — the model `type` is the first argument (case-insensitive):
+
+```bash
+npm run mock s19xp
+```
+
+Programmatic:
+
 ```js
-const amMock = require('@tetherto/miner-antminer/mock/server')
+const amMock = require('@tetherto/mdk-worker-antminer/mock/server')
 
 amMock.createServer({
-  port: 4028,
+  port: 14021,
   host: '127.0.0.1',
-  type: 's19xp'
+  type: 's19xp',
+  serial: 'AM-001',
+  password: 'root'
 })
 ```
 

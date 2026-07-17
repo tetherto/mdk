@@ -1,4 +1,4 @@
-import { AverageDowntimeChart } from '@tetherto/mdk-react-devkit/core'
+import { AverageDowntimeChart } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 
@@ -14,7 +14,7 @@ export const AverageDowntimeChartPage = (): JSX.Element => (
     <h2 className="demo-section__title">Average Downtime Chart</h2>
     <p className="demo-section__description">
       Stacked bar chart of curtailment vs operational downtime rates (%), matching the mining OS
-      multi-site energy revenue panel.
+      energy revenue panel.
     </p>
     <div className="demo-section__charts demo-section__charts--1-col">
       <section>

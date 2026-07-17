@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
-import { authStore } from '@tetherto/mdk-ui-core'
-import { PoolManagerMinerExplorer } from '@tetherto/mdk-react-devkit/foundation'
+import { authStore } from '@tetherto/mdk-ui-foundation'
+import { PoolManagerMinerExplorer } from '@tetherto/mdk-react-devkit/domain'
 
 import { DEMO_MINERS, DEMO_POOL_CONFIG } from '../../../constants/demo-pool-manager-data'
 import { DemoPageHeader } from '../../../components/demo-page-header'

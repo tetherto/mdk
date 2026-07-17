@@ -57,7 +57,7 @@ The full registry (${componentCount} components, ${hookCount} hooks) is also
 available as a JSON manifest with O(1) indexes:
 
 \`\`\`bash
-node -e 'const r=require("${packageName}/registry.json"); console.log(r.indexes.componentsByOrkCapability)'
+node -e 'const r=require("${packageName}/registry.json"); console.log(r.indexes.componentsByKernelCapability)'
 \`\`\`
 
 ## Reading the state and data-fetching surface
@@ -67,7 +67,7 @@ node -e 'const r=require("${packageName}/registry.json"); console.log(r.indexes.
 npx mdk-ui hooks                                 # full manifest
 npx mdk-ui hooks --category store --format table # just the store-binding hooks
 
-# Zustand stores + TanStack Query helpers from ui-core
+# Zustand stores + TanStack Query helpers from ui-foundation
 npx mdk-ui stores                                # full manifest
 npx mdk-ui stores --category devices --format table
 \`\`\`

@@ -1,0 +1,17 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-enabled-disable-toggle {
+  @include flex_column_center;
+
+  &__toggle {
+    @include flex_between;
+
+    flex-basis: 50%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    gap: 12px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    margin-block: 5px;
+  }
+}

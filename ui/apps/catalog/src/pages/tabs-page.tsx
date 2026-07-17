@@ -4,7 +4,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 import { type ComponentType, type JSX, lazy } from 'react'
 
 const Tab1Content = (): JSX.Element => (

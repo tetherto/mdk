@@ -1,0 +1,11 @@
+# Keep the Docker build context small and reproducible (the image installs fresh).
+**/node_modules
+.git
+**/.mdk-data
+**/store
+**/status
+**/logs
+tmp
+ui/dist
+**/*.log
+.DS_Store

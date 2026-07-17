@@ -1,0 +1,48 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-gauge-chart-component {
+  @include flex_column_center;
+
+  overflow: hidden;
+
+  &__title {
+    margin: 0 0 0.625rem;
+    font-size: 1.125rem;
+    font-weight: 400;
+  }
+
+  &__chart {
+    position: relative;
+    width: 100%;
+
+    .mdk-gauge-chart {
+      position: relative;
+      z-index: 0;
+    }
+  }
+
+  &__value {
+    @include flex_center;
+
+    position: absolute;
+    z-index: 1;
+    right: 0;
+    bottom: 0.25rem;
+    left: 0;
+    gap: 0.25rem;
+    font-size: 1.3125rem;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  &__value-number {
+    font-weight: 600;
+  }
+
+  &__value-unit {
+    font-weight: 400;
+    opacity: 0.8;
+  }
+}

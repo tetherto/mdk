@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operational Centre — Full Scope</title>
+<meta name="description" content="Full program scope for bringing the MiningOS Operational Centre pages (Site Overview + Explorer) into the MDK.">
+
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --ground: #F5F6F8;
+    --paper: #FFFFFF;
+    --ink: #15191F;
+    --ink-2: #555E70;
+    --ink-3: #899282;
+    --muted: #8A93A3;
+    --line: #E4E7ED;
+    --line-strong: #CDD3DC;
+    --accent: #B45309;
+    --accent-deep: #8A3E07;
+    --accent-soft: #FBEEDD;
+    --ok: #2E7D32;
+    --ok-soft: #E6F0E7;
+    --info: #2160A8;
+    --info-soft: #E5EDF6;
+    --blocked: #BE3A2B;
+    --blocked-soft: #F7E7E4;
+    --defer: #79828F;
+    --defer-soft: #ECEFF2;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", "Menlo", Consolas, monospace;
+    --maxw: 1000px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+  }
+
+  /* ---- eyebrow / labels ---- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+
+  /* ---- header ---- */
+  .head h1 {
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    text-wrap: balance;
+    margin: 0 0 14px;
+  }
+  .head .lede {
+    font-size: 17px;
+    color: var(--ink-2);
+    max-width: 62ch;
+    margin: 0 0 22px;
+  }
+  .head .meta {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .head .meta b { color: var(--ink-2); font-weight: 600; }
+
+  /* ---- metrics strip ---- */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 36px 0 8px;
+  }
+  .metric { background: var(--paper); padding: 18px 18px 16px; }
+  .metric .n {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .metric .n .u { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .metric .k {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .metric.hot .n { color: var(--accent); }
+
+  /* ---- section scaffold ---- */
+  section { margin-top: 52px; }
+  .sec-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 18px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .sec-label .hint { text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--ink-3); }
+  h2.title {
+    font-size: 13px;
+  }
+
+  /* ---- phase timeline ---- */
+  .phases { display: flex; flex-direction: column; gap: 10px; }
+  .phase {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 18px;
+    align-items: start;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .phase.is-sprint { border-left-color: var(--accent); background: linear-gradient(90deg, var(--accent-soft), var(--paper) 42%); }
+  .phase .pid {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding-top: 2px;
+  }
+  .phase .pid b { display: block; font-size: 22px; color: var(--ink); letter-spacing: -0.02em; }
+  .phase.is-sprint .pid b { color: var(--accent); }
+  .phase .pbody h3 { margin: 0 0 4px; font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+  .phase .pbody p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+  .phase .pmeta { text-align: right; white-space: nowrap; }
+  .phase .pmeta .days {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+  .phase .pmeta .tasks { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ---- two-page scope ---- */
+  .pages { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pcard {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 22px 20px;
+  }
+  .pcard .route {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+    word-break: break-all;
+  }
+  .pcard h3 { margin: 0 0 10px; font-size: 19px; letter-spacing: -0.01em; }
+  .pcard ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .pcard li { font-size: 13.5px; color: var(--ink-2); padding-left: 16px; position: relative; }
+  .pcard li::before {
+    content: ""; position: absolute; left: 0; top: 8px;
+    width: 6px; height: 6px; border-radius: 1px; background: var(--accent);
+  }
+  .pcard li b { color: var(--ink); font-weight: 600; }
+  .pcard .scale {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line);
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+
+  /* ---- sprint callout ---- */
+  .sprint {
+    background: var(--ink);
+    color: #EDEFF3;
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    margin-top: 16px;
+  }
+  .sprint .eyebrow { color: #F0A35B; }
+  .sprint h3 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.01em; color: #fff; }
+  .sprint .goal { margin: 0 0 20px; color: #B7BECC; font-size: 14.5px; max-width: 70ch; }
+  .sprint-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 26px; }
+  .sprint h4 {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #8B93A3; margin: 0 0 12px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    font-family: var(--mono); font-size: 12px;
+    background: #20262F; border: 1px solid #2D343F; color: #D7DBE3;
+    padding: 5px 9px; border-radius: 6px; font-variant-numeric: tabular-nums;
+  }
+  .chip b { color: #F0A35B; font-weight: 600; }
+  .sprint ul.exit { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .sprint ul.exit li { font-size: 13px; color: #C5CBD6; padding-left: 18px; position: relative; }
+  .sprint ul.exit li::before {
+    content: "✓"; position: absolute; left: 0; top: 0; color: #5FB37A; font-family: var(--mono); font-size: 12px;
+  }
+  .staffing {
+    margin-top: 22px; padding-top: 18px; border-top: 1px solid #2A313B;
+    font-size: 13.5px; color: #B7BECC;
+  }
+  .staffing b { color: #fff; }
+
+  /* ---- tracks ---- */
+  .tracks { margin-top: 24px; padding-top: 20px; border-top: 1px solid #2A313B; }
+  .track {
+    display: grid;
+    grid-template-columns: 132px 1fr;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #232A33;
+  }
+  .track:last-child { border-bottom: 0; }
+  .track .tname {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .track .tname .t {
+    font-size: 14px; font-weight: 650; color: #fff; letter-spacing: -0.01em;
+  }
+  .track .tname .who {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .track .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .track .step {
+    font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums;
+    background: #20262F; border: 1px solid #2D343F; color: #D7DBE3;
+    padding: 6px 10px; border-radius: 6px;
+  }
+  .track .step b { color: #F0A35B; font-weight: 600; }
+  .track .arrow { color: #5A6373; font-family: var(--mono); font-size: 13px; }
+  .track.t1 .tname .who { color: #F0A35B; }
+  .track.t2 .tname .who { color: #6FA8E0; }
+  .track.t3 .tname .who { color: #6FC591; }
+  .track.spike .tname .who { color: #B7BECC; }
+  .track.spike .step { background: #2A2017; border-color: #5C4322; }
+
+  .scaling {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: #2A313B; border: 1px solid #2A313B; border-radius: 8px; overflow: hidden;
+    margin-top: 18px;
+  }
+  .scaling .col { background: #181D24; padding: 14px 15px; }
+  .scaling .col h5 {
+    font-family: var(--mono); font-size: 12px; margin: 0 0 7px; color: #F0A35B; letter-spacing: 0.04em;
+  }
+  .scaling .col.rec h5::after { content: " · recommended"; color: #6FC591; font-size: 10.5px; letter-spacing: 0.06em; }
+  .scaling .col p { margin: 0; font-size: 12.5px; color: #AEB6C2; line-height: 1.5; }
+  .scaling .col.rec { background: #1C2A22; }
+  @media (max-width: 760px) {
+    .track { grid-template-columns: 1fr; gap: 8px; }
+    .scaling { grid-template-columns: 1fr; }
+  }
+
+  /* ---- task table ---- */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; }
+  thead th {
+    text-align: left;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600;
+    padding: 13px 14px; border-bottom: 1px solid var(--line-strong);
+    background: #FAFBFC;
+  }
+  tbody td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13.5px; }
+  tbody tr:last-child td { border-bottom: 0; }
+  .grp td {
+    background: #F0F2F5; padding: 9px 14px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .grp td .gd { float: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  td.id { font-family: var(--mono); color: var(--accent); font-weight: 600; width: 42px; font-variant-numeric: tabular-nums; }
+  td.est { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; width: 92px; }
+  td.tk b { font-weight: 600; }
+  td.tk span { color: var(--ink-2); }
+  td.sp { width: 84px; }
+  .tag {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em;
+    padding: 3px 7px; border-radius: 5px; white-space: nowrap; font-weight: 600;
+  }
+  .tag.s4 { background: var(--accent-soft); color: var(--accent-deep); }
+  .tag.later { background: var(--defer-soft); color: var(--defer); }
+  .tag.block { background: var(--blocked-soft); color: var(--blocked); }
+
+  /* ---- notes ---- */
+  .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .note {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 20px 20px 18px;
+  }
+  .note h4 { margin: 0 0 10px; font-size: 14px; letter-spacing: -0.005em; }
+  .note p { margin: 0 0 9px; font-size: 13px; color: var(--ink-2); }
+  .note p:last-child { margin-bottom: 0; }
+  .note code { font-family: var(--mono); font-size: 12px; background: var(--ground); padding: 1px 5px; border-radius: 4px; color: var(--accent-deep); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 24px; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+  footer {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-family: var(--mono); font-size: 11.5px; color: var(--muted); line-height: 1.7;
+  }
+  footer b { color: var(--ink-2); }
+
+  @media (max-width: 760px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .pages, .sprint-grid, .notes { grid-template-columns: 1fr; }
+    .phase { grid-template-columns: 48px 1fr; }
+    .phase .pmeta { grid-column: 2; text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="head">
+    <p class="eyebrow">MDK · Operational Centre · Program Scope</p>
+    <h1>Site Overview &amp; Explorer into the MDK</h1>
+    <p class="lede">
+      Bring two MiningOS Operational Centre pages — Container&nbsp;Widgets and the device
+      Explorer — into the MDK as add-able shell pages, backed by real backend calls and the
+      voting/approval workflow. This is the full committed scope at <b>full parity</b>; the
+      phasing below lets a usable read-only slice land first.
+    </p>
+    <div class="meta">
+      <span><b>Author</b> Arif Dewi</span>
+      <span><b>Date</b> 2026-06-29</span>
+      <span><b>Plan</b> docs/reference/maintainers/plans/operational-centre-pages.md</span>
+      <span><b>Sprint #4</b> foundation slice</span>
+    </div>
+  </header>
+
+  <div class="metrics">
+    <div class="metric"><div class="n">2</div><div class="k">Pages</div></div>
+    <div class="metric"><div class="n">21</div><div class="k">Tasks</div></div>
+    <div class="metric"><div class="n">57–84<span class="u"> d</span></div><div class="k">Dev-days</div></div>
+    <div class="metric"><div class="n">6–9<span class="u"> wk</span></div><div class="k">Program</div></div>
+    <div class="metric hot"><div class="n">8</div><div class="k">In Sprint #4</div></div>
+  </div>
+
+  <!-- PHASES -->
+  <section>
+    <p class="sec-label">Sequencing <span class="hint">critical path: A → C → (E,F) → H → I</span></p>
+    <div class="phases">
+
+      <div class="phase is-sprint">
+        <div class="pid">Phase<b>0</b></div>
+        <div class="pbody">
+          <h3>Spike &amp; contracts</h3>
+          <p>Verify endpoint shapes against the live BE, confirm the per-model tab matrix and exact voting payloads. Do first — blocks everyone.</p>
+        </div>
+        <div class="pmeta"><div class="days">2–3 d</div><div class="tasks">task #1</div></div>
+      </div>
+
+      <div class="phase is-sprint">
+        <div class="pid">Phase<b>1</b></div>
+        <div class="pbody">
+          <h3>Data layer</h3>
+          <p>ui-foundation read + voting factories, then the adapter read &amp; voting hooks. The sequential gate everything downstream waits on.</p>
+        </div>
+        <div class="pmeta"><div class="days">10–14 d</div><div class="tasks">#2 #3 #4 #5</div></div>
+      </div>
+
+      <div class="phase is-sprint">
+        <div class="pid">Phase<b>2</b></div>
+        <div class="pbody">
+          <h3>Pages — read-first slice</h3>
+          <p>Generic Container-Widgets grid + Explorer list/detail + Home/Charts tabs + shell pages + the missing primitives. First demoable end-to-end slice.</p>
+        </div>
+        <div class="pmeta"><div class="days">18–25 d</div><div class="tasks">#6 #9 #10 #14 #15 #16</div></div>
+      </div>
+
+      <div class="phase">
+        <div class="pid">Phase<b>3</b></div>
+        <div class="pbody">
+          <h3>Vendor parity + remaining tabs</h3>
+          <p>Widget vendor boxes + DCS; the full Explorer tab matrix — PDU, Heatmap, Power Adjustment, Parameters, Alarm, Controls, Settings across all 6 models.</p>
+        </div>
+        <div class="pmeta"><div class="days">17–24 d</div><div class="tasks">#7 #8 #11 #12 #13</div></div>
+      </div>
+
+      <div class="phase">
+        <div class="pid">Phase<b>4</b></div>
+        <div class="pbody">
+          <h3>Writes everywhere</h3>
+          <p>Wire device control actions (reboot, power-mode, LED, position, add/replace) into PDU / Controls / Power-Adjustment through the voting flow.</p>
+        </div>
+        <div class="pmeta"><div class="days">incl. above</div><div class="tasks">#5 wiring</div></div>
+      </div>
+
+      <div class="phase">
+        <div class="pid">Phase<b>5</b></div>
+        <div class="pbody">
+          <h3>CLI + registry + catalog</h3>
+          <p>Default-app wiring, managed-page add/remove for both pages, blueprints &amp; registry, catalog demos.</p>
+        </div>
+        <div class="pmeta"><div class="days">7–10 d</div><div class="tasks">#17 #18 #19 #20</div></div>
+      </div>
+
+      <div class="phase">
+        <div class="pid">Phase<b>6</b></div>
+        <div class="pbody">
+          <h3>Real-BE QA</h3>
+          <p>Smoke every view, every tab × model, every write path against the local MiningOS backend with a real token.</p>
+        </div>
+        <div class="pmeta"><div class="days">3–5 d</div><div class="tasks">#21</div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- TWO PAGES -->
+  <section>
+    <p class="sec-label">What ships — two pages, full parity</p>
+    <div class="pages">
+
+      <div class="pcard">
+        <span class="route">/operations/mining/site-overview/container-widgets</span>
+        <h3>Site Overview</h3>
+        <ul>
+          <li><b>Container widget grid</b> — per-container card: status, miners summary, activity chart</li>
+          <li><b>Vendor boxes</b> — supply-liquid, tanks, Bitmain immersion, MicroBT</li>
+          <li><b>DCS wiring</b> — cooling &amp; energy system data</li>
+          <li><b>Container Charts</b> sub-view — multi line-chart + selectors</li>
+          <li><b>Confirmation modal</b> for threshold/alarm settings</li>
+        </ul>
+        <div class="scale">grid + 4 vendor box types + charts sub-view</div>
+      </div>
+
+      <div class="pcard">
+        <span class="route">/operations/mining/explorer?tab=container</span>
+        <h3>Explorer</h3>
+        <ul>
+          <li><b>List + detail split</b> — tabs: container / miner / cabinet</li>
+          <li><b>Thing detail</b> — 9 tabs × 6 container models</li>
+          <li><b>PDU tab</b> — multi-select socket grid + heatmap + dialogs</li>
+          <li><b>Heatmap &amp; Power Adjustment</b> tabs</li>
+          <li><b>Writes via voting</b> — reboot, power-mode, LED, position, add/replace</li>
+        </ul>
+        <div class="scale">9 tabs × 6 models = the dominant cost</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SPRINT 4 -->
+  <section>
+    <p class="sec-label">Sprint #4 — the foundation slice <span class="hint">2 weeks · staff with 3</span></p>
+    <div class="sprint">
+      <p class="eyebrow">First 10 working days</p>
+      <h3>Lock contracts, land the data layer, ship a read-only slice</h3>
+      <p class="goal">
+        The de-risking sprint. Spike the BE, build the <b>entire data + hook layer</b> (reads and
+        voting hooks), add the missing visualization primitives, and wire a thin <b>read-only</b>
+        Container-Widgets + Explorer slice against the real backend. No full tab matrix, no vendor
+        boxes, no UI-wired writes yet — those depend on this.
+      </p>
+      <div class="sprint-grid">
+        <div>
+          <h4>In scope — 8 tasks</h4>
+          <div class="chips">
+            <span class="chip"><b>#1</b> spike</span>
+            <span class="chip"><b>#2</b> ui-foundation reads</span>
+            <span class="chip"><b>#3</b> voting factory</span>
+            <span class="chip"><b>#4</b> read hooks</span>
+            <span class="chip"><b>#5</b> voting hooks</span>
+            <span class="chip"><b>#14</b> primitives</span>
+            <span class="chip"><b>#6</b> widgets grid</span>
+            <span class="chip"><b>#9</b> explorer list</span>
+          </div>
+        </div>
+        <div>
+          <h4>Exit criteria</h4>
+          <ul class="exit">
+            <li>Contracts + tab matrix + voting payloads documented</li>
+            <li>#2–#5 complete &amp; unit-tested</li>
+            <li>#14 primitives done, with catalog demo</li>
+            <li>#6 / #9 wired to live reads (container + miner)</li>
+            <li>Read-only slice runs against the real BE</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tracks">
+        <h4>Three parallel tracks — staff 1 to 3</h4>
+
+        <div class="track spike">
+          <div class="tname"><span class="t">Spike</span><span class="who">Lead · days 1–3</span></div>
+          <div class="flow">
+            <span class="step"><b>#1</b> verify contracts + tab matrix + voting payloads</span>
+            <span class="arrow">→ then floats to review</span>
+          </div>
+        </div>
+
+        <div class="track t1">
+          <div class="tname"><span class="t">Track 1 · Data</span><span class="who">Dev A · ui-foundation</span></div>
+          <div class="flow">
+            <span class="step"><b>#2</b> read factories</span>
+            <span class="arrow">→</span>
+            <span class="step"><b>#3</b> voting factory</span>
+          </div>
+        </div>
+
+        <div class="track t2">
+          <div class="tname"><span class="t">Track 2 · Hooks</span><span class="who">Dev B · react-adapter</span></div>
+          <div class="flow">
+            <span class="step"><b>#4</b> read hooks</span>
+            <span class="arrow">→</span>
+            <span class="step"><b>#5</b> voting hooks</span>
+            <span class="arrow">(waits on #2)</span>
+          </div>
+        </div>
+
+        <div class="track t3">
+          <div class="tname"><span class="t">Track 3 · UI</span><span class="who">Dev C · react-devkit</span></div>
+          <div class="flow">
+            <span class="step"><b>#14</b> primitives</span>
+            <span class="arrow">→</span>
+            <span class="step"><b>#6</b> widgets grid</span>
+            <span class="step"><b>#9</b> explorer list</span>
+            <span class="arrow">(waits on #4)</span>
+          </div>
+        </div>
+
+        <div class="scaling">
+          <div class="col">
+            <h5>1 dev</h5>
+            <p>Run the tracks in series: spike → data → hooks → UI. Doable but tight — the read-only slice likely slips past 2 weeks.</p>
+          </div>
+          <div class="col">
+            <h5>2 devs</h5>
+            <p>Dev A takes Tracks 1+2 (data→hooks); Dev B takes Track 3 (primitives, which is dependency-free, then UI). Clean, no idle time.</p>
+          </div>
+          <div class="col rec">
+            <h5>3 devs</h5>
+            <p>One dev per track, Lead on the spike. Maximum useful parallelism — a 4th has no independent lane and would churn on mocks.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FULL TASK TABLE -->
+  <section>
+    <p class="sec-label">All 21 tasks <span class="hint">ideal engineer-days · planning-grade ±40%</span></p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Task</th><th>Est.</th><th>Sprint</th></tr>
+        </thead>
+        <tbody>
+          <tr class="grp"><td colspan="4">Phase 0 — Spike <span class="gd">2–3 d</span></td></tr>
+          <tr><td class="id">1</td><td class="tk"><b>Spike: BE contracts &amp; tab matrix</b> <span>— verify endpoint shapes, per-model tab matrix, voting payloads</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag block">blocks all</span></td></tr>
+
+          <tr class="grp"><td colspan="4">Phase 1 — Data layer <span class="gd">10–14 d</span></td></tr>
+          <tr><td class="id">2</td><td class="tk"><b>ui-foundation read data layer</b> <span>— query factories, param builders, types, tab-matrix module</span></td><td class="est">3–4 d</td><td class="sp"><span class="tag s4">Sprint 4</span></td></tr>
+          <tr><td class="id">3</td><td class="tk"><b>Device-action / voting factory</b> <span>— single + batch, vote, cancel, comments</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag s4">Sprint 4</span></td></tr>
+          <tr><td class="id">4</td><td class="tk"><b>Read hooks (react-adapter)</b> <span>— widgets, explorer-list, thing-detail, pdu, cooling, …</span></td><td class="est">3–4 d</td><td class="sp"><span class="tag s4">Sprint 4</span></td></tr>
+          <tr><td class="id">5</td><td class="tk"><b>Voting hooks (react-adapter)</b> <span>— useDeviceAction, vote, cancel, comment + gating</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag s4">Sprint 4</span></td></tr>
+
+          <tr class="grp"><td colspan="4">Phase 2 — Pages, read-first slice <span class="gd">18–25 d</span></td></tr>
+          <tr><td class="id">6</td><td class="tk"><b>Container Widgets grid + generic cards</b> <span>— model-agnostic, read-only</span></td><td class="est">3–4 d</td><td class="sp"><span class="tag s4">Sprint 4</span></td></tr>
+          <tr><td class="id">9</td><td class="tk"><b>Explorer list + detail panel</b> <span>— split view, container/miner tables, detail panel</span></td><td class="est">4–5 d</td><td class="sp"><span class="tag s4">Sprint 4</span></td></tr>
+          <tr><td class="id">10</td><td class="tk"><b>Thing-detail: Home + Charts tabs</b> <span>— per-model tab shell + first two tabs</span></td><td class="est">4–5 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">14</td><td class="tk"><b>Gauge &amp; heatmap primitives</b> <span>— missing react-devkit/primitives visualizations</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag s4">Sprint 4</span></td></tr>
+          <tr><td class="id">15</td><td class="tk"><b>Site Overview shell page</b> <span>— compose widgets + charts sub-views</span></td><td class="est">1–2 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">16</td><td class="tk"><b>Explorer shell page</b> <span>— list+detail split + thing-detail routing</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+
+          <tr class="grp"><td colspan="4">Phase 3 — Vendor parity + remaining tabs <span class="gd">17–24 d</span></td></tr>
+          <tr><td class="id">7</td><td class="tk"><b>Widget vendor boxes + DCS</b> <span>— supply-liquid, tanks, immersion, MicroBT + cooling/energy</span></td><td class="est">4–6 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">8</td><td class="tk"><b>Container Charts sub-view</b> <span>— multi line-chart + selectors</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">11</td><td class="tk"><b>Thing-detail: PDU tab</b> <span>— multi-select grid, legends, add/replace + position dialogs</span></td><td class="est">5–7 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">12</td><td class="tk"><b>Thing-detail: Heatmap + Power Adjustment</b> <span>— visualization + control tab</span></td><td class="est">4–5 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">13</td><td class="tk"><b>Thing-detail: Parameters / Alarm / Controls / Settings</b> <span>— remaining per-model tabs</span></td><td class="est">4–6 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+
+          <tr class="grp"><td colspan="4">Phase 5 — CLI + registry + catalog <span class="gd">7–10 d</span></td></tr>
+          <tr><td class="id">17</td><td class="tk"><b>Add both pages to default app</b> <span>— sidebar, routes, nav icons</span></td><td class="est">1 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">18</td><td class="tk"><b>CLI add/remove for both pages</b> <span>— managed-pages entries + tests</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">19</td><td class="tk"><b>Registry + blueprints + docs</b> <span>— two blueprints, regenerate manifests</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+          <tr><td class="id">20</td><td class="tk"><b>Catalog demos</b> <span>— routes/pages for new components</span></td><td class="est">2–3 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+
+          <tr class="grp"><td colspan="4">Phase 6 — QA <span class="gd">3–5 d</span></td></tr>
+          <tr><td class="id">21</td><td class="tk"><b>Real-BE integration &amp; QA pass</b> <span>— every view, tab × model, write path</span></td><td class="est">3–5 d</td><td class="sp"><span class="tag later">later</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--accent-soft);border:1px solid var(--accent)"></i> in Sprint #4</span>
+      <span><i class="sw" style="background:var(--defer-soft);border:1px solid var(--line-strong)"></i> later sprint</span>
+      <span><i class="sw" style="background:var(--blocked-soft);border:1px solid var(--blocked)"></i> blocks others</span>
+    </div>
+  </section>
+
+  <!-- NOTES -->
+  <section>
+    <p class="sec-label">Why it resists splitting · scope decisions</p>
+    <div class="notes">
+      <div class="note">
+        <h4>Parallelism caps around 2 on the critical path</h4>
+        <p>The data layer (#2–#5) is a <b>sequential gate</b> — page work churns against mocks until it stabilizes.</p>
+        <p>The Explorer detail tabs (#10–#13) are <b>one coupled surface</b> — shared tab shell, selection store, and <code>Thing</code> container — so splitting tabs across devs adds merge contention faster than throughput.</p>
+        <p>Peel-off work — vendor boxes (#7), primitives (#14), catalog/docs — is where extra devs add value.</p>
+      </div>
+      <div class="note">
+        <h4>Scope locked 2026-06-29</h4>
+        <p><b>Explorer:</b> full parity — 9 tabs × 6 models, PDU grid + heatmap.</p>
+        <p><b>Writes:</b> included — control actions via the voting workflow.</p>
+        <p><b>Widgets:</b> full vendor parity + DCS.</p>
+        <p><b>API:</b> match the reference app exactly — <code>/list-things</code>, <code>/tail-log</code>, <code>/pdu-layout</code>, <code>/global/data</code>, <code>/actions/*</code> — not the newer <code>/auth/*</code> aggregates.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <b>Source FE</b> the reference app (AntD · RTK Query · Formik) &nbsp;·&nbsp; <b>Real BE</b> miningos-gateway :3000 &nbsp;·&nbsp; <b>Target</b> MDK · react-devkit / react-adapter / ui-foundation / cli<br>
+    Full plan: docs/reference/maintainers/plans/operational-centre-pages.md &nbsp;·&nbsp; Sprint backlog: docs/reference/maintainers/plans/operational-centre-sprint-4.md
+  </footer>
+
+</div>
+
+</body>
+</html>

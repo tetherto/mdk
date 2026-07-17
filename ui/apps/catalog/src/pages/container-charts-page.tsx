@@ -1,8 +1,8 @@
-import { ContainerCharts, TAGS_LABEL } from '@tetherto/mdk-react-devkit/foundation'
+import { ContainerCharts, TAGS_LABEL } from '@tetherto/mdk-react-devkit/domain'
 import type {
   ChartEntry,
   ContainerChartsDatasetBorderColorResolver,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import { useMemo, useState } from 'react'
 import type { JSX, ReactNode } from 'react'
 
@@ -117,7 +117,7 @@ const microbtChartRows: ChartEntry[] = [
   {
     ts: 1700000000,
     container_specific_stats_group_aggr: {
-      'container-mbt-wonderint': {
+      'container-mbt-beta': {
         unit_inlet_temp_t2_group: 29,
         unit_outlet_pressure_p3_group: 1.7,
       },

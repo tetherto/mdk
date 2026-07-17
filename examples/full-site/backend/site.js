@@ -2,32 +2,53 @@
 
 // Shared boot primitives for the full-site example — worker specs, device
 // seeding, config injection, pool driver, readiness wait, UI launcher. Used by
-// both start.js (in-process, via an `ork` handle) and backend/proc/* (out-of-
+// both start.js (in-process, via an `kernel` handle) and backend/proc/* (out-of-
 // process, via discovery); bootWorker() handles either.
 
 const path = require('path')
 const fs = require('fs')
 const { spawn } = require('child_process')
 const debug = require('debug')('mdk:example:full-site:site')
-const { getOrk, startWorker } = require('../../../backend/core/mdk')
+const { getKernel } = require('../../../backend/core/mdk')
+const { publishWorkerKey, keysDir } = require('../../../backend/core/mdk/lib/local-discovery')
 const { PORTS, HOST } = require('../mocks')
 
-const { WM_M56S } = require('../../../backend/workers/miners/whatsminer')
-const { MBT_KEHUA } = require('../../../backend/workers/containers/microbt')
-const { ABB_B23 } = require('../../../backend/workers/power-meter/abb')
-const { OCEAN_POOL } = require('../../../backend/workers/minerpools/ocean')
+const { startWhatsminerWorker } = require('../../../backend/workers/miners/whatsminer')
+const { startAntminerWorker } = require('../../../backend/workers/miners/antminer')
+const { startAvalonWorker } = require('../../../backend/workers/miners/avalon')
+const { startAntspaceWorker } = require('../../../backend/workers/containers/antspace')
+const { startBitdeerWorker } = require('../../../backend/workers/containers/bitdeer')
+const { startAbbWorker } = require('../../../backend/workers/power-meter/abb')
+const { startSatecWorker } = require('../../../backend/workers/power-meter/satec')
+const { startSchneiderWorker } = require('../../../backend/workers/power-meter/schneider')
+const { startOceanPoolWorker } = require('../../../backend/workers/minerpools/ocean')
+const { startF2poolWorker } = require('../../../backend/workers/minerpools/f2pool')
+const { startSenecaWorker } = require('../../../backend/workers/temperature/seneca')
+
+const bitdeerMock = require(path.join(__dirname, '..', '..', '..', 'backend', 'workers', 'containers', 'bitdeer', 'mock', 'server'))
 
 const WORKERS_SRC = path.join(__dirname, '..', '..', '..', 'backend', 'workers')
 const ROOT = path.join(__dirname, '..', '.mdk-data')
 
 const HTTP_PORT = Number(process.env.MDK_HTTP_PORT) || 3007
 const UI_PORT = Number(process.env.MDK_UI_PORT) || 3040
+const MCP_PORT = Number(process.env.MDK_MCP_PORT) || 3008
 
-const CONTAINER_ID = 'container-1'
-const DEFAULT_MINER_COUNT = 100
+const CONTAINER_ANTSPACE = 'container-antspace'
+const CONTAINER_BITDEER = 'container-bitdeer'
+const BITDEER_MQTT_ID = 'C024_D40'
+
+const DEFAULT_MINER_COUNT = 10
+const MINER_FAMILIES = 3
 const PDU_COUNT = 5
-const POOL_ACCOUNT = 'tb1qqltm70wyz734t9k8d9w70uuhyxnemyh56d5ra8rtw082ytd7ywmsqudq5e'
+const POOL_ACCOUNT = 'sample-ocean-account'
+const F2POOL_ACCOUNT = 'sample-f2pool-account'
 const POOL_TICK_MS = 10000
+
+const SENSOR_CONTAINERS = [
+  { id: 'site-sensor-antspace', container: CONTAINER_ANTSPACE, port: PORTS.SENSOR_BASE },
+  { id: 'site-sensor-bitdeer', container: CONTAINER_BITDEER, port: PORTS.SENSOR_BASE + 1 }
+]
 
 // Demo-friendly cadence: collect a snap and store it to the tail-log every few
 // seconds (the real defaults are 60s / 300s, too slow to watch live).
@@ -41,89 +62,142 @@ const THING_CONF = {
 
 // --- device seeding (real connection opts pointed at the mock ports) ---------
 
-async function seedMiners (manager, minerCount) {
-  const count = minerCount || DEFAULT_MINER_COUNT
+function pduPos (i, count, offset = 0) {
   const socketsPerPdu = Math.max(1, Math.ceil(count / PDU_COUNT))
-  for (let i = 0; i < count; i++) {
-    const pdu = Math.floor(i / socketsPerPdu) + 1
-    const socket = (i % socketsPerPdu) + 1
-    await manager.registerThing({
-      id: `miner-${i}`,
-      info: { container: CONTAINER_ID, pos: `${pdu}_${socket}`, serialNum: `WM-${String(i).padStart(4, '0')}` },
-      opts: { address: HOST, port: PORTS.MINER_BASE + i, password: 'admin' }
-    })
-  }
-  return count
+  const idx = i + offset
+  const pdu = Math.floor(idx / socketsPerPdu) + 1
+  const socket = (idx % socketsPerPdu) + 1
+  return `${pdu}_${socket}`
 }
 
-async function seedContainer (manager) {
-  await manager.registerThing({
-    id: CONTAINER_ID,
-    info: { container: CONTAINER_ID },
-    opts: { address: HOST, port: PORTS.CONTAINER, username: 'admin', password: 'admin' }
-  })
-  return 1
+// Runtime-hosted worker: seed data, not registerThing calls — passed to
+// startWhatsminerWorker as seedDevices and applied only to an empty store.
+// Shares CONTAINER_ANTSPACE with the antminer family — offset by `count` so
+// the two families occupy distinct PDU positions in the same rack.
+function seedWhatsminers (minerCount) {
+  const count = minerCount || DEFAULT_MINER_COUNT
+  return Array.from({ length: count }, (_, i) => ({
+    id: `whatsminer-${i}`,
+    info: { container: CONTAINER_ANTSPACE, pos: pduPos(i, count, count), serialNum: `WM-${String(i).padStart(4, '0')}` },
+    opts: { address: HOST, port: PORTS.MINER_BASE + i, password: 'admin' }
+  }))
 }
 
-async function seedPowermeter (manager) {
-  await manager.registerThing({
+function seedAntminers (minerCount) {
+  const count = minerCount || DEFAULT_MINER_COUNT
+  return Array.from({ length: count }, (_, i) => ({
+    id: `antminer-${i}`,
+    info: { container: CONTAINER_ANTSPACE, pos: pduPos(i, count), serialNum: `AM-${String(i).padStart(4, '0')}` },
+    opts: { address: HOST, port: PORTS.ANTMINER_BASE + i, username: 'root', password: 'root' }
+  }))
+}
+
+function seedAvalonMiners (minerCount) {
+  const count = minerCount || DEFAULT_MINER_COUNT
+  return Array.from({ length: count }, (_, i) => ({
+    id: `avalon-${i}`,
+    info: { container: CONTAINER_BITDEER, pos: pduPos(i, count), serialNum: `AV-${String(i).padStart(4, '0')}` },
+    opts: { address: HOST, port: PORTS.AVALON_BASE + i, password: 'admin' }
+  }))
+}
+
+function seedAntspaceContainer () {
+  return [{
+    id: CONTAINER_ANTSPACE,
+    info: { container: CONTAINER_ANTSPACE, serialNum: 'HK3-001' },
+    opts: { address: HOST, port: PORTS.ANTSPACE }
+  }]
+}
+
+function seedBitdeerContainer () {
+  return [{
+    id: CONTAINER_BITDEER,
+    info: { container: CONTAINER_BITDEER, serialNum: 'D40-A1346-001' },
+    opts: { containerId: BITDEER_MQTT_ID }
+  }]
+}
+
+function seedPowermeter () {
+  return [{
     id: 'site-powermeter',
     info: { pos: 'site' },
     opts: { address: HOST, port: PORTS.POWERMETER, unitId: 1 }
-  })
-  return 1
+  }]
 }
 
-// One worker per device family. workerId is fixed so the persistent store and
-// RPC seed are reused on every restart. `name` is the short CLI/argv token.
+function seedSatecPowermeter () {
+  return [{
+    id: 'site-satec-powermeter',
+    info: { pos: 'site' },
+    opts: { address: HOST, port: PORTS.SATEC_POWERMETER, unitId: 1 }
+  }]
+}
+
+function seedSchneiderPowermeter () {
+  return [{
+    id: 'site-schneider-powermeter',
+    info: { pos: 'site' },
+    opts: { address: HOST, port: PORTS.SCHNEIDER_POWERMETER, unitId: 1 }
+  }]
+}
+
+function seedSenecaSensors () {
+  return SENSOR_CONTAINERS.map((s) => ({
+    id: s.id,
+    info: { container: s.container, pos: 'inlet', serialNum: `SEN-${s.container}` },
+    opts: { address: HOST, port: s.port, unitId: 0, register: 3 }
+  }))
+}
+
+// Bitdeer mock is an MQTT client — start it after the worker's broker is up.
+function startBitdeerMock () {
+  const bitdeerDir = path.join(WORKERS_SRC, 'containers', 'bitdeer')
+  process.chdir(bitdeerDir)
+  const handle = bitdeerMock.createServer({
+    host: HOST,
+    port: PORTS.BITDEER_MQTT,
+    type: 'd40_a1346',
+    id: BITDEER_MQTT_ID
+  })
+  debug('started bitdeer mock (MQTT client → %s:%d, id=%s)', HOST, PORTS.BITDEER_MQTT, BITDEER_MQTT_ID)
+  return handle
+}
+
+// One worker per device family, each hosted on the WorkerRuntime through its
+// package's plugin boot. workerId is fixed so the persistent store and RPC
+// seed are reused on every restart. `name` is the short CLI/argv token.
 const WORKER_SPECS = [
-  { name: 'miner', workerId: 'miner-worker', Manager: WM_M56S, pkg: 'miners/whatsminer', seed: seedMiners },
-  { name: 'container', workerId: 'container-worker', Manager: MBT_KEHUA, pkg: 'containers/microbt', seed: seedContainer },
-  { name: 'powermeter', workerId: 'powermeter-worker', Manager: ABB_B23, pkg: 'power-meter/abb', seed: seedPowermeter },
-  { name: 'minerpool', workerId: 'minerpool-worker', Manager: OCEAN_POOL, pkg: 'minerpools/ocean', pool: true }
+  { name: 'whatsminer', workerId: 'whatsminer-worker', boot: startWhatsminerWorker, model: 'm56s', pkg: 'miners/whatsminer', seed: seedWhatsminers },
+  { name: 'antminer', workerId: 'antminer-worker', boot: startAntminerWorker, model: 's19xp', pkg: 'miners/antminer', seed: seedAntminers },
+  { name: 'avalon', workerId: 'avalon-worker', boot: startAvalonWorker, model: 'a1346', pkg: 'miners/avalon', seed: seedAvalonMiners },
+  { name: 'antspace', workerId: 'antspace-worker', boot: startAntspaceWorker, model: 'hk3', pkg: 'containers/antspace', seed: seedAntspaceContainer },
+  { name: 'bitdeer', workerId: 'bitdeer-worker', boot: startBitdeerWorker, model: 'a1346', pkg: 'containers/bitdeer', seed: seedBitdeerContainer, mqttPort: PORTS.BITDEER_MQTT, afterBoot: startBitdeerMock },
+  { name: 'abb', workerId: 'powermeter-worker', boot: startAbbWorker, model: 'b23', pkg: 'power-meter/abb', seed: seedPowermeter },
+  { name: 'satec', workerId: 'satec-powermeter-worker', boot: startSatecWorker, model: 'pm180', pkg: 'power-meter/satec', seed: seedSatecPowermeter },
+  { name: 'schneider', workerId: 'schneider-powermeter-worker', boot: startSchneiderWorker, model: 'pm5340', pkg: 'power-meter/schneider', seed: seedSchneiderPowermeter },
+  { name: 'seneca', workerId: 'seneca-sensor-worker', boot: startSenecaWorker, noModelOpt: true, pkg: 'temperature/seneca', seed: seedSenecaSensors },
+  { name: 'minerpool', workerId: 'minerpool-worker', boot: startOceanPoolWorker, pkg: 'minerpools/ocean', pool: true, poolKey: 'ocean', poolConf: () => ({ apiUrl: `http://${HOST}:${PORTS.POOL}`, accounts: [POOL_ACCOUNT] }) },
+  { name: 'f2pool', workerId: 'f2pool-worker', boot: startF2poolWorker, pkg: 'minerpools/f2pool', pool: true, poolKey: 'f2pool', poolConf: () => ({ apiUrl: `http://${HOST}:${PORTS.F2POOL}`, apiSecret: 'secret-key', accounts: [F2POOL_ACCOUNT] }) }
 ]
 
 function workerSpec (name) {
   return WORKER_SPECS.find((s) => s.name === name || s.workerId === name) || null
 }
 
-// --- worker config injection -------------------------------------------------
-
-// Pre-write the configs we need before startWorker copies the package examples:
-// fast intervals for thing workers, ocean.json (apiUrl → mock) for the pool.
-function prepWorkerConfig (spec, root) {
-  const configDir = path.join(root, 'workers', spec.workerId, 'config')
-  fs.mkdirSync(configDir, { recursive: true })
-
-  if (spec.pool) {
-    fs.writeFileSync(
-      path.join(configDir, 'ocean.json'),
-      JSON.stringify({ apiUrl: `http://${HOST}:${PORTS.POOL}`, accounts: [POOL_ACCOUNT] }, null, 2)
-    )
-    return
-  }
-
-  // Merge fast intervals over the package example so alert/threshold config is kept.
-  const examplePath = path.join(WORKERS_SRC, spec.pkg, 'config', 'base.thing.json.example')
-  let base = {}
-  try { base = JSON.parse(fs.readFileSync(examplePath, 'utf8')) } catch {}
-  fs.writeFileSync(path.join(configDir, 'base.thing.json'), JSON.stringify({ ...base, ...THING_CONF }, null, 2))
-}
-
 // --- pool driver -------------------------------------------------------------
 
 // The Ocean worker runs on a 1m/5m cron — too slow to watch. Drive its real
 // fetch/save on a demo cadence so stats populate within seconds. Non-overlapping.
-function drivePool (manager) {
+function drivePool (pool) {
   let running = false
   const tick = async () => {
     if (running) return
     running = true
     try {
       const now = new Date()
-      await manager.fetchWorkers(now)
-      await manager.fetchStats(now)
-      await manager.saveStats(now)
+      await pool.fetchWorkers(now)
+      await pool.fetchStats(now)
+      await pool.saveStats(now)
     } catch (e) {
       debug('pool tick error: %s', e.message)
     } finally {
@@ -136,16 +210,15 @@ function drivePool (manager) {
   return timer
 }
 
-// --- ORK + worker boot --------------------------------------------------------
+// --- Kernel + worker boot --------------------------------------------------------
 
-// Start the ORK over HRPC only (no IPC). `mode`: 'local' (register workers by
+// Start the Kernel over HRPC. `mode`: 'local' (register workers by
 // the RPC keys they publish to the shared dir) or 'dht' (Hyperswarm topic; the
 // optional `topic` pins it).
-async function bootOrk ({ root, topic, mode = 'local' }) {
+async function bootKernel ({ root, topic, mode = 'local' }) {
   const opts = {
     root,
-    storeDir: path.join(root, 'ork-db'),
-    ipc: false
+    storeDir: path.join(root, 'kernel-db')
   }
   if (mode === 'local') {
     opts.discovery = { mode: 'local' }
@@ -153,54 +226,82 @@ async function bootOrk ({ root, topic, mode = 'local' }) {
     opts.topicFile = path.join(root, '.dht-topic')
     if (topic) opts.topic = topic
   }
-  return getOrk(opts)
+  return getKernel(opts)
 }
 
-// Boot one worker. In-process callers pass `ork`; out-of-process callers pick a
-// discovery `mode`. Post-start steps (seeding, pool driver) are mode-independent.
-async function bootWorker (spec, { ork, orkTopic, root, minerCount, mode = 'local' }) {
-  prepWorkerConfig(spec, root)
+// Boot one worker on the WorkerRuntime (Worker Plugin on @tetherto/mdk-worker,
+// no manager class). Same discovery contract for every family: in-process
+// `kernel` handle → register by key; `local` → publish the RPC key to the
+// shared keys dir; `dht` → join the topic. Thing workers seed at boot from
+// spec.seed(minerCount) data and only when the persistent provisioning store
+// is empty; pool workers take their conf directly and get the demo pacer.
+async function bootWorker (spec, { kernel, kernelTopic, root, minerCount, mode = 'local' }) {
+  const storeDir = path.join(root, 'workers', spec.workerId, 'store')
+  fs.mkdirSync(storeDir, { recursive: true })
 
-  const startOpts = {
-    root,
-    rack: 'site-1',
+  const opts = {
     workerId: spec.workerId,
-    workerPackagePath: path.join(WORKERS_SRC, spec.pkg)
+    storeDir,
+    kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null
   }
-  if (ork) startOpts.ork = ork
-  else if (mode === 'local') startOpts.discovery = { mode: 'local' }
-  else startOpts.orkTopic = orkTopic
-
-  const handle = await startWorker(spec.Manager, startOpts)
-  const { manager } = handle
 
   if (spec.pool) {
-    // Scheduler/EventEmitter worker — no things to seed; just pace it.
-    drivePool(manager)
-    debug('%s pool driver started', spec.workerId)
-    return { ...handle, seeded: 0 }
-  }
-
-  // ThingManager workers run their snap-collecting interval only while active.
-  // startWorker instantiates the manager without a wrk-base, so set it here.
-  manager.active = true
-
-  // Idempotent seeding: only on the first ever boot, when the persistent store
-  // holds no things yet. On later boots they are reloaded by setupThings().
-  let seeded = 0
-  if (Object.keys(manager.mem.things).length === 0) {
-    seeded = await spec.seed(manager, minerCount)
-    debug('seeded %d device(s) into %s', seeded, spec.workerId)
+    opts.rack = 'site-1'
+    opts.conf = { [spec.poolKey]: spec.poolConf() }
+  } else if (spec.plain) {
+    // Third-party plugin demo: no worker-infra conf/model plumbing — the boot
+    // takes only the runtime device list and keeps its own SQLite under storeDir.
+    opts.seedDevices = spec.seed(minerCount)
   } else {
-    debug('%s resumed with %d persisted device(s)', spec.workerId, Object.keys(manager.mem.things).length)
+    // Package example config (alerts, thresholds) overlaid with the
+    // demo-fast intervals.
+    const examplePath = path.join(WORKERS_SRC, spec.pkg, 'config', 'base.thing.json.example')
+    let base = {}
+    try { base = JSON.parse(fs.readFileSync(examplePath, 'utf8')) } catch {}
+    opts.conf = { thing: { ...base, ...THING_CONF, allowDuplicateIPs: true } }
+    opts.seedDevices = spec.seed(minerCount)
+    if (!spec.noModelOpt) opts.model = spec.model
+    if (spec.mqttPort) opts.mqttPort = spec.mqttPort
   }
-  return { ...handle, seeded }
+
+  const handle = await spec.boot(opts)
+
+  const rpcKey = handle.runtime.getPublicKey().toString('hex')
+  if (kernel) {
+    await kernel.registerWorker(handle.runtime.getPublicKey())
+    if (Array.isArray(kernel._cleanup)) kernel._cleanup.push(() => handle.stop())
+  } else {
+    if (mode === 'local') publishWorkerKey(keysDir(root), spec.workerId, rpcKey)
+    const stop = () => { handle.stop().finally(() => process.exit(0)) }
+    process.once('SIGINT', stop)
+    process.once('SIGTERM', stop)
+  }
+
+  const mockHandle = spec.afterBoot ? spec.afterBoot() : null
+
+  if (spec.pool) {
+    // Scheduler-driven pool worker — no things to seed; just pace it.
+    drivePool(handle.pool)
+    debug('%s pool driver started', spec.workerId)
+    return { ...handle, seeded: 0, mockHandle }
+  }
+
+  if (spec.plain) {
+    debug('%s booted on the bare worker runtime (%d device(s), sqlite: %s)',
+      spec.workerId, handle.deviceIds.length, handle.dbPath)
+    return { ...handle, mockHandle }
+  }
+
+  debug('%s booted on the worker runtime (%d device(s), seeded %d)',
+    spec.workerId, handle.services.provisioning.listDeviceIds().length, handle.seeded)
+  return { ...handle, mockHandle }
 }
 
 // --- readiness + UI -----------------------------------------------------------
 
 async function waitForReady ({ port, minerCount, timeoutMs }) {
-  const want = minerCount || DEFAULT_MINER_COUNT
+  const perFamily = minerCount || DEFAULT_MINER_COUNT
+  const want = perFamily * MINER_FAMILIES
   const url = `http://127.0.0.1:${port || HTTP_PORT}/site/overview`
   const start = Date.now()
   while (Date.now() - start < timeoutMs) {
@@ -225,26 +326,47 @@ function startUi ({ uiPort, httpPort } = {}) {
   return child
 }
 
+function startMcpServer ({ root, port } = {}) {
+  const child = spawn('node', [path.join(__dirname, 'proc', 'mcp-server.js'), '--root', root || ROOT, '--port', String(port || MCP_PORT)], {
+    stdio: 'inherit'
+  })
+  child.on('error', (err) => debug('mcp-server failed to start: %s', err.message))
+  return child
+}
+
 module.exports = {
   WORKERS_SRC,
   ROOT,
   HTTP_PORT,
   UI_PORT,
-  CONTAINER_ID,
+  MCP_PORT,
+  CONTAINER_ANTSPACE,
+  CONTAINER_BITDEER,
+  BITDEER_MQTT_ID,
   DEFAULT_MINER_COUNT,
+  MINER_FAMILIES,
   PDU_COUNT,
   THING_CONF,
   PORTS,
   HOST,
   WORKER_SPECS,
   workerSpec,
-  seedMiners,
-  seedContainer,
+  seedWhatsminers,
+  seedAntminers,
+  seedAvalonMiners,
+  seedAntspaceContainer,
+  seedBitdeerContainer,
   seedPowermeter,
-  prepWorkerConfig,
+  seedSatecPowermeter,
+  seedSchneiderPowermeter,
+  seedSenecaSensors,
+  F2POOL_ACCOUNT,
+  SENSOR_CONTAINERS,
+  startBitdeerMock,
   drivePool,
-  bootOrk,
+  bootKernel,
   bootWorker,
   waitForReady,
-  startUi
+  startUi,
+  startMcpServer
 }

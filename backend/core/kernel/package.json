@@ -1,0 +1,40 @@
+{
+  "name": "@tetherto/mdk-kernel",
+  "version": "0.5.0",
+  "description": "MDK Kernel - Orchestration Kernel",
+  "main": "index.js",
+  "keywords": [
+    "tether",
+    "mdk",
+    "kernel"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit && npm run test:integration",
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.js",
+    "test:integration": "NODE_ENV=test brittle tests/integration/*.js",
+    "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
+  },
+  "dependencies": {
+    "@bitfinex/bfx-facs-interval": "git+https://github.com/bitfinexcom/bfx-facs-interval.git",
+    "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
+    "@hyperswarm/rpc": "^3.5.0",
+    "@tetherto/hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git#v1.0.0",
+    "@tetherto/svc-facs-action-approver": "git+https://github.com/tetherto/svc-facs-action-approver.git#v1.0.0",
+    "async": "^3.2.6",
+    "debug": "^4.4.1",
+    "hyperdht": "^6.32.0",
+    "hyperswarm": "^4.17.0",
+    "mingo": "^6.4.15"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0",
+    "standard": "17.1.0"
+  }
+}

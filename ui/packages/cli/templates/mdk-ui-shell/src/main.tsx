@@ -1,5 +1,5 @@
 import { MdkProvider } from '@tetherto/mdk-react-adapter'
-import { authStore, extractAuthTokenFromUrl, stripAuthTokenFromUrl } from '@tetherto/mdk-ui-core'
+import { authStore, extractAuthTokenFromUrl, stripAuthTokenFromUrl } from '@tetherto/mdk-ui-foundation'
 import React from 'react'
 
 import ReactDOM from 'react-dom/client'
@@ -9,11 +9,12 @@ import { router } from './router'
 import '@tetherto/mdk-fonts/jetbrains-mono.css'
 
 import '@tetherto/mdk-react-devkit/styles.css'
+import '@tetherto/mdk-react-devkit/styles-domain.css'
 import './index.scss'
 
 // --- OAuth callback bootstrap ------------------------------------------
 // authStore's persist middleware already rehydrates the token from
-// localStorage on import (see @tetherto/mdk-ui-core/store/auth-store) —
+// localStorage on import (see @tetherto/mdk-ui-foundation/store/auth-store) —
 // the only thing we still need to do is capture a fresh `?authToken=`
 // off the OAuth redirect and clean it out of the URL.
 const urlToken = extractAuthTokenFromUrl(window.location.search)

@@ -1,7 +1,7 @@
 import { type CoreStore, loadStoresManifest } from '../registry-loader.js'
 
 export type ListStoresOptions = {
-  /** ui-core package name. Defaults to `@tetherto/mdk-ui-core`. */
+  /** ui-foundation package name. Defaults to `@tetherto/mdk-ui-foundation`. */
   packageName?: string
   format?: 'json' | 'table'
   /** Filter to a single category. */
@@ -10,14 +10,14 @@ export type ListStoresOptions = {
   out?: (line: string) => void
 }
 
-const DEFAULT_CORE = '@tetherto/mdk-ui-core'
+const DEFAULT_CORE = '@tetherto/mdk-ui-foundation'
 
 const padRight = (s: string, n: number): string =>
   s.length >= n ? `${s.slice(0, n - 1)}…` : s.padEnd(n)
 
 /**
  * Print the Zustand stores + query helpers manifest published by
- * `@tetherto/mdk-ui-core`. The first call an agent makes when wiring up
+ * `@tetherto/mdk-ui-foundation`. The first call an agent makes when wiring up
  * shared state or a data fetch.
  */
 export const runStores = (opts: ListStoresOptions = {}): void => {

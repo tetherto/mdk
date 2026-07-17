@@ -7,7 +7,7 @@ docs@tether_slug: tutorials/full-stack/dashboard/
 *Get started · 3 of 3 · Run the dashboard demo*
 
 > [!NOTE]
-> If ORK, worker, manager, or thing are unfamiliar, read [`terminology.md`][terminology] first.
+> If Kernel, Worker, manager, or thing are unfamiliar, read [`terminology.md`][terminology] first.
 
 ## Overview
 
@@ -16,14 +16,14 @@ the [`mdk-site-monitor`][site-monitor-readme] example.
 
 What you'll have at the end:
 
-- The same mock Whatsminer M56S stack from [rung 2][cli-tutorial], fronted by an App Node REST API on `:3000`
+- The same mock Whatsminer M56S stack from [rung 2][cli-tutorial], fronted by a Gateway REST API on `:3000`
 - A React dashboard on `:3030` — total hashrate, total power, and active device count as metric cards, a live hashrate chart, and a per-device breakdown
-- The dashboard polling App Node every 5 seconds, built entirely from MDK UI components (`MetricCard`, `HashRateLineChart`, `Typography`, ...)
+- The dashboard polling Gateway every 5 seconds, built entirely from MDK UI components (`MetricCard`, `HashRateLineChart`, `Typography`, ...)
 
 > [!NOTE]
-> Same shape as rungs 1 and 2: underneath, the stack still boots with `getOrk()`, `startWorker()`, and `registerThing()`, and the device is the same 
-> Whatsminer M56S mock as [rung 2][cli-tutorial]. What's new is two layers on top — App Node translating MDK Protocol to REST, and a Vite React UI
-> consuming that REST.
+> Same shape as rungs 1 and 2: underneath, the stack still boots with `getKernel()`, `startWhatsminerWorker()`, and `kernel.registerWorker()`, and the
+> device is the same Whatsminer M56S mock as [rung 2][cli-tutorial]. What's new is two layers on top — Gateway translating MDK Protocol to REST, and a
+> Vite React UI consuming that REST.
 
 ## Prerequisites
 
@@ -31,9 +31,8 @@ What you'll have at the end:
 - npm >=11
 
 > [!IMPORTANT]
-> The stack starts an ORK whose control plane is peer-to-peer over a Hyperswarm DHT, so it needs outbound network access. Without it the stack stalls 
-> at startup while the ORK tries to reach DHT bootstrap nodes. See [how workers connect][workers-connect] 
-> for the ORK/DHT mechanics.
+> HRPC relies on HyperDHT for peer connectivity, including when Kernel and the Worker share a process.
+> Review the [network requirements and checks][network-troubleshooting] if startup stalls.
 
 <Steps>
 
@@ -105,7 +104,7 @@ mdk> start all
 
 This starts:
 
-1. **App Node** (`server.js --app-node`) — ORK + mock Whatsminer + a REST API on `http://localhost:3000`, in `noAuth` mode
+1. **Gateway** (`server.js --gateway`) — Kernel + mock Whatsminer + a REST API on `http://localhost:3000`, in `noAuth` mode
 2. **UI** — a Vite dev server on `http://localhost:3030`, launched with `VITE_NO_AUTH=true` so it skips the login screen
 
 Wait a few seconds for both to come up, then open:
@@ -120,14 +119,14 @@ Other launcher commands:
 
 ```
 status                       — show running services and their URLs
-stop  [ork|app-node|ui|all]  — stop a service (default: all)
-start [ork|app-node|ui|all]  — start a service (default: all)
+stop  [kernel|gateway|ui|all]  — stop a service (default: all)
+start [kernel|gateway|ui|all]  — start a service (default: all)
 help                         — show usage
 exit                         — stop everything and quit
 ```
 
 > [!WARNING]
-> `start all` runs App Node in `noAuth` mode for development convenience. Do not expose port 3000 outside localhost.
+> `start all` runs Gateway in `noAuth` mode for development convenience. Do not expose port 3000 outside localhost.
 
 </Step>
 
@@ -137,10 +136,10 @@ exit                         — stop everything and quit
 
 ```mermaid
 flowchart TD
-  mock["Mock Whatsminer M56S (TCP :14028)"] --> worker["MDK worker"]
-  worker --> ork["ORK (IPC socket)"]
-  ork --> appnode["App Node (HTTP :3000)"]
-  appnode -->|"GET /site-monitor/hashrate every 5s"| ui["Dashboard (Vite :3030)"]
+  mock["Mock Whatsminer M56S (TCP :14028)"] --> worker["MDK Worker"]
+  worker --> kernel["Kernel (HRPC)"]
+  kernel --> gateway["Gateway (HTTP :3000)"]
+  gateway -->|"GET /site-monitor/hashrate every 5s"| ui["Dashboard (Vite :3030)"]
 ```
 
 The page renders three metric cards (Total Hashrate in TH/s, Total Power in W, Active Devices), a live hashrate line chart that grows as new data points 
@@ -155,10 +154,10 @@ At the launcher prompt:
 mdk> exit
 ```
 
-`exit` stops App Node, the mock, ORK, and the UI dev server. `server.js` leaves data under `os.tmpdir()/mdk/` — safe to ignore, or remove with:
+`exit` stops Gateway, the mock, Kernel, and the UI dev server. `server.js` leaves data under `os.tmpdir()/mdk-e2e/` — safe to ignore, or remove with:
 
 ```bash
-rm -rf "$TMPDIR/mdk" /tmp/mdk
+rm -rf "$TMPDIR/mdk-e2e" /tmp/mdk-e2e
 ```
 
 <details>
@@ -175,9 +174,9 @@ sign-in that issues a bearer token the dashboard sends on every request — conf
 4. Add to **Authorized JavaScript origins**: `http://localhost:3030`
 5. Copy the **Client ID** and **Client Secret**
 
-**2. Configure App Node**
+**2. Configure Gateway**
 
-Edit `backend/core/app-node/config/facs/httpd-oauth2.config.json` (copy from `.example` if it doesn't exist) and fill in your client ID and secret:
+Edit `backend/core/gateway/config/facs/httpd-oauth2.config.json` (copy from `.example` if it doesn't exist) and fill in your client ID and secret:
 
 ```json
 {
@@ -194,7 +193,7 @@ Edit `backend/core/app-node/config/facs/httpd-oauth2.config.json` (copy from `.e
 
 **3. Set yourself as super-admin**
 
-In `backend/core/app-node/config/facs/auth.config.json`, set `superAdmin` to your Google account email:
+In `backend/core/gateway/config/facs/auth.config.json`, set `superAdmin` to your Google account email:
 
 ```json
 { "a0": { "superAdmin": "you@example.com" } }
@@ -202,7 +201,7 @@ In `backend/core/app-node/config/facs/auth.config.json`, set `superAdmin` to you
 
 **4. Run with auth**
 
-Start App Node and the UI without the `VITE_NO_AUTH` shortcut (run them directly rather than via `start all`), open `http://localhost:3030`, 
+Start Gateway and the UI without the `VITE_NO_AUTH` shortcut (run them directly rather than via `start all`), open `http://localhost:3030`, 
 click **Sign in with Google**, and authorise with the super-admin email. The dashboard then shows live data behind the token.
 
 For the full setup, see the example's [`README.md`][site-monitor-readme].
@@ -219,13 +218,13 @@ You've climbed the whole ladder: observed a stack, driven it from a CLI, and bui
 
 - The [full example, including the OAuth setup and how to add a new data panel][site-monitor-readme]
 - Learn more about [MDK UI toolkit (components, hooks, theming)][ui-usage]
-- Run a full site (multiple workers and devices)[site-example]
+- [Run a full site (multiple Workers and devices)][site-example]
 - Read [all runnable examples in one place][examples-readme]
 
 ## Links
 
-[terminology]: ../../concepts/terminology.md
-<!-- docs@tether.io: terminology → concepts/terminology -->
+[terminology]: ../../reference/glossary.md
+<!-- docs@tether.io: terminology → reference/glossary -->
 
 [get-started]: index.md
 <!-- docs@tether.io: get-started → tutorials/backend-stack -->
@@ -235,6 +234,9 @@ You've climbed the whole ladder: observed a stack, driven it from a CLI, and bui
 
 [workers-connect]: ../../concepts/stack/workers.md
 <!-- docs@tether.io: workers-connect → concepts/stack/workers -->
+
+[network-troubleshooting]: ../../guides/miners/troubleshooting.md#example-does-not-print-a-kernel-key
+<!-- docs@tether.io: network-troubleshooting → guides/miners/troubleshooting#example-does-not-print-a-kernel-key -->
 
 [site-monitor-readme]: ../../../examples/e2e/README.md
 <!-- docs@tether.io: site-monitor-readme → https://github.com/tetherto/mdk/tree/main/examples/e2e -->

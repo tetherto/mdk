@@ -3,9 +3,10 @@
 // Shared spawn descriptors + dependency checks used by the up/start handlers.
 
 const path = require('path')
-const { WORKER_SPECS, workerSpec } = require('../../backend/site')
+const { WORKER_SPECS, workerSpec, MCP_PORT } = require('../../backend/site')
+const { missingUiDeps, SETUP_HINT } = require('../../preflight')
 
-const COMPONENTS = ['mocks', 'ork', 'app-node', 'ui']
+const COMPONENTS = ['mocks', 'kernel', 'gateway', 'ui', 'mcp-server']
 
 // The per-process boot entrypoints live in the MDK layer (backend/proc/*.js).
 function procEntry (siteDir, file) {
@@ -21,7 +22,7 @@ function resolveProcName (token) {
 }
 
 // { procName, entry, argv } for spawning a component or worker, or null.
-// The ORK and workers must agree on discovery mode, so both inherit ctx.discovery
+// The Kernel and workers must agree on discovery mode, so both inherit ctx.discovery
 // (default 'local'); --discovery threads it to the proc entrypoints.
 function spawnDescriptor (ctx, name, { minerCount } = {}) {
   const siteDir = ctx.siteDir
@@ -29,12 +30,14 @@ function spawnDescriptor (ctx, name, { minerCount } = {}) {
   switch (name) {
     case 'mocks':
       return { procName: 'mocks', entry: procEntry(siteDir, 'mocks.js'), argv: ['--miners', String(minerCount)] }
-    case 'ork':
-      return { procName: 'ork', entry: procEntry(siteDir, 'ork.js'), argv: ['--root', ctx.root, '--discovery', discovery] }
-    case 'app-node':
-      return { procName: 'app-node', entry: procEntry(siteDir, 'app-node.js'), argv: ['--root', ctx.root, '--port', String(ctx.httpPort)] }
+    case 'kernel':
+      return { procName: 'kernel', entry: procEntry(siteDir, 'kernel.js'), argv: ['--root', ctx.root, '--discovery', discovery] }
+    case 'gateway':
+      return { procName: 'gateway', entry: procEntry(siteDir, 'gateway.js'), argv: ['--root', ctx.root, '--port', String(ctx.httpPort)] }
     case 'ui':
       return { procName: 'ui', entry: procEntry(siteDir, 'ui.js'), argv: ['--port', String(ctx.uiPort), '--http-port', String(ctx.httpPort)] }
+    case 'mcp-server':
+      return { procName: 'mcp-server', entry: procEntry(siteDir, 'mcp-server.js'), argv: ['--root', ctx.root, '--port', String(ctx.mcpPort || MCP_PORT)] }
     default: {
       const spec = workerSpec(name)
       if (!spec) return null
@@ -48,6 +51,10 @@ async function startComponent (ctx, name, { minerCount, readyTimeoutMs = 45000 }
   const desc = spawnDescriptor(ctx, name, { minerCount })
   if (!desc) throw new Error(`ERR_UNKNOWN_COMPONENT: ${name}`)
   if (ctx.pm.isAlive(desc.procName)) throw new Error(`ERR_PROC_ALREADY_RUNNING: ${desc.procName}`)
+  if (name === 'ui') {
+    const missing = missingUiDeps()
+    if (missing.length) throw new Error(`ERR_UI_DEPS_MISSING: ${missing.join('; ')} — ${SETUP_HINT}`)
+  }
   ctx.pm.spawn(desc.procName, desc.entry, desc.argv)
   await ctx.pm.waitForReady(desc.procName, readyTimeoutMs)
   return desc.procName

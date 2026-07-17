@@ -1,7 +1,7 @@
 'use strict'
 
 const test = require('brittle')
-const { STATUS, POWER_MODE } = require('../../../base/lib/utils/constants')
+const { STATUS, POWER_MODE } = require('../../../../../core/mdk').constants
 
 function makeStubMiner (opts = {}) {
   const AvalonMiner = require('../../lib/avalon.miner.js')

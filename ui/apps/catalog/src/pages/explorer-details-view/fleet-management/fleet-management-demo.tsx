@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react'
 import { useState } from 'react'
-import { Button, Dialog, DialogContent } from '@tetherto/mdk-react-devkit/core'
+import { Button, Dialog, DialogContent } from '@tetherto/mdk-react-devkit/primitives'
 import {
   AddReplaceMinerDialog,
   ContainerSelectionDialog,
@@ -9,7 +9,7 @@ import {
   POSITION_CHANGE_DIALOG_FLOWS,
   PositionChangeDialog,
   RemoveMinerDialog,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 
 import { DemoBlock } from '../../../components/demo-block'
 import { DemoPageHeader } from '../../../components/demo-page-header'

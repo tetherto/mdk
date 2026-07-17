@@ -1,4 +1,4 @@
-import type { PowerModeTimelineEntry } from '@tetherto/mdk-react-devkit/foundation'
+import type { PowerModeTimelineEntry } from '@tetherto/mdk-react-devkit/domain'
 import { generateTimelineData } from './power-mode-timeline-chart-page.utils'
 
 const NOW = Date.now()
@@ -6,11 +6,11 @@ const MIN_5 = 5 * 60 * 1000
 const HOUR = 60 * 60 * 1000
 
 const MINERS = [
-  'm221-gabbani-1-miner1',
-  'm221-gabbani-1-miner2',
-  'm221-gabbani-2-miner1',
-  'm221-gabbani-2-miner2',
-  'm221-gabbani-3-miner1',
+  'm221-alpha-1-miner1',
+  'm221-alpha-1-miner2',
+  'm221-alpha-2-miner1',
+  'm221-alpha-2-miner2',
+  'm221-alpha-3-miner1',
 ]
 
 const POWER_MODES = ['sleep', 'low', 'normal', 'high'] as const

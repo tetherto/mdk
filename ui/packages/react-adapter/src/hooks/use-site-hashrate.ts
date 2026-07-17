@@ -5,7 +5,7 @@ import {
   type HashRateLogEntry,
   readHashrateMhs,
   tailLogQuery,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 const MHS_PER_PHS = 1_000_000_000

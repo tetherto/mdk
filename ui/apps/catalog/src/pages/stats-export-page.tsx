@@ -1,4 +1,4 @@
-import { StatsExport } from '@tetherto/mdk-react-devkit/foundation'
+import { StatsExport } from '@tetherto/mdk-react-devkit/domain'
 
 import { useDemoToast } from '../utils/use-demo-toast'
 

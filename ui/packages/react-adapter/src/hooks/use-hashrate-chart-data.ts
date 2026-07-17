@@ -10,7 +10,7 @@ import {
   readHashrateMhs,
   type TailLogEntry,
   tailLogQuery,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
@@ -20,7 +20,7 @@ import { useMemo } from 'react'
 const MH_PER_PHS = 1_000_000_000
 const HS_PER_PHS = 1_000_000_000_000_000
 
-/* Colour palette mirrors Moria's hashrate chart legend so consumers
+/* Colour palette mirrors Mining OS's hashrate chart legend so consumers
  * see the same lines in the same hues across both apps. */
 const MINING_OS_COLOR = '#f7931a'
 const AGGR_POOL_COLOR = '#22afff'
@@ -171,7 +171,7 @@ export type HashrateChartResult = {
  * Both upstream calls share the page's `{ timeline, start, end }`
  * inputs; results are merged into a single `ChartCardData` payload so
  * the dashboard page stays pure presentation. Each pool gets a
- * deterministic colour from the Moria-mirrored palette.
+ * deterministic colour from the Mining OS-mirrored palette.
  *
  * @category dashboard
  */

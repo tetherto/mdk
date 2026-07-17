@@ -1,0 +1,308 @@
+/* Layout + page chrome aligned with Mining OS `Views/Financial/EnergyBalance`.
+   Reused primitives (SingleStatCard, ChartContainer, BarChart, LineChart) are not re-themed here. */
+
+@use '@primitives/styles/mixins' as *;
+@use '../../utils/reporting-panel' as reporting-panel;
+
+.mdk-energy-balance {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 20px;
+  background: var(--mdk-color-dark-bg);
+}
+
+.mdk-energy-balance__loading {
+  @include flex_align;
+
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.mdk-energy-balance__header {
+  @include flex_align_between;
+
+  margin-bottom: 20px;
+}
+
+.mdk-energy-balance__header-actions {
+  @include flex_align;
+
+  gap: 16px;
+}
+
+.mdk-energy-balance__page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 24px;
+  color: hsl(var(--foreground));
+  font-family: var(--font-mono);
+}
+
+.mdk-energy-balance__set-cost {
+  @include flex_align;
+
+  gap: 8px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  border: 1px solid var(--mdk-color-white-alpha-02);
+  border-radius: 0;
+  background: var(--mdk-color-background-dark);
+  color: var(--mdk-color-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: var(--mdk-color-primary);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+}
+
+.mdk-energy-balance__period {
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgb(var(--mdk-color-grey-idle));
+  font-family: var(--font-mono);
+}
+
+.mdk-energy-balance__controls {
+  margin-bottom: 8px;
+
+  .mdk-date-picker__trigger {
+    background: var(--mdk-color-background-dark);
+    border: 1px solid var(--mdk-color-white-alpha-02);
+    color: var(--mdk-color-text-secondary);
+    font-family: var(--font-mono);
+  }
+
+  .mdk-date-picker__text {
+    color: var(--mdk-color-white);
+  }
+
+  .mdk-date-picker__icon {
+    color: var(--mdk-color-text-secondary);
+  }
+}
+
+.mdk-energy-balance__error {
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid rgb(var(--mdk-color-error));
+  border-radius: 4px;
+  background: hsl(var(--destructive));
+  color: rgb(var(--mdk-color-error));
+  text-align: center;
+  font-size: 14px;
+  font-family: var(--font-mono);
+}
+
+.mdk-energy-balance__info {
+  margin: 100px auto;
+  width: fit-content;
+  max-width: 36rem;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgb(var(--mdk-color-dark-grey));
+  font-family: var(--font-mono);
+}
+
+.mdk-energy-balance__revenue-metrics {
+  @include flex_align;
+
+  gap: 16px;
+  margin: 0;
+
+  > * {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.mdk-energy-balance__cost-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+
+  > * {
+    min-width: 0;
+  }
+}
+
+.mdk-energy-balance__revenue-metrics,
+.mdk-energy-balance__cost-metrics {
+  .mdk-single-stat-card {
+    background: rgba(var(--mdk-color-black), 0.5);
+    padding: 20px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .mdk-energy-balance__cost-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .mdk-energy-balance__cost-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tab chrome via className on TabsList/TabsTrigger (variant="side"); do not target core mdk_tabs__* internals. */
+.mdk-energy-balance__tabs {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 20px;
+
+  .mdk-energy-balance__tabs-list {
+    margin-bottom: 24px;
+    display: flex;
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    padding: 7px;
+    box-sizing: border-box;
+    border: 1px solid var(--mdk-color-white-transparent);
+  }
+
+  .mdk-energy-balance__tabs-trigger {
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: 0;
+    padding: 8px 24px;
+    font-size: 13px;
+    text-align: center;
+    text-shadow: none;
+    border: none;
+    height: auto;
+    color: var(--mdk-color-text-disabled);
+    background: transparent;
+
+    &[data-state='active'] {
+      color: var(--mdk-color-primary);
+      background: color-mix(in srgb, var(--mdk-color-primary) 20%, transparent);
+    }
+
+    & + .mdk-energy-balance__tabs-trigger {
+      margin-left: 0;
+    }
+  }
+
+  .mdk-energy-balance__tabs-content {
+    margin-top: 0;
+    color: inherit;
+  }
+}
+
+.mdk-energy-balance__chart-header {
+  @include flex_align_between;
+
+  width: 100%;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.mdk-energy-balance__chart-header-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--mdk-color-white);
+  font-family: var(--font-mono);
+}
+
+.mdk-energy-balance__charts {
+  @include flex_column;
+
+  gap: 40px;
+  margin-top: 12px;
+}
+
+.mdk-energy-balance__panel {
+  @include reporting-panel.reporting-panel-base;
+
+  &--primary {
+    margin-bottom: 0;
+  }
+
+  &--fill {
+    @include flex_column;
+
+    flex: 1;
+    min-height: 0;
+
+    .mdk-chart-container {
+      @include flex_column;
+
+      flex: 1;
+      min-height: 0;
+    }
+
+    .mdk-chart-container__chart-area,
+    .mdk-chart-container__body,
+    .mdk-chart-container__chart-slot {
+      flex: 1;
+      min-height: 240px;
+    }
+
+    .mdk-bar-chart,
+    .mdk-line-chart {
+      flex: 1;
+      min-height: 240px;
+      height: 100% !important;
+    }
+  }
+}
+
+.mdk-energy-balance__revenue-mosaic {
+  align-items: stretch;
+
+  > .mosaic-item {
+    min-width: 0;
+  }
+}
+
+.mdk-energy-balance__revenue-mosaic-left,
+.mdk-energy-balance__revenue-mosaic-power {
+  display: flex;
+  min-height: 0;
+}
+
+.mdk-energy-balance__revenue-left {
+  @include flex_column;
+
+  gap: 16px;
+  width: 100%;
+  min-height: 100%;
+  flex: 1;
+}
+
+.mdk-energy-balance__revenue-mosaic-power {
+  .mdk-energy-balance__panel--fill {
+    width: 100%;
+  }
+
+  /* Stack ChartContainer legend on top of the line chart (same cell as downtime bar legend placement). */
+  .mdk-chart-container__panel-header {
+    position: relative;
+    z-index: 1;
+    margin-bottom: -2.25rem;
+  }
+
+  .mdk-chart-container__chart-area {
+    padding-top: 2.25rem;
+  }
+}

@@ -44,6 +44,26 @@ test('alarm config build+parse roundtrip preserves key fields', t => {
   t.is(parsed.action.output, cfg.action.output)
 })
 
+test('obisToBytes rejects out-of-range and non-numeric components', t => {
+  t.exception(() => obisToBytes('1.2.3.4.5.256'), /Invalid byte value in OBIS code/)
+  t.exception(() => obisToBytes('1.2.3.4.5.x'), /Invalid byte value in OBIS code/)
+})
+
+test('parseAlarmConfig rejects a quantity packet of wrong length', t => {
+  const packets = buildAlarmConfig({
+    index: 1,
+    quantity: '1.2.3.4.5.6',
+    limit_on: 1,
+    limit_off: 0,
+    delay_on: 0,
+    delay_off: 0,
+    action: { types: ['setAlarmBit'], output: 0 }
+  })
+  packets[1] = Buffer.alloc(5)
+
+  t.exception(() => parseAlarmConfig(packets), /Invalid OBIS code byte length/)
+})
+
 test('asciiBufferToStr strips zero bytes and decodes', t => {
   const out = asciiBufferToStr(Buffer.from([65, 0, 66, 0, 67]))
   t.is(out, 'ABC')

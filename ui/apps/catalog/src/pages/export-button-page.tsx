@@ -1,4 +1,4 @@
-import { ExportButton } from '@tetherto/mdk-react-devkit/foundation'
+import { ExportButton } from '@tetherto/mdk-react-devkit/domain'
 import type { JSX } from 'react'
 
 import { DemoBlock } from '../components/demo-block'

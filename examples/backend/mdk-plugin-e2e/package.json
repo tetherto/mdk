@@ -1,0 +1,13 @@
+{
+  "name": "mdk-plugin-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "End-to-end MDK example: WorkerRuntime hosting mock devices + Kernel + Gateway Plugin aggregation",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "start": "node run.js"
+  }
+}

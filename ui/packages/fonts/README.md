@@ -23,17 +23,30 @@ no manual copy step required.
 
 After importing, the package will:
 
-1. Register the JetBrains Mono font family for weights 100, 300, 400, 500, 600, 700.
+1. Register the JetBrains Mono font family for weights 300, 400, 500, 600, 700.
 2. Override the `--font-mono` CSS variable so `@tetherto/mdk-react-devkit` components pick it up.
 
 ## What's included
 
-- **JetBrainsMono-Thin.woff2** — font weight 100
 - **JetBrainsMono-Light.woff2** — font weight 300
 - **JetBrainsMono-Regular.woff2** — font weight 400
 - **JetBrainsMono-Medium.woff2** — font weight 500
 - **JetBrainsMono-SemiBold.woff2** — font weight 600
 - **JetBrainsMono-Bold.woff2** — font weight 700
+
+> The unused Thin (100) weight was removed. If you rely on weight 100, the
+> browser synthesises it from the nearest available weight.
+
+## Glyph coverage (subsetted)
+
+The woff2 files are **subsetted to a Western character set** to keep the bundle
+small (~53 KB/weight instead of ~91 KB). Retained ranges: Basic Latin,
+Latin-1 Supplement, Latin Extended-A/B, General Punctuation, super/subscripts,
+currency symbols (incl. ₿), letterlike symbols, arrows, mathematical operators,
+box-drawing, block elements, and geometric shapes (■ ● ▲ …). **Non-Latin scripts
+(Cyrillic, Greek, CJK, etc.) are not included.** If you need them, re-subset from
+the upstream [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) (OFL)
+with a wider `--unicodes` range.
 
 ## Optional
 

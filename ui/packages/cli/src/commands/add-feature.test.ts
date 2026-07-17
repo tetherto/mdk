@@ -1,9 +1,10 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeConsumerFixture, noop } from '../test-utils.js'
+import { DIST_DIR, MANIFESTS, NODE_MODULES_DIR, PACKAGE_JSON, PACKAGES } from '../constants.js'
+import { DEVKIT_DIR, makeConsumerFixture, noop } from '../test-utils.js'
 import { runAddFeature } from './add-feature.js'
 
 describe('runAddFeature', () => {
@@ -15,7 +16,7 @@ describe('runAddFeature', () => {
 
   it('happy path: writes a .tsx file from a real blueprint', () => {
     const { writtenPath } = runAddFeature({
-      packageName: '@tetherto/mdk-react-devkit',
+      packageName: PACKAGES.devkit,
       blueprintId: 'alerts',
       cwd: fixture.dir,
       outDir: 'src/pages',
@@ -32,7 +33,7 @@ describe('runAddFeature', () => {
 
   it('refuses to overwrite when the file already exists without force', () => {
     runAddFeature({
-      packageName: '@tetherto/mdk-react-devkit',
+      packageName: PACKAGES.devkit,
       blueprintId: 'alerts',
       cwd: fixture.dir,
       outDir: 'src/pages',
@@ -41,7 +42,7 @@ describe('runAddFeature', () => {
 
     expect(() =>
       runAddFeature({
-        packageName: '@tetherto/mdk-react-devkit',
+        packageName: PACKAGES.devkit,
         blueprintId: 'alerts',
         cwd: fixture.dir,
         outDir: 'src/pages',
@@ -52,7 +53,7 @@ describe('runAddFeature', () => {
 
   it('overwrites when force: true', () => {
     runAddFeature({
-      packageName: '@tetherto/mdk-react-devkit',
+      packageName: PACKAGES.devkit,
       blueprintId: 'alerts',
       cwd: fixture.dir,
       outDir: 'src/pages',
@@ -61,7 +62,7 @@ describe('runAddFeature', () => {
 
     expect(() =>
       runAddFeature({
-        packageName: '@tetherto/mdk-react-devkit',
+        packageName: PACKAGES.devkit,
         blueprintId: 'alerts',
         cwd: fixture.dir,
         outDir: 'src/pages',
@@ -74,7 +75,7 @@ describe('runAddFeature', () => {
   it('throws a clear message when the blueprint id does not exist', () => {
     expect(() =>
       runAddFeature({
-        packageName: '@tetherto/mdk-react-devkit',
+        packageName: PACKAGES.devkit,
         blueprintId: 'definitely-not-a-blueprint',
         cwd: fixture.dir,
         outDir: 'src/pages',
@@ -86,7 +87,7 @@ describe('runAddFeature', () => {
   it('throws when no blueprints manifest is published', () => {
     expect(() =>
       runAddFeature({
-        packageName: '@tetherto/mdk-react-devkit',
+        packageName: PACKAGES.devkit,
         blueprintId: 'alerts',
         cwd: '/tmp',
         outDir: 'src/pages',
@@ -99,7 +100,7 @@ describe('runAddFeature', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
     try {
       runAddFeature({
-        packageName: '@tetherto/mdk-react-devkit',
+        packageName: PACKAGES.devkit,
         blueprintId: 'alerts',
         cwd: fixture.dir,
         outDir: 'src/pages',
@@ -111,22 +112,20 @@ describe('runAddFeature', () => {
   })
 
   it('throws when a blueprint has no ```tsx block', () => {
-    // Manually patch blueprints.json in the symlinked devkit copy temporarily
-    // by pointing to a fake package dir — easiest approach is to inject
-    // a modified version via a custom package dir layout in the fixture.
-    // Instead, we verify the error path by using a spy: write a fake
-    // blueprints.json into the fixture's node_modules.
-    const fakeBlueprintsPath = join(
-      fixture.dir,
-      'node_modules',
-      '@tetherto',
-      'mdk-react-devkit',
-      'dist',
-      'blueprints.json',
-    )
+    // Replace the symlinked devkit with a real copy first, so patching
+    // blueprints.json stays local to this fixture and never taints the shared
+    // workspace `dist/` (which would race with blueprints.test.ts under
+    // vitest's parallel file execution).
+    const pkgDir = join(fixture.dir, NODE_MODULES_DIR, PACKAGES.devkit)
+    rmSync(pkgDir, { force: true }) // drop the symlink
+    mkdirSync(join(pkgDir, DIST_DIR), { recursive: true })
+    cpSync(join(DEVKIT_DIR, PACKAGE_JSON), join(pkgDir, PACKAGE_JSON))
+    cpSync(join(DEVKIT_DIR, DIST_DIR, MANIFESTS.registry), join(pkgDir, DIST_DIR, MANIFESTS.registry))
+    const blueprintsPath = join(pkgDir, DIST_DIR, MANIFESTS.blueprints)
+    cpSync(join(DEVKIT_DIR, DIST_DIR, MANIFESTS.blueprints), blueprintsPath)
 
-    // Read the real one, patch one blueprint body to remove the tsx block
-    const real = JSON.parse(readFileSync(fakeBlueprintsPath, 'utf8')) as {
+    // Patch one blueprint body to remove the tsx block.
+    const real = JSON.parse(readFileSync(blueprintsPath, 'utf8')) as {
       blueprints: Array<{ id: string; body: string }>
       indexes?: { byId: Record<string, number> }
     }
@@ -136,20 +135,16 @@ describe('runAddFeature', () => {
         b.id === 'alerts' ? { ...b, body: 'No tsx block here.' } : b,
       ),
     }
-
-    writeFileSync(fakeBlueprintsPath, JSON.stringify(modified), 'utf8')
+    writeFileSync(blueprintsPath, JSON.stringify(modified), 'utf8')
 
     expect(() =>
       runAddFeature({
-        packageName: '@tetherto/mdk-react-devkit',
+        packageName: PACKAGES.devkit,
         blueprintId: 'alerts',
         cwd: fixture.dir,
         outDir: 'src/pages',
         out: noop,
       }),
     ).toThrow(/no `{3}tsx block/)
-
-    // Restore to avoid tainting the symlinked devkit
-    writeFileSync(fakeBlueprintsPath, JSON.stringify(real), 'utf8')
   })
 })

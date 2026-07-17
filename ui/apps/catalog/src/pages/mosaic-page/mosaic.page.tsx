@@ -6,7 +6,7 @@ import {
   Mosaic,
   Typography,
   UNITS,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 import './mosaic-page.scss'
 
 import type { JSX } from 'react'

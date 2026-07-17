@@ -1,23 +1,30 @@
 'use strict'
 
-const { getOrk, startWorker } = require('../../../backend/core/mdk')
-const { WM_M56S } = require('../../../backend/workers/miners/whatsminer')
+const path = require('path')
+const os = require('os')
+const { getKernel } = require('../../../backend/core/mdk')
+const { startWhatsminerWorker } = require('../../../backend/workers/miners/whatsminer')
 const wmMock = require('../../../backend/workers/miners/whatsminer/mock/server')
 
 async function main () {
   wmMock.createServer({ port: 14028, host: '127.0.0.1', type: 'm56s', serial: 'WM-001', password: 'admin' })
 
-  const ork = await getOrk()
-  const { manager } = await startWorker(WM_M56S, { ork })
+  const kernel = await getKernel()
 
-  await manager.registerThing({
-    info: { container: 'site-1', serialNum: 'WM001' },
-    opts: { address: '127.0.0.1', port: 14028, password: 'admin' }
+  const worker = await startWhatsminerWorker({
+    workerId: 'whatsminer-m56s-client-demo',
+    model: 'm56s',
+    storeDir: path.join(os.tmpdir(), 'mdk', 'client-miner', 'worker-store'),
+    seedDevices: [{
+      info: { container: 'site-1', serialNum: 'WM001' },
+      opts: { address: '127.0.0.1', port: 14028, password: 'admin' }
+    }]
   })
+  await kernel.registerWorker(worker.runtime.getPublicKey())
 
-  const deviceId = Object.keys(manager.mem.things)[0]
+  const deviceId = worker.services.provisioning.listDeviceIds()[0]
 
-  console.log('\n  ORK HRPC key:', ork.getPublicKey().toString('hex'))
+  console.log('\n  Kernel HRPC key:', kernel.getPublicKey().toString('hex'))
   console.log('  Device:', deviceId)
   console.log('\n  Ctrl+C to stop.\n')
 }

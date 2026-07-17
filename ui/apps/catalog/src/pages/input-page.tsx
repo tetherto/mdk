@@ -1,4 +1,4 @@
-import { Input, TagInput } from '@tetherto/mdk-react-devkit/core'
+import { Input, TagInput } from '@tetherto/mdk-react-devkit/primitives'
 import { useState } from 'react'
 import type { JSX } from 'react'
 

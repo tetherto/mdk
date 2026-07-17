@@ -1,5 +1,5 @@
 import { readExampleSource } from '../examples.js'
-import { findComponent, loadRegistry } from '../registry-loader.js'
+import { findComponent, loadRegistry, TIERS } from '../registry-loader.js'
 
 export type ExampleCommandOptions = {
   packageName: string
@@ -30,7 +30,7 @@ export const runExample = (opts: ExampleCommandOptions): void => {
   const example = readExampleSource(packageDir, component)
   if (!example) {
     throw new Error(
-      `Component "${component.name}" has no co-located example. Only \`agent-ready\` components ship examples; this one is \`${component.tier ?? 'advanced'}\`. See \`${component.path}\` for the source.`,
+      `Component "${component.name}" has no co-located example. Only \`agent-ready\` components ship examples; this one is \`${component.tier ?? TIERS.advanced}\`. See \`${component.path}\` for the source.`,
     )
   }
 

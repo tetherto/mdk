@@ -6,7 +6,7 @@
  * locally-administered prefix so they cannot collide with real hardware.
  */
 
-import { UNITS } from '@tetherto/mdk-react-devkit/core'
+import { UNITS } from '@tetherto/mdk-react-devkit/primitives'
 
 const SITE = 'Demo Site'
 const DEMO_USER = 'operator1@example.com'

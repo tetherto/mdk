@@ -44,12 +44,12 @@ const META = {
 const PACKAGES = [
   {
     name: 'core',
-    entryPoint: 'packages/react-devkit/src/core/index.ts',
+    entryPoint: 'packages/react-devkit/src/primitives/index.ts',
     tsconfig: 'packages/react-devkit/tsconfig.json',
   },
   {
     name: 'foundation',
-    entryPoint: 'packages/react-devkit/src/foundation/index.ts',
+    entryPoint: 'packages/react-devkit/src/domain/index.ts',
     tsconfig: 'packages/react-devkit/tsconfig.json',
   },
 ]

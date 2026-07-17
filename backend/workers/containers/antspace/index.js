@@ -1,6 +1,9 @@
 'use strict'
 
 module.exports = {
-  AS_HK3: require('./lib/types/hk3.container.manager'),
-  AS_IMM: require('./lib/types/immersion.container.manager')
+  plugin: require('./plugin'),
+  startAntspaceWorker: require('./plugin/boot').startAntspaceWorker,
+  Antspace: require('./lib/antspace'),
+  AntspaceHydro: require('./lib/antspace.hydro'),
+  AntspaceImmersion: require('./lib/antspace.immersion')
 }

@@ -1,0 +1,90 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-miners-activity-chart {
+  &__root {
+    @include flex_align;
+
+    gap: 8px;
+
+    &--tiles {
+      align-items: stretch;
+      gap: 6px;
+    }
+  }
+
+  &__tile {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    // Match the operator app: compact, square (no radius), 0 horizontal padding.
+    padding: 4px 0;
+    text-transform: capitalize;
+
+    &--large {
+      gap: 8px;
+      padding: 8px 0;
+    }
+  }
+
+  &__tile-label {
+    // 11px keeps the widest label ("Offline") inside its equal-share tile,
+    // which has zero horizontal padding.
+    font-size: 11px;
+    white-space: nowrap;
+
+    @media (max-width: 475px) {
+      font-size: 9px;
+    }
+  }
+
+  &__tile-value {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &__spinner {
+    @include flex_align;
+
+    min-height: 80px;
+
+    &--large {
+      min-height: 120px;
+    }
+  }
+
+  &__label {
+    white-space: nowrap;
+    text-align: center;
+    text-transform: capitalize;
+
+    @media (max-width: 475px) {
+      font-size: 9px;
+    }
+
+    &--large {
+      font-size: 14px;
+      white-space: nowrap;
+      text-align: center;
+      text-transform: capitalize;
+
+      @media (max-width: 475px) {
+        font-size: 9px;
+      }
+    }
+  }
+
+  &__item {
+    flex: 1 1 0%;
+    text-transform: capitalize;
+    padding: 4px 0;
+
+    &--large {
+      font-size: 16px;
+      gap: 8px;
+    }
+  }
+}

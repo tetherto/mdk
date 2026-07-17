@@ -1,7 +1,13 @@
 'use strict'
 
-const libStats = require('../../../base/lib/templates/stats')
+const { templates } = require('../../../../../core/mdk')
 
-libStats.specs.miner = libStats.specs.miner_default
+const { minerConf, specs: baseSpecs } = templates.stats
 
-module.exports = libStats
+module.exports = {
+  conf: minerConf,
+  specs: {
+    ...baseSpecs,
+    miner: baseSpecs.miner_default
+  }
+}

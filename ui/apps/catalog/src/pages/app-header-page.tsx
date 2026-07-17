@@ -1,5 +1,5 @@
 import { ClockIcon } from '@radix-ui/react-icons'
-import { AppHeader, Button, MdkWordmark, SignOutIcon } from '@tetherto/mdk-react-devkit/core'
+import { AppHeader, Button, MdkWordmark, SignOutIcon } from '@tetherto/mdk-react-devkit/primitives'
 import {
   AlarmsBellButton,
   HeaderConsumptionBox,
@@ -8,7 +8,7 @@ import {
   HeaderMinersBox,
   HeaderStatsBar,
   ProfileMenu,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import type { JSX } from 'react'
 
 import { DemoBlock } from '../components/demo-block'

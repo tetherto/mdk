@@ -7,7 +7,7 @@ import {
   LogRow,
   LogsCard,
   UNITS,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

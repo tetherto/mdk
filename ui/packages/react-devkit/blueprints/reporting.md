@@ -7,7 +7,7 @@ intent: >
   as CSV. The starting point for anything framed as "reporting", "monthly
   numbers", "billing inputs", or "data export".
 domain: financial-reporting
-orkCapabilities:
+kernelCapabilities:
   - hashrate-monitoring
   - energy-consumption
   - incident-alerts

@@ -1,4 +1,4 @@
-import { createMdkQueryClient } from '@tetherto/mdk-ui-core'
+import { createMdkQueryClient } from '@tetherto/mdk-ui-foundation'
 import type { QueryClient } from '@tanstack/react-query'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createContext, type FC, type ReactNode, useContext, useMemo } from 'react'
@@ -23,7 +23,7 @@ export type MdkProviderProps = {
  *
  * @example
  * ```tsx
- * <MdkProvider apiBaseUrl="https://app-node.example.com">
+ * <MdkProvider apiBaseUrl="https://gateway.example.com">
  *   <App />
  * </MdkProvider>
  * ```

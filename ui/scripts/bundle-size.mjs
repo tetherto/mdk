@@ -67,8 +67,32 @@ const formatSize = (bytes) => {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 }
 
+/**
+ * How each package reaches production determines whether its whole-dist size is
+ * a meaningful number:
+ *   - 'bundle'      → shipped as one unit (a single CSS/asset import). Whole-dist
+ *                     size IS the consumer cost; judge it against the thresholds.
+ *   - 'treeshake'   → a library consumers import piecemeal. The whole-dist total
+ *                     is an upper bound nobody ships; real cost is per-import
+ *                     (run `npm run size:consumer`). Not flagged on total.
+ *   - 'not-shipped' → demo app / build tooling / scaffold template. Never reaches
+ *                     a production browser bundle; excluded from the size verdict.
+ */
+const CATEGORY = {
+  'packages/fonts': 'bundle',
+  'packages/react-devkit': 'treeshake',
+  'packages/react-adapter': 'treeshake',
+  'packages/ui-foundation': 'treeshake',
+  'packages/cli': 'not-shipped',
+  'apps/catalog': 'not-shipped',
+  'apps/mdk-ui-shell': 'not-shipped',
+}
+
 const getStatus = (pkg) => {
   if (!pkg.hasBuild) return '⚠️ No build'
+  const category = CATEGORY[pkg.name] ?? 'bundle'
+  if (category === 'not-shipped') return '— not shipped'
+  if (category === 'treeshake') return '📦 tree-shakeable'
   if (pkg.gzippedSize > 500 * 1024) return '🔴 > 500KB'
   if (pkg.gzippedSize > 200 * 1024) return '🟡 > 200KB'
   return '✅'
@@ -223,9 +247,12 @@ const main = () => {
   console.log('  Runtime  = Built JS/CSS/fonts (excludes .d.ts files)')
   console.log('  Gzipped  = Compressed runtime bundle\n')
   console.log('Status:')
-  console.log('  ✅ Gzipped < 200KB')
-  console.log('  🟡 Gzipped 200-500KB')
-  console.log('  🔴 Gzipped > 500KB')
+  console.log('  ✅ Gzipped < 200KB (shipped as one bundle)')
+  console.log('  🟡 Gzipped 200-500KB (shipped as one bundle)')
+  console.log('  🔴 Gzipped > 500KB (shipped as one bundle)')
+  console.log('  📦 Tree-shakeable library — whole-dist total is an upper bound')
+  console.log('     nobody ships; real per-import cost: `npm run size:consumer`')
+  console.log('  —  Not shipped to production (demo app / tooling / template)')
   console.log('  ⚠️  No build output found\n')
 }
 

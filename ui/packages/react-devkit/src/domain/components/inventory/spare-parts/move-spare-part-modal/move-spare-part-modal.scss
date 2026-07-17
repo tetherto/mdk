@@ -1,0 +1,153 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
+.mdk-move-spare-part-modal {
+  --mdk-dialog-max-width: min(860px, 92vw);
+
+  &__status-section {
+    display: flex;
+    gap: 36px;
+    margin-bottom: 1.5rem;
+  }
+
+  &__left-panel {
+    flex: 1;
+  }
+
+  &__right-panel {
+    flex: 1;
+  }
+
+  &__current-state,
+  &__preview-side {
+    display: flex;
+    @include flex_column;
+    gap: 15px;
+  }
+
+  &__preview {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 6px;
+    background: var(--mdk-color-surface-elevated, #191714);
+  }
+
+  &__arrow {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  // LargeStatusField: row layout with label min-width and boxed value
+  &__state-field {
+    display: flex;
+    @include flex_row;
+    gap: 24px;
+    align-items: center;
+  }
+
+  &__state-label {
+    flex: 1;
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  &__state-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    padding: 20px;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 22px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  &__form {
+    display: flex;
+    @include flex_column;
+    gap: 6px;
+  }
+
+  &__form-body {
+    display: flex;
+    @include flex_column;
+    gap: 25px;
+  }
+
+  &__form-header {
+    color: var(--mdk-color-primary, #f7931a);
+    font-weight: 400;
+  }
+
+  &__target-fields {
+    display: flex;
+    @include flex_row;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  // TargetStateField: row layout with label inline; flex: 1 so both fields share width equally
+  &__field-group {
+    display: flex;
+    flex: 1;
+    @include flex_row;
+    gap: 14px;
+    align-items: baseline;
+
+    > span {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    > *:last-child {
+      flex: 1;
+    }
+  }
+
+  &__form-footer {
+    gap: 4px;
+  }
+
+  &__no-changes {
+    display: flex;
+    @include flex_row;
+    align-items: center;
+    justify-content: center;
+    color: white
+  }
+
+  &__confirm-text {
+    font-weight: 700;
+    display: flex;
+    @include flex_row;
+    align-items: center;
+    justify-content: center;
+    color: white
+  }
+}
+
+.mdk-spare-part-details {
+  display: flex;
+  @include flex_column;
+  gap: 4px;
+
+  &__row {
+    display: flex;
+    gap: 4px;
+    align-items: baseline;
+  }
+
+  &__label {
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &__value {
+    color: var(--mdk-color-text-secondary, rgba(255, 255, 255, 0.85));
+  }
+}

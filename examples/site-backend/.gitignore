@@ -1,0 +1,9 @@
+node_modules/
+.mdk-data/
+# transient runtime dirs created by gateway facilities (cwd-relative)
+store/
+status/
+logs/
+db/
+*.log
+.docker-installed

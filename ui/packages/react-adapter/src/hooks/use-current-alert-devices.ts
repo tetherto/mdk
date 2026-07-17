@@ -2,16 +2,21 @@ import {
   buildCurrentAlertDevicesParams,
   type ListThingsDevice,
   listThingsQuery,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 
+import { ALERTS_POLL_INTERVAL_MS } from './poll-intervals'
+import { useAuthToken } from './use-auth-token'
+
 export type UseCurrentAlertDevicesOptions = {
-  /** Polling interval in ms. Defaults to 20s (matches Moria). Pass 0 to disable. */
+  /** Polling interval in ms. Defaults to 20s (matches Mining OS). Pass 0 to disable. */
   refetchInterval?: number
+  /** Disable the query (e.g. when the consuming view is hidden). Defaults to running whenever an auth token is present. */
+  enabled?: boolean
   /**
    * Alerts search chips (the devices store's `filterTags`). Included in the
    * backend `list-things` selector — chips trigger a refetch that narrows the
-   * dataset server-side, mirroring Moria's alerts search.
+   * dataset server-side, mirroring Mining OS's alerts search.
    */
   filterTags?: string[]
 }
@@ -33,10 +38,12 @@ export const useCurrentAlertDevices = (
   options: UseCurrentAlertDevicesOptions = {},
 ): UseQueryResult<ListThingsDevice[][], Error> => {
   const queryClient = useQueryClient()
+  const token = useAuthToken()
   const factory = listThingsQuery(queryClient, buildCurrentAlertDevicesParams(options.filterTags))
 
   return useQuery({
     ...factory,
-    refetchInterval: options.refetchInterval ?? 20_000,
+    refetchInterval: options.refetchInterval ?? ALERTS_POLL_INTERVAL_MS,
+    enabled: options.enabled ?? !!token,
   })
 }

@@ -1,8 +1,8 @@
-import { Checkbox, Input, UNITS } from '@tetherto/mdk-react-devkit/core'
+import { Checkbox, Input, UNITS } from '@tetherto/mdk-react-devkit/primitives'
 import {
   BitMainControlsTab,
   BitMainImmersionUnitControlBox,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import './bitmain-immersion-controls-demo.scss'

@@ -1,7 +1,7 @@
 {
   "name": "mdk-ui",
   "type": "module",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "packageManager": "npm@11.13.0",
   "engines": {
@@ -23,7 +23,8 @@
     "dev:packages": "turbo dev --filter=!@tetherto/mdk-catalog-ui",
     "format": "turbo format",
     "size": "node scripts/bundle-size.mjs",
-    "size:check": "npm run build && npm run size",
+    "size:consumer": "node scripts/treeshake-check.mjs",
+    "size:check": "npm run build && npm run size && npm run size:consumer",
     "api:surface": "node scripts/generate-public-surface.mjs",
     "generate:shell": "npm run build && rimraf apps/mdk-ui-shell && node packages/cli/dist/bin.js create mdk-ui-shell",
     "test": "turbo test",

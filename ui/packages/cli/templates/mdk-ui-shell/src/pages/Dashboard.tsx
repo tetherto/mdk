@@ -16,6 +16,7 @@ import {
 } from '@tetherto/mdk-react-devkit'
 
 import { CHART_MIN_HEIGHT } from '../constants/dashboard'
+import { PageLayout } from '../components/PageLayout'
 
 const Dashboard = () => {
   const { timeline, setTimeline, options } = useDashboardTimeRange()
@@ -29,15 +30,16 @@ const Dashboard = () => {
   const { export: exportData } = useDashboardExport({ timeline, start, end })
 
   return (
-    <div className="mdk-ui-shell-dashboard">
-      <div className="mdk-ui-shell-dashboard__topline">
-        <h1 className="mdk-ui-shell-dashboard__title">Dashboard</h1>
-        <div className="mdk-ui-shell-dashboard__topline-actions">
+    <PageLayout
+      title="Dashboard"
+      className="mdk-ui-shell-dashboard"
+      actions={
+        <>
           <DashboardDateRangePicker value={{ start, end }} onChange={(next) => setRange(next)} />
           <ExportButton onExport={exportData} />
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <LineChartCard
         title="Hash Rate"
         data={hashrate.data}
@@ -66,7 +68,7 @@ const Dashboard = () => {
         />
         <MiningPoolsPanel rows={pools.rows} isLoading={pools.isLoading} />
       </div>
-    </div>
+    </PageLayout>
   )
 }
 

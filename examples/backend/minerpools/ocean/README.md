@@ -2,14 +2,14 @@
 
 A small, self-contained **Ocean** minerpool example you can clone and run with **no real hardware,
 no Ocean.xyz account, and no network access**. It starts a mock Ocean API, drives the `OCEAN_POOL`
-worker against it, and prints a live pool snapshot (hashrate, workers, balance, transactions,
+Worker against it, and prints a live pool snapshot (hashrate, Workers, balance, transactions,
 blocks). It then stays running so `verify.js` can re-query the same mock.
 
-## Why this one is standalone (no ORK / app-node)
+## Why this one is standalone (no Kernel / gateway)
 
 The miner and container examples (e.g. [`examples/backend/miners/antminer`](../../miners/antminer/README.md))
-bring up an ORK + app-node and register devices as **things**. **Minerpools are different** and are
-**not yet wired into the ORK/MDK thing model:**
+bring up an Kernel + gateway and register devices as **things**. **Minerpools are different** and are
+**not yet wired into the Kernel/MDK thing model:**
 
 - `OceanMinerpoolManager` extends `MinerpoolManager` (an `EventEmitter`), **not** `ThingManager`. It
   has no `registerThing`, no `mem.things`, no `getThingType`.
@@ -18,17 +18,17 @@ bring up an ORK + app-node and register devices as **things**. **Minerpools are 
   `fetchBlocks`.
 - `startWorker()` constructs every manager with an empty conf and `MDKWorkerAdapter` is hard-wired to
   the `ThingManager` API (`mem.things`, `listThings`, `collectThingSnap`), so a minerpool can't be
-  started under the ORK today.
+  started under the Kernel today.
 
-So this example drives the pool manager **directly**, exactly as it runs inside a worker process.
-Wiring minerpools into the ORK (conf injection in `startWorker` + a minerpool path in the adapter)
+So this example drives the pool manager **directly**, exactly as it runs inside a Worker process.
+Wiring minerpools into the Kernel (conf injection in `startWorker` + a minerpool path in the adapter)
 is the **"MDK integration"** half of the parent task and is tracked separately. Once that lands, this
-example can grow an ORK + `verify`-over-IPC flow like the miner examples.
+example can grow an Kernel + `verify`-over-HRPC flow like the miner examples.
 
 ## What it demonstrates
 
-- Running the `OCEAN_POOL` worker against a mock Ocean.xyz REST API — zero hardware/account.
-- Pulling pool **stats**, per-worker **hashrate**, **transactions** and **blocks** into the worker store.
+- Running the `OCEAN_POOL` Worker against a mock Ocean.xyz REST API — zero hardware/account.
+- Pulling pool **stats**, per-worker **hashrate**, **transactions** and **blocks** into the Worker store.
 - Reading those back via `getWrkExtData()` / `getWorkers()`.
 
 ## Prerequisites
@@ -53,7 +53,7 @@ flowchart LR
 ```
 
 `index.js` owns the mock; `verify.js` is a second process that spins up its own `OCEAN_POOL` against
-the same mock. No ORK, no app-node, no DHT.
+the same mock. No Kernel, no gateway, no DHT.
 
 ## Quickstart
 
@@ -81,7 +81,7 @@ node verify.js        # or: npm run verify
 ```
 
 It builds its own `OCEAN_POOL` against the running mock and prints per-account stats plus each
-worker's hashrate:
+Worker's hashrate:
 
 ```
 Ocean account: test
@@ -90,7 +90,7 @@ Ocean account: test
   balance:  0 BTC   (est. today 0 BTC)
     └─ test.worker1  online=1  109.70 TH/s
     ...
-OK — Ocean pool worker is fetching live data from the mock API.
+OK — Ocean pool Worker is fetching live data from the mock API.
 ```
 
 (The mock returns randomised values per run, so exact numbers vary.)
@@ -154,4 +154,4 @@ $TMPDIR/mdk-site-ocean/store/     # the pool's Hyperbee store
 |---|---|
 | [`backend/workers/minerpools/ocean`](../../../../backend/workers/minerpools/ocean/README.md) | Ocean `OCEAN_POOL` manager, mock server, `mdk-contract.json`. |
 | [`examples/backend/minerpools/mdk.client.ocean.js`](../mdk.client.ocean.js) | The minimal single-file version of this example. |
-| [`examples/backend/miners/antminer`](../../miners/antminer/README.md) | An ORK-integrated example (for comparison — what minerpools will look like once integrated). |
+| [`examples/backend/miners/antminer`](../../miners/antminer/README.md) | An Kernel-integrated example (for comparison — what minerpools will look like once integrated). |

@@ -1,0 +1,52 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-pm-sites-list {
+  width: 100%;
+  margin-top: 40px;
+
+  &__row {
+    @include flex_row;
+
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+  }
+
+  &__unit-col {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  &__unit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(260px, 30%, 320px), 1fr));
+    gap: 30px;
+  }
+
+  &__sticky-col {
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    max-width: 35%;
+    min-width: 300px;
+  }
+
+  &__fab {
+    @include flex_column_center;
+
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    z-index: 1;
+    width: 70px;
+    height: 70px;
+    padding: 8px;
+    border: none;
+    border-radius: 50%;
+    font-size: 11px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--mdk-color-white);
+    background-color: var(--mdk-color-primary);
+  }
+}

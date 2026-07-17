@@ -1,5 +1,5 @@
-import { MinersSummaryBox } from '@tetherto/mdk-react-devkit/foundation'
-import { FALLBACK, UNITS } from '@tetherto/mdk-react-devkit/core'
+import { MinersSummaryBox } from '@tetherto/mdk-react-devkit/domain'
+import { FALLBACK, UNITS } from '@tetherto/mdk-react-devkit/primitives'
 import type { JSX, ReactNode } from 'react'
 import './miners-summary-box-page.scss'
 

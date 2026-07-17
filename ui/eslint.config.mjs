@@ -16,6 +16,10 @@ export default antfu(
       'packages/**/*.md',
       'apps/**/*.md',
       'packages/cli/templates/**',
+      // Docs rendering-component templates: written against the mdk-docs
+      // dependency tree (fumadocs, @/ alias), not resolvable here. They ship
+      // verbatim and are installed into the docs repo by `mdk-ui docs:build`.
+      'packages/cli/templates-docs/**',
       // mdk-ui-shell is a scaffold-shaped app: it owns its own eslint
       // config (PascalCase filenames, looser typed-lint scope) so the
       // monorepo-wide rules don't apply here. Lint via
@@ -25,12 +29,12 @@ export default antfu(
   },
   // ── Cross-boundary import guard ──────────────────────────────────────────
   // Ban relative paths that navigate into src/core from src/foundation, or
-  // climb 2+ levels in ui-core / react-adapter (which have no sub-directories
+  // climb 2+ levels in ui-foundation / react-adapter (which have no sub-directories
   // deep enough to need that). All packages expose '@/*' → 'src/*' and
-  // react-devkit additionally exposes '@core' → 'src/core'.
+  // react-devkit additionally exposes '@primitives' → 'src/core'.
   {
-    // foundation → core: any relative path that resolves to src/core must use @core.
-    files: ['packages/react-devkit/src/foundation/**'],
+    // foundation → core: any relative path that resolves to src/core must use @primitives.
+    files: ['packages/react-devkit/src/domain/**'],
     rules: {
       'ts/no-restricted-imports': [
         'error',
@@ -38,7 +42,7 @@ export default antfu(
           patterns: [
             {
               regex: '(\\.\\./)+core($|\\/)',
-              message: "Use '@core' instead of a relative path to src/core.",
+              message: "Use '@primitives' instead of a relative path to src/core.",
             },
           ],
         },
@@ -46,7 +50,7 @@ export default antfu(
     },
   },
   {
-    files: ['packages/ui-core/src/**', 'packages/react-adapter/src/**'],
+    files: ['packages/ui-foundation/src/**', 'packages/react-adapter/src/**'],
     rules: {
       'ts/no-restricted-imports': [
         'error',
@@ -80,15 +84,6 @@ export default antfu(
           ignore: ['README.md', 'App.tsx'],
         },
       ],
-    },
-  },
-  // TEMP: moria port — see PORTING.md in this tree. Remove block when checklist done.
-  // packages/react-devkit/src/foundation/components/domain/reporting-tool/multi-site/mining-report/PORTING.md
-  {
-    files: ['**/multi-site/mining-report/**'],
-    rules: {
-      'unicorn/filename-case': 'off',
-      'ts/ban-ts-comment': 'off',
     },
   },
 )

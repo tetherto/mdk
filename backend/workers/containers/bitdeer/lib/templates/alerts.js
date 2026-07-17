@@ -1,18 +1,23 @@
 'use strict'
 
-const libAlerts = require('../../../../base/lib/templates/alerts')
-const libUtils = require('../../../../base/lib/utils')
+const { templates, utils } = require('../../../../../core/mdk')
 
-libAlerts.specs.container = {
-  ...libAlerts.specs.container_default,
-  oil_min_inlet_temp_warn: {
-    valid: (ctx, snap) => {
-      return libUtils.isValidSnap(snap) && !libUtils.isOffline(snap) && ctx.conf.oil_min_inlet_temp_warn && snap.stats.container_specific?.cooling_system?.oil_pump?.length > 0
-    },
-    probe: (ctx, snap) => {
-      return snap.stats.container_specific.cooling_system.oil_pump.some(pump => pump.cold_temp_c < ctx.conf.oil_min_inlet_temp_warn.params.temp)
+const { isValidSnap, isOffline } = utils
+const baseSpecs = templates.alerts.specs
+
+module.exports = {
+  specs: {
+    ...baseSpecs,
+    container: {
+      ...baseSpecs.container_default,
+      oil_min_inlet_temp_warn: {
+        valid: (ctx, snap) => {
+          return isValidSnap(snap) && !isOffline(snap) && ctx.conf.oil_min_inlet_temp_warn && snap.stats.container_specific?.cooling_system?.oil_pump?.length > 0
+        },
+        probe: (ctx, snap) => {
+          return snap.stats.container_specific.cooling_system.oil_pump.some(pump => pump.cold_temp_c < ctx.conf.oil_min_inlet_temp_warn.params.temp)
+        }
+      }
     }
   }
 }
-
-module.exports = libAlerts

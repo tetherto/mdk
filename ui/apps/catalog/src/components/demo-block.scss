@@ -1,3 +1,5 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
 @layer app {
   .demo-block {
     display: flex;
@@ -20,7 +22,8 @@
 
     &__body {
       display: flex;
-      flex-direction: column;
+      @include flex_column;
+      align-items: flex-start;
       gap: 0.75rem;
       width: 100%;
       margin-top: 0.25rem;

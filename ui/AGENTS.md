@@ -24,8 +24,9 @@ next level of detail:
    commands rather than scanning the source.
 6. **Run the shell template end-to-end** —
    [`docs/AGENT_FIRST.md#run-the-mdk-ui-shell-template-end-to-end`](docs/AGENT_FIRST.md#run-the-mdk-ui-shell-template-end-to-end).
-   The `miningos-app-node` backend, Google OAuth setup, the Vite proxy, and
+   The `miningos-gateway` backend, Google OAuth setup, the Vite proxy, and
    common first-run errors. Read before suggesting `npm run dev` on a scaffold.
+   <!-- todo: update the miningos-gateway link -->
 
 ## Machine-readable artifacts
 
@@ -39,7 +40,7 @@ exports for use in scripts.
 | `@tetherto/mdk-react-devkit`  | `dist/registry.json`    | `@tetherto/mdk-react-devkit/registry.json`    | `mdk-ui registry`     | Every public component + hook with props, JSDoc, tier, indexes.    |
 | `@tetherto/mdk-react-devkit`  | `dist/blueprints.json`  | `@tetherto/mdk-react-devkit/blueprints.json`  | `mdk-ui blueprints`   | Intent → recipe map (markdown body included).                      |
 | `@tetherto/mdk-react-adapter` | `dist/hooks.json`       | `@tetherto/mdk-react-adapter/hooks.json`      | `mdk-ui hooks`        | React hooks (store / utility / permission / ui / external) + provider. |
-| `@tetherto/mdk-ui-core`       | `dist/stores.json`      | `@tetherto/mdk-ui-core/stores.json`           | `mdk-ui stores`       | Zustand stores (state + actions) and TanStack Query helpers.       |
+| `@tetherto/mdk-ui-foundation`       | `dist/stores.json`      | `@tetherto/mdk-ui-foundation/stores.json`           | `mdk-ui stores`       | Zustand stores (state + actions) and TanStack Query helpers.       |
 | `@tetherto/mdk-ui-cli`        | `dist/cli-manifest.json`| `@tetherto/mdk-ui-cli/cli-manifest.json`      | `mdk-ui --json-help`  | The CLI's own command surface (args, options, subcommands).        |
 
 All manifests are regenerated on every `npm run build` and are checked
@@ -59,7 +60,7 @@ npx mdk-ui example <ComponentName>               # *.example.tsx
 npx mdk-ui hooks                                 # full manifest
 npx mdk-ui hooks --category store --format table # filter + pretty-print
 
-# Stores + query helpers (ui-core)
+# Stores + query helpers (ui-foundation)
 npx mdk-ui stores
 npx mdk-ui stores --category devices --format table
 
@@ -77,7 +78,7 @@ new code lands in the right package:
 - **Hooks (in `@tetherto/mdk-react-adapter`)** own the data → render
   shape transformation. They fetch, convert units, format, and return
   ready-to-render payloads (e.g. `ChartCardData`).
-- **State and API contracts live in `@tetherto/mdk-ui-core`.** Query
+- **State and API contracts live in `@tetherto/mdk-ui-foundation`.** Query
   factories, query-param builders, Zustand stores, types. Adapter and
   devkit consume them; nothing reimplements them.
 - **Pages are thin glue** — read hooks, pass output to components.

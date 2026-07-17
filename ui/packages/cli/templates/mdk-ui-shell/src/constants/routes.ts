@@ -3,6 +3,9 @@ export const ROUTE_PATHS = {
   SIGN_IN: '/signin',
   DASHBOARD: '/dashboard',
   ALERTS: '/alerts',
+  POOL_MANAGER: '/pool-manager',
+  SITE_OVERVIEW: '/site-overview',
+  EXPLORER: '/explorer',
   NOT_FOUND: '*',
 } as const
 

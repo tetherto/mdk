@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { JSX } from 'react'
-import type { SidebarMenuItem } from '@tetherto/mdk-react-devkit/core'
-import { Button, Sidebar } from '@tetherto/mdk-react-devkit/core'
+import type { SidebarMenuItem } from '@tetherto/mdk-react-devkit/primitives'
+import { Button, Sidebar } from '@tetherto/mdk-react-devkit/primitives'
 import { BarChartIcon, BellIcon, GearIcon, HomeIcon, PersonIcon } from '@radix-ui/react-icons'
 
 const SIDEBAR_EXAMPLE_ITEMS: SidebarMenuItem[] = [

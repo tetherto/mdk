@@ -1,32 +1,43 @@
-# @tetherto/powermeter-satec
+# @tetherto/mdk-worker-satec
 
-MDK worker for Satec power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports the PM180 model.
+MDK Worker for Satec power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports the PM180 model.
 
 ## Supported Models
 
-| Export | Model |
+| `model` value | Model |
 |--------|-------|
-| `SATEC_PM180` | Satec PM180 |
+| `pm180` | Satec PM180 |
 
 ## Install
 
 ```bash
-npm install @tetherto/powermeter-satec
+npm install @tetherto/mdk-worker-satec
 ```
 
 ## Usage
 
 ```js
-const { SATEC_PM180 } = require('@tetherto/powermeter-satec')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startSatecWorker } = require('@tetherto/mdk-worker-satec')
 
-const { manager } = await startWorker(SATEC_PM180, { ork, rack: 'site-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { serialNum: 'SATEC-A', container: 'container-A' },
-  opts: { address: '192.168.1.151', port: 502, unitId: 1 }
+const worker = await startSatecWorker({
+  workerId: 'satec-rack-1',
+  model: 'pm180',
+  storeDir: './store/satec-rack-1',
+  seedDevices: [{
+    info: { serialNum: 'SATEC-A', container: 'container-A' },
+    opts: { address: '192.168.1.151', port: 502, unitId: 1 }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
+`registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is
+stopped and restarted (`await worker.stop()`, then `startSatecWorker` again with no `seedDevices`) — there is no
+hot-add.
 
 ## Protocol
 

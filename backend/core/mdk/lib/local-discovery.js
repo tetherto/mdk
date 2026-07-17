@@ -5,12 +5,12 @@
 // component runs on one machine.
 //
 // Each worker publishes its stable (seed-derived) RPC public key to a shared
-// keys dir; the ORK reads each key and connects BY KEY, running the normal
+// keys dir; the Kernel reads each key and connects BY KEY, running the normal
 // identity → capability → Ready flow. This skips the DHT topic announce/lookup
 // round-trip, so registration is immediate as soon as the key file appears.
 //
 // This is the `discovery: { mode: 'local' }` path. The dir is resolved the same
-// way on both sides — getOrk and startWorker default it to keysDir(root) and
+// way on both sides — getKernel and startWorker default it to keysDir(root) and
 // share the same root default — so the two processes agree with no config.
 
 const path = require('path')
@@ -23,19 +23,19 @@ function keysDir (root) {
 
 // Worker side: publish this worker's RPC public key to `dir`. The key is stable
 // across restarts (derived from the persisted seedRpc), so re-publishing is a
-// no-op for the ORK (already-known peers are deduped by the listener).
+// no-op for the Kernel (already-known peers are deduped by the listener).
 function publishWorkerKey (dir, workerId, rpcKeyHex) {
   fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(dir, `${workerId}.key`), rpcKeyHex, 'utf8')
   debug('published %s key %s…', workerId, rpcKeyHex.slice(0, 16))
 }
 
-// ORK side: offer every published worker key to the discovery listener, then
+// Kernel side: offer every published worker key to the discovery listener, then
 // keep watching `dir` for new ones. The listener dedupes already-known peers and
 // drops a key on connect failure (so a periodic rescan retries workers whose RPC
-// server was not yet reachable, and re-discovers all workers after an ORK
+// server was not yet reachable, and re-discovers all workers after an Kernel
 // restart). Returns stop() to tear the watcher + timer down.
-function discoverWorkerKeys (ork, dir, { rescanMs = 4000 } = {}) {
+function discoverWorkerKeys (kernel, dir, { rescanMs = 4000 } = {}) {
   fs.mkdirSync(dir, { recursive: true })
 
   const offer = (file) => {
@@ -43,7 +43,7 @@ function discoverWorkerKeys (ork, dir, { rescanMs = 4000 } = {}) {
     let key
     try { key = fs.readFileSync(path.join(dir, file), 'utf8').trim() } catch { return }
     if (!key) return
-    Promise.resolve(ork.dhtListener.discoverWorker(key))
+    Promise.resolve(kernel.dhtListener.discoverWorker(key))
       .catch((e) => debug('discover %s failed: %s', file, e.message))
   }
 
@@ -54,13 +54,26 @@ function discoverWorkerKeys (ork, dir, { rescanMs = 4000 } = {}) {
   }
 
   scan()
-  const watcher = fs.watch(dir, (_event, filename) => offer(filename))
+  let watcher = null
+  try {
+    watcher = fs.watch(dir, (_event, filename) => offer(filename))
+    watcher.on('error', (err) => {
+      debug('watch %s failed: %s', dir, err.message)
+      try { watcher.close() } catch {}
+      watcher = null
+    })
+  } catch (err) {
+    debug('watch %s failed: %s', dir, err.message)
+  }
   const timer = setInterval(scan, rescanMs)
   timer.unref()
 
   return {
     stop () {
-      try { watcher.close() } catch {}
+      if (watcher) {
+        try { watcher.close() } catch {}
+        watcher = null
+      }
       clearInterval(timer)
     }
   }

@@ -1,29 +1,42 @@
-# @tetherto/minerpool-f2pool
+# @tetherto/mdk-worker-f2pool
 
-MDK worker for the F2Pool Bitcoin mining pool. Fetches hashrate, worker stats, and earnings via the F2Pool REST API.
+MDK Worker for the F2Pool Bitcoin mining pool. Fetches hashrate, worker stats, and earnings via the F2Pool REST API.
 
 ## Install
 
 ```bash
-npm install @tetherto/minerpool-f2pool
+npm install @tetherto/mdk-worker-f2pool
 ```
 
 ## Usage
 
+`startF2poolWorker(opts)` boots a single logical device on `WorkerRuntime` — the pool account list is configuration
+passed at boot, not a `registerThing`-provisioned device:
+
 ```js
-const { F2POOL } = require('@tetherto/minerpool-f2pool')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startF2poolWorker } = require('@tetherto/mdk-worker-f2pool')
 
-const { manager } = await startWorker(F2POOL, { ork, rack: 'site-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { username: 'my-f2pool-account' },
-  opts: {
-    apiKey: 'your-api-key',
-    baseUrl: 'https://api.f2pool.com/v2'
-  }
+const worker = await startF2poolWorker({
+  workerId: 'f2pool-site-1',
+  rack: 'site-1',
+  storeDir: './store/f2pool-site-1',
+  conf: { f2pool: { accounts: ['my-f2pool-account'], apiSecret: 'your-api-secret', apiUrl: 'https://api.f2pool.com/v2' } }
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+| `opts` field | Type | Status | Notes |
+| --- | --- | --- | --- |
+| `workerId` | string | Required | One runtime process = one `workerId`. |
+| `rack` | string | Required | Rack identifier; also the pool store prefix. |
+| `storeDir` | string | Required | Persistent store directory. |
+| `conf.f2pool.accounts` | string[] | Required | F2Pool usernames to poll. |
+| `conf.f2pool.apiSecret` | string | Required | Sent as the `F2P-API-SECRET` header. |
+| `conf.f2pool.apiUrl` | string | Optional | Defaults to the F2Pool API base URL. |
+| `kernelTopic` | string | Optional | DHT discovery topic (hex); omit to register directly with `kernel.registerWorker()`. |
 
 ## Telemetry
 
@@ -44,8 +57,16 @@ Uses the F2Pool REST API over HTTPS. Authenticated with an API key in the reques
 
 ## Mock Server
 
+Run the mock standalone (f2pool has no model `type`):
+
+```bash
+npm run mock
+```
+
+Programmatic:
+
 ```js
-const f2poolMock = require('@tetherto/minerpool-f2pool/mock/server')
+const f2poolMock = require('@tetherto/mdk-worker-f2pool/mock/server')
 f2poolMock.createServer({ port: 5030, host: '127.0.0.1' })
 ```
 

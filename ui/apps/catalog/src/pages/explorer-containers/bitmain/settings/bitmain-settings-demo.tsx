@@ -1,8 +1,8 @@
-import { Button, Checkbox, Input, UNITS } from '@tetherto/mdk-react-devkit/core'
-import { BitMainHydroSettings } from '@tetherto/mdk-react-devkit/foundation'
+import { Button, Checkbox, Input, UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import { BitMainHydroSettings } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
-import type { Device } from '@tetherto/mdk-react-devkit/foundation'
+import type { Device } from '@tetherto/mdk-react-devkit/domain'
 import './bitmain-settings-demo.scss'
 
 /**

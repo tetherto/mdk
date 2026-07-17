@@ -4,7 +4,7 @@ import {
   type DashboardQueryRange,
   type TailLogEntry,
   tailLogQuery,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
@@ -91,7 +91,7 @@ export type SiteConsumptionChartResult = {
  * `<LineChartCard />`. Reads `site_power_w` from the
  * `t-powermeter`-tagged tail-log (same source the header's
  * `useSitePowerMeter` snapshot uses), converts W → MW, and emits
- * `highlightedValue` + `minMaxAvg`. Mirrors Moria's `Power Consumption`
+ * `highlightedValue` + `minMaxAvg`. Mirrors Mining OS's `Power Consumption`
  * card query verbatim: `type=powermeter, tag=t-powermeter,
  * aggrFields={site_power_w:1}`.
  *

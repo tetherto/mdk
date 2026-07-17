@@ -3,8 +3,8 @@
  * Used by LineChart, BarChart, and AreaChart demos in App.tsx.
  */
 
-import { COLOR, UNITS } from '@tetherto/mdk-react-devkit/core'
-import { WEBAPP_DISPLAY_NAME } from '@tetherto/mdk-react-devkit/foundation'
+import { COLOR, UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import { WEBAPP_DISPLAY_NAME } from '@tetherto/mdk-react-devkit/domain'
 
 export const LINE_CHART_REVENUE_BASIC = {
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],

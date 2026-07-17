@@ -4,7 +4,7 @@ import {
   HeaderHashrateBox,
   HeaderMinersBox,
   HeaderStatsBar,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import type { JSX } from 'react'
 
 import { DemoBlock } from '../components/demo-block'

@@ -1,0 +1,32 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
+.mdk-add-spare-part-modal {
+  min-width: 660px;
+
+  &__form {
+    display: flex;
+    @include flex_column;
+    gap: 1rem;
+  }
+
+  &__fields {
+    display: flex;
+    @include flex_column;
+    gap: 0.75rem;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 24px;
+    border-top: 1px solid var(--mdk-dialog-border-color);
+    gap: 0.75rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+  }
+}

@@ -5,8 +5,9 @@
     "jsx": "react-jsx",
     "rootDir": "./src",
     "paths": {
-      "@core": ["./src/core"],
-      "@/*": ["./src/foundation/*"]
+      "@primitives": ["./src/primitives"],
+      "@primitives/*": ["./src/primitives/*"],
+      "@domain/*": ["./src/domain/*"]
     },
     "declarationDir": "./dist",
     "noEmit": false,

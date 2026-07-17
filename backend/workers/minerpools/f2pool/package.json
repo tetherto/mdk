@@ -1,6 +1,6 @@
 {
-  "name": "@tetherto/minerpool-f2pool",
-  "version": "0.3.0",
+  "name": "@tetherto/mdk-worker-f2pool",
+  "version": "0.5.0",
   "description": "F2Pool miner pool lib",
   "keywords": [
     "tether"
@@ -15,10 +15,11 @@
   "scripts": {
     "lint": "standard",
     "lint:fix": "standard --fix",
+    "mock": "node mock/server.js",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
     "test:unit": "NODE_ENV=test brittle tests/unit/**/*.test.js",
     "test:integration": "NODE_ENV=test brittle tests/integration/**/*.test.js",
-    "test:coverage": "NODE_ENV=test brittle --coverage tests/unit/**/*.test.js"
+    "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
     "@bitfinex/lib-js-util-base": "git+https://github.com/bitfinexcom/lib-js-util-base.git",
@@ -30,13 +31,5 @@
     "fastify": "5.8.5",
     "standard": "17.1.2",
     "yargs": "17.7.2"
-  },
-  "overrides": {
-    "acorn": ">=8.17.0",
-    "js-yaml": ">=4.3.0",
-    "minimatch": ">=10.2.1",
-    "qs": ">=6.15.3",
-    "semver": ">=7.8.5",
-    "tar": ">=7.5.19"
   }
 }

@@ -6,5 +6,5 @@ Workers with `metadata.deviceFamily: "minerpool"` in their `mdk-contract.json`. 
 
 | Pool | Website | Worker package |
 |------|---------|----------------|
-| Ocean | [ocean.xyz](https://ocean.xyz/) | [`backend/workers/minerpools/ocean/`](../../../../backend/workers/minerpools/ocean/mdk-contract.json) |
-| F2Pool | [f2pool.com](https://www.f2pool.com/) | [`backend/workers/minerpools/f2pool/`](../../../../backend/workers/minerpools/f2pool/mdk-contract.json) |
+| Ocean | [ocean.xyz](https://ocean.xyz/) | [`backend/workers/minerpools/ocean/`](../../../../backend/workers/minerpools/ocean/plugin/mdk-contract.json) |
+| F2Pool | [f2pool.com](https://www.f2pool.com/) | [`backend/workers/minerpools/f2pool/`](../../../../backend/workers/minerpools/f2pool/plugin/mdk-contract.json) |

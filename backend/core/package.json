@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-core",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "description": "MDK Core",
   "keywords": [
@@ -19,17 +19,9 @@
     "lint": "standard",
     "lint:fix": "standard --fix",
     "test": "npm run lint && npm run test:packages",
-    "test:packages": "for pkg in app-node client mdk mock-control-service ork; do if [ -f \"$pkg/package.json\" ]; then npm test --prefix \"$pkg\" || exit 1; fi; done"
+    "test:packages": "for pkg in gateway client mdk mock-control-service kernel; do if [ -f \"$pkg/package.json\" ]; then npm test --prefix \"$pkg\" || exit 1; fi; done"
   },
   "devDependencies": {
     "standard": "17.1.0"
-  },
-  "overrides": {
-    "acorn": ">=8.17.0",
-    "js-yaml": ">=4.3.0",
-    "minimatch": ">=10.2.1",
-    "qs": ">=6.15.3",
-    "semver": ">=7.8.5",
-    "tar": ">=7.5.19"
   }
 }

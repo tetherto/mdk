@@ -1,7 +1,7 @@
 ---
 title: Contributing
 description: Contribution workflow for all MDK repositories
-docs@tether_slug: community/contributing
+docs@tether_slug: support/community/contributing
 icon: GitPullRequest
 ---
 
@@ -9,8 +9,8 @@ icon: GitPullRequest
 
 Thank you for your interest in contributing to [MDK][mdk-repo].
 
-This document outlines the contribution workflow for the MDK repository, from setting up your development environment to submitting pull requests and 
-participating in releases.
+This document outlines the contribution workflow for the MDK repository, from setting up your development environment to 
+submitting pull requests and participating in releases.
 
 ## Security
 
@@ -24,7 +24,8 @@ MDK is a monorepo with separate backend and frontend workspaces:
 
 - Backend:
    - `backend/core/`: Backend services, container modules, and integration/unit tests (npm-based)
-   - `backend/workers/`: Protocol-translator worker packages (miners, miner-pools, power-meter, temperature, containers), per-worker mock servers, and 
+   - `backend/workers/`: Protocol-translator worker packages (miners, miner-pools, power-meter, temperature, containers), 
+   per-worker mock servers, and 
 per-worker tests (npm-based)
 - Frontend: `ui/`: Frontend packages, demo app, and shared UI foundation (npm + Turbo-based)
 
@@ -32,12 +33,21 @@ Choose the backend or frontend workflow that matches the area you are contributi
 
 ### Root configuration must be domain-aware
 
-The repo top level is a fixed set of domains (`ui/`, `backend/`, `docs/`, `examples/`) plus tooling and repo-meta files. Shared root config (today just `.gitignore`) is read across all of them, so every pattern must be written so it cannot silently match another domain's source:
+The repo top level is a fixed set of domains (`ui/`, `backend/`, `docs/`, `examples/`) plus tooling and repo-meta files. 
+Shared root config (today just `.gitignore`) is read across all of them, so every pattern must be written so it cannot 
+silently match another domain's source:
 
-- **Anchor anything that targets one domain's build or runtime output.** Use `/name/` for the repo root or `domain/**/name/` for a subtree. A bare `status` / `store` / `tmp` / `Checklist*` matches a file or directory of that name *anywhere*, including UI source. That is exactly what caused a prior root ignore regression, where bare `status` / `store` swallowed `ui/packages/ui-core/src/store/`.
-- **Keep per-domain ignores in that domain's own `.gitignore`** (`ui/.gitignore`, the per-package backend `.gitignore`s), not the root. Things like `dist`, `.turbo`, and `build` belong to a domain.
-- **Lint/format/type config is domain-owned, not shared at the root.** `ui/` ships its own `eslint.config.mjs` / `tsconfig.base.json` / `.prettierrc`; backend uses `standard`. Do not add a root-level eslint/tsconfig/prettier that would apply across domains.
-- **A genuinely shared convention is fine if it applies identically to every domain** - e.g. committing `config/*.json.example` while ignoring the generated `config/*.json`. Note it as shared so the intent is clear.
+- **Anchor anything that targets one domain's build or runtime output.** Use `/name/` for the repo root or `domain/**/name/` 
+for a subtree. A bare `status` / `store` / `tmp` / `Checklist*` matches a file or directory of that name *anywhere*, 
+including UI source. That is exactly what caused a prior root ignore regression, where bare `status` / `store` 
+swallowed `ui/packages/ui-foundation/src/store/`.
+- **Keep per-domain ignores in that domain's own `.gitignore`** (`ui/.gitignore`, the per-package backend `.gitignore`s), 
+not the root. Things like `dist`, `.turbo`, and `build` belong to a domain.
+- **Lint/format/type config is domain-owned, not shared at the root.** `ui/` ships its own `eslint.config.mjs` / 
+`tsconfig.base.json` / `.prettierrc`; backend uses `standard`. Do not add a root-level eslint/tsconfig/prettier 
+that would apply across domains.
+- **A genuinely shared convention is fine if it applies identically to every domain** - e.g. committing 
+`config/*.json.example` while ignoring the generated `config/*.json`. Note it as shared so the intent is clear.
 
 ## Get started
 
@@ -176,6 +186,19 @@ git checkout -b feat/mdk-new-device
 git checkout -b fix/timeout-handling
 ```
 
+### Commit message template
+
+The repository ships a commit message template at [`.gitmessage`](.gitmessage) that pre-fills the
+commit editor with the expected format (type, summary, body, and Asana/Related PR references).
+Enable it once per clone:
+
+```bash
+git config commit.template .gitmessage
+```
+
+This is a local convenience only — it is not enforced, and the [conventional types](#conventional-types)
+above remain the source of truth for commit, branch, and PR naming.
+
 ### Pull request steps
 
 1. Sync your local main with upstream `main`.
@@ -207,7 +230,8 @@ Use the following convention:
 {type}({scope}): {description}
 ```
 
-Where `{type}` is one of the [conventional types](#conventional-types) and `{scope}` is the affected area, for example `miner` or `ui`.
+Where `{type}` is one of the [conventional types](#conventional-types) and `{scope}` is the affected area, 
+for example `miner` or `ui`.
 
 Examples:
 
@@ -272,25 +296,14 @@ Key rules:
 
 ## Versioning and tagging
 
-### Version tagging
-
-```bash
-git checkout main
-git pull origin main
-
-git tag -a v1.2.0 -m "Release v1.2.0: Add RTD support"
-
-git push origin main
-git push origin v1.2.0
-```
-
-### Versioning scheme
-
 MDK follows **Semantic Versioning**:
 
 - **MAJOR** (`1.x.x`): breaking changes
 - **MINOR** (`x.1.x`): new backward-compatible features
 - **PATCH** (`x.x.1`): backward-compatible bug fixes
+
+When the MDK team provides a release, they are cut from a `release/<version>` branch, verified in CI, 
+promoted to the public repo, then tagged. For the full release process and checklist, see [RELEASING.md](RELEASING.md).
 
 Happy contributing, and thanks for helping improve MDK! 🚀
 

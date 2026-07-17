@@ -1,36 +1,39 @@
 # workers/miners
 
-Bitcoin ASIC miner workers. Each implements the `MinerManager` base class which extends `ThingManager` with mining-specific services (hashrate tracking, pool management, power mode control, efficiency metrics).
+Bitcoin ASIC miner Workers. Each ships a Worker Plugin (`plugin/{index.js,mdk-contract.json,boot.js}`) hosted on
+[`WorkerRuntime`][mdk-worker-runtime], with mining-specific config (alert thresholds, stats specs) layered on top via
+[`createWorkerInfra`][worker-infra] — see [Worker Runtime legacy services][worker-runtime-legacy] for how that shared
+plumbing works.
 
 ## Packages
 
 | Directory | Package | Models |
 |-----------|---------|--------|
-| [`base/`](./base/) | `@tetherto/tpl-lib-miner` | `MinerManager` — base class for all miner workers |
-| [`whatsminer/`](./whatsminer/README.md) | `@tetherto/miner-whatsminer` | M30SP, M30SPP, M53S, M56S, M63 |
-| [`antminer/`](./antminer/README.md) | `@tetherto/miner-antminer` | S19XP and variants |
-| [`avalon/`](./avalon/README.md) | `@tetherto/miner-avalon` | A1346 and variants |
+| [`whatsminer/`](./whatsminer/README.md) | `@tetherto/mdk-worker-whatsminer` | M30SP, M30SPP, M53S, M56S, M63 |
+| [`antminer/`](./antminer/README.md) | `@tetherto/mdk-worker-antminer` | S19XP and variants |
+| [`avalon/`](./avalon/README.md) | `@tetherto/mdk-worker-avalon` | A1346 and variants |
 
-## Inheritance Chain
+## Package shape
+
+Every package here follows the same layout, each `boot.js` calling `createWorkerInfra()` then constructing
+`WorkerRuntime` the same way:
 
 ```
-ThingManager (workers/base/)
-  └── MinerManager (miners/base/)
-        ├── WhatsminerManager (miners/whatsminer/)
-        │     ├── WM_M30SP
-        │     ├── WM_M30SPP
-        │     ├── WM_M53S
-        │     ├── WM_M56S
-        │     └── WM_M63
-        ├── AntminerManager (miners/antminer/)
-        │     └── AM_S19XP
-        └── AvalonManager (miners/avalon/)
-              └── AV_A1346
+miners/<vendor>/
+  plugin/
+    index.js        # the Worker Plugin: { contract, dir, connect, disconnect }
+    mdk-contract.json
+    boot.js          # start<Vendor>Worker(opts) — infra + WorkerRuntime, exported from the package root
+    src/
+      telemetry/*.js
+      commands/*.js
+  lib/                 # the vendor device driver `plugin.connect()` returns
+  mock/                # a standalone fake of the vendor's native API
 ```
 
 ## Common Telemetry Fields
 
-All miner workers report these standard telemetry fields:
+All miner Workers report these standard telemetry fields:
 
 | Field | Unit | Description |
 |-------|------|-------------|
@@ -50,7 +53,7 @@ All miner workers report these standard telemetry fields:
 
 ## Common Commands
 
-All miner workers support these commands (declared in `mdk-contract.json`):
+All miner Workers support these commands (declared in `mdk-contract.json`):
 
 | Command | Parameters | Description |
 |---------|-----------|-------------|
@@ -62,11 +65,11 @@ All miner workers support these commands (declared in `mdk-contract.json`):
 | `registerThing` | `info, opts` | Register a new device |
 | `updateThing` | `info, opts` | Update device connection info |
 | `forgetThings` | `ids` | Remove devices |
-| `saveSettings` | — | Persist worker settings |
+| `saveSettings` | — | Persist Worker settings |
 | `saveComment` | `text` | Add a device annotation |
 | `editComment` | `commentId, text` | Edit annotation |
 | `deleteComment` | `commentId` | Delete annotation |
-| `rackReboot` | — | Restart the worker process |
+| `rackReboot` | — | Restart the Worker process |
 | `downloadLogs` | — | Download raw diagnostic logs |
 
 ## Health States
@@ -78,14 +81,42 @@ Common alerts: `alert.overheat`, `alert.fan_failure`, `alert.psu_failure`, `aler
 ## Quick Start
 
 ```js
-const { getOrk, startWorker } = require('@tetherto/mdk')
-const { WM_M56S } = require('@tetherto/miner-whatsminer')
+const { getKernel } = require('@tetherto/mdk')
+const { startWhatsminerWorker } = require('@tetherto/mdk-worker-whatsminer')
 
-const ork = await getOrk()
-const { manager } = await startWorker(WM_M56S, { ork, rack: 'rack-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { serialNum: 'WM-001', container: 'A', pos: 'A1' },
-  opts: { address: '192.168.1.10', port: 14028, password: 'admin' }
+const worker = await startWhatsminerWorker({
+  workerId: 'whatsminer-rack-1',
+  model: 'm56s',
+  storeDir: './store/whatsminer-rack-1',
+  seedDevices: [{
+    info: { serialNum: 'WM-001', container: 'A', pos: 'A1' },
+    opts: { address: '192.168.1.10', port: 14028, password: 'admin' }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+Each package's own `USAGE.md` ([whatsminer][whatsminer-usage], [antminer][antminer-usage], [avalon][avalon-usage])
+documents its `model` values, mock, and the `registerThing` command for adding a device to an already-running Worker.
+
+## Links
+
+[mdk-worker-runtime]: ../../core/mdk-worker/lib/worker-runtime.js
+<!-- docs@tether.io: mdk-worker-runtime → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/lib/worker-runtime.js -->
+
+[worker-infra]: ../../core/mdk/lib/worker-infra.js
+<!-- docs@tether.io: worker-infra → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/lib/worker-infra.js -->
+
+[worker-runtime-legacy]: ../../../docs/reference/maintainers/worker-runtime-legacy-services.md
+<!-- docs@tether.io: worker-runtime-legacy → https://github.com/tetherto/mdk/blob/main/docs/reference/maintainers/worker-runtime-legacy-services.md -->
+
+[whatsminer-usage]: ./whatsminer/USAGE.md
+<!-- docs@tether.io: whatsminer-usage → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/whatsminer/USAGE.md -->
+
+[antminer-usage]: ./antminer/USAGE.md
+<!-- docs@tether.io: antminer-usage → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/USAGE.md -->
+
+[avalon-usage]: ./avalon/USAGE.md
+<!-- docs@tether.io: avalon-usage → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/USAGE.md -->

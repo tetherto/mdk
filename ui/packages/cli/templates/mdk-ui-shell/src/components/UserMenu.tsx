@@ -6,7 +6,7 @@ import {
   SignOutIcon,
   UserAvatarIcon,
 } from '@tetherto/mdk-react-devkit'
-import { authStore, getRolesFromAuthToken } from '@tetherto/mdk-ui-core'
+import { authStore, getRolesFromAuthToken } from '@tetherto/mdk-ui-foundation'
 import { useMemo, useState } from 'react'
 
 const SUPPORTED_TIMEZONES: string[] = (() => {

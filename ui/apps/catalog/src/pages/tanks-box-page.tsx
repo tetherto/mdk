@@ -1,4 +1,4 @@
-import { TanksBox } from '@tetherto/mdk-react-devkit/foundation'
+import { TanksBox } from '@tetherto/mdk-react-devkit/domain'
 
 import type { JSX } from 'react'
 

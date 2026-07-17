@@ -1,0 +1,156 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-grid-unit {
+  position: relative;
+  height: max(550px, 60vh);
+
+  &__controls {
+    @include flex_align;
+
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__controls-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__controls-section {
+    @include flex_justify_end_align_center;
+
+    flex-wrap: wrap;
+    gap: 6px;
+
+    &--expand {
+      flex: 1;
+    }
+  }
+
+  &__tooltip-trigger {
+    @include inline_flex_align;
+
+    cursor: pointer;
+    color: var(--mdk-color-text-secondary);
+
+    &:hover {
+      color: var(--mdk-color-white);
+    }
+  }
+
+  &__tooltip-list {
+    padding-left: 16px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  &__viewer-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+    border: 1px solid var(--mdk-color-white-alpha-024);
+    background: var(--mdk-color-background-dark);
+  }
+
+  &__viewer-content {
+    @include flex_align;
+
+    width: 100%;
+  }
+
+  &__row-wrapper {
+    @include flex_row;
+
+    gap: 12px;
+
+    &--column {
+      flex-direction: column;
+    }
+  }
+
+  &__unit-row {
+    @include flex_row_align_start;
+
+    gap: 8px;
+
+    &--border {
+      border-bottom: 1px solid var(--mdk-border-default-color);
+      padding-bottom: 8px;
+    }
+  }
+
+  &__row-label {
+    min-width: 60px;
+    font-size: 11px;
+    color: var(--mdk-color-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    padding-top: 4px;
+
+    &--heatmap {
+      color: var(--mdk-color-white);
+    }
+
+    &:hover {
+      color: var(--mdk-color-white);
+    }
+  }
+
+  &__sockets-list {
+    @include flex_wrap;
+
+    gap: 4px;
+
+    &--column {
+      flex-direction: column;
+    }
+
+    &--heatmap {
+      gap: 2px;
+    }
+  }
+
+  &__socket-wrapper {
+    &--disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  &__socket-container {
+    cursor: pointer;
+
+    &--disabled {
+      pointer-events: none;
+    }
+  }
+
+  &__miner-box {
+    @include flex_column_center;
+
+    width: 48px;
+    height: 48px;
+    font-size: 10px;
+    text-align: center;
+    border: 1px solid var(--mdk-border-default-color);
+    background-color: var(--mdk-grid-unit-background-color);
+    transition: border-color 0.15s;
+    color: var(--mdk-grid-unit-color);
+
+    &--selectable {
+      cursor: pointer;
+    }
+
+    &--selected {
+      border-color: var(--mdk-grid-unit-color);
+    }
+  }
+
+  &__miner-id {
+    @include text_ellipsis;
+
+    font-size: 9px;
+    margin-top: 2px;
+  }
+}

@@ -38,7 +38,7 @@ const THING_CONFIG_SOURCES = [
 ]
 
 const HTTP_NODE_WRK_STUB =
-  "module.exports = require('../../backend/core/app-node/workers/http.node.wrk')\n"
+  "module.exports = require('../../backend/core/gateway/workers/http.node.wrk')\n"
 
 const TEMPLATE = {
   dirs: [
@@ -49,7 +49,6 @@ const TEMPLATE = {
     'types/WhatsminerManagerM56s/config',
     'types/BitdeerManagerD40M56/config',
     'types/AnstspaceManagerHK3/config',
-    'types/MicroBTManagerHK3/config',
     'types/B23PowerMeterManager/config',
     'types/TempSenecaSensorManager/config',
     'workers'
@@ -91,11 +90,11 @@ module.exports = () => {
 
   const commonDest = path.join(rootStoreDir, 'config', 'common.json')
   if (!fs.existsSync(commonDest)) {
-    const src = resolveSource(path.join(localPackages, LIB_TYPES.APP_NODE, 'config'), 'common.json')
+    const src = resolveSource(path.join(localPackages, LIB_TYPES.GATEWAY, 'config'), 'common.json')
     if (src) fs.copyFileSync(src, commonDest)
   }
 
-  const orkConfDir = path.join(localPackages, LIB_TYPES.ORK, 'config')
+  const orkConfDir = path.join(localPackages, LIB_TYPES.Kernel, 'config')
   for (const entry of fs.readdirSync(orkConfDir)) {
     if (!entry.endsWith('.example')) continue
     const filename = entry.slice(0, -'.example'.length)
@@ -105,13 +104,13 @@ module.exports = () => {
     }
   }
 
-  const appNodeConfigsDir = path.join(localPackages, LIB_TYPES.APP_NODE, 'config', 'facs')
-  for (const entry of fs.readdirSync(appNodeConfigsDir)) {
+  const gatewayConfigsDir = path.join(localPackages, LIB_TYPES.GATEWAY, 'config', 'facs')
+  for (const entry of fs.readdirSync(gatewayConfigsDir)) {
     if (!entry.endsWith('.example')) continue
     const filename = entry.slice(0, -'.example'.length)
     const dest = path.join(rootStoreDir, 'config', 'facs', filename)
     if (!fs.existsSync(dest)) {
-      fs.copyFileSync(path.join(appNodeConfigsDir, entry), dest)
+      fs.copyFileSync(path.join(gatewayConfigsDir, entry), dest)
     }
   }
 

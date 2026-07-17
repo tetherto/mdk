@@ -1,6 +1,6 @@
-import { Label, Switch, UNITS } from '@tetherto/mdk-react-devkit/core'
+import { Label, Switch, UNITS } from '@tetherto/mdk-react-devkit/primitives'
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { Socket } from '@tetherto/mdk-react-devkit/foundation'
+import { Socket } from '@tetherto/mdk-react-devkit/domain'
 import { type ReactElement, type ReactNode, useState } from 'react'
 import './socket-demo.scss'
 

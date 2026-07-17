@@ -3,7 +3,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 import type { FC } from 'react'
 
 export const AccordionExample: FC = () => (

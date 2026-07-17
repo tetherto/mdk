@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Migrate `vi.mock('<deep relative>', ...)` calls in react-devkit tests to use
- * the `@/*` alias that maps to `src/foundation/*` (already configured in both
+ * the `@/*` alias that maps to `src/domain/*` (already configured in both
  * tsconfig and vitest.config). Two birds, one stone:
  *   1. Fix broken mocks (post-flatten refactor left some paths with one extra
  *      '../' that silently no-ops the mock).
@@ -18,9 +18,9 @@ const PKG_ROOT = path.resolve(process.argv[2] ?? 'packages/react-devkit')
 const SRC_ROOT = path.join(PKG_ROOT, 'src')
 
 // Mirror vitest.config.js + tsconfig.json alias map. Order matters: longer
-// prefixes should be tried first so '@core' wins over '@'.
+// prefixes should be tried first so '@primitives' wins over '@'.
 const ALIAS_MAP = [
-  ['@core', path.join(SRC_ROOT, 'core')],
+  ['@primitives', path.join(SRC_ROOT, 'core')],
   ['@', path.join(SRC_ROOT, 'foundation')],
 ]
 

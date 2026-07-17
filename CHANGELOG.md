@@ -1,365 +1,163 @@
-# Changelog: mdk-0.3.0
+# Changelog: mdk-0.5.0
 
-> For a high-level introduction, see the [v0.3.0 release notes](./docs/reference/release-notes/0.3.0-release.md).
+> For a high-level introduction, see the [release notes](./docs/reference/release-notes/0.5.0-release.md).
 
-## Overview
+## v0.5.0
 
-MDK v0.3.0 focuses on extensibility, multi-host deployments, and a richer UI data layer. The headline additions are:
-
-- A formal plugin system for App Node routes (`@tetherto/mdk-plugins`)
-- A local-discovery mode that bypasses DHT for same-machine setups
-- An HRPC client transport for cross-host App Node connections
-- A unified lifecycle API (`onShutdown` / `shutdown`)
-- A wave of new UI components covering alerts, inventory, repairs, and operational reporting
+- Completes the control-plane **rename**: **ORK → Kernel** and **App Node → Gateway**, across backend, UI, examples, and docs (breaking)
+- **Retires the IPC transport** — HRPC is now the only client transport, with a zero-config Kernel **key-file** bootstrap (breaking)
+- Extracts the Worker runtime into a standalone **`@tetherto/mdk-worker`** package and migrates every worker onto the `WorkerRuntime` plugin model, deleting the legacy `base/`/`ThingManager` packages (breaking)
+- Renames the UI foundation package **`@tetherto/mdk-ui-core` → `@tetherto/mdk-ui-foundation`** and restructures `@tetherto/mdk-react-devkit` into **`primitives`/`domain`** layers (breaking)
+- Renames every worker package to a uniform **`@tetherto/mdk-worker-*`** scheme, and removes the microbt and electricity workers (breaking)
+- Adds **paginated, searchable** pools and containers listings
+- Ships a **third-party Worker developer guide**, a docs-generation pipeline, a full-site **dashboard + MCP server** example, and a large **test-coverage** push
 
 ## Breaking changes
 
-### Node.js minimum version bumped to `>=24`
+### ORK renamed to Kernel
 
-All packages previously requiring `>=22` now require Node.js 24+. Update your runtime before upgrading.
+The orchestration runtime called **ORK** is now the **Kernel** throughout the codebase, matching the docs and protocol terminology.
 
-### App-node HTTP routes moved to the plugin system
+- `backend/core/ork/` → `backend/core/kernel/`; package `@tetherto/mdk-ork` → **`@tetherto/mdk-kernel`**
+- Internal module `lib/ork.manager.js` → `lib/kernel.manager.js`; class `ORKManager` → `KernelManager`
+- The UI nomenclature was swept in lockstep (`ork` → `kernel`) across `@tetherto/mdk-ui-foundation`, `@tetherto/mdk-react-adapter`, and `@tetherto/mdk-react-devkit`; the JSDoc capability tag `@orkCapability` / `ork-capabilities` → `@kernelCapability` / `kernel-capabilities`
 
-`metricsRoutes` and `devicesRoutes` are no longer registered directly in `backend/core/app-node/workers/lib/server/index.js`. Auth and telemetry endpoints are now delivered by the built-in plugins in `backend/core/plugins/`. Code that patched or monkey-patched these route registrations must be migrated to the plugin manifest format.
+**Not affected**: the MDK protocol action names are unchanged — only doc comments moved from "ORK"/"App Node" to "Kernel"/"Gateway". Envelope string values (`identity.request`, `command.request`, `worker.list`, …) are identical, so a 0.4.x peer still speaks the same wire protocol.
 
-### `waitForDiscovery()` signature changed
+**Action required**: replace imports of `@tetherto/mdk-ork` with `@tetherto/mdk-kernel` and path references to `backend/core/ork` with `backend/core/kernel`.
 
-The second argument is now an options object instead of a bare timeout number:
+### App Node renamed to Gateway
 
-```js
-// 0.2.0
-await waitForDiscovery(ork, 30000)
+- `backend/core/app-node/` → `backend/core/gateway/`; package `@tetherto/mdk-app-node` → **`@tetherto/mdk-gateway`**
+- The bootstrap export **`startAppNode()` → `startGateway()`** (`backend/core/mdk`)
+- The client envelope `sender`/`requesterId` value `'app-node'` → `'gateway'`
+- `@tetherto/mdk-plugins` is now described as "MDK Gateway Plugins" (was "MDK App Node Plugins")
 
-// 0.3.0
-await waitForDiscovery(ork, { timeoutMs: 30000, minWorkers: 1, requireDevices: true })
-```
+**Action required**: rename `startAppNode` call sites to `startGateway`, and update the `@tetherto/mdk-app-node` dependency to `@tetherto/mdk-gateway`.
 
-A bare numeric second argument is still accepted as `timeoutMs` for backward compatibility, but the old positional form is deprecated.
+### IPC transport removed — HRPC only
+
+The Unix-socket IPC transport is gone; HRPC (RPC listener) is the sole client transport.
+
+- **Client**: `backend/core/client/lib/ipc-client.js` deleted; `createMdkClient` no longer accepts `opts.ipc`; `_createTransport` now throws `ERR_MDK_CLIENT_TRANSPORT_REQUIRED` when neither `hrpc` nor `transport` is supplied
+- **Kernel**: `IPCListener` and its `KernelManager` lifecycle wiring removed, along with the `listeners.ipc` option on `createKernel`
+- **Zero-config bootstrap replacement**: `getKernel` now writes the Kernel's HRPC public key (hex) to a **key file** — `DEFAULT_KEY_FILE` = `<tmpdir>/mdk/.kernel-key` — after start, so out-of-process clients connect without any hand-passed key. `startGateway` resolves the key from that file (order documented); `opts.keyFile` (`string | boolean`) overrides, and `keyFile: false` disables it. New error `ERR_KERNEL_KEY_FILE_NOT_FOUND`.
+
+### `@tetherto/mdk-ui-core` renamed to `@tetherto/mdk-ui-foundation`
+
+The core UI data/state package is now published as **`@tetherto/mdk-ui-foundation`** (`ui/packages/ui-core/` → `ui/packages/ui-foundation/`). Update the dependency name and imports; the API surface is unchanged by the rename itself.
+
+### `@tetherto/mdk-react-devkit` layer restructure and export-map changes (`core`/`foundation` → `primitives`/`domain`)
+
+The devkit source layers were renamed — `src/core/` → **`src/primitives/`** (alias `@core` → `@primitives`), `src/foundation/` → **`src/domain/`** (alias `@foundation` → `@domain`), and the inner `components/domain/` → `components/composite/`. This moved **193 component `USAGE.md`** files and their sources; update any deep imports into `@tetherto/mdk-react-devkit/src/...` accordingly.
+
+The package `exports` map changed:
+
+- `"./core"` **removed** → use `"./primitives"`
+- `"./foundation"` and `"./feature"` **removed** (unused convenience exports); `"./domain"` retained but now resolves to `./dist/domain/index`
+- Stylesheet `"./styles-foundation.css"` **renamed to `"./styles-domain.css"`** (source `styles-foundation.scss` → `styles-domain.scss`). **Action required** for anyone who adopted the 0.4.0 core/foundation CSS split: rename the second import to `@tetherto/mdk-react-devkit/styles-domain.css`.
+
+### Registry & docs-data schema bumped to `2.0.0` (ORK → Kernel field rename)
+
+`REGISTRY_SCHEMA_VERSION` (`1.4.0` → `2.0.0`) and `DOCS_DATA_SCHEMA_VERSION` (`1.3.0` → `2.0.0`) both moved, because the capability fields consumers read were renamed: `orkCapabilities` → `kernelCapabilities`, type `OrkCapability` → `KernelCapability`, the required JSDoc tag `@orkCapability` → `@kernelCapability`, and the index keys `componentsByOrkCapability`/`hooksByOrkCapability`/blueprint `byOrkCapability` → `…ByKernelCapability`. The `find`/`docs`/`blueprints` CLI commands emit the renamed field.
+
+### Worker packages renamed to `@tetherto/mdk-worker-*`
+
+Every worker package moved to a uniform scheme, e.g. `@tetherto/miner-antminer` → **`@tetherto/mdk-worker-antminer`**, `@tetherto/container-bitdeer` → **`@tetherto/mdk-worker-bitdeer`**, and the demo `@tetherto/sample-demo-worker` → **`@tetherto/mdk-worker-demo`** (also across antspace, avalon, whatsminer, f2pool, ocean, abb, satec, schneider, seneca).
+
+### Worker runtime extracted; legacy `base/` packages removed
+
+`WorkerRuntime` now ships in the new `@tetherto/mdk-worker` package (see Added), and every worker was migrated onto the `WorkerRuntime` plugin model (`plugin/` with `boot.js`, `index.js`, `mdk-contract.json`, `src/commands/*`, `src/telemetry/*`). The shared `base/` packages were deleted: `backend/workers/base/` (`ThingManager`, `thing.js`, `mdk-worker-adapter.js`, `lib/services/*`, `facs/*`, contract schema) and the per-family `miners/base`, `containers/base`, `power-meter/base`, `temperature/base`, `minerpools/base`. Consumers no longer import `ThingManager`, the family managers, or the device bases.
 
 ## Added
 
-### Plugin system
+### `@tetherto/mdk-worker` — Worker Runtime package
 
-(`backend/core/plugins/`)
+New package (`backend/core/mdk-worker/`, v0.1.0) — "hosts a Worker Plugin's devices behind one HRPC channel to the Kernel."
 
-A new `@tetherto/mdk-plugins` package introduces a declarative, file-based plugin format for App Node routes.
-
-**Plugin manifest** (`mdk-plugin.json`):
-
-Each plugin directory ships a manifest that describes its HTTP surface:
-
-| Field | Description |
+| Export / feature | Description |
 |---|---|
-| `name`, `version`, `description` | Plugin identity |
-| `routes[].id` | Unique route identifier |
-| `routes[].handler` | JS file + optional named export (`./controllers/foo.js#namedExport`) |
-| `routes[].auth` | Whether the route requires authentication |
-| `routes[].cache` | Cache key parts extracted from the request (`query.start`, `params.id`, etc.) |
-| `routes[].http` | Method, path (using `{param}` syntax), parameters, and response descriptors |
+| `WorkerRuntime` (`lib/worker-runtime.js`) | Hosts N same-type devices behind one HRPC channel; `getPublicKey()`, `getDeviceContext(deviceId)`; handlers invoked as `(ctx, params)` with `ctx = { deviceId, device, config }`, results wrapped in MDK protocol envelopes. Generalizes/replaces the former `MDKWorkerAdapter` (persistent seeds, single HRPC respond loop, DHT topic announce carried over; `ThingManager` delegation replaced by per-device handler dispatch). |
+| `loadPlugin` (`lib/plugin-loader.js`) | Plugin loader with eager handler loading. |
+| `service-builtins.js` | `telemetryBuiltin`, `commandBuiltin`, `mergeBuiltinCommands` — serves the legacy worker-infra surface (logs/count/config, pool `ext_data` queries, write-action approval) from injected `opts.services`. |
+| `mdk-contract.schema.json` | Formal JSON Schema (draft 2020-12) for the device-lib contract, re-homed with the runtime. |
+| `opts.allowEmptyDevices` | Opt-in zero-device boot for provisioning-first bootstrap; default still throws `ERR_DEVICES_REQUIRED`. |
 
-**Built-in plugins**:
+Dependencies: `@hyperswarm/rpc` 3.5.0, `hyperdht` 6.32.0, `hyperswarm` 4.17.0, `debug` 4.4.1.
 
-| Plugin | Routes |
-|---|---|
-| `auth` | `GET /auth/userinfo`, `POST /auth/token`, `GET /auth/permissions`, `GET /auth/ext-data` |
-| `telemetry` | `GET /auth/metrics/hashrate`, `consumption`, `efficiency`, `miner-status`, `power-mode`, `power-mode/timeline`, `temperature`, `containers/{id}`, `containers/{id}/history` |
-| `site-hashrate` | Site-level hashrate metrics (placeholder, expanded in a later release) |
+### Gateway — paginated, searchable listings
 
-**Plugin loader** (`backend/core/app-node/workers/lib/plugin-loader.js`):
-- `loadPlugin(pluginDir)` — loads manifest + handler files; validates route structure and uniqueness.
-- Normalizes path parameters from `{id}` to `:id` (Fastify format).
+- **Pools list pagination + search** (`server/handlers/pools.handlers.js`): `getPools` accepts `search`, `offset`, `limit`. `search` matches `name`/`pool`/`account` (case-insensitive); `total` counts the matched set before the page slice; `summary` still covers the full pool set. Response is `{ pools, summary, total }`. Schema adds `search` (string), `offset` (int ≥ 0), `limit` (int 1–100).
+- **Containers list server-side filter/sort/pagination** (`server/handlers/devices.handlers.js`): `getContainers` pushes tag + filter + search to `listThings`, takes the global `total` from `getThingsCount`, then merges/sorts/slices (matching the miners handler).
 
-**Plugin adapter** (`backend/core/app-node/workers/lib/plugin-adapter.js`):
-- `buildFastifyRoutes(plugin, ctx)` — converts plugin routes to Fastify handlers, wires `authCheck` / `capCheck` for `auth: true` routes, and applies request-level caching.
+### `@tetherto/mdk` — absorbed worker-infra services
 
-**App-node integration**:
+The former `mdk-utils` package was absorbed into `@tetherto/mdk`: new `lib/services/` (actions, alerts, comments, log-history, logs, pool, provisioning, settings, snaps, stats + `pool-utils/`), `lib/things/` device layer (thing, miner, container, powermeter, sensor + constants), `lib/templates/` (alerts, stats), `lib/worker-infra.js`, `lib/utils.js`, with extensive new unit coverage. New deps pulled in: `@bitfinex/bfx-facs-http`, `@bitfinex/bfx-facs-scheduler`, `@bitfinex/lib-js-util-base`, `@bitfinex/lib-js-util-promise`, `async` 3.2.6, `mingo` 6.5.6, `uuid` 14.0.0.
 
-`startAppNode()` now accepts an `extraPluginDirs` option — an array of plugin package directory paths to load at boot alongside the built-in plugins.
+### Per-worker runtime plugins + contract-declared handlers
 
-```js
-await startAppNode({ port: 3000, extraPluginDirs: ['/my-site/plugins/custom-metrics'] })
-```
+Each surviving worker gained a `plugin/` package (`boot.js`, `index.js`, `mdk-contract.json`, `src/commands/*`, `src/telemetry/*`) with matching integration + unit test suites — antminer, avalon, whatsminer (miners); antspace, bitdeer (containers); f2pool, ocean (minerpools); abb, satec, schneider (power-meter); seneca (temperature). Example: antminer telemetry (accepted/rejected shares, hashrate-avg, power, power-mode, efficiency, status, temperature, uptime, snap) and commands (reboot, set-led, set-power-mode, setup-pools). A `whatsminer/examples/run-runtime-parity.js` e2e runs the runtime against mock devices.
 
-### Local Worker discovery
+### Documentation
 
-(`backend/core/mdk/lib/local-discovery.js`)
-
-A new same-machine discovery mode lets Workers publish their RPC public key to a shared directory instead of joining the DHT. This eliminates DHT round-trip latency for local deployments.
-
-| Function | Description |
-|---|---|
-| `publishWorkerKey(dir, workerId, rpcKeyHex)` | Worker side: writes the stable RPC key to `<dir>/<workerId>.key` |
-| `discoverWorkerKeys(ork, dir, opts)` | ORK side: watches `dir` for `.key` files, offers each to `ork.dhtListener.discoverWorker(key)`, rescans every 4 s |
-
-Both `getOrk()` and `startWorker()` now accept a `discovery` option:
-
-```js
-// DHT (default, works cross-network)
-await getOrk({ discovery: { mode: 'dht' } })
-
-// Local file handoff (same machine only, no DHT join)
-await getOrk({ discovery: { mode: 'local', dir: '/var/run/mdk/keys' } })
-await startWorker(MyMinerClass, { discovery: { mode: 'local', dir: '/var/run/mdk/keys' } })
-```
-
-In `'local'` mode no DHT topic file is written and no Hyperswarm DHT join occurs.
-
-### HRPC client transport
-
-(`backend/core/client/`)
-
-The client package now supports two transports: the existing UNIX socket IPC and a new Holepunch RPC (HRPC) gateway transport for connecting to remote App Nodes.
-
-**New dependencies**: `@hyperswarm/rpc ^3.5.0`, `hyperdht ^6.32.0`.
-
-**`HRPCClient`** (`backend/core/client/lib/hrpc-client.js`):
-- Connects to the ORK HRPC gateway using the gateway's public key.
-- Serializes/deserializes MDK protocol envelopes via `@hyperswarm/rpc`.
-- Accepts optional DHT seed/bootstrap overrides for test isolation.
-
-**`createMdkClient()` transport selection**:
-
-```js
-// IPC (unchanged default)
-const client = createMdkClient({ ipc: '/var/run/mdk.sock' })
-
-// HRPC (new — cross-host app-node)
-const client = createMdkClient({ hrpc: { key: '<gateway-public-key-hex>' } })
-```
-
-**`createWorkerClient(rpcKey, hrpcOpts)`** — new factory that binds a client directly to a specific Worker's RPC key without going through the ORK gateway.
-
-### Enhanced MDK client methods
-
-`createMdkClient()` returns several new methods for waiting on infrastructure readiness:
-
-| Method | Description |
-|---|---|
-| `connect({ warmup?, warmupRetries?, warmupDelayMs? })` | Optional post-connect warmup with configurable retries |
-| `getStatus({ retries?, retryDelayMs?, timeoutMs? })` | Aggregate `WORKER_LIST` with built-in retries |
-| `waitForWorkers({ count?, requireDevices?, timeoutMs?, intervalMs? })` | Poll until `count` Workers (with or without registered devices) are ready |
-| `waitForDevice(deviceId, { workerId?, timeoutMs?, intervalMs? })` | Poll until a specific device is registered in the ORK registry |
-| `getWorkerKey(workerId)` | Resolve a Worker's RPC public key from the registry |
-| `sendWorkerCommand(workerId, deviceId, command, params, { hrpc? })` | Issue a command directly to a Worker, bypassing the App Node HTTP layer |
-
-`pullTelemetry()` now accepts a full query object in addition to a bare type string.
-
-### MDK lifecycle API
-
-(`backend/core/mdk/index.js`)
-
-Two new exports simplify service teardown:
-
-**`onShutdown(cleanupFn, opts?)`**
-- Registers a one-shot handler for `SIGINT` / `SIGTERM`.
-- Force-exits after `opts.forceMs` (default 3 s) if the cleanup function hangs.
-- Idempotent; returns a handle for manual invocation in tests.
-
-**`shutdown(handle)`**
-- Unified async teardown for any MDK boot handle (ORK, App Node, or Worker).
-- Drains the handle's `_cleanup` array and calls `.stop()` or the manager→adapter chain.
-- Idempotent via an internal `__mdkShutdownDone` flag.
-
-### Enhanced `waitForDiscovery()`
-
-| New option | Default | Description |
-|---|---|---|
-| `minWorkers` | `1` | Minimum number of ready Workers required |
-| `requireDevices` | `true` | Whether Workers must have registered devices |
-| `timeoutMs` | `30000` | Total wait timeout in ms |
-| `intervalMs` | `500` | Poll interval in ms |
-
-Returns the full Worker list (not just the ready subset).
-
-### Extended `startAppNode()` options
-
-| New option | Description |
-|---|---|
-| `tmpdir` | Explicit corestore directory; defaults to `root` in test environments for hermetic isolation |
-| `orkKey` | ORK HRPC gateway public key (hex or Buffer); selects HRPC transport instead of IPC |
-| `extraPluginDirs` | External plugin directories to load at boot |
-
-### ORK integration tests & fixtures
-
-New out-of-process test coverage for DHT-based discovery:
-
-- `backend/core/ork/tests/integration/dht-topic-discovery.test.js` — spawns separate ORK and Workers processes, shares only a topic file, asserts the Workers reaches `READY` within 30 s.
-- `backend/core/ork/tests/fixtures/repro-ork.js` / `repro-worker.js` — standalone fixture processes for DHT integration testing.
-
-### Whatsminer Workers restart test
-
-`backend/workers/miners/whatsminer/tests/integration/manager-restart.test.js` — new integration test verifying that the `WhatsminerManager` reconnects correctly after a restart cycle.
-
-### MDK core unit tests
-
-New unit tests covering the new lifecycle functions:
-
-- `backend/core/mdk/tests/unit/shutdown.test.js`
-- `backend/core/mdk/tests/unit/wait-for-discovery.test.js`
-- `backend/core/mdk/tests/integration/local-discovery.test.js`
-
-### UI: alert utilities
-
-(`@tetherto/mdk-ui-core`)
-
-**`ui/packages/ui-core/src/utils/alert-queries.ts`**:
-
-| Export | Description |
-|---|---|
-| `ONE_DAY_MS` | 24-hour constant |
-| `DEFAULT_HISTORICAL_WINDOW_MS` | 14-day default look-back |
-| `getDefaultHistoricalAlertsRange(now?)` | Seed range for alert queries |
-| `buildCurrentAlertDevicesParams(filterTags?)` | `list-things` query params for current-alert devices (1 000 limit) |
-| `buildHistoricalAlertsParams(range)` | `history-log` query params for a given alert window |
-
-**`ui/packages/ui-core/src/utils/historical-log-chunks.ts`**:
-
-| Export | Description |
-|---|---|
-| `breakTimeIntoIntervals(start, end, intervalMs?)` | Split a time range into 24-hour windows |
-| `mergeAlertsByUuid(prev, next)` | Deduplicate alerts by `uuid` (later entry wins) |
-| `fetchHistoricalAlertsInChunks(range, fetchWindow, opts?)` | Paginate + merge, honours `AbortSignal` for early exit |
-
-### UI: alert hooks
-
-(`@tetherto/mdk-react-adapter`)
-
-**`useCurrentAlertDevices(options?)`** - queries the current set of devices carrying active alerts via `list-things`. Returns `ListThingsDevice[][]` (table-row format). Refreshes every 20 s by default; accepts `filterTags` and a custom `refetchInterval`.
-
-**`useHistoricalAlerts({ start, end, intervalMs?, enabled? })`** - fetches historical alert logs over a date range, fanning out into 24-hour chunks. Merges results client-side; aborts in-flight requests when the range changes.
-
-### UI: new core chart components
-
-(`@tetherto/mdk-react-devkit`)
-
-| Component | Location | Description |
-|---|---|---|
-| `AverageDowntimeChart` | `src/core/components/average-downtime-chart/` | Downtime metrics visualization |
-| `ThresholdLineChart` | `src/core/components/threshold-line-chart/` | Line chart with configurable threshold bands |
-| `OperationsEnergyCostChart` | `src/core/components/operations-energy-cost-chart/` | Energy cost over time |
-| `MinMaxAvg` | `src/core/components/min-max-avg/` | Min/max/average display primitive |
-
-### UI: new foundation domain components
-
-(`@tetherto/mdk-react-devkit`)
-
-**Alerts** (`src/foundation/components/alerts/`):
-- Alert table with dedicated column styles.
-- Powered by the new `useCurrentAlertDevices` and `useHistoricalAlerts` hooks.
-
-**Inventory** (`src/foundation/components/inventory/`):
-- Device inventory management table.
-- `MovementDetailsModal` tracks device movements between racks and containers.
-
-**Repairs** (`src/foundation/components/repairs/`):
-- Device repair and maintenance log tracking.
-- `RepairLogChanges` page component.
-
-### UI: reporting tool
-
-(`@tetherto/mdk-react-devkit`)
-
-The reporting tool is the SDK's analytics surface. It presents financial and operational reports over a user-selected timeframe, each report reading from `@tetherto/mdk-ui-core` query helpers and rendering through shared chart primitives. The 0.3.0 release adds a revenue report, a consolidated operational dashboard, deeper hashrate views, and shared charting improvements.
-
-**Financial reports**:
-- `reporting-tool/financial/revenue-chart/` - new revenue report across the selected period, joining the existing cost, EBITDA, energy balance, and subsidy fee reports.
-- Energy balance now renders downtime through the `AverageDowntimeChart` core primitive in place of its former bespoke chart.
-
-**Operational reports**:
-- `reporting-tool/operational/dashboard/` - new composite report backed by the `useOperationsDashboard` hook, summarizing fleet operations in a single view.
-- `reporting-tool/operational/hashrate/` - adds a site-view tab alongside the existing mining-unit and miner-type views, with polished charts and shared axis scaling.
-- `reporting-tool/operational/efficiency/` - chart legends and MDK tooltips added to the efficiency bars.
-
-**Shared reporting infrastructure**:
-- `MinMaxAvg` primitive for min/max/average summaries across reports.
-- `headerAction` and `titleExtra` slots on `ChartContainer` and `LineChartCard` for mounting controls and context beside a chart title.
-- `use-single-series-bar-legend` hook consolidating single-series bar chart legends.
-- Reporting panels render transparent, and doughnut tooltips report values through `UNITS.PERCENT` for consistent formatting.
-
-Timeframe selection runs through the `timeframe-controls` and `report-time-frame-selector` components and the `use-financial-date-range` hook, so every report shares one date-range model.
-
-### UI: catalog demo pages
-
-(`ui/apps/catalog`)
-
-New demo pages added to `mdk-catalog-ui`:
-
-| Page | File |
-|---|---|
-| Average Downtime Chart | `average-downtime-chart-page.tsx` |
-| Threshold Line Chart | `threshold-line-chart-page.tsx` |
-| Operations Energy Cost Chart | `operations-energy-cost-chart-page.tsx` |
-| Repair Log Changes | `repair-log-changes-page.tsx` |
-| Movement Details Modal | `inventory/movement-details-modal/` |
-| Operational Dashboard | `reporting-tool/operational-dashboard/` |
-| Revenue Chart | `reporting-tool/financial/revenue-chart/` |
-
-### UI: CLI shell template
-
-(`@tetherto/mdk-ui-cli`)
-
-`ui/packages/cli/templates/mdk-ui-shell/src/pages/Alerts.tsx` - `Alerts` page added to the scaffold template generated by `mdk-ui scaffold`.
+- **Worker developer guides**: `docs/guides/workers/build-a-worker.md` (build a third-party Worker end-to-end, from your own repo) and `docs/tutorials/quickstart/build-a-dashboard.md` (one Worker + one Gateway route + one static page, no build step).
+- **HRPC**: `examples/backend/inspect-over-hrpc.md` (inspect MDK over HRPC with `hp-rpc-cli`); the IPC transport docs were replaced with the HRPC key-file flow across the top-level README and core/worker READMEs.
+- **MCP**: `examples/full-site/docs/mcp-server.md` documents a full-site MCP server that connects to the Kernel directly over HRPC (no Gateway) and exposes registry/telemetry/command tools over HTTP.
+- **New stack/reference pages**: `docs/concepts/stack/kernel.md` and `stack/gateway.md` (replacing the ORK/app-node pages); `docs/reference/glossary.md` (replacing `docs/concepts/terminology.md`), with an HRPC section.
+- **Docs-generation pipeline**: `mdk-ui docs:generate` with package-grouped versioned reference nav (`ui/packages/cli`), documented in `ui/docs/extending-docs-to-backend.md` and a rewritten `ui/docs/docs-sync-how-to.html`.
 
 ### Examples
 
-(`examples/`)
+- **full-site dashboard + MCP**: a new `DashboardPage.tsx` and supporting UI (`AppSidebar`, `ContainerGrid`, `Containers`/`Control`/`Monitoring`/`Pools` pages, chart components), plus an MCP server (`backend/proc/mcp-server.js`, `.mcp.json`) and new dep `@modelcontextprotocol/sdk ^1.29.0`.
+- **`examples/site-backend/`** (new) — boots every worker family as its own OS process against mock hardware, coordinated by a Kernel and exposed via the Gateway HTTP API; runnable under PM2 or Docker (Dockerfile, docker-compose, PM2 ecosystem).
+- **`examples/backend/mdk-plugin-e2e/`** (new) — plugin-authoring e2e: `WorkerRuntime` hosting mock devices + Kernel + Gateway Plugin aggregation.
+- **`examples/backend/demo-worker-caller/index.js`** (new) — a single-file "caller" showing how a host constructs `WorkerRuntime` around the shipped demo-worker plugin and runs a telemetry sampler loop.
+- **`examples/backend/kernel/`** (new) and per-family example test packages (`@tetherto/mdk-backend-*-examples`) with a shared `examples/backend/utils/test-harness.js` (`runAutoExit`).
 
-All backend examples have been consolidated and expanded under `examples/backend/`:
+### CI / tooling
 
-| Example | Description |
-|---|---|
-| `examples/backend/site/` | Multi-process deployment (ORK + App Node + Workers); includes `Dockerfile`, `docker-entrypoint.sh`, and client scripts for PM2 and Docker modes |
-| `examples/backend/site-single-process/` | Single-process deployment for same-machine demos and development |
-| `examples/backend/ork/auth-whitelist.js` | HRPC firewall whitelist setup with key-pair generation and `hp-rpc-cli` usage examples |
-| `examples/backend/ork/command-flow.js` | End-to-end command dispatch flow |
-| `examples/backend/ork/telemetry-flow.js` | Telemetry pull flow |
-| `examples/backend/ork/ork-shell.js` | Interactive ORK REPL |
-| `examples/backend/miners/` | Per-miner Worker examples |
-| `examples/backend/containers/` | Container Worker examples |
-| `examples/backend/minerpools/` | Pool Worker examples |
-| `examples/backend/powermeters/` | Power-meter Worker examples |
-| `examples/backend/sensors/` | Sensor (temperature) Worker examples |
-| `examples/backend/mdk-e2e/` | End-to-end MDK lifecycle example |
-| `examples/backend/mdk-site/` | Full-site MDK example |
-| `examples/full-site/` | Monorepo-level full site example |
-
-### `.nvmrc`
-
-A `.nvmrc` file has been added to the repository root pinning the Node.js version for `nvm` users.
-
-### CI/CD: docs-only path detection
-
-`.github/workflows/ci.yml` now detects whether a PR touches only documentation (`docs/`, `*.md`, `LICENSE`, `linkinator.config.json`). When the condition is true the domain build and test pipelines are skipped, cutting CI time for documentation-only changes.
+- A new **`examples` CI pipeline** (`.github/workflows/ci.yml`): `list-examples`, `setup-examples`, and `test-examples` matrix jobs discovering every `examples/**/package.json`, plus an "Examples" row in the summary (no coverage threshold enforced for examples).
+- **`.mailmap`** (new) — maps contributor commit emails to non-routable `example.com` placeholders for this public repo (no history rewrite).
 
 ## Changed
 
-### Node.js engine requirement
-
-All `backend/` packages have updated their `engines.node` constraint from `>=22` to `>=24`.
-
-### `backend/core/client/` — dual-transport support
-
-The client description updated to "IPC and HRPC (RPC gateway) transports for ORK". Transport is now selected at construction time via `{ ipc }` or `{ hrpc }`.
-
-### App Node server routes
-
-`workers/lib/server/index.js` no longer imports or registers `metricsRoutes` or `devicesRoutes` directly. Route coverage is now provided by the built-in plugin packages. The `auth.routes.js` file has been simplified — handler imports and helper utilities (`createAuthRoute`, `createCachedAuthRoute`) have been removed; auth callbacks now delegate fully to the plugin layer.
-
-### `startAppNode()` test isolation
-
-When `env === 'test'` and no explicit `tmpdir` is provided, the corestore directory defaults to `root`, giving each test run a hermetic, independent store without manual path wiring.
+- **full-site realigned to the "11-family" site**: description now "3 miner families + 2 containers + 3 powermeters + 2 sensors + 2 pools over the RPC listener"; test expectations moved from 12 families/13 workers to the current 11 after the wm-v3 demo family and microbt containers were removed. The seed was made effective under the Worker runtime (unique-id default `pos`, restart-and-wait for registry visibility), taking e2e to 14/14.
+- **CI worker dependency install** rewritten to install shared core deps (`backend/core/{kernel,client,mdk,mdk-worker}`, `backend/workers/mock`, `backend/core/mock-control-service`) instead of the deleted `base/` packages.
+- **Nomenclature** propagated through examples and CI: `proc/ork.js` → `kernel.js`, `proc/app-node.js` → `gateway.js`; `ui-core` → `ui-foundation` in CI and issue templates.
+- **Information-architecture restructure** in docs: `how-to/` collapsed into `guides/` (deployment, gateway, miners); `docs/concepts/stack` files renamed; `terminology.md` → `reference/glossary.md`.
+- All release-line `package.json` versions across `backend/core`, `backend/workers`, `ui/packages`, and `examples/` synced to `0.5.0`; independently-versioned newcomers (`@tetherto/mdk-worker`, the demo/sample workers, the mock, and two examples) keep their own `0.1.0`/`0.0.1` versions.
 
 ## Removed
 
-- `backend/core/examples/` — moved to `examples/backend/`.
-- `backend/core/ork/examples/` — moved to `examples/backend/ork/`.
-- `examples/core/` — replaced by `examples/backend/`.
-- `ui/packages/react-devkit/src/foundation/components/reporting-tool/financial/energy-balance/components/downtime-chart.tsx` and `downtime-chart.example.tsx` - superseded by the new `AverageDowntimeChart` primitive in `src/core/components/`.
-- Direct `metricsRoutes` and `devicesRoutes` registrations from the App Node server (functionality now lives in the plugin system).
+- **microbt container workers** — the entire `backend/workers/containers/microbt/` tree, plus its catalogue/manifest/supported-hardware/mock-runner entries and the mdk constants/bootstrap references.
+- **electricity power-meter worker** (`backend/workers/power-meter/electricity/`).
+- All worker **`base/` packages** (`ThingManager`, device bases, family managers) after the runtime migration.
+- Client **`ipc-client.js`**, Kernel **`IPCListener`**, and the Gateway IPC transport.
+- The **`mdk-utils`** package (absorbed into `@tetherto/mdk`).
+- Deleted docs: `docs/concepts/terminology.md`, `stack/ork.md`, `stack/app-node.md`, `docs/how-to/**` (moved to `guides/`), `backend/core/ork/README.md` + `docs/phase-bootstrap-api.md`, `backend/workers/docs/orchestrator.md`.
 
-## Security
+## Fixed
 
-- Pinned `esbuild` to `>=0.28.1` in the UI workspace via a `ui/package.json` override, clearing advisory GHSA-gv7w-rqvm-qjhr.
-- Pinned `undici` to `^7.28.0` via a `ui/package.json` override (the vulnerable version was pulled in transitively by `jsdom`), clearing seven advisories including the high-severity TLS certificate validation bypass GHSA-vmh5-mc38-953g.
+- **Containers list truncation / wrong total**: `getContainers` previously fetched only a tag-filtered page and re-filtered in memory (offset:0/limit:0), so user filters saw a truncated set and `total` was the page length; now uses a server-side query + global `getThingsCount`.
+- **MQTT mock determinism** (`backend/workers/mock/transports/mqtt.transport.js`): `close()` now force-closes (`client.end(true)`) and runs an idempotent `_runCleanup()` directly rather than waiting on the `'end'` event (which may never fire when the broker is gone), preventing leaked publish intervals that held the event loop open.
+- **bitdeer MQTT broker per worker** (`containers/bitdeer/plugin/boot.js`): the shared module-level `svc-facs-mqtt` aedes broker meant the first worker's `stop()` killed every later worker's broker; boot now creates its own `Aedes` broker + `net` server per worker and closes both in `stop()`. `svc-facs-mqtt` dropped; `aedes 1.0.2` and `mqtt 5.15.2` promoted to direct deps. (An earlier lazy-`require` fix so bare requires can exit was superseded by this.)
+- **UI** — log the user out and redirect on session expiry (`@tetherto/mdk-ui-foundation`) (#180); abort in-flight requests on unmount; guard the power-adjustment insert against a missing PDU tab; carry device-action targeting fields through the voting payload; restore Op Centre factory exports dropped in a query-barrel refactor.
+- **full-site** — seed effective under the Worker runtime; local-discovery watch and example setup corrections.
+- **schneider** — corrected a "Terher" typo in the package author field.
+- Numerous documentation link repairs (404s flagged by the markdown link checker), including the stale worker-guide anchor fixed in the 0.5.0 changeset.
+
+### Tests
+
+A large coverage push lifted each flagged backend package above the 80% per-package gate. Highlights (before → after, statements/branches/functions/lines):
+
+| Package | Coverage | Added unit tests (selected) |
+|---|---|---|
+| bitdeer | 74% br → ~97% | D40 command handlers, `optimizeSocketCalls` PDU collapse, boot arg validation, alert templates |
+| antminer | 76% → ~99% | device getters/setters (injected fake fetch), error maps, DHCP/static conf, power modes, pools; mock router; plugin handlers |
+| whatsminer | 79% br → ~97% | write-action wrappers, AES-ECB token handshake + 135/136 retry paths, firmware header parsing, mock utils |
+| f2pool | 77% br → ~95% | mock router validation/error + auth-hook 401s, `fetchStats` fallbacks + cached-month refresh + rate-limit path |
+| abb | 52% fns → ~99% | B2X/M1M20/M4M20/REU615 `_readValues`/`_prepSnap` vs fake Modbus, per-channel telemetry incl. `?? 0` fallbacks, `ERR_MODEL_INVALID` |
+
+Plus `@tetherto/mdk-client` typed request-wrapper tests, new Kernel suites (`kernel-manager`, `actions-stress`, key-file integration), and `@tetherto/mdk-react-devkit` branch-coverage additions.
 
 > For previous releases, see the [changelog archive](./docs/reference/changelog-archive/2026-archive.md)

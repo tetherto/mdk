@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-import { Button } from '@tetherto/mdk-react-devkit/core'
-import type { PoolSummary } from '@tetherto/mdk-react-devkit/foundation'
-import { AssignPoolModal } from '@tetherto/mdk-react-devkit/foundation'
+import { Button } from '@tetherto/mdk-react-devkit/primitives'
+import type { PoolSummary } from '@tetherto/mdk-react-devkit/domain'
+import { AssignPoolModal } from '@tetherto/mdk-react-devkit/domain'
 
 import { DEMO_MINERS, DEMO_POOL_CONFIG } from '../../../constants/demo-pool-manager-data'
 import { DemoBlock } from '../../../components/demo-block'

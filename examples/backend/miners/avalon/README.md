@@ -1,16 +1,16 @@
 # MDK Avalon Miner Example
 
 A small, self-contained **Avalon A1346 miner** site you can run with **no real hardware**.
-One ORK and one Avalon A1346 worker in a single Node.js process, backed by a **mock** Avalon
+One Kernel and one Avalon A1346 Worker in a single Node.js process, backed by a **mock** Avalon
 device speaking CGMiner's TCP protocol, so the whole site comes up on `localhost` and is
 immediately verifiable.
 
 ## What it demonstrates
 
-- Bringing up an ORK + one worker in one process.
+- Bringing up an Kernel + one Worker in one process.
 - Starting a **mock Avalon A1346 miner** and **registering** it as a thing.
-- Exposing the ORK via an **HTTP app node** at `http://localhost:3000`.
-- Live mock telemetry pulled through the ORK over HTTP — no hardware.
+- Exposing the Kernel via an **HTTP gateway** at `http://localhost:3000`.
+- Live mock telemetry pulled through the Kernel over HTTP — no hardware.
 
 ## Prerequisites
 
@@ -30,24 +30,24 @@ npm run setup:workers   # backend/workers packages (includes miner-avalon + its 
 ```mermaid
 flowchart LR
   Index[index.js]
-  Index --> Ork[getOrk]
-  Index --> App[startAppNode :3000]
+  Index --> Kernel[getKernel]
+  Index --> App[startGateway :3000]
   Index --> W1[startWorker AV_A1346]
 
   subgraph proc [Single Node.js process]
-    Ork
+    Kernel
     App
     W1
     M1[mock :14031 CGMiner TCP]
   end
 
-  App <-->|IPC| Ork
-  Ork <-->|MDK Protocol over Hyperswarm DHT| W1
+  App <-->|HRPC| Kernel
+  Kernel <-->|MDK Protocol over Hyperswarm DHT| W1
   W1 <-->|CGMiner TCP loopback| M1
 ```
 
-The worker polls its mock over CGMiner's TCP protocol on loopback, exactly as it would poll a
-real Avalon miner. An HTTP app node sits in front of the ORK and exposes a REST API at
+The Worker polls its mock over CGMiner's TCP protocol on loopback, exactly as it would poll a
+real Avalon miner. An HTTP gateway sits in front of the Kernel and exposes a REST API at
 `http://localhost:3000`.
 
 ## Workers and mocks
@@ -65,21 +65,21 @@ node examples/backend/miners/avalon/index.js     # from the repo root
 # or: cd examples/backend/miners/avalon && npm start
 ```
 
-On startup the ORK HRPC key, the HTTP server URL, and the registered device ID are printed. After
-~20–30 s the worker has joined the DHT and its device is live. `Ctrl+C` shuts everything down
+On startup the Kernel HRPC key, the HTTP server URL, and the registered device ID are printed. After
+~20–30 s the Worker has joined the DHT and its device is live. `Ctrl+C` shuts everything down
 cleanly.
 
 ## Verifying it works
 
-Once the example is running, query the HTTP API exposed by the app node (`http://localhost:3000`)
-directly. For example, to list workers and pull telemetry for a device:
+Once the example is running, query the HTTP API exposed by the gateway (`http://localhost:3000`)
+directly. For example, to list Workers and pull telemetry for a device:
 
 ```bash
 curl http://localhost:3000/site-monitor/workers
 curl http://localhost:3000/site-monitor/devices/<device-id>/telemetry
 ```
 
-A healthy response from the workers endpoint looks like:
+A healthy response from the Workers endpoint looks like:
 
 ```json
 {

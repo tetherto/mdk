@@ -1,4 +1,4 @@
-import { ChartContainer, GaugeChart } from '@tetherto/mdk-react-devkit/core'
+import { ChartContainer, GaugeChart } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

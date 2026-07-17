@@ -1,6 +1,6 @@
 import { HamburgerMenuIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons'
-import type { SidebarMenuItem } from '@tetherto/mdk-react-devkit/core'
-import { Button, Sidebar } from '@tetherto/mdk-react-devkit/core'
+import type { SidebarMenuItem } from '@tetherto/mdk-react-devkit/primitives'
+import { Button, Sidebar } from '@tetherto/mdk-react-devkit/primitives'
 import { useMemo, useRef, useState } from 'react'
 import type { JSX } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'

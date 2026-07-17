@@ -1,0 +1,24 @@
+{
+  "name": "@tetherto/mdk-worker-mock",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Generic mock framework for MDK device workers (BaseMock + transport adapters)",
+  "keywords": [
+    "tether",
+    "mdk",
+    "mock"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix"
+  },
+  "devDependencies": {
+    "standard": "17.1.2"
+  }
+}

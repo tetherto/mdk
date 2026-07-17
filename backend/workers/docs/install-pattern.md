@@ -1,8 +1,8 @@
 # Worker install pattern
 
-Every worker package in this workspace ships the same shape. Per-manufacturer specifics live in each worker's own `USAGE.md`.
+Every Worker package in this workspace ships the same shape. Per-manufacturer specifics live in each Worker's own `USAGE.md`.
 
-## What a worker package contains
+## What a Worker package contains
 
 ```
 backend/workers/<family>/<provider>/
@@ -19,10 +19,10 @@ backend/workers/<family>/<provider>/
   examples/             # runnable scenarios per the qvac model
 ```
 
-The contract — [`mdk-contract.json`](../../workers/miners/antminer/mdk-contract.json) is the engineering source of truth for telemetry units, command 
+The contract — [`mdk-contract.json`](../../workers/miners/antminer/plugin/mdk-contract.json) is the engineering source of truth for telemetry units, command 
 shapes, and supported models. 
 
-## The two ways to run a worker
+## The two ways to run a Worker
 
 ### As a library, in your own Node process
 
@@ -30,11 +30,11 @@ The canonical SDK shape. You instantiate the manager class via [`startWorker`](.
 programmatically:
 
 ```js
-const { getOrk, startWorker } = require('@tetherto/mdk')
-const { AM_S19XP } = require('@tetherto/miner-antminer')
+const { getKernel, startWorker } = require('@tetherto/mdk')
+const { AM_S19XP } = require('@tetherto/mdk-worker-antminer')
 
-const ork = await getOrk()
-const { manager } = await startWorker(AM_S19XP, { ork })
+const kernel = await getKernel()
+const { manager } = await startWorker(AM_S19XP, { kernel })
 
 await manager.registerThing({
   info: { container: 'site-1', serialNum: 'AM-001' },
@@ -43,23 +43,23 @@ await manager.registerThing({
 ```
 
 This is what every example under [`examples/backend/README.md`](../../../examples/backend/README.md) does. The per-package `USAGE.md` documents which 
-manager class names a given worker exports and what `opts` it needs.
+manager class names a given Worker exports and what `opts` it needs.
 
 ### Standalone via `worker.js`
 
 The core SDK ships [`backend/core/mdk/worker.js`](../../core/mdk/worker.js): a shared process entry compatible with pm2, Docker, or `node worker.js` 
 directly. It is driven by environment variables, not CLI flags — [`utils/service-bootstrap.js`](../../core/mdk/utils/service-bootstrap.js) reads `SERVICE` 
-(and, for a worker, `WORKER`/`TYPE`/`RACK`) and bootstraps the matching manager. (The only `--wtype` in play is the one it passes when spawning the App Node's own worker; 
-miner workers run with a fixed internal `wtype`.)
+(and, for a Worker, `WORKER`/`TYPE`/`RACK`) and bootstraps the matching manager. (The only `--wtype` in play is the one it passes when spawning the Gateway's own Worker;
+miner Workers run with a fixed internal `wtype`.)
 
-Choosing this over the library shape is a deployment-topology decision, not just "for production": running each service as its own OS process 
-(under pm2 or Docker) is what lets a supervisor allocate resources per process/container, restart or scale one worker independently, and keep a 
-worker crash from taking down its siblings or the App Node. The library shape instead runs everything in one Node heap (lower footprint, simplest). 
+Choosing this over the library shape is a deployment-topology decision, not just "for production": running each service as its own OS process
+(under pm2 or Docker) is what lets a supervisor allocate resources per process/container, restart or scale one Worker independently, and keep a
+Worker crash from taking down its siblings or the Gateway. The library shape instead runs everything in one Node heap (lower footprint, simplest). 
 See [`docs/concepts/deployment-topologies.md`](../../../docs/concepts/deployment-topologies.md) for the full trade-off.
 
 ## Run a mock device
 
-Every worker bundles a mock server next to its real-device code. To run a mock Antminer S19XP on port 14021:
+Every Worker bundles a mock server next to its real-device code. To run a mock Antminer S19XP on port 14021:
 
 ```bash
 node backend/workers/miners/antminer/mock/server.js --port 14021 --type s19xp
@@ -68,12 +68,12 @@ node backend/workers/miners/antminer/mock/server.js --port 14021 --type s19xp
 Or programmatically (this is what the examples do):
 
 ```js
-const amMock = require('@tetherto/miner-antminer/mock/server')
+const amMock = require('@tetherto/mdk-worker-antminer/mock/server')
 amMock.createServer({ port: 14021, host: '127.0.0.1', type: 's19xp', serial: 'AM-001', password: 'root' })
 ```
 
-The mock binds an HTTP server that answers the vendor's native API with canned data from `mock/initial_states/`. Per-worker mock options (supported types, 
-default credentials, control port) are documented in each worker's `USAGE.md`.
+The mock binds an HTTP server that answers the vendor's native API with canned data from `mock/initial_states/`. Per-Worker mock options (supported types,
+default credentials, control port) are documented in each Worker's `USAGE.md`.
 
 ## Configuration
 
@@ -96,11 +96,12 @@ The example files are checked in; the copied actives are gitignored, leaving roo
 | `miners/avalon` | [USAGE.md](../miners/avalon/USAGE.md) | [examples/](../miners/avalon/examples/)| [workers-manifest.yaml](workers-manifest.yaml) |
 | containers, minerpools, power-meter, temperature | _Phase 3+_ | varies under `examples/backend/` | _Phase 3+_ |
 
-The full model coverage for every worker (all families) is generated from the contracts: see [`docs/supported-hardware.md`](supported-hardware.md).
+The full model coverage for every Worker (all families) is generated from the contracts: see [`docs/supported-hardware.md`](supported-hardware.md).
 
 ## Next steps
 
-- [`orchestrator.md`](orchestrator.md) — the ORK side of the install picture
+- [`build-a-worker.md`](../../../docs/guides/workers/build-a-worker.md) — build your own Worker in a separate repo, for a new device family
+- [`backend/core/kernel/README.md`](../../core/kernel/README.md) — the Kernel side of the install picture
 - [`workers-manifest.yaml`](workers-manifest.yaml) — agent-readable manifest of variants + mock ports
 - [`docs/tutorials/get-started/run.md`](../../../docs/tutorials/get-started/run.md) — narrative onboarding that uses this pattern
 - [`docs/reference/maintainers/agent-ready-sdk.md`](../../../docs/reference/maintainers/agent-ready-sdk.md) — the workspace-wide USAGE.md + examples 

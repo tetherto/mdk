@@ -1,4 +1,4 @@
-import type { OperationsEnergyCostChartData } from '@tetherto/mdk-react-devkit/core'
+import type { OperationsEnergyCostChartData } from '@tetherto/mdk-react-devkit/primitives'
 
 export const OPERATIONS_ENERGY_COST_SAMPLE: OperationsEnergyCostChartData = {
   energyCostsUSD: 500,

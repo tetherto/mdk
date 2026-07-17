@@ -1,4 +1,4 @@
-import { getLatestSample, type TailLogEntry } from '@tetherto/mdk-ui-core'
+import { getLatestSample, type TailLogEntry } from '@tetherto/mdk-ui-foundation'
 import {
   useConsumptionChartData,
   type UseConsumptionChartDataParams,

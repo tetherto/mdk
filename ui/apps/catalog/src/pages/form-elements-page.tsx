@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { JSX } from 'react'
-import { Input, TagInput } from '@tetherto/mdk-react-devkit/core'
+import { Input, TagInput } from '@tetherto/mdk-react-devkit/primitives'
 
 export const FormElementsPage = (): JSX.Element => {
   const [tagInputTags, setTagInputTags] = useState<string[]>([])
@@ -52,8 +52,8 @@ export const FormElementsPage = (): JSX.Element => {
               'Bitdeer S19XP',
               'Bitmain Hydro',
               'Bitmain Imm',
-              'MicroBT Wonder',
-              'MicroBT Kehua',
+              'MicroBT Beta',
+              'MicroBT Alpha',
             ]}
             placeholder="Search miners..."
             variant="search"
@@ -84,8 +84,8 @@ export const FormElementsPage = (): JSX.Element => {
               'Bitdeer S19XP',
               'Bitmain Hydro',
               'Bitmain Imm',
-              'MicroBT Wonder',
-              'MicroBT Kehua',
+              'MicroBT Beta',
+              'MicroBT Alpha',
             ]}
             placeholder="Search miners..."
             variant="search"

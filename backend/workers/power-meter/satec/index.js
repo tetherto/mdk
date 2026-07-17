@@ -1,5 +1,7 @@
 'use strict'
 
 module.exports = {
-  SATEC: require('./lib/satec.powermeter.manager')
+  plugin: require('./plugin'),
+  startSatecWorker: require('./plugin/boot').startSatecWorker,
+  SatecPowerMeter: require('./lib/satec.powermeter')
 }

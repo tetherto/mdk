@@ -3,46 +3,109 @@
 // provision.js — register a device on a running worker, the MDK way.
 //
 // SEED_TYPES holds the app-specific device params; provisionDevice does the
-// generic MDK flow: resolve the worker via the ORK, send registerThing
-// worker-direct (sendWorkerCommand), then wait for the ORK to sync it. Progress
-// is reported through an injected callback, keeping CLI concerns out.
+// generic MDK flow: resolve the worker via the Kernel and send registerThing
+// worker-direct (sendWorkerCommand). The device takes effect on worker restart.
+// Progress is reported through an injected callback, keeping CLI concerns out.
 
 const { createMdkClient } = require('../../../backend/core/client')
-const { readOrkKey } = require('./inspect')
-const { PORTS, HOST, CONTAINER_ID } = require('./site')
+const { readKernelKey } = require('./inspect')
+const {
+  PORTS,
+  HOST,
+  CONTAINER_ANTSPACE,
+  CONTAINER_BITDEER,
+  BITDEER_MQTT_ID,
+  SENSOR_CONTAINERS
+} = require('./site')
 
 // Each seed type targets one running worker. The new device's connection opts
 // default to that family's mock port (so the device has live telemetry); --port
 // overrides.
 const SEED_TYPES = {
-  miner: {
-    workerId: 'miner-worker',
-    prefix: 'miner',
+  whatsminer: {
+    workerId: 'whatsminer-worker',
+    prefix: 'whatsminer',
     params: (id, flags) => ({
       id,
-      info: { container: flags.container || CONTAINER_ID, pos: flags.pos || '1_1', serialNum: `WM-${id}` },
+      info: { container: flags.container || CONTAINER_ANTSPACE, pos: flags.pos || id, serialNum: `WM-${id}` },
       opts: { address: HOST, port: Number(flags.port) || PORTS.MINER_BASE, password: 'admin' }
     })
   },
-  container: {
-    workerId: 'container-worker',
-    prefix: 'container',
+  antminer: {
+    workerId: 'antminer-worker',
+    prefix: 'antminer',
     params: (id, flags) => ({
       id,
-      info: { container: id },
-      opts: { address: HOST, port: Number(flags.port) || PORTS.CONTAINER, username: 'admin', password: 'admin' }
+      info: { container: flags.container || CONTAINER_ANTSPACE, pos: flags.pos || id, serialNum: `AM-${id}` },
+      opts: { address: HOST, port: Number(flags.port) || PORTS.ANTMINER_BASE, username: 'root', password: 'root' }
     })
   },
-  powermeter: {
+  avalon: {
+    workerId: 'avalon-worker',
+    prefix: 'avalon',
+    params: (id, flags) => ({
+      id,
+      info: { container: flags.container || CONTAINER_BITDEER, pos: flags.pos || id, serialNum: `AV-${id}` },
+      opts: { address: HOST, port: Number(flags.port) || PORTS.AVALON_BASE, password: 'admin' }
+    })
+  },
+  antspace: {
+    workerId: 'antspace-worker',
+    prefix: 'antspace',
+    params: (id, flags) => ({
+      id: flags.id || CONTAINER_ANTSPACE,
+      info: { container: flags.id || CONTAINER_ANTSPACE, serialNum: 'HK3-001' },
+      opts: { address: HOST, port: Number(flags.port) || PORTS.ANTSPACE }
+    })
+  },
+  bitdeer: {
+    workerId: 'bitdeer-worker',
+    prefix: 'bitdeer',
+    params: (id, flags) => ({
+      id: flags.id || CONTAINER_BITDEER,
+      info: { container: flags.id || CONTAINER_BITDEER, serialNum: 'D40-A1346-001' },
+      opts: { containerId: flags.containerId || BITDEER_MQTT_ID }
+    })
+  },
+  abb: {
     workerId: 'powermeter-worker',
-    prefix: 'powermeter',
+    prefix: 'abb-powermeter',
     params: (id, flags) => ({
       id,
       info: { pos: 'site' },
       opts: { address: HOST, port: Number(flags.port) || PORTS.POWERMETER, unitId: 1 }
     })
+  },
+  satec: {
+    workerId: 'satec-powermeter-worker',
+    prefix: 'satec-powermeter',
+    params: (id, flags) => ({
+      id,
+      info: { pos: 'site' },
+      opts: { address: HOST, port: Number(flags.port) || PORTS.SATEC_POWERMETER, unitId: 1 }
+    })
+  },
+  schneider: {
+    workerId: 'schneider-powermeter-worker',
+    prefix: 'schneider-powermeter',
+    params: (id, flags) => ({
+      id,
+      info: { pos: 'site' },
+      opts: { address: HOST, port: Number(flags.port) || PORTS.SCHNEIDER_POWERMETER, unitId: 1 }
+    })
+  },
+  seneca: {
+    workerId: 'seneca-sensor-worker',
+    prefix: 'seneca-sensor',
+    params: (id, flags) => ({
+      id,
+      info: { container: flags.container || SENSOR_CONTAINERS[0].container, pos: flags.pos || 'inlet' },
+      opts: { address: HOST, port: Number(flags.port) || PORTS.SENSOR_BASE, unitId: 0, register: 3 }
+    })
   }
 }
+
+const SEED_TYPE_LIST = Object.keys(SEED_TYPES).join('|')
 
 function nextId (prefix, existing) {
   let n = existing.length
@@ -50,41 +113,33 @@ function nextId (prefix, existing) {
   return `${prefix}-${n}`
 }
 
-// Register the next device of `type` on its worker. `root` locates the ORK key;
+// Register the next device of `type` on its worker. `root` locates the Kernel key;
 // `flags` carry per-device overrides (container/pos/port); `report` (optional)
 // receives human-readable progress lines. Returns the new deviceId. Throws
 // ERR_UNKNOWN_SEED_TYPE / ERR_WORKER_KEY_MISSING / ERR_SEED_FAILED.
 async function provisionDevice (type, { root, flags = {}, report = () => {} } = {}) {
   const spec = SEED_TYPES[type]
-  if (!spec) throw new Error(`ERR_UNKNOWN_SEED_TYPE: ${type || ''} (miner|container|powermeter)`)
+  if (!spec) throw new Error(`ERR_UNKNOWN_SEED_TYPE: ${type || ''} (${SEED_TYPE_LIST})`)
 
-  const ork = createMdkClient({ hrpc: { key: readOrkKey(root) } })
-  await ork.connect()
+  const kernel = createMdkClient({ hrpc: { key: readKernelKey(root) } })
+  await kernel.connect()
   try {
-    const { workers } = await ork.getStatus()
+    const { workers } = await kernel.getStatus()
     const wk = workers.find((w) => w.workerId === spec.workerId)
     if (!wk || !wk.rpcKey) throw new Error(`ERR_WORKER_KEY_MISSING: ${spec.workerId}`)
 
     const id = nextId(spec.prefix, wk.deviceIds || [])
     const params = spec.params(id, flags)
 
-    const res = await ork.sendWorkerCommand(spec.workerId, id, 'registerThing', params)
+    const res = await kernel.sendWorkerCommand(spec.workerId, id, 'registerThing', params)
     const payload = res && res.payload
     if (payload && payload.status === 'FAILED') throw new Error(`ERR_SEED_FAILED: ${payload.error}`)
-    report(`seeded ${id} on ${spec.workerId} (port ${params.opts.port}); waiting for ORK refresh…`)
+    const portHint = params.opts.port != null ? `port ${params.opts.port}` : `containerId ${params.opts.containerId}`
 
-    // The worker syncs the new device into the ORK registry on its next refresh.
-    try {
-      await ork.waitForDevice(id, { workerId: spec.workerId, timeoutMs: 12000, intervalMs: 1500 })
-      const after = await ork.getStatus()
-      const w = after.workers.find((x) => x.workerId === spec.workerId)
-      report(`${id} registered in ORK (worker now has ${w ? w.deviceCount : '?'} device(s))`)
-    } catch {
-      report(`(${id} seeded but not yet visible in the ORK registry)`)
-    }
-    return id
+    report(`seeded ${params.id || id} on ${spec.workerId} (${portHint}); takes effect on worker restart`)
+    return params.id || id
   } finally {
-    await ork.close()
+    await kernel.close()
   }
 }
 

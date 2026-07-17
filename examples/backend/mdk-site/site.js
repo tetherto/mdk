@@ -1,20 +1,16 @@
 'use strict'
 
+const path = require('path')
+const os = require('os')
 const { setTimeout: sleep } = require('timers/promises')
-const { getOrk, startWorker } = require('../../../backend/core/mdk')
+const { getKernel } = require('../../../backend/core/mdk')
 
-// Miner types
-const { WM_M56S } = require('../../../backend/workers/miners/whatsminer')
-const { AM_S19XP } = require('../../../backend/workers/miners/antminer')
-
-// Container type
-const { AS_HK3 } = require('../../../backend/workers/containers/antspace')
-
-// Power meter
-const { ABB_B23 } = require('../../../backend/workers/power-meter/abb')
-
-// Temperature sensor
-const { SENECA } = require('../../../backend/workers/temperature/seneca')
+// Every family boots on the WorkerRuntime through its package's plugin boot.
+const { startWhatsminerWorker } = require('../../../backend/workers/miners/whatsminer')
+const { startAntminerWorker } = require('../../../backend/workers/miners/antminer')
+const { startAntspaceWorker } = require('../../../backend/workers/containers/antspace')
+const { startAbbWorker } = require('../../../backend/workers/power-meter/abb')
+const { startSenecaWorker } = require('../../../backend/workers/temperature/seneca')
 
 // Mock hardware servers
 const wmMock = require('../../../backend/workers/miners/whatsminer/mock/server')
@@ -24,6 +20,11 @@ const abbMock = require('../../../backend/workers/power-meter/abb/mock/server')
 const senMock = require('../../../backend/workers/temperature/seneca/mock/server')
 
 const SITE = 'site-texas-01'
+const STORE_BASE = path.join(os.tmpdir(), 'mdk-site-example')
+
+function storeDir (workerId) {
+  return path.join(STORE_BASE, workerId, 'store')
+}
 
 async function startMocks () {
   // Whatsminer mock fleet: ports 14100-14109
@@ -57,17 +58,21 @@ async function main () {
   await startMocks()
   console.log('  Mock hardware started (20 miners, 2 containers, 2 power meters, 2 temp sensors)')
 
-  // Start ORK first — workers will auto-register on the same topic
-  console.log('\n  Starting ORK...')
-  const ork = await getOrk()
+  // Start Kernel first — workers will auto-register on the same topic
+  console.log('\n  Starting Kernel...')
+  const kernel = await getKernel()
 
   // ── Start Workers ──────────────────────────────────────────────
+  // Each mock fleet shares 127.0.0.1, so duplicate addresses are allowed.
 
   // Whatsminer worker (manages 10 M56S miners in container-A)
-  const { manager: wm } = await startWorker(WM_M56S, { ork })
-
-  for (let i = 0; i < 10; i++) {
-    await wm.registerThing({
+  const wm = await startWhatsminerWorker({
+    workerId: 'whatsminer-m56s-site',
+    model: 'm56s',
+    storeDir: storeDir('whatsminer-worker'),
+    conf: { thing: { allowDuplicateIPs: true } },
+    seedDevices: Array.from({ length: 10 }, (_, i) => ({
+      id: `wm-${i + 1}`,
       info: {
         serialNum: `WM56S-${String(i + 1).padStart(3, '0')}`,
         container: 'container-A',
@@ -75,69 +80,93 @@ async function main () {
         location: `${SITE}.container`
       },
       opts: { address: '127.0.0.1', port: 14100 + i, password: 'admin' }
-    })
-  }
+    }))
+  })
+  await kernel.registerWorker(wm.runtime.getPublicKey())
   console.log('  Whatsminer worker: 10 M56S miners registered in container-A')
 
   // Antminer worker (manages 10 S19XP miners in container-B)
-  const { manager: am } = await startWorker(AM_S19XP, { ork })
-
-  for (let i = 0; i < 10; i++) {
-    await am.registerThing({
+  const am = await startAntminerWorker({
+    workerId: 'antminer-s19xp-site',
+    model: 's19xp',
+    storeDir: storeDir('antminer-worker'),
+    conf: { thing: { allowDuplicateIPs: true } },
+    seedDevices: Array.from({ length: 10 }, (_, i) => ({
       info: {
         serialNum: `S19XP-${String(i + 1).padStart(3, '0')}`,
         container: 'container-B',
         pos: `B${i + 1}`,
         location: `${SITE}.container`
       },
-      opts: { address: '127.0.0.1', port: 14200 + i }
-    })
-  }
+      opts: { address: '127.0.0.1', port: 14200 + i, username: 'root', password: 'root' }
+    }))
+  })
+  await kernel.registerWorker(am.runtime.getPublicKey())
   console.log('  Antminer worker: 10 S19XP miners registered in container-B')
 
   // Container worker (manages 2 Antspace HK3 containers)
-  const { manager: as } = await startWorker(AS_HK3, { ork })
-
-  await as.registerThing({
-    info: { serialNum: 'HK3-A', container: 'container-A', location: `${SITE}.container` },
-    opts: { address: '127.0.0.1', port: 18001 }
+  const as = await startAntspaceWorker({
+    workerId: 'antspace-hk3-site',
+    model: 'hk3',
+    storeDir: storeDir('antspace-worker'),
+    conf: { thing: { allowDuplicateIPs: true } },
+    seedDevices: [
+      {
+        info: { serialNum: 'HK3-A', container: 'container-A', location: `${SITE}.container` },
+        opts: { address: '127.0.0.1', port: 18001 }
+      },
+      {
+        info: { serialNum: 'HK3-B', container: 'container-B', location: `${SITE}.container` },
+        opts: { address: '127.0.0.1', port: 18002 }
+      }
+    ]
   })
-  await as.registerThing({
-    info: { serialNum: 'HK3-B', container: 'container-B', location: `${SITE}.container` },
-    opts: { address: '127.0.0.1', port: 18002 }
-  })
+  await kernel.registerWorker(as.runtime.getPublicKey())
   console.log('  Container worker: 2 Antspace HK3 containers registered')
 
   // Power meter worker (1 ABB B23 per container)
-  const { manager: abb } = await startWorker(ABB_B23, { ork })
-
-  await abb.registerThing({
-    info: { serialNum: 'ABB-A', container: 'container-A', location: `${SITE}.container` },
-    opts: { address: '127.0.0.1', port: 15001, unitId: 0 }
+  const abb = await startAbbWorker({
+    workerId: 'abb-b23-site',
+    model: 'b23',
+    storeDir: storeDir('powermeter-worker'),
+    conf: { thing: { allowDuplicateIPs: true } },
+    seedDevices: [
+      {
+        info: { serialNum: 'ABB-A', container: 'container-A', location: `${SITE}.container` },
+        opts: { address: '127.0.0.1', port: 15001, unitId: 0 }
+      },
+      {
+        info: { serialNum: 'ABB-B', container: 'container-B', location: `${SITE}.container` },
+        opts: { address: '127.0.0.1', port: 15002, unitId: 0 }
+      }
+    ]
   })
-  await abb.registerThing({
-    info: { serialNum: 'ABB-B', container: 'container-B', location: `${SITE}.container` },
-    opts: { address: '127.0.0.1', port: 15002, unitId: 0 }
-  })
+  await kernel.registerWorker(abb.runtime.getPublicKey())
   console.log('  Power meter worker: 2 ABB B23 meters registered')
 
   // Temperature sensor worker (1 sensor per container)
-  const { manager: sen } = await startWorker(SENECA, { ork })
-
-  await sen.registerThing({
-    info: { serialNum: 'SEN-A', container: 'container-A', pos: 'lv_1', location: `${SITE}.container` },
-    opts: { address: '127.0.0.1', port: 15501, unitId: 0, register: 3 }
+  const sen = await startSenecaWorker({
+    workerId: 'seneca-site',
+    storeDir: storeDir('sensor-worker'),
+    conf: { thing: { allowDuplicateIPs: true } },
+    seedDevices: [
+      {
+        info: { serialNum: 'SEN-A', container: 'container-A', pos: 'lv_1', location: `${SITE}.container` },
+        opts: { address: '127.0.0.1', port: 15501, unitId: 0, register: 3 }
+      },
+      {
+        info: { serialNum: 'SEN-B', container: 'container-B', pos: 'lv_1', location: `${SITE}.container` },
+        opts: { address: '127.0.0.1', port: 15502, unitId: 0, register: 3 }
+      }
+    ]
   })
-  await sen.registerThing({
-    info: { serialNum: 'SEN-B', container: 'container-B', pos: 'lv_1', location: `${SITE}.container` },
-    opts: { address: '127.0.0.1', port: 15502, unitId: 0, register: 3 }
-  })
+  await kernel.registerWorker(sen.runtime.getPublicKey())
   console.log('  Sensor worker: 2 Seneca temperature sensors registered')
 
   // Wait for all 5 workers to be discovered and devices populated
   let attempts = 0
   while (attempts < 120) {
-    const w = ork.registry.listWorkers()
+    const w = kernel.registry.listWorkers()
     const ready = w.filter(wr => wr.state === 'READY')
     const totalDev = ready.reduce((sum, wr) => sum + wr.deviceIds.length, 0)
     if (ready.length >= 5 && totalDev >= 26) break
@@ -145,13 +174,13 @@ async function main () {
     attempts++
   }
 
-  const workers = ork.registry.listWorkers()
+  const workers = kernel.registry.listWorkers()
   const totalDevices = workers.reduce((sum, w) => sum + w.deviceIds.length, 0)
 
   console.log('')
   console.log('  ════════════════════════════════════════════════════')
   console.log(`  Site: ${SITE}`)
-  console.log(`  HRPC Key: ${ork.getPublicKey().toString('hex')}`)
+  console.log(`  HRPC Key: ${kernel.getPublicKey().toString('hex')}`)
   console.log(`  Workers: ${workers.length} | Devices: ${totalDevices}`)
   console.log('  ════════════════════════════════════════════════════')
 

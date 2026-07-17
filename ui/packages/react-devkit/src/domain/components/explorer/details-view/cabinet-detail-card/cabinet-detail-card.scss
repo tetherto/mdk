@@ -1,0 +1,34 @@
+.mdk-cabinet-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__title {
+    font-weight: 600;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+
+  &__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__value {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  &__unit {
+    color: var(--mdk-color-text-secondary);
+    min-width: 32px;
+  }
+}

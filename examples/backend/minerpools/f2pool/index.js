@@ -24,7 +24,7 @@ const main = async () => {
   // network access is needed.
   const mock = createServer({ host: HOST, port: PORT, usernames: ACCOUNT })
 
-  // Minerpools are not wired into the ORK/MDK thing model — F2PoolMinerpoolManager
+  // Minerpools are not wired into the Kernel/MDK thing model — F2PoolMinerpoolManager
   // is config-driven (accounts + apiUrl) and is not a ThingManager — so we drive
   // the pool manager directly, exactly as it runs inside a worker process.
   const pool = new F2_POOL(

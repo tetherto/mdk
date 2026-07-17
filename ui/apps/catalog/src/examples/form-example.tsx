@@ -21,7 +21,7 @@ import {
   SelectValue,
   Switch,
   TextArea,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'

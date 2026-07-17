@@ -1,5 +1,5 @@
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { MinerInfoCard } from '@tetherto/mdk-react-devkit/foundation'
+import { MinerInfoCard } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import './miner-info-card.demo.scss'
 

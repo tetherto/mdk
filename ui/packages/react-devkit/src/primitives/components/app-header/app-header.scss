@@ -1,0 +1,94 @@
+@use '../../styles/mixins' as *;
+
+@layer mdk {
+  .mdk-app-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    /* Include border + padding in the width: 100% calculation so the
+     * header never exceeds its grid cell (which is what was creating
+     * the "page wider than viewport" effect — without border-box the
+     * 0.5px bottom border plus 1rem horizontal padding added on top
+     * of the 100% width). */
+    box-sizing: border-box;
+    /* As a grid/flex item (the shell places the header in a grid row),
+     * the default min-width: auto floors the track at the header's
+     * min-content width — logo + full stats strip + actions. On narrow
+     * windows that pushes the track past the viewport and clips the
+     * actions cluster with no way to scroll to it. min-width: 0 lets
+     * the header shrink so the __main slot absorbs the squeeze. */
+    min-width: 0;
+    min-height: 4.6875rem; /* 75px — matches the Mining OS reference header */
+    padding: 0 1rem;
+    background: var(--mdk-color-surface, #0a0a09);
+    color: var(--mdk-color-text-primary, #f5f5f0);
+    /* Sits above the sidebar (z-index 10) so the sidebar's top-right
+     * notch ::after tucks under the header's bottom border, forming
+     * the continuous Mining OS-style L-shape. */
+    position: relative;
+    z-index: 11;
+    border-bottom: 0.5px solid var(--mdk-color-primary, #f7931a);
+
+    &--sticky {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    &__logo {
+      display: flex;
+      align-items: center;
+      /* Pin to the sidebar's expanded width so the leading
+       * HeaderStatDividerIcon in the stats bar starts at exactly
+       * the sidebar's right edge, forming the continuous orange
+       * stroke from sidebar to header chevron (Mining OS L-shape). */
+      width: var(--mdk-shell-sidebar-width, 220px);
+      box-sizing: border-box;
+      padding: 0 0.75rem 0 0.25rem;
+      color: var(--mdk-color-primary);
+      flex: 0 0 auto;
+    }
+
+    &__start {
+      display: flex;
+      align-items: center;
+      padding: 0 0.75rem;
+      flex: 0 0 auto;
+    }
+
+    &__main {
+      display: flex;
+      align-items: center;
+      /* flex-basis 0 + min-width 0 + overflow hidden together force
+       * the middle slot to shrink to its share of the row instead of
+       * its content's intrinsic width. HeaderStatsBar handles the
+       * overflow with its own overflow-x: auto inside this slot. */
+      flex: 1 1 0;
+      min-width: 0;
+      overflow: hidden;
+      padding: 0 0.5rem 0 0;
+    }
+
+    &__actions {
+      display: flex;
+      align-items: center;
+      flex: 0 0 auto;
+      gap: 1rem;
+      padding-left: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      padding-inline: 0.5rem;
+
+      &__logo {
+        display: none;
+      }
+
+      &__actions {
+        gap: 0.5rem;
+        padding-left: 0.5rem;
+      }
+    }
+  }
+}

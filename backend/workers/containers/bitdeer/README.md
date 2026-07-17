@@ -1,39 +1,54 @@
-# @tetherto/container-bitdeer
+# @tetherto/mdk-worker-bitdeer
 
-MDK worker for Bitdeer D40 mining container systems. Communicates via MQTT. Supports A1346, M30, M56, and S19XP container variants.
+MDK Worker for Bitdeer D40 mining container systems. Communicates via MQTT. Supports A1346, M30, M56, and S19XP container variants.
 
 ## Supported Models
 
-| Export | Model |
+| `model` value | Model |
 |--------|-------|
-| `BITDEER_D40_A1346` | D40 container for Avalon A1346 miners |
-| `BITDEER_D40_M30` | D40 container for Whatsminer M30 miners |
-| `BITDEER_D40_M56` | D40 container for Whatsminer M56 miners |
-| `BITDEER_D40_S19XP` | D40 container for Antminer S19XP miners |
+| `a1346` | D40 container for Avalon A1346 miners |
+| `m30` | D40 container for Whatsminer M30 miners |
+| `m56` | D40 container for Whatsminer M56 miners |
+| `s19xp` | D40 container for Antminer S19XP miners |
 
 ## Install
 
 ```bash
-npm install @tetherto/container-bitdeer
+npm install @tetherto/mdk-worker-bitdeer
 ```
 
 ## Usage
 
+`startBitdeerWorker(opts)` embeds an MQTT broker (one per worker process, default port `10883`, override with
+`opts.mqttPort`) that the containers publish into. Device specs are keyed by `containerId`, not address/port:
+
 ```js
-const { BITDEER_D40_M56 } = require('@tetherto/container-bitdeer')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startBitdeerWorker } = require('@tetherto/mdk-worker-bitdeer')
 
-const { manager } = await startWorker(BITDEER_D40_M56, { ork, rack: 'site-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { serialNum: 'D40-M56-001', container: 'container-A' },
-  opts: { address: '192.168.1.102', port: 1883 }   // MQTT broker
+const worker = await startBitdeerWorker({
+  workerId: 'bitdeer-rack-1',
+  model: 'm56',
+  storeDir: './store/bitdeer-rack-1',
+  mqttPort: 10883,
+  seedDevices: [{
+    info: { serialNum: 'D40-M56-001', container: 'container-A' },
+    opts: { containerId: 'D40-M56-001' }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
+`registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is
+stopped and restarted (`await worker.stop()`, then `startBitdeerWorker` again with no `seedDevices`) — there is no
+hot-add.
 
 ## Protocol
 
-Communicates via MQTT. The container management system publishes status topics and subscribes to command topics.
+Communicates via MQTT. The embedded broker accepts container connections; the container management system publishes status topics and subscribes to command topics.
 
 ## Telemetry
 

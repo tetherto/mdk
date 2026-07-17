@@ -37,9 +37,9 @@ const main = async () => {
   // pool account or network access is needed.
   const mock = createServer({ host, port, delay: 0 })
 
-  // NOTE: minerpools are not (yet) wired into the ORK/MDK thing model — the
+  // NOTE: minerpools are not (yet) wired into the Kernel/MDK thing model — the
   // OceanMinerpoolManager is config-driven (accounts + apiUrl) and is not a
-  // ThingManager, so there is no ORK, app-node or registerThing here. We drive
+  // ThingManager, so there is no Kernel, gateway or registerThing here. We drive
   // the pool manager directly, exactly as it runs inside a worker process.
   const pool = new OCEAN_POOL(
     { ocean: { accounts, apiUrl } },

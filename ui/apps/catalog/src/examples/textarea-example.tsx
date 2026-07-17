@@ -1,4 +1,4 @@
-import { TextArea } from '@tetherto/mdk-react-devkit/core'
+import { TextArea } from '@tetherto/mdk-react-devkit/primitives'
 
 import { DemoPageHeader } from '../components/demo-page-header'
 

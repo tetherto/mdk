@@ -1,4 +1,4 @@
-import { isContainer, isMiner } from '@tetherto/mdk-ui-core'
+import { isContainer, isMiner } from '@tetherto/mdk-ui-foundation'
 
 /**
  * Minimal device shape consumed by `useGetAvailableDevices` — only `type`

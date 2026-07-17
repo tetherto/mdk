@@ -7,7 +7,7 @@ intent: >
   well-trodden path when someone says "show me the alerts page" or "I want a
   view of active and historical incidents".
 domain: mining-operations
-orkCapabilities:
+kernelCapabilities:
   - incident-alerts
   - device-telemetry
 components:

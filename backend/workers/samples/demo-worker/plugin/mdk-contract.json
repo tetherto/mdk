@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "provider": "wm",
+    "deviceFamily": "miner",
+    "brand": "WM",
+    "modelsSupported": ["WM_V3"],
+    "overview": "Controls WM miners running the (hypothetical) firmware v3 HTTP JSON API. Third-party authoring demo: a plain Worker Plugin with its own SQLite persistence — no MDK worker-infra services. Hosted on WorkerRuntime by a caller (see examples/backend/demo-worker-caller), not by this package."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate_rt", "unit": "TH/s", "type": "number", "handler": "src/telemetry/hashrate-rt.js", "description": "Real-time hashrate from /api/v3/summary." },
+      { "name": "power", "unit": "W", "type": "number", "handler": "src/telemetry/power.js", "description": "Current power draw." },
+      { "name": "temperature", "unit": "C", "type": "number", "handler": "src/telemetry/temperature.js", "description": "Hash board temperature." },
+      { "name": "power_mode", "type": "string", "handler": "src/telemetry/power-mode.js", "description": "Active power mode: eco, normal or high." },
+      { "name": "history", "type": "array", "handler": "src/telemetry/history.js", "description": "Recent telemetry samples from the worker's own SQLite store (params: { limit })." }
+    ],
+    "commands": [
+      { "name": "reboot", "handler": "src/commands/reboot.js", "description": "Restarts the miner controller.", "constraints": "Do not call more than once per 5 minutes.", "params": [] },
+      { "name": "setPowerMode", "handler": "src/commands/set-power-mode.js", "description": "Changes the power mode: eco, normal or high (low is accepted as an alias for eco).", "params": [{ "name": "mode", "type": "string" }] }
+    ],
+    "health": { "supportedStates": ["OK", "OFFLINE"] },
+    "errors": {
+      "ERR_BAD_POWER_MODE": "The firmware rejected the requested power mode.",
+      "ERR_DEVICE_CALL_FAILED": "The v3 HTTP API call failed or returned an error."
+    }
+  }
+}

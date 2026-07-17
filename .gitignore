@@ -33,8 +33,15 @@ backend/**/tmp/
 backend/**/status/
 backend/**/store/
 
+# Turborepo cache can materialize at the repo root when a ui/ task is run from
+# here. ANCHORED so it never matches a domain's own .turbo (those stay ignored
+# by each domain's .gitignore per the header note above).
+/.turbo/
+
 # WIP work. `/Checklist*` is anchored to the repo root so it cannot match UI
 # component files (e.g. ui/.../ChecklistCard.tsx).
 /Checklist*
-docs/how-to/security
-backend/workers/docs/Documents.code-workspace
+
+# local / machine-specific
+docs/scripts/check_bullet_stops.py
+

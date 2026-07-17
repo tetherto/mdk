@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
 
-import { Button } from '@tetherto/mdk-react-devkit/core'
+import { Button } from '@tetherto/mdk-react-devkit/primitives'
 import {
   useActions,
   useAuth,
@@ -137,7 +137,7 @@ export const HooksDemoPage = (): JSX.Element => {
     <div>
       <DemoPageHeader
         title="Adapter Hooks"
-        description="Live demonstration of the five MDK React adapter hooks. Each hook is backed by a Zustand vanilla store from @tetherto/mdk-ui-core and re-renders only when its selected slice changes."
+        description="Live demonstration of the five MDK React adapter hooks. Each hook is backed by a Zustand vanilla store from @tetherto/mdk-ui-foundation and re-renders only when its selected slice changes."
       />
 
       <DemoBlock

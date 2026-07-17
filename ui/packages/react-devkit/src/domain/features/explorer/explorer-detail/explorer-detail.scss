@@ -1,0 +1,18 @@
+@use "@primitives/styles/mixins" as *;
+
+.mdk-explorer-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  min-width: 0;
+
+  /* The batch-controls card forces a 500px min-width for its pool-manager
+     placement; in the narrower Explorer detail column that overflows and
+     clips. Let it fill the column and wrap instead. */
+  .mdk-batch-container-controls-card {
+    min-width: 0;
+    width: 100%;
+    padding: 16px;
+  }
+}

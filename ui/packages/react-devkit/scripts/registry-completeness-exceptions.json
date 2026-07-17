@@ -1,0 +1,4 @@
+{
+  "ErrorBoundary": "Class component (extends React.Component). The registry generator only introspects function components, so it cannot resolve this one. Public and usable; remove this exemption once the generator gains class-component support.",
+  "DeviceInfo": "Pre-existing: agent-ready function component that the registry generator drops, while its sibling InfoContainer in the same file resolves fine. Tracked as debt so the gate does not block; needs a follow-up to find the resolution failure."
+}

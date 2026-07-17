@@ -1,4 +1,4 @@
-const { execSync } = require('child_process')
+const { execFileSync } = require('child_process')
 const path = require('path')
 const fs = require('fs')
 const initialize = require('./utils/initialize')
@@ -44,7 +44,7 @@ function startPm2 (config) {
 
   initialize()
   ensureMdkWorker()
-  ensureConfigFromExamples(path.join(repoRoot, 'backend', 'core', 'app-node', 'config'))
+  ensureConfigFromExamples(path.join(repoRoot, 'backend', 'core', 'gateway', 'config'))
 
   const workerScript = 'mdk/worker.js'
   const sharedEnv = {
@@ -53,7 +53,7 @@ function startPm2 (config) {
   }
 
   const apps = config.services.map(svc => {
-    if (svc.kind === 'app-node') {
+    if (svc.kind === 'gateway') {
       return {
         name: `mdk-${svc.name}`,
         script: workerScript,
@@ -62,7 +62,7 @@ function startPm2 (config) {
         instances: 1,
         env: {
           ...sharedEnv,
-          SERVICE: 'app-node',
+          SERVICE: 'gateway',
           PORT: String(svc.port)
         }
       }
@@ -92,7 +92,7 @@ module.exports = ${JSON.stringify({ apps }, null, 2)}
 
   fs.writeFileSync(file, content)
   if (config.shouldAutoStart) {
-    execSync(`pm2 start ${file}`, { stdio: 'inherit' })
+    execFileSync('pm2', ['start', file], { stdio: 'inherit' })
   }
 }
 
@@ -108,7 +108,7 @@ function startDocker (config) {
 
   initialize()
   ensureMdkWorker(siteDir)
-  ensureConfigFromExamples(path.join(repoRoot, 'backend', 'core', 'app-node', 'config'))
+  ensureConfigFromExamples(path.join(repoRoot, 'backend', 'core', 'gateway', 'config'))
 
   const siteMount = path.relative(repoRoot, siteDir).split(path.sep).join('/') || '.'
   const workingDir = `/app/repo/${siteMount}`
@@ -131,12 +131,12 @@ function startDocker (config) {
       environment: { ...sharedEnv }
     }
 
-    if (svc.kind === 'app-node') {
+    if (svc.kind === 'gateway') {
       services[svc.name] = {
         ...base,
         environment: {
           ...base.environment,
-          SERVICE: 'app-node',
+          SERVICE: 'gateway',
           PORT: String(svc.port)
         },
         ports: [`${svc.port}:${svc.port}`]
@@ -165,7 +165,7 @@ function startDocker (config) {
   fs.writeFileSync(file, buildComposeYaml(compose))
 
   if (config.shouldAutoStart) {
-    execSync(`docker compose -f ${file} up -d`, { stdio: 'inherit', cwd: siteDir })
+    execFileSync('docker', ['compose', '-f', file, 'up', '-d'], { stdio: 'inherit', cwd: siteDir })
   }
 
   return { file, repoRoot, siteDir }

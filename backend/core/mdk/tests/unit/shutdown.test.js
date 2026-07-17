@@ -1,6 +1,6 @@
 'use strict'
 
-// Lifecycle helpers: shutdown(handle) teardown across the three handle shapes,
+// Lifecycle helpers: shutdown(handle) teardown across the handle shapes,
 // and onShutdown() idempotency + signal registration. Signal handlers call
 // process.exit, so we never emit a real signal — we invoke the returned handler
 // with process.exit stubbed, and always remove listeners in teardown so they
@@ -9,7 +9,7 @@
 const test = require('brittle')
 const { shutdown, onShutdown } = require('../../index')
 
-test('shutdown - ork-like handle: drains _cleanup in order then stops', async (t) => {
+test('shutdown - kernel-like handle: drains _cleanup in order then stops', async (t) => {
   const order = []
   const handle = {
     _cleanup: [async () => order.push('c1'), async () => order.push('c2')],
@@ -23,18 +23,15 @@ test('shutdown - ork-like handle: drains _cleanup in order then stops', async (t
   t.alike(order, ['c1', 'c2', 'stop'], 'second call is a no-op')
 })
 
-test('shutdown - worker-like handle: stops manager then adapter', async (t) => {
-  const order = []
-  const handle = {
-    manager: { stop: (cb) => { order.push('manager'); cb() } },
-    adapter: { stop: async () => { order.push('adapter') } },
-    store: {}
-  }
+test('shutdown - runtime-worker-like handle: promise stop()', async (t) => {
+  let stopped = false
+  const handle = { stop: async () => { stopped = true } }
   await shutdown(handle)
-  t.alike(order, ['manager', 'adapter'], 'manager flushed before adapter')
+  t.is(stopped, true)
+  t.is(handle.__mdkShutdownDone, true)
 })
 
-test('shutdown - app-node-like handle: callback stop()', async (t) => {
+test('shutdown - gateway-like handle: callback stop()', async (t) => {
   let stopped = false
   const handle = { stop: (cb) => { stopped = true; cb() } }
   await shutdown(handle)
@@ -44,7 +41,7 @@ test('shutdown - app-node-like handle: callback stop()', async (t) => {
 
 test('shutdown - tolerates null and partial handles', async (t) => {
   await shutdown(null) // no throw
-  await shutdown({}) // no stop, no cleanup, no manager/adapter
+  await shutdown({}) // no stop, no cleanup
   t.pass('null and empty handles are safe')
 })
 

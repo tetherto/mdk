@@ -5,8 +5,8 @@
   "shouldAutoStart": false,
   "services": [
     {
-      "name": "app-node",
-      "kind": "app-node",
+      "name": "gateway",
+      "kind": "gateway",
       "port": 3000
     },
     {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { timezoneStore } from '@tetherto/mdk-ui-core'
+import { timezoneStore } from '@tetherto/mdk-ui-foundation'
 import { act, renderHook } from '@testing-library/react'
 import * as dateFnsTz from 'date-fns-tz'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

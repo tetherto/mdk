@@ -1,0 +1,8 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-pm-wrapper {
+  @include flex_column;
+
+  position: relative;
+  gap: 24px;
+}

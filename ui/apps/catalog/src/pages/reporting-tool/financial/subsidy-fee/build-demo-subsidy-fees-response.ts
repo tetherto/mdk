@@ -1,7 +1,7 @@
 import type {
   SubsidyFeesLogEntry,
   SubsidyFeesResponse,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 
 const BTC_SATS = 100_000_000
 

@@ -1,12 +1,12 @@
-import { MetricCard } from '@tetherto/mdk-react-devkit/foundation'
-import { Button, LineChart, Spinner, Typography } from '@tetherto/mdk-react-devkit/core'
+import { MetricCard } from '@tetherto/mdk-react-devkit/domain'
+import { Button, LineChart, Spinner, Typography } from '@tetherto/mdk-react-devkit/primitives'
 import { useAuth, useQuery, useMdkContext } from '@tetherto/mdk-react-adapter'
 import type { CSSProperties, JSX } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const AUTH_TOKEN_KEY = 'mdk_auth_token'
 const MAX_HISTORY = 60
-// Set by start.js via VITE_NO_AUTH=true when app-node runs without authentication
+// Set by start.js via VITE_NO_AUTH=true when gateway runs without authentication
 const NO_AUTH = import.meta.env.VITE_NO_AUTH === 'true'
 
 type DeviceStats = {
@@ -226,7 +226,7 @@ export function SiteHashratePage(): JSX.Element {
         {/* No data yet */}
         {!data && !isFetching && (
           <Typography variant="body" color="muted" align="center">
-            No data — is app-node running and connected to ORK?
+            No data — is gateway running and connected to Kernel?
           </Typography>
         )}
       </div>

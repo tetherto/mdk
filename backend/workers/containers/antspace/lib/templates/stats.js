@@ -1,8 +1,10 @@
 'use strict'
 
-const libStats = require('../../../base/lib/templates/stats')
-const libUtils = require('../../../base/lib/utils')
+const { templates, utils } = require('../../../../../core/mdk')
 const { groupBy } = require('../../../../../core/lib-stats/utils')
+
+const { isOffline } = utils
+const { conf, specs: baseSpecs } = templates.stats
 
 const createSrcEntries = (fieldNames) => {
   return fieldNames.map(fieldName => ({
@@ -28,19 +30,23 @@ const containerSpecificFields = [
   'supply_liquid_set_temp'
 ]
 
-libStats.specs.container = {
-  ...libStats.specs.container_default,
-  ops: {
-    ...libStats.specs.container_default.ops,
-    container_specific_stats_group: {
-      op: 'group_multiple_stats',
-      srcs: createSrcEntries(containerSpecificFields),
-      group: groupBy('info.container'),
-      filter: entry => {
-        return !libUtils.isOffline(entry.last.snap)
+module.exports = {
+  conf,
+  specs: {
+    ...baseSpecs,
+    container: {
+      ...baseSpecs.container_default,
+      ops: {
+        ...baseSpecs.container_default.ops,
+        container_specific_stats_group: {
+          op: 'group_multiple_stats',
+          srcs: createSrcEntries(containerSpecificFields),
+          group: groupBy('info.container'),
+          filter: entry => {
+            return !isOffline(entry.last.snap)
+          }
+        }
       }
     }
   }
 }
-
-module.exports = libStats

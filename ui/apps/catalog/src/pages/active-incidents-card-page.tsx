@@ -1,6 +1,6 @@
-import { ActiveIncidentsCard } from '@tetherto/mdk-react-devkit/foundation'
-import type { TIncidentRowProps } from '@tetherto/mdk-react-devkit/foundation'
-import { UNITS } from '@tetherto/mdk-react-devkit/core'
+import { ActiveIncidentsCard } from '@tetherto/mdk-react-devkit/domain'
+import type { TIncidentRowProps } from '@tetherto/mdk-react-devkit/domain'
+import { UNITS } from '@tetherto/mdk-react-devkit/primitives'
 import type { JSX } from 'react'
 
 const mockIncidents: TIncidentRowProps[] = [

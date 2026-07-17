@@ -153,7 +153,7 @@ class ProcessManager {
     })
   }
 
-  // Stop everything in reverse spawn order (e.g. ui → app-node → workers → ork
+  // Stop everything in reverse spawn order (e.g. ui → gateway → workers → kernel
   // → mocks), so dependents go down before their dependencies.
   async stopAll (opts) {
     const names = [...this._procs.keys()].reverse()

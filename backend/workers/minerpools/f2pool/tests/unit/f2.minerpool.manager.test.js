@@ -3,7 +3,7 @@
 const test = require('brittle')
 const { F2_POOL } = require('../../index')
 const { POOL_TYPE } = require('../../lib/utils/constants')
-const { SCHEDULER_TIMES, BTC_SATS, HOUR_MS } = require('../../../base/lib/utils/constants')
+const { SCHEDULER_TIMES, BTC_SATS, HOUR_MS } = require('../../../../../core/mdk/lib/services/pool-utils/constants')
 
 function makeReadStreamDb (entries) {
   return {

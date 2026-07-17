@@ -1,0 +1,51 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-pm-status-card {
+  @include flex_column;
+
+  padding: 12px;
+  border: 1px solid var(--mdk-color-white-transparent);
+  cursor: pointer;
+
+  &__header {
+    @include flex_between;
+
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  &__unit-info {
+    @include flex_align;
+
+    gap: 10px;
+  }
+
+  &__unit-name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  &__status-badge {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: capitalize;
+  }
+
+  &__info-list {
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--mdk-color-text-disabled);
+  }
+
+  &__info-item {
+    span {
+      color: inherit;
+    }
+
+    &--highlight span {
+      color: var(--mdk-color-primary);
+    }
+  }
+}

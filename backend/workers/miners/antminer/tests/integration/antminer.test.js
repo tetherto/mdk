@@ -4,7 +4,7 @@ const net = require('net')
 const path = require('path')
 const test = require('brittle')
 const Antminer = require('../../lib/antminer.js')
-const AntminerManagerS21 = require('../../lib/types/s21.miner.manager.js')
+const plugin = require('../../plugin')
 const { createServer } = require(path.join(__dirname, '../../mock/server.js'))
 
 const MOCK_PORT = 8000
@@ -254,27 +254,22 @@ test('integration: Antminer getSnap (_prepSnap) against mock server', { timeout:
   t.ok(snap.config.firmware_ver, 'firmware_ver present')
 })
 
-test('integration: AntminerManager connectThing and collectThingSnap against mock server', { timeout: 15000 }, async (t) => {
+test('integration: plugin connect and getSnap against mock server', { timeout: 15000 }, async (t) => {
   const server = await startMockServer()
   t.teardown(() => server.stop())
 
-  const manager = new AntminerManagerS21({ thing: { miner: {} } }, { rack: 'test-rack' })
-  const thg = {
-    id: 'test-miner-1',
-    opts: {
-      address: MOCK_OPTS.host,
-      port: MOCK_PORT,
-      username: 'root',
-      password: MOCK_OPTS.password
-    }
-  }
+  const device = await plugin.connect({
+    address: MOCK_OPTS.host,
+    port: MOCK_PORT,
+    errPort: MOCK_PORT,
+    username: 'root',
+    password: MOCK_OPTS.password,
+    type: 'miner-am-s21'
+  }, { deviceId: 'test-miner-1' })
+  t.ok(device, 'connect returns a device client')
 
-  const connected = await manager.connectThing(thg)
-  t.is(connected, 1, 'connectThing returns 1')
-  t.ok(thg.ctrl, 'thing has ctrl (miner instance)')
-
-  const snap = await manager.collectThingSnap(thg)
-  t.ok(snap, 'collectThingSnap returns')
+  const snap = await device.getSnap()
+  t.ok(snap, 'getSnap returns')
   t.ok(snap.stats, 'snap has stats')
   t.ok(snap.config, 'snap has config')
   t.ok(typeof snap.stats.hashrate_mhs === 'object', 'hashrate_mhs present')

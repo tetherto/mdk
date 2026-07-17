@@ -3,6 +3,8 @@ import { Command } from 'commander'
 
 import { runRegistry } from './commands/registry.js'
 import { runDocs } from './commands/docs.js'
+import { runDocsBuild } from './commands/docs-build.js'
+import { runDocsGenerate } from './commands/docs-generate.js'
 import { runExample } from './commands/example.js'
 import { runAddPage } from './commands/add-page.js'
 import { runAddFeature } from './commands/add-feature.js'
@@ -18,6 +20,7 @@ import { runSuggest } from './commands/suggest.js'
 import { runHooks } from './commands/hooks.js'
 import { runStores } from './commands/stores.js'
 import { buildManifest } from './manifest.js'
+import { PACKAGES } from './constants.js'
 
 const program = new Command()
 
@@ -25,7 +28,7 @@ program
   .name('mdk-ui')
   .description('Agent-first CLI for the MDK Devkit.')
   .version('0.0.1')
-  .option('--package <name>', 'MDK devkit package to read', '@tetherto/mdk-react-devkit')
+  .option('--package <name>', 'MDK devkit package to read', PACKAGES.devkit)
 
 program
   .command('create [appName]')
@@ -121,6 +124,80 @@ program
     })
   })
 
+program
+  .command('docs:build')
+  .description(
+    'Generate the docs-site dataset (catalog + usage + examples + cli) from the ' +
+      'registry. Point --docs-repo at a local mdk-docs checkout to write into it, ' +
+      'install the rendering components, and print a coverage report; or use --out ' +
+      'for a plain dataset. Public surface only; a leak guard blocks private references.',
+  )
+  .option('--devkit-dir <dir>', 'Built devkit checkout (contains dist/registry.json)')
+  .option('--adapter-dir <dir>', 'Built react-adapter checkout (contains dist/hooks.json)')
+  .option('--core-dir <dir>', 'Built ui-foundation checkout (contains dist/stores.json)')
+  .option('--fonts-dir <dir>', 'Fonts package checkout (contains package.json + dist/fonts)')
+  .option('--adapter <name>', 'react-adapter package to read', PACKAGES.adapter)
+  .option('--core <name>', 'ui-foundation package to read', PACKAGES.core)
+  .option('--fonts <name>', 'fonts package to read', PACKAGES.fonts)
+  .option('--out <dir>', 'Plain dataset output directory (mutually exclusive with --docs-repo)')
+  .option('--docs-repo <path>', 'Local mdk-docs checkout; writes src/data/<version>/generated')
+  .option('--version-label <id>', 'Version segment + meta stamp', '0.2.0')
+  .option('--report-only', 'Diff against the committed tree, write nothing, exit 1 on drift')
+  .option('--no-scaffold', 'Skip MDX page + nav scaffolding (dataset only) for --docs-repo')
+  .option('--include-internal', 'Include public:false entries (debug only — never commit)')
+  .option('--cli-manifest <file>', 'Path to a cli-manifest.json to embed as cli.json')
+  .action(async (opts) => {
+    const result = await runDocsBuild({
+      packageName: program.opts().package,
+      devkitDir: opts.devkitDir,
+      adapterPackage: opts.adapter,
+      adapterDir: opts.adapterDir,
+      corePackage: opts.core,
+      coreDir: opts.coreDir,
+      fontsPackage: opts.fonts,
+      fontsDir: opts.fontsDir,
+      outDir: opts.out,
+      docsRepo: opts.docsRepo,
+      versionLabel: opts.versionLabel,
+      reportOnly: !!opts.reportOnly,
+      scaffold: opts.scaffold,
+      includeInternal: !!opts.includeInternal,
+      cliManifestPath: opts.cliManifest,
+    })
+    // Drift is only a failure signal in the CI-style --report-only lane.
+    if (opts.reportOnly && result.drift?.hasDrift) process.exitCode = 1
+  })
+
+program
+  .command('docs:generate')
+  .description(
+    'One-command orchestration around docs:build. Locates the MDK monorepo, ' +
+      'builds it so every package manifest (registry / hooks / stores / fonts) is ' +
+      'fresh, then generates the reference dataset + pages + report into a docs repo. ' +
+      'This is the reusable core the docs site wraps with its own config + prose sync.',
+  )
+  .option('--repo <dir>', 'Monorepo root (auto-detected by walking up from cwd if omitted)')
+  .option('--docs-repo <path>', 'Local mdk-docs checkout; writes src/data/<version>/generated')
+  .option('--out <dir>', 'Plain dataset output directory (mutually exclusive with --docs-repo)')
+  .option('--version-label <id>', 'Version segment + meta stamp', '0.2.0')
+  .option('--skip-build', 'Reuse existing dist/ instead of rebuilding (faster; can be stale)')
+  .option('--report-only', 'Diff against the committed tree, write nothing, exit 1 on drift')
+  .option('--no-scaffold', 'Skip MDX page + nav scaffolding (dataset only)')
+  .option('--include-internal', 'Include public:false entries (debug only — never commit)')
+  .action(async (opts) => {
+    const result = await runDocsGenerate({
+      repo: opts.repo,
+      docsRepo: opts.docsRepo,
+      outDir: opts.out,
+      versionLabel: opts.versionLabel,
+      skipBuild: !!opts.skipBuild,
+      reportOnly: !!opts.reportOnly,
+      scaffold: opts.scaffold,
+      includeInternal: !!opts.includeInternal,
+    })
+    if (opts.reportOnly && result.drift?.hasDrift) process.exitCode = 1
+  })
+
 const add = program.command('add').description('Scaffolding helpers.')
 
 add
@@ -185,7 +262,7 @@ remove
 program
   .command('find')
   .description('Filter the registry by capability / domain / category / tier.')
-  .option('--capability <id>', 'ORK capability identifier (e.g. hashrate-monitoring)')
+  .option('--capability <id>', 'Kernel capability identifier (e.g. hashrate-monitoring)')
   .option('--domain <id>', 'mining-operations | financial-reporting | device-management | generic')
   .option('--category <id>', 'Category bucket (charts, cards, tables, ...)')
   .option('--tier <tier>', 'agent-ready | advanced | all (defaults to agent-ready)')
@@ -205,8 +282,8 @@ program
 
 program
   .command('stores')
-  .description('Print the Zustand stores + query helpers manifest from the ui-core package.')
-  .option('--core <name>', 'ui-core package to read', '@tetherto/mdk-ui-core')
+  .description('Print the Zustand stores + query helpers manifest from the ui-foundation package.')
+  .option('--core <name>', 'ui-foundation package to read', PACKAGES.core)
   .option(
     '--category <category>',
     'Filter by category (auth | devices | notifications | timezone | actions)',
@@ -223,7 +300,7 @@ program
 program
   .command('hooks')
   .description('Print the React hooks manifest published by the adapter package.')
-  .option('--adapter <name>', 'Adapter package to read', '@tetherto/mdk-react-adapter')
+  .option('--adapter <name>', 'Adapter package to read', PACKAGES.adapter)
   .option(
     '--category <category>',
     'Filter by category (store | utility | permission | ui | external)',

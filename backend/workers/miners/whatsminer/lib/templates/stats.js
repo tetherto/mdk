@@ -1,8 +1,10 @@
 'use strict'
 
-const libStats = require('../../../base/lib/templates/stats')
-const { STATUS } = require('../../../base/lib/utils/constants')
+const { templates, constants } = require('../../../../../core/mdk')
 const { getVal } = require('../../../../../core/lib-stats/utils')
+
+const { STATUS } = constants
+const { minerConf, specs: baseSpecs } = templates.stats
 
 const MINOR_ERROR_CODES_M56S_M30_SET = new Set(
   [203, 204, 205, 206, 219, 236, 248, 270, 275, 320, 321, 322, 620, 714, 901, 2320, 2330, 2350, 5140, 5141]
@@ -59,46 +61,47 @@ const sharedPoolStats = {
   }
 }
 
-libStats.specs = {
-  miner: {
-    ops: {
-      ...libStats.specs.miner_default.ops,
-      ...sharedPoolStats
-    }
-  },
-  'miner-wm-m30s': {
-    ops: getSharedOps(MINOR_ERROR_CODES_M56S_M30_SET)
-  },
-  'miner-wm-m56s': {
-    ops: getSharedOps(MINOR_ERROR_CODES_M56S_M30_SET)
-  },
-  'miner-wm-m53s': {
-    ops: getSharedOps(MINOR_ERROR_CODES_M53_SET)
-  },
-  'miner-wm-m63': {
-    ops: {
-      hashrate_mhs_1m_group: {
-        op: 'group',
-        src: 'last.snap.stats.hashrate_mhs.t_1m',
-        group: groupByMinerInfo
-      },
-      power_mode_group: {
-        op: 'group',
-        src: 'last.snap.config.power_mode',
-        group: groupByMinerInfo
-      },
-      power_w_group: {
-        op: 'group',
-        src: 'last.snap.stats.power_w',
-        group: groupByMinerInfo
-      },
-      status_group: {
-        op: 'group',
-        src: 'last.snap.stats.status',
-        group: groupByMinerInfo
+module.exports = {
+  conf: minerConf,
+  specs: {
+    miner: {
+      ops: {
+        ...baseSpecs.miner_default.ops,
+        ...sharedPoolStats
+      }
+    },
+    'miner-wm-m30s': {
+      ops: getSharedOps(MINOR_ERROR_CODES_M56S_M30_SET)
+    },
+    'miner-wm-m56s': {
+      ops: getSharedOps(MINOR_ERROR_CODES_M56S_M30_SET)
+    },
+    'miner-wm-m53s': {
+      ops: getSharedOps(MINOR_ERROR_CODES_M53_SET)
+    },
+    'miner-wm-m63': {
+      ops: {
+        hashrate_mhs_1m_group: {
+          op: 'group',
+          src: 'last.snap.stats.hashrate_mhs.t_1m',
+          group: groupByMinerInfo
+        },
+        power_mode_group: {
+          op: 'group',
+          src: 'last.snap.config.power_mode',
+          group: groupByMinerInfo
+        },
+        power_w_group: {
+          op: 'group',
+          src: 'last.snap.stats.power_w',
+          group: groupByMinerInfo
+        },
+        status_group: {
+          op: 'group',
+          src: 'last.snap.stats.status',
+          group: groupByMinerInfo
+        }
       }
     }
   }
 }
-
-module.exports = libStats

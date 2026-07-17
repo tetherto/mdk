@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "description": "MDK umbrella repository - thin federated root orchestrator. Forwards install/build/test/lint/typecheck to the UI npm workspace (ui/) and the federated backend (backend/core, backend/workers). No shared dependency graph, no root workspaces, no Turbo - each domain keeps its own package manager and install scripts.",
   "license": "Apache-2.0",
@@ -42,6 +42,7 @@
     "clean:ui": "npm --prefix ui run clean",
     "clean:core": "npm --prefix backend/core run clean:packages",
     "clean:workers": "npm --prefix backend/workers run clean:packages",
+    "mock": "npm --prefix backend/workers run mock",
     "link-check": "npx --yes linkinator@^7.6.0 --config linkinator.config.json \"**/*.md\""
   }
 }

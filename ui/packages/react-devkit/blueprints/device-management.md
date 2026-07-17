@@ -7,7 +7,7 @@ intent: >
   actions. The starting point for "I want to manage my miners" or
   "show me what each device is doing".
 domain: device-management
-orkCapabilities:
+kernelCapabilities:
   - device-management
   - device-telemetry
 components:

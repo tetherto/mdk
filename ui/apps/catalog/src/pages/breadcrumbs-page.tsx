@@ -1,4 +1,4 @@
-import { Breadcrumbs } from '@tetherto/mdk-react-devkit/core'
+import { Breadcrumbs } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

@@ -1,5 +1,5 @@
-import { Button } from '@tetherto/mdk-react-devkit/core'
-import { type MovementData, MovementDetailsModal } from '@tetherto/mdk-react-devkit/foundation'
+import { Button } from '@tetherto/mdk-react-devkit/primitives'
+import { type MovementData, MovementDetailsModal } from '@tetherto/mdk-react-devkit/domain'
 import { useState } from 'react'
 
 import { DemoBlock } from '../../../components/demo-block'
@@ -16,7 +16,7 @@ const DEMO_MOVEMENT: MovementData = {
     tags: ['code-M-1042'],
     type: 'antminer',
     info: {
-      site: 'Paraguay',
+      site: 'Site A',
       container: 'C-12',
       serialNum: 'SN-9981',
       macAddress: 'AA:BB:CC:DD:EE:FF',

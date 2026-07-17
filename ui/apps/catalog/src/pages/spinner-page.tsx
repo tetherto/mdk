@@ -1,4 +1,4 @@
-import { Spinner } from '@tetherto/mdk-react-devkit/core'
+import { Spinner } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

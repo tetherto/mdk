@@ -3,7 +3,7 @@
 const F2MinerpoolApi = require('./f2.minerpool.api')
 const { TRANSACTION_TYPES, POOL_TYPE } = require('./utils/constants')
 const { getWorkersStats, isCurrentMonth, getMonthlyDateRanges } = require('./utils')
-const MinerpoolManager = require('../../base/lib/minerpool.manager')
+const MinerpoolManager = require('../../../../core/mdk').PoolService
 
 class F2MinerpoolManager extends MinerpoolManager {
   constructor (conf, ctx) {

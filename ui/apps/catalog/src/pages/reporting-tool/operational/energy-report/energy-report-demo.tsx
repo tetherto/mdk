@@ -2,8 +2,8 @@ import type {
   EnergyReportContainer,
   EnergyReportDateRange,
   EnergyReportMinerTypeViewProps,
-} from '@tetherto/mdk-react-devkit/foundation'
-import { EnergyReport } from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
+import { EnergyReport } from '@tetherto/mdk-react-devkit/domain'
 import { endOfDay, startOfDay, subDays } from 'date-fns'
 import { useMemo, useState } from 'react'
 
@@ -128,6 +128,37 @@ export const EnergyReportDemo = () => {
   const defaultRange = useMemo(buildDefaultRange, [])
   const [siteRange, setSiteRange] = useState<EnergyReportDateRange>(defaultRange)
 
+  const siteView = useMemo(
+    () => ({
+      dateRange: siteRange,
+      onDateRangeChange: setSiteRange,
+      consumptionLog: MOCK_CONSUMPTION_LOG,
+      nominalPowerAvailabilityMw: 600,
+      tailLog: MOCK_TAIL_LOG,
+      containers: MOCK_CONTAINERS,
+      onRefetchSnapshot: () => undefined,
+    }),
+    [siteRange],
+  )
+
+  const minerTypeView = useMemo(
+    () => ({
+      groupedConsumption: MOCK_MINER_GROUPED,
+      containers: MOCK_CONTAINERS,
+      isLoading: false,
+    }),
+    [],
+  )
+
+  const minerUnitView = useMemo(
+    () => ({
+      groupedConsumption: MOCK_UNIT_GROUPED,
+      containers: MOCK_CONTAINERS,
+      isLoading: false,
+    }),
+    [],
+  )
+
   return (
     <section className="demo-section">
       <DemoPageHeader
@@ -135,25 +166,9 @@ export const EnergyReportDemo = () => {
         description="Operational energy report — site consumption trend, power modes by miner type, and consumption by miner type / mining unit."
       />
       <EnergyReport
-        siteView={{
-          dateRange: siteRange,
-          onDateRangeChange: setSiteRange,
-          consumptionLog: MOCK_CONSUMPTION_LOG,
-          nominalPowerAvailabilityMw: 600,
-          tailLog: MOCK_TAIL_LOG,
-          containers: MOCK_CONTAINERS,
-          onRefetchSnapshot: () => undefined,
-        }}
-        minerTypeView={{
-          groupedConsumption: MOCK_MINER_GROUPED,
-          containers: MOCK_CONTAINERS,
-          isLoading: false,
-        }}
-        minerUnitView={{
-          groupedConsumption: MOCK_UNIT_GROUPED,
-          containers: MOCK_CONTAINERS,
-          isLoading: false,
-        }}
+        siteView={siteView}
+        minerTypeView={minerTypeView}
+        minerUnitView={minerUnitView}
       />
     </section>
   )

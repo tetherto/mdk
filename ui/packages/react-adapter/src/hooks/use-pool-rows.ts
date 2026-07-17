@@ -2,7 +2,7 @@ import {
   type MinerpoolExtDataEntry,
   minerpoolStatsQuery,
   type PoolMinerStats,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
@@ -17,7 +17,7 @@ export type PoolDetail = {
 export type PoolRow = {
   /** Stable React key — derived from poolType. */
   id: string
-  /** Display name in the Moria style — `minerpool-{poolType}-shelf-0`. */
+  /** Display name in the Mining OS style — `minerpool-{poolType}-shelf-0`. */
   name: string
   /** Raw poolType string (e.g. `f2pool`, `ocean`). */
   poolType: string
@@ -84,7 +84,7 @@ const buildPoolRow = (stats: PoolMinerStats, index: number): PoolRow | null => {
  * {@link usePoolStats} so subscribing here doesn't trigger an extra
  * fetch — both hooks share the cache entry.
  *
- * Names follow Moria's "minerpool-`{poolType}`-shelf-0" convention so
+ * Names follow Mining OS's "minerpool-`{poolType}`-shelf-0" convention so
  * the rows match what operators see in the production dashboard.
  *
  * @category dashboard

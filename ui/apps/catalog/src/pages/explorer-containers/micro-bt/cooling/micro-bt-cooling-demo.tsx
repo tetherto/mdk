@@ -1,6 +1,6 @@
-import { Button } from '@tetherto/mdk-react-devkit/core'
-import type { Device } from '@tetherto/mdk-react-devkit/foundation'
-import { MicroBTCooling } from '@tetherto/mdk-react-devkit/foundation'
+import { Button } from '@tetherto/mdk-react-devkit/primitives'
+import type { Device } from '@tetherto/mdk-react-devkit/domain'
+import { MicroBTCooling } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import './micro-bt-cooling-demo.scss'
@@ -35,9 +35,9 @@ const DEMO_PRESETS = {
       },
     },
   },
-  kehua: {
-    id: 'demo-kehua',
-    type: 'container-mbt-kehua',
+  alpha: {
+    id: 'demo-alpha',
+    type: 'container-mbt-alpha',
     status: 'active',
     last: {
       snap: {
@@ -187,10 +187,10 @@ export const MicroBTCoolingDemo = (): ReactElement => {
             Normal Operation
           </Button>
           <Button
-            variant={scenario === 'kehua' ? 'primary' : 'secondary'}
-            onClick={() => setScenario('kehua')}
+            variant={scenario === 'alpha' ? 'primary' : 'secondary'}
+            onClick={() => setScenario('alpha')}
           >
-            Kehua Type
+            Alpha Type
           </Button>
           <Button
             variant={scenario === 'highSpeed' ? 'primary' : 'secondary'}
@@ -230,9 +230,9 @@ export const MicroBTCoolingDemo = (): ReactElement => {
                 <p>🌡️ Normal cooling mode</p>
               </>
             )}
-            {scenario === 'kehua' && (
+            {scenario === 'alpha' && (
               <>
-                <p>🔵 Kehua-type container</p>
+                <p>🔵 Alpha-type container</p>
                 <p>📊 Circulation pump at 75%</p>
                 <p>⚡ High speed cooling</p>
                 <p>ℹ️ Speed shown in percentage</p>

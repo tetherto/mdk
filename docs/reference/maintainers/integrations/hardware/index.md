@@ -8,9 +8,9 @@ The hardware catalogue is no longer hand-maintained. It is generated from every 
 
 Per-category pages ([`miners.md`](#miners), [`containers.md`](#containers), [`powermeters.md`](#power-meters), [`sensors.md`](#sensors)) are now pointers to the generated catalogue. Pool integrations and external services remain at [`../pools.md`](../pools.md) and [`../external-services.md`](../external-services.md).
 
-Detailed facts for each integration live next to its worker package: `mdk-contract.json` for the runtime contract, and `USAGE.md` + `examples/` for prose and runnables.
+Detailed facts for each integration live next to its Worker package: `mdk-contract.json` for the runtime contract, and `USAGE.md` + `examples/` for prose and runnables.
 
-## How the workers catalogue stays correct
+## How the Workers catalogue stays correct
 
 The catalogue is regenerated from the contracts, not hand-maintained:
 
@@ -19,12 +19,12 @@ cd packages/workers
 npm run generate:catalogue
 ```
 
-The generator ([`backend/workers/scripts/generate-catalogue.js`](../../../../../backend/workers/scripts/generate-catalogue.js)) validates every contract against the vendored [`mdk-contract.schema.json`](../../../../../backend/workers/base/mdk-contract.schema.json) and reports any non-conformance for maintainers to resolve. Mock types, ports, and manager-class names are not part of the contract — those live in each worker's `USAGE.md` and the [workers manifest](../../../../../backend/workers/docs/workers-manifest.yaml).
+The generator ([`backend/workers/scripts/generate-catalogue.js`](../../../../../backend/workers/scripts/generate-catalogue.js)) validates every contract against the vendored [`mdk-contract.schema.json`](../../../../../backend/core/mdk-worker/mdk-contract.schema.json) and reports any non-conformance for maintainers to resolve. Mock types, ports, and manager-class names are not part of the contract — those live in each Worker's `USAGE.md` and the [workers manifest](../../../../../backend/workers/docs/workers-manifest.yaml).
 
 
 # Containers
 
-The container model coverage is generated from the worker contracts.
+The container model coverage is generated from the Worker contracts.
 
 - See the [Containers section of the generated catalogue](../../../../../backend/workers/docs/supported-hardware.md#containers)
 - User-facing entrypoint: [`reference/supported-hardware.md`](../../../supported-hardware.md)
@@ -33,7 +33,7 @@ The container model coverage is generated from the worker contracts.
 
 # Miners
 
-The miner model coverage is generated from the worker contracts.
+The miner model coverage is generated from the Worker contracts.
 
 - See the [Miners section of the generated catalogue](../../../../../backend/workers/docs/supported-hardware.md#miners)
 - User-facing entrypoint: [`reference/supported-hardware.md`](../../../supported-hardware.md)
@@ -41,7 +41,7 @@ The miner model coverage is generated from the worker contracts.
 
 # Power meters
 
-The power-meter model coverage is now generated from the worker contracts.
+The power-meter model coverage is now generated from the Worker contracts.
 
 - See the [Power meters section of the generated catalogue](../../../../../backend/workers/docs/supported-hardware.md#power-meters)
 - User-facing entrypoint: [`reference/supported-hardware.md`](../../../supported-hardware.md)
@@ -49,7 +49,7 @@ The power-meter model coverage is now generated from the worker contracts.
 
 # Sensors
 
-The sensor model coverage is now generated from the worker contracts.
+The sensor model coverage is now generated from the Worker contracts.
 
 - See the [Sensors section of the generated catalogue](../../../../../backend/workers/docs/supported-hardware.md#sensors)
 - User-facing entrypoint: [`reference/supported-hardware.md`](../../../supported-hardware.md)

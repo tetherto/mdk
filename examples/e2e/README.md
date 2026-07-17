@@ -5,10 +5,10 @@ End-to-end example showing how to build a mining-site dashboard on top of MDK.
 **What runs:**
 - Mock [Whatsminer M56S](../../backend/workers/miners/whatsminer/README.md) miner
   ([`mdk-e2e/server.js`](../backend/mdk-e2e/server.js))
-- [ORK](../../docs/concepts/architecture.md#the-ork-kernel) — discovers the mock Worker via DHT and exposes an IPC socket
-- [App Node](../../docs/concepts/architecture.md#app-node) — connects to ORK over IPC and serves a REST API on `:3000`
+- [Kernel](../../docs/concepts/architecture.md#the-kernel) — discovers the mock Worker via DHT and exposes an HRPC listener
+- [Gateway](../../docs/concepts/architecture.md#gateway) — connects to Kernel over HRPC (by its public key) and serves a REST API on `:3000`
   (noAuth mode)
-- Vite UI — React app using MDK UI components, polls App Node for site hashrate
+- Vite UI — React app using MDK UI components, polls Gateway for site hashrate
   ([`ui/src/SiteHashratePage.tsx`](ui/src/SiteHashratePage.tsx))
 
 ## Prerequisites
@@ -29,7 +29,7 @@ npm run install:packages
 cd -
 ```
 
-Installs `node_modules` for `mdk`, `ork`, `app-node`, `client`, `plugins`, and the
+Installs `node_modules` for `mdk`, `kernel`, `gateway`, `client`, `plugins`, and the
 `examples/mdk-e2e` backend server.
 
 #### 1.2 Worker packages
@@ -40,7 +40,7 @@ npm run install:packages
 cd -
 ```
 
-Installs `node_modules` for `workers/base` and all worker drivers (including
+Installs `node_modules` for `workers/base` and all Worker drivers (including
 `workers/miners/whatsminer`) that `mdk-e2e/server.js` imports at runtime.
 
 ### 2. Build the MDK UI packages
@@ -63,7 +63,7 @@ cd -
 ```
 
 > [!NOTE]
-> The example runs in `noAuth` mode — the app-node skips JWT validation and the UI
+> The example runs in `noAuth` mode — the gateway skips JWT validation and the UI
 > skips the Google login screen. No OAuth credentials are required. To add Google
 > OAuth to your own deployment, see
 > [Add real auth (Google OAuth)](../../docs/tutorials/get-started/dashboard.md).
@@ -83,7 +83,7 @@ start all
 ```
 
 This starts, with a short delay between each:
-1. **app-node** — ORK + mock miner + HTTP server on `http://localhost:3000`
+1. **gateway** — Kernel + mock miner + HTTP server on `http://localhost:3000`
 2. **UI dev server** — Vite on `http://localhost:3030`
 
 Once the UI service starts (watch for the Vite ready message), open:
@@ -106,10 +106,10 @@ Mock miner (TCP :14028)
 MDK Worker (Hyperswarm DHT)
       │  MDK Protocol over HRPC
       ▼
-ORK (in-process, same Node process as app-node)
-      │  IPC (mdk-client)
+Kernel (in-process, same Node process as gateway)
+      │  HRPC (mdk-client, by kernel public key)
       ▼
-app-node (HTTP :3000, noAuth mode)
+gateway (HTTP :3000, noAuth mode)
   └─ GET  /site-monitor/hashrate   → aggregate hashrate across all devices
       │  no auth token required (noAuth mode)
       ▼
@@ -128,11 +128,11 @@ No custom component library or hand-rolled CSS is needed.
 
 | Component | Package | Purpose |
 |---|---|---|
-| `Button` | `mdk-react-devkit/core` | Sign-in / Sign-out actions |
-| `Typography` | `mdk-react-devkit/core` | All text and headings |
-| `Spinner` | `mdk-react-devkit/core` | Loading state |
-| `LineChart` | `mdk-react-devkit/core` | Time-series data visualization |
-| `MetricCard` | `mdk-react-devkit/foundation` | Hashrate / Power / Device count |
+| `Button` | `mdk-react-devkit/primitives` | Sign-in / Sign-out actions |
+| `Typography` | `mdk-react-devkit/primitives` | All text and headings |
+| `Spinner` | `mdk-react-devkit/primitives` | Loading state |
+| `LineChart` | `mdk-react-devkit/primitives` | Time-series data visualization |
+| `MetricCard` | `mdk-react-devkit/domain` | Hashrate / Power / Device count |
 | `MdkProvider` | `mdk-react-adapter` | QueryClient + API base URL context |
 | `useAuth` | `mdk-react-adapter` | Token store (set / read / clear) |
 | `useQuery` | `mdk-react-adapter` | Data fetching with polling |
@@ -145,8 +145,8 @@ To add a new data panel, follow the plugin pattern shown in
 
 1. Create a plugin directory with an `mdk-plugin.json` manifest
 2. Add a controller file referenced from the manifest
-3. Pass the plugin directory to `startAppNode()` via `extraPluginDirs`
+3. Pass the plugin directory to `startGateway()` via `extraPluginDirs`
 4. Call the new endpoint from the UI with `useQuery` + the `Authorization` header
 5. Render with MDK UI components
 
-See the [App Node plugin guide](../../docs/how-to/app-node/plugins.md) for the full manifest schema and controller contract.
+See the [Gateway plugin guide](../../docs/guides/gateway/plugins.md) for the full manifest schema and controller contract.

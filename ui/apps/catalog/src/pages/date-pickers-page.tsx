@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import type { JSX } from 'react'
-import type { DateRange } from '@tetherto/mdk-react-devkit/core'
+import type { DateRange } from '@tetherto/mdk-react-devkit/primitives'
 import {
   CURRENCY,
   DataLabel,
   DatePicker,
   DateRangePicker,
   UNITS,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 
 import { DemoBlock } from '../components/demo-block'
 import { DemoPageHeader } from '../components/demo-page-header'

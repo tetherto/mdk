@@ -1,5 +1,9 @@
-// Top-level SCSS entry for the devkit.
+// Primitives stylesheet.
 // Builds to dist/styles.css and is exported as `@tetherto/mdk-react-devkit/styles.css`.
+//
+// Carries the design tokens plus the styles for the generic primitives
+// (Button, Card, Input, charts, …). Apps that also use the mining-domain
+// components must additionally import
+// `@tetherto/mdk-react-devkit/styles-domain.css` (loaded after this file).
 
-@forward "./core/styles/index";
-@forward "./foundation/styles/index";
+@forward "./primitives/styles/index";

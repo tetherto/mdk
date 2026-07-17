@@ -1,4 +1,4 @@
-import { ArrowIcon, Indicator } from '@tetherto/mdk-react-devkit/core'
+import { ArrowIcon, Indicator } from '@tetherto/mdk-react-devkit/primitives'
 
 export const IndicatorsExample = (): React.ReactElement => {
   return (

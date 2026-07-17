@@ -1,0 +1,313 @@
+@use '@primitives/styles/mixins' as *;
+
+// Exact the reference app color values
+// EBONY = #0f0f0f  (modal body background)
+// SIMPLE_BLACK = #000000 (header background)
+// WHITE_ALPHA_01 = #FFFFFF1A (border)
+
+$sidebar-width: 520px;
+$sidebar-min-width: 520px;
+
+// ---------------------------------------------------------------------------
+// Backdrop (shown when drawer is open, unpinned only)
+// ---------------------------------------------------------------------------
+.mdk-actions-sidebar__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: rgba(0, 0, 0, 0.45);
+  animation: mdkBackdropFadeIn 0.22s ease forwards;
+}
+
+@keyframes mdkBackdropFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ---------------------------------------------------------------------------
+// Slide-in animation (mirrors Ant Design modal move-right)
+// ---------------------------------------------------------------------------
+@keyframes mdkSidebarSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0.3;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Drawer shell
+// ---------------------------------------------------------------------------
+.mdk-actions-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  width: $sidebar-width;
+  min-width: $sidebar-min-width;
+  max-width: 100vw;
+  height: 100vh;
+  transform-origin: 217px 116px;
+  padding: 0px 20px 24px;
+  // Exact the reference app: EBONY background, no border-radius, left border
+  background-color: #000;
+  border-left: 1px solid #ffffff1a;
+  border-radius: 0;
+
+  @include flex_column;
+
+  // Off-screen by default
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &--open {
+    animation: mdkSidebarSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  // Pinned: position/sizing are controlled by the shell's
+  // .mdk-ui-shell-outlet--sidebar-pinned rule (position:relative !important,
+  // flex:1). This block only changes visual appearance.
+  &--pinned {
+    transform: none;
+    opacity: 1;
+    transition: none;
+    animation: none;
+    background-color: var(--mdk-color-surface, #0a0a09);
+    border-left: none;
+
+    .mdk-actions-sidebar__header {
+      background-color: var(--mdk-color-surface, #0a0a09);
+    }
+
+    .mdk-actions-sidebar__body {
+      background-color: var(--mdk-color-surface, #0a0a09);
+    }
+  }
+
+  @media (max-width: 475px) {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Header — SIMPLE_BLACK background matching the reference app
+// ---------------------------------------------------------------------------
+.mdk-actions-sidebar__header {
+  @include flex_align;
+
+  flex-shrink: 0;
+  gap: 10px;
+  padding: 18px 20px 24px;
+  border-bottom: 1px solid #ffffff1a;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--mdk-color-text-primary, #f5f5f0);
+}
+
+.mdk-actions-sidebar__title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--mdk-color-text-primary, #f5f5f0);
+}
+
+// ---------------------------------------------------------------------------
+// Scrollable body
+// ---------------------------------------------------------------------------
+.mdk-actions-sidebar__body {
+  @include flex_column;
+
+  flex: 1;
+  gap: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 0 24px;
+  padding-right: 12px;
+  margin-top: 16px;
+
+  // Pinned inner area height (mirrors the reference app's calc(100vh - 187px))
+  .mdk-actions-sidebar--pinned & {
+    height: calc(100vh - var(--mdk-app-header-height, 75px) - 85px);
+  }
+}
+
+.mdk-actions-sidebar__empty {
+  padding: 32px 20px;
+  font-size: 14px;
+  color: var(--mdk-color-white-5, rgba(255,255,255,0.35));
+  text-align: center;
+}
+
+// ---------------------------------------------------------------------------
+// Section (used for In-review / Requested groups)
+// ---------------------------------------------------------------------------
+.mdk-actions-sidebar__section {
+  @include flex_column;
+
+  border-bottom: 1px solid #ffffff1a;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.mdk-actions-sidebar__section-header {
+  @include flex_align;
+
+  gap: 8px;
+  padding: 14px 20px 10px;
+}
+
+.mdk-actions-sidebar__section-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mdk-color-white-5, rgba(255,255,255,0.35));
+}
+
+.mdk-actions-sidebar__section-count {
+  @include flex_center;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  border-radius: 9px;
+  color: var(--mdk-color-primary);
+  background-color: color-mix(in srgb, var(--mdk-color-primary) 20%, transparent);
+}
+
+.mdk-actions-sidebar__section-body {
+  @include flex_column;
+
+  gap: 0;
+  padding: 0 12px 12px;
+}
+
+.mdk-actions-sidebar__section-footer {
+  @include flex_align;
+
+  gap: 8px;
+  padding: 8px 0px;
+  justify-content: flex-end;
+}
+
+// ---------------------------------------------------------------------------
+// Unified action card — shared by every section (drafts / in-review / requested)
+// ---------------------------------------------------------------------------
+.mdk-actions-sidebar__cards {
+  @include flex_column;
+
+  gap: 10px;
+}
+
+.mdk-actions-sidebar__card {
+  @include flex_column;
+
+  gap: 0;
+  padding: 25px;
+  background: rgb(22, 21, 20);
+  border-radius: 0;
+  border: 1px solid #424242;
+}
+
+.mdk-actions-sidebar__card__submitter {
+  @include flex_align_between;
+
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  word-break: break-all;
+
+  svg {
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.35);
+  }
+}
+
+.mdk-actions-sidebar__card__title {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 14px;
+  letter-spacing: 1.32px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 10px;
+}
+
+.mdk-actions-sidebar__card__badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 4px 8px;
+  min-width: 125px;
+  max-width: fit-content;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  background-color: rgba(255, 255, 255, 0.06);
+
+  // Local draft, not yet submitted (grey — the default)
+  &--draft {
+    color: rgba(255, 255, 255, 0.35);
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  // My submitted action (red)
+  &--submitted {
+    color: #e05252;
+    background-color: rgba(215, 71, 71, 0.15);
+  }
+
+  // Another user's action awaiting my vote (blue)
+  &--requested {
+    color: rgb(59, 130, 246);
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+}
+
+.mdk-actions-sidebar__card__description {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  letter-spacing: 1.32px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 10px;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.mdk-actions-sidebar__card__meta {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 10px;
+  margin-bottom: 0;
+  word-break: break-all;
+}
+
+.mdk-actions-sidebar__card__buttons {
+  @include flex_align;
+
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+// ---------------------------------------------------------------------------
+// Confirmation dialog body
+// ---------------------------------------------------------------------------
+.mdk-actions-sidebar__confirm-text {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--mdk-color-text-secondary, #d9d9d9);
+}

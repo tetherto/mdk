@@ -39,14 +39,6 @@
   font-display: optional;
 }
 
-@font-face {
-  font-family: 'JetBrains Mono';
-  src: url('./fonts/JetBrainsMono-Thin.woff2') format('woff2');
-  font-weight: 100;
-  font-style: normal;
-  font-display: optional;
-}
-
 /* Override CSS variable to use JetBrains Mono */
 :root {
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;

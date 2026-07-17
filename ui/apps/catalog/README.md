@@ -1,7 +1,7 @@
 # @tetherto/mdk-catalog-ui
 
 Catalog application showcasing the `@tetherto/mdk-react-devkit` component
-library along with the headless core (`@tetherto/mdk-ui-core`) and its
+library along with the headless core (`@tetherto/mdk-ui-foundation`) and its
 React bindings (`@tetherto/mdk-react-adapter`).
 
 ## Getting Started
@@ -62,7 +62,7 @@ copy(window.__MDK_BUILD__)
 ```
 
 The page title also carries the version suffix (for example,
-`MDK UI Toolkit Catalog · v0.3.0`), so you can identify the running build at a glance
+`MDK UI Toolkit Catalog · v0.4.0`), so you can identify the running build at a glance
 without opening devtools.
 
 ### Shape

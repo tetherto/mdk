@@ -1,4 +1,4 @@
-import { actionsStore, authStore, devicesStore, notificationStore } from '@tetherto/mdk-ui-core'
+import { actionsStore, authStore, devicesStore, notificationStore } from '@tetherto/mdk-ui-foundation'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useActions, useAuth, useDevices, useNotifications, useTimezone } from './store-hooks'

@@ -9,8 +9,8 @@
  * the component, not patterns to copy into real call sites.
  */
 
-import { UNITS } from '@tetherto/mdk-react-devkit/core'
-import type { TimelineItemData } from '@tetherto/mdk-react-devkit/foundation'
+import { UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import type { TimelineItemData } from '@tetherto/mdk-react-devkit/domain'
 
 export type SelectedContainersMap = Record<string, unknown>
 

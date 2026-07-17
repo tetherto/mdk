@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { PermissionCheck } from '@tetherto/mdk-ui-core'
+import type { PermissionCheck } from '@tetherto/mdk-ui-foundation'
 import { useIsFeatureEditingEnabled } from '../use-is-feature-editing-enabled'
 
 vi.mock('../use-permissions', () => ({

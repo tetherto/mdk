@@ -19,9 +19,9 @@
  * shape to chart-ready points.
  */
 
-import { CURRENCY, UNITS } from '@tetherto/mdk-react-devkit/core'
-import type { LineChartCardData } from '@tetherto/mdk-react-devkit/foundation'
-import { WEBAPP_NAME } from '@tetherto/mdk-react-devkit/foundation'
+import { CURRENCY, UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import type { LineChartCardData } from '@tetherto/mdk-react-devkit/domain'
+import { WEBAPP_NAME } from '@tetherto/mdk-react-devkit/domain'
 
 const now = Date.now()
 const HOUR = 3_600_000

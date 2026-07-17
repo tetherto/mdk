@@ -24,7 +24,7 @@ import type {
   ComponentMeta,
   DomainContext,
   HookMeta,
-  OrkCapability,
+  KernelCapability,
 } from "./registry-types.ts";
 import { BLUEPRINTS_SCHEMA_VERSION } from "./registry-types.ts";
 
@@ -156,7 +156,7 @@ const requireStringList = (fm: Frontmatter, key: string): string[] => {
 const buildBlueprintIndexes = (blueprints: BlueprintMeta[]): BlueprintIndexes => {
   const byId: Record<string, number> = {};
   const byDomain: Record<string, string[]> = {};
-  const byOrkCapability: Record<string, string[]> = {};
+  const byKernelCapability: Record<string, string[]> = {};
   const byComponent: Record<string, string[]> = {};
   const pushUnique = (bucket: Record<string, string[]>, key: string, value: string) => {
     if (!bucket[key]) bucket[key] = [];
@@ -165,10 +165,10 @@ const buildBlueprintIndexes = (blueprints: BlueprintMeta[]): BlueprintIndexes =>
   blueprints.forEach((b, i) => {
     byId[b.id] = i;
     pushUnique(byDomain, b.domain, b.id);
-    for (const cap of b.orkCapabilities) pushUnique(byOrkCapability, cap, b.id);
+    for (const cap of b.kernelCapabilities) pushUnique(byKernelCapability, cap, b.id);
     for (const comp of b.components) pushUnique(byComponent, comp, b.id);
   });
-  return { byId, byDomain, byOrkCapability, byComponent };
+  return { byId, byDomain, byKernelCapability, byComponent };
 };
 
 export const buildBlueprints = (args: BuildBlueprintsArgs): BlueprintBuildResult => {
@@ -183,7 +183,7 @@ export const buildBlueprints = (args: BuildBlueprintsArgs): BlueprintBuildResult
         package: packageName,
         generatedAt: new Date().toISOString(),
         blueprints: [],
-        indexes: { byId: {}, byDomain: {}, byOrkCapability: {}, byComponent: {} },
+        indexes: { byId: {}, byDomain: {}, byKernelCapability: {}, byComponent: {} },
       },
       errors,
     };
@@ -222,7 +222,7 @@ export const buildBlueprints = (args: BuildBlueprintsArgs): BlueprintBuildResult
     if (id && seenIds.has(id)) errors.push(`${file}: duplicate id \`${id}\``);
     if (id) seenIds.add(id);
 
-    const orkCapabilities = requireStringList(fm, "orkCapabilities") as OrkCapability[];
+    const kernelCapabilities = requireStringList(fm, "kernelCapabilities") as KernelCapability[];
     const referencedComponents = requireStringList(fm, "components");
     const referencedHooks = requireStringList(fm, "hooks");
 
@@ -247,7 +247,7 @@ export const buildBlueprints = (args: BuildBlueprintsArgs): BlueprintBuildResult
       title,
       intent,
       domain,
-      orkCapabilities,
+      kernelCapabilities,
       components: referencedComponents,
       hooks: referencedHooks,
       demoRoute: typeof fm.demoRoute === "string" ? fm.demoRoute : undefined,

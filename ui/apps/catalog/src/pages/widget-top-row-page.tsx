@@ -1,5 +1,5 @@
-import { UNITS } from '@tetherto/mdk-react-devkit/core'
-import { WidgetTopRow } from '@tetherto/mdk-react-devkit/foundation'
+import { UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import { WidgetTopRow } from '@tetherto/mdk-react-devkit/domain'
 
 import type { JSX } from 'react'
 

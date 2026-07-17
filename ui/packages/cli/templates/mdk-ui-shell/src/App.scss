@@ -1,5 +1,8 @@
 @layer app {
   .mdk-ui-shell-root {
+    --mdk-app-header-height: 75px;
+    --mdk-actions-sidebar-width: 520px;
+
     display: grid;
     grid-template-rows: auto 1fr;
     /* Fixed viewport height + clip together pin the header and sidebar:
@@ -26,6 +29,32 @@
     padding: 2rem;
   }
 
+  .mdk-ui-shell-outlet {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: row;
+    min-width: 0;
+    min-height: 0;
+
+    &--sidebar-pinned {
+      .mdk-ui-shell-main {
+        flex: 3;
+      }
+
+      .mdk-actions-sidebar--pinned {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        height: auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        flex: 1;
+        overflow-y: auto;
+      }
+    }
+  }
+
   .mdk-ui-shell-main {
     position: relative;
     flex: 1 1 auto;
@@ -36,6 +65,37 @@
 
     @media (max-width: 768px) {
       padding: 1rem;
+    }
+  }
+
+  /* Unified page shell — every route renders inside `<PageLayout>` so the
+   * header sits at the same height with the same title style on every page. */
+  .mdk-ui-shell-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 2.25rem;
+    }
+
+    &__title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1.2;
+      color: var(--mdk-color-text-primary, #f5f5f0);
+    }
+
+    &__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
   }
 
@@ -186,6 +246,40 @@
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--mdk-color-primary);
+    }
+  }
+
+  .mdk-ui-shell-explorer__detail {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px;
+  }
+
+  .mdk-ui-shell-explorer__detail-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .mdk-ui-shell-explorer__detail-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+
+    dt {
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--mdk-color-text-muted, #888);
+    }
+
+    dd {
+      margin: 0;
+      font-size: 14px;
+      color: var(--mdk-color-text-secondary, #d9d9d9);
     }
   }
 

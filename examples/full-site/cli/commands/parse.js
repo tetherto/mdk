@@ -2,8 +2,8 @@
 
 // Parse a REPL line into { command, args, flags }.
 //   up --miners 3            -> { command:'up', args:[], flags:{miners:'3'} }
-//   start worker miner       -> { command:'start', args:['worker','miner'], flags:{} }
-//   logs ork -f --grep boot  -> { command:'logs', args:['ork'], flags:{f:true, grep:'boot'} }
+//   start worker whatsminer       -> { command:'start', args:['worker','whatsminer'], flags:{} }
+//   logs kernel -f --grep boot  -> { command:'logs', args:['kernel'], flags:{f:true, grep:'boot'} }
 //
 // A `--flag` consumes the next token as its value unless that token is itself a
 // flag, in which case it is a boolean. `-x` short flags are always boolean.

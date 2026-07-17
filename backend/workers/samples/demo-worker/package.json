@@ -1,0 +1,27 @@
+{
+  "name": "@tetherto/mdk-worker-demo",
+  "version": "0.1.0",
+  "description": "Third-party plugin-authoring demo Worker Plugin with its own SQLite persistence — hosted on WorkerRuntime by a caller (see examples/backend/demo-worker-caller), never depends on WorkerRuntime itself",
+  "keywords": [
+    "tether"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engine": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit",
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js",
+    "test:coverage": "NODE_ENV=test brittle --coverage tests/unit/*.test.js"
+  },
+  "dependencies": {
+    "debug": "4.4.1"
+  },
+  "devDependencies": {
+    "brittle": "3.16.3",
+    "standard": "17.1.2"
+  }
+}

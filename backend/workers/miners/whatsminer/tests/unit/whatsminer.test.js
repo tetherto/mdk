@@ -2,7 +2,7 @@
 
 const test = require('brittle')
 const Whatsminer = require('../../lib/whatsminer')
-const { STATUS, POWER_MODE } = require('../../../base/lib/utils/constants')
+const { STATUS, POWER_MODE } = require('../../../../../core/mdk').constants
 
 function makeWhatsminer (opts = {}) {
   const mockRpc = { request: async () => '{}', stop: async () => {} }

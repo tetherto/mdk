@@ -1,4 +1,4 @@
-import { ActionButton } from '@tetherto/mdk-react-devkit/core'
+import { ActionButton } from '@tetherto/mdk-react-devkit/primitives'
 
 import { useDemoToast } from '../utils/use-demo-toast'
 

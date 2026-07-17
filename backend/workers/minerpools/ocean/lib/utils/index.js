@@ -4,7 +4,7 @@ const {
   isCurrentMonth,
   convertMsToSeconds,
   getTimeRanges
-} = require('../../../base/lib/utils/time')
+} = require('../../../../../core/mdk/lib/services/pool-utils/time')
 
 const getWorkersStats = (data, username) => {
   return Object.entries(data.workers).map(([name, [worker]]) => {

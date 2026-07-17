@@ -1,4 +1,4 @@
-import { Button } from '@tetherto/mdk-react-devkit/core'
+import { Button } from '@tetherto/mdk-react-devkit/primitives'
 import { PlusIcon } from '@radix-ui/react-icons'
 
 import type { JSX } from 'react'

@@ -1,5 +1,5 @@
-import { DoughnutChart } from '@tetherto/mdk-react-devkit/core'
-import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/core'
+import { DoughnutChart } from '@tetherto/mdk-react-devkit/primitives'
+import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/primitives'
 import {
   DOUGHNUT_CHART_MINER_STATUS,
   DOUGHNUT_CHART_MINER_TYPES,

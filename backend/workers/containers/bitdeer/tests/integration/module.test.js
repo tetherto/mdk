@@ -1,12 +1,10 @@
 'use strict'
 
 const net = require('net')
-const path = require('path')
 const { test } = require('brittle')
 const { promiseSleep } = require('@bitfinex/lib-js-util-promise')
 const { Aedes } = require('aedes')
 const Bitdeer = require('../../lib/bitdeer')
-const BitdeerManager = require('../../lib/bitdeer.manager')
 const libAlerts = require('../../lib/templates/alerts')
 const libStats = require('../../lib/templates/stats')
 const { MAPPINGS, ERROR_MAP, DEVICE_TYPE_MAP, DEFAULT_MQTT_PORT } = require('../../lib/utils/constants')
@@ -24,27 +22,16 @@ const E2E_TYPES = [
   { mockType: 'D40_S19xp', model: 's19xp' }
 ]
 
-test('package exports type managers', (t) => {
+test('package exports plugin, boot and Bitdeer', (t) => {
   const pkg = require('../../index.js')
-  t.ok(pkg.BD_D40_A1346, 'BD_D40_A1346 exported')
-  t.ok(pkg.BD_D40_M30, 'BD_D40_M30 exported')
-  t.ok(pkg.BD_D40_M56, 'BD_D40_M56 exported')
-  t.ok(pkg.BD_D40_S19XP, 'BD_D40_S19XP exported')
+  t.ok(pkg.plugin && pkg.plugin.contract, 'plugin with contract')
+  t.is(typeof pkg.startBitdeerWorker, 'function', 'startBitdeerWorker is function')
+  t.is(pkg.Bitdeer, Bitdeer, 'Bitdeer exported')
 })
 
-test('type managers extend BitdeerManager', (t) => {
-  const BD_D40_M56 = require('../../index.js').BD_D40_M56
-  const mgr = new BD_D40_M56({}, { rack: 'r1' })
-  t.is(mgr.getThingType(), 'container-bd-d40-m56', 'getThingType includes d40-m56')
-  t.ok(mgr.getThingTags().includes('bitdeer'), 'getThingTags includes bitdeer')
-})
-
-test('Bitdeer and BitdeerManager type alignment', (t) => {
-  const ctx = { rack: 'test-rack' }
-  const manager = new BitdeerManager({}, ctx)
+test('Bitdeer device type alignment', (t) => {
   const server = { subscribe: () => {}, publish: () => {} }
   const container = new Bitdeer({ server, containerId: 'C1', type: 'm56' })
-  t.is(manager.getThingType(), 'container-bd', 'manager reports container-bd type')
   t.is(container._type, 'container', 'container instance has type container')
 })
 
@@ -57,41 +44,6 @@ test('constants and templates load', (t) => {
   t.ok(libAlerts.specs.container !== undefined, 'alerts container spec available')
   t.ok(libStats.specs.container !== undefined, 'stats container spec available')
   t.ok(libStats.specs.container.ops.container_specific_stats_group !== undefined, 'stats container_specific_stats_group available')
-})
-
-test('BitdeerManager init with mocked facs completes', async (t) => {
-  const emptyAsyncIterable = { [Symbol.asyncIterator]: async function * () {} }
-  const pkgRoot = path.join(__dirname, '../..')
-  const ctx = {
-    rack: 'integration-rack',
-    mqttPort: 18983,
-    storeDir: null,
-    root: pkgRoot,
-    facs: {
-      store_s1: {
-        getBee: async () => ({
-          ready: async () => {},
-          sub: () => ({ createReadStream: () => emptyAsyncIterable })
-        })
-      },
-      interval_0: { add: () => {} },
-      scheduler_0: { add: () => {} },
-      mdkThgWriteCalls_0: { whitelistActions: () => {} }
-    }
-  }
-  const manager = new BitdeerManager({}, ctx)
-  await manager.init()
-  t.teardown(() => {
-    if (manager.mqtt_m0 && manager.mqtt_m0.server && typeof manager.mqtt_m0.server.close === 'function') {
-      manager.mqtt_m0.server.close()
-    }
-    if (manager.mqtt_m0 && manager.mqtt_m0.aedes && typeof manager.mqtt_m0.aedes.close === 'function') {
-      manager.mqtt_m0.aedes.close()
-    }
-  })
-  t.ok(manager._initialized, 'manager initialized')
-  t.ok(manager.rackId && typeof manager.rackId === 'string', 'rackId set')
-  t.ok(manager.mqtt_m0, 'mqtt_m0 facility created')
 })
 
 for (let i = 0; i < E2E_TYPES.length; i++) {

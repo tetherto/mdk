@@ -1,0 +1,34 @@
+{
+  "name": "@tetherto/mdk-site-backend-example",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MDK example: run every backend worker family with registered devices connecting to mocks, orchestrated as separate processes by PM2 or Docker.",
+  "keywords": [
+    "tether",
+    "mdk",
+    "example"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "setup": "npm --prefix ../.. run setup:core && npm --prefix ../.. run setup:workers && npm install",
+    "start:pm2": "pm2 start deploy/ecosystem.config.js",
+    "stop:pm2": "pm2 delete deploy/ecosystem.config.js",
+    "docker:build": "docker build -f deploy/Dockerfile -t mdk-site-backend ../..",
+    "start:docker": "docker compose -f deploy/docker-compose.yml up -d --build",
+    "stop:docker": "docker compose -f deploy/docker-compose.yml down -v",
+    "lint": "standard",
+    "test": "NODE_ENV=test brittle tests/unit/*.test.js"
+  },
+  "dependencies": {
+    "debug": "^4.3.4"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0",
+    "standard": "^17.1.0"
+  }
+}

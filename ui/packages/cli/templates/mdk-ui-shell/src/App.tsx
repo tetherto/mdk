@@ -1,5 +1,5 @@
 import {
-  useActiveIncidents,
+  useActions,
   useDashboardTimeRange,
   usePoolStats,
   useSiteContainerCapacity,
@@ -10,14 +10,18 @@ import {
   useTokenPolling,
 } from '@tetherto/mdk-react-adapter'
 import {
+  ActionsSidebar,
   AlarmsBellButton,
   AppHeader,
+  ContainerWidgetsNavIcon,
   HeaderConsumptionBox,
   HeaderEfficiencyBox,
   HeaderHashrateBox,
   HeaderMinersBox,
   HeaderStatsBar,
   MdkWordmark,
+  OperationsNavIcon,
+  PendingActionsButton,
   Sidebar,
 } from '@tetherto/mdk-react-devkit'
 import { useMemo } from 'react'
@@ -29,6 +33,27 @@ import { ROUTE_PATHS } from './constants/routes'
 import { ROUTES } from './routes'
 
 import './App.scss'
+
+// Derived once from the ROUTES constant — the single source of truth managed
+// by `mdk-ui add/remove page`. When a page is removed, its header icon and
+// any associated sidebar component disappear automatically without any further
+// changes to this file.
+//
+// Alerts is loaded lazily from the managed ROUTES registry, so the first
+// `/alerts` visit shows a brief Suspense fallback (a deliberate trade-off for
+// add/remove-ability). The header bell count comes from `minerStats.alertCounts`
+// (the `alerts_aggr` server-side aggregate, matching Mining OS) rather than the
+// list-things-derived `useActiveIncidents`, so it reflects the true total.
+const HAS_ALERTS = ROUTES.some((r) => r.path === ROUTE_PATHS.ALERTS)
+const HAS_POOL_MANAGER = ROUTES.some((r) => r.path === ROUTE_PATHS.POOL_MANAGER)
+
+// The actions draft/review flow (PendingActionsButton + ActionsSidebar) is
+// shared by every page that queues device writes — Pool Manager and the
+// Operational Centre pages (Site Overview, Explorer). Mount it whenever any of
+// them is present so the drawer is available across those pages.
+const HAS_ACTIONS =
+  HAS_POOL_MANAGER ||
+  ROUTES.some((r) => r.path === ROUTE_PATHS.EXPLORER || r.path === ROUTE_PATHS.SITE_OVERVIEW)
 
 export const App = () => {
   const navigate = useNavigate()
@@ -53,34 +78,69 @@ export const App = () => {
   const minerStats = useSiteMinerStats()
   const containerCapacity = useSiteContainerCapacity()
   const poolStats = usePoolStats()
-  const incidents = useActiveIncidents()
+  // `alertCounts` comes from `alerts_aggr` in the realtime tail-log — the
+  // same server-side aggregate Mining OS uses, which reflects the true total of
+  // all individual alert instances (not capped by list-things device limit).
+  const incidentCounts = minerStats.alertCounts
+  const { sidebarPinned } = useActions()
 
-  const incidentCounts = useMemo(() => {
-    const items = incidents.data ?? []
-    let critical = 0
-    let high = 0
-    let medium = 0
-    for (const row of items) {
-      const sev = row.severity?.toLowerCase()
-      if (sev === 'critical') critical += 1
-      else if (sev === 'high') high += 1
-      else if (sev === 'medium') medium += 1
-    }
-    return { critical, high, medium }
-  }, [incidents.data])
+  // Dashboard is hardcoded in the router; everything else (Alerts, Pool
+  // Manager, user-added pages) is pre-seeded/managed in `./routes`.
+  const sidebarItems = useMemo(() => {
+    // Operational Centre pages nest under an "Operations Centre > Mining" group
+    // (matching Mining OS). They are still managed as flat routes by `mdk-ui
+    // add/remove page`; this only groups them for display. If one is removed the
+    // group shrinks; if both are removed it disappears.
+    const opCentrePaths: string[] = [ROUTE_PATHS.SITE_OVERVIEW, ROUTE_PATHS.EXPLORER]
+    const isOpCentre = (path: string): boolean => opCentrePaths.includes(path)
 
-  const sidebarItems = useMemo(
-    () => [
-      { id: ROUTE_PATHS.DASHBOARD, label: 'Dashboard', icon: getNavIcon(ROUTE_PATHS.DASHBOARD) },
-      { id: ROUTE_PATHS.ALERTS, label: 'Alerts', icon: getNavIcon(ROUTE_PATHS.ALERTS) },
-      ...ROUTES.map((route) => ({
-        id: route.path,
-        label: route.label,
-        icon: getNavIcon(route.path),
-      })),
-    ],
-    [],
-  )
+    const topLevelItems = ROUTES.filter((route) => !isOpCentre(route.path)).map((route) => {
+      if (route.path === ROUTE_PATHS.POOL_MANAGER) {
+        return {
+          id: route.path,
+          label: route.label,
+          icon: getNavIcon(route.path),
+          items: [
+            { id: ROUTE_PATHS.POOL_MANAGER, label: 'Dashboard' },
+            { id: `${ROUTE_PATHS.POOL_MANAGER}?view=pools`, label: 'Pools' },
+            { id: `${ROUTE_PATHS.POOL_MANAGER}?view=sites-overview`, label: 'Sites Overview' },
+            { id: `${ROUTE_PATHS.POOL_MANAGER}?view=miner-explorer`, label: 'Miner Explorer' },
+          ],
+        }
+      }
+      return { id: route.path, label: route.label, icon: getNavIcon(route.path) }
+    })
+
+    const miningItems = ROUTES.filter((route) => isOpCentre(route.path)).map((route) => ({
+      id: route.path,
+      label: route.label,
+      icon: getNavIcon(route.path),
+    }))
+
+    const operationsCentre = miningItems.length
+      ? [
+          {
+            id: 'operations-centre',
+            label: 'Operations Centre',
+            icon: <OperationsNavIcon />,
+            items: [
+              {
+                id: 'operations-centre/mining',
+                label: 'Mining',
+                icon: <ContainerWidgetsNavIcon />,
+                items: miningItems,
+              },
+            ],
+          },
+        ]
+      : []
+
+    return [
+      { id: ROUTE_PATHS.DASHBOARD, label: 'Main Dashboard', icon: getNavIcon(ROUTE_PATHS.DASHBOARD) },
+      ...operationsCentre,
+      ...topLevelItems,
+    ]
+  }, [])
 
   return (
     <div className="mdk-ui-shell-root">
@@ -88,15 +148,18 @@ export const App = () => {
         logo={<MdkWordmark size="md" />}
         actions={
           <>
-            <AlarmsBellButton
-              counts={incidentCounts}
-              onClick={() => {
-                void navigate(ROUTE_PATHS.ALERTS)
-              }}
-              onSeverityClick={(severity) => {
-                void navigate(`${ROUTE_PATHS.ALERTS}?severity=${severity}`)
-              }}
-            />
+            {HAS_ACTIONS && <PendingActionsButton />}
+            {HAS_ALERTS && (
+              <AlarmsBellButton
+                counts={incidentCounts}
+                onClick={() => {
+                  void navigate(ROUTE_PATHS.ALERTS)
+                }}
+                onSeverityClick={(severity: string) => {
+                  void navigate(`${ROUTE_PATHS.ALERTS}?severity=${severity}`)
+                }}
+              />
+            )}
             <UserMenu
               onSignOut={() => {
                 void navigate(ROUTE_PATHS.SIGN_IN, { replace: true })
@@ -125,15 +188,20 @@ export const App = () => {
       <div className="mdk-ui-shell-content">
         <Sidebar
           items={sidebarItems}
-          activeId={location.pathname}
+          activeId={location.pathname + location.search}
           onItemClick={(item) => {
             void navigate(item.id)
           }}
           defaultExpanded
         />
-        <main className="mdk-ui-shell-main">
-          <Outlet />
-        </main>
+
+        <div className={`mdk-ui-shell-outlet${HAS_ACTIONS && sidebarPinned ? ' mdk-ui-shell-outlet--sidebar-pinned' : ''}`}>
+          <main className="mdk-ui-shell-main">
+            <Outlet />
+          </main>
+
+          {HAS_ACTIONS && <ActionsSidebar />}
+        </div>
       </div>
     </div>
   )

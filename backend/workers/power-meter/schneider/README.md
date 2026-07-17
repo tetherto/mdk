@@ -1,33 +1,44 @@
-# @tetherto/powermeter-schneider
+# @tetherto/mdk-worker-schneider
 
-MDK worker for Schneider Electric power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports P3U30 and PM5340 models.
+MDK Worker for Schneider Electric power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports P3U30 and PM5340 models.
 
 ## Supported Models
 
-| Export | Models |
+| `model` value | Model |
 |--------|--------|
-| `SCHNEIDER_P3U30` | EasyLogic PM3250 (P3U30) |
-| `SCHNEIDER_PM5340` | Acti9 PowerTag / PM5340 |
+| `p3u30` | EasyLogic PM3250 (P3U30) |
+| `pm5340` | Acti9 PowerTag / PM5340 |
 
 ## Install
 
 ```bash
-npm install @tetherto/powermeter-schneider
+npm install @tetherto/mdk-worker-schneider
 ```
 
 ## Usage
 
 ```js
-const { SCHNEIDER_PM5340 } = require('@tetherto/powermeter-schneider')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startSchneiderWorker } = require('@tetherto/mdk-worker-schneider')
 
-const { manager } = await startWorker(SCHNEIDER_PM5340, { ork, rack: 'site-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { serialNum: 'SCHN-A', container: 'container-A' },
-  opts: { address: '192.168.1.152', port: 502, unitId: 1 }
+const worker = await startSchneiderWorker({
+  workerId: 'schneider-rack-1',
+  model: 'pm5340',
+  storeDir: './store/schneider-rack-1',
+  seedDevices: [{
+    info: { serialNum: 'SCHN-A', container: 'container-A' },
+    opts: { address: '192.168.1.152', port: 502, unitId: 1 }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
+`registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is
+stopped and restarted (`await worker.stop()`, then `startSchneiderWorker` again with no `seedDevices`) — there is no
+hot-add.
 
 ## Protocol
 

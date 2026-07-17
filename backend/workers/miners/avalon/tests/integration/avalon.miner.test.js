@@ -4,7 +4,7 @@ const test = require('brittle')
 const TcpFacility = require('@tetherto/svc-facs-tcp')
 const { createServer } = require('../../mock/server')
 const AvalonMiner = require('../../lib/avalon.miner')
-const { POWER_MODE } = require('../../../base/lib/utils/constants.js')
+const { POWER_MODE } = require('../../../../../core/mdk').constants
 
 async function withMiner (opts, fn) {
   const port = 4028

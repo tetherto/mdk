@@ -42,11 +42,11 @@ export type Tier = 'agent-ready' | 'advanced' | 'internal'
 export const DEFAULT_TIER: Tier = 'advanced'
 
 /**
- * ORK (Operational Resource Kind) capability identifier this component is
+ * Kernel (Orchestration Kernel) capability identifier this component is
  * suited to visualise. Lets an agent pick the right component given the
- * active ORK capabilities for a site.
+ * active Kernel capabilities for a site.
  */
-export type OrkCapability =
+export type KernelCapability =
   | 'hashrate-monitoring'
   | 'pool-performance'
   | 'energy-consumption'
@@ -59,19 +59,24 @@ export type OrkCapability =
 export type PropMeta = {
   name: string
   /**
-   * Serialised TypeScript type (e.g. `string`, `HashrateDataPoint[]`).
+   * Serialized TypeScript type (e.g. `string`, `HashrateDataPoint[]`).
    * Truncated to 240 chars + `… /* see source *\/` when longer to keep the
    * registry payload small. Full type is available from the source file.
    */
   type: string
   required: boolean
-  /** Default value as a source-literal string (`"false"`, `"4"`). */
+  /** Default value as a source-literal string (`"false"`, `"4"`), pulled from the `@default` JSDoc tag. */
   default?: string
   /**
    * Short JSDoc on the prop, when present. Truncated at 120 chars — long-form
    * usage lives in the co-located `USAGE.md`.
    */
   description?: string
+  /**
+   * Full untruncated prop JSDoc. Only emitted when it differs from
+   * `description`, so the common case adds no payload.
+   */
+  descriptionFull?: string
 }
 
 /** Metadata for a single exported component. */
@@ -84,6 +89,12 @@ export type ComponentMeta = {
    * long-form lives in `USAGE.md` for `agent-ready` components.
    */
   description: string
+  /**
+   * Full untruncated JSDoc description (all paragraphs, newlines preserved).
+   * Only emitted when it differs from `description` — keeps the agent-facing
+   * payload tight while giving docs generators the long form.
+   */
+  descriptionFull?: string
   /**
    * Audience tier; pulled from `@tier` JSDoc tag. **Undefined when the tag
    * is absent** — consumers display as `advanced` but the contract gate
@@ -98,8 +109,8 @@ export type ComponentMeta = {
   public: boolean
   /** Free-form category tag pulled from `@category` (e.g. `charts`, `tables`). */
   category?: string
-  /** ORK capabilities pulled from `@orkCapability` tags. */
-  orkCapabilities?: OrkCapability[]
+  /** Kernel capabilities pulled from `@kernelCapability` tags. */
+  kernelCapabilities?: KernelCapability[]
   /** Mining domain area pulled from `@domain`. */
   domainContext?: DomainContext
   /** Source-derived prop information. */
@@ -122,6 +133,8 @@ export type HookMeta = {
   path: string
   /** First paragraph of JSDoc; truncated to 200 chars. */
   description: string
+  /** Full untruncated JSDoc description; only emitted when it differs from `description`. */
+  descriptionFull?: string
   /** Audience tier; undefined when `@tier` is absent (see `ComponentMeta.tier`). */
   tier?: Tier
   /** Whether this hook is part of the public API surface (`tier` ≠ `internal`). */
@@ -131,14 +144,14 @@ export type HookMeta = {
    */
   signature: string
   category?: string
-  orkCapabilities?: OrkCapability[]
+  kernelCapabilities?: KernelCapability[]
   domainContext?: DomainContext
 }
 
 /**
  * O(1) lookup indexes for the registry. Values are either component/hook
  * indexes into the `components` / `hooks` arrays (`byName`) or arrays of
- * names (`byCategory`, `byDomain`, `byOrkCapability`, `byTier`).
+ * names (`byCategory`, `byDomain`, `byKernelCapability`, `byTier`).
  *
  * Agents use these to skip scanning the flat arrays.
  */
@@ -147,12 +160,12 @@ export type RegistryIndexes = {
   hooksByName: Record<string, number>
   componentsByCategory: Record<string, string[]>
   componentsByDomain: Record<string, string[]>
-  componentsByOrkCapability: Record<string, string[]>
+  componentsByKernelCapability: Record<string, string[]>
   componentsByTier: Record<string, string[]>
   /** Keys are `"true"` and `"false"`. Lets consumers quickly get the public surface. */
   componentsByPublic: Record<string, string[]>
   hooksByDomain: Record<string, string[]>
-  hooksByOrkCapability: Record<string, string[]>
+  hooksByKernelCapability: Record<string, string[]>
   /** Keys are `"true"` and `"false"`. */
   hooksByPublic: Record<string, string[]>
 }
@@ -167,13 +180,25 @@ export type RegistryManifest = {
   packageVersion: string
   /** ISO timestamp of when the registry was generated. */
   generatedAt: string
+  /**
+   * Provenance of the generation run. `gitSha` is the HEAD commit of the
+   * checkout the registry was built from, or `null` outside a git checkout
+   * (e.g. building from an extracted tarball).
+   */
+  generatedFrom?: { gitSha: string | null }
   components: ComponentMeta[]
   hooks: HookMeta[]
   indexes: RegistryIndexes
 }
 
-/** Current registry schema version. Bump on breaking changes. */
-export const REGISTRY_SCHEMA_VERSION = '1.3.0'
+/**
+ * Current registry schema version. Bump on breaking changes.
+ *
+ * 2.0.0 - `orkCapabilities` renamed to `kernelCapabilities` (and the
+ * `@orkCapability` JSDoc tag to `@kernelCapability`) as part of the
+ * ORK -> Kernel nomenclature shift. Breaking for registry consumers.
+ */
+export const REGISTRY_SCHEMA_VERSION = '2.0.0'
 
 // ─── Blueprints ─────────────────────────────────────────────────────────────
 
@@ -188,7 +213,7 @@ export type BlueprintMeta = {
   title: string
   intent: string
   domain: DomainContext
-  orkCapabilities: OrkCapability[]
+  kernelCapabilities: KernelCapability[]
   components: string[]
   hooks: string[]
   demoRoute?: string
@@ -202,7 +227,7 @@ export type BlueprintMeta = {
 export type BlueprintIndexes = {
   byId: Record<string, number>
   byDomain: Record<string, string[]>
-  byOrkCapability: Record<string, string[]>
+  byKernelCapability: Record<string, string[]>
   byComponent: Record<string, string[]>
 }
 

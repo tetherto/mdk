@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "ocean",
+    "deviceFamily": "minerpool",
+    "brand": "Ocean",
+    "modelsSupported": ["OCEAN-BTC"],
+    "overview": "Reports Ocean.xyz mining pool account data: hashrate, workers, balances and revenue. Read-only — pool state is polled over HTTPS, no device writes."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate", "unit": "H/s", "type": "number", "handler": "src/telemetry/hashrate.js", "description": "Total pool-side hashrate across configured accounts (60s window)." },
+      { "name": "workers_online", "unit": "", "type": "number", "handler": "src/telemetry/workers-online.js", "description": "Workers currently known to the pool." },
+      { "name": "balance", "unit": "BTC", "type": "number", "handler": "src/telemetry/balance.js", "description": "Unsettled + settled account balance across accounts." },
+      { "name": "estimated_earnings", "unit": "BTC", "type": "number", "handler": "src/telemetry/estimated-earnings.js", "description": "Estimated income for the current day across accounts." }
+    ],
+    "commands": [],
+    "config": {
+      "schema": "ocean_pool_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.pool_unreachable", "alert.hashrate_low"],
+      "troubleshooting": [
+        "If alert.pool_unreachable, verify the apiUrl and outbound HTTPS connectivity.",
+        "If alert.hashrate_low, cross-check the fleet's own hashrate before escalating."
+      ]
+    },
+    "errors": {
+      "E_POOL_API": "Pool REST API request failed"
+    }
+  }
+}

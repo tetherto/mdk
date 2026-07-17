@@ -1,5 +1,5 @@
-import type { HashrateDateRange, HashrateGroupedLog } from '@tetherto/mdk-react-devkit/foundation'
-import { Hashrate } from '@tetherto/mdk-react-devkit/foundation'
+import type { HashrateDateRange, HashrateGroupedLog } from '@tetherto/mdk-react-devkit/domain'
+import { Hashrate } from '@tetherto/mdk-react-devkit/domain'
 import { endOfDay, startOfDay, subDays } from 'date-fns'
 import { useCallback, useMemo, useState } from 'react'
 
@@ -15,7 +15,7 @@ const MOCK_MINER_LOG: HashrateGroupedLog = Array.from({ length: 14 }, (_, i) => 
     'miner-am-s19xp': 5_000_000 + Math.sin(i / 2) * 200_000,
     'miner-wm-m56s': 3_200_000 + Math.cos(i / 2) * 150_000,
     'miner-av-a1346': 1_800_000 + Math.sin(i / 3) * 100_000,
-    'miner-acme-m1': 900_000,
+    'miner-demo-m1': 900_000,
   },
 }))
 

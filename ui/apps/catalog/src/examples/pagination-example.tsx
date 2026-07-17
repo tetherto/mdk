@@ -1,5 +1,5 @@
-import type { IndicatorProps } from '@tetherto/mdk-react-devkit/core'
-import { Indicator, Pagination, Typography } from '@tetherto/mdk-react-devkit/core'
+import type { IndicatorProps } from '@tetherto/mdk-react-devkit/primitives'
+import { Indicator, Pagination, Typography } from '@tetherto/mdk-react-devkit/primitives'
 import { usePagination } from '@tetherto/mdk-react-adapter'
 import { useMemo } from 'react'
 

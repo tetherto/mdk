@@ -1,5 +1,7 @@
 'use strict'
 
-const libStats = require('../../../base/lib/templates/stats')
+const { templates } = require('../../../../../core/mdk')
 
-module.exports = libStats
+const { conf, specs } = templates.stats
+
+module.exports = { conf, specs: { ...specs } }

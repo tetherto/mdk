@@ -4,7 +4,7 @@ todo: "see docs/reference/maintainers/ia.md — check:plugin-reference-fresh and
 
 # @tetherto/mdk-plugins
 
-Default [App Node](../app-node/README.md) plugins and the declarative plugin format for extending the MDK App Node with 
+Default [Gateway](../gateway/README.md) plugins and the declarative plugin format for extending the MDK Gateway with 
 custom HTTP routes.
 
 ## Overview
@@ -14,11 +14,11 @@ A plugin is a directory containing:
 - `mdk-plugin.json`: manifest declaring route identity, HTTP surface, auth requirements, and caching
 - One or more controller files — each exports `async function (req, services)`
 
-The App Node loads its default plugins automatically and accepts additional plugin directories via 
-`startAppNode({ extraPluginDirs: [...] })`.
+The Gateway loads its default plugins automatically and accepts additional plugin directories via 
+`startGateway({ extraPluginDirs: [...] })`.
 
 > [!TIP]
-> New to the plugin system? Read the [App Node plugins how-to guide](../../../docs/how-to/app-node/plugins.md) for a step-by-step walkthrough.
+> New to the plugin system? Read the [Gateway plugins how-to guide](../../../docs/guides/gateway/plugins.md) for a step-by-step walkthrough.
 > For the broader toolkit context, see the [MDK App Toolkit concept page](../../../docs/concepts/stack/app-toolkit.md).
 
 ## Manifest format
@@ -31,11 +31,11 @@ named-export handlers (`./controllers/power-mode.js#timeline`)
 - [site-plugin manifest](../../../examples/full-site/plugins/site/mdk-plugin.json): a public route
 (`auth: false`), a `POST` with a `requestBody`, path `parameters`, and `safety`
 
-What is required and what is rejected is defined by `_validateManifest` in [`plugin-loader.js`](../app-node/workers/lib/plugin-loader.js): `name`, 
+What is required and what is rejected is defined by `_validateManifest` in [`plugin-loader.js`](../gateway/workers/lib/plugin-loader.js): `name`, 
 `version`, and a non-empty `routes` array, plus per route an `id`, a `handler`, an allowed `http.method` (`GET`/`POST`/`PUT`/`DELETE`/`PATCH`), an 
 `http.path`, and unique route ids. Path parameters in `{param}` form are normalized to Fastify's `:param`.
 
-`auth`, `permissions`, and `cache` are consumed at registration in [`plugin-adapter.js`](../app-node/workers/lib/plugin-adapter.js): `auth: true` 
+`auth`, `permissions`, and `cache` are consumed at registration in [`plugin-adapter.js`](../gateway/workers/lib/plugin-adapter.js): `auth: true` 
 requires a Bearer token, `permissions` is an RBAC array enforced by `capCheck` after auth, and `cache` is an array of dot-paths composed into the 
 cache key (pass `?overwriteCache=true` to bypass).
 
@@ -48,14 +48,16 @@ A controller exports `async function (req, services)` and returns a value that i
 "./file.js#namedExport"` for a non-default export. Any shipping controller shows the shape — for example,
 [`hashrate.js`](telemetry/controllers/hashrate.js).
 
-- `req` (`params`, `query`, `body`, `headers`, `_info`) is assembled in [`plugin-adapter.js`](../app-node/workers/lib/plugin-adapter.js)
-- `services` (`mdkClient`, `dataProxy`, `authLib`, `conf`) is defined by the `_pluginServices` getter in [`http.node.wrk.js`](../app-node/workers/http.node.wrk.js) — guard `services.mdkClient`, which is `null` when ORK is not connected
+- `req` (`params`, `query`, `body`, `headers`, `_info`) is assembled in [`plugin-adapter.js`](../gateway/workers/lib/plugin-adapter.js)
+- `services` (`mdkClient`, `dataProxy`, `authLib`, `conf`) is defined by the `_pluginServices` getter in 
+[`http.node.wrk.js`](../gateway/workers/http.node.wrk.js) — guard `services.mdkClient`, which is `null` when Kernel is not connected
 
-The [plugin authoring guide](../../../docs/how-to/app-node/plugins.md) walks through building a controller, including when to use `mdkClient` versus `dataProxy`.
+The [plugin authoring guide](../../../docs/guides/gateway/plugins.md) walks through building a controller, including when to use `mdkClient` 
+versus `dataProxy`.
 
 ## Default plugins
 
-These plugins ship with MDK and load automatically on App Node startup. The tables below are generated from each default plugin's `mdk-plugin.json` by 
+These plugins ship with MDK and load automatically on Gateway startup. The tables below are generated from each default plugin's `mdk-plugin.json` by 
 [`docs/scripts/generate-plugin-reference.js`](../../../docs/scripts/generate-plugin-reference.js) and document only these default plugins — routes
 you add through `extraPluginDirs` are owned by their own manifests and are not listed here. In the `Auth` column, `Required` means the route needs a
 valid Bearer token.
@@ -69,13 +71,13 @@ valid Bearer token.
 | `GET` | `/auth/userinfo` | Required | Returns the authenticated user's profile from the validated JWT. |
 | `POST` | `/auth/token` | Required | Issues a new JWT from an existing valid token, optionally scoping TTL and roles. |
 | `GET` | `/auth/permissions` | Required | Returns the permission set encoded in the current token. |
-| `GET` | `/auth/ext-data` | Required | Proxies an external data request to the ORK network by type and optional query filter. |
+| `GET` | `/auth/ext-data` | Required | Proxies an external data request to the Kernel network by type and optional query filter. |
 
 ### `site-hashrate`
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api/site/hashrate-history` | Required | Fans out telemetry.pull to every registered worker and returns site-level hashrate history aggregated by timestamp. Defaults to last 7 days when start/end are omitted. |
+| `GET` | `/api/site/hashrate-history` | Required | Fans out telemetry.pull to every registered Worker and returns site-level hashrate history aggregated by timestamp. Defaults to last 7 days when start/end are omitted. |
 
 ### `telemetry`
 
@@ -96,10 +98,10 @@ valid Bearer token.
 ## Mounting plugins
 
 ```js
-const { startAppNode } = require('@tetherto/mdk')
+const { startGateway } = require('@tetherto/mdk')
 
-await startAppNode({
-  ork,
+await startGateway({
+  kernel,
   extraPluginDirs: [
     path.join(__dirname, 'plugins/my-metrics')
   ]
@@ -108,7 +110,7 @@ await startAppNode({
 
 The loader validates every manifest and handler at startup and throws an `ERR_PLUGIN_*` error on the first problem — a missing or unparsable manifest, 
 a missing required field, a duplicate route `id`, a handler file that can't be found, or a handler that isn't a function. The codes and the 
-checks behind them live in [`plugin-loader.js`](../app-node/workers/lib/plugin-loader.js).
+checks behind them live in [`plugin-loader.js`](../gateway/workers/lib/plugin-loader.js).
 
 ## Directory layout
 
@@ -157,8 +159,8 @@ npm run generate:plugin-reference
 
 ## Next steps
 
-- [Build your first plugin](../../../docs/how-to/app-node/plugins.md)
+- [Build your first plugin](../../../docs/guides/gateway/plugins.md)
 - See a working [`extraPluginDirs` setup](../../../examples/full-site/README.md)
-- Review the [App Node's extension model, data access, and auth design](../../../docs/concepts/stack/app-node.md)
+- Review the [Gateway's extension model, data access, and auth design](../../../docs/concepts/stack/gateway.md)
 - [Understand where plugins fit in the stack](../../../docs/concepts/stack/app-toolkit.md)
-- See all [`startAppNode()` options](../mdk/README.md)
+- See all [`startGateway()` options](../mdk/README.md)

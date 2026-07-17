@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-site",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "description": "MDK Site",
   "keywords": [
     "tether"
@@ -19,9 +19,13 @@
     "stop:docker": "docker compose -f docker-compose.generated.yml down",
     "docker:build": "docker build -f Dockerfile -t site-mdk ../../..",
     "lint": "standard",
-    "lint:fix": "standard --fix"
+    "lint:fix": "standard --fix",
+    "test": "NODE_ENV=test brittle tests/examples.test.js"
   },
   "dependencies": {
     "@bitfinex/bfx-svc-boot-js": "1.2.0"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0"
   }
 }

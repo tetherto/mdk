@@ -1,7 +1,7 @@
 import type {
   EfficiencyDateRange,
   MetricsEfficiencyLogEntry,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import {
   MINER_TYPE_NAME_MAP,
   OperationsEfficiency,
@@ -9,7 +9,7 @@ import {
   TAIL_LOG_MINER_TYPE_KEY,
   toOperationsEfficiencyMinerType,
   toOperationsEfficiencyMinerUnit,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import { differenceInDays, endOfDay, startOfDay, subDays } from 'date-fns'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo, useState } from 'react'

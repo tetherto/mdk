@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
+import { MAX_WALK_UP_DEPTH } from '../constants.js'
+
 export type CheckOptions = {
   file: string
   cwd: string
@@ -91,7 +93,7 @@ const runEslint = (absFile: string, cwd: string): CheckError[] | null => {
 
 const findTsConfig = (start: string): string | null => {
   let dir = start
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < MAX_WALK_UP_DEPTH; i += 1) {
     const candidate = join(dir, 'tsconfig.json')
     if (existsSync(candidate)) return candidate
     const parent = dirname(dir)

@@ -10,27 +10,34 @@ export default defineConfig(({ mode }) => ({
   publicDir: false,
   resolve: {
     alias: {
-      '@core': resolve(__dirname, 'src/core'),
+      '@primitives': resolve(__dirname, 'src/primitives'),
     },
   },
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/styles.scss'),
+      // Two stylesheets: generic primitives (styles.css) and the mining-domain
+      // components (styles-domain.css). Apps that only use primitives import
+      // styles.css alone and ship ~half the CSS.
+      entry: {
+        styles: resolve(__dirname, 'src/styles.scss'),
+        'styles-domain': resolve(__dirname, 'src/styles-domain.scss'),
+      },
       formats: ['es'],
     },
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: false,
-    // Must stay `true`: the entry is a pure-CSS chunk and, under Vite 8 /
-    // rolldown, the internal `vite:css-post` plugin only registers entry CSS
-    // assets in its lookup map when code splitting is enabled. With
-    // `cssCodeSplit: false` that map is empty and its pure-CSS-chunk cleanup
-    // crashes (`Cannot read properties of undefined (reading 'referenceId')`).
-    // There is only one CSS entry, so the output is still a single `styles.css`.
+    // Must stay `true`: under Vite 8 / rolldown, the internal `vite:css-post`
+    // plugin only registers entry CSS assets in its lookup map when code
+    // splitting is enabled. With `cssCodeSplit: false` that map is empty and
+    // its pure-CSS-chunk cleanup crashes (`Cannot read properties of undefined
+    // (reading 'referenceId')`). It also keeps the two CSS entries above as
+    // separate `styles.css` / `styles-domain.css` outputs.
     cssCodeSplit: true,
     sourcemap: mode === 'development',
     rollupOptions: {
       output: {
-        assetFileNames: 'styles.css',
+        // CSS asset inherits its entry's name → styles.css / styles-domain.css
+        assetFileNames: '[name].css',
       },
     },
   },
@@ -46,8 +53,8 @@ export default defineConfig(({ mode }) => ({
         // Expose the shared SCSS foundation as a top-level load path so any
         // component stylesheet can write `@use "mixins" as *;` (or
         // `@use "colors" as *;`, etc.) without long relative paths like
-        // `../../../../../core/styles/mixins`.
-        loadPaths: [resolve(__dirname, 'src/core/styles')],
+        // `../../../../../primitives/styles/mixins`.
+        loadPaths: [resolve(__dirname, 'src/primitives/styles')],
       },
     },
   },

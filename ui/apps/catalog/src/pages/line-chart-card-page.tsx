@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { JSX } from 'react'
 
-import { LineChartCard } from '@tetherto/mdk-react-devkit/foundation'
+import { LineChartCard } from '@tetherto/mdk-react-devkit/domain'
 
 import {
   BASIC_DATA,

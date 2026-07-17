@@ -14,11 +14,11 @@ internal layout keeps the two layers clearly separated:
 > `docs`, `example`, `add page`, `check`. Run `npx mdk-ui init` once to seed
 > agent context in your project.
 
-- `src/core/` — framework-agnostic-ish UI primitives built on Radix UI,
+- `src/primitives/` — framework-agnostic-ish UI primitives built on Radix UI,
   design tokens, formatting utilities and types.
-- `src/foundation/` — mining-domain components, features, presentation
+- `src/domain/` — mining-domain components, features, presentation
   hooks (under `utils/`), constants, and types. Zustand stores live in
-  `@tetherto/mdk-ui-core`; store hooks and `MdkProvider` live in
+  `@tetherto/mdk-ui-foundation`; store hooks and `MdkProvider` live in
   `@tetherto/mdk-react-adapter`.
 
 ## Installation
@@ -38,14 +38,14 @@ This is a workspace package; depend on it from another workspace:
 ### Subpath imports (preferred — better tree-shaking)
 
 ```tsx
-import { Button, Dialog } from "@tetherto/mdk-react-devkit/core";
-import { useNotification } from "@tetherto/mdk-react-devkit/foundation";
+import { Button, Dialog } from "@tetherto/mdk-react-devkit/primitives";
+import { useNotification } from "@tetherto/mdk-react-devkit/domain";
 // Store hooks and Query client — not separate devkit subpaths:
-import { actionsStore, devicesStore } from "@tetherto/mdk-ui-core";
+import { actionsStore, devicesStore } from "@tetherto/mdk-ui-foundation";
 import { useActions, useDevices, useTimezone } from "@tetherto/mdk-react-adapter";
 ```
 
-Presentation hooks ship on `./foundation` (or the top-level barrel), not
+Presentation hooks ship on `./domain` (or the top-level barrel), not
 `@tetherto/mdk-react-devkit/hooks` — that subpath is not in `package.json`
 `exports`.
 
@@ -59,7 +59,11 @@ import { Button, useNotification } from "@tetherto/mdk-react-devkit";
 
 ```tsx
 import "@tetherto/mdk-react-devkit/styles.css";
+import "@tetherto/mdk-react-devkit/styles-domain.css"; // only if using domain (mining-domain) components
 ```
+
+Import `styles.css` **first** — it defines the design tokens the domain styles reference.
+Apps that only use primitives (`./primitives`) can omit `styles-domain.css` and ship ~70 KB less CSS.
 
 Or in SCSS:
 
@@ -75,44 +79,41 @@ overrides.
 
 | Subpath | Resolves to | Purpose |
 | --- | --- | --- |
-| `.` | `dist/index.{js,d.ts}` | Top-level barrel (`core` + `foundation`) |
-| `./core` | `dist/core/index.{js,d.ts}` | Generic UI primitives |
-| `./foundation` | `dist/foundation/index.{js,d.ts}` | Mining-domain layer: components, features, presentation hooks, constants, types |
-| `./domain` | `dist/foundation/components/index.{js,d.ts}` | Mining-domain components only |
-| `./feature` | `dist/foundation/features/index.{js,d.ts}` | Full-page feature compositions |
+| `.` | `dist/index.{js,d.ts}` | Top-level barrel (`primitives` + `domain`) |
+| `./primitives` | `dist/primitives/index.{js,d.ts}` | Generic UI primitives |
+| `./domain` | `dist/domain/index.{js,d.ts}` | Mining-domain layer: components, features, presentation hooks, constants, types |
 | `./registry.json` | `dist/registry.json` | Machine-readable component + hook registry |
 | `./blueprints.json` | `dist/blueprints.json` | Intent → recipe index |
-| `./styles.css` | `dist/styles.css` | Bundled stylesheet (cascade-layer ready) |
-| `./styles` | `src/core/styles/_mixins.scss` | SCSS mixins (`@use`) |
-| `./tokens.scss` | `src/core/styles/_colors.scss` | Design-token CSS variables (`@use`) |
-| `./src/styles/index.scss` | `src/foundation/styles/index.scss` | Foundation SCSS entry (advanced) |
+| `./styles.css` | `dist/styles.css` | Design tokens + core primitives (~18 KB gz) |
+| `./styles-domain.css` | `dist/styles-domain.css` | Mining-domain component styles (~70 KB gz); import after `styles.css` |
+| `./styles` | `src/primitives/styles/_mixins.scss` | SCSS mixins (`@use`) |
+| `./tokens.scss` | `src/primitives/styles/_colors.scss` | Design-token CSS variables (`@use`) |
+| `./src/styles/index.scss` | `src/domain/styles/index.scss` | Domain SCSS entry (advanced) |
 
 For `mdk-ui registry`, `docs`, and `example`, see [`AGENTS.md`](../../AGENTS.md) and
 [`../cli/README.md`](../cli/README.md). Adapter hook and store manifests:
-`@tetherto/mdk-react-adapter/hooks.json`, `@tetherto/mdk-ui-core/stores.json`.
+`@tetherto/mdk-react-adapter/hooks.json`, `@tetherto/mdk-ui-foundation/stores.json`.
 
 ### Hooks and data (not separate devkit subpaths)
 
 | Need | Import from |
 | --- | --- |
 | Store hooks (`useAuth`, `useDevices`, `useTimezone`, …) | `@tetherto/mdk-react-adapter` |
-| Zustand stores outside React | `@tetherto/mdk-ui-core` |
-| Presentation hooks (`useNotification`, `useListViewFilters`, …) | `@tetherto/mdk-react-devkit/foundation` or `.` |
-| TanStack `QueryClient` factory | `@tetherto/mdk-ui-core` (`createMdkQueryClient`) |
+| Zustand stores outside React | `@tetherto/mdk-ui-foundation` |
+| Presentation hooks (`useNotification`, `useListViewFilters`, …) | `@tetherto/mdk-react-devkit/domain` or `.` |
+| TanStack `QueryClient` factory | `@tetherto/mdk-ui-foundation` (`createMdkQueryClient`) |
 
 There is no `./hooks` or `./api` export today; those capabilities are reached
-through `./foundation`, the adapter, or the core package.
+through `./domain`, the adapter, or the foundation package.
 
 ## Build strategy
 
 - **TypeScript** — `tsc -p tsconfig.build.json` emits ESM JS + `.d.ts`
   into `dist/`. A small post-process (`scripts/strip-style-imports.mjs`)
   removes the side-effect `.scss` / `.css` imports from emitted JS
-  because the bundled `dist/styles.css` already contains every
-  component's styles.
-- **CSS** — Vite compiles `src/styles.scss` into `dist/styles.css`. PostCSS
-  (`postcss-mdk-layer.mjs`) wraps top-level rules in `@layer mdk` and prepends
-  `@layer base, mdk, app;`.
+  because styles are in the Vite-built `dist/styles.css` and
+  `dist/styles-domain.css`, not in the TS output.
+- **CSS** — Vite compiles two SCSS entry points into `dist/styles.css` (design tokens + core primitives) and `dist/styles-domain.css` (mining-domain components). PostCSS (`postcss-mdk-layer.mjs`) wraps top-level rules in `@layer mdk` and prepends `@layer base, mdk, app;`.
 - **Registry** — `npm run build:registry` emits `dist/registry.json` and
   `dist/blueprints.json`. Run `npm run check:agent-ready` before changing
   public exports (also runs in root `npm run fullcheck`).
@@ -125,7 +126,7 @@ through `./foundation`, the adapter, or the core package.
 npm run dev                    # watch CSS + TS
 npm run build                  # build:ts + build:scss + build:registry
 npm run build:ts               # TypeScript only
-npm run build:scss             # Vite → dist/styles.css
+npm run build:scss             # Vite → dist/styles.css + dist/styles-domain.css
 npm run build:registry         # dist/registry.json + dist/blueprints.json
 npm run check:agent-ready      # contract gate (needs registry build)
 npm run typecheck

@@ -1,4 +1,4 @@
-import { StatusItem } from '@tetherto/mdk-react-devkit/foundation'
+import { StatusItem } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import { DemoBlock } from '../../../../components/demo-block'
 import { DemoPageHeader } from '../../../../components/demo-page-header'

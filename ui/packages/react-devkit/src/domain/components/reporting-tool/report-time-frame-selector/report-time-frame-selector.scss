@@ -1,0 +1,7 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-report-time-frame-selector {
+  @include flex_align;
+
+  gap: 8px;
+}

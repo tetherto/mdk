@@ -199,7 +199,7 @@ jobs:
   # 🧪 Test Coverage — sharded matrix
   # react-devkit (the bottleneck, 296 test files) is split across 4 parallel runners
   # via `vitest --shard`. Each shard writes a blob report; the coverage job merges
-  # them and enforces thresholds. Other packages (ui-core, react-adapter, cli) run
+  # them and enforces thresholds. Other packages (ui-foundation, react-adapter, cli) run
   # only in shard 1 since they're small and not worth sharding.
   test:
     name: 🧪 Test (shard ${{ matrix.shard }}/4)
@@ -251,7 +251,7 @@ jobs:
         with:
           path: |
             packages/react-devkit/.cache/vitest
-            packages/ui-core/.cache/vitest
+            packages/ui-foundation/.cache/vitest
             packages/react-adapter/.cache/vitest
             packages/cli/.cache/vitest
           key: vitest-${{ runner.os }}-${{ hashFiles('packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/vitest.config.js') }}-shard-${{ matrix.shard }}
@@ -266,7 +266,7 @@ jobs:
       - name: 🧪 Run smaller packages (shard 1 only)
         if: matrix.shard == 1
         run: |
-          echo "🧪 Running ui-core, react-adapter, cli tests with coverage..."
+          echo "🧪 Running ui-foundation, react-adapter, cli tests with coverage..."
           time npx turbo run test:coverage --filter='!@tetherto/mdk-react-devkit' --filter='!@tetherto/mdk-fonts' --filter='!@tetherto/mdk-catalog-ui'
 
       - name: 🧪 Run react-devkit shard ${{ matrix.shard }}/4
@@ -387,9 +387,9 @@ jobs:
             du -sh packages/react-devkit/dist/
             find packages/react-devkit/dist/ -type f \( -name "*.js" -o -name "*.css" \) | head -10 | xargs ls -lh
           fi
-          if [ -d "packages/ui-core/dist" ]; then
+          if [ -d "packages/ui-foundation/dist" ]; then
             echo "📦 UI Core (headless) package:"
-            du -sh packages/ui-core/dist/
+            du -sh packages/ui-foundation/dist/
           fi
           if [ -d "packages/react-adapter/dist" ]; then
             echo "📦 React adapter package:"
@@ -447,7 +447,7 @@ jobs:
           echo "  ✅ TypeScript strict type checking"
           echo "  ✅ Turbo build + test caching (local + optional remote)"
           echo "  ✅ test:coverage runs every workspace in parallel (no ^dependsOn)"
-          echo "  ✅ Vitest projects split inside react-devkit: node, core-dom, foundation-dom"
+          echo "  ✅ Vitest projects split inside react-devkit: node, primitives-dom, domain-dom"
           echo "  ✅ Parallel job execution"
           echo "  ✅ Reduced timeouts and redundant steps"
 
@@ -459,7 +459,7 @@ jobs:
           echo "🚀 Performance Highlights:"
           echo "  • Linting: Zero tolerance for warnings"
           echo "  • TypeScript: Type checking passed"
-          echo "  • Test Coverage: ui-core ≥85%, react-adapter ≥80%, react-devkit ≥80% (thresholds enforced)"
+          echo "  • Test Coverage: ui-foundation ≥85%, react-adapter ≥80%, react-devkit ≥80% (thresholds enforced)"
           echo "  • Build: Production ready"
           echo "  • CI: Optimized for speed and reliability"
           echo "  • Monorepo: Turbo build caching enabled"

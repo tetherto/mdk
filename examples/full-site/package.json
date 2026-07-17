@@ -1,15 +1,21 @@
 {
   "name": "@tetherto/mdk-full-site-example",
-  "version": "0.3.0",
-  "description": "MDK full-site example — 100 miners + container + powermeter + pool over the RPC gateway",
+  "version": "0.5.0",
+  "description": "MDK full-site example — 3 miner families + 2 containers + 3 powermeters + 2 sensors + 2 pools over the RPC listener",
   "private": true,
   "engines": {
     "node": ">=24"
   },
   "scripts": {
+    "setup": "npm --prefix ../.. run setup && npm --prefix ../.. run build:ui && npm install && npm --prefix ui install",
     "start": "node start.js",
     "lint": "standard",
-    "test": "NODE_ENV=test brittle tests/unit/*.test.js"
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js",
+    "test:e2e": "NODE_ENV=test brittle tests/e2e/*.test.js",
+    "test": "npm run test:unit && npm run test:e2e"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {
     "brittle": "3.18.0",

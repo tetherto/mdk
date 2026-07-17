@@ -64,7 +64,7 @@ describe('runRegistry', () => {
     expect(parsed.components.every((c: { tier?: string }) => c.tier === 'advanced')).toBe(true)
     expect(
       parsed.components.every((component: { name?: string }) =>
-        /^(?:EnergyReport(?:MinerTypeView|MinerUnitView|SiteView)|MiningReport(?:Cover)?|SiteReports|Operational(?:HashrateChart|PowerConsumptionChart|SiteEfficiencyChart|MinersStatusChart)|ChartExpandAction)$/.test(
+        /^(?:EnergyReport(?:MinerTypeView|MinerUnitView|SiteView)|Operational(?:HashrateChart|PowerConsumptionChart|SiteEfficiencyChart|MinersStatusChart)|ChartExpandAction|SparePartDetails|CabinetDetailCard|ContainerControlsCard)$/.test(
           component.name ?? '',
         ),
       ),

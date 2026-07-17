@@ -12,7 +12,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/bin.ts', 'src/index.ts'],
+      // docs-generate.ts is an orchestration entry (spawns `npm run build`, walks
+      // the monorepo, delegates to the tested docs-build) — like bin.ts, not
+      // meaningfully unit-testable.
+      exclude: ['src/**/*.test.ts', 'src/bin.ts', 'src/index.ts', 'src/commands/docs-generate.ts'],
       reporter: ['text-summary'],
       thresholds: {
         lines: 80,

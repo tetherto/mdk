@@ -1,37 +1,48 @@
-# @tetherto/container-antspace
+# @tetherto/mdk-worker-antspace
 
-MDK worker for Antspace (Bitmain) mining container systems. Supports the HK3 and IMM models.
+MDK Worker for Antspace (Bitmain) mining container systems. Supports the HK3 and immersion-cooling models.
 
 ## Supported Models
 
-| Export | Model | Description |
+| `model` value | Model | Description |
 |--------|-------|-------------|
-| `AS_HK3` | Antspace HK3 | Hyperscale liquid-cooled container |
-| `AS_IMM` | Antspace IMM | Immersion cooling system |
+| `hk3` | Antspace HK3 | Hyperscale liquid-cooled container |
+| `immersion` | Antspace immersion | Immersion cooling system |
 
 ## Install
 
 ```bash
-npm install @tetherto/container-antspace
+npm install @tetherto/mdk-worker-antspace
 ```
 
 ## Usage
 
 ```js
-const { AS_HK3 } = require('@tetherto/container-antspace')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startAntspaceWorker } = require('@tetherto/mdk-worker-antspace')
 
-const { manager } = await startWorker(AS_HK3, { ork, rack: 'site-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { serialNum: 'HK3-A', container: 'container-A', location: 'site-texas-01.container' },
-  opts: { address: '192.168.1.100', port: 18001 }
+const worker = await startAntspaceWorker({
+  workerId: 'antspace-rack-1',
+  model: 'hk3',
+  storeDir: './store/antspace-rack-1',
+  seedDevices: [{
+    info: { serialNum: 'HK3-A', container: 'container-A', location: 'site-texas-01.container' },
+    opts: { address: '192.168.1.100', port: 18001 }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
+`registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is
+stopped and restarted (`await worker.stop()`, then `startAntspaceWorker` again with no `seedDevices`) — there is no
+hot-add.
 
 ## Protocol
 
-Antspace uses a REST HTTP API. The worker connects over HTTP and polls the container management system for thermal and cooling status.
+Antspace uses a REST HTTP API. The Worker connects over HTTP and polls the container management system for thermal and cooling status.
 
 ## Telemetry
 
@@ -65,8 +76,18 @@ Antspace uses a REST HTTP API. The worker connects over HTTP and polls the conta
 
 ## Mock Server
 
+Run the mock standalone — the model `type` (`hk3` or `immersion`, case-insensitive) is the first
+argument:
+
+```bash
+npm run mock hk3
+node mock/server.js --type hk3 --port 18001   # custom port/flags: run the server directly
+```
+
+Programmatic:
+
 ```js
-const asMock = require('@tetherto/container-antspace/mock/server')
+const asMock = require('@tetherto/mdk-worker-antspace/mock/server')
 asMock.createServer({ port: 18001, host: '127.0.0.1', type: 'hk3' })
 ```
 

@@ -1,4 +1,4 @@
-import { MultiSelect, type MultiSelectOption } from '@tetherto/mdk-react-devkit/core'
+import { MultiSelect, type MultiSelectOption } from '@tetherto/mdk-react-devkit/primitives'
 import { type JSX, useState } from 'react'
 
 import { DemoBlock } from '../components/demo-block'
@@ -10,7 +10,7 @@ const MINER_TYPE_OPTIONS: MultiSelectOption[] = [
   { value: 'miner-av-a1346', label: 'Avalon A1346' },
   { value: 'miner-wm-m30sp', label: 'WhatsMiner M30SP' },
   { value: 'miner-wm-m56s', label: 'WhatsMiner M56S' },
-  { value: 'miner-acme-m1', label: 'Acme M1' },
+  { value: 'miner-demo-m1', label: 'Demo M1' },
 ]
 
 const CONTAINER_OPTIONS: MultiSelectOption[] = [
@@ -75,7 +75,7 @@ export const MultiSelectPage = (): JSX.Element => {
       >
         <MultiSelect
           options={MINER_TYPE_OPTIONS}
-          defaultValue={['miner-acme-m1']}
+          defaultValue={['miner-demo-m1']}
           placeholder="Filter by miner type"
           disabled
         />

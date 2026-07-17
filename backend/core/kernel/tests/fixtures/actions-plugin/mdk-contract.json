@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "provider": "tether",
+    "deviceFamily": "miner",
+    "brand": "SimRack",
+    "modelsSupported": ["SIM-RACK"],
+    "overview": "In-memory rack fixture hosted by WorkerRuntime for kernel action tests. Handlers record invocations on the per-device state carried in the device config."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "status", "unit": "", "type": "string", "handler": "src/telemetry/status.js", "description": "Device status." }
+    ],
+    "commands": [
+      { "name": "reboot", "handler": "src/commands/reboot.js", "description": "Restart the device. (1 vote)", "params": [] },
+      { "name": "setLED", "handler": "src/commands/set-led.js", "description": "Toggle the LED indicator. (1 vote)", "params": [{ "name": "enabled", "type": "boolean" }] },
+      { "name": "powerCycle", "handler": "src/commands/power-cycle.js", "description": "Hard power cycle. Requires 2 approvals.", "params": [] },
+      { "name": "factoryReset", "handler": "src/commands/factory-reset.js", "description": "Wipe and restore defaults. Requires 3 approvals.", "params": [] },
+      { "name": "rackReboot", "handler": "src/commands/rack-reboot.js", "description": "Restart the worker process managing this rack.", "params": [] }
+    ],
+    "health": { "supportedStates": ["OK", "OFFLINE"] },
+    "errors": {}
+  }
+}

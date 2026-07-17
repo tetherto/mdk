@@ -4,7 +4,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogTrigger,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 import { useState } from 'react'
 import type { JSX } from 'react'
 

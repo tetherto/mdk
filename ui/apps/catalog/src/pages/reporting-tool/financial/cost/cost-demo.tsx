@@ -9,7 +9,7 @@ import {
   PERIOD,
   TimeframeControls,
   type TimeframeControlsOnRangeChange,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import { endOfMonth } from 'date-fns/endOfMonth'
 import { startOfMonth } from 'date-fns/startOfMonth'
 import type { ReactElement } from 'react'

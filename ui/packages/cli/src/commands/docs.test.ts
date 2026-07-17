@@ -52,8 +52,8 @@ describe('runDocs', () => {
     ).toThrow(/not found/)
   })
 
-  it('emits ORK capabilities line when the component declares them', () => {
-    // LineChartCard is agent-ready and ships orkCapabilities. The synthesised
+  it('emits kernel capabilities line when the component declares them', () => {
+    // LineChartCard is agent-ready and ships kernelCapabilities. The synthesised
     // path is only hit when the component has no USAGE.md — pick one we know
     // lacks USAGE.md but declares capabilities. ActiveIncidentsCard fits.
     const { sink, out } = captureLines()

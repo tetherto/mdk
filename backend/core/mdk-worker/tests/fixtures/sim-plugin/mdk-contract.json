@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "provider": "tether",
+    "deviceFamily": "miner",
+    "brand": "SimMiner",
+    "modelsSupported": ["SIM-1"],
+    "overview": "In-memory simulated miner used by mdk-worker tests."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate_rt", "unit": "TH/s", "type": "number", "handler": "src/telemetry/hashrate.js", "description": "Real-time hashrate." },
+      { "name": "power", "unit": "W", "type": "number", "handler": "src/telemetry/power.js", "description": "Power draw." },
+      { "name": "power_limit", "unit": "W", "type": "number", "handler": "src/telemetry/power-limit.js", "description": "Configured power limit." }
+    ],
+    "commands": [
+      { "name": "setPowerLimit", "handler": "src/commands/set-power-limit.js", "params": [{ "name": "limit_watts", "type": "number", "min": 100, "max": 5000 }] },
+      { "name": "reboot", "handler": "src/commands/reboot.js", "params": [] },
+      { "name": "explode", "handler": "src/commands/explode.js", "params": [] }
+    ],
+    "health": { "supportedStates": ["OK", "OFFLINE"] },
+    "errors": {}
+  }
+}

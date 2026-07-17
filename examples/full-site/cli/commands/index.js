@@ -17,13 +17,13 @@ const { down } = require('./down')
 
 const HELP = `MDK full-site CLI — commands:
   up [--miners N] [--no-ui] [--discovery local|dht]
-                                   bring up the whole site in order (default 100 miners, local discovery)
-  start mocks|ork|app-node|ui      start one component
-  start worker <miner|container|powermeter|minerpool>
-  seed miner [--container <id>] [--pos <pdu_socket>] [--port <p>]
-  seed container | seed powermeter
-  status                           query ORK over HRPC: workers, devices, health
-  keys                             print ORK + worker RPC public keys
+                                   bring up the whole site (N per miner family, default 10 → 30 total)
+  start mocks|kernel|gateway|ui|mcp-server      start one component
+  start worker <whatsminer|antminer|avalon|antspace|bitdeer|abb|satec|schneider|seneca|minerpool|f2pool>
+  seed whatsminer|antminer|avalon [--container <id>] [--pos <pdu_socket>] [--port <p>]
+  seed antspace|bitdeer|abb|satec|schneider|seneca [--container <id>] [--port <p>]
+  status                           query Kernel over HRPC: workers, devices, health
+  keys                             print Kernel + worker RPC public keys
   ps                               list tracked processes (pid, status, uptime, log)
   logs <proc> [-f] [--grep <pat>] [--n <lines>]
   stop <proc>                      stop one component

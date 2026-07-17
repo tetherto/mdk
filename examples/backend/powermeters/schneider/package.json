@@ -1,11 +1,19 @@
 {
   "name": "@tetherto/mdk-example-powermeter-schneider",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "description": "MDK Schneider PM5340 power meter example (mock-backed)",
   "keywords": ["tether", "mdk", "schneider", "powermeter", "example"],
   "author": "Tether",
   "license": "Apache-2.0",
-  "engines": { "node": ">=22" },
+  "engines": { "node": ">=24" },
   "type": "commonjs",
-  "scripts": { "start": "node index.js", "lint": "standard", "lint:fix": "standard --fix" }
+  "scripts": {
+    "start": "node index.js",
+    "test": "NODE_ENV=test brittle tests/examples.test.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0"
+  }
 }

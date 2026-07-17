@@ -1,4 +1,4 @@
-import { type TailLogEntry, tailLogQuery } from '@tetherto/mdk-ui-core'
+import { type TailLogEntry, tailLogQuery } from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 
 const headOrEmpty = <T>(value: T[][] | undefined | null): T[] => {

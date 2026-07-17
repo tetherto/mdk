@@ -3,12 +3,12 @@ import {
   authTokenMutation,
   getRolesFromAuthToken,
   MdkFetchError,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 
 /**
- * Default polling interval — 250 s, mirroring Moria's production cadence.
+ * Default polling interval — 250 s, mirroring Mining OS's production cadence.
  * Backend token TTL defaults to 5 min (300 s) so we refresh comfortably
  * inside the window.
  */

@@ -1,5 +1,5 @@
-import type { AuthConfig, PermissionCheck } from '@tetherto/mdk-ui-core'
-import { checkPermission } from '@tetherto/mdk-ui-core'
+import type { AuthConfig, PermissionCheck } from '@tetherto/mdk-ui-foundation'
+import { checkPermission } from '@tetherto/mdk-ui-foundation'
 import { useMemo } from 'react'
 
 import { useAuth } from './store-hooks'

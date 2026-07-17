@@ -10,6 +10,31 @@
   *::after {
     box-sizing: border-box;
   }
+
+  /* Brand-orange scrollbars app-wide. Lives in `base` so components that
+   * intentionally hide their own scrollbar (e.g. the sidebar, in the `mdk`
+   * layer) still win. */
+  * {
+    scrollbar-color: var(--mdk-color-primary, #a8631e) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--mdk-color-primary, #a8631e);
+    border-radius: 6px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--mdk-color-primary-hover, var(--mdk-color-primary, #a8631e));
+  }
 }
 
 @layer app {

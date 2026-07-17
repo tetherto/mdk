@@ -19,7 +19,7 @@ CLI commands.
    intent: >
      One-paragraph summary of the user goal this blueprint covers.
    domain: mining-operations          # one of: mining-operations | financial-reporting | device-management | generic
-   orkCapabilities:
+   kernelCapabilities:
      - hashrate-monitoring
    components:
      - ComponentName                  # MUST be `agent-ready` and exist in registry.json

@@ -1,47 +1,51 @@
 'use strict'
 
 const os = require('os')
+const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 
-const config = require('./config/mdk.config.json')
-const { initialize, getOrk, startAppNode, startWorker, waitForDiscovery } = require('../../../backend/core/mdk')
+// Prefer a local config copy if present; otherwise fall back to the committed
+// example so the project runs clone-and-run with zero setup.
+const LOCAL_CONFIG = path.join(__dirname, 'config', 'mdk.config.json')
+const EXAMPLE_CONFIG = path.join(__dirname, 'config', 'mdk.config.json.example')
+const config = fs.existsSync(LOCAL_CONFIG)
+  ? require(LOCAL_CONFIG)
+  : JSON.parse(fs.readFileSync(EXAMPLE_CONFIG, 'utf8'))
+
+const { initialize, getKernel, startGateway, waitForDiscovery } = require('../../../backend/core/mdk')
+const { resolveWorkerBoot } = require('../../../backend/core/mdk/utils/service-bootstrap')
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..')
 const EXAMPLE_TMP = path.join(os.tmpdir(), 'mdk-site-single-process')
-const ORK_ROOT = path.join(EXAMPLE_TMP, 'ork')
-const APP_NODE_ROOT = path.join(EXAMPLE_TMP, 'app-node')
-const ORK_IPC_SOCK = path.join(ORK_ROOT, 'ork.sock')
+const KERNEL_ROOT = path.join(EXAMPLE_TMP, 'kernel')
+const GATEWAY_ROOT = path.join(EXAMPLE_TMP, 'gateway')
 
-const WORKER_REGISTRY = {
-  'miner-whatsminer:M56S': 'WM_M56S',
-  'miner-whatsminer:M30SP': 'WM_M30SP',
-  'miner-whatsminer:M30SPP': 'WM_M30SPP',
-  'miner-whatsminer:M53S': 'WM_M53S',
-  'miner-whatsminer:M63': 'WM_M63',
-  'miner-antminer:S19XP': 'AM_S19XP',
-  'miner-antminer:S19XPH': 'AM_S19XPH',
-  'miner-antminer:S21': 'AM_S21',
-  'miner-antminer:S21PRO': 'AM_S21PRO'
-}
+// Every family boots through its package's runtime plugin boot; TYPE maps to
+// the boot's model id via the shared WORKER_BOOTS registry.
+async function startWorkerService (kernel, svc) {
+  const { spec, factory } = resolveWorkerBoot(REPO_ROOT, svc.worker)
 
-const WORKER_PACKAGES = {
-  'miner-whatsminer': 'workers/miners/whatsminer',
-  'miner-antminer': 'workers/miners/antminer'
-}
+  let workerId
+  const opts = {}
+  if (spec.pool) {
+    workerId = `${spec.prefix}-${svc.rack}`
+    opts.rack = svc.rack
+  } else {
+    const model = spec.models[svc.type]
+    if (!model) { throw new Error(`ERR_WORKER_UNKNOWN: no plugin model for ${svc.worker}:${svc.type}`) }
+    workerId = `${spec.prefix}-${model}-${svc.rack}`
+    if (!spec.noModelOpt) opts.model = model
+  }
 
-function resolveManagerClass (worker, type) {
-  const key = `${worker}:${type}`
-  const exportName = WORKER_REGISTRY[key]
-  if (!exportName) { throw new Error(`ERR_WORKER_UNKNOWN: no manager for ${key}`) }
+  opts.workerId = workerId
+  opts.storeDir = path.join(EXAMPLE_TMP, 'data', svc.rack, 'workers', workerId, 'store')
+  fs.mkdirSync(opts.storeDir, { recursive: true })
+  if (svc.seedDevices) opts.seedDevices = svc.seedDevices
 
-  const pkgPath = WORKER_PACKAGES[worker]
-  if (!pkgPath) { throw new Error(`ERR_WORKER_PACKAGE: unknown worker package "${worker}"`) }
-
-  const mod = require(path.join(REPO_ROOT, 'packages', pkgPath))
-  const ManagerClass = mod[exportName]
-  if (!ManagerClass) { throw new Error(`ERR_WORKER_EXPORT: ${exportName} not found in ${worker}`) }
-  return ManagerClass
+  const handle = await factory(opts)
+  await kernel.registerWorker(handle.runtime.getPublicKey())
+  kernel._cleanup.push(() => handle.stop())
 }
 
 async function main () {
@@ -56,8 +60,8 @@ async function main () {
   const noAuth = !!config.noAuth
   initialize()
 
-  const orkTopic = crypto.randomBytes(32).toString('hex')
-  let ork = null
+  const kernelTopic = crypto.randomBytes(32).toString('hex')
+  let kernel = null
   let shuttingDown = false
 
   const shutdown = async (signal) => {
@@ -66,8 +70,8 @@ async function main () {
     console.log('[mdk-site]', `Received ${signal}, shutting down...`)
     setTimeout(() => process.exit(0), 5000).unref()
 
-    if (ork) {
-      const cleanups = ork._cleanup || []
+    if (kernel) {
+      const cleanups = kernel._cleanup || []
       for (let i = cleanups.length - 1; i >= 0; i--) {
         try {
           await cleanups[i]()
@@ -76,9 +80,9 @@ async function main () {
         }
       }
       try {
-        await ork.stop()
+        await kernel.stop()
       } catch (err) {
-        console.error('[mdk-site]', 'ork.stop error:', err)
+        console.error('[mdk-site]', 'kernel.stop error:', err)
       }
     }
 
@@ -97,12 +101,11 @@ async function main () {
     }
 
     try {
-      if (svc.kind === 'ork') {
-        logger.log('Starting ORK')
-        ork = await getOrk({
-          topic: orkTopic,
-          root: ORK_ROOT,
-          ipc: { path: ORK_IPC_SOCK }
+      if (svc.kind === 'kernel') {
+        logger.log('Starting Kernel')
+        kernel = await getKernel({
+          topic: kernelTopic,
+          root: KERNEL_ROOT
         })
         process.removeAllListeners('SIGINT')
         process.on('SIGINT', () => shutdown('SIGINT'))
@@ -110,37 +113,30 @@ async function main () {
         continue
       }
 
-      if (svc.kind === 'app-node') {
-        if (!ork) throw new Error('ERR_ORK_REQUIRED: declare an "ork" service before app-node')
-        logger.log(`Starting app-node on port ${svc.port}${noAuth ? ' (noAuth)' : ''}`)
-        const orkPubKey = ork.getPublicKey()
+      if (svc.kind === 'gateway') {
+        if (!kernel) throw new Error('ERR_KERNEL_REQUIRED: declare an "kernel" service before gateway')
+        logger.log(`Starting gateway on port ${svc.port}${noAuth ? ' (noAuth)' : ''}`)
+        const orkPubKey = kernel.getPublicKey()
         const orkPubKeyHex = Buffer.isBuffer(orkPubKey) ? orkPubKey.toString('hex') : orkPubKey
-        const hnd = await startAppNode({
+        const hnd = await startGateway({
           port: svc.port,
           env,
           noAuth,
-          root: APP_NODE_ROOT,
-          orkIpc: ORK_IPC_SOCK,
+          root: GATEWAY_ROOT,
+          kernelKey: orkPubKeyHex,
           common: {
             orks: { 'cluster-1': { rpcPublicKey: orkPubKeyHex } }
           }
         })
-        ork._cleanup.push(() => new Promise((resolve) => hnd.stop(resolve)))
+        kernel._cleanup.push(() => new Promise((resolve) => hnd.stop(resolve)))
         logger.log('Started')
         continue
       }
 
       if (svc.kind === 'worker') {
-        if (!ork) throw new Error('ERR_ORK_REQUIRED: declare an "ork" service before workers')
-        logger.log(`Starting ${svc.worker} ${svc.type} on rack ${svc.rack}`)
-        const ManagerClass = resolveManagerClass(svc.worker, svc.type)
-        await startWorker(ManagerClass, {
-          ork,
-          rack: svc.rack,
-          root: path.join(process.cwd(), 'data', svc.rack),
-          wtype: 'wrk-thing',
-          workerId: `${ManagerClass.name}-${svc.rack}`
-        })
+        if (!kernel) throw new Error('ERR_KERNEL_REQUIRED: declare an "kernel" service before workers')
+        logger.log(`Starting ${svc.worker} ${svc.type || ''} on rack ${svc.rack}`)
+        await startWorkerService(kernel, svc)
         logger.log('Started')
         continue
       }
@@ -151,13 +147,13 @@ async function main () {
     }
   }
 
-  if (ork) {
-    console.log('[mdk-site]', 'Waiting for workers to register with ORK...')
-    const workers = await waitForDiscovery(ork, 10000)
+  if (kernel) {
+    console.log('[mdk-site]', 'Waiting for workers to register with Kernel...')
+    const workers = await waitForDiscovery(kernel, 10000)
     const summary = workers.length === 0
       ? '(none)'
       : workers.map(w => `${w.workerId || w.id || 'unknown'} state=${w.state}`).join(', ')
-    console.log('[mdk-site]', `ORK sees ${workers.length} worker(s): ${summary}`)
+    console.log('[mdk-site]', `Kernel sees ${workers.length} worker(s): ${summary}`)
   }
 
   console.log('[mdk-site]', 'All services started. Press Ctrl+C to stop.')

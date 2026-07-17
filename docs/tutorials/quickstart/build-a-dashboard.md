@@ -566,10 +566,10 @@ This guide stops at one of everything on purpose. From here:
 [architecture]: ../../../docs/concepts/architecture.md
 <!-- docs@tether.io: architecture → concepts/architecture -->
 
-[build-a-worker]: build-a-worker.md
+[build-a-worker]: ../../../docs/guides/workers/build-a-worker.md
 <!-- docs@tether.io: build-a-worker → guides/workers/build-a-worker -->
 
-[demo-worker]: ../samples/demo-worker/index.js
+[demo-worker]: ../../../backend/workers/samples/demo-worker/index.js
 <!-- docs@tether.io: demo-worker → https://github.com/tetherto/mdk/blob/main/backend/workers/samples/demo-worker/index.js -->
 
 [demo-worker-caller]: ../../../examples/backend/demo-worker-caller/index.js

@@ -84,7 +84,7 @@ import {
   UserManagementNavIcon,
   VolumeOffIcon,
   VolumeOnIcon,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 
 import { DemoPageHeader } from '../components/demo-page-header'
 

@@ -1,7 +1,7 @@
 'use strict'
 
 const { parallelLimit } = require('async')
-const { RUNNING_STATUS } = require('../../base/lib/utils/constants')
+const { RUNNING_STATUS } = require('../../../../core/mdk').constants
 const Antspace = require('./antspace')
 
 const errorMap = {

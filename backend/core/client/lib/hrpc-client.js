@@ -3,18 +3,17 @@
 const debug = require('debug')('mdk:client:hrpc')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
-const { serialize, deserialize } = require('../../ork/lib/protocol/envelope')
+const { serialize, deserialize } = require('../../kernel/lib/protocol/envelope')
 
 /**
  * HRPCClient
  *
- * MDK transport over the ORK HRPC gateway (the RPC gateway). Each request is an
- * independent @hyperswarm/rpc call to the gateway's 'mdk' responder, so — unlike
- * the newline-delimited IPC transport — no FIFO queue is needed: concurrent
- * requests are multiplexed by the RPC layer.
+ * MDK transport over the Kernel HRPC listener (the RPC listener). Each request is an
+ * independent @hyperswarm/rpc call to the listener's 'mdk' responder, so no FIFO
+ * queue is needed: concurrent requests are multiplexed by the RPC layer.
  *
- * `key` is the ORK gateway public key (hex string or Buffer) obtained from
- * `ork.getPublicKey()`. A `dht`/`rpc` may be injected (tests) to share an
+ * `key` is the Kernel listener public key (hex string or Buffer) obtained from
+ * `kernel.getPublicKey()`. A `dht`/`rpc` may be injected (tests) to share an
  * existing transport; otherwise this client owns and tears down its own.
  */
 class HRPCClient {
@@ -39,7 +38,7 @@ class HRPCClient {
       this._rpc = new HyperswarmRPC({ dht: this._dht })
     }
     this._connected = true
-    debug('connected to ork %s...', this._key.toString('hex').slice(0, 16))
+    debug('connected to kernel %s...', this._key.toString('hex').slice(0, 16))
     return Promise.resolve()
   }
 

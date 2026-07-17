@@ -48,9 +48,15 @@ const EXAMPLES = [
 
   {
     script: 'mdk-e2e/run.js',
-    description: 'E2E single-process automated test (worker + ORK + IPC queries)',
+    description: 'E2E single-process automated test (worker + Kernel + HRPC queries)',
     mode: 'auto',
-    timeout: 40000
+    timeout: 60000
+  },
+  {
+    script: 'mdk-plugin-e2e/run.js',
+    description: 'Plugin-authoring E2E (WorkerRuntime + worker plugin on mock devices + fleet-summary gateway plugin)',
+    mode: 'auto',
+    timeout: 90000
   },
   {
     script: 'minerpools/mdk.client.ocean.js',
@@ -65,8 +71,8 @@ const EXAMPLES = [
     timeout: 20000
   },
   {
-    script: 'ork/demo.js',
-    description: 'ORK full feature parity demo (all telemetry + command types)',
+    script: 'kernel/demo.js',
+    description: 'Kernel full feature parity demo (all telemetry + command types)',
     mode: 'auto',
     timeout: 30000
   },
@@ -75,59 +81,59 @@ const EXAMPLES = [
 
   {
     script: 'miners/mdk.client.miner.js',
-    description: 'Whatsminer M56S worker + ORK (port 14028)',
+    description: 'Whatsminer M56S worker + Kernel (port 14028)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'containers/mdk.client.container.js',
-    description: 'Antspace HK3 container worker + ORK (port 8000)',
+    description: 'Antspace HK3 container worker + Kernel (port 8000)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'powermeters/mdk.client.powermeter.js',
-    description: 'ABB B23 power meter worker + ORK (port 5020)',
+    description: 'ABB B23 power meter worker + Kernel (port 5020)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'powermeters/abb/index.js',
-    description: 'ABB B23 power meter example: ORK + ABB worker (standalone, port 5060)',
+    description: 'ABB B23 power meter example: Kernel + ABB worker (standalone, port 5060)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'powermeters/satec/index.js',
-    description: 'Satec PM180 power meter example: ORK + Satec worker (standalone, port 5061)',
+    description: 'Satec PM180 power meter example: Kernel + Satec worker (standalone, port 5061)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'powermeters/schneider/index.js',
-    description: 'Schneider PM5340 power meter example: ORK + Schneider worker (standalone, port 5062)',
+    description: 'Schneider PM5340 power meter example: Kernel + Schneider worker (standalone, port 5062)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'sensors/mdk.client.sensor.js',
-    description: 'Seneca temperature sensor worker + ORK (port 5030)',
+    description: 'Seneca temperature sensor worker + Kernel (port 5030)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'sensors/seneca/index.js',
-    description: 'Seneca sensor example: ORK + Seneca worker (standalone, port 5050)',
+    description: 'Seneca sensor example: Kernel + Seneca worker (standalone, port 5050)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'minerpools/ocean/index.js',
@@ -137,71 +143,64 @@ const EXAMPLES = [
     timeout: 30000
   },
   {
-    script: 'ork/command-flow.js',
-    description: 'ORK command flow reference (HRPC command cheatsheet)',
+    script: 'kernel/command-flow.js',
+    description: 'Kernel command flow reference (HRPC command cheatsheet)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
-    script: 'ork/telemetry-flow.js',
-    description: 'ORK telemetry flow reference (live pull + cheatsheet)',
+    script: 'kernel/telemetry-flow.js',
+    description: 'Kernel telemetry flow reference (live pull + cheatsheet)',
     mode: 'server',
     successMarker: 'Live telemetry',
-    timeout: 30000
+    timeout: 60000
   },
   {
-    script: 'ork/auth-whitelist.js',
-    description: 'ORK HRPC auth whitelist demo',
+    script: 'kernel/auth-whitelist.js',
+    description: 'Kernel HRPC auth allowlist demo',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
-    script: 'ork/ork-shell.js',
-    description: 'ORK shell: createORK() explicit lifecycle',
+    script: 'kernel/kernel-shell.js',
+    description: 'Kernel shell: createKernel() explicit lifecycle',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'mdk-e2e/server.js',
-    description: 'E2E interactive server (ORK + mock miner, stays running)',
+    description: 'E2E interactive server (Kernel + mock miner, stays running)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 30000
+    timeout: 60000
   },
   {
     script: 'mdk-site/site.js',
     description: 'Full site: 5 workers, 26 devices (takes ~60 s)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 120000
+    timeout: 180000
   },
   {
     script: 'miners/antminer/index.js',
-    description: 'Antminer site: ORK + app-node + 4 Antminer workers (S19XP/S19XPH/S21/S21PRO)',
+    description: 'Antminer site: Kernel + gateway + 4 Antminer workers (S19XP/S19XPH/S21/S21PRO)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
-    timeout: 90000
-  },
-  {
-    script: 'containers/microbt/index.js',
-    description: 'MicroBT container site: ORK + app-node + 2 MicroBT container workers (KEHUA/WONDERINT) with 1 miner each',
-    mode: 'server',
-    successMarker: 'Ctrl+C to stop',
-    timeout: 90000
+    timeout: 150000
   },
   {
     script: 'containers/bitdeer/index.js',
-    description: 'Bitdeer D40 container example: ORK + Bitdeer worker over MQTT (port 10883)',
+    description: 'Bitdeer D40 container example: Kernel + Bitdeer worker over MQTT (port 10883)',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
     timeout: 60000
   },
   {
     script: 'miners/avalon/index.js',
-    description: 'Avalon miner site: ORK + 1 Avalon A1346 worker',
+    description: 'Avalon miner site: Kernel + 1 Avalon A1346 worker',
     mode: 'server',
     successMarker: 'Ctrl+C to stop',
     timeout: 90000
@@ -216,28 +215,29 @@ const EXAMPLES = [
     reason: 'requires coordinated 3-process DHT setup'
   },
   {
-    script: 'mdk-e2e/dht-ork.js',
-    description: 'DHT ORK (part of 3-process DHT demo)',
+    script: 'mdk-e2e/dht-kernel.js',
+    description: 'DHT Kernel (part of 3-process DHT demo)',
     mode: 'skip',
     reason: 'requires coordinated 3-process DHT setup'
   },
   {
     script: 'mdk-e2e/client.js',
-    description: 'Interactive IPC client (REPL)',
+    description: 'Interactive HRPC client (REPL)',
     mode: 'skip',
-    reason: 'requires a running ORK IPC socket'
+    reason: 'requires a running Kernel key file'
   },
   {
     script: 'mdk-e2e/http.js',
-    description: 'HTTP bridge for ORK',
+    description: 'HTTP bridge for Kernel',
     mode: 'skip',
     reason: 'requires server.js to be running first'
   },
   {
     script: 'site-single-process/index.js',
     description: 'Single-process site (config-driven)',
-    mode: 'skip',
-    reason: 'requires mdk.config.json with service definitions'
+    mode: 'server',
+    timeout: 120000,
+    successMarker: 'All services started'
   }
 ]
 
@@ -353,11 +353,11 @@ function checkPrereqs () {
   const { existsSync } = require('fs')
   const checks = [
     {
-      path: path.join(REPO_ROOT, 'backend/core/ork/node_modules'),
+      path: path.join(REPO_ROOT, 'backend/core/kernel/node_modules'),
       hint: 'npm --prefix backend/core run install:packages'
     },
     {
-      path: path.join(REPO_ROOT, 'backend/workers/base/node_modules'),
+      path: path.join(REPO_ROOT, 'backend/workers/miners/whatsminer/node_modules'),
       hint: 'npm --prefix backend/workers run install:packages'
     }
   ]

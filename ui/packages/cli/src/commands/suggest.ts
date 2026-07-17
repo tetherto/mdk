@@ -17,8 +17,8 @@ export type SuggestOptions = {
    */
   adapterPackage?: string | null
   /**
-   * ui-core package to include in scoring. Defaults to
-   * `@tetherto/mdk-ui-core`. Pass `null` to skip.
+   * ui-foundation package to include in scoring. Defaults to
+   * `@tetherto/mdk-ui-foundation`. Pass `null` to skip.
    */
   corePackage?: string | null
   cwd?: string
@@ -115,11 +115,11 @@ const topN = (items: SuggestResultItem[], n: number): SuggestResultItem[] =>
     .slice(0, n)
 
 const DEFAULT_ADAPTER = '@tetherto/mdk-react-adapter'
-const DEFAULT_CORE = '@tetherto/mdk-ui-core'
+const DEFAULT_CORE = '@tetherto/mdk-ui-foundation'
 
 /**
  * Local, deterministic keyword-overlap scoring across the registry,
- * blueprints, adapter hooks and ui-core stores. No network, no embeddings.
+ * blueprints, adapter hooks and ui-foundation stores. No network, no embeddings.
  * Good-enough routing for an agent that will then read `docs` / `example` /
  * `blueprint` / `hooks` / `stores` for the top hits.
  */
@@ -155,7 +155,7 @@ export const runSuggest = (opts: SuggestOptions): SuggestResult => {
       c.description ?? '',
       c.category ?? '',
       c.domainContext ?? '',
-      (c.orkCapabilities ?? []).join(' '),
+      (c.kernelCapabilities ?? []).join(' '),
     ].join(' ')
     const { score, hits } = scoreOverlap(corpus, queryTokens)
     return { name: c.name, score, reasons: hits }
@@ -166,14 +166,14 @@ export const runSuggest = (opts: SuggestOptions): SuggestResult => {
       h.name,
       h.description ?? '',
       h.domainContext ?? '',
-      (h.orkCapabilities ?? []).join(' '),
+      (h.kernelCapabilities ?? []).join(' '),
     ].join(' ')
     const { score, hits } = scoreOverlap(corpus, queryTokens)
     return { name: h.name, score, reasons: hits }
   })
 
   const blueprintScores: SuggestResultItem[] = (blueprints?.blueprints ?? []).map((b) => {
-    const corpus = [b.id, b.title, b.intent, b.domain, b.orkCapabilities.join(' '), b.body].join(
+    const corpus = [b.id, b.title, b.intent, b.domain, b.kernelCapabilities.join(' '), b.body].join(
       ' ',
     )
     const { score, hits } = scoreOverlap(corpus, queryTokens)

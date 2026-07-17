@@ -1,8 +1,8 @@
-import { loadRegistry, type Tier } from '../registry-loader.js'
+import { loadRegistry, type Tier, TIERS } from '../registry-loader.js'
 
 export type FindCommandOptions = {
   packageName: string
-  /** Filter by ORK capability identifier. */
+  /** Filter by Kernel capability identifier. */
   capability?: string
   /** Filter by mining domain. */
   domain?: string
@@ -35,16 +35,16 @@ const matchesTier = (entryTier: Tier | undefined, want: Tier | 'all'): boolean =
 }
 
 const filterEntries = <
-  T extends { tier?: Tier; orkCapabilities?: string[]; domainContext?: string; category?: string },
+  T extends { tier?: Tier; kernelCapabilities?: string[]; domainContext?: string; category?: string },
 >(
   entries: T[],
   opts: FindCommandOptions,
 ): T[] => {
-  const tier = opts.tier ?? 'agent-ready'
+  const tier = opts.tier ?? TIERS.agentReady
   return entries.filter(
     (entry) =>
       matchesTier(entry.tier, tier) &&
-      matches(entry.orkCapabilities, opts.capability, (caps, cap) => !!caps?.includes(cap)) &&
+      matches(entry.kernelCapabilities, opts.capability, (caps, cap) => !!caps?.includes(cap)) &&
       matches(entry.domainContext, opts.domain, (dom, want) => dom === want) &&
       matches(entry.category, opts.category, (cat, want) => cat === want),
   )
@@ -88,7 +88,7 @@ export const runFind = (opts: FindCommandOptions): void => {
         `${padRight(c.name, 32)}${padRight(c.tier ?? 'advanced', 13)}${padRight(
           c.category ?? '-',
           14,
-        )}${padRight(c.domainContext ?? '-', 20)}${(c.orkCapabilities ?? []).join(', ')}`,
+        )}${padRight(c.domainContext ?? '-', 20)}${(c.kernelCapabilities ?? []).join(', ')}`,
       )
     }
     out('')
@@ -102,7 +102,7 @@ export const runFind = (opts: FindCommandOptions): void => {
         `${padRight(h.name, 32)}${padRight(h.tier ?? 'advanced', 13)}${padRight(
           h.domainContext ?? '-',
           20,
-        )}${(h.orkCapabilities ?? []).join(', ')}`,
+        )}${(h.kernelCapabilities ?? []).join(', ')}`,
       )
     }
   }

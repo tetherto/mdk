@@ -1,30 +1,35 @@
 'use strict'
 
-const libAlerts = require('../../../../base/lib/templates/alerts')
-const libUtils = require('../../../../base/lib/utils')
+const { templates, utils } = require('../../../../../core/mdk')
 
-libAlerts.specs.powermeter = {
-  ...libAlerts.specs.powermeter_default,
-  medium_voltage_low: {
-    valid: (ctx, snap) => {
-      return libUtils.isValidSnap(snap) && !libUtils.isOffline(snap) && ctx.conf.medium_voltage_low
-    },
-    probe: (ctx, snap) => {
-      const voltage = snap.stats.voltage_v
-      if (voltage === undefined || voltage === null) return false
-      return voltage < ctx.conf.medium_voltage_low.minVoltage
-    }
-  },
-  medium_voltage_high: {
-    valid: (ctx, snap) => {
-      return libUtils.isValidSnap(snap) && !libUtils.isOffline(snap) && ctx.conf.medium_voltage_high
-    },
-    probe: (ctx, snap) => {
-      const voltage = snap.stats.voltage_v
-      if (voltage === undefined || voltage === null) return false
-      return voltage > ctx.conf.medium_voltage_high.maxVoltage
+const { isValidSnap, isOffline } = utils
+const baseSpecs = templates.alerts.specs
+
+module.exports = {
+  specs: {
+    ...baseSpecs,
+    powermeter: {
+      ...baseSpecs.powermeter_default,
+      medium_voltage_low: {
+        valid: (ctx, snap) => {
+          return isValidSnap(snap) && !isOffline(snap) && ctx.conf.medium_voltage_low
+        },
+        probe: (ctx, snap) => {
+          const voltage = snap.stats.voltage_v
+          if (voltage === undefined || voltage === null) return false
+          return voltage < ctx.conf.medium_voltage_low.minVoltage
+        }
+      },
+      medium_voltage_high: {
+        valid: (ctx, snap) => {
+          return isValidSnap(snap) && !isOffline(snap) && ctx.conf.medium_voltage_high
+        },
+        probe: (ctx, snap) => {
+          const voltage = snap.stats.voltage_v
+          if (voltage === undefined || voltage === null) return false
+          return voltage > ctx.conf.medium_voltage_high.maxVoltage
+        }
+      }
     }
   }
 }
-
-module.exports = libAlerts

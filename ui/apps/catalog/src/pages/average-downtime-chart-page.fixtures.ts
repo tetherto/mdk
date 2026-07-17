@@ -1,4 +1,4 @@
-import type { AverageDowntimeChartData } from '@tetherto/mdk-react-devkit/core'
+import type { AverageDowntimeChartData } from '@tetherto/mdk-react-devkit/primitives'
 
 export const AVERAGE_DOWNTIME_SAMPLE: AverageDowntimeChartData = {
   labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],

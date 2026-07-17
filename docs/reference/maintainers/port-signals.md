@@ -44,14 +44,14 @@ Preserving a non-Tether external URL:
 Monorepo source file — local relative path for IDE navigation, GitHub URL on port:
 
 ```markdown
-[ork-package]: ../../backend/core/ork/index.js
-<!-- docs@tether.io: ork-package → https://github.com/tetherto/mdk/blob/main/backend/core/ork/index.js -->
+[kernel-package]: ../../backend/core/kernel/index.js
+<!-- docs@tether.io: kernel-package → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/index.js -->
 ```
 
 Engineer-facing code link with no upstream parity:
 
 ```markdown
-[envelope-impl]: ../../backend/core/ork/lib/protocol/envelope.js
+[envelope-impl]: ../../backend/core/kernel/lib/protocol/envelope.js
 <!-- docs@tether.io: no parity link -->
 ```
 
@@ -66,7 +66,7 @@ Code link with a temp flag (target not yet populated):
 In-page anchor (uncommented by design):
 
 ```markdown
-[architecture-section]: #the-ork-kernel
+[architecture-section]: #the-kernel
 ```
 
 ## GFM alert → fumadocs `<Callout>`

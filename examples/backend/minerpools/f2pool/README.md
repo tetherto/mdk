@@ -1,21 +1,21 @@
 # MDK F2Pool Minerpool Example (standalone)
 
 A small, self-contained **F2Pool** minerpool example you can clone and run with **no real hardware,
-no F2Pool account, and no network access**. It starts a mock F2Pool API, drives the `F2_POOL` worker
-against it, and prints a pool snapshot (hashrate, workers, balance, transactions) before exiting.
+no F2Pool account, and no network access**. It starts a mock F2Pool API, drives the `F2_POOL` Worker
+against it, and prints a pool snapshot (hashrate, Workers, balance, transactions) before exiting.
 
-## Why this one is standalone (no ORK / app-node)
+## Why this one is standalone (no Kernel / gateway)
 
 Like [`examples/backend/minerpools/ocean`](../ocean/README.md), this runs **standalone**. Minerpools
-are **not yet wired into the ORK/MDK thing model**: `F2PoolMinerpoolManager` extends `MinerpoolManager`
+are **not yet wired into the Kernel/MDK thing model**: `F2PoolMinerpoolManager` extends `MinerpoolManager`
 (an `EventEmitter`), **not** `ThingManager` — it has no `registerThing`/`mem.things`, and is
 config-driven (accounts + apiUrl + apiSecret). So this example drives the pool manager **directly**,
-exactly as it runs inside a worker process. Wiring minerpools into the ORK is tracked separately.
+exactly as it runs inside a Worker process. Wiring minerpools into the Kernel is tracked separately.
 
 ## What it demonstrates
 
-- Running the `F2_POOL` worker against a mock F2Pool REST API — zero hardware/account.
-- Pulling pool **stats**, **workers** and **transactions** into the worker store and reading them back
+- Running the `F2_POOL` Worker against a mock F2Pool REST API — zero hardware/account.
+- Pulling pool **stats**, **Workers** and **transactions** into the Worker store and reading them back
   via `getWrkExtData()` / `getWorkers()`.
 
 ## Prerequisites
@@ -66,7 +66,7 @@ examples/backend/minerpools/f2pool/
 └── .gitignore
 ```
 
-The worker's Hyperbee store is written to a fresh `$TMPDIR/mdk-f2pool-*` dir and removed on exit.
+The Worker's Hyperbee store is written to a fresh `$TMPDIR/mdk-f2pool-*` dir and removed on exit.
 
 ## Troubleshooting
 

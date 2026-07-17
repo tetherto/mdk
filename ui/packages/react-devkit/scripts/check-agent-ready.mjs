@@ -10,7 +10,7 @@
  *       missing-description, missing-category, missing-domain, missing-tier
  *   - Agent-ready additionally:
  *       agent-ready-missing-usage, agent-ready-missing-example,
- *       agent-ready-missing-ork-capability
+ *       agent-ready-missing-kernel-capability
  *
  * Failures present in `scripts/agent-ready-baseline.json` are reported as
  * `debt` (warnings) and do not fail the build. Failures NOT in the baseline
@@ -73,11 +73,11 @@ const RULE_FIX = {
   'missing-tier':
     'Add `@tier agent-ready | advanced | internal`. Every public export must declare its audience.',
   'agent-ready-missing-usage':
-    'Create `USAGE.md` next to the component (summary + props table + minimal example).',
+    'Create `USAGE.md` next to the component — focus on the summary + notes (the docs site generates the props table and examples from your types and `*.example.tsx`).',
   'agent-ready-missing-example':
     'Add `<name>.example.tsx` next to the component (mock data only; import from `@tetherto/mdk-react-devkit`).',
-  'agent-ready-missing-ork-capability':
-    'Add at least one `@orkCapability <id>` tag so agents can find this by capability.',
+  'agent-ready-missing-kernel-capability':
+    'Add at least one `@kernelCapability <id>` tag so agents can find this by capability.',
   'description-too-short':
     'Replace the placeholder description with a 1–2 sentence summary (what it is + when to use it). Must be ≥40 chars and not match the `"<Name> component."` template.',
 }
@@ -107,7 +107,7 @@ const collectViolations = () => {
 
   /**
    * @param {{ entry: string, kind: "component" | "hook", tier?: string, description?: string, category?: string, domainContext?: string }} v
-   * @param {{ requireExample?: boolean, requireUsage?: boolean, examples?: string[], usageDoc?: string, orkCapabilities?: string[] }} extra
+   * @param {{ requireExample?: boolean, requireUsage?: boolean, examples?: string[], usageDoc?: string, kernelCapabilities?: string[] }} extra
    */
   const checkEntry = (v, extra = {}) => {
     if (v.tier === 'internal') return
@@ -125,12 +125,12 @@ const collectViolations = () => {
       if (extra.requireExample && (!extra.examples || extra.examples.length === 0)) {
         out.push({ entry: v.entry, kind: v.kind, rule: 'agent-ready-missing-example' })
       }
-      // ORK capabilities are mining-specific. Generic primitives (Button,
+      // Kernel capabilities are mining-specific. Generic primitives (Button,
       // Form, ...) carry `@domain generic` and are exempt — there's no
       // sensible capability tag for them.
       const isGeneric = v.domainContext === 'generic'
-      if (!isGeneric && (!extra.orkCapabilities || extra.orkCapabilities.length === 0)) {
-        out.push({ entry: v.entry, kind: v.kind, rule: 'agent-ready-missing-ork-capability' })
+      if (!isGeneric && (!extra.kernelCapabilities || extra.kernelCapabilities.length === 0)) {
+        out.push({ entry: v.entry, kind: v.kind, rule: 'agent-ready-missing-kernel-capability' })
       }
     }
   }
@@ -150,7 +150,7 @@ const collectViolations = () => {
         requireUsage: true,
         examples: c.examples,
         usageDoc: c.usageDoc,
-        orkCapabilities: c.orkCapabilities,
+        kernelCapabilities: c.kernelCapabilities,
       },
     )
   }
@@ -164,7 +164,7 @@ const collectViolations = () => {
         category: h.category,
         domainContext: h.domainContext,
       },
-      { orkCapabilities: h.orkCapabilities },
+      { kernelCapabilities: h.kernelCapabilities },
     )
   }
 

@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "seneca",
+    "deviceFamily": "sensor",
+    "brand": "Seneca",
+    "modelsSupported": ["Z-4RTD-2"],
+    "overview": "Reads Seneca Z-4RTD-2 temperature sensors via Modbus TCP. Read-only device — no write commands."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "temperature", "unit": "C", "type": "number", "handler": "src/telemetry/temperature.js", "description": "Measured temperature." },
+      { "name": "snap", "unit": "", "type": "object", "handler": "src/telemetry/snap.js", "description": "Full structured snapshot (stats + config), same shape the legacy metrics pull returned." }
+    ],
+    "commands": [],
+    "config": {
+      "schema": "seneca_sensor_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.cabinet_temp_high", "alert.oil_temp_high"],
+      "troubleshooting": [
+        "A raw reading of 850.0 marks a sensor fault (open RTD circuit).",
+        "If readings stall, verify Modbus TCP reachability (address, port, unitId, register)."
+      ]
+    },
+    "errors": {
+      "E_SENSOR_FAULT": "Sensor returned the 850.0 fault sentinel",
+      "E_MODBUS_TIMEOUT": "Modbus read timed out"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { BitMainImmersionSettings } from '@tetherto/mdk-react-devkit/foundation'
+import { BitMainImmersionSettings } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import './bitmain-immersion-settings-demo.scss'
 

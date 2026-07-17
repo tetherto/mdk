@@ -1,4 +1,4 @@
-import { SubsidyFee } from '@tetherto/mdk-react-devkit/foundation'
+import { SubsidyFee } from '@tetherto/mdk-react-devkit/domain'
 import { type ReactElement, useMemo } from 'react'
 
 import { DemoPageHeader } from '../../../../components/demo-page-header'

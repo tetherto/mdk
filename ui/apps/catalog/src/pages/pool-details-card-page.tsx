@@ -1,6 +1,6 @@
-import { PoolDetailsCard } from '@tetherto/mdk-react-devkit/foundation'
-import type { PoolDetailItem } from '@tetherto/mdk-react-devkit/foundation'
-import { UNITS } from '@tetherto/mdk-react-devkit/core'
+import { PoolDetailsCard } from '@tetherto/mdk-react-devkit/domain'
+import type { PoolDetailItem } from '@tetherto/mdk-react-devkit/domain'
+import { UNITS } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

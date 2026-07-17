@@ -1,5 +1,5 @@
 // Stylelint plugin: ban relative @use paths into src/core in foundation SCSS.
-// All foundation stylesheets must use `@use '@core/styles/...' as *;`.
+// All foundation stylesheets must use `@use '@primitives/styles/...' as *;`.
 const ruleName = 'custom/no-relative-core-use'
 const meta = { url: '' }
 
@@ -10,7 +10,7 @@ const rule = (enabled) => {
       const match = atRule.params.match(/^['"]([^'"]+)['"]/)
       const path = match?.[1] ?? ''
       if (/^(?:\.\.\/)+core(?:\/|$)/.test(path)) {
-        result.warn(`Use '@core/styles/...' instead of relative path "${path}"`, {
+        result.warn(`Use '@primitives/styles/...' instead of relative path "${path}"`, {
           node: atRule,
           ruleName,
           word: path,

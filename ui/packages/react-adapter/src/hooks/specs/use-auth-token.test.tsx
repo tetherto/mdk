@@ -1,4 +1,4 @@
-import { authStore } from '@tetherto/mdk-ui-core'
+import { authStore } from '@tetherto/mdk-ui-foundation'
 import { renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthToken } from '../use-auth-token'

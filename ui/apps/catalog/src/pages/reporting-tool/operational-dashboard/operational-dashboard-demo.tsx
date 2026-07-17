@@ -1,9 +1,9 @@
-import type { DashboardDateRange, UseOperationsDashboardInput } from '@tetherto/mdk-react-devkit/foundation'
+import type { DashboardDateRange, UseOperationsDashboardInput } from '@tetherto/mdk-react-devkit/domain'
 import {
   DashboardDateRangePicker,
   OperationalDashboard,
   useOperationsDashboard,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import { endOfDay, startOfDay, subDays } from 'date-fns'
 import { useState } from 'react'
 

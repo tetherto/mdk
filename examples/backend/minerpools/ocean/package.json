@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-example-minerpool-ocean",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "description": "MDK Ocean minerpool example (standalone, mock-backed)",
   "keywords": [
     "tether",
@@ -18,7 +18,13 @@
   "scripts": {
     "start": "node index.js",
     "verify": "node verify.js",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "NODE_ENV=test brittle tests/pool-managers.test.js",
+    "test:e2e": "NODE_ENV=test brittle tests/examples.test.js",
     "lint": "standard",
     "lint:fix": "standard --fix"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0"
   }
 }

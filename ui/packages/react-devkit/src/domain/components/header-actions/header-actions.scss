@@ -1,0 +1,300 @@
+@use '@primitives/styles/mixins' as *;
+
+@keyframes warnBlink {
+  from { opacity: 1; }
+  to   { opacity: 0.25; }
+}
+
+@layer mdk {
+  /* Base tile shared by all header action buttons (profile, etc.). */
+  .mdk-header-action-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 2.8125rem; /* 45px */
+    height: 2.8125rem;
+    padding: 0.5rem;
+    background: color-mix(in srgb, var(--mdk-color-primary, #f7931a) 20%, transparent);
+    border: none;
+    color: var(--mdk-color-text-primary, #f5f5f0);
+    cursor: pointer;
+    clip-path: polygon(
+      11px 0,
+      100% 0,
+      100% calc(100% - 11px),
+      calc(100% - 11px) 100%,
+      0 100%,
+      0 11px
+    );
+    transition: color 120ms ease, background 120ms ease;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--mdk-color-text-primary, #f5f5f0);
+      background: color-mix(in srgb, var(--mdk-color-primary, #f7931a) 32%, transparent);
+      outline: none;
+    }
+
+    &__icon {
+      display: inline-grid;
+      place-items: center;
+      font-size: 1.25rem;
+      color: currentColor;
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        z-index: 1;
+        border-style: solid;
+        border-width: 0 0 8px 8px;
+        border-color: transparent transparent rgb(23, 19, 15) transparent;
+      }
+    }
+  }
+
+  /* Bell button */
+  .mdk-alarms-bell-button-group {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background-color: color-mix(in srgb, var(--mdk-color-primary, #f7931a) 20%, transparent);
+    transition: background-color 120ms ease;
+
+    /* Top-left cut. */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      z-index: 1;
+      border-style: solid;
+      border-width: 8px 8px 0 0;
+      border-color: rgb(23, 19, 15) transparent transparent transparent;
+    }
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--mdk-color-primary, #f7931a) 32%, transparent);
+    }
+  }
+
+  .mdk-alarms-bell-button {
+    /* Transparent icon tile — background and cut live on the group.
+     * Extra left padding reserves space for the severity badge column. */
+    width: auto;
+    min-width: 2.8125rem;
+    max-width: max-content;
+    height: 2.8125rem;
+    padding: 0.5rem 0rem 0.5rem 1.75rem;
+    background: transparent;
+    clip-path: none;
+    color: var(--mdk-color-primary);
+
+    &:hover,
+    &:focus-visible {
+      background: transparent;
+      color: var(--mdk-color-primary);
+    }
+
+    .mdk-header-action-button__icon {
+      height: 45px;
+      width: 45px;
+    }
+
+    /* Severity numbers — absolutely positioned to the left of the icon tile. */
+    &__badge {
+      position: absolute;
+      left: 0.375rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.05rem;
+      font-family: var(--mdk-font-mono, "JetBrains Mono", ui-monospace, monospace);
+      font-size: 0.5625rem;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.025em;
+      pointer-events: none;
+      line-height: 14px;
+
+      &-row {
+        background: transparent;
+
+        /* Highest-severity row blinks to draw the operator's eye. */
+        &:first-child {
+          animation: warnBlink 0.25s cubic-bezier(0.7, 0, 1, 1) 0s infinite alternate none running;
+        }
+
+        &--critical { color: var(--mdk-color-severity-critical); }
+        &--high     { color: var(--mdk-color-severity-high); }
+        &--medium   { color: var(--mdk-color-severity-medium); }
+
+        &--interactive {
+          margin: 0;
+          padding: 0;
+          border: 0;
+          font: inherit;
+          background: none;
+          text-align: left;
+          cursor: pointer;
+          pointer-events: auto;
+
+          &:hover,
+          &:focus-visible {
+            text-decoration: underline;
+            outline: none;
+          }
+        }
+      }
+    }
+  }
+
+  /* ── Pending-actions button ─────────────────────────────────────────────
+   * Same pattern as the bell button: group carries background + ::after cut,
+   * button is a transparent 45px icon tile. */
+  .mdk-pending-actions-button-group {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background-color: color-mix(in srgb, var(--mdk-color-primary, #f7931a) 20%, transparent);
+    transition: background-color 120ms ease;
+
+    /* Top-left cut. */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      z-index: 1;
+      border-style: solid;
+      border-width: 8px 8px 0 0;
+      border-color: rgb(23, 19, 15) transparent transparent transparent;
+    }
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--mdk-color-primary, #f7931a) 32%, transparent);
+    }
+  }
+
+  .mdk-pending-actions-button {
+    width: 2.8125rem;
+    min-width: 0;
+    height: 2.8125rem;
+    padding: 0.5rem;
+    background: transparent;
+    clip-path: none;
+    color: var(--mdk-color-primary);
+
+    &:hover,
+    &:focus-visible {
+      background: transparent;
+      color: var(--mdk-color-primary);
+    }
+
+    .mdk-header-action-button__icon {
+      font-size: 1rem;
+    }
+  }
+
+  /* Count badge — pinned to the bottom-right corner of the tile. */
+  .mdk-pending-actions-button__count {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 2;
+    min-width: 5px;
+    min-height: 8px;
+    padding: 0 2px;
+    font-family: var(--mdk-font-mono, "JetBrains Mono", ui-monospace, monospace);
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+    border-radius: 2px 0 0;
+    background-color: rgb(23, 19, 15);
+    color: var(--mdk-color-primary);
+    pointer-events: none;
+  }
+
+  /* ── Profile menu ───────────────────────────────────────────────────────*/
+  .mdk-profile-menu {
+    /* Full BTC orange fill — the "active" action tile. */
+    &__trigger {
+      width: 2.8125rem;
+      min-width: 0;
+      height: 2.8125rem;
+      background: var(--mdk-color-primary, #f7931a);
+      color: #11100f;
+
+      &:hover,
+      &:focus-visible {
+        background: var(--mdk-color-primary, #f7931a);
+        color: #11100f;
+      }
+    }
+
+    &__user {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      padding: 0.5rem 0.625rem 0.625rem;
+      color: var(--mdk-color-text-primary, #f5f5f0);
+
+      &-email { font-weight: 700; }
+
+      &-role {
+        font-size: 0.8125rem;
+        color: rgba(255, 255, 255, 0.5);
+      }
+    }
+
+    &__item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.625rem;
+
+      &--two-line { align-items: flex-start; }
+      &--danger   { color: var(--mdk-color-danger, #ff5a5a); }
+    }
+
+    &__item-icon {
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      width: 1.25rem;
+      color: currentColor;
+    }
+
+    &__item-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      min-width: 0;
+    }
+
+    &__item-label {
+      font-weight: 500;
+      color: currentColor;
+    }
+
+    &__item-description {
+      font-size: 0.8125rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}

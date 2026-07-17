@@ -14,8 +14,8 @@
  * never hand-build a `Device` payload.
  */
 
-import type { Alert, Device } from '@tetherto/mdk-react-devkit/foundation'
-import { SEVERITY } from '@tetherto/mdk-react-devkit/foundation'
+import type { Alert, Device } from '@tetherto/mdk-react-devkit/domain'
+import { SEVERITY } from '@tetherto/mdk-react-devkit/domain'
 
 const SEVERITIES = [SEVERITY.CRITICAL, SEVERITY.HIGH, SEVERITY.MEDIUM] as const
 

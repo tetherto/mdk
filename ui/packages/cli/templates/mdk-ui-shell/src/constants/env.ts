@@ -16,7 +16,7 @@ const required = (key: string, value: string | undefined): string => {
 }
 
 /**
- * App Node API base URL. Empty string means "use relative URLs" — the Vite
+ * Gateway API base URL. Empty string means "use relative URLs" — the Vite
  * dev proxy (or a production reverse proxy) handles routing.
  */
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''

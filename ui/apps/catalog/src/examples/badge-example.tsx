@@ -1,4 +1,4 @@
-import { Badge, Button } from '@tetherto/mdk-react-devkit/core'
+import { Badge, Button } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

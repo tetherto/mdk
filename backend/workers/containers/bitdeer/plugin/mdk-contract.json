@@ -1,0 +1,91 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "bitdeer",
+    "deviceFamily": "container",
+    "brand": "Bitdeer",
+    "modelsSupported": ["D40-A1346", "D40-M30", "D40-M56", "D40-S19XP"],
+    "overview": "Controls Bitdeer D40 immersion containers. The worker embeds the MQTT broker the container publishes into — reads are served from the last published state."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "container_power", "unit": "W", "type": "number", "handler": "src/telemetry/container-power.js", "description": "Container power draw." },
+      { "name": "temperature", "unit": "C", "type": "number", "handler": "src/telemetry/temperature.js", "description": "Container temperature." },
+      { "name": "tank_status", "unit": "", "type": "string", "handler": "src/telemetry/tank-status.js", "description": "Tank status." },
+      { "name": "exhaust_status", "unit": "", "type": "string", "handler": "src/telemetry/exhaust-status.js", "description": "Exhaust fan status." },
+      { "name": "snap", "unit": "", "type": "object", "handler": "src/telemetry/snap.js", "description": "Full structured snapshot (stats + config), same shape the legacy metrics pull returned." }
+    ],
+    "commands": [
+      {
+        "name": "switchContainer",
+        "description": "Turn the whole container on or off.",
+        "handler": "src/commands/switch-container.js",
+        "params": [
+          { "name": "enabled", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "switchSocket",
+        "description": "Switch PDU sockets: array of [pduIndex, socketIndex, enabled] tuples.",
+        "handler": "src/commands/switch-socket.js",
+        "params": [
+          { "name": "args", "type": "object" }
+        ]
+      },
+      {
+        "name": "switchCoolingSystem",
+        "description": "Turn the cooling system on or off.",
+        "handler": "src/commands/switch-cooling-system.js",
+        "params": [
+          { "name": "enabled", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "setTankEnabled",
+        "description": "Enable or disable a tank.",
+        "handler": "src/commands/set-tank-enabled.js",
+        "params": [
+          { "name": "tankIndex", "type": "number" },
+          { "name": "status", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "setAirExhaustEnabled",
+        "description": "Enable or disable the air exhaust.",
+        "handler": "src/commands/set-air-exhaust-enabled.js",
+        "params": [
+          { "name": "status", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "resetAlarm",
+        "description": "Reset the container alarm.",
+        "handler": "src/commands/reset-alarm.js",
+        "params": []
+      },
+      {
+        "name": "setTemperatureSettings",
+        "description": "Set temperature thresholds ({ coldOil, hotOil, coldWater, hotWater, coldOilSet, exhaustFan, pressureAlarm }).",
+        "constraints": "Requires two approvals.",
+        "handler": "src/commands/set-temperature-settings.js",
+        "params": [
+          { "name": "settings", "type": "object" }
+        ]
+      }
+    ],
+    "config": {
+      "schema": "bitdeer_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.oil_min_inlet_temp", "alert.pump_failure"],
+      "troubleshooting": [
+        "Reads come from the container's MQTT publishes — a fresh worker reports offline until the container publishes state.",
+        "If status stays offline, verify the container can reach the worker's broker port."
+      ]
+    },
+    "errors": {
+      "E_OFFLINE": "No recent MQTT state from the container"
+    }
+  }
+}

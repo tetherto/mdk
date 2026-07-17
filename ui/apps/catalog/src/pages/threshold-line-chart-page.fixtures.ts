@@ -1,5 +1,5 @@
-import type { ThresholdLineChartData } from '@tetherto/mdk-react-devkit/core'
-import { CHART_COLORS } from '@tetherto/mdk-react-devkit/core'
+import type { ThresholdLineChartData } from '@tetherto/mdk-react-devkit/primitives'
+import { CHART_COLORS } from '@tetherto/mdk-react-devkit/primitives'
 
 const dayMs = 86_400_000
 const baseUtc = Date.UTC(2025, 0, 1)

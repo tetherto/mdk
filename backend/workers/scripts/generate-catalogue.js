@@ -2,8 +2,9 @@
 
 // Generates the supported-hardware catalogue from worker contracts.
 //
-// Source of truth: every backend/workers/**/mdk-contract.json. Each contract is
-// validated against the vendored schema (backend/workers/base/mdk-contract.schema.json)
+// Source of truth: every backend/workers/**/mdk-contract.json (the handler-bearing
+// contracts under each package's plugin/). Each contract is validated against the
+// schema vendored with the runtime (backend/core/mdk-worker/mdk-contract.schema.json)
 // with ajv. Validation is WARN-ONLY: gaps are reported (stderr + both outputs) for
 // confirmation on the PR, but generation never fails and contracts are never edited.
 //
@@ -19,7 +20,7 @@ const Ajv = require('ajv/dist/2020')
 
 const WORKERS_ROOT = path.resolve(__dirname, '..')
 const REPO_ROOT = path.resolve(WORKERS_ROOT, '../..')
-const SCHEMA_PATH = path.join(WORKERS_ROOT, 'base', 'mdk-contract.schema.json')
+const SCHEMA_PATH = path.join(REPO_ROOT, 'backend', 'core', 'mdk-worker', 'mdk-contract.schema.json')
 const DOCS_DIR = path.join(WORKERS_ROOT, 'docs')
 const JSON_OUT = path.join(DOCS_DIR, 'catalogue.json')
 const MD_OUT = path.join(DOCS_DIR, 'supported-hardware.md')
@@ -73,19 +74,27 @@ function buildEntries () {
 
     const ok = validate(contract)
     const meta = contract.metadata || {}
-    const pkgDir = path.dirname(file)
+    // Handler-bearing contracts live under <package>/plugin/; the catalogue
+    // links the package itself.
+    let pkgDir = path.dirname(file)
+    if (path.basename(pkgDir) === 'plugin') pkgDir = path.dirname(pkgDir)
     const usagePath = path.join(pkgDir, 'USAGE.md')
 
-    entries.push({
-      family: meta.deviceFamily || 'unknown',
-      brand: meta.brand || meta.provider || '(unknown)',
-      provider: meta.provider || '',
-      models: Array.isArray(meta.modelsSupported) ? meta.modelsSupported : [],
-      package: rel(pkgDir),
-      contract: rel(file),
-      usage: fs.existsSync(usagePath) ? rel(usagePath) : null,
-      conformant: ok
-    })
+    // Sample contracts must conform too, but hypothetical devices do not
+    // belong in the supported-hardware catalogue.
+    const isSample = path.relative(WORKERS_ROOT, file).split(path.sep)[0] === 'samples'
+    if (!isSample) {
+      entries.push({
+        family: meta.deviceFamily || 'unknown',
+        brand: meta.brand || meta.provider || '(unknown)',
+        provider: meta.provider || '',
+        models: Array.isArray(meta.modelsSupported) ? meta.modelsSupported : [],
+        package: rel(pkgDir),
+        contract: rel(file),
+        usage: fs.existsSync(usagePath) ? rel(usagePath) : null,
+        conformant: ok
+      })
+    }
 
     if (!ok) {
       gaps.push({
@@ -127,7 +136,7 @@ function familySection (entries, family) {
 
 function writeMarkdown (entries, gaps) {
   let md = '<!-- GENERATED FILE — DO NOT EDIT. Regenerate with `npm run generate:catalogue` from backend/workers. '
-  md += 'Source: backend/workers/**/mdk-contract.json validated against backend/workers/base/mdk-contract.schema.json. -->\n\n'
+  md += 'Source: backend/workers/**/mdk-contract.json validated against backend/core/mdk-worker/mdk-contract.schema.json. -->\n\n'
   md += '# Supported hardware\n\n'
   md += 'Every row is derived from a worker\'s `mdk-contract.json` (`metadata.provider`, `deviceFamily`, '
   md += '`brand`, `modelsSupported`) — the engineering source of truth. Mock types, ports, and manager-class '

@@ -1,6 +1,6 @@
-import type { ToastPosition, ToastVariant } from '@tetherto/mdk-react-devkit/core'
-import { Button, Toast, TOAST_POSITIONS, Toaster } from '@tetherto/mdk-react-devkit/core'
-import { useNotification } from '@tetherto/mdk-react-devkit/foundation'
+import type { ToastPosition, ToastVariant } from '@tetherto/mdk-react-devkit/primitives'
+import { Button, Toast, TOAST_POSITIONS, Toaster } from '@tetherto/mdk-react-devkit/primitives'
+import { useNotification } from '@tetherto/mdk-react-devkit/domain'
 import { useState } from 'react'
 import type { JSX } from 'react'
 

@@ -1,5 +1,5 @@
-import { COLOR, UNITS } from '@tetherto/mdk-react-devkit/core'
-import { MetricCard } from '@tetherto/mdk-react-devkit/foundation'
+import { COLOR, UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import { MetricCard } from '@tetherto/mdk-react-devkit/domain'
 import type { JSX } from 'react'
 
 import { DemoBlock } from '../components/demo-block'

@@ -34,7 +34,7 @@
       },
       "description": "Fans out telemetry.pull to every registered worker and returns site-level hashrate history aggregated by timestamp. Defaults to last 7 days when start/end are omitted.",
       "constraints": [
-        "Requires the MDK client to be connected to an ORK instance.",
+        "Requires the MDK client to be connected to an Kernel instance.",
         "Workers must expose a hashrate_history telemetry type.",
         "start and end are optional Unix millisecond timestamps; defaults to last 7 days."
       ],

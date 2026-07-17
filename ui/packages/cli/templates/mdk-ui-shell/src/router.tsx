@@ -4,7 +4,6 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { App } from './App'
 import { ROUTE_PATHS } from './constants/routes'
-import Alerts from './pages/Alerts'
 import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
 import SignIn from './pages/SignIn'
@@ -28,15 +27,12 @@ export const router = createBrowserRouter([
         path: ROUTE_PATHS.DASHBOARD.replace(/^\//, ''),
         element: <Dashboard />,
       },
-      {
-        // Optional `:uuid` segment supports deep-linking to a single alert.
-        path: `${ROUTE_PATHS.ALERTS.replace(/^\//, '')}/:uuid?`,
-        element: <Alerts />,
-      },
+      // Alerts and Pool Manager are pre-seeded in `./routes`; deep-link
+      // params (e.g. Alerts' `/:uuid?`) come from each route's `routePath`.
       ...ROUTES.map((route) => {
         const Page = lazy(route.page)
         return {
-          path: route.path.replace(/^\//, ''),
+          path: (route.routePath ?? route.path).replace(/^\//, ''),
           element: (
             <Suspense fallback={<div className="mdk-ui-shell-loader">Loading…</div>}>
               <Page />

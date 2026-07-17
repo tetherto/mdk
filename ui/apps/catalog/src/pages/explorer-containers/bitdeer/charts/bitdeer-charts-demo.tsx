@@ -1,12 +1,12 @@
-import type { UnknownRecord } from '@tetherto/mdk-react-devkit/core'
-import { Button } from '@tetherto/mdk-react-devkit/core'
+import type { UnknownRecord } from '@tetherto/mdk-react-devkit/primitives'
+import { Button } from '@tetherto/mdk-react-devkit/primitives'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 
 import {
   BitdeerTankPressureCharts,
   BitdeerTankTempCharts,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import './bitdeer-charts-demo.scss'
 
 const CHART_HEIGHT = 300

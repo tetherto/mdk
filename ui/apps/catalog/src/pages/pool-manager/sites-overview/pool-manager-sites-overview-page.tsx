@@ -1,7 +1,7 @@
 import {
   PoolManagerSitesOverview,
   SITE_OVERVIEW_STATUSES,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import type { JSX } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DemoBlock } from '../../../components/demo-block'
@@ -71,7 +71,7 @@ const mockUnits = [
   },
   {
     id: 'unit-5',
-    type: 'container-mbt-kehua',
+    type: 'container-mbt-alpha',
     hashrateMhs: 1_100_000_000,
     status: SITE_OVERVIEW_STATUSES.MINING,
     info: { container: 'microbt-1', poolConfig: 'pool-2' },

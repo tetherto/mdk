@@ -1,6 +1,6 @@
-import { UNITS } from '@tetherto/mdk-react-devkit/core'
+import { UNITS } from '@tetherto/mdk-react-devkit/primitives'
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { SecondaryStatCard } from '@tetherto/mdk-react-devkit/foundation'
+import { SecondaryStatCard } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import './secondary-stat-card-demo.scss'
 

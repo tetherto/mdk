@@ -6,8 +6,8 @@ import ReactDOM from 'react-dom/client'
 
 import { SiteHashratePage } from './SiteHashratePage'
 
-// In dev: Vite proxies /oauth/* and /ork/* to app-node — use same origin (empty string).
-// In production: UI is served by app-node as static files — also same origin.
+// In dev: Vite proxies /oauth/* and /kernel/* to gateway — use same origin (empty string).
+// In production: UI is served by gateway as static files — also same origin.
 // Override with VITE_API_BASE_URL only when deploying UI and API to separate hosts.
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
 

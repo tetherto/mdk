@@ -5,7 +5,7 @@ import {
   historyLogQuery,
   mapHistoryLogToAlerts,
   queryKeys,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 
 export type UseHistoricalAlertsOptions = {

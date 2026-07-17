@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { BtcAveragePrice } from '@tetherto/mdk-react-devkit/core'
+import { BtcAveragePrice } from '@tetherto/mdk-react-devkit/primitives'
 
 import { DemoBlock } from '../components/demo-block'
 import { DemoPageHeader } from '../components/demo-page-header'

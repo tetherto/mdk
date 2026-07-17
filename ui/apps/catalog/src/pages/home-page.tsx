@@ -1,8 +1,8 @@
-import type { SidebarMenuItem } from '@tetherto/mdk-react-devkit/core'
+import type { SidebarMenuItem } from '@tetherto/mdk-react-devkit/primitives'
 import { useMemo } from 'react'
 import type { JSX } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { COMPONENT_NAV, getCategoryStats } from '../constants/navigation'
+import { COMPONENT_NAV, getCategoryStats, NAV_SECTION } from '../constants/navigation'
 import './home-page.scss'
 
 type CategoryCardProps = {
@@ -108,7 +108,7 @@ export const HomePage = (): JSX.Element => {
 
   const sectionGroups = useMemo((): SectionGroup[] => {
     return COMPONENT_NAV.filter(
-      (item) => item.id === 'guides' || item.id === 'core' || item.id === 'foundation',
+      (item) => item.id === NAV_SECTION.guides || item.id === NAV_SECTION.primitives || item.id === NAV_SECTION.domain,
     ).map((section) => ({
       section: section.label,
       categories: (section.items ?? []).map((category) => {

@@ -29,7 +29,7 @@ describe('runBlueprints', () => {
     expect(first).toHaveProperty('title')
     expect(first).toHaveProperty('intent')
     expect(first).toHaveProperty('domain')
-    expect(first).toHaveProperty('orkCapabilities')
+    expect(first).toHaveProperty('kernelCapabilities')
     expect(first).toHaveProperty('components')
     expect(first).toHaveProperty('hooks')
   })

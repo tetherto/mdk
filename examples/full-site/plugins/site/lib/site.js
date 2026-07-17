@@ -1,14 +1,77 @@
 'use strict'
 
-// Shared helpers for the site plugin controllers. Every ORK access goes through
-// the injected mdkClient (RPC gateway) — controllers never reach further down.
+// Shared helpers for the site plugin controllers. Every Kernel access goes through
+// the injected mdkClient (RPC listener) — controllers never reach further down.
 
-// List workers and classify each by its contract's deviceFamily (the real MDK
-// classification, robust to thing-type naming). Thing workers (miner, container,
-// power-meter) get one list pull — with { status: true } each thing carries its
-// latest snapshot (thg.last.snap), so the live site is assembled from one call
-// per worker, not one per miner. The minerpool is a scheduler worker with no
-// things; it is exposed only as { workerId, deviceId } for ext_data pulls.
+// Fallback when a config pull fails or omits deviceFamily — keyed by stable workerId.
+const WORKER_FAMILY = {
+  'whatsminer-worker': 'miner',
+  'antminer-worker': 'miner',
+  'avalon-worker': 'miner',
+  'container-worker': 'container',
+  'antspace-worker': 'container',
+  'bitdeer-worker': 'container',
+  'powermeter-worker': 'power-meter',
+  'satec-powermeter-worker': 'power-meter',
+  'schneider-powermeter-worker': 'power-meter',
+  'seneca-sensor-worker': 'sensor',
+  'minerpool-worker': 'minerpool',
+  'f2pool-worker': 'minerpool'
+}
+
+function resolveFamily (worker, cfg) {
+  const fromContract = cfg && cfg.config && cfg.config.contract && cfg.config.contract.deviceFamily
+  if (fromContract) return fromContract
+  return WORKER_FAMILY[worker.workerId] || null
+}
+
+function telemetryAnchor (worker) {
+  const deviceIds = worker.deviceIds || []
+  return deviceIds[0] || worker.workerId
+}
+
+// Adapter for workers that don't serve the worker-infra `config`/`list`
+// queries (e.g. a third-party plugin like backend/workers/samples/demo-worker):
+// classify by published
+// capability (the Kernel registry exposes contract.capabilities, not
+// metadata — a worker declaring a hashrate_rt channel is a miner) and
+// synthesize the thing shape the controllers read from plain per-device
+// `metrics` pulls. Only miners are adapted — theirs is the card shape the
+// overview knows how to render.
+async function adaptContractMiners (mdkClient, worker) {
+  const caps = await mdkClient.getCapabilities(telemetryAnchor(worker))
+  const telemetry = (caps && caps.capabilities && caps.capabilities.telemetry) || []
+  if (!telemetry.some((t) => t.name === 'hashrate_rt')) return null
+
+  const container = `rack-${worker.workerId.replace(/-worker$/, '')}`
+  return Promise.all((worker.deviceIds || []).map(async (deviceId, i) => {
+    const tel = await mdkClient.pullTelemetry(deviceId, { type: 'metrics' }).catch(() => null)
+    const m = (tel && tel.metrics) || {}
+    const hashrateThs = Number(m.hashrate_rt) || 0
+    return {
+      id: deviceId,
+      code: deviceId,
+      info: { container, pos: String(i + 1) },
+      last: {
+        snap: {
+          stats: {
+            status: hashrateThs > 0 ? 'mining' : 'offline',
+            power_w: Number(m.power) || 0,
+            hashrate_mhs: { t_5m: hashrateThs * 1e6 },
+            temperature_c: { avg: Number(m.temperature) || 0 }
+          },
+          // The UI's mode toggle speaks low|normal|high; firmware v3 says eco.
+          config: { power_mode: m.power_mode === 'eco' ? 'low' : m.power_mode || null }
+        }
+      },
+      workerId: worker.workerId
+    }
+  }))
+}
+
+// List workers and classify each by deviceFamily (contract or workerId fallback).
+// One list pull per worker — with { status: true } each thing carries its latest
+// snapshot (thg.last.snap). The minerpool is a scheduler worker with no things.
 async function loadSite (mdkClient, opts = {}) {
   if (!mdkClient) throw new Error('ERR_MDK_CLIENT_UNAVAILABLE')
 
@@ -16,29 +79,57 @@ async function loadSite (mdkClient, opts = {}) {
   const workers = (res && res.workers) || []
 
   const byFamily = {}
-  let pool = null
+  const pools = []
 
   await Promise.all(workers.map(async (w) => {
-    const deviceIds = w.deviceIds || []
-    if (!deviceIds.length) return
+    if (w.state === 'TERMINATED' || w.healthState === 'DEAD') return
 
-    const cfg = await mdkClient.pullTelemetry(deviceIds[0], { type: 'config' })
-    const family = cfg && cfg.config && cfg.config.contract && cfg.config.contract.deviceFamily
+    const anchor = telemetryAnchor(w)
+    const cfg = await mdkClient.pullTelemetry(anchor, { type: 'config' })
+    const family = resolveFamily(w, cfg)
 
     if (family === 'minerpool') {
-      pool = { workerId: w.workerId, deviceId: deviceIds[0] }
+      pools.push({ workerId: w.workerId, deviceId: anchor })
       return
     }
 
-    const query = { type: 'list', limit: 10000 }
+    if (!family) {
+      // No worker-infra surface — fall back to contract classification
+      // (rejections mean "not adaptable", same as unknown family before).
+      const adapted = await adaptContractMiners(mdkClient, w).catch(() => null)
+      if (adapted && adapted.length) {
+        if (!byFamily.miner) byFamily.miner = []
+        byFamily.miner.push(...adapted)
+      }
+      return
+    }
+
+    let limit = Math.max((w.deviceIds || []).length, 1)
+    try {
+      const countRes = await mdkClient.pullTelemetry(anchor, { type: 'count' })
+      if (countRes && countRes.count > 0) limit = countRes.count
+    } catch {}
+
+    const query = { type: 'list', limit }
     if (opts.status) query.status = true
-    const tel = await mdkClient.pullTelemetry(deviceIds[0], query)
+    const tel = await mdkClient.pullTelemetry(anchor, query)
     const things = (tel && tel.things) || []
+    if (!things.length) {
+      // Container worker is registered but returned no things (e.g. MQTT broker
+      // initialising before its first snap). Add a stub using the device ID so the
+      // container card still appears in the overview.
+      if (family === 'container' && anchor !== w.workerId) {
+        if (!byFamily[family]) byFamily[family] = []
+        byFamily[family].push({ id: anchor, code: anchor, info: { container: anchor }, last: {}, workerId: w.workerId })
+      }
+      return
+    }
+
     if (!byFamily[family]) byFamily[family] = []
     for (const thg of things) byFamily[family].push({ ...thg, workerId: w.workerId })
   }))
 
-  return { workers, byFamily, pool }
+  return { workers, byFamily, pools }
 }
 
 function snapStats (thg) {
@@ -49,4 +140,4 @@ function snapConfig (thg) {
   return (thg && thg.last && thg.last.snap && thg.last.snap.config) || {}
 }
 
-module.exports = { loadSite, snapStats, snapConfig }
+module.exports = { loadSite, snapStats, snapConfig, WORKER_FAMILY, resolveFamily }

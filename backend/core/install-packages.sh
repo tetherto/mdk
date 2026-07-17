@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 MODE="${1:-install}"
-PACKAGES=(app-node client examples/mdk-e2e mdk mock-control-service ork plugins)
+PACKAGES=(client gateway kernel mdk mdk-worker mock-control-service plugins)
 
 run_npm () {
   local dir="$1"

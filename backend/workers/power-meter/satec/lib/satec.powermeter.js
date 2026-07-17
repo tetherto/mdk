@@ -1,6 +1,6 @@
 'use strict'
 
-const PowerMeter = require('../../base/lib/powermeter')
+const { PowerMeter } = require('../../../../core/mdk')
 const { series } = require('async')
 const { FUNCTION_CODES, PROTOCOL } = require('svc-facs-modbus/lib/constants')
 const { promiseTimeout } = require('@bitfinex/lib-js-util-promise')

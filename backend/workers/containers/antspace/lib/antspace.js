@@ -1,6 +1,6 @@
 'use strict'
 
-const Container = require('../../base/lib/container')
+const { Container } = require('../../../../core/mdk')
 
 class Antspace extends Container {
   constructor ({ client, ...opts }) {

@@ -1,4 +1,4 @@
-import { ErrorCard } from '@tetherto/mdk-react-devkit/core'
+import { ErrorCard } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

@@ -1,4 +1,4 @@
-import { ChartContainer } from '@tetherto/mdk-react-devkit/core'
+import { ChartContainer } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 import { DemoBlock } from '../components/demo-block'

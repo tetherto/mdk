@@ -1,4 +1,4 @@
-import { type PowerModeTimelineEntry, tailLogQuery } from '@tetherto/mdk-ui-core'
+import { type PowerModeTimelineEntry, tailLogQuery } from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 
 const POWER_MODE_AGGR_FIELDS = JSON.stringify({

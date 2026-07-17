@@ -1,6 +1,6 @@
 'use strict'
 
-const Sensor = require('../../base/lib/sensor')
+const { Sensor } = require('../../../../core/mdk')
 const { FUNCTION_CODES, PROTOCOL } = require('svc-facs-modbus/lib/constants')
 const { promiseTimeout } = require('@bitfinex/lib-js-util-promise')
 

@@ -7,8 +7,8 @@
 // that same mock and pulls stats, workers, transactions and blocks, proving the
 // pool worker fetches and stores data correctly.
 //
-// Minerpools are not (yet) wired into the ORK/MDK thing model, so there is no IPC
-// socket to query (unlike the miner/container examples). We exercise the pool
+// Minerpools are not (yet) wired into the Kernel/MDK thing model, so there is no
+// Kernel to query over HRPC (unlike the miner/container examples). We exercise the pool
 // manager directly, which is how it runs inside a worker process today.
 //
 // Usage:

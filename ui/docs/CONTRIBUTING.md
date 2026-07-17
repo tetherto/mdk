@@ -40,7 +40,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 feat(react-devkit): add MinerCard component
-fix(ui-core): correct removeMultipleSelectedSockets filter logic
+fix(ui-foundation): correct removeMultipleSelectedSockets filter logic
 docs(readme): refresh the architecture overview
 refactor(react-adapter): simplify useTelemetry implementation
 test(react-devkit): add tests for DataTable column ordering
@@ -65,7 +65,7 @@ Pre-commit hooks (Husky + lint-staged) run `eslint --fix` and
 npm run dev                              # watch every package + run the catalog
 npm run dev:packages                     # packages only, no catalog
 npm run dev:catalog                      # catalog with HMR (requires built packages)
-turbo dev --filter @tetherto/mdk-ui-core # focus a single workspace
+turbo dev --filter @tetherto/mdk-ui-foundation # focus a single workspace
 
 # Build
 npm run build                            # everything
@@ -150,7 +150,7 @@ The toolkit follows a **framework-first** naming convention:
 These are enforced architectural decisions — please follow them:
 
 - **State** lives in Zustand vanilla stores inside
-  `@tetherto/mdk-ui-core`. React components consume them via the hooks in
+  `@tetherto/mdk-ui-foundation`. React components consume them via the hooks in
   `@tetherto/mdk-react-adapter`. **Do not** reintroduce Redux, MobX or
   any alternative state library.
 - **Data fetching** is TanStack Query. The headless client lives in the
@@ -202,7 +202,7 @@ describe("Button", () => {
 **Store test**:
 
 ```ts
-import { authStore } from "@tetherto/mdk-ui-core"
+import { authStore } from "@tetherto/mdk-ui-foundation"
 
 describe("authStore", () => {
   beforeEach(() => authStore.getState().reset())
@@ -225,15 +225,15 @@ this document and the relevant `vitest.config.js`:
 
 | Package | Lines / Functions / Statements | Branches | Notes |
 |---------|--------------------------------|----------|-------|
-| `@tetherto/mdk-ui-core` | 85% | 80% | Headless state + utilities, Node env. |
+| `@tetherto/mdk-ui-foundation` | 85% | 80% | Headless state + utilities, Node env. |
 | `@tetherto/mdk-react-adapter` | 80% | 80% | React bindings, `happy-dom` env. |
-| `@tetherto/mdk-react-devkit` | 80% | 80% | UI library, three Vitest projects (`node`, `core-dom`, `foundation-dom`). |
+| `@tetherto/mdk-react-devkit` | 80% | 80% | UI library, three Vitest projects (`node`, `primitives-dom`, `domain-dom`). |
 | `@tetherto/mdk-fonts` | — | — | Asset-only; no tests, no coverage. |
 
 **Exclusions** — common to all: barrel `index.{ts,tsx}` files, `*.d.ts`, and
-test files / test utilities. Additionally: `src/types/**` (ui-core);
-`src/**/icons/**`, `src/core/components/logs/**`,
-`src/core/components/labeled-card/**`, `src/core/types/**`,
+test files / test utilities. Additionally: `src/types/**` (ui-foundation);
+`src/**/icons/**`, `src/primitives/components/logs/**`,
+`src/primitives/components/labeled-card/**`, `src/primitives/types/**`,
 `src/**/*.stories.{ts,tsx}` (react-devkit). All packages report
 `["text-summary", "html", "lcov", "json"]` with `reportOnFailure: true`.
 
@@ -241,7 +241,7 @@ test files / test utilities. Additionally: `src/types/**` (ui-core);
 
 ```bash
 npm run test:coverage                                          # all workspaces
-npm run --workspace @tetherto/mdk-ui-core       test:coverage
+npm run --workspace @tetherto/mdk-ui-foundation       test:coverage
 npm run --workspace @tetherto/mdk-react-adapter test:coverage
 npm run --workspace @tetherto/mdk-react-devkit  test:coverage
 ```
@@ -293,7 +293,7 @@ one and add what it requires:
 
 | Tier | Use when… | Must add |
 |------|-----------|----------|
-| `agent-ready` | An LLM or non-expert will pick this directly to build a page | JSDoc + `@category` + `@domain` + `@tier` + `USAGE.md` + `*.example.tsx` (+ `@orkCapability` when `@domain ≠ generic`) |
+| `agent-ready` | An LLM or non-expert will pick this directly to build a page | JSDoc + `@category` + `@domain` + `@tier` + `USAGE.md` + `*.example.tsx` (+ `@kernelCapability` when `@domain ≠ generic`) |
 | `advanced` | A downstream engineer composes or extends with this | JSDoc + `@category` + `@domain` + `@tier` |
 | `internal` | Implementation detail, never part of the public API | `@tier internal` only |
 
@@ -318,6 +318,16 @@ export const MyComponent = (…) => { … };
 
 The first paragraph becomes the registry description — keep it ≤ 200 chars.
 Longer prose belongs in `USAGE.md`.
+
+> **These feed the public docs site.** Your JSDoc (description + per-prop
+> docs + `@default`), `USAGE.md`, and `*.example.tsx` files are the source
+> for the reference pages on the [mdk-docs](https://github.com/tetherto/mdk-docs)
+> site — `mdk-ui docs:build` reads them straight from the registry and writes
+> a generated dataset the docs repo embeds via `<ComponentDoc>`. Write them
+> for a reader, not just the linter: a clear sentence, a real default, and a
+> runnable example all show up verbatim on the published page. Run
+> `mdk-ui docs:build --docs-repo <path> --report-only` to see what would
+> change before you commit.
 
 #### Extra files required for `agent-ready`
 
@@ -354,6 +364,14 @@ One-paragraph summary.
 - Anything non-obvious about composition, accessibility, or performance.
 ```
 
+The docs site renders the description, props table, and examples from your
+types and `*.example.tsx` — it strips the `# Title`, `## Props`, and
+`## Example` sections out of `USAGE.md` so they aren't shown twice, and renders
+only your intro + `## Notes`. Put your effort into that prose; the props/example
+blocks above are optional (they only feed the raw `mdk-ui doc` CLI output). See
+[`packages/react-devkit/AGENT_READY.md`](../packages/react-devkit/AGENT_READY.md#paste-ready-templates)
+for the full explanation.
+
 #### Blueprints — only when adding a new user intent
 
 Blueprints live in `packages/react-devkit/blueprints/` and map a high-level
@@ -376,7 +394,7 @@ npm run fullcheck
 The gate compares against a baseline — new violations fail the build.
 See [`packages/react-devkit/AGENT_READY.md`](../packages/react-devkit/AGENT_READY.md)
 for the full contract, allowed values for `@tier` / `@category` / `@domain` /
-`@orkCapability`, paste-ready templates, and the error catalogue.
+`@kernelCapability`, paste-ready templates, and the error catalogue.
 
 ## Pull request guidelines
 

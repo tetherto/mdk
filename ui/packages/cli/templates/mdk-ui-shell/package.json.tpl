@@ -15,7 +15,7 @@
     "@tetherto/mdk-fonts": "^0.0.1",
     "@tetherto/mdk-react-adapter": "^0.0.1",
     "@tetherto/mdk-react-devkit": "^0.0.1",
-    "@tetherto/mdk-ui-core": "^0.0.1",
+    "@tetherto/mdk-ui-foundation": "^0.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0"

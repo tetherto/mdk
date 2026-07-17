@@ -4,12 +4,12 @@
   "env": "development",
   "services": [
     {
-      "name": "ork",
-      "kind": "ork"
+      "name": "kernel",
+      "kind": "kernel"
     },
     {
-      "name": "app-node",
-      "kind": "app-node",
+      "name": "gateway",
+      "kind": "gateway",
       "port": 3000
     },
     {

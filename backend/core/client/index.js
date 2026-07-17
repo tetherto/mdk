@@ -1,25 +1,21 @@
 'use strict'
 
-const { IPCClient } = require('./lib/ipc-client')
 const { HRPCClient } = require('./lib/hrpc-client')
-const { build } = require('../ork/lib/protocol/envelope')
-const { ACTIONS, MESSAGE_TYPES } = require('../ork/lib/protocol/actions')
+const { build } = require('../kernel/lib/protocol/envelope')
+const { ACTIONS, MESSAGE_TYPES } = require('../kernel/lib/protocol/actions')
 
 /**
  * createMdkClient
  *
- * Factory for an MDK protocol client. Opens a persistent connection to an ORK
- * gateway and exposes typed request helpers for every App Node → ORK action
- * defined in the MDK protocol. The transport is selected by which option is
- * given:
- *   - `opts.hrpc = { key }` — the RPC gateway (HRPC) over Hyperswarm
- *   - `opts.ipc  = '<path>'` — the local IPC Unix socket
+ * Factory for an MDK protocol client. Opens a persistent connection to a Kernel
+ * listener and exposes typed request helpers for every Gateway → Kernel action
+ * defined in the MDK protocol. Transport is the RPC listener (HRPC) over
+ * Hyperswarm: `opts.hrpc = { key }`.
  *
  * @param {object} opts
  * @param {object} [opts.hrpc]     - HRPC transport opts ({ key, seed?, bootstrap?, dht?, rpc? })
- * @param {string} [opts.ipc]      - Path to the ORK Unix socket
  * @param {object} [opts.transport] - Pre-built transport ({ connect, close, request }); test seam
- * @returns {object} MDK client with connect/close and action methods
+ * @returns {object} Client with connect/close and action methods
  */
 function createMdkClient (opts) {
   const transport = _createTransport(opts)
@@ -28,7 +24,7 @@ function createMdkClient (opts) {
     return transport.request(build({
       action,
       type: MESSAGE_TYPES.REQUEST,
-      sender: 'app-node',
+      sender: 'gateway',
       deviceId: deviceId || null,
       payload: payload || {}
     }))
@@ -56,7 +52,7 @@ function createMdkClient (opts) {
     },
 
     // Read-only WORKER_LIST aggregator. Retries are safe here because it only
-    // reads; command ops are never retried (the ORK dedups, not the transport).
+    // reads; command ops are never retried (the Kernel dedups, not the transport).
     async getStatus ({ retries = 3, retryDelayMs = 600, timeoutMs = 8000 } = {}) {
       let lastErr
       for (let i = 0; i < retries; i++) {
@@ -131,10 +127,10 @@ function createMdkClient (opts) {
     },
 
     sendCommand (deviceId, command, params) {
-      return request(ACTIONS.COMMAND_REQUEST, { command, params: params || {}, requesterId: 'app-node' }, deviceId)
+      return request(ACTIONS.COMMAND_REQUEST, { command, params: params || {}, requesterId: 'gateway' }, deviceId)
     },
 
-    // Resolve a worker's RPC public key (hex) from the ORK registry, or null.
+    // Resolve a worker's RPC public key (hex) from the Kernel registry, or null.
     async getWorkerKey (workerId) {
       const { workers } = await client.getStatus()
       const w = workers.find((x) => x.workerId === workerId)
@@ -158,6 +154,34 @@ function createMdkClient (opts) {
 
     terminateWorker (workerId) {
       return request(ACTIONS.WORKER_TERMINATE, { workerId })
+    },
+
+    pushAction ({ query, action, params, voter, authPerms, batchActionUID }) {
+      return request(ACTIONS.ACTION_PUSH, { query, action, params, voter, authPerms, batchActionUID })
+    },
+
+    pushActionsBatch ({ batchActionsPayload, voter, authPerms, batchActionUID, suffix }) {
+      return request(ACTIONS.ACTION_PUSH_BATCH, { batchActionsPayload, voter, authPerms, batchActionUID, suffix })
+    },
+
+    getAction ({ id, type }) {
+      return request(ACTIONS.ACTION_GET, { id, type })
+    },
+
+    getActionsBatch ({ ids }) {
+      return request(ACTIONS.ACTION_GET_BATCH, { ids })
+    },
+
+    queryActions ({ queries, suffix, groupBatch }) {
+      return request(ACTIONS.ACTION_QUERY, { queries, suffix, groupBatch })
+    },
+
+    voteAction ({ id, voter, approve, authPerms }) {
+      return request(ACTIONS.ACTION_VOTE, { id, voter, approve, authPerms })
+    },
+
+    cancelActionsBatch ({ ids, voter }) {
+      return request(ACTIONS.ACTION_CANCEL_BATCH, { ids, voter })
     }
   }
 
@@ -165,7 +189,7 @@ function createMdkClient (opts) {
 }
 
 // A client bound directly to a worker by its RPC public key — same surface as
-// the ORK client, for ops the worker adapter handles directly.
+// the Kernel client, for ops the worker adapter handles directly.
 function createWorkerClient (rpcKey, hrpcOpts = {}) {
   return createMdkClient({ hrpc: { key: rpcKey, ...hrpcOpts } })
 }
@@ -174,7 +198,6 @@ function _createTransport (opts) {
   // `transport` is an injection seam (tests): any { connect, close, request }.
   if (opts && opts.transport) return opts.transport
   if (opts && opts.hrpc) return new HRPCClient(opts.hrpc)
-  if (opts && opts.ipc) return new IPCClient(opts.ipc)
   throw new Error('ERR_MDK_CLIENT_TRANSPORT_REQUIRED')
 }
 

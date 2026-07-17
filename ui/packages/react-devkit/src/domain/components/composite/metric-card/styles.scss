@@ -1,0 +1,35 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-metric-card {
+  @include flex_column;
+
+  flex: 1;
+  padding: 20px;
+  min-width: 200px;
+  box-sizing: border-box;
+  background-color: var(--mdk-metric-card-bg);
+
+  &--no-min-width {
+    min-width: unset;
+  }
+
+  &__label {
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: normal;
+    color: var(--mdk-color-text-disabled);
+  }
+
+  &__value {
+    font-size: 25px;
+    font-weight: 700;
+    line-height: normal;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+
+    &--medium {
+      font-size: 20px;
+    }
+  }
+}

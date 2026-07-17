@@ -9,9 +9,9 @@ import {
   LineChart,
   Loader,
   UNITS,
-} from '@tetherto/mdk-react-devkit/core'
-import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/core'
-import { ChartWrapper } from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/primitives'
+import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/primitives'
+import { ChartWrapper } from '@tetherto/mdk-react-devkit/domain'
 import { type ReactElement, type ReactNode, useCallback, useState } from 'react'
 
 import { BAR_CHART_MINING_OUTPUT } from '../constants/demo-chart-data'

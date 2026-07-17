@@ -1,4 +1,4 @@
-import { CONTAINER_STATUS, SITE_OVERVIEW_STATUSES } from '@tetherto/mdk-ui-core'
+import { CONTAINER_STATUS, SITE_OVERVIEW_STATUSES } from '@tetherto/mdk-ui-foundation'
 import { describe, expect, it } from 'vitest'
 
 import { useSitesOverviewData } from '../use-sites-overview-data'

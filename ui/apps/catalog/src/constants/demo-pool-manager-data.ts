@@ -3,8 +3,8 @@
  * Used by: PoolManagerPools, PoolManagerMinerExplorer, AssignPoolModal demos.
  */
 
-import type { Device, PoolConfigData } from '@tetherto/mdk-react-devkit/foundation'
-import { COMPLETE_MINER_TYPES } from '@tetherto/mdk-react-devkit/foundation'
+import type { Device, PoolConfigData } from '@tetherto/mdk-react-devkit/domain'
+import { COMPLETE_MINER_TYPES } from '@tetherto/mdk-react-devkit/domain'
 
 export const DEMO_POOL_CONFIG: PoolConfigData[] = [
   {

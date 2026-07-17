@@ -1,15 +1,15 @@
 import type {
   HashRevenueLogEntry,
   HashRevenueResponse,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 
 import _map from 'lodash/map'
 
 import {
-  buildMoriaStyleLogEntry,
-  buildMoriaStyleYearLog,
-  MORIA_HASH_BALANCE_MONTHLY,
-} from './hash-balance-moria-demo.fixture'
+  buildDemoLogEntry,
+  buildDemoYearLog,
+  HASH_BALANCE_MONTHLY,
+} from './hash-balance-demo.fixture'
 
 export const DEMO_HASH_BALANCE_EMPTY_YEAR = 2024
 
@@ -25,13 +25,13 @@ const timeframePickerYears = (): number[] => {
   return [current, current - 1, current - 2]
 }
 
-const sparseMoriaFallbackYear = (year: number): HashRevenueLogEntry[] => {
-  const template = MORIA_HASH_BALANCE_MONTHLY[2025]?.[4]
+const sparseFallbackYear = (year: number): HashRevenueLogEntry[] => {
+  const template = HASH_BALANCE_MONTHLY[2025]?.[4]
 
   if (!template) return []
 
   return _map<number, HashRevenueLogEntry>(DEMO_HASH_BALANCE_SPARSE_FALLBACK_MONTHS, (month) =>
-    buildMoriaStyleLogEntry(year, month, template),
+    buildDemoLogEntry(year, month, template),
   )
 }
 
@@ -75,12 +75,12 @@ export const buildDemoHashRevenueResponse = (): HashRevenueResponse => {
   for (const year of timeframePickerYears()) {
     if (year === DEMO_HASH_BALANCE_EMPTY_YEAR) continue
 
-    if (year in MORIA_HASH_BALANCE_MONTHLY) {
-      log.push(...buildMoriaStyleYearLog(year))
+    if (year in HASH_BALANCE_MONTHLY) {
+      log.push(...buildDemoYearLog(year))
       continue
     }
 
-    log.push(...sparseMoriaFallbackYear(year))
+    log.push(...sparseFallbackYear(year))
   }
 
   log.sort((a, b) => a.ts - b.ts)

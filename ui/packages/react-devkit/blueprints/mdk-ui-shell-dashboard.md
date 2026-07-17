@@ -8,7 +8,7 @@ intent: >
   from foundation components and adapter hooks, no Ant Design, no custom
   data fetching.
 domain: mining-operations
-orkCapabilities:
+kernelCapabilities:
   - hashrate-monitoring
   - power-consumption
   - power-mode-tracking
@@ -29,7 +29,7 @@ demoRoute: /dashboard
 ## When to use
 
 Pick this blueprint when the user wants a *complete*, sign-in-gated,
-single-site operator dashboard against the App Node backend — the
+single-site operator dashboard against the Gateway backend — the
 smallest runnable demonstration of MDK end-to-end. The output is a
 ~70-line `Dashboard.tsx` with one hook per chart and no inline data
 transformations.
@@ -42,14 +42,14 @@ mdk-ui create my-dashboard --template mdk-ui-shell
 
 ## Local setup (backend + frontend)
 
-The dashboard talks to [`miningos-app-node`](https://github.com/tetherto/miningos-app-node)
+The dashboard talks to [`mdk-gateway`](https://github.com/tetherto/mdk-prv/blob/release/0.5.0/backend/core/gateway/package.json)
 over the Vite dev proxy. Both sides must be running for sign-in to
 succeed.
 
 ```bash
 # 1. Backend (one-time setup — needs a Google OAuth client)
-git clone https://github.com/tetherto/miningos-app-node.git
-cd miningos-app-node
+git clone https://github.com/tetherto/miningos-gateway.git
+cd miningos-gateway
 ./setup-config.sh
 #   ↳ paste a Google OAuth client id + secret into
 #     config/facs/httpd-oauth2.config.json, then add your Google email
@@ -119,14 +119,14 @@ export default function Dashboard() {
 
 - Wrap the app once in `<MdkProvider apiBaseUrl={import.meta.env.VITE_API_BASE_URL}>`.
 - All requests use `Authorization: Bearer <token>`. The token lives in
-  `authStore` (`@tetherto/mdk-ui-core`). `useAuthToken` writes it after the
+  `authStore` (`@tetherto/mdk-ui-foundation`). `useAuthToken` writes it after the
   Google OAuth callback; `useTokenPolling` refreshes it every 250 s and
   clears it on a 401 / 500.
 - Each chart hook is one `useQuery` against `/auth/tail-log` with the
   appropriate `aggrFields`. The `select` projection unwraps the nested
   array — components never see raw HTTP shapes.
 - `useActiveIncidents` polls `/auth/list-things?query={"last.alerts":{"$ne":null}}`
-  every 20 s (matches Moria production cadence).
+  every 20 s (matches Mining OS production cadence).
 - The whole authenticated tree sits inside `<RequireAuth fallback={<Navigate to="/signin" />}>`,
   so adding a new route is automatically auth-gated.
 
@@ -135,8 +135,7 @@ export default function Dashboard() {
 - **Microsoft OAuth**: add a `SignInMicrosoftButton` foundation component
   and a second `<button>` on the SignIn page. Backend needs the matching
   `h1` block in `httpd-oauth2.config.json`.
-- **Multi-site**: not in scope for v1. Use the
-  `mining-operations-dashboard` blueprint when you need pool + device
-  explorer + multi-site.
+- **Additional dashboards**: use the `mining-operations-dashboard`
+  blueprint when you need pool + device explorer.
 - **No active alerts endpoint**: drop `<ActiveIncidentsCard>` entirely.
   The hook is opt-in.

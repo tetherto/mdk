@@ -1,6 +1,6 @@
 'use strict'
 
-const Container = require('../../base/lib/container')
+const { Container } = require('../../../../core/mdk')
 const { getPDUValues, unMapPDU, unMapSocket, MAPPINGS } = require('./utils/pduOps')
 const { TaskQueue } = require('@bitfinex/lib-js-util-task-queue')
 const { optimizeSocketCalls } = require('./utils/optimize')

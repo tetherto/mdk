@@ -1,12 +1,22 @@
 # Tag vocabulary — presentation overlay
 #
+# STATUS: Not in use. No build step reads this file today. When completed,
+# a docs aggregator would walk backend/workers/**/mdk-contract.json and
+# ui/dist/registry.json, emit dist/facets.json for catalogue membership,
+# and use this file as a display-label overlay (slug → pretty name) and
+# as the source of integration-kinds browse groupings. Until that aggregator
+# is built, this file is a planning artefact only. The final destination for live 
+# consumer it anticipates (tbd docs.mdk.tether.io or mdk.tether.io) is not determined.
+# 
+# See docs/reference/maintainers/ia.md#derived-vocabulary for the full design.
+#
 # This file does NOT define what tags are allowed. The constraint surfaces
 # are engineer-owned and live with the code:
 #
 #   mdk-contract.schema.json  → constrains worker contract metadata
 #                               (metadata.deviceFamily, etc.)
 #   JSDoc + registry generator → constrains UI tags
-#                               (@tier, @category, @domain, @orkCapability)
+#                               (@tier, @category, @domain, @kernelCapability)
 #
 # This file does two things:
 #
@@ -21,7 +31,7 @@
 #
 # Target end state: the slug → label mappings are extracted from contracts
 # and JSDoc by a build step, and this file shrinks to integration-kinds.
-# See docs/maintainers/ia.md#derived-vocabulary.
+# See docs/reference/maintainers/ia.md#derived-vocabulary.
 
 # ─────────────────────────────────────────────
 # Display labels — workers (mirror mdk-contract.json fields)
@@ -121,8 +131,8 @@ domains:
   generic:
     label: Generic (no mining domain)
 
-# @orkCapability
-ork-capabilities:
+# @kernelCapability (Kernel capability)
+kernel-capabilities:
   hashrate-monitoring:
     label: Hashrate monitoring
   pool-performance:

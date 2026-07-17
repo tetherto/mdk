@@ -1,0 +1,21 @@
+@use '@tetherto/mdk-react-devkit/styles' as *;
+
+.mdk-batch-move-spare-parts-modal {
+  --mdk-dialog-max-width: min(860px, 92vw);
+
+  &__form {
+    display: flex;
+    @include flex_column;
+    gap: 24px;
+  }
+
+  &__fields {
+    display: flex;
+    @include flex_column;
+    gap: 8px;
+  }
+
+  &__footer {
+    gap: 12px;
+  }
+}

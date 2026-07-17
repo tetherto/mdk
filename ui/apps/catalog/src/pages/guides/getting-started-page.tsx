@@ -6,14 +6,17 @@ import { DemoPageHeader } from '../../components/demo-page-header'
 const CODE_INSTALL = `npm install \\
   @tetherto/mdk-react-devkit \\
   @tetherto/mdk-react-adapter \\
-  @tetherto/mdk-ui-core`
+  @tetherto/mdk-ui-foundation`
 
 const CODE_PROVIDER = `// main.tsx
 import { MdkProvider } from '@tetherto/mdk-react-adapter'
 import '@tetherto/mdk-react-devkit/styles.css'
+// Only needed if you use mining-domain (foundation) components.
+// Skip it for a core-primitives-only app to ship ~70 KB less CSS.
+import '@tetherto/mdk-react-devkit/styles-domain.css'
 
 ReactDOM.createRoot(rootElement).render(
-  <MdkProvider apiBaseUrl="https://app-node.example.com">
+  <MdkProvider apiBaseUrl="https://gateway.example.com">
     <App />
   </MdkProvider>,
 )`
@@ -27,7 +30,7 @@ const Toolbar = () => {
   // ...
 }`
 
-const CODE_STORE_DIRECT = `import { actionsStore, devicesStore } from '@tetherto/mdk-ui-core'
+const CODE_STORE_DIRECT = `import { actionsStore, devicesStore } from '@tetherto/mdk-ui-foundation'
 
 // Outside React (utilities, sagas, etc.) you can read/write directly:
 devicesStore.getState().setSelectedDevices([])
@@ -54,11 +57,11 @@ export const GettingStartedPage = (): JSX.Element => {
 
       <DemoBlock
         title="Package map"
-        description="The toolkit is split into three publishable packages. Only @tetherto/mdk-ui-core is framework-agnostic — the adapter and devkit are React-specific. A future React Native or Web Components binding would sit beside mdk-react-adapter and reuse the same headless core."
+        description="The toolkit is split into three publishable packages. Only @tetherto/mdk-ui-foundation is framework-agnostic — the adapter and devkit are React-specific. A future React Native or Web Components binding would sit beside mdk-react-adapter and reuse the same headless core."
       >
         <ul>
           <li>
-            <code>@tetherto/mdk-ui-core</code> — headless state (Zustand vanilla stores), a TanStack
+            <code>@tetherto/mdk-ui-foundation</code> — headless state (Zustand vanilla stores), a TanStack
             QueryClient factory, telemetry primitives and the command state machine. No React.
           </li>
           <li>

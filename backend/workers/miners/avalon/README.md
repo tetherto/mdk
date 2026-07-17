@@ -1,36 +1,46 @@
-# @tetherto/miner-avalon
+# @tetherto/mdk-worker-avalon
 
-MDK worker for Canaan Avalon Bitcoin miners. Supports the A1346 family.
+MDK Worker for Canaan Avalon Bitcoin miners. Supports the A1346 family.
 
 ## Supported Models
 
-| Export | Model |
+| `model` value | Model |
 |--------|-------|
-| `AV_A1346` | Avalon A1346 |
+| `a1346` | Avalon A1346 |
 
 ## Install
 
 ```bash
-npm install @tetherto/miner-avalon
+npm install @tetherto/mdk-worker-avalon
 ```
 
 ## Usage
 
 ```js
-const { AV_A1346 } = require('@tetherto/miner-avalon')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
 
-const { manager } = await startWorker(AV_A1346, { ork, rack: 'rack-3' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { serialNum: 'AV-001', container: 'container-C', pos: 'C1' },
-  opts: { address: '192.168.1.30', port: 4028 }
+const worker = await startAvalonWorker({
+  workerId: 'avalon-rack-3',
+  model: 'a1346',
+  storeDir: './store/avalon-rack-3',
+  seedDevices: [{
+    info: { serialNum: 'AV-001', container: 'container-C', pos: 'C1' },
+    opts: { address: '192.168.1.30', port: 4028 }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
+`registerThing` command over HRPC instead — see [USAGE.md](USAGE.md#registering-devices) for the full pattern and the
+restart-required caveat.
 
 ## Protocol
 
-Avalon uses a native HTTP API on port 4028. The worker uses `@tetherto/svc-facs-tcp` for connection management and supports fan control, clock tuning, and pool reconfiguration through the Avalon API.
+Avalon uses the native CGMiner TCP API on port 4028 (unauthenticated) and supports fan control, clock tuning, and pool reconfiguration through the same API.
 
 ## Telemetry
 
@@ -64,7 +74,7 @@ Avalon uses a native HTTP API on port 4028. The worker uses `@tetherto/svc-facs-
 | `saveComment` | `text` | Add annotation |
 | `editComment` | `commentId, text` | Edit annotation |
 | `deleteComment` | `commentId` | Delete annotation |
-| `rackReboot` | — | Restart worker process |
+| `rackReboot` | — | Restart Worker process |
 
 ## Health
 

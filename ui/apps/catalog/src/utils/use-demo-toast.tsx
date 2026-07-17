@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
-import type { ToastVariant } from '@tetherto/mdk-react-devkit/core'
-import { Toast, Toaster } from '@tetherto/mdk-react-devkit/core'
+import type { ToastVariant } from '@tetherto/mdk-react-devkit/primitives'
+import { Toast, Toaster } from '@tetherto/mdk-react-devkit/primitives'
 
 type DemoToastItem = {
   id: string

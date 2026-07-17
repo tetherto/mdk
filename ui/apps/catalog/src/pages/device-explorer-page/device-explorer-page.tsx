@@ -1,10 +1,10 @@
-import { Button } from '@tetherto/mdk-react-devkit/core'
-import type { DataTableRowSelectionState, LocalFilters } from '@tetherto/mdk-react-devkit/core'
-import { DeviceExplorer } from '@tetherto/mdk-react-devkit/foundation'
+import { Button } from '@tetherto/mdk-react-devkit/primitives'
+import type { DataTableRowSelectionState, LocalFilters } from '@tetherto/mdk-react-devkit/primitives'
+import { DeviceExplorer } from '@tetherto/mdk-react-devkit/domain'
 import type {
   DeviceExplorerDeviceData,
   DeviceExplorerDeviceType,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import { useState } from 'react'
 import type { JSX } from 'react'
 import { cabinetData, containerData, minersData } from './mock-data'

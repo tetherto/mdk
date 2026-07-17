@@ -1,0 +1,54 @@
+{
+  "name": "@tetherto/mdk-plugin-fleet-summary",
+  "version": "0.1.0",
+  "description": "Example Gateway Plugin: aggregates hashrate and power across every registered device via the MDK protocol client.",
+  "routes": [
+    {
+      "id": "fleet.summary",
+      "handler": "./controllers/fleet-summary.js",
+      "auth": true,
+      "http": {
+        "method": "GET",
+        "path": "/api/fleet/summary",
+        "responses": {
+          "200": {
+            "description": "Fleet totals with per-device breakdown.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deviceCount": { "type": "integer" },
+                    "totalHashrateThs": { "type": "number" },
+                    "totalPowerW": { "type": "number" },
+                    "devices": { "type": "array" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "MDK client unavailable." }
+        }
+      },
+      "description": "Fans out telemetry.pull to every registered deviceId and returns fleet totals (total hashrate, total power, device count). Aggregation lives here — workers only ever answer for one device.",
+      "constraints": [
+        "Requires the MDK client to be connected to a Kernel instance.",
+        "Devices must expose hashrate_rt and power telemetry channels."
+      ],
+      "examples": [
+        {
+          "description": "Get current fleet totals",
+          "request": "GET /api/fleet/summary",
+          "response": {
+            "deviceCount": 2,
+            "totalHashrateThs": 240,
+            "totalPowerW": 6200,
+            "devices": [{ "deviceId": "SIM-001", "hashrateThs": 100, "powerW": 3000 }]
+          }
+        }
+      ],
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE"],
+      "safety": "read-only"
+    }
+  ]
+}

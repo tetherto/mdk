@@ -25,6 +25,16 @@ test('getMinerStaticIpFromThgInfo returns empty string for invalid IP', (t) => {
   t.is(ip, '')
 })
 
+test('getMinerStaticIpFromThgInfo rejects octets above 255', (t) => {
+  const thg = {
+    info: {
+      container: 'container-5',
+      pos: '1_2_99'
+    }
+  }
+  t.is(getMinerStaticIpFromThgInfo(thg), '')
+})
+
 test('getMinerStaticIpFromThgInfo handles single digit pos parts', (t) => {
   const thg = {
     info: {

@@ -1,0 +1,73 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "bitmain",
+    "deviceFamily": "miner",
+    "brand": "Antminer",
+    "modelsSupported": ["S19XP", "S19XPH", "S21", "S21PRO"],
+    "overview": "Controls Bitmain Antminer Bitcoin miners over the HTTP digest API. Operations affect physical hardware — prioritize thermal safety."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate_avg", "unit": "TH/s", "type": "number", "handler": "src/telemetry/hashrate-avg.js", "description": "Average hashrate." },
+      { "name": "power", "unit": "W", "type": "number", "handler": "src/telemetry/power.js", "description": "Power draw (supported models only)." },
+      { "name": "temperature", "unit": "C", "type": "number", "handler": "src/telemetry/temperature.js", "description": "Max outlet temperature." },
+      { "name": "status", "unit": "", "type": "string", "handler": "src/telemetry/status.js", "description": "Device status." },
+      { "name": "efficiency", "unit": "W/TH", "type": "number", "handler": "src/telemetry/efficiency.js", "description": "Power efficiency." },
+      { "name": "uptime", "unit": "ms", "type": "number", "handler": "src/telemetry/uptime.js", "description": "Uptime." },
+      { "name": "accepted_shares", "unit": "", "type": "number", "handler": "src/telemetry/accepted-shares.js", "description": "Accepted shares." },
+      { "name": "rejected_shares", "unit": "", "type": "number", "handler": "src/telemetry/rejected-shares.js", "description": "Rejected shares." },
+      { "name": "power_mode", "unit": "", "type": "string", "handler": "src/telemetry/power-mode.js", "description": "Current power mode." },
+      { "name": "snap", "unit": "", "type": "object", "handler": "src/telemetry/snap.js", "description": "Full structured snapshot (stats + config), same shape the legacy metrics pull returned." }
+    ],
+    "commands": [
+      {
+        "name": "reboot",
+        "description": "Restarts the miner controller. Takes 2-3 minutes to resume.",
+        "constraints": "Do not call more than once per 5 minutes.",
+        "handler": "src/commands/reboot.js",
+        "params": []
+      },
+      {
+        "name": "setPowerMode",
+        "description": "Changes the power mode (sleep | normal).",
+        "handler": "src/commands/set-power-mode.js",
+        "params": [
+          { "name": "mode", "type": "string" }
+        ]
+      },
+      {
+        "name": "setLED",
+        "description": "Toggle the physical LED indicator (auto-disables after 2 minutes).",
+        "handler": "src/commands/set-led.js",
+        "params": [
+          { "name": "enabled", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "setupPools",
+        "description": "Configure mining pools. Uses the worker's configured pools when none are passed.",
+        "handler": "src/commands/setup-pools.js",
+        "params": [
+          { "name": "pools", "type": "object" }
+        ]
+      }
+    ],
+    "config": {
+      "schema": "antminer_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.overheat", "alert.hashboard_error", "alert.fan_failure", "alert.pool_dead"],
+      "troubleshooting": [
+        "If alert.overheat, verify fan speeds and ambient temperature.",
+        "If alert.hashboard_error persists after reboot, escalate to operator.",
+        "If status is OFFLINE, do not attempt reboot. Escalate to operator."
+      ]
+    },
+    "errors": {
+      "E_TEMP_HIGH": "Temperature exceeded threshold",
+      "E_HASHBOARD_FAIL": "Hashboard failure"
+    }
+  }
+}

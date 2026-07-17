@@ -11,7 +11,7 @@ import {
   type PoolMinerStats,
   queryKeys,
   type TailLogEntry,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 
@@ -28,7 +28,7 @@ export type DashboardExportPayload = {
 }
 
 /* Static params for the live pool-stats snapshot query — mirrors
- * `minerpoolStatsQuery` in ui-core so cache lookup is deterministic. */
+ * `minerpoolStatsQuery` in ui-foundation so cache lookup is deterministic. */
 const POOL_STATS_PARAMS: ExtDataParams = {
   type: 'minerpool',
   query: JSON.stringify({ key: 'stats' }),

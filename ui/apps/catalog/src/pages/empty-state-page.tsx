@@ -1,4 +1,4 @@
-import { EmptyState } from '@tetherto/mdk-react-devkit/core'
+import { EmptyState } from '@tetherto/mdk-react-devkit/primitives'
 import { CubeIcon } from '@radix-ui/react-icons'
 
 import type { JSX } from 'react'

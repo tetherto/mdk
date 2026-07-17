@@ -1,6 +1,6 @@
 # lib-stats
 
-Telemetry aggregation library. Provides a set of composable statistical operations that device workers use to compute time-bucketed metrics (hashrate averages, power totals, group counts, etc.).
+Telemetry aggregation library. Provides a set of composable statistical operations that device Workers use to compute time-bucketed metrics (hashrate averages, power totals, group counts, etc.).
 
 This is an internal package used by `ThingManager` in `backend/workers/base/`. It is not published separately.
 

@@ -1,9 +1,9 @@
-import { Button, DataTable, getDataTableColumnHelper } from '@tetherto/mdk-react-devkit/core'
+import { Button, DataTable, getDataTableColumnHelper } from '@tetherto/mdk-react-devkit/primitives'
 import type {
   DataTableExpandedState,
   DataTableRow,
   DataTableRowSelectionState,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 import { type JSX, type ReactNode, useMemo, useState } from 'react'
 
 import { useDemoToast } from '../utils/use-demo-toast'

@@ -1,7 +1,7 @@
 'use strict'
 
 // getWorkerKey + createWorkerClient + sendWorkerCommand — hermetic, no network.
-// The ORK client uses the { transport } seam to serve WORKER_LIST (so getStatus
+// The Kernel client uses the { transport } seam to serve WORKER_LIST (so getStatus
 // surfaces a worker rpcKey). The worker-bound client goes through the real
 // createWorkerClient -> createMdkClient -> HRPCClient path, with an injected
 // `rpc` (HRPCClient honors opts.rpc and then never builds a DHT), so we capture
@@ -9,8 +9,8 @@
 
 const test = require('brittle')
 const { createMdkClient, createWorkerClient } = require('../../index')
-const { serialize, deserialize } = require('../../../ork/lib/protocol/envelope')
-const { ACTIONS } = require('../../../ork/lib/protocol/actions')
+const { serialize, deserialize } = require('../../../kernel/lib/protocol/envelope')
+const { ACTIONS } = require('../../../kernel/lib/protocol/actions')
 
 const WORKER_KEY = 'ab'.repeat(32) // 32-byte hex, valid for HRPCClient
 
@@ -35,16 +35,16 @@ function fakeWorkerRpc (reply = { payload: { status: 'QUEUED', commandId: 'cmd-1
   return rpc
 }
 
-test('getWorkerKey - returns the worker rpcKey from the ORK registry', async (t) => {
-  const ork = createMdkClient({ transport: orkTransport([{ workerId: 'miner-worker', state: 'READY', healthState: 'HEALTHY', deviceIds: ['m0'], rpcKey: WORKER_KEY }]) })
-  await ork.connect()
-  t.is(await ork.getWorkerKey('miner-worker'), WORKER_KEY)
+test('getWorkerKey - returns the worker rpcKey from the Kernel registry', async (t) => {
+  const kernel = createMdkClient({ transport: orkTransport([{ workerId: 'miner-worker', state: 'READY', healthState: 'HEALTHY', deviceIds: ['m0'], rpcKey: WORKER_KEY }]) })
+  await kernel.connect()
+  t.is(await kernel.getWorkerKey('miner-worker'), WORKER_KEY)
 })
 
 test('getWorkerKey - returns null for an unregistered worker', async (t) => {
-  const ork = createMdkClient({ transport: orkTransport([{ workerId: 'miner-worker', state: 'READY', deviceIds: [], rpcKey: WORKER_KEY }]) })
-  await ork.connect()
-  t.is(await ork.getWorkerKey('ghost-worker'), null)
+  const kernel = createMdkClient({ transport: orkTransport([{ workerId: 'miner-worker', state: 'READY', deviceIds: [], rpcKey: WORKER_KEY }]) })
+  await kernel.connect()
+  t.is(await kernel.getWorkerKey('ghost-worker'), null)
 })
 
 test('createWorkerClient - builds a connectable client over the injected rpc', async (t) => {
@@ -59,12 +59,12 @@ test('createWorkerClient - builds a connectable client over the injected rpc', a
 })
 
 test('sendWorkerCommand - resolves the key then sends COMMAND_REQUEST worker-direct', async (t) => {
-  const ork = createMdkClient({ transport: orkTransport([{ workerId: 'miner-worker', state: 'READY', deviceIds: [], rpcKey: WORKER_KEY }]) })
-  await ork.connect()
+  const kernel = createMdkClient({ transport: orkTransport([{ workerId: 'miner-worker', state: 'READY', deviceIds: [], rpcKey: WORKER_KEY }]) })
+  await kernel.connect()
   const rpc = fakeWorkerRpc()
 
   const params = { id: 'miner-0', info: { pos: '1_1' }, opts: { port: 4028 } }
-  const res = await ork.sendWorkerCommand('miner-worker', 'miner-0', 'registerThing', params, { hrpc: { rpc } })
+  const res = await kernel.sendWorkerCommand('miner-worker', 'miner-0', 'registerThing', params, { hrpc: { rpc } })
 
   t.is(rpc.requests.length, 1, 'exactly one worker request')
   const sent = rpc.requests[0]
@@ -77,10 +77,10 @@ test('sendWorkerCommand - resolves the key then sends COMMAND_REQUEST worker-dir
 })
 
 test('sendWorkerCommand - throws ERR_MDK_WORKER_KEY_UNKNOWN for an unregistered worker', async (t) => {
-  const ork = createMdkClient({ transport: orkTransport([]) })
-  await ork.connect()
+  const kernel = createMdkClient({ transport: orkTransport([]) })
+  await kernel.connect()
   const rpc = fakeWorkerRpc()
 
-  await t.exception(() => ork.sendWorkerCommand('ghost', 'd0', 'registerThing', {}, { hrpc: { rpc } }), /ERR_MDK_WORKER_KEY_UNKNOWN/)
+  await t.exception(() => kernel.sendWorkerCommand('ghost', 'd0', 'registerThing', {}, { hrpc: { rpc } }), /ERR_MDK_WORKER_KEY_UNKNOWN/)
   t.is(rpc.requests.length, 0, 'no worker request attempted when the key is unknown')
 })

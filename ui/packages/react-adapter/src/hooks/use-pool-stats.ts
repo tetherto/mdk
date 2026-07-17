@@ -1,4 +1,4 @@
-import { type MinerpoolExtDataEntry, minerpoolStatsQuery } from '@tetherto/mdk-ui-core'
+import { type MinerpoolExtDataEntry, minerpoolStatsQuery } from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 
 /* Pool API reports hashrate in raw H/s (hashes per second), not the MH/s
@@ -20,7 +20,7 @@ export type PoolStats = {
 }
 
 export type UsePoolStatsOptions = {
-  /** Polling interval in ms. Defaults to 120s (Moria's POLLING_2m). Pass 0 to disable. */
+  /** Polling interval in ms. Defaults to 120s (Mining OS's POLLING_2m). Pass 0 to disable. */
   refetchInterval?: number
 }
 

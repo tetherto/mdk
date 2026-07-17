@@ -10,13 +10,14 @@
  *
  * Custom JSDoc tags consumed:
  *   - `@category`        — free-form category (charts, tables, …)
- *   - `@orkCapability`   — ORK capability identifier (repeatable)
+ *   - `@kernelCapability`   — Kernel capability identifier (repeatable)
  *   - `@domain`          — mining-operations | financial-reporting | …
  *
  * Co-located `*.example.tsx` and `USAGE.md` files in the same directory as a
  * component are picked up automatically.
  */
 import { Buffer } from "node:buffer";
+import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -126,6 +127,35 @@ const getJsDocDescription = (jsDocs: JSDoc[]): string => {
   return firstParagraph(jsDocs[0]!.getDescription());
 };
 
+/** Full JSDoc description: all paragraphs, trimmed, paragraph breaks preserved. */
+const getJsDocDescriptionFull = (jsDocs: JSDoc[]): string => {
+  if (!jsDocs.length) return "";
+  return jsDocs[0]!
+    .getDescription()
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n\n");
+};
+
+/**
+ * Emit the long-form description only when it adds information over the
+ * truncated short form, so the common case adds no registry payload.
+ */
+const descriptionFullIfDiffers = (full: string, short: string): string | undefined =>
+  full && full !== short ? full : undefined;
+
+/** Best-effort HEAD commit of the checkout; `null` outside a git repo (e.g. tarball builds). */
+const resolveGitSha = (): string | null => {
+  try {
+    return execSync("git rev-parse HEAD", { cwd: PACKAGE_ROOT, stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim() || null;
+  } catch {
+    return null;
+  }
+};
+
 const getJsDocTagValues = (jsDocs: JSDoc[], tagName: string): string[] => {
   const values: string[] = [];
   for (const doc of jsDocs) {
@@ -191,6 +221,8 @@ const propsFromType = (type: Type): PropMeta[] => {
     const propTypeText = propType ? formatType(propType) : "unknown";
 
     let description: string | undefined;
+    let descriptionFull: string | undefined;
+    let defaultValue: string | undefined;
     let isOptionalFromDecl = false;
     if (
       declaration
@@ -199,6 +231,8 @@ const propsFromType = (type: Type): PropMeta[] => {
       const docs = (declaration as { getJsDocs?: () => JSDoc[] }).getJsDocs?.() ?? [];
       const raw = getJsDocDescription(docs);
       description = raw ? truncate(raw, PROP_DESCRIPTION_MAX_CHARS) : undefined;
+      descriptionFull = descriptionFullIfDiffers(getJsDocDescriptionFull(docs), description ?? "");
+      defaultValue = getJsDocTagValues(docs, "default")[0];
       const hasQ = (declaration as { hasQuestionToken?: () => boolean }).hasQuestionToken;
       isOptionalFromDecl = hasQ ? hasQ.call(declaration) : false;
     }
@@ -207,7 +241,9 @@ const propsFromType = (type: Type): PropMeta[] => {
       name: prop.getName(),
       type: truncateType(propTypeText),
       required: !isPartial && !isOptionalFromDecl,
+      ...(defaultValue ? { default: defaultValue } : {}),
       description,
+      ...(descriptionFull ? { descriptionFull } : {}),
     });
   }
 
@@ -328,8 +364,9 @@ const resolveHook = (
 
 const buildComponentMeta = (resolved: ResolvedComponent): ComponentMeta => {
   const description = truncate(getJsDocDescription(resolved.jsDocs), DESCRIPTION_MAX_CHARS);
+  const descriptionFull = descriptionFullIfDiffers(getJsDocDescriptionFull(resolved.jsDocs), description);
   const category = getJsDocTagValues(resolved.jsDocs, "category")[0];
-  const orkCapabilities = getJsDocTagValues(resolved.jsDocs, "orkCapability");
+  const kernelCapabilities = getJsDocTagValues(resolved.jsDocs, "kernelCapability");
   const domainContext = getJsDocTagValues(resolved.jsDocs, "domain")[0];
   const tier = parseTier(getJsDocTagValues(resolved.jsDocs, "tier")[0]);
 
@@ -356,11 +393,12 @@ const buildComponentMeta = (resolved: ResolvedComponent): ComponentMeta => {
     name: resolved.name,
     path: toRelativeFromPackage(filePath),
     description,
+    ...(descriptionFull ? { descriptionFull } : {}),
     ...(tier ? { tier } : {}),
     public: tier !== "internal",
     category: category || undefined,
-    orkCapabilities: orkCapabilities.length
-      ? (orkCapabilities as ComponentMeta["orkCapabilities"])
+    kernelCapabilities: kernelCapabilities.length
+      ? (kernelCapabilities as ComponentMeta["kernelCapabilities"])
       : undefined,
     domainContext: domainContext ? (domainContext as ComponentMeta["domainContext"]) : undefined,
     props,
@@ -373,19 +411,21 @@ const buildComponentMeta = (resolved: ResolvedComponent): ComponentMeta => {
 
 const buildHookMeta = (resolved: ResolvedHook): HookMeta => {
   const description = truncate(getJsDocDescription(resolved.jsDocs), DESCRIPTION_MAX_CHARS);
+  const descriptionFull = descriptionFullIfDiffers(getJsDocDescriptionFull(resolved.jsDocs), description);
   const category = getJsDocTagValues(resolved.jsDocs, "category")[0];
-  const orkCapabilities = getJsDocTagValues(resolved.jsDocs, "orkCapability");
+  const kernelCapabilities = getJsDocTagValues(resolved.jsDocs, "kernelCapability");
   const domainContext = getJsDocTagValues(resolved.jsDocs, "domain")[0];
   const tier = parseTier(getJsDocTagValues(resolved.jsDocs, "tier")[0]);
   return {
     name: resolved.name,
     path: toRelativeFromPackage(resolved.sourceFile.getFilePath()),
     description,
+    ...(descriptionFull ? { descriptionFull } : {}),
     ...(tier ? { tier } : {}),
     public: tier !== "internal",
     signature: truncateType(resolved.signature),
     category: category || undefined,
-    orkCapabilities: orkCapabilities.length ? (orkCapabilities as HookMeta["orkCapabilities"]) : undefined,
+    kernelCapabilities: kernelCapabilities.length ? (kernelCapabilities as HookMeta["kernelCapabilities"]) : undefined,
     domainContext: domainContext ? (domainContext as HookMeta["domainContext"]) : undefined,
   };
 };
@@ -400,11 +440,11 @@ const buildIndexes = (components: ComponentMeta[], hooks: HookMeta[]): RegistryI
   const hooksByName: Record<string, number> = {};
   const componentsByCategory: Record<string, string[]> = {};
   const componentsByDomain: Record<string, string[]> = {};
-  const componentsByOrkCapability: Record<string, string[]> = {};
+  const componentsByKernelCapability: Record<string, string[]> = {};
   const componentsByTier: Record<string, string[]> = {};
   const componentsByPublic: Record<string, string[]> = {};
   const hooksByDomain: Record<string, string[]> = {};
-  const hooksByOrkCapability: Record<string, string[]> = {};
+  const hooksByKernelCapability: Record<string, string[]> = {};
   const hooksByPublic: Record<string, string[]> = {};
 
   const pushUnique = (bucket: Record<string, string[]>, key: string, value: string): void => {
@@ -417,14 +457,14 @@ const buildIndexes = (components: ComponentMeta[], hooks: HookMeta[]): RegistryI
     if (c.tier) pushUnique(componentsByTier, c.tier, c.name);
     if (c.category) pushUnique(componentsByCategory, c.category, c.name);
     if (c.domainContext) pushUnique(componentsByDomain, c.domainContext, c.name);
-    for (const cap of c.orkCapabilities ?? []) pushUnique(componentsByOrkCapability, cap, c.name);
+    for (const cap of c.kernelCapabilities ?? []) pushUnique(componentsByKernelCapability, cap, c.name);
     pushUnique(componentsByPublic, String(c.public), c.name);
   });
 
   hooks.forEach((h, i) => {
     hooksByName[h.name] = i;
     if (h.domainContext) pushUnique(hooksByDomain, h.domainContext, h.name);
-    for (const cap of h.orkCapabilities ?? []) pushUnique(hooksByOrkCapability, cap, h.name);
+    for (const cap of h.kernelCapabilities ?? []) pushUnique(hooksByKernelCapability, cap, h.name);
     pushUnique(hooksByPublic, String(h.public), h.name);
   });
 
@@ -433,11 +473,11 @@ const buildIndexes = (components: ComponentMeta[], hooks: HookMeta[]): RegistryI
     hooksByName,
     componentsByCategory,
     componentsByDomain,
-    componentsByOrkCapability,
+    componentsByKernelCapability,
     componentsByTier,
     componentsByPublic,
     hooksByDomain,
-    hooksByOrkCapability,
+    hooksByKernelCapability,
     hooksByPublic,
   };
 };
@@ -505,6 +545,7 @@ const main = (): void => {
     package: pkg.name,
     packageVersion: pkg.version,
     generatedAt: new Date().toISOString(),
+    generatedFrom: { gitSha: resolveGitSha() },
     components: publicComponents,
     hooks: publicHooks,
     indexes,
@@ -512,7 +553,10 @@ const main = (): void => {
 
   if (!existsSync(DIST_DIR)) mkdirSync(DIST_DIR, { recursive: true });
   const outPath = join(DIST_DIR, "registry.json");
-  const serialised = `${JSON.stringify(manifest, null, 2)}\n`;
+  // Minified: this is a generated, machine-consumed artifact (the CLI JSON.parses
+  // it) shipped in the published tarball. Dropping the indentation trims ~29% off
+  // the installed file with no functional change.
+  const serialised = `${JSON.stringify(manifest)}\n`;
   writeFileSync(outPath, serialised, "utf8");
 
   const sizeKb = (Buffer.byteLength(serialised, "utf8") / 1024).toFixed(1);
@@ -538,7 +582,7 @@ const main = (): void => {
     hooks: publicHooks,
   });
   const blueprintsPath = join(DIST_DIR, "blueprints.json");
-  const blueprintsSerialised = `${JSON.stringify(blueprintsResult.manifest, null, 2)}\n`;
+  const blueprintsSerialised = `${JSON.stringify(blueprintsResult.manifest)}\n`;
   writeFileSync(blueprintsPath, blueprintsSerialised, "utf8");
   const bpSizeKb = (Buffer.byteLength(blueprintsSerialised, "utf8") / 1024).toFixed(1);
   console.log(

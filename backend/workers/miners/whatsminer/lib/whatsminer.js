@@ -1,6 +1,6 @@
 'use strict'
 
-const Miner = require('../../base/lib/miner.js')
+const { Miner, constants } = require('../../../../core/mdk')
 const async = require('async')
 const net = require('node:net')
 const CryptoJS = require('crypto-js')
@@ -13,7 +13,7 @@ const {
   MINOR_ERROR_CODES_M53_SET,
   MINER_COOLING_TYPE_MAP
 } = require('./utils/constants.js')
-const { STATUS, POWER_MODE } = require('../../base/lib/utils/constants.js')
+const { STATUS, POWER_MODE } = constants
 
 function isResOK (res) {
   return res?.Code === 131

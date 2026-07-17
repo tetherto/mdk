@@ -17,7 +17,7 @@ const server = createServer({
 })
 ```
 
-Each worker package also ships its own `mock/server.js` that uses this under the hood. The examples import directly from those:
+Each Worker package also ships its own `mock/server.js` that uses this under the hood. The examples import directly from those:
 
 ```js
 // From backend/core/examples/mdk-e2e/run.js
@@ -33,7 +33,6 @@ wmMock.createServer({ port: 14028, host: '127.0.0.1', type: 'm56s', serial: 'WM-
 | Antminer S19XP | HTTP (CGMiner API) | 4028 | Digest auth |
 | Avalon A1346 | HTTP | 4028 | |
 | Antspace HK3 container | HTTP REST | 18001 | |
-| MicroBT container | HTTP REST | 8080 | |
 | ABB B23 power meter | HTTP/Modbus | 15001 | |
 | SATEC power meter | HTTP/Modbus | 15001 | |
 | Schneider power meter | HTTP/Modbus | 15001 | |

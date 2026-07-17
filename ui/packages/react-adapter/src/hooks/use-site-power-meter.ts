@@ -1,4 +1,4 @@
-import { type ListThingsDevice, listThingsQuery } from '@tetherto/mdk-ui-core'
+import { type ListThingsDevice, listThingsQuery } from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 const SITE_QUERY = JSON.stringify({ 'info.pos': { $eq: 'site' } })
@@ -16,7 +16,7 @@ const headOrEmpty = (value: ListThingsDevice[][] | undefined | null): ListThings
   return Array.isArray(first) ? first : []
 }
 
-/* Moria filters by `device.tags` (an array of role strings — e.g.
+/* Mining OS filters by `device.tags` (an array of role strings — e.g.
  * `['t-powermeter']`), not by `device.type`. Mirror that or the
  * lookup misses on the same backend payload. */
 const filterByTag = (devices: ListThingsDevice[], tag: string): ListThingsDevice[] =>
@@ -46,7 +46,7 @@ export type UseSitePowerMeterOptions = {
  * Site-level power reading for the header's `<HeaderConsumptionBox />`. Reads
  * the freshest snapshot from a `t-powermeter`-tagged thing at `info.pos =
  * 'site'`; falls back to a `t-container`-tagged thing if no powermeter is
- * configured (matches Moria's `useHeaderStats` fallback chain).
+ * configured (matches Mining OS's `useHeaderStats` fallback chain).
  *
  * Note this is **distinct** from {@link useSiteConsumption}, which sums the
  * per-miner aggregates from tail-log and is appropriate for the chart card's
@@ -71,7 +71,7 @@ export const useSitePowerMeter = (options: UseSitePowerMeterOptions = {}): SiteP
 
   const devices = headOrEmpty(data)
   /* Prefer a dedicated powermeter; fall back to container readings only
-   * when no powermeter is configured (Moria's getDeviceDataByType chain).
+   * when no powermeter is configured (Mining OS's getDeviceDataByType chain).
    * Sum across all matching devices to handle multi-meter sites. */
   const powermeters = filterByTag(devices, 't-powermeter')
   const fallbacks = powermeters.length > 0 ? powermeters : filterByTag(devices, 't-container')

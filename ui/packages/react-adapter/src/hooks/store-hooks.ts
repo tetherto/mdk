@@ -9,7 +9,7 @@ import {
   type NotificationStore,
   timezoneStore,
   type TimezoneStore,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useStore } from 'zustand'
 
 /**

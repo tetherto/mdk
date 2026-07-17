@@ -1,4 +1,4 @@
-import { DashboardDateRangePicker } from '@tetherto/mdk-react-devkit/foundation'
+import { DashboardDateRangePicker } from '@tetherto/mdk-react-devkit/domain'
 import type { JSX } from 'react'
 import { useMemo, useState } from 'react'
 

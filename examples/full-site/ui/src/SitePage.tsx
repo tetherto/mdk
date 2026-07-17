@@ -1,114 +1,42 @@
 import type { JSX } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useMdkContext, useQuery } from "@tetherto/mdk-react-adapter";
 import {
+  AlarmsBellButton,
   HeaderConsumptionBox,
-  LineChartCard,
-  MetricCard,
-  MiningPoolsPanel,
-  Socket,
-} from "@tetherto/mdk-react-devkit/foundation";
-import type { LineChartCardData, MiningPoolRow } from "@tetherto/mdk-react-devkit/foundation";
-import { Button, Spinner, Typography } from "@tetherto/mdk-react-devkit/core";
+  HeaderEfficiencyBox,
+  HeaderHashrateBox,
+  HeaderMinersBox,
+  HeaderStatsBar,
+  type MiningPoolRow,
+  ProfileMenu,
+  type TIncidentRowProps,
+} from "@tetherto/mdk-react-devkit/domain";
+import { AppHeader, MiningStatusIcon, Spinner, Typography } from "@tetherto/mdk-react-devkit/primitives";
 
-// ─── API response shapes (served by the full-site app-node plugin) ──────────
+import { AppSidebar } from "./AppSidebar";
+import { HS_PER_PHS, HS_PER_THS, MHS_PER_PHS, NOMINAL_MHS_PER_MINER } from "./constants";
+import { ContainerDetailPage, ContainersListPage } from "./ContainersPage";
+import { ControlPage } from "./ControlPage";
+import { DashboardPage } from "./DashboardPage";
+import { MonitoringPage } from "./MonitoringPage";
+import { PoolsPage } from "./PoolsPage";
+import type { Container, History, Overview } from "./types";
+import { get, powerModesForDevice } from "./utils";
 
-type Miner = {
-  deviceId: string;
-  code: string;
-  container: string;
-  pos: string;
-  status: string;
-  powerMode: string | null;
-  hashrateMhs: number;
-  powerW: number;
-  temperature: number;
-};
-
-type Overview = {
-  ts: number;
-  container: { deviceId: string; id: string; operatingStatus: string; powerW: number; ambientTempC: number } | null;
-  site: { powerW: number; tensionV: number; currentA: number };
-  pool: {
-    deviceId: string;
-    name: string;
-    poolType: string;
-    status: string;
-    hashrate: number;
-    hashrate24h: number;
-    workersOnline: number;
-    balanceBtc: number;
-    revenue24hBtc: number;
-  } | null;
-  miners: Miner[];
-  totals: { hashrateMhs: number; powerW: number; minerCount: number; onlineCount: number };
-};
-
-type HistoryPoint = { ts: number; value: number };
-type History = { metric: string; unit: string; log: HistoryPoint[] };
-
-type SocketMiner = Parameters<typeof Socket>[0]["miner"];
-
-// Real Whatsminer power modes (sleep omitted — it powers the miner down).
-const MODES = ["low", "normal", "high"];
-const MHS_PER_PHS = 1e9; // MH/s per PH/s
-const HS_PER_THS = 1e12; // H/s per TH/s (pool reports hashrate in H/s)
-
-// ─── helpers ────────────────────────────────────────────────────────────────
-
-function get<T>(base: string, path: string) {
-  return fetch(`${base}${path}`).then((r) => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json() as Promise<T>;
-  });
+function formatStamp(ts: number): string {
+  const d = new Date(ts);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
-
-// Group miners into PDU columns by the prefix of info.pos ("<pdu>_<socket>").
-function groupByPdu(miners: Miner[]) {
-  const groups: Record<string, Miner[]> = {};
-  for (const m of miners) {
-    const sep = m.pos.lastIndexOf("_");
-    const pdu = sep === -1 ? m.pos : m.pos.slice(0, sep);
-    (groups[pdu] ||= []).push(m);
-  }
-  for (const pdu of Object.keys(groups)) {
-    groups[pdu].sort((a, b) => Number(a.pos.split("_").pop()) - Number(b.pos.split("_").pop()));
-  }
-  return groups;
-}
-
-// Shape a miner into the structure <Socket> reads (snap.stats / snap.config).
-function toSocketMiner(m: Miner): SocketMiner {
-  const snap = {
-    stats: { status: m.status, hashrate_mhs: { t_5m: m.hashrateMhs } },
-    config: { power_mode: m.powerMode ?? "normal" },
-  };
-  return { snap, last: { snap }, temperature: { chip: m.temperature } } as unknown as SocketMiner;
-}
-
-function toChartData(history: History | undefined, color: string, unit: string, scale = 1): LineChartCardData {
-  // LineChartCard converts x→seconds internally (x / 1000), so x must be the
-  // millisecond timestamp. It also needs strictly-ascending unique seconds, so
-  // collapse any points that share a second (keeping the latest ms in it).
-  const bySecond = new Map<number, { x: number; y: number }>();
-  for (const p of history?.log ?? []) bySecond.set(Math.floor(p.ts / 1000), { x: p.ts, y: p.value / scale });
-  const points = [...bySecond.values()].sort((a, b) => a.x - b.x);
-  const latest = points.length ? points[points.length - 1].y : 0;
-  return {
-    datasets: [{ label: history?.metric ?? "", borderColor: color, data: points }],
-    highlightedValue: { value: latest.toFixed(2), unit },
-    yTicksFormatter: (v: number) => v.toFixed(2),
-  };
-}
-
-// ─── page ─────────────────────────────────────────────────────────────────
 
 export function SitePage(): JSX.Element {
   const { apiBaseUrl } = useMdkContext();
   const base = apiBaseUrl ?? "";
-  const [selectedMiner, setSelectedMiner] = useState("miner-0");
-  const [selectedMode, setSelectedMode] = useState("high");
+  const [selectedMiner, setSelectedMiner] = useState("");
+  const [selectedMode, setSelectedMode] = useState("normal");
   const [actionMsg, setActionMsg] = useState("");
 
   const overview = useQuery({
@@ -123,29 +51,161 @@ export function SitePage(): JSX.Element {
     refetchInterval: 10000,
   });
 
-  const powerHistory = useQuery({
-    queryKey: ["site-history", "power"],
-    queryFn: () => get<History>(base, "/site/history?metric=power"),
-    refetchInterval: 10000,
-  });
-
   const data = overview.data;
-  const pduGroups = useMemo(() => groupByPdu(data?.miners ?? []), [data?.miners]);
 
-  const poolRows: MiningPoolRow[] = data?.pool
-    ? [{
-        id: data.pool.deviceId,
-        name: data.pool.name,
-        revenue24hBtc: data.pool.revenue24hBtc,
-        hashratePhs: data.pool.hashrate / HS_PER_THS / 1000,
-        details: [
-          { title: "Status", value: data.pool.status },
-          { title: "Type", value: data.pool.poolType },
-          { title: "Hashrate", value: `${(data.pool.hashrate / HS_PER_THS).toFixed(1)} TH/s` },
-          { title: "Workers online", value: data.pool.workersOnline },
-        ],
-      }]
-    : [];
+  const minersByContainer = useMemo(() => {
+    const map = new Map<string, Overview["miners"][number][]>();
+    for (const m of data?.miners ?? []) {
+      const key = m.container || "__unassigned__";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(m);
+    }
+    return map;
+  }, [data?.miners]);
+
+  const containerSections = useMemo(() => {
+    const sections = [...(data?.containers ?? [])];
+    const known = new Set(sections.map((c) => c.id));
+    for (const [key, miners] of minersByContainer) {
+      if (key === "__unassigned__" || known.has(key)) continue;
+      sections.push({
+        deviceId: key,
+        id: key,
+        code: key,
+        operatingStatus: "unknown",
+        powerW: miners.reduce((sum, m) => sum + m.powerW, 0),
+        ambientTempC: 0,
+        inletTempC: 0,
+        minerCount: miners.length,
+      } satisfies Container);
+    }
+    return sections.sort((a, b) => a.id.localeCompare(b.id));
+  }, [data?.containers, minersByContainer]);
+
+  useEffect(() => {
+    if (data?.miners.length && !selectedMiner) {
+      setSelectedMiner(data.miners[0].deviceId);
+    }
+  }, [data?.miners, selectedMiner]);
+
+  const modeOptions = useMemo(
+    () => (selectedMiner ? [...powerModesForDevice(selectedMiner)] : ["normal"]),
+    [selectedMiner],
+  );
+
+  useEffect(() => {
+    if (!selectedMiner || modeOptions.length === 0) return;
+    setSelectedMode((prev) => {
+      if (modeOptions.includes(prev)) return prev;
+      const miner = data?.miners.find((m) => m.deviceId === selectedMiner);
+      const current = miner?.powerMode?.toLowerCase();
+      if (current && modeOptions.includes(current)) return current;
+      return modeOptions[0];
+    });
+  }, [selectedMiner, modeOptions, data?.miners]);
+
+  const containerPowerMw = useMemo(
+    () => (data?.containers ?? []).reduce((sum, c) => sum + c.powerW, 0) / 1e6,
+    [data?.containers],
+  );
+
+  const minerCounts = useMemo(() => {
+    const miners = data?.miners ?? [];
+    const HEALTHY = new Set(["online", "mining", "active", "normal", "running"]);
+    let online = 0;
+    let error = 0;
+    let offline = 0;
+    for (const m of miners) {
+      const s = (m.status || "").toLowerCase();
+      if (HEALTHY.has(s)) online++;
+      else if (s === "offline") offline++;
+      else error++;
+    }
+    return { total: data?.totals.minerCount ?? miners.length, online, error, offline };
+  }, [data?.miners, data?.totals.minerCount]);
+
+  const mosPhs = (data?.totals.hashrateMhs ?? 0) / MHS_PER_PHS;
+  const poolPhs = useMemo(
+    () => (data?.pools ?? []).reduce((sum, p) => sum + p.hashrate, 0) / HS_PER_PHS,
+    [data?.pools],
+  );
+
+  const efficiencyWthS = useMemo(() => {
+    const ths = (data?.totals.hashrateMhs ?? 0) / 1e6;
+    return ths > 0 ? (containerPowerMw * 1e6) / ths : 0;
+  }, [data?.totals.hashrateMhs, containerPowerMw]);
+
+  const nominalPhs = ((data?.totals.minerCount ?? 0) * NOMINAL_MHS_PER_MINER) / MHS_PER_PHS;
+
+  const incidents = useMemo<TIncidentRowProps[]>(() => {
+    const out: TIncidentRowProps[] = [];
+    const stamp = formatStamp(data?.ts ?? 0);
+    for (const m of data?.miners ?? []) {
+      if (m.temperature > 70) {
+        out.push({
+          id: `temp-${m.deviceId}`,
+          severity: "high",
+          title: "temperature_alarm",
+          body: `Cooling-loop temperature above alarm threshold — ${m.code}: ${m.temperature.toFixed(1)}°C (threshold 70°C)`,
+          subtitle: stamp,
+        });
+      }
+    }
+    for (const m of data?.miners ?? []) {
+      const s = (m.status || "").toLowerCase();
+      if (s === "offline") {
+        out.push({
+          id: `off-${m.deviceId}`,
+          severity: "critical",
+          title: "offline_alarm",
+          body: `Miner not reporting — ${m.code} (${m.container})`,
+          subtitle: stamp,
+        });
+      }
+    }
+    return out.slice(0, 20);
+  }, [data?.miners, data?.ts]);
+
+  const alarmCounts = useMemo(
+    () =>
+      incidents.reduce(
+        (acc, i) => {
+          acc[i.severity] = (acc[i.severity] ?? 0) + 1;
+          return acc;
+        },
+        { critical: 0, high: 0, medium: 0 } as Record<TIncidentRowProps["severity"], number>,
+      ),
+    [incidents],
+  );
+
+  const allContainers = useMemo(() => {
+    const unassigned = minersByContainer.get("__unassigned__") ?? [];
+    if (!unassigned.length) return containerSections;
+    const unassignedEntry: Container = {
+      deviceId: "__unassigned__",
+      id: "__unassigned__",
+      code: "unassigned",
+      operatingStatus: "unknown",
+      powerW: 0,
+      ambientTempC: 0,
+      inletTempC: 0,
+      minerCount: unassigned.length,
+    };
+    return [...containerSections, unassignedEntry];
+  }, [containerSections, minersByContainer]);
+
+  const poolRows: MiningPoolRow[] = (data?.pools ?? []).map((pool) => ({
+    id: pool.deviceId,
+    name: pool.name,
+    revenue24hBtc: pool.revenue24hBtc,
+    hashratePhs: pool.hashrate / HS_PER_THS / 1000,
+    details: [
+      { title: "Status", value: pool.status },
+      { title: "Type", value: pool.poolType },
+      { title: "Hashrate", value: `${(pool.hashrate / HS_PER_THS).toFixed(1)} TH/s` },
+      { title: "Workers online", value: pool.workersOnline },
+    ],
+  }));
 
   async function applyAction() {
     setActionMsg("Dispatching…");
@@ -173,77 +233,98 @@ export function SitePage(): JSX.Element {
     );
   }
 
+  const logo = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ color: "#f7931a", display: "inline-flex" }}>
+        <MiningStatusIcon />
+      </span>
+      <Typography variant="heading3" style={{ color: "#fff", fontWeight: 700 }}>
+        MDK Site
+      </Typography>
+    </div>
+  );
+
+  const actions = (
+    <>
+      <AlarmsBellButton counts={alarmCounts} />
+      <ProfileMenu user="operator@example.com" items={[]} />
+    </>
+  );
+
   return (
-    <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, maxWidth: 1200, margin: "0 auto" }}>
-      <Typography variant="heading2">MDK Full Site — real workers over the RPC gateway</Typography>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+      <AppHeader logo={logo} actions={actions}>
+        <HeaderStatsBar>
+          <HeaderMinersBox
+            total={minerCounts.total}
+            online={minerCounts.online}
+            error={minerCounts.error}
+            offline={minerCounts.offline}
+            mosTotal={minerCounts.total}
+            poolTotal={data.pools.length}
+            poolOnline={0}
+            poolMismatch={0}
+          />
+          <HeaderHashrateBox mosPhs={mosPhs} poolPhs={poolPhs} />
+          <HeaderConsumptionBox valueMw={containerPowerMw} />
+          <HeaderEfficiencyBox valueWthS={efficiencyWthS} />
+        </HeaderStatsBar>
+      </AppHeader>
 
-      {/* Header KPI strip */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
-        <HeaderConsumptionBox valueMw={(data.container?.powerW ?? 0) / 1e6} />
-        <MetricCard label="Miners online" unit={`/ ${data.totals.minerCount}`} value={data.totals.onlineCount} />
-        <MetricCard label="Site hashrate" unit="PH/s" value={(data.totals.hashrateMhs / MHS_PER_PHS).toFixed(2)} />
-        <MetricCard label="Site meter" unit="W" value={data.site.powerW.toFixed(1)} />
-        <MetricCard label="Pool 24h" unit="BTC" value={(data.pool?.revenue24hBtc ?? 0).toFixed(4)} />
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        <AppSidebar />
+
+        <main style={{ flex: 1, padding: 24, display: "flex", flexDirection: "column", gap: 20, minWidth: 0, overflowY: "auto" }}>
+          <Routes>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route
+              path="/dashboard"
+              element={
+                <DashboardPage
+                  hashHistory={hashHistory.data}
+                  mosPhs={mosPhs}
+                  containerPowerMw={containerPowerMw}
+                  nominalPhs={nominalPhs}
+                  nowTs={data.ts}
+                  incidents={incidents}
+                  incidentsLoading={false}
+                  poolRows={poolRows}
+                  poolsLoading={poolRows.length === 0}
+                />
+              }
+            />
+            <Route
+              path="/containers"
+              element={<ContainersListPage allContainers={allContainers} minersByContainer={minersByContainer} />}
+            />
+            <Route
+              path="/containers/:containerId"
+              element={<ContainerDetailPage allContainers={allContainers} minersByContainer={minersByContainer} />}
+            />
+            <Route
+              path="/monitoring"
+              element={<MonitoringPage base={base} powermeters={data.powermeters ?? []} sensors={data.sensors ?? []} />}
+            />
+            <Route path="/pools" element={<PoolsPage poolRows={poolRows} />} />
+            <Route
+              path="/control"
+              element={
+                <ControlPage
+                  miners={data.miners}
+                  selectedMiner={selectedMiner}
+                  setSelectedMiner={setSelectedMiner}
+                  selectedMode={selectedMode}
+                  setSelectedMode={setSelectedMode}
+                  modeOptions={modeOptions}
+                  applyAction={applyAction}
+                  actionMsg={actionMsg}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
       </div>
-
-      {/* Container with linked miners */}
-      <section style={{ background: "#141414", borderRadius: 12, padding: 16 }}>
-        <Typography variant="heading3">
-          Container {data.container?.id ?? "—"} · {data.container?.operatingStatus ?? "—"} · {data.miners.length} miners
-        </Typography>
-        <div data-testid="container-grid" style={{ display: "flex", gap: 16, marginTop: 12, overflowX: "auto" }}>
-          {Object.entries(pduGroups).map(([pdu, miners]) => (
-            <div key={pdu} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <Typography variant="caption">PDU {pdu}</Typography>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
-                {miners.map((m) => (
-                  <Socket
-                    key={m.deviceId}
-                    socket={Number(m.pos.split("_").pop())}
-                    enabled
-                    power_w={m.powerW}
-                    miner={toSocketMiner(m)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Historical charts */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <LineChartCard
-          title="Pool hashrate (history)"
-          data={toChartData(hashHistory.data, "#f5a623", "TH/s", HS_PER_THS)}
-          isLoading={hashHistory.isLoading}
-          minHeight={240}
-        />
-        <LineChartCard
-          title="Site power (history)"
-          data={toChartData(powerHistory.data, "#4a90e2", "W")}
-          isLoading={powerHistory.isLoading}
-          minHeight={240}
-        />
-      </div>
-
-      {/* Pool */}
-      <MiningPoolsPanel rows={poolRows} isLoading={!data.pool} />
-
-      {/* Live miner action */}
-      <section style={{ background: "#141414", borderRadius: 12, padding: 16, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <Typography variant="heading3">Miner action</Typography>
-        <select value={selectedMiner} onChange={(e) => setSelectedMiner(e.target.value)} data-testid="miner-select">
-          {data.miners.map((m) => (
-            <option key={m.deviceId} value={m.deviceId}>{m.deviceId} ({m.powerMode})</option>
-          ))}
-        </select>
-        <select value={selectedMode} onChange={(e) => setSelectedMode(e.target.value)} data-testid="mode-select">
-          {MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
-        </select>
-        <Button onClick={applyAction} data-testid="apply-action">Set power mode</Button>
-        {actionMsg && <Typography data-testid="action-msg">{actionMsg}</Typography>}
-      </section>
     </div>
   );
 }

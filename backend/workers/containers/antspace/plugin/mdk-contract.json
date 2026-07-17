@@ -1,0 +1,75 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "bitmain",
+    "deviceFamily": "container",
+    "brand": "Antspace",
+    "modelsSupported": ["HK3", "IMM"],
+    "overview": "Controls Antspace container cooling systems. Operations affect live cooling for racks of miners — prioritize thermal safety."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "inlet_temp", "unit": "C", "type": "number", "handler": "src/telemetry/inlet-temp.js", "description": "Inlet (return liquid) temperature." },
+      { "name": "outlet_temp", "unit": "C", "type": "number", "handler": "src/telemetry/outlet-temp.js", "description": "Outlet (supply liquid) temperature." },
+      { "name": "liquid_supply_temp", "unit": "C", "type": "number", "handler": "src/telemetry/liquid-supply-temp.js", "description": "Liquid supply set temperature." },
+      { "name": "cooling_status", "unit": "", "type": "string", "handler": "src/telemetry/cooling-status.js", "description": "Cooling system status." },
+      { "name": "snap", "unit": "", "type": "object", "handler": "src/telemetry/snap.js", "description": "Full structured snapshot (stats + config), same shape the legacy metrics pull returned." }
+    ],
+    "commands": [
+      {
+        "name": "switchContainer",
+        "description": "Turn the whole container on or off.",
+        "handler": "src/commands/switch-container.js",
+        "params": [
+          { "name": "enabled", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "switchSocket",
+        "description": "Switch PDU sockets: array of [pduIndex, socketIndex, enabled] tuples.",
+        "handler": "src/commands/switch-socket.js",
+        "params": [
+          { "name": "args", "type": "object" }
+        ]
+      },
+      {
+        "name": "switchCoolingSystem",
+        "description": "Turn the cooling system on or off.",
+        "handler": "src/commands/switch-cooling-system.js",
+        "params": [
+          { "name": "enabled", "type": "boolean" }
+        ]
+      },
+      {
+        "name": "resetCoolingSystem",
+        "description": "Reset the cooling system.",
+        "constraints": "Requires two approvals.",
+        "handler": "src/commands/reset-cooling-system.js",
+        "params": []
+      },
+      {
+        "name": "setLiquidSupplyTemperature",
+        "description": "Set the liquid supply target temperature.",
+        "constraints": "Requires two approvals.",
+        "handler": "src/commands/set-liquid-supply-temperature.js",
+        "params": [
+          { "name": "temperature", "type": "number" }
+        ]
+      }
+    ],
+    "config": {
+      "schema": "antspace_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.cooling_failure", "alert.supply_liquid_temp_low"],
+      "troubleshooting": [
+        "If alert.cooling_failure, check pump and fan fault flags in container_specific stats.",
+        "If status is OFFLINE, verify the container controller is reachable before any write."
+      ]
+    },
+    "errors": {
+      "E_COOLING_FAIL": "Cooling system failure"
+    }
+  }
+}

@@ -1,6 +1,9 @@
 'use strict'
 
 module.exports = {
-  SCHNEIDER_P3U30: require('./lib/types/p3u30.powermeter.manager'),
-  SCHNEIDER_PM5340: require('./lib/types/pm5340.powermeter.manager')
+  plugin: require('./plugin'),
+  startSchneiderWorker: require('./plugin/boot').startSchneiderWorker,
+  SchneiderPowerMeter: require('./lib/schneider'),
+  P3U30PowerMeter: require('./lib/models/p3u30.powermeter'),
+  PM5340PowerMeter: require('./lib/models/pm5340.powemeter')
 }

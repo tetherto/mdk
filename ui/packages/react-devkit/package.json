@@ -1,9 +1,9 @@
 {
   "name": "@tetherto/mdk-react-devkit",
   "type": "module",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
-  "description": "MDK Devkit (React) — generic UI primitives (src/core) plus mining-domain components, hooks, and state bindings (src/foundation)",
+  "description": "MDK Devkit (React) — generic UI primitives (src/primitives) plus mining-domain components, hooks, and state bindings (src/domain)",
   "sideEffects": [
     "*.css",
     "*.scss"
@@ -14,32 +14,24 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./core": {
-      "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.js",
-      "default": "./dist/core/index.js"
-    },
-    "./foundation": {
-      "types": "./dist/foundation/index.d.ts",
-      "import": "./dist/foundation/index.js",
-      "default": "./dist/foundation/index.js"
+    "./primitives": {
+      "types": "./dist/primitives/index.d.ts",
+      "import": "./dist/primitives/index.js",
+      "default": "./dist/primitives/index.js"
     },
     "./domain": {
-      "types": "./dist/foundation/components/index.d.ts",
-      "import": "./dist/foundation/components/index.js",
-      "default": "./dist/foundation/components/index.js"
-    },
-    "./feature": {
-      "types": "./dist/foundation/features/index.d.ts",
-      "import": "./dist/foundation/features/index.js",
-      "default": "./dist/foundation/features/index.js"
+      "types": "./dist/domain/index.d.ts",
+      "import": "./dist/domain/index.js",
+      "default": "./dist/domain/index.js"
     },
     "./registry.json": "./dist/registry.json",
     "./blueprints.json": "./dist/blueprints.json",
     "./styles.css": "./dist/styles.css",
-    "./styles": "./src/core/styles/_mixins.scss",
-    "./tokens.scss": "./src/core/styles/_colors.scss",
-    "./src/styles/index.scss": "./src/foundation/styles/index.scss"
+    "./styles-domain.css": "./dist/styles-domain.css",
+    "./styles": "./src/primitives/styles/_mixins.scss",
+    "./tokens.scss": "./src/primitives/styles/_colors.scss",
+    "./src/styles/index.scss": "./src/domain/styles/index.scss",
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -47,14 +39,16 @@
     "AGENT_READY.md",
     "blueprints/*.md",
     "dist",
-    "src",
     "src/**/*.example.tsx",
+    "src/**/*.scss",
+    "src/**/*.webp",
     "src/**/USAGE.md"
   ],
   "scripts": {
-    "build": "rimraf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && npm run build:ts && npm run build:scss && npm run build:registry",
+    "build": "rimraf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && npm run build:ts && npm run check:styles && npm run build:scss && npm run build:registry",
     "build:registry": "tsx scripts/generate-registry.mts",
     "build:scss": "vite build",
+    "check:styles": "node scripts/check-style-forwards.mjs",
     "build:ts": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && node scripts/strip-style-imports.mjs dist",
     "clean": "rimraf dist node_modules .turbo",
     "dev": "concurrently -n ts,scss -c cyan,magenta \"npm run dev:ts\" \"npm run dev:scss\"",
@@ -63,7 +57,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "eslint . --fix",
-    "check:agent-ready": "npm run build:registry && node scripts/check-agent-ready.mjs",
+    "check:agent-ready": "npm run build:registry && tsx scripts/check-registry-completeness.mts && node scripts/check-agent-ready.mjs",
     "test": "vitest run --config vitest.config.js --maxConcurrency=5",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --config vitest.config.js --coverage",
@@ -104,12 +98,11 @@
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.25",
-    "@tetherto/mdk-react-adapter": "^0.3.0",
-    "@tetherto/mdk-ui-core": "^0.3.0",
+    "@tetherto/mdk-react-adapter": "^0.5.0",
+    "@tetherto/mdk-ui-foundation": "^0.5.0",
     "chart.js": "^4.4.9",
     "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-datalabels": "^2.2.0",
-    "chartjs-plugin-zoom": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

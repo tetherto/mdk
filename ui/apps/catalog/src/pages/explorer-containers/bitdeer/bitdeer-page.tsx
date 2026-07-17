@@ -1,4 +1,4 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tetherto/mdk-react-devkit/core'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tetherto/mdk-react-devkit/primitives'
 import { DemoPageHeader } from '../../../components/demo-page-header'
 import type { ReactElement } from 'react'
 

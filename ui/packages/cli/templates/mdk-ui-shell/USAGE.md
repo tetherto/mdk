@@ -32,7 +32,7 @@ The template imports from three MDK packages and three only:
              │ imports
              ▼
 ┌─────────────────────────────────────────────────────────┐
-│ @tetherto/mdk-ui-core                                   │
+│ @tetherto/mdk-ui-foundation                                   │
 │   API contracts, query factories, mappers, Zustand      │
 │   stores. No React.                                     │
 └─────────────────────────────────────────────────────────┘
@@ -56,7 +56,7 @@ exist, **add it to the appropriate package**, not the template.
 | `useActiveIncidents`          | `IncidentRow[]`               | `<ActiveIncidentsCard>`   |
 | `usePoolRows`                 | `MiningPoolRow[]`             | `<MiningPoolsPanel>`      |
 
-Each hook fans out the TanStack `useQuery` calls against the App Node
+Each hook fans out the TanStack `useQuery` calls against the Gateway
 backend and returns presentation-ready data. The dashboard chart hooks
 emit a shared `ChartCardData` payload (datasets + min/max/avg footer +
 formatters) consumed verbatim by `<LineChartCard>`. **MDK UI Shell never
@@ -94,8 +94,9 @@ reshapes data inline** — that's the hook's job.
 
 To add a second OAuth provider (e.g. Microsoft):
 
+<!-- todo: update miningos-gateway reference -->
 1. Configure the provider in
-   `miningos-app-node/config/facs/httpd-oauth2.config.json` (`h1` block).
+   `miningos-gateway/config/facs/httpd-oauth2.config.json` (`h1` block).
 2. Add a `SignInMicrosoftButton` in the foundation package, mirroring
    `SignInGoogleButton`. Do **not** inline the OAuth redirect in the
    template — put it in `@tetherto/mdk-react-devkit` so other apps can
@@ -106,17 +107,17 @@ To add a second OAuth provider (e.g. Microsoft):
 | Don't                                                  | Do instead                                                   |
 | ------------------------------------------------------ | ------------------------------------------------------------ |
 | Call `fetch('/auth/...')` from a component             | Use one of the data hooks; add a new one if missing.         |
-| Define a Zustand store inside the template             | Use `authStore` / `devicesStore` / etc. from `ui-core`.      |
+| Define a Zustand store inside the template             | Use `authStore` / `devicesStore` / etc. from `ui-foundation`.      |
 | Import `@tanstack/react-query` directly                | Use the re-exports from `@tetherto/mdk-react-adapter`.       |
 | Hard-code a base URL                                   | Read from `import.meta.env.VITE_*` via `src/constants/env`.  |
-| Transform a chart response inline in `Dashboard.tsx`   | Put the transform in the hook's `select`; if reusable, in `ui-core/utils`. |
+| Transform a chart response inline in `Dashboard.tsx`   | Put the transform in the hook's `select`; if reusable, in `ui-foundation/utils`. |
 | Import Ant Design / MUI / Bootstrap                    | Use `@tetherto/mdk-react-devkit` primitives + foundation.    |
 | Add a route directly to `router.tsx`                   | Use `mdk-ui add page` — it appends to `routes.ts`.           |
 
 ## Extending: add a new chart card
 
 1. Pick / add a chart component in
-   `packages/react-devkit/src/foundation/components/dashboard/`.
+   `packages/react-devkit/src/domain/components/dashboard/`.
 2. Add a data hook in
    `packages/react-adapter/src/hooks/use-<thing>-chart-data.ts`. The hook
    uses `tailLogQuery(client, { ... })` with the right `aggrFields` and a
@@ -125,7 +126,7 @@ To add a second OAuth provider (e.g. Microsoft):
    to the chart component. **No transformation between the two.**
 
 If your transform looks like "more than two lines or used by ≥ 2 hooks",
-lift it into `packages/ui-core/src/utils/` as a pure function.
+lift it into `packages/ui-foundation/src/utils/` as a pure function.
 
 ## Blueprint reference
 

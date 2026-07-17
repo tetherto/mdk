@@ -1,36 +1,51 @@
-# @tetherto/powermeter-abb
+# @tetherto/mdk-worker-abb
 
-MDK worker for ABB power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports B23, B24, M1M20, M4M20, and REU615 models.
+MDK Worker for ABB power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports B23, B24, M1M20, M4M20, and REU615 models.
 
 ## Supported Models
 
-| Export | Models |
+| `model` value | Model |
 |--------|--------|
-| `ABB_B23` | B23, B24, M1M20, M4M20, REU615 |
+| `b23` | ABB B23 |
+| `b24` | ABB B24 |
+| `m1m20` | ABB M1M20 |
+| `m4m20` | ABB M4M20 |
+| `reu615` | ABB REU615 |
 
 ## Install
 
 ```bash
-npm install @tetherto/powermeter-abb
+npm install @tetherto/mdk-worker-abb
 ```
 
 ## Usage
 
 ```js
-const { ABB_B23 } = require('@tetherto/powermeter-abb')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startAbbWorker } = require('@tetherto/mdk-worker-abb')
 
-const { manager } = await startWorker(ABB_B23, { ork, rack: 'site-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { serialNum: 'ABB-A', container: 'container-A', location: 'site-texas-01.container' },
-  opts: {
-    address: '192.168.1.150',
-    port: 502,          // Modbus TCP default port
-    unitId: 1           // Modbus unit ID
-  }
+const worker = await startAbbWorker({
+  workerId: 'abb-rack-1',
+  model: 'b23',
+  storeDir: './store/abb-rack-1',
+  seedDevices: [{
+    info: { serialNum: 'ABB-A', container: 'container-A', location: 'site-texas-01.container' },
+    opts: {
+      address: '192.168.1.150',
+      port: 502,          // Modbus TCP default port
+      unitId: 1           // Modbus unit ID
+    }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
+`registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is
+stopped and restarted (`await worker.stop()`, then `startAbbWorker` again with no `seedDevices`) — there is no
+hot-add.
 
 ## Protocol
 
@@ -59,8 +74,16 @@ Power meters are primarily read-only. Standard device management commands are su
 
 ## Mock Server
 
+Run the mock standalone — the model `type` is the first argument (case-insensitive):
+
+```bash
+npm run mock b23
+```
+
+Programmatic:
+
 ```js
-const abbMock = require('@tetherto/powermeter-abb/mock/server')
+const abbMock = require('@tetherto/mdk-worker-abb/mock/server')
 abbMock.createServer({ host: '127.0.0.1', port: 502, type: 'B23' })
 ```
 

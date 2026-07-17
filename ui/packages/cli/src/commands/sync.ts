@@ -11,7 +11,7 @@ const HOOKS_MARKER = {
 }
 
 const MDK_IMPORT_RE =
-  /from\s+["']@tetherto\/mdk-(?:react-devkit|react-adapter|ui-core)(?:\/[^"']+)?["']/
+  /from\s+["']@tetherto\/mdk-(?:react-devkit|react-adapter|ui-foundation)(?:\/[^"']+)?["']/
 
 const SCAN_EXTENSIONS = new Set(['.ts', '.tsx'])
 const IGNORED_DIRS = new Set(['node_modules', 'dist', '.turbo', '.next', 'coverage'])

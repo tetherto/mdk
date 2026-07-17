@@ -1,11 +1,11 @@
 {
-  "name": "@tetherto/powermeter-schneider",
-  "version": "0.3.0",
+  "name": "@tetherto/mdk-worker-schneider",
+  "version": "0.5.0",
   "description": "PowerMeter Schneider",
   "keywords": [
     "tether"
   ],
-  "author": "Terher",
+  "author": "Tether",
   "license": "Apache-2.0",
   "engine": {
     "node": ">=24"
@@ -13,10 +13,11 @@
   "scripts": {
     "lint": "standard",
     "lint:fix": "standard --fix",
+    "mock": "node mock/server.js --type",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
     "test:unit": "brittle tests/unit/*.js",
     "test:integration": "brittle tests/integration/*.js",
-    "test:coverage": "brittle --coverage tests/unit/*.js"
+    "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
     "@bitfinex/lib-js-util-promise": "git+https://github.com/bitfinexcom/lib-js-util-promise.git",
@@ -30,12 +31,6 @@
     "yargs": "17.7.2"
   },
   "overrides": {
-    "acorn": ">=8.17.0",
-    "js-yaml": ">=4.3.0",
-    "minimatch": ">=10.2.1",
-    "qs": ">=6.15.3",
-    "semver": ">=7.8.5",
-    "serialport": "npm:noop@1.0.0",
-    "tar": ">=7.5.19"
+    "serialport": "npm:noop@1.0.0"
   }
 }

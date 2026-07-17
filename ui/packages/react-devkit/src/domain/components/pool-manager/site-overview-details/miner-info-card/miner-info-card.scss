@@ -1,0 +1,109 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-miner-info-card {
+  @include flex_column;
+
+  font-family: var(--font-mono);
+  border: 1px solid var(--mdk-color-white-transparent);
+
+  &__header {
+    @include flex_column;
+
+    gap: 12px;
+    padding: 24px;
+    border-bottom: 1px solid var(--mdk-color-white-transparent);
+  }
+
+  &__title {
+    font-size: 18px;
+    line-height: 28px;
+  }
+
+  &__subtitle {
+    @include flex_between;
+
+    align-items: center;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__pdu {
+    font-size: 14px;
+    line-height: 1;
+    color: var(--mdk-color-white-5);
+  }
+
+  &__socket {
+    @include flex_align;
+
+    gap: 6px;
+    padding: 10px;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--mdk-color-white);
+    background-color: var(--mdk-color-white-8);
+  }
+
+  &__socket-badge {
+    display: block;
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+
+    &--gray {
+      background-color: rgb(var(--mdk-color-dark-grey));
+    }
+
+    &--slate {
+      background-color: rgb(var(--mdk-color-grey-idle));
+    }
+
+    &--red {
+      background-color: rgb(var(--mdk-color-error));
+    }
+
+    &--green {
+      background-color: rgb(var(--mdk-color-success));
+    }
+  }
+
+  &__pool-section {
+    @include flex_column;
+
+    gap: 24px;
+    padding: 24px;
+    color: var(--mdk-color-text-secondary);
+  }
+
+  &__pool-title {
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 14px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--mdk-color-white-5);
+  }
+
+  &__fields {
+    @include flex_column;
+
+    gap: 16px;
+  }
+
+  &__field {
+    @include flex_column;
+
+    gap: 6px;
+  }
+
+  &__field-label {
+    font-size: 12px;
+    line-height: 14px;
+    color: var(--mdk-color-white-5);
+  }
+
+  &__field-value {
+    font-size: 14px;
+    line-height: 1;
+    color: var(--mdk-color-white);
+  }
+}

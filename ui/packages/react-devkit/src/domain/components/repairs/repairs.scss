@@ -1,0 +1,21 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-repair-log-changes {
+  &__label {
+    @include flex_justify_center;
+
+    width: 150px;
+    padding: 4px;
+    border: 1px solid;
+
+    &--removed {
+      border-color: var(--mdk-color-brick-red);
+      background: color-mix(in srgb, var(--mdk-color-brick-red) 20%, transparent);
+    }
+
+    &--added {
+      border-color: var(--mdk-color-brick-green);
+      background: color-mix(in srgb, var(--mdk-color-brick-green) 20%, transparent);
+    }
+  }
+}

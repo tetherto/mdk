@@ -1,0 +1,11 @@
+// Mining-domain stylesheet.
+// Builds to dist/styles-domain.css and is exported as
+// `@tetherto/mdk-react-devkit/styles-domain.css`.
+//
+// Carries the styles for the mining-domain components only —
+// explorer, containers, pool-manager, reporting-tool, settings, etc. It relies
+// on the design tokens defined in the primitives stylesheet, so consumers MUST import
+// `@tetherto/mdk-react-devkit/styles.css` first. Apps that use only the generic
+// primitives can skip this file to ship roughly half the CSS.
+
+@forward "./domain/styles/index";

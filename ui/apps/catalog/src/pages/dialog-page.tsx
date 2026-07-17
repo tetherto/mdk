@@ -7,7 +7,7 @@ import {
   DialogFooter,
   DialogTrigger,
   Spinner,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 
 const ControlledDialog = lazy(() =>
   import('../components/controlled-dialog').then((module) => ({

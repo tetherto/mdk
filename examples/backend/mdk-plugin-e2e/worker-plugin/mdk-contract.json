@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "provider": "tether",
+    "deviceFamily": "miner",
+    "brand": "SimMiner",
+    "modelsSupported": ["SIM-1"],
+    "overview": "Controls a simulated miner over its TCP JSON API. Each device is addressed by deviceId; telemetry reads live stats, commands mutate the device."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate_rt", "unit": "TH/s", "type": "number", "handler": "src/telemetry/hashrate.js", "description": "Real-time hashrate. 0 implies offline or booting." },
+      { "name": "power", "unit": "W", "type": "number", "handler": "src/telemetry/power.js", "description": "Current power draw." },
+      { "name": "uptime", "unit": "s", "type": "number", "handler": "src/telemetry/uptime.js", "description": "Seconds since last boot." }
+    ],
+    "commands": [
+      { "name": "reboot", "handler": "src/commands/reboot.js", "description": "Restart the miner.", "constraints": "Do not call more than once in a 15-minute window.", "params": [] },
+      { "name": "setPowerLimit", "handler": "src/commands/set-power-limit.js", "description": "Set the power limit in watts.", "params": [{ "name": "limit_watts", "type": "number", "min": 1000, "max": 5000 }] }
+    ],
+    "health": { "supportedStates": ["OK", "OFFLINE"] },
+    "errors": { "ERR_DEVICE_CALL_FAILED": "The device rejected or failed the vendor API call." }
+  }
+}

@@ -1,5 +1,7 @@
 'use strict'
 
+const crypto = require('crypto')
+
 function strToAsciiBuffer (s) {
   const charCodeArr = []
 

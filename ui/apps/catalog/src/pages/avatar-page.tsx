@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@tetherto/mdk-react-devkit/core'
+import { Avatar, AvatarFallback, AvatarImage } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

@@ -1,9 +1,9 @@
 'use strict'
 
 const { parallelLimit } = require('async')
-const Miner = require('../../base/lib/miner.js')
+const { Miner } = require('../../../../core/mdk')
 const { ErrorMap } = require('./utils/errors.js')
-const { STATUS, POWER_MODE } = require('../../base/lib/utils/constants.js')
+const { STATUS, POWER_MODE } = require('../../../../core/mdk').constants
 
 class Antminer extends Miner {
   constructor (opts = {}) {
@@ -24,13 +24,16 @@ class Antminer extends Miner {
           this.debugError(`Request timed out after ${this.opts.timeout}ms`)
           controller.abort()
         }, this.opts.timeout)
-        const r = await this._digestClient.fetch(resource, {
-          ...opts,
-          signal: controller.signal
-        })
-        clearTimeout(id)
-        this.updateLastSeen()
-        return r
+        try {
+          const r = await this._digestClient.fetch(resource, {
+            ...opts,
+            signal: controller.signal
+          })
+          this.updateLastSeen()
+          return r
+        } finally {
+          clearTimeout(id)
+        }
       }
     }
   }
@@ -494,7 +497,7 @@ class Antminer extends Miner {
       if (state) {
         setTimeout(() => {
           this.setLED(false)
-        }, 2 * 60 * 1000)
+        }, 2 * 60 * 1000).unref()
       }
 
       return { success: response.ok }

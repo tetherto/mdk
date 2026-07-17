@@ -16,7 +16,7 @@ workers:
   - id: antminer
     family: miner
     provider: bitmain
-    package: "@tetherto/miner-antminer"
+    package: "@tetherto/mdk-worker-antminer"
     path: backend/workers/miners/antminer
     usage: backend/workers/miners/antminer/USAGE.md
     contract: backend/workers/miners/antminer/mdk-contract.json
@@ -43,7 +43,7 @@ workers:
   - id: whatsminer
     family: miner
     provider: microbt
-    package: "@tetherto/miner-whatsminer"
+    package: "@tetherto/mdk-worker-whatsminer"
     path: packages/workers/miners/whatsminer
     usage: packages/workers/miners/whatsminer/USAGE.md
     contract: packages/workers/miners/whatsminer/mdk-contract.json
@@ -78,7 +78,7 @@ workers:
   - id: avalon
     family: miner
     provider: canaan
-    package: "@tetherto/miner-avalon"
+    package: "@tetherto/mdk-worker-avalon"
     path: packages/workers/miners/avalon
     usage: packages/workers/miners/avalon/USAGE.md
     contract: packages/workers/miners/avalon/mdk-contract.json

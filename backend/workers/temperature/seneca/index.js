@@ -1,5 +1,7 @@
 'use strict'
 
 module.exports = {
-  SENECA: require('./lib/types/temp.seneca.sensor.manager.wrk')
+  plugin: require('./plugin'),
+  startSenecaWorker: require('./plugin/boot').startSenecaWorker,
+  SenecaSensor: require('./lib/seneca.sensor')
 }

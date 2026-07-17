@@ -1,5 +1,5 @@
-import { COLOR, CURRENCY, UNITS } from '@tetherto/mdk-react-devkit/core'
-import { SingleStatCard } from '@tetherto/mdk-react-devkit/foundation'
+import { COLOR, CURRENCY, UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import { SingleStatCard } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import { DemoBlock } from '../../../components/demo-block'
 import { DemoPageHeader } from '../../../components/demo-page-header'

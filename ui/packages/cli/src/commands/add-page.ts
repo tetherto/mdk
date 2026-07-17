@@ -2,13 +2,21 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 import { readExampleSource } from '../examples.js'
+import { findManagedPage, type ManagedPage } from '../managed-pages.js'
+import { patchNavIcon } from '../nav.js'
 import {
   findComponent,
   loadRegistry,
   type Registry,
   type RegistryComponent,
 } from '../registry-loader.js'
+import { findRoutesFile, ROUTES_END_MARKER } from '../routes-file.js'
+import { getTemplatesRoot } from '../templates.js'
 import { placeholderFor, toPascalCase } from '../utils.js'
+
+// Re-exported for the legacy `import { ROUTES_CANDIDATES } from './add-page.js'`
+// callsite; new code should import from `../routes-file.js`.
+export { ROUTES_CANDIDATES } from '../routes-file.js'
 
 export type AddPageOptions = {
   packageName: string
@@ -128,9 +136,6 @@ export const resolveComponent = (
   )
 }
 
-export const ROUTES_CANDIDATES = ['src/routes.ts', 'src/routes.tsx']
-const ROUTES_END_MARKER = /^(\s*)\/\/ mdk:routes-end/m
-
 /**
  * Append a new route entry to the project's routes manifest if one exists
  * (identified by a `// mdk:routes-end` marker). Does nothing when the file
@@ -142,7 +147,7 @@ export const patchRoutesFile = (
   routePath: string,
   out: (line: string) => void,
 ): void => {
-  const routesFile = ROUTES_CANDIDATES.map((c) => resolve(cwd, c)).find(existsSync)
+  const routesFile = findRoutesFile(cwd)
   if (!routesFile) return
 
   const content = readFileSync(routesFile, 'utf8')
@@ -161,6 +166,58 @@ export const patchRoutesFile = (
   out(`✓ Registered route ${routePath} in ${routesFile}`)
 }
 
+/**
+ * Insert a managed page's canonical `ROUTES` entry before the routes marker.
+ * No-op when the route is already registered or the routes file/marker is
+ * absent. Mirrors {@link patchRoutesFile} but writes the exact pre-seeded line
+ * (so e.g. Alerts keeps its `routePath: '/alerts/:uuid?'` deep-link segment).
+ */
+const patchManagedRoute = (cwd: string, page: ManagedPage, out: (line: string) => void): void => {
+  const routesFile = findRoutesFile(cwd)
+  if (!routesFile) return
+
+  const content = readFileSync(routesFile, 'utf8')
+  if (content.includes(`path: '${page.routePath}'`)) return
+  if (!ROUTES_END_MARKER.test(content)) return
+
+  const patched = content.replace(ROUTES_END_MARKER, `$1${page.routeEntry}\n$1// mdk:routes-end`)
+  writeFileSync(routesFile, patched, 'utf8')
+  out(`✓ Registered route ${page.routePath} in ${routesFile}`)
+}
+
+/**
+ * Scaffold a pre-seeded managed page (Pool Manager, Alerts): copy the canonical
+ * fully-wired page bundled with the CLI verbatim, then register its route and
+ * sidebar nav icon. The reverse of `remove page` for the same page.
+ */
+const addManagedPage = (
+  page: ManagedPage,
+  opts: AddPageOptions,
+  out: (line: string) => void,
+): { writtenPath: string } => {
+  const sourcePath = join(getTemplatesRoot(), page.templateId, page.templatePagePath)
+  if (!existsSync(sourcePath)) {
+    throw new Error(`Managed page template not found: ${sourcePath}`)
+  }
+  const contents = readFileSync(sourcePath, 'utf8')
+
+  const fileName = `${page.name}.tsx`
+  const targetDir = resolve(opts.cwd, opts.outDir)
+  const targetPath = join(targetDir, fileName)
+  if (existsSync(targetPath) && !opts.force) {
+    throw new Error(`${targetPath} already exists. Re-run with --force to overwrite.`)
+  }
+
+  mkdirSync(targetDir, { recursive: true })
+  writeFileSync(targetPath, contents, 'utf8')
+  out(`✓ Wrote ${targetPath} (managed page: ${page.name})`)
+
+  patchManagedRoute(opts.cwd, page, out)
+  patchNavIcon(opts.cwd, page, out)
+
+  return { writtenPath: targetPath }
+}
+
 export const runAddPage = (opts: AddPageOptions): { writtenPath: string } => {
   const out =
     opts.out ??
@@ -168,6 +225,14 @@ export const runAddPage = (opts: AddPageOptions): { writtenPath: string } => {
       // eslint-disable-next-line no-console
       console.log(s)
     })
+
+  // Pre-seeded, fully-wired pages resolve to a canonical bundled page rather
+  // than a registry example. An explicit --component or --shell opts back out
+  // to the generic scaffold path.
+  if (!opts.componentName && !opts.shell) {
+    const managed = findManagedPage(opts.pageName)
+    if (managed) return addManagedPage(managed, opts, out)
+  }
 
   const { registry, packageDir } = loadRegistry({
     packageName: opts.packageName,

@@ -1,8 +1,8 @@
-import { devicesStore } from '@tetherto/mdk-ui-core'
+import { devicesStore } from '@tetherto/mdk-ui-foundation'
 import { type ReactElement, useEffect, useMemo, useState } from 'react'
 
 import { DemoPageHeader } from '../../../components/demo-page-header'
-import { BatchContainerControlsCard } from '@tetherto/mdk-react-devkit/foundation'
+import { BatchContainerControlsCard } from '@tetherto/mdk-react-devkit/domain'
 
 import {
   SCENARIOS,

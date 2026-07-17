@@ -6,7 +6,7 @@
 
 function renderStatus (status) {
   const lines = []
-  lines.push(`ORK  ${status.orkKey}`)
+  lines.push(`Kernel  ${status.kernelKey}`)
   lines.push('')
   if (!status.workers.length) {
     lines.push('  (no workers registered)')
@@ -24,7 +24,7 @@ function renderStatus (status) {
 
 function renderKeys (keys) {
   const lines = []
-  lines.push(`${'ORK'.padEnd(20)}${keys.orkKey || '(not started)'}`)
+  lines.push(`${'Kernel'.padEnd(20)}${keys.kernelKey || '(not started)'}`)
   for (const w of keys.workers) {
     lines.push(`${w.workerId.padEnd(20)}${w.rpcKey}`)
   }

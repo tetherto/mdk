@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-client",
-  "version": "0.3.0",
-  "description": "MDK protocol client HRPC (RPC gateway) transports for ORK",
+  "version": "0.5.0",
+  "description": "MDK protocol client — HRPC (RPC listener) transport for Kernel",
   "main": "index.js",
   "keywords": [
     "tether",
@@ -17,7 +17,8 @@
     "lint": "standard",
     "lint:fix": "standard --fix",
     "test": "npm run lint && npm run test:unit",
-    "test:unit": "NODE_ENV=test brittle tests/unit/*.js"
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.js",
+    "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
     "@hyperswarm/rpc": "^3.5.0",
@@ -27,13 +28,5 @@
   "devDependencies": {
     "brittle": "3.18.0",
     "standard": "17.1.0"
-  },
-  "overrides": {
-    "acorn": ">=8.17.0",
-    "js-yaml": ">=4.3.0",
-    "minimatch": ">=10.2.1",
-    "qs": ">=6.15.3",
-    "semver": ">=7.8.5",
-    "tar": ">=7.5.19"
   }
 }

@@ -1,4 +1,4 @@
-import { CONTAINER_STATUS, SITE_OVERVIEW_STATUSES } from '@tetherto/mdk-ui-core'
+import { CONTAINER_STATUS, SITE_OVERVIEW_STATUSES } from '@tetherto/mdk-ui-foundation'
 
 export type ContainerUnit = {
   id?: string
@@ -45,7 +45,7 @@ export type ProcessedContainerUnit = ContainerUnit & {
 /**
  * Minimal shape of a tail-log row consumed by `useSitesOverviewData`.
  * The dashboard fetches the full row via
- * `tailLogQuery({ key: 'stat-1m', type: 'miner', tag: 't-miner', ... })`
+ * `tailLogQuery({ key: 'stat-rtd', type: 'miner', tag: 't-miner', ... })`
  * — pass `_head(_head(rawResponse))` here.
  */
 export type SitesOverviewTailLogItem = {

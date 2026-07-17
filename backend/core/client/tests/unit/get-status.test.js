@@ -7,7 +7,7 @@
 
 const test = require('brittle')
 const { createMdkClient } = require('../../index')
-const { ACTIONS } = require('../../../ork/lib/protocol/actions')
+const { ACTIONS } = require('../../../kernel/lib/protocol/actions')
 
 function fakeTransport (respond) {
   const t = { calls: 0, requests: [] }

@@ -5,14 +5,14 @@ import {
   DEFAULT_HEADER_PREFERENCES,
   SettingsDashboard,
   WEBAPP_NAME,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import type {
   HeaderPreferences,
   PermLevel,
   RoleOption,
   SettingsExportData,
   SettingsUser,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 
 import './settings-demo.scss'
 

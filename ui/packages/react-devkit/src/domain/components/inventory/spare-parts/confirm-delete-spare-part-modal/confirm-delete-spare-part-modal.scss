@@ -1,0 +1,11 @@
+.mdk-confirm-delete-spare-part-modal {
+  max-width: 660px;
+
+  &__message {
+    line-height: 1.5;
+  }
+
+  &__footer {
+    gap: 12px;
+  }
+}

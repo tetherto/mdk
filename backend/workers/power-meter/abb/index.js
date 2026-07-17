@@ -1,9 +1,11 @@
 'use strict'
 
 module.exports = {
-  ABB_B23: require('./lib/types/b23.powermeter.manager'),
-  ABB_B24: require('./lib/types/b24.powermeter.manager'),
-  ABB_M1M20: require('./lib/types/m1m20.powermeter.manager'),
-  ABB_M4M20: require('./lib/types/m4m20.powermeter.manager'),
-  ABB_REU615: require('./lib/types/reu615.powermeter.manager')
+  plugin: require('./plugin'),
+  startAbbWorker: require('./plugin/boot').startAbbWorker,
+  ABBPowerMeter: require('./lib/abb.powermeter'),
+  B2XPowerMeter: require('./lib/models/b2x.powermeter'),
+  M1M20PowerMeter: require('./lib/models/m1m20.powermeter'),
+  M4M20PowerMeter: require('./lib/models/m4m20.powermeter'),
+  REU615PowerMeter: require('./lib/models/reu615.powermeter')
 }

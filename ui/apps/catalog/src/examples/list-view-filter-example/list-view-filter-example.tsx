@@ -1,4 +1,4 @@
-import type { CascaderOption, IndicatorProps, LocalFilters } from '@tetherto/mdk-react-devkit/core'
+import type { CascaderOption, IndicatorProps, LocalFilters } from '@tetherto/mdk-react-devkit/primitives'
 import {
   Button,
   Card,
@@ -11,7 +11,7 @@ import {
   Tag,
   Typography,
   UNITS,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
 import './list-view-filter-example.scss'
 
 import { useCallback, useMemo, useState } from 'react'

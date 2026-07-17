@@ -2,19 +2,18 @@
 
 const MDK_ROOT = 'tmp'
 const MDK_STORE = 'store'
-const ORK_CLUSTER = 'cluster-0'
+const KERNEL_CLUSTER = 'cluster-0'
 const WRK_TYPES = {
-  ORK: 'wrk-ork',
-  APP_NODE: 'wrk-node-http'
+  Kernel: 'wrk-kernel',
+  GATEWAY: 'wrk-node-http'
 }
 const LIB_TYPES = {
-  ORK: 'core/ork',
-  APP_NODE: 'core/app-node',
+  Kernel: 'core/kernel',
+  GATEWAY: 'core/gateway',
   ANTMINER: 'workers/miners/antminer',
   AVALON: 'workers/miners/avalon',
   WHATSMINER: 'workers/miners/whatsminer',
   BITDEER: 'workers/containers/bitdeer',
-  MICROBT: 'workers/containers/microbt',
   ANTSPACE: 'workers/containers/antspace',
   ABB: 'workers/power-meter/abb',
   SATEC: 'workers/power-meter/satec',
@@ -28,6 +27,6 @@ module.exports = {
   WRK_TYPES,
   MDK_ROOT,
   MDK_STORE,
-  ORK_CLUSTER,
+  KERNEL_CLUSTER,
   LIB_TYPES
 }

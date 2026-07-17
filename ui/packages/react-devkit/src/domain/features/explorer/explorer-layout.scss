@@ -1,0 +1,63 @@
+@use "@primitives/styles/mixins" as *;
+
+.mdk-explorer-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  &__row {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  &__list {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+  }
+
+  &__row--split &__list {
+    width: 70%;
+  }
+
+  &__detail {
+    position: sticky;
+    top: 0;
+    width: 34%;
+    min-width: 340px;
+    align-self: stretch;
+    overflow-x: auto;
+    overflow-y: auto;
+    border-left: 1px solid var(--mdk-border-default-color);
+  }
+
+  @media (max-width: 992px) {
+    &__row--split {
+      flex-direction: column;
+    }
+
+    &__row--split &__list,
+    &__detail {
+      width: 100%;
+    }
+
+    &__detail {
+      position: static;
+      border-left: none;
+      border-top: 1px solid var(--mdk-border-default-color);
+    }
+  }
+}

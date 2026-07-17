@@ -7,11 +7,7 @@
 
 const path = require('path')
 const { spawn } = require('child_process')
-
-function arg (name, fallback) {
-  const i = process.argv.indexOf(name)
-  return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : fallback
-}
+const { arg } = require('../argv')
 
 function main () {
   const uiPort = arg('--port', '3040')

@@ -23,7 +23,7 @@ describe('runStores', () => {
     const { sink, out } = captureLines()
     runStores({ cwd: fixture.dir, out: sink })
     const parsed = JSON.parse(out.join('\n'))
-    expect(parsed.package).toBe('@tetherto/mdk-ui-core')
+    expect(parsed.package).toBe('@tetherto/mdk-ui-foundation')
     expect(parsed.stores.map((s: { name: string }) => s.name).sort()).toEqual([
       'actionsStore',
       'authStore',

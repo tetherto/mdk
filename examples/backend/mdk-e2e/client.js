@@ -1,115 +1,84 @@
 'use strict'
 
-const net = require('net')
-const crypto = require('crypto')
+const fs = require('fs')
 const readline = require('readline')
-const { ACTIONS, MESSAGE_TYPES } = require('../../../backend/core/ork/lib/protocol/actions')
-const { DEFAULT_IPC_SOCK } = require('../../../backend/core/mdk')
+const { createMdkClient } = require('../../../backend/core/client')
+const { DEFAULT_KEY_FILE } = require('../../../backend/core/mdk')
 
-const IPC_PATH = process.argv[2] || DEFAULT_IPC_SOCK
+const KERNEL_KEY = process.argv[2] ||
+  (fs.existsSync(DEFAULT_KEY_FILE) ? fs.readFileSync(DEFAULT_KEY_FILE, 'utf8').trim() : null)
 
-function buildEnvelope (action, deviceId, payload) {
-  return {
-    id: crypto.randomUUID(),
-    version: '0.1.0',
-    type: MESSAGE_TYPES.REQUEST,
-    action,
-    sender: 'mdk-client:cli:1',
-    target: null,
-    deviceId: deviceId || null,
-    timestamp: Date.now(),
-    payload: payload || {}
-  }
-}
-
-function ipcRequest (sockPath, envelope) {
-  return new Promise((resolve, reject) => {
-    const client = net.connect(sockPath, () => {
-      client.write(JSON.stringify(envelope) + '\n')
-    })
-    let data = ''
-    client.on('data', (chunk) => {
-      data += chunk.toString()
-      const idx = data.indexOf('\n')
-      if (idx !== -1) {
-        client.end()
-        resolve(JSON.parse(data.slice(0, idx)))
-      }
-    })
-    client.on('error', reject)
-    setTimeout(() => { client.destroy(); reject(new Error('timeout')) }, 10000)
-  })
-}
+let client = null
 
 async function run (cmd, args) {
-  let envelope
+  let call
 
   switch (cmd) {
     case 'workers':
-      envelope = buildEnvelope(ACTIONS.WORKER_LIST)
+      call = () => client.listWorkers()
       break
 
     case 'capabilities': {
       const did = args[0]
       if (!did) { console.log('Usage: capabilities <deviceId>'); return }
-      envelope = buildEnvelope(ACTIONS.DEVICE_CAPABILITIES, did)
+      call = () => client.getCapabilities(did)
       break
     }
 
     case 'state': {
       const did = args[0]
-      envelope = buildEnvelope(ACTIONS.STATE_PULL, did)
+      call = () => client.pullState(did)
       break
     }
 
     case 'metrics': {
       const did = args[0]
       if (!did) { console.log('Usage: metrics <deviceId>'); return }
-      envelope = buildEnvelope(ACTIONS.TELEMETRY_PULL, did, { query: { type: 'metrics' } })
+      call = () => client.pullTelemetry(did, 'metrics')
       break
     }
 
     case 'list': {
       const did = args[0]
-      envelope = buildEnvelope(ACTIONS.TELEMETRY_PULL, did, { query: { type: 'list' } })
+      call = () => client.pullTelemetry(did, 'list')
       break
     }
 
     case 'count': {
       const did = args[0]
-      envelope = buildEnvelope(ACTIONS.TELEMETRY_PULL, did, { query: { type: 'count' } })
+      call = () => client.pullTelemetry(did, 'count')
       break
     }
 
     case 'logs': {
       const did = args[0]
       if (!did) { console.log('Usage: logs <deviceId>'); return }
-      envelope = buildEnvelope(ACTIONS.TELEMETRY_PULL, did, { query: { type: 'logs', limit: 5 } })
+      call = () => client.pullTelemetry(did, { type: 'logs', limit: 5 })
       break
     }
 
     case 'settings': {
       const did = args[0]
-      envelope = buildEnvelope(ACTIONS.TELEMETRY_PULL, did, { query: { type: 'settings' } })
+      call = () => client.pullTelemetry(did, 'settings')
       break
     }
 
     case 'stats': {
       const did = args[0]
-      envelope = buildEnvelope(ACTIONS.TELEMETRY_PULL, did, { query: { type: 'stats' } })
+      call = () => client.pullTelemetry(did, 'stats')
       break
     }
 
     case 'config': {
       const did = args[0]
-      envelope = buildEnvelope(ACTIONS.TELEMETRY_PULL, did, { query: { type: 'thing_config' } })
+      call = () => client.pullTelemetry(did, 'thing_config')
       break
     }
 
     case 'reboot': {
       const did = args[0]
       if (!did) { console.log('Usage: reboot <deviceId>'); return }
-      envelope = buildEnvelope(ACTIONS.COMMAND_REQUEST, did, { command: 'reboot', params: {} })
+      call = () => client.sendCommand(did, 'reboot', {})
       break
     }
 
@@ -117,7 +86,7 @@ async function run (cmd, args) {
       const did = args[0]
       const mode = args[1] || 'normal'
       if (!did) { console.log('Usage: setpower <deviceId> <normal|low|high>'); return }
-      envelope = buildEnvelope(ACTIONS.COMMAND_REQUEST, did, { command: 'setPowerMode', params: { mode } })
+      call = () => client.sendCommand(did, 'setPowerMode', { mode })
       break
     }
 
@@ -125,7 +94,7 @@ async function run (cmd, args) {
       const did = args[0]
       const on = args[1] !== 'off'
       if (!did) { console.log('Usage: setled <deviceId> [on|off]'); return }
-      envelope = buildEnvelope(ACTIONS.COMMAND_REQUEST, did, { command: 'setLED', params: { enabled: on } })
+      call = () => client.sendCommand(did, 'setLED', { enabled: on })
       break
     }
 
@@ -158,7 +127,7 @@ async function run (cmd, args) {
   }
 
   try {
-    const resp = await ipcRequest(IPC_PATH, envelope)
+    const resp = await call()
     console.log(JSON.stringify(resp, null, 2))
   } catch (err) {
     console.log(`  Error: ${err.message}`)
@@ -166,7 +135,15 @@ async function run (cmd, args) {
 }
 
 async function main () {
-  console.log(`\n  MDK Client — connected to IPC: ${IPC_PATH}`)
+  if (!KERNEL_KEY) {
+    console.error(`\n  No kernel key: pass one as argv or start the Kernel first (key file: ${DEFAULT_KEY_FILE})\n`)
+    process.exit(1)
+  }
+
+  client = createMdkClient({ hrpc: { key: KERNEL_KEY } })
+  await client.connect()
+
+  console.log(`\n  Client — connected to Kernel over HRPC: ${KERNEL_KEY.slice(0, 16)}…`)
   console.log('  Type "help" for commands, "quit" to exit.\n')
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -176,7 +153,7 @@ async function main () {
       const parts = line.trim().split(/\s+/)
       const cmd = (parts[0] || '').toLowerCase()
       if (!cmd) { prompt(); return }
-      if (cmd === 'quit' || cmd === 'exit') { rl.close(); return }
+      if (cmd === 'quit' || cmd === 'exit') { rl.close(); client.close(); return }
       await run(cmd, parts.slice(1))
       prompt()
     })

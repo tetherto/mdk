@@ -2,8 +2,8 @@
 /* eslint-disable no-console */
 /**
  * Rewrites demo-app imports of the now-removed packages
- *   @tetherto/mdk-core-ui       → @tetherto/mdk-react-devkit/core
- *   @tetherto/mdk-foundation-ui → @tetherto/mdk-react-devkit/foundation
+ *   @tetherto/mdk-core-ui       → @tetherto/mdk-react-devkit/primitives
+ *   @tetherto/mdk-foundation-ui → @tetherto/mdk-react-devkit/domain
  *   @tetherto/mdk-foundation-ui/<sub> → @tetherto/mdk-react-devkit/<sub>
  *   SCSS @use of those packages too.
  *
@@ -34,7 +34,7 @@ const REPLACEMENTS = [
   // foundation/<sub>: keep <sub> as the new subpath
   [/(['"])@tetherto\/mdk-foundation-ui\/([^'"]+)\1/g, '$1@tetherto/mdk-react-devkit/$2$1'],
   // bare foundation: → /foundation
-  [/(['"])@tetherto\/mdk-foundation-ui\1/g, '$1@tetherto/mdk-react-devkit/foundation$1'],
+  [/(['"])@tetherto\/mdk-foundation-ui\1/g, '$1@tetherto/mdk-react-devkit/domain$1'],
   // core/styles.css → unified styles.css
   [/(['"])@tetherto\/mdk-core-ui\/styles\.css\1/g, '$1@tetherto/mdk-react-devkit/styles.css$1'],
   // core/styles → unified /styles
@@ -42,9 +42,9 @@ const REPLACEMENTS = [
   // core/<sub> → /core/<sub>... but most things have a flat top-level export, so just go to /core
   // Actually most code does `from '@tetherto/mdk-core-ui'` — handled by next pattern.
   // For e.g. `'@tetherto/mdk-core-ui/dist/...'` — we forward to /core/...
-  [/(['"])@tetherto\/mdk-core-ui\/([^'"]+)\1/g, '$1@tetherto/mdk-react-devkit/core/$2$1'],
+  [/(['"])@tetherto\/mdk-core-ui\/([^'"]+)\1/g, '$1@tetherto/mdk-react-devkit/primitives/$2$1'],
   // bare core: → /core
-  [/(['"])@tetherto\/mdk-core-ui\1/g, '$1@tetherto/mdk-react-devkit/core$1'],
+  [/(['"])@tetherto\/mdk-core-ui\1/g, '$1@tetherto/mdk-react-devkit/primitives$1'],
 ]
 
 let touched = 0

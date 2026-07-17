@@ -1,10 +1,12 @@
 # Build system, scripts and watch mode
 
-Complete guide to building and developing inside the MDK monorepo —
-the Turborepo pipeline, configuration files, the full script surface,
-and how to drive it all.
+The MDK UI monorepo compiles TypeScript and SCSS across four packages (`mdk-ui-foundation`, `mdk-react-adapter`, 
+`mdk-react-devkit`, `mdk-fonts`) and a catalog app. Turborepo orchestrates the dependency order and caches 
+outputs; Vite handles SCSS compilation for the devkit and fonts. 
 
-## Quick start
+This guide covers the full pipeline — configuration files, every script, and watch mode.
+
+## Quickstart
 
 ```bash
 corepack enable    # if not already enabled
@@ -21,24 +23,24 @@ npm run dev        # watch everything and start the catalog app
   - TypeScript compiler (`tsc`) for `.ts/.tsx`. All three TypeScript
     packages are **pre-built** — `tsc` emits ESM JS + `.d.ts`
     declarations under `dist/` and every `exports` map resolves there,
-    so external NPM consumers never compile our source.
+    so external NPM consumers never compile our source
   - Vite for SCSS compilation in `@tetherto/mdk-react-devkit` and
-    `@tetherto/mdk-fonts`.
+    `@tetherto/mdk-fonts`
   - A small custom PostCSS plugin
     (`packages/react-devkit/postcss-mdk-layer.mjs`) that wraps top-level
-    rules in `@layer mdk` and prepends `@layer base, mdk, app;`.
+    rules in `@layer mdk` and prepends `@layer base, mdk, app;`
   - `packages/react-devkit/scripts/strip-style-imports.mjs` — a small
     post-`tsc` step that removes side-effect `.scss` / `.css` imports
-    from the emitted JS (the bundled `dist/styles.css` already contains
-    every component's styles).
+    from the emitted JS (styles are in the Vite-built `dist/styles.css` and
+    `dist/styles-domain.css`, not in the TS output)
 
 ### Why Turborepo?
 
-- Already in use, no new tools to learn.
-- Intelligent caching — builds are reused across runs.
-- Parallel execution of independent tasks.
-- Automatic dependency-graph ordering.
-- Simple configuration in a single `turbo.json`.
+- Already in use, no new tools to learn
+- Intelligent caching — builds are reused across runs
+- Parallel execution of independent tasks
+- Automatic dependency-graph ordering
+- Simple configuration in a single `turbo.json`
 
 ## Build pipeline
 
@@ -47,27 +49,28 @@ npm run build
    │
    ▼
 Turborepo
-   ├── @tetherto/mdk-ui-core           (build:ts: tsc → dist/ ESM + d.ts)
+   ├── @tetherto/mdk-ui-foundation           (build:ts: tsc → dist/ ESM + d.ts)
    ├── @tetherto/mdk-react-adapter     (build:ts: tsc → dist/ ESM + d.ts)
-   ├── @tetherto/mdk-react-devkit      (build:ts: tsc → dist/ ESM + d.ts, then build:scss: vite → dist/styles.css)
+   ├── @tetherto/mdk-react-devkit      (build:ts: tsc → dist/ ESM + d.ts, then build:scss: vite → dist/styles.css + dist/styles-domain.css)
    ├── @tetherto/mdk-fonts             (build:scss: vite → dist/jetbrains-mono.css)
    └── apps/catalog                    (build: vite → dist/, consumes all packages from their dist/)
 ```
 
 When you run a full build, Turborepo will:
 
-1. Build `@tetherto/mdk-ui-core` first (no workspace deps).
+1. Build `@tetherto/mdk-ui-foundation` first (no workspace deps).
 2. Build `@tetherto/mdk-react-adapter` after the core (depends on it).
 3. Build `@tetherto/mdk-fonts` in parallel (no workspace deps).
 4. Build `@tetherto/mdk-react-devkit` after its workspace deps complete.
 5. Build `apps/catalog` last.
 
-Every TypeScript package ships a pre-built `dist/`. The devkit's SCSS
-is built once into a single layer-wrapped stylesheet shipped as
-`./styles.css`; the SCSS source files (`_mixins.scss`, `_colors.scss`)
-are also exposed as subpath exports for consumers authoring their own
-SCSS. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the package layering
-and [`STYLING.md`](STYLING.md) for the cascade-layer details.
+Every TypeScript package ships a pre-built `dist/`. The devkit's SCSS is compiled into two layer-wrapped stylesheets: 
+`dist/styles.css` (design tokens + core primitives) and `dist/styles-domain.css` (mining-domain components). 
+The SCSS source files (`_mixins.scss`, `_colors.scss`) are also exposed as subpath exports for consumers authoring their own SCSS. 
+
+> [!TIP]
+> See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the package layering and [`STYLING.md`](STYLING.md) for 
+> the cascade-layer details and the two-import pattern.
 
 ## Configuration files
 
@@ -93,7 +96,7 @@ Defines the task graph used by every workspace:
 
 ### Per-package: `package.json` scripts
 
-A typical pre-built package (`mdk-ui-core`, `mdk-react-adapter`):
+A typical pre-built package (`mdk-ui-foundation`, `mdk-react-adapter`):
 
 ```json
 {
@@ -128,18 +131,41 @@ file declares `@layer base, mdk, app;` and wraps unlayered rules in
 `@layer mdk`:
 
 ```js
-import postcssMdkLayer from "./postcss-mdk-layer.mjs"
+import { dirname, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+import { defineConfig } from "vite"
+import mdkLayer from "./postcss-mdk-layer.mjs"
 
-export default defineConfig({
-  css: {
-    postcss: { plugins: [postcssMdkLayer()] },
-  },
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+export default defineConfig(({ mode }) => ({
+  publicDir: false,
   build: {
-    lib: { entry: "src/styles/index.scss", formats: ["es"] },
-    outDir: "dist",
-    cssCodeSplit: false,
+    lib: {
+      // Two entry points produce two separate CSS outputs.
+      entry: {
+        styles: resolve(__dirname, "src/styles.scss"),
+        "styles-domain": resolve(__dirname, "src/styles-domain.scss"),
+      },
+      formats: ["es"],
+    },
+    outDir: resolve(__dirname, "dist"),
+    emptyOutDir: false,
+    cssCodeSplit: true, // required to keep the two CSS outputs separate
+    sourcemap: mode === "development",
+    rollupOptions: {
+      output: {
+        assetFileNames: "[name].css", // → styles.css / styles-domain.css
+      },
+    },
   },
-})
+  css: {
+    postcss: { plugins: [mdkLayer()] },
+    preprocessorOptions: {
+      scss: { api: "modern-compiler", silenceDeprecations: ["import"] },
+    },
+  },
+}))
 ```
 
 ## Root scripts
@@ -167,8 +193,10 @@ All root scripts proxy to Turborepo, which fans out across workspaces.
 | `npm run test:watch`   | Vitest in watch mode                                    |
 | `npm run test:coverage`| Vitest with coverage (writes to `coverage/`)            |
 | `npm run check`        | `turbo check` (lint + format + typecheck)               |
-| `npm run fullcheck`    | `build` + `lint` + `typecheck` + `format` + coverage    |
+| `npm run fullcheck`    | `build` + `lint` + `typecheck` + `format` + `check:agent-ready` + coverage (see [`AGENT_FIRST.md`](./AGENT_FIRST.md#gate-1-checkagent-ready)) |
 | `npm run size`         | Bundle-size report via `scripts/bundle-size.mjs`        |
+| `npm run size:consumer`| Tree-shake check — simulates a consumer bundle to catch accidental side-effect imports (`scripts/treeshake-check.mjs`) |
+| `npm run size:check`   | Full size audit: `build` + `size` + `size:consumer`     |
 | `npm run generate:shell` | Regenerate `apps/mdk-ui-shell` from the CLI template (`rimraf` + `mdk-ui create`) |
 | `npm run clean`        | Remove `dist/` and `node_modules/` across workspaces    |
 
@@ -192,20 +220,20 @@ All root scripts proxy to Turborepo, which fans out across workspaces.
 Every workspace exposes the same script names where applicable, so the
 Turborepo fan-out is uniform.
 
-### `@tetherto/mdk-ui-core`
+### `@tetherto/mdk-ui-foundation`
 
 Framework-agnostic state + utilities. Pre-built to JS + d.ts.
 
 ```bash
-npm run --workspace @tetherto/mdk-ui-core build      # tsc → dist/
-npm run --workspace @tetherto/mdk-ui-core dev:ts     # tsc --watch
-npm run --workspace @tetherto/mdk-ui-core typecheck  # tsc --noEmit
-npm run --workspace @tetherto/mdk-ui-core test       # vitest run
+npm run --workspace @tetherto/mdk-ui-foundation build      # tsc → dist/
+npm run --workspace @tetherto/mdk-ui-foundation dev:ts     # tsc --watch
+npm run --workspace @tetherto/mdk-ui-foundation typecheck  # tsc --noEmit
+npm run --workspace @tetherto/mdk-ui-foundation test       # vitest run
 ```
 
 ### `@tetherto/mdk-react-adapter`
 
-React bindings for `mdk-ui-core`. Pre-built to ESM JS + `.d.ts` under
+React bindings for `mdk-ui-foundation`. Pre-built to ESM JS + `.d.ts` under
 `dist/`; the package `exports` map resolves there.
 
 ```bash
@@ -217,15 +245,15 @@ npm run --workspace @tetherto/mdk-react-adapter test
 
 ### `@tetherto/mdk-react-devkit`
 
-Generic UI primitives (`src/core`) + mining-domain components
-(`src/foundation`). Pre-built to ESM JS + `.d.ts` under `dist/` (with a
-post-`tsc` step that strips side-effect SCSS imports) plus a Vite-built
-`dist/styles.css`.
+Generic UI primitives (`src/primitives`) + mining-domain components
+(`src/domain`). Pre-built to ESM JS + `.d.ts` under `dist/` (with a
+post-`tsc` step that strips side-effect SCSS imports) plus two Vite-built
+stylesheets: `dist/styles.css` and `dist/styles-domain.css`.
 
 ```bash
-npm run --workspace @tetherto/mdk-react-devkit build       # tsc → dist/ + strip-style-imports + vite → dist/styles.css
+npm run --workspace @tetherto/mdk-react-devkit build       # tsc → dist/ + strip-style-imports + vite → dist/styles.css + dist/styles-domain.css
 npm run --workspace @tetherto/mdk-react-devkit build:ts    # tsc + strip-style-imports
-npm run --workspace @tetherto/mdk-react-devkit build:scss  # vite build → dist/styles.css
+npm run --workspace @tetherto/mdk-react-devkit build:scss  # vite build → dist/styles.css + dist/styles-domain.css
 npm run --workspace @tetherto/mdk-react-devkit dev         # concurrent tsc + vite watch
 npm run --workspace @tetherto/mdk-react-devkit dev:ts      # tsc --watch
 npm run --workspace @tetherto/mdk-react-devkit dev:scss    # vite build --watch
@@ -268,8 +296,8 @@ Output looks like:
 ## Filtering with Turborepo directly
 
 ```bash
-turbo build --filter=@tetherto/mdk-ui-core         # only the core
-turbo build --filter=@tetherto/mdk-ui-core...      # core + everything that depends on it
+turbo build --filter=@tetherto/mdk-ui-foundation         # only the core
+turbo build --filter=@tetherto/mdk-ui-foundation...      # core + everything that depends on it
 turbo build --filter=!@tetherto/mdk-catalog-ui     # everything except the catalog app
 turbo dev   --filter=@tetherto/mdk-react-devkit    # watch only the devkit
 ```
@@ -286,7 +314,7 @@ npm run clean              # delete dist/ across all packages
 ## Dependency graph
 
 ```
-@tetherto/mdk-ui-core              (built JS + d.ts)
+@tetherto/mdk-ui-foundation              (built JS + d.ts)
   └── @tetherto/mdk-react-adapter  (built JS + d.ts)
         └── @tetherto/mdk-react-devkit ─┐  (built JS + d.ts + CSS)
                                         ├──→ @tetherto/mdk-catalog-ui
@@ -296,7 +324,7 @@ npm run clean              # delete dist/ across all packages
 Turborepo guarantees the correct order and parallelizes independent
 tasks:
 
-- `mdk-ui-core` builds before `mdk-react-adapter`.
+- `mdk-ui-foundation` builds before `mdk-react-adapter`.
 - `mdk-react-adapter` builds before `mdk-react-devkit`.
 - `mdk-fonts` builds in parallel with the React stack.
 - The catalog build sees up-to-date `dist/` for every workspace
@@ -322,7 +350,7 @@ Outputs are cached between runs.
    `--force` unless you suspect cache corruption — the cache is normally
    correct.
 3. **Run `npm run build` before `npm run dev` on a fresh clone** — the
-   pre-built packages (`mdk-ui-core`, `mdk-react-adapter`) need their
+   pre-built packages (`mdk-ui-foundation`, `mdk-react-adapter`) need their
    `dist/` populated before the devkit consumes them.
 4. **Keep `turbo.json` simple**; per-package nuance belongs in that
    package's own `package.json` scripts.
@@ -344,7 +372,7 @@ npm run --workspace @tetherto/mdk-react-devkit build:scss
 ### TypeScript errors that look stale
 
 ```bash
-npm run --workspace @tetherto/mdk-ui-core build
+npm run --workspace @tetherto/mdk-ui-foundation build
 npm run --workspace @tetherto/mdk-react-adapter build
 npm run typecheck
 ```

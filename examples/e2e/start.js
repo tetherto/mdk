@@ -30,20 +30,20 @@ const SERVER_JS = path.resolve(E2E_DIR, 'server.js')
 const UI_DIR = path.join(__dirname, 'ui')
 
 // ── Service registry ──────────────────────────────────────────────────────────
-// 'ork' and 'app-node' both use server.js and are mutually exclusive (same port).
+// 'kernel' and 'gateway' both use server.js and are mutually exclusive (same port).
 const SERVICE_DEFS = {
-  ork: {
-    label: 'ORK',
+  kernel: {
+    label: 'Kernel',
     color: C.cyan,
     cmd: process.execPath,
     args: [SERVER_JS],
     opts: { cwd: E2E_DIR }
   },
-  'app-node': {
+  'gateway': {
     label: 'BACKEND',
     color: C.cyan,
     cmd: process.execPath,
-    args: [SERVER_JS, '--app-node'],
+    args: [SERVER_JS, '--gateway'],
     opts: { cwd: E2E_DIR }
   },
   ui: {
@@ -59,7 +59,7 @@ const SERVICE_DEFS = {
   }
 }
 
-const BACKEND_SERVICES = new Set(['ork', 'app-node'])
+const BACKEND_SERVICES = new Set(['kernel', 'gateway'])
 
 // running: Map<name, { proc, label, color, stopping }>
 const running = new Map()
@@ -119,9 +119,9 @@ function startService (name) {
     return false
   }
 
-  // ork / app-node are mutually exclusive — both run server.js on the same port
+  // kernel / gateway are mutually exclusive — both run server.js on the same port
   if (BACKEND_SERVICES.has(name)) {
-    const other = name === 'ork' ? 'app-node' : 'ork'
+    const other = name === 'kernel' ? 'gateway' : 'kernel'
     if (running.has(other)) {
       out(`${C.yellow}Cannot start ${C.bold}${name}${C.reset}${C.yellow}: ` +
           `${C.bold}${other}${C.reset}${C.yellow} is already running. ` +
@@ -168,7 +168,7 @@ function cmdStart (args) {
   const target = (args[0] || 'all').toLowerCase()
 
   if (target === 'all') {
-    const backendStarted = startService('app-node')
+    const backendStarted = startService('gateway')
     const delay = backendStarted ? 4000 : 0
     setTimeout(() => startService('ui'), delay)
     return
@@ -206,11 +206,11 @@ function cmdStatus () {
   }
   out(`${C.bold}Running services:${C.reset}`)
   for (const [name, { label, color, proc }] of running) {
-    const addr = name === 'app-node'
+    const addr = name === 'gateway'
       ? 'http://localhost:3000'
       : name === 'ui'
         ? 'http://localhost:3030'
-        : 'ork backend'
+        : 'kernel backend'
     out(`  ${C.green}●${C.reset} ${color}${label.padEnd(10)}${C.reset}` +
         ` pid ${C.bold}${proc.pid}${C.reset}  ${C.dim}${addr}${C.reset}`)
   }
@@ -221,16 +221,16 @@ function printHelp () {
 ${C.bold}${C.green}MDK Site Monitor${C.reset}
 
 ${C.bold}Services:${C.reset}
-  ${C.cyan}ork${C.reset}        ORK backend — mock Whatsminer M56S + worker
+  ${C.cyan}kernel${C.reset}        Kernel backend — mock Whatsminer M56S + worker
                ${C.dim}(no HTTP API)${C.reset}
-  ${C.cyan}app-node${C.reset}   ORK backend + HTTP API on ${C.bold}:3000${C.reset} — noAuth mode
-               ${C.dim}(includes ORK — use this for the full example)${C.reset}
+  ${C.cyan}gateway${C.reset}   Kernel backend + HTTP API on ${C.bold}:3000${C.reset} — noAuth mode
+               ${C.dim}(includes Kernel — use this for the full example)${C.reset}
   ${C.cyan}ui${C.reset}         Vite UI dev server on ${C.bold}:3030${C.reset}
-               ${C.dim}(proxies /ork and /oauth to app-node)${C.reset}
+               ${C.dim}(proxies /kernel and /oauth to gateway)${C.reset}
 
 ${C.bold}Commands:${C.reset}
-  ${C.bold}start${C.reset} [ork|app-node|ui|all]   Start a service  ${C.dim}(default: all)${C.reset}
-  ${C.bold}stop${C.reset}  [ork|app-node|ui|all]   Stop a service   ${C.dim}(default: all)${C.reset}
+  ${C.bold}start${C.reset} [kernel|gateway|ui|all]   Start a service  ${C.dim}(default: all)${C.reset}
+  ${C.bold}stop${C.reset}  [kernel|gateway|ui|all]   Stop a service   ${C.dim}(default: all)${C.reset}
   ${C.bold}status${C.reset}                        Show running services
   ${C.bold}help${C.reset}                          Show this message
   ${C.bold}exit${C.reset}                          Stop all services and quit

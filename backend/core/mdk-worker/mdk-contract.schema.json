@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "This schema describes a static Worker Plugin contract. Runtime device IDs and connection configuration belong to the host process and are reported dynamically by WorkerRuntime identity responses; they are intentionally not embedded here.",
+  "title": "MDK Device-Lib Contract Schema",
+  "description": "Formal JSON Schema defining the unified programmatic and semantic capabilities contract for MDK device integration workers.",
+  "type": "object",
+  "required": [
+    "metadata",
+    "capabilities"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "metadata": {
+      "type": "object",
+      "description": "Identity and family metadata defining what the worker represents.",
+      "required": ["provider", "deviceFamily", "brand", "modelsSupported", "overview"],
+      "properties": {
+        "provider": { "type": "string", "description": "The corporate or individual provider behind the worker (e.g., 'microbt')." },
+        "deviceFamily": { "type": "string", "description": "The broad category of devices (e.g., 'miner', 'sensor', 'switchgear')." },
+        "brand": { "type": "string", "description": "The human-readable brand name of the device." },
+        "modelsSupported": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of specific models this specific contract supports."
+        },
+        "overview": { 
+          "type": "string", 
+          "description": "Mandatory semantic overview. Used to instruct AI agents on the broad purpose and critical environmental constraints for this device group." 
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "The unified machine and semantic capabilities mapping for the device.",
+      "required": ["telemetry", "commands", "health", "errors"],
+      "properties": {
+        "telemetry": {
+          "type": "array",
+          "description": "Metrics continuously updated and read from the device. Natural semantic rules should be appended to the 'description' field.",
+          "items": {
+            "type": "object",
+            "required": ["name", "type", "handler", "description"],
+            "properties": {
+              "name": { "type": "string" },
+              "unit": { "type": "string" },
+              "type": { "type": "string", "enum": ["number", "string", "boolean", "object", "array"] },
+              "handler": { "type": "string", "description": "CommonJS handler path relative to the Worker Plugin directory. Removed from the contract published to Kernel." },
+              "description": { "type": "string", "description": "Human and AI readable metric description. Should include semantic boundaries (e.g., 'If 0, device is booting')." }
+            }
+          }
+        },
+        "commands": {
+          "type": "array",
+          "description": "Callable operations the device accepts.",
+          "items": {
+            "type": "object",
+            "required": ["name", "handler"],
+            "properties": {
+              "name": { "type": "string" },
+              "handler": { "type": "string", "description": "CommonJS handler path relative to the Worker Plugin directory. Removed from the contract published to Kernel." },
+              "description": { "type": "string", "description": "What the command does physically." },
+              "constraints": { "type": "string", "description": "Strict semantic limits (e.g., 'Do not call more than once every 15 minutes')." },
+              "examples": {
+                "type": "array",
+                "description": "Concrete AI instruction workflows for how to utilize this command optimally.",
+                "items": {
+                  "type": "object",
+                  "required": ["intent", "steps"],
+                  "properties": {
+                    "intent": { "type": "string", "description": "The goal or overarching reason for executing the workflow." },
+                    "steps": { "type": "array", "items": { "type": "string" }, "description": "Step-by-step numbered execution plan for the AI." }
+                  }
+                }
+              },
+              "params": {
+                "type": "array",
+                "description": "Input arguments required by the command.",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "type": { "type": "string", "enum": ["number", "string", "boolean", "object"] },
+                    "required": { "type": "boolean", "description": "Whether the command handler requires this parameter." },
+                    "enum": {
+                      "type": "array",
+                      "description": "Allowed values. WorkerRuntime publishes this constraint but the command handler must enforce it.",
+                      "items": {}
+                    },
+                    "min": { "type": "number", "description": "Allowed minimum value (for numbers)." },
+                    "max": { "type": "number", "description": "Allowed maximum value (for numbers)." }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "config": {
+          "type": "object",
+          "description": "Device configuration models.",
+          "properties": {
+            "schema": { "type": "string", "description": "Reference identifier for config payload shape." }
+          }
+        },
+        "health": {
+          "type": "object",
+          "description": "Standardized diagnostic mappings.",
+          "required": ["supportedStates"],
+          "properties": {
+            "supportedStates": { "type": "array", "items": { "type": "string" } },
+            "alerts": { "type": "array", "items": { "type": "string" } },
+            "troubleshooting": { 
+              "type": "array", 
+              "items": { "type": "string" },
+              "description": "Semantic AI reasoning array. Provides if-then remediation workflows for specific failures."
+            }
+          }
+        },
+        "errors": {
+          "type": "object",
+          "description": "Lookup table mapping specific device error codes to human/AI-readable text.",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    }
+  }
+}

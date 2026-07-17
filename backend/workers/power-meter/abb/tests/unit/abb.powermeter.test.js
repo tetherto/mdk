@@ -39,6 +39,23 @@ test('ABBPowerMeter readValues caches last successful payload', async t => {
   t.alike(third, payload, 'returns cache while under cacheLimit')
 })
 
+test('ABBPowerMeter base _readValues is a no-op and close ends the client', async t => {
+  let ended = 0
+  const meter = new ABBPowerMeter({
+    address: '127.0.0.1',
+    port: 5020,
+    unitId: 0,
+    conf: {},
+    getClient: () => ({
+      end () { ended++ }
+    })
+  })
+
+  t.is(await meter._readValues(), undefined)
+  meter.close()
+  t.is(ended, 1)
+})
+
 test('ABBPowerMeter readValues throws when cache limit exceeded', async t => {
   const meter = new ABBPowerMeter({
     address: '127.0.0.1',

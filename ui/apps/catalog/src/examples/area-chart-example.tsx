@@ -1,5 +1,5 @@
-import { AreaChart, ChartContainer, UNITS } from '@tetherto/mdk-react-devkit/core'
-import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/core'
+import { AreaChart, ChartContainer, UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/primitives'
 import { DemoPageHeader } from '../components/demo-page-header'
 import {
   AREA_CHART_HASHRATE_TREND,

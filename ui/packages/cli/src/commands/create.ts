@@ -17,24 +17,24 @@ import { runInit } from './init.js'
 
 const MDK_PACKAGES = [
   '@tetherto/mdk-fonts',
-  '@tetherto/mdk-ui-core',
+  '@tetherto/mdk-ui-foundation',
   '@tetherto/mdk-react-adapter',
   '@tetherto/mdk-react-devkit',
 ] as const
 
 /**
  * Walk up from `start` looking for an MDK monorepo root. Detected by the
- * presence of `packages/ui-core/package.json` whose name is `@tetherto/mdk-ui-core`.
+ * presence of `packages/ui-foundation/package.json` whose name is `@tetherto/mdk-ui-foundation`.
  * Returns the absolute path of the monorepo root, or null if not inside one.
  */
 const findMdkMonorepoRoot = (start: string): string | null => {
   let dir = start
   while (dir !== dirname(dir)) {
-    const probe = join(dir, 'packages', 'ui-core', 'package.json')
+    const probe = join(dir, 'packages', 'ui-foundation', 'package.json')
     if (existsSync(probe)) {
       try {
         const pkg = JSON.parse(readFileSync(probe, 'utf8')) as { name?: string }
-        if (pkg.name === '@tetherto/mdk-ui-core') return dir
+        if (pkg.name === '@tetherto/mdk-ui-foundation') return dir
       } catch {
         // ignore, keep walking
       }

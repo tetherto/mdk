@@ -1,4 +1,4 @@
-import { authStore, extractAuthTokenFromUrl, stripAuthTokenFromUrl } from '@tetherto/mdk-ui-core'
+import { authStore, extractAuthTokenFromUrl, stripAuthTokenFromUrl } from '@tetherto/mdk-ui-foundation'
 import { useEffect } from 'react'
 import { useStore } from 'zustand'
 

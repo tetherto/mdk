@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { JSX } from 'react'
 
-import { Button, Checkbox, Typography } from '@tetherto/mdk-react-devkit/core'
-import { Alerts } from '@tetherto/mdk-react-devkit/foundation'
+import { Button, Checkbox, Typography } from '@tetherto/mdk-react-devkit/primitives'
+import { Alerts } from '@tetherto/mdk-react-devkit/domain'
 
 import { DemoPageHeader } from '../../components/demo-page-header'
 

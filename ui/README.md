@@ -47,23 +47,36 @@ The monorepo ships **runtime packages** (what React apps depend on), **assets**,
 
 ### Product — runtime packages and assets
 
-### `@tetherto/mdk-ui-core` (`packages/ui-core`)
+### `@tetherto/mdk-ui-foundation` (`packages/ui-foundation`)
 
 Framework-agnostic headless package. Pure TypeScript, no React.
 
 - Zustand vanilla stores: `authStore`, `devicesStore`, `notificationStore`,
   `timezoneStore`, `actionsStore`
 - TanStack `QueryClient` factory (`createMdkQueryClient`)
+- `queryKeys`: centralized key factories for all read endpoints,
+  including Op Centre reads (site, racks, PDU layout, global data,
+  `thingConfig`), Pool Manager, and `thing` comment mutations
+- Query factories and pool factories: `{ queryKey, queryFn }` objects
+  for mining read endpoints
+- Query parameter builders: Op Centre, alert, dashboard, and pool
+  builders (`buildExplorerListThingsParams`, `buildContainerDetailParams`,
+  `buildContainerWidgetsListParams`, etc.)
+- Container tab utilities: `CONTAINER_TAB_MATRIX`, `resolveContainerModelFamily`,
+  `getSupportedContainerTabs`
+- `flattenKernelEnvelope`: null-safe per-Kernel envelope flattener
 - Telemetry primitives (subscription manager, stale detection, ring
   buffer)
 - Command lifecycle state machine
-- Shared types
+- Shared API types (including Op Centre: `ListRacksParams`,
+  `PduLayoutParams`, `GlobalDataParams`, `ThingConfigParams`,
+  `ThingCommentBody`)
 
 ### `@tetherto/mdk-react-adapter` (`packages/react-adapter`)
 
 React bindings for the headless core.
 
-- `<MdkProvider>` — wraps `QueryClientProvider` and exposes the resolved
+- `<MdkProvider>`: wraps `QueryClientProvider` and exposes the resolved
   API base URL.
 - Store hooks: `useAuth`, `useDevices`, `useNotifications`, `useTimezone`,
   `useActions`.
@@ -74,10 +87,10 @@ React bindings for the headless core.
 
 The React UI library:
 
-- `src/core/` — generic UI primitives built on Radix UI (Button, Dialog,
+- `src/primitives/`: generic UI primitives built on Radix UI (Button, Dialog,
   Switch, Table, Charts, …). BEM class names, SCSS design tokens, CSS
   custom property theming.
-- `src/foundation/` — mining-domain components, hooks and a TanStack
+- `src/domain/`: mining-domain components, hooks and a TanStack
   Query API stub.
 
 ### `@tetherto/mdk-fonts` (`packages/fonts`)
@@ -159,7 +172,7 @@ npx mdk-ui create my-dashboard --template mdk-ui-shell
 ```
 
 That template needs a local
-[`miningos-app-node`](https://github.com/tetherto/miningos-app-node)
+[`mdk-gateway`](https://github.com/tetherto/mdk-prv/blob/release/0.5.0/backend/core/gateway/package.json)
 running on `http://localhost:3000` and a Google OAuth client. See
 [`docs/AGENT_FIRST.md`](docs/AGENT_FIRST.md#run-the-mdk-ui-shell-template-end-to-end)
 for the end-to-end recipe.
@@ -170,7 +183,7 @@ runtime packages to its `package.json`:
 ```json
 {
   "dependencies": {
-    "@tetherto/mdk-ui-core": "*",
+    "@tetherto/mdk-ui-foundation": "*",
     "@tetherto/mdk-react-adapter": "*",
     "@tetherto/mdk-react-devkit": "*"
   }
@@ -185,10 +198,11 @@ Wrap your app in `<MdkProvider>` and import the stylesheet once:
 ```tsx
 import "@tetherto/mdk-fonts/jetbrains-mono.css";
 import "@tetherto/mdk-react-devkit/styles.css";
+import "@tetherto/mdk-react-devkit/styles-domain.css"; // only if using domain (mining-domain) components
 import { MdkProvider } from "@tetherto/mdk-react-adapter";
 
 ReactDOM.createRoot(rootElement).render(
-  <MdkProvider apiBaseUrl="https://app-node.example.com">
+  <MdkProvider apiBaseUrl="https://gateway.example.com">
     <App />
   </MdkProvider>,
 );
@@ -197,7 +211,7 @@ ReactDOM.createRoot(rootElement).render(
 Use components and hooks:
 
 ```tsx
-import { Button, Dialog } from "@tetherto/mdk-react-devkit/core";
+import { Button, Dialog } from "@tetherto/mdk-react-devkit/primitives";
 import { useAuth, useDevices } from "@tetherto/mdk-react-adapter";
 
 const Toolbar = () => {
@@ -241,7 +255,8 @@ For details:
 
 **Pick your role:**
 
-- **Contributor** (monorepo changes, agent-ready exports) → [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) + [`AGENT_READY.md`](packages/react-devkit/AGENT_READY.md)
+- **Contributor** (monorepo changes, agent-ready exports) → [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) + 
+[`AGENT_READY.md`](packages/react-devkit/AGENT_READY.md)
 - **Agent** (LLM workflows, manifests, `mdk-ui` CLI) → [`AGENTS.md`](AGENTS.md) + [`docs/AGENT_FIRST.md`](docs/AGENT_FIRST.md)
 - **Engineer** (integrating MDK into an app) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) + the package READMEs below
 
@@ -254,22 +269,22 @@ For details:
 
 ### Build and development
 
-- **[Build](docs/BUILD.md)** — scripts, watch mode, Turborepo pipeline, and config
-- **[Styling](docs/STYLING.md)** — theming model + SCSS build setup
-- **[Test coverage](docs/CONTRIBUTING.md#coverage)** — thresholds and reports
+- **[Build](docs/BUILD.md)**: scripts, watch mode, Turborepo pipeline, and config
+- **[Styling](docs/STYLING.md)**: theming model + SCSS build setup
+- **[Test coverage](docs/CONTRIBUTING.md#coverage)**: thresholds and reports
 
 ### Agents and CLI
 
-- **[AGENTS.md](AGENTS.md)** — agent contract overview and quick recipe.
-- **[Agent-first](docs/AGENT_FIRST.md)** — plain-language tour, deeper architecture reference 
+- **[AGENTS.md](AGENTS.md)**: agent contract overview and quick recipe.
+- **[Agent-first](docs/AGENT_FIRST.md)**: plain-language tour, deeper architecture reference 
 (manifests, blueprints, registry), and the
   end-to-end shell setup
-- **[@tetherto/mdk-ui-cli](packages/cli/README.md)** — full CLI command reference (`create`, `add page`, 
+- **[@tetherto/mdk-ui-cli](packages/cli/README.md)**: full CLI command reference (`create`, `add page`, 
 `add feature`, `remove page`, `registry`, `hooks`, `stores`, `suggest`, …)
 
 ### Package documentation
 
-- **[@tetherto/mdk-ui-core](packages/ui-core/README.md)**: headless core
+- **[@tetherto/mdk-ui-foundation](packages/ui-foundation/README.md)**: headless core
 - **[@tetherto/mdk-react-adapter](packages/react-adapter/README.md)**: React bindings
 - **[@tetherto/mdk-react-devkit](packages/react-devkit/README.md)**: React UI library
 - **[Styling guide](docs/STYLING.md)**: cascade layers, tokens, class overrides, SCSS setup

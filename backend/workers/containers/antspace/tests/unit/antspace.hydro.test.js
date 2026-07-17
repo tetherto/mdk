@@ -2,7 +2,7 @@
 
 const { test } = require('brittle')
 const AntspaceHydro = require('../../lib/antspace.hydro')
-const { RUNNING_STATUS } = require('../../../base/lib/utils/constants')
+const { RUNNING_STATUS } = require('../../../../../core/mdk').constants
 
 function createMockFetch (systemData = {}, minerInfo = {}) {
   return {

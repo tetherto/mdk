@@ -1,4 +1,4 @@
-import type { PowerModeTimelineEntry } from '@tetherto/mdk-react-devkit/foundation'
+import type { PowerModeTimelineEntry } from '@tetherto/mdk-react-devkit/domain'
 
 export const randomElement = <T>(arr: readonly T[]): T =>
   arr[Math.floor(Math.random() * arr.length)]!

@@ -2,7 +2,7 @@
 
 const test = require('brittle')
 const Antminer = require('../../lib/antminer.js')
-const { POWER_MODE } = require('../../../base/lib/utils/constants.js')
+const { POWER_MODE } = require('../../../../../core/mdk').constants
 
 test('validateWriteAction accepts setPowerMode with SLEEP', (t) => {
   const miner = new Antminer({
@@ -73,7 +73,7 @@ test('_getStatus returns ERROR when isErrored', (t) => {
     username: 'root',
     password: 'root'
   })
-  const { STATUS } = require('../../../base/lib/utils/constants.js')
+  const { STATUS } = require('../../../../../core/mdk').constants
   t.is(miner._getStatus(true, { minerMode: 0 }), STATUS.ERROR)
 })
 
@@ -84,7 +84,7 @@ test('_getStatus returns MINING when minerMode 0 and not errored', (t) => {
     username: 'root',
     password: 'root'
   })
-  const { STATUS } = require('../../../base/lib/utils/constants.js')
+  const { STATUS } = require('../../../../../core/mdk').constants
   t.is(miner._getStatus(false, { minerMode: 0 }), STATUS.MINING)
 })
 
@@ -95,7 +95,7 @@ test('_getStatus returns SLEEPING when minerMode 1 and not errored', (t) => {
     username: 'root',
     password: 'root'
   })
-  const { STATUS } = require('../../../base/lib/utils/constants.js')
+  const { STATUS } = require('../../../../../core/mdk').constants
   t.is(miner._getStatus(false, { minerMode: 1 }), STATUS.SLEEPING)
 })
 

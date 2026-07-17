@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import { useState } from 'react'
 
-import { Button, Card } from '@tetherto/mdk-react-devkit/core'
+import { Button, Card } from '@tetherto/mdk-react-devkit/primitives'
 
 import { DemoBlock } from '../../components/demo-block'
 import { DemoPageHeader } from '../../components/demo-page-header'

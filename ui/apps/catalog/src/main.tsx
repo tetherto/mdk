@@ -1,5 +1,6 @@
 import '@tetherto/mdk-fonts/jetbrains-mono.css'
 import '@tetherto/mdk-react-devkit/styles.css'
+import '@tetherto/mdk-react-devkit/styles-domain.css'
 import { MdkProvider } from '@tetherto/mdk-react-adapter'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'

@@ -1,51 +1,61 @@
-# @tetherto/miner-whatsminer
+# @tetherto/mdk-worker-whatsminer
 
-MDK worker for MicroBT Whatsminer Bitcoin miners. Supports the M30SP, M30SPP, M53S, M56S, and M63 model families.
+MDK Worker for MicroBT Whatsminer Bitcoin miners. Supports the M30SP, M30SPP, M53S, M56S, and M63 model families.
 
 ## Supported Models
 
-| Export | Model | Notes |
+| `model` value | Model | Notes |
 |--------|-------|-------|
-| `WM_M30SP` | M30S+ | — |
-| `WM_M30SPP` | M30S++ | — |
-| `WM_M53S` | M53S | — |
-| `WM_M56S` | M56S | Used in examples |
-| `WM_M63` | M63 | — |
+| `m30sp` | M30S+ | — |
+| `m30spp` | M30S++ | — |
+| `m53s` | M53S | — |
+| `m56s` | M56S | Used in examples |
+| `m63` | M63 | Extra `setUpfreqSpeed` command |
 
 ## Install
 
 ```bash
-npm install @tetherto/miner-whatsminer
+npm install @tetherto/mdk-worker-whatsminer
 ```
 
 ## Usage
 
 ```js
-const { WM_M56S } = require('@tetherto/miner-whatsminer')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startWhatsminerWorker } = require('@tetherto/mdk-worker-whatsminer')
 
-const { manager } = await startWorker(WM_M56S, { ork, rack: 'rack-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: {
-    serialNum: 'WM56S-001',
-    container: 'container-A',
-    pos: 'A1',
-    location: 'site-texas-01.container'
-  },
-  opts: {
-    address: '192.168.1.10',
-    port: 14028,           // Whatsminer default API port
-    password: 'admin'
-  }
+const worker = await startWhatsminerWorker({
+  workerId: 'whatsminer-rack-1',
+  model: 'm56s',
+  storeDir: './store/whatsminer-rack-1',
+  seedDevices: [{
+    info: {
+      serialNum: 'WM56S-001',
+      container: 'container-A',
+      pos: 'A1',
+      location: 'site-texas-01.container'
+    },
+    opts: {
+      address: '192.168.1.10',
+      port: 14028,           // Whatsminer default API port
+      password: 'admin'
+    }
+  }]
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
+`registerThing` command over HRPC instead — see [USAGE.md](USAGE.md#registering-devices) for the full pattern and the
+restart-required caveat.
 
 ## Protocol
 
-Whatsminer uses an encrypted TCP API on port 14028. The worker handles token-based authentication (HMAC-SHA256 challenge-response). Uses the `@tetherto/svc-facs-tcp` facility for connection management.
+Whatsminer uses an encrypted TCP API on port 14028. The Worker handles token-based authentication (HMAC-SHA256 challenge-response). Uses the `@tetherto/svc-facs-tcp` facility for connection management.
 
-The API key and set key must be configured per device in `opts`. The worker automatically negotiates the session token on each connection.
+The API key and set key must be configured per device in `opts`. The Worker automatically negotiates the session token on each connection.
 
 ## Telemetry
 
@@ -76,7 +86,7 @@ Live metrics collected on each poll cycle:
 | `setLED` | `enabled: boolean` | Physical LED blink |
 | `setupPools` | `pools: object` | Pool URL, worker, password |
 | `setPowerPct` | `pct: number (0–100)` | Fine-grained power control |
-| `rackReboot` | — | Restart the worker process |
+| `rackReboot` | — | Restart the Worker process |
 | `downloadLogs` | — | Pull raw diagnostic logs from hardware |
 
 Plus the standard device management commands: `registerThing`, `updateThing`, `forgetThings`, `saveSettings`, `saveComment`, `editComment`, `deleteComment`.
@@ -101,7 +111,7 @@ Plus the standard device management commands: `registerThing`, `updateThing`, `f
 The package ships a mock TCP server that simulates the Whatsminer API:
 
 ```js
-const wmMock = require('@tetherto/miner-whatsminer/mock/server')
+const wmMock = require('@tetherto/mdk-worker-whatsminer/mock/server')
 
 wmMock.createServer({
   port: 14028,

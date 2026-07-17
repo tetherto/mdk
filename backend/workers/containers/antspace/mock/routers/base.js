@@ -6,7 +6,7 @@ module.exports = function (fastify) {
     const { minerInfo, ...state } = request.state
     switch (operation) {
       case 'open':
-        if (request.ctx.type === 'IMMERSION') {
+        if (request.ctx.type?.toLowerCase() === 'immersion') {
           request.state.pump_ready = true
           request.state.pump_operation = true
           request.state.one_pump = true
@@ -33,7 +33,7 @@ module.exports = function (fastify) {
         }
         return reply.send({ ok: true, method: 'open', params: null })
       case 'close':
-        if (request.ctx.type === 'IMMERSION') {
+        if (request.ctx.type?.toLowerCase() === 'immersion') {
           request.state.pump_ready = false
           request.state.pump_operation = false
           request.state.one_pump = false

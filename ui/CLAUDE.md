@@ -29,10 +29,10 @@ single-file test invocations, etc.) are listed in
 
 npm workspaces monorepo on Turborepo, split so non-React adapters can be
 added later without touching the core. Dependency flow:
-`catalog → react-devkit → react-adapter → ui-core`. See
+`catalog → react-devkit → react-adapter → ui-foundation`. See
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture.
 
-- **`packages/ui-core`** (`@tetherto/mdk-ui-core`) — framework-agnostic
+- **`packages/ui-foundation`** (`@tetherto/mdk-ui-foundation`) — framework-agnostic
   headless layer: Zustand vanilla stores (`authStore`, `devicesStore`,
   `notificationStore`, `timezoneStore`, `actionsStore`), TanStack
   `QueryClient` factory, telemetry primitives, command lifecycle state
@@ -42,8 +42,8 @@ added later without touching the core. Dependency flow:
   `useNotifications`, `useTimezone`, `useActions`), pass-through
   re-exports of `useQuery` / `useMutation`.
 - **`packages/react-devkit`** (`@tetherto/mdk-react-devkit`) — React UI
-  library. `src/core/` exports generic primitives on Radix UI with BEM
-  + SCSS tokens; `src/foundation/` exports mining-domain components and
+  library. `src/primitives/` exports generic primitives on Radix UI with BEM
+  + SCSS tokens; `src/domain/` exports mining-domain components and
   hooks.
 - **`packages/cli`** (`@tetherto/mdk-ui-cli`, bin `mdk-ui`) — agent-first
   CLI: registry discovery, doc/example fetching, page scaffolding,
@@ -57,7 +57,7 @@ in [`docs/BUILD.md`](docs/BUILD.md).
 
 ### State management
 
-State lives in `@tetherto/mdk-ui-core` as Zustand vanilla stores, consumed
+State lives in `@tetherto/mdk-ui-foundation` as Zustand vanilla stores, consumed
 from React via `@tetherto/mdk-react-adapter` hooks. Outside React, read
 or write the stores directly via `store.getState()` / `store.setState()`.
 **Do not add Redux, react-redux, or any alternative state library.**
@@ -65,8 +65,8 @@ or write the stores directly via `store.getState()` / `store.setState()`.
 ### Data fetching
 
 API layer is a placeholder under
-`packages/react-devkit/src/foundation/api/`. New hooks use TanStack Query
-via `createMdkQueryClient` from `@tetherto/mdk-ui-core` and `<MdkProvider>`.
+`packages/react-devkit/src/domain/api/`. New hooks use TanStack Query
+via `createMdkQueryClient` from `@tetherto/mdk-ui-foundation` and `<MdkProvider>`.
 
 ### Styling
 
@@ -78,6 +78,17 @@ via `createMdkQueryClient` from `@tetherto/mdk-ui-core` and `<MdkProvider>`.
 - Cascade layers: stylesheet declares `@layer base, mdk, app;`. Tokens
   in `base`, component rules in `mdk`, consumer styles win without
   specificity hacks. See [`docs/STYLING.md`](docs/STYLING.md).
+- **Register every new component `.scss` in a bundled entry index.** A
+  component imports its own stylesheet from its `.tsx`
+  (`import "./foo.scss"`), but the published package strips those imports
+  from `dist/*.js` — so a stylesheet only ships if it is also
+  `@forward`/`@use`-d from `src/styles-domain.scss` (domain, via
+  `src/domain/styles/index.scss`) or `src/styles.scss` (primitives, via
+  `src/primitives/styles/index.scss`). Miss it and the component compiles,
+  passes tests, and renders **completely unstyled** in built consumers
+  (the operator shell, not the catalog). `npm run build` runs
+  `check:styles` (`scripts/check-style-forwards.mjs`) to fail fast on any
+  unregistered stylesheet — do not bypass it; add the `@forward` line.
 
 ### Separation of concerns (load-bearing rule)
 
@@ -93,13 +104,13 @@ This is the rule that organises everything else — break it and the layers coll
   output straight to components. If you see a `useMemo` in a page that
   divides by 1e6 or builds a `datasets` array, that logic belongs in a
   hook.
-- **All API + state interaction lives in `@tetherto/mdk-ui-core`.**
+- **All API + state interaction lives in `@tetherto/mdk-ui-foundation`.**
   Query factories, query keys, query-param builders, Zustand stores,
   token utilities, type contracts. The adapter and devkit consume them
   but never reimplement them.
 - **No tag / aggregate-field strings leak past the data layer.** Page
   files must never reference `t-miner`, `t-powermeter`, `power_w_sum_aggr`,
-  `site_power_w`, etc. Those belong in `packages/ui-core/src/utils/dashboard-queries.ts`
+  `site_power_w`, etc. Those belong in `packages/ui-foundation/src/utils/dashboard-queries.ts`
   (and similar builders) and are consumed by adapter hooks.
 
 **Red flag — stop and refactor (or file techdebt):**
@@ -107,7 +118,7 @@ This is the rule that organises everything else — break it and the layers coll
 - A component that calls `useQuery` or `fetch` directly.
 - A page that does unit conversions, formatter functions, or builds
   `LineChartCardData` / table rows inline.
-- A "fat" foundation component that embeds telemetry shaping (the
+- A "fat" domain component that embeds telemetry shaping (the
   retired `ConsumptionLineChart` / `HashRateLineChart` are the
   canonical anti-examples — use `<LineChartCard>` with adapter hooks
   instead).
@@ -132,10 +143,10 @@ violates) — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md#tracking-tech-de
 
 - Vitest + `@testing-library/react` + `happy-dom` / `jsdom`.
 - `@tetherto/mdk-react-devkit` runs three Vitest projects: `node`
-  (pure logic), `core-dom` (core components), `foundation-dom`
+  (pure logic), `primitives-dom` (primitives components), `domain-dom`
   (heavier React/DOM mocks).
 - Tests interact with the **real** Zustand singletons from
-  `@tetherto/mdk-ui-core` — use `vi.spyOn` on store actions and
+  `@tetherto/mdk-ui-foundation` — use `vi.spyOn` on store actions and
   `getState().reset()` in `beforeEach`. Do **not** mock `react-redux`
   or reintroduce a Provider.
 - Test utilities are exported from each package's `src/test-utils/`.
@@ -191,7 +202,7 @@ since stores are global.
 
 ```bash
 npm install <pkg> --workspace @tetherto/mdk-react-devkit    # to a package
-npm install -D <pkg> --workspace @tetherto/mdk-ui-core      # dev dep
+npm install -D <pkg> --workspace @tetherto/mdk-ui-foundation      # dev dep
 npm install -w <pkg>                                        # to workspace root
 ```
 

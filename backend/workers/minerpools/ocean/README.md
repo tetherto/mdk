@@ -1,29 +1,41 @@
-# @tetherto/minerpool-ocean
+# @tetherto/mdk-worker-ocean
 
-MDK worker for the Ocean.xyz Bitcoin mining pool. Fetches hashrate, worker stats, and earnings via the Ocean REST API.
+MDK Worker for the Ocean.xyz Bitcoin mining pool. Fetches hashrate, worker stats, and earnings via the Ocean REST API.
 
 ## Install
 
 ```bash
-npm install @tetherto/minerpool-ocean
+npm install @tetherto/mdk-worker-ocean
 ```
 
 ## Usage
 
+`startOceanPoolWorker(opts)` boots a single logical device on `WorkerRuntime` — the pool account list is configuration
+passed at boot, not a `registerThing`-provisioned device:
+
 ```js
-const { OCEAN } = require('@tetherto/minerpool-ocean')
-const { startWorker } = require('@tetherto/mdk')
+const { getKernel } = require('@tetherto/mdk')
+const { startOceanPoolWorker } = require('@tetherto/mdk-worker-ocean')
 
-const { manager } = await startWorker(OCEAN, { ork, rack: 'site-1' })
+const kernel = await getKernel()
 
-await manager.registerThing({
-  info: { username: 'my-ocean-account' },
-  opts: {
-    apiKey: 'your-api-key',
-    baseUrl: 'https://api.ocean.xyz/v1'
-  }
+const worker = await startOceanPoolWorker({
+  workerId: 'ocean-site-1',
+  rack: 'site-1',
+  storeDir: './store/ocean-site-1',
+  conf: { ocean: { accounts: ['my-ocean-account'], apiUrl: 'https://api.ocean.xyz' } }
 })
+await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+| `opts` field | Type | Status | Notes |
+| --- | --- | --- | --- |
+| `workerId` | string | Required | One runtime process = one `workerId`. |
+| `rack` | string | Required | Rack identifier; also the pool store prefix. |
+| `storeDir` | string | Required | Persistent store directory. |
+| `conf.ocean.accounts` | string[] | Required | Ocean.xyz usernames to poll. |
+| `conf.ocean.apiUrl` | string | Optional | Defaults to the Ocean.xyz API base URL. |
+| `kernelTopic` | string | Optional | DHT discovery topic (hex); omit to register directly with `kernel.registerWorker()`. |
 
 ## Telemetry
 
@@ -44,8 +56,16 @@ Uses the Ocean REST API over HTTPS. Authenticated with an API key in the request
 
 ## Mock Server
 
+Run the mock standalone (ocean has no model `type`):
+
+```bash
+npm run mock
+```
+
+Programmatic:
+
 ```js
-const oceanMock = require('@tetherto/minerpool-ocean/mock/server')
+const oceanMock = require('@tetherto/mdk-worker-ocean/mock/server')
 oceanMock.createServer({ port: 5020, host: '127.0.0.1' })
 ```
 

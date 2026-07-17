@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "schneider",
+    "deviceFamily": "power-meter",
+    "brand": "Schneider Electric",
+    "modelsSupported": ["P3U30", "PM5340"],
+    "overview": "Reads Schneider Electric power meters via Modbus TCP. Read-only device — no write commands."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "voltage", "unit": "V", "type": "number", "handler": "src/telemetry/voltage.js", "description": "Average phase-to-phase voltage (tension)." },
+      { "name": "current", "unit": "A", "type": "number", "handler": "src/telemetry/current.js", "description": "Average phase current (PM5340 only — 0 on P3U30)." },
+      { "name": "active_power", "unit": "W", "type": "number", "handler": "src/telemetry/active-power.js", "description": "Total active power." },
+      { "name": "power_factor", "unit": "", "type": "number", "handler": "src/telemetry/power-factor.js", "description": "Total power factor (PM5340 only — 0 on P3U30)." },
+      { "name": "frequency", "unit": "Hz", "type": "number", "handler": "src/telemetry/frequency.js", "description": "Line frequency." },
+      { "name": "snap", "unit": "", "type": "object", "handler": "src/telemetry/snap.js", "description": "Full structured snapshot (stats + config), same shape the legacy metrics pull returned." }
+    ],
+    "commands": [],
+    "config": {
+      "schema": "schneider_powermeter_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": [],
+      "troubleshooting": [
+        "If readings stall, verify Modbus TCP reachability (address, port, unitId).",
+        "If status is OFFLINE, check meter power and network cabling."
+      ]
+    },
+    "errors": {
+      "E_MODBUS_TIMEOUT": "Modbus read timed out",
+      "E_DATA_INSUFFICIENT": "Register read returned fewer bytes than expected"
+    }
+  }
+}

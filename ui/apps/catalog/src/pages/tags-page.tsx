@@ -1,4 +1,4 @@
-import { Tag } from '@tetherto/mdk-react-devkit/core'
+import { Tag } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

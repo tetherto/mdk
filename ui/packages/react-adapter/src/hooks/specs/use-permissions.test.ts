@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
-import type { AuthConfig } from '@tetherto/mdk-ui-core'
-import { authStore, checkPermission } from '@tetherto/mdk-ui-core'
+import type { AuthConfig } from '@tetherto/mdk-ui-foundation'
+import { authStore, checkPermission } from '@tetherto/mdk-ui-foundation'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useCheckPerm } from '../use-permissions'
 
-vi.mock('@tetherto/mdk-ui-core', async () => {
-  const actual = await vi.importActual<typeof import('@tetherto/mdk-ui-core')>('@tetherto/mdk-ui-core')
+vi.mock('@tetherto/mdk-ui-foundation', async () => {
+  const actual = await vi.importActual<typeof import('@tetherto/mdk-ui-foundation')>('@tetherto/mdk-ui-foundation')
   return {
     ...actual,
     checkPermission: vi.fn(),

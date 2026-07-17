@@ -61,11 +61,11 @@
           { "in": "query", "name": "overwriteCache", "required": false, "schema": { "type": "boolean" } }
         ],
         "responses": {
-          "200": { "description": "External data result from the ORK network." },
+          "200": { "description": "External data result from the Kernel network." },
           "400": { "description": "Invalid query JSON or missing type parameter." }
         }
       },
-      "description": "Proxies an external data request to the ORK network by type and optional query filter.",
+      "description": "Proxies an external data request to the Kernel network by type and optional query filter.",
       "constraints": ["Requires a valid Bearer token. type is mandatory."],
       "errors": ["ERR_AUTH_FAIL", "ERR_QUERY_INVALID_JSON"]
     }

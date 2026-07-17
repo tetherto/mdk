@@ -1,6 +1,6 @@
 {
-  "name": "@tetherto/miner-whatsminer",
-  "version": "0.3.0",
+  "name": "@tetherto/mdk-worker-whatsminer",
+  "version": "0.5.0",
   "description": "Miner Whatsminer",
   "keywords": [
     "tether"
@@ -13,12 +13,14 @@
   "scripts": {
     "lint": "standard",
     "lint:fix": "standard --fix",
+    "mock": "node mock/server.js --type",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
     "test:unit": "brittle tests/unit/*.js",
     "test:integration": "NODE_ENV=test brittle tests/integration/*.js",
-    "test:coverage": "brittle --coverage tests/{,**/}*.test.js"
+    "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
+    "@tetherto/hp-svc-facs-store": "git+https://github.com/tetherto/hp-svc-facs-store.git#v1.0.0",
     "@tetherto/svc-facs-tcp": "git+https://github.com/tetherto/svc-facs-tcp.git#v1.0.0",
     "async": "3.2.6",
     "crypto-js": "4.2.0",
@@ -30,13 +32,5 @@
     "brittle": "3.16.3",
     "standard": "17.1.2",
     "yargs": "17.7.2"
-  },
-  "overrides": {
-    "acorn": ">=8.17.0",
-    "js-yaml": ">=4.3.0",
-    "minimatch": ">=10.2.1",
-    "qs": ">=6.15.3",
-    "semver": ">=7.8.5",
-    "tar": ">=7.5.19"
   }
 }

@@ -1,4 +1,4 @@
-import { Loader, Typography } from '@tetherto/mdk-react-devkit/core'
+import { Loader, Typography } from '@tetherto/mdk-react-devkit/primitives'
 
 import type { JSX } from 'react'
 

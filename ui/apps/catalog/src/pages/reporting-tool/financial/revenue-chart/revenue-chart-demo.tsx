@@ -1,13 +1,13 @@
-import { RevenueChart } from '@tetherto/mdk-react-devkit/foundation'
+import { RevenueChart } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 
 import { DemoBlock } from '../../../../components/demo-block'
 import { DemoPageHeader } from '../../../../components/demo-page-header'
 
 const SITE_LIST = [
-  { id: 'site-a', name: 'Paraguay' },
-  { id: 'site-b', name: 'Uruguay' },
-  { id: 'site-c', name: 'Argentina' },
+  { id: 'site-a', name: 'Site A' },
+  { id: 'site-b', name: 'Site B' },
+  { id: 'site-c', name: 'Site C' },
 ]
 
 const MONTHS = ['Jan 2024', 'Feb 2024', 'Mar 2024', 'Apr 2024', 'May 2024', 'Jun 2024']

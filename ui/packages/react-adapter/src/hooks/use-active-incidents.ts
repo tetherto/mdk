@@ -3,7 +3,7 @@ import {
   type ListThingsDevice,
   listThingsQuery,
   mapDevicesToIncidents,
-} from '@tetherto/mdk-ui-core'
+} from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 
 const ACTIVE_ALERTS_QUERY = JSON.stringify({ 'last.alerts': { $ne: null } })
@@ -22,7 +22,7 @@ const headOrEmpty = (value: ListThingsDevice[][] | undefined | null): ListThings
 }
 
 export type UseActiveIncidentsOptions = {
-  /** Polling interval in ms. Defaults to 20s (matches Moria). Pass 0 to disable. */
+  /** Polling interval in ms. Defaults to 20s (matches Mining OS). Pass 0 to disable. */
   refetchInterval?: number
   /** Date formatter for the row body. Defaults to ISO string. */
   formatDate?: (d: Date) => string

@@ -3,34 +3,41 @@
 /**
  * MDK E2E Example — HTTP Bridge
  *
- * Fastify server that connects to the ORK IPC socket and exposes
- * ORK data over REST for the UI demo page.
+ * Fastify server that connects to the Kernel over HRPC (key read from the
+ * kernel key file) and exposes Kernel data over REST for the UI demo page.
  *
  * Run after server.js:
  *
  *   # Terminal 1
- *   node backend/core/examples/mdk-e2e/server.js
+ *   node examples/backend/mdk-e2e/server.js
  *
  *   # Terminal 2
- *   node backend/core/examples/mdk-e2e/http.js
+ *   node examples/backend/mdk-e2e/http.js
  *
  */
 
+const fs = require('fs')
 const Fastify = require('fastify')
 const { createMdkClient } = require('../../../backend/core/client')
-const { DEFAULT_IPC_SOCK } = require('../../../backend/core/mdk')
+const { DEFAULT_KEY_FILE } = require('../../../backend/core/mdk')
 
-const IPC_PATH = process.env.MDK_IPC || DEFAULT_IPC_SOCK
+const KERNEL_KEY = process.env.MDK_KERNEL_KEY ||
+  (fs.existsSync(DEFAULT_KEY_FILE) ? fs.readFileSync(DEFAULT_KEY_FILE, 'utf8').trim() : null)
 const PORT = Number(process.env.MDK_HTTP_PORT) || 3001
 const HOST = '127.0.0.1'
 
 async function main () {
-  const mdkClient = createMdkClient({ ipc: IPC_PATH })
+  if (!KERNEL_KEY) {
+    console.error(`\n  No kernel key: set MDK_KERNEL_KEY or start the Kernel first (key file: ${DEFAULT_KEY_FILE})`)
+    console.error('  Is server.js running?\n')
+    process.exit(1)
+  }
+  const mdkClient = createMdkClient({ hrpc: { key: KERNEL_KEY } })
 
   try {
     await mdkClient.connect()
   } catch (err) {
-    console.error(`\n  Cannot connect to ORK IPC at ${IPC_PATH}`)
+    console.error(`\n  Cannot connect to Kernel over HRPC (key ${KERNEL_KEY.slice(0, 16)}…)`)
     console.error('  Is server.js running?\n')
     process.exit(1)
   }
@@ -75,7 +82,7 @@ async function main () {
 
   console.log('\n  ════════════════════════════════════════')
   console.log(`  MDK HTTP bridge ready at http://${HOST}:${PORT}`)
-  console.log(`  IPC:  ${IPC_PATH}`)
+  console.log(`  Kernel HRPC key: ${KERNEL_KEY.slice(0, 16)}…`)
   console.log('\n  Endpoints:')
   console.log('    GET  /workers')
   console.log('    GET  /devices/:deviceId/telemetry')

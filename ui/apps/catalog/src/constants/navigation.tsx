@@ -12,12 +12,23 @@ import {
   MagnifyingGlassIcon,
   StackIcon,
 } from '@radix-ui/react-icons'
-import type { SidebarMenuItem } from '@tetherto/mdk-react-devkit/core'
+import type { SidebarMenuItem } from '@tetherto/mdk-react-devkit/primitives'
 import {
   AlertsNavIcon,
   PoolManagerNavIcon,
   ReportingNavIcon,
-} from '@tetherto/mdk-react-devkit/core'
+} from '@tetherto/mdk-react-devkit/primitives'
+
+/**
+ * Stable ids for the top-level nav sections. Referenced by the home-page section
+ * grouping and category-stats helpers, so keep them in sync with the section
+ * definitions below rather than repeating the raw strings.
+ */
+export const NAV_SECTION = {
+  guides: 'guides',
+  primitives: 'primitives',
+  domain: 'domain',
+} as const
 
 export const COMPONENT_NAV: SidebarMenuItem[] = [
   {
@@ -26,7 +37,7 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
     icon: <HomeIcon />,
   },
   {
-    id: 'guides',
+    id: NAV_SECTION.guides,
     label: 'Guides',
     icon: <BookmarkIcon />,
     items: [
@@ -36,8 +47,8 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
     ],
   },
   {
-    id: 'core',
-    label: 'Core',
+    id: NAV_SECTION.primitives,
+    label: 'Primitives',
     icon: <LayersIcon />,
     items: [
       {
@@ -108,6 +119,7 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
           { id: 'area-chart', label: 'Area Chart' },
           { id: 'doughnut-chart', label: 'Doughnut Chart' },
           { id: 'gauge-chart', label: 'Gauge Chart' },
+          { id: 'heatmap', label: 'Heatmap' },
           { id: 'threshold-line-chart', label: 'Threshold Line Chart' },
           { id: 'operations-energy-cost-chart', label: 'Operations vs Energy Cost Chart' },
           { id: 'average-downtime-chart', label: 'Average Downtime Chart' },
@@ -148,8 +160,8 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
     ],
   },
   {
-    id: 'foundation',
-    label: 'Foundation',
+    id: NAV_SECTION.domain,
+    label: 'Domain',
     icon: <DashboardIcon />,
     items: [
       {
@@ -160,6 +172,7 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
           { id: 'active-incidents-card', label: 'Active Incidents Card' },
           { id: 'alarms-bell-button', label: 'Alarms Bell Button' },
           { id: 'bitmain-immersion-summary-box', label: 'Bitmain Immersion Summary Box' },
+          { id: 'container-widgets', label: 'Container Widgets' },
           { id: 'dashboard-date-range-picker', label: 'Dashboard Date Range Picker' },
           { id: 'export-button', label: 'Export Button' },
           { id: 'header-stats-bar', label: 'Header Stats Bar' },
@@ -190,9 +203,6 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
           { id: 'revenue-chart', label: 'Revenue Chart' },
           { id: 'cost', label: 'Cost Summary' },
           { id: 'energy-balance', label: 'Energy Balance' },
-          { id: 'site-reports', label: 'Reports (All Sites)' },
-          { id: 'sites/uy/site-reports', label: 'Reports (Uruguay)' },
-          { id: 'sites/py/site-reports', label: 'Reports (Paraguay)' },
         ],
       },
       {
@@ -220,6 +230,7 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
                 id: 'explorer',
                 label: 'Explorer',
                 items: [
+                  { id: 'explorer-list-detail', label: 'List + Detail' },
                   { id: 'device-explorer', label: 'Device Explorer' },
                   {
                     id: 'explorer-containers',
@@ -267,7 +278,10 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
         id: 'inventory',
         label: 'Inventory',
         icon: <StackIcon />,
-        items: [{ id: 'movement-details-modal', label: 'Movement Details Modal' }],
+        items: [
+          { id: 'movement-details-modal', label: 'Movement Details Modal' },
+          { id: 'spare-parts-modals', label: 'Spare Parts Modals' },
+        ],
       },
       {
         id: 'pool-manager',
@@ -299,14 +313,14 @@ const countLeafItems = (items: SidebarMenuItem[]): number =>
   }, 0)
 
 export const getCategoryStats = (): { totalComponents: number; totalCategories: number } => {
-  const coreSection = COMPONENT_NAV.find((item) => item.id === 'core')
-  const foundationSection = COMPONENT_NAV.find((item) => item.id === 'foundation')
+  const primitivesSection = COMPONENT_NAV.find((item) => item.id === NAV_SECTION.primitives)
+  const domainSection = COMPONENT_NAV.find((item) => item.id === NAV_SECTION.domain)
 
-  const coreItems = coreSection?.items ?? []
-  const foundationItems = foundationSection?.items ?? []
+  const primitivesItems = primitivesSection?.items ?? []
+  const domainItems = domainSection?.items ?? []
 
-  const totalComponents = countLeafItems([...coreItems, ...foundationItems])
-  const totalCategories = coreItems.length + foundationItems.length
+  const totalComponents = countLeafItems([...primitivesItems, ...domainItems])
+  const totalCategories = primitivesItems.length + domainItems.length
 
   return { totalComponents, totalCategories }
 }

@@ -36,7 +36,7 @@ export const createLibConfig = ({ packageDir }) => {
                   // Map workspace package names to their internal source folders.
                   const pkgMap = {
                     'mdk-react-devkit': 'react-devkit',
-                    'mdk-ui-core': 'ui-core',
+                    'mdk-ui-foundation': 'ui-foundation',
                     'mdk-react-adapter': 'react-adapter',
                     'mdk-fonts': 'fonts',
                   }

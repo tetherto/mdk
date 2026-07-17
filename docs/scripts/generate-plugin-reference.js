@@ -7,7 +7,7 @@
 // published route list cannot drift from the manifests.
 //
 // Only the default plugins shipped in this directory are generated. Plugins mounted at runtime
-// via startAppNode({ extraPluginDirs }) live outside the repo and document their own routes.
+// via startGateway({ extraPluginDirs }) live outside the repo and document their own routes.
 //
 // Output (regenerate with `npm run generate:plugin-reference` from backend/core/plugins): the region between
 //   <!-- BEGIN GENERATED: default-plugins ... --> and <!-- END GENERATED: default-plugins -->

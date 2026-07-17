@@ -1,0 +1,80 @@
+@use "@primitives/styles/mixins" as *;
+
+$cut-edge: 8px;
+
+.mdk-container-widget-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--mdk-border-default-color);
+  overflow: hidden;
+  background: var(--mdk-color-dark-bg);
+  transition: border-color 0.2s ease;
+  // Chamfered top-left corner (matches the operator app's widget box).
+  clip-path: polygon($cut-edge 0, 100% 0, 100% 100%, 0 100%, 0 $cut-edge);
+
+  // Draws the diagonal border line across the cut corner.
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    border-top: $cut-edge solid var(--mdk-border-default-color);
+    border-right: $cut-edge solid transparent;
+    transition: border-top-color 0.2s ease;
+  }
+
+  // Calm state is grey (above). When the card is clickable it lights the
+  // border + chamfer orange on hover to signal the navigation affordance.
+  &[role="button"] {
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--mdk-color-primary);
+
+      &::before {
+        border-top-color: var(--mdk-color-primary);
+      }
+    }
+  }
+
+  // Divider between the header row, banners, and body sections.
+  & > *:not(:last-child) {
+    border-bottom: 1px solid var(--mdk-border-default-color);
+  }
+
+  &--flash {
+    animation: mdk-container-widget-card-flash 2.5s ease-in-out infinite;
+  }
+
+  &__banner {
+    padding: 16px;
+    font-size: 12px;
+    opacity: 0.7;
+
+    &--error {
+      color: var(--mdk-color-error);
+      opacity: 1;
+    }
+  }
+
+  &__body > *:not(:last-child) {
+    border-bottom: 1px solid var(--mdk-border-default-color);
+  }
+
+  &__activity {
+    padding: 16px;
+  }
+}
+
+@keyframes mdk-container-widget-card-flash {
+  0%,
+  100% {
+    background: var(--mdk-color-dark-bg);
+  }
+
+  50% {
+    background: var(--mdk-color-brick-red);
+  }
+}

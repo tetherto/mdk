@@ -1,23 +1,23 @@
 ---
 title: Run the stack
-description: "[⏱️ <3 min] From git clone to a running ORK with one mock Antminer registered, in under 3 minutes"
+description: "[⏱️ <3 min] From git clone to a running Kernel with one mock Whatsminer registered, in under 3 minutes"
 docs@tether_slug: tutorials/backend-stack/run/
 ---
 
 *Get started · 1 of 3 · Run the stack*
 
 > [!NOTE]
-> If ORK, worker, manager, or thing are unfamiliar, read [`terminology.md`][terminology] first.
+> If Kernel, Worker, manager, or thing are unfamiliar, read [`terminology.md`][terminology] first.
 
 ## Overview
 
-This is rung 1 of the [Get started][get-started] ladder: **observe**. It walks the shortest path from a fresh clone to a running ORK with one mock Antminer registered, no hardware required. Everything runs in one Node process.
+This is rung 1 of the [Get started][get-started] ladder: **observe**. It walks the shortest path from a fresh clone to a running Kernel with one mock Whatsminer registered, no hardware required. Everything runs in one Node process.
 
 What you'll have at the end:
 
-- A mock Antminer S19XP serving Bitmain CGI endpoints on `127.0.0.1:14021`
-- An ORK started and aware of one registered device
-- The ORK HRPC key and device ID printed to the terminal — ready for further inspection
+- A mock Whatsminer M56S serving telemetry on `127.0.0.1:14028`
+- An Kernel started and aware of one registered device
+- Device list, telemetry, and available commands printed to the terminal
 
 ## Prerequisites
 
@@ -25,7 +25,8 @@ What you'll have at the end:
 - npm >=11
 
 > [!IMPORTANT]
-> The stack starts an ORK whose control plane is peer-to-peer over a Hyperswarm DHT, so it needs outbound network access. Without it the stack stalls at startup while the ORK tries to reach DHT bootstrap nodes. See [how workers connect][workers-connect] for the ORK/DHT mechanics.
+> HRPC relies on HyperDHT for peer connectivity, including when Kernel and the Worker share a process.
+> Review the [network requirements and checks][network-troubleshooting] if startup stalls.
 
 <Steps>
 
@@ -59,22 +60,21 @@ backend/workers/install-packages.sh ci
 ### Run the example
 
 ```bash
-node backend/workers/miners/antminer/examples/run-s19xp.js
+node examples/backend/mdk-e2e/run.js
 ```
 
-Expected output (the hex key varies):
+Expected output:
 
 ```
-  ORK HRPC key: 7a4c8b...e3f0
-  Device: t-miner-am-s19xp-127-0-0-1
-
-  Ctrl+C to stop.
+Devices: [ 'WM-001 [miner-wm-m56s]' ]
+Telemetry: mining hashrate=295764693.45 power=4000W
+Commands: reboot, setPowerMode, setLED, setupPools, setPowerPct, setUpfreqSpeed, registerThing, updateThing, forgetThings, saveSettings, saveComment, editComment, deleteComment
 ```
 
-If you see those two lines, the whole stack is up: mock device responding, worker registered, ORK started and aware of the device.
+If you see those three lines, the whole stack is up: mock device responding, Worker registered, Kernel started and aware of the device. The script queries the device and then exits cleanly.
 
 > [!IMPORTANT]
-> If the example fails with `EADDRINUSE`, a previous run left port 14021 bound. Kill stale Node processes with `pkill -f run-s19xp` and retry.
+> If the example fails with `EADDRINUSE`, a previous run left port 14028 bound. Kill stale Node processes with `pkill -f mdk-e2e` and retry.
 
 </Step>
 
@@ -82,46 +82,62 @@ If you see those two lines, the whole stack is up: mock device responding, worke
 
 ## What just happened
 
-Here is what [`run-s19xp.js`][run-s19xp-example] does, line by line — the minimum runnable shape for an MDK stack:
+Here is what `run.js` does — the minimum runnable shape for an MDK stack:
 
 ```js
-const { getOrk, startWorker } = require('@tetherto/mdk')
-const { AM_S19XP } = require('@tetherto/miner-antminer')
-const amMock = require('@tetherto/miner-antminer/mock/server')
+const { getKernel, waitForDiscovery } = require('../../../backend/core/mdk')
+const { createMdkClient } = require('../../../backend/core/client')
+const { startWhatsminerWorker } = require('../../../backend/workers/miners/whatsminer')
+const wmMock = require('../../../backend/workers/miners/whatsminer/mock/server')
 
-// Start a mock Antminer S19XP on port 14021 to emit telemetry
-amMock.createServer({ port: 14021, host: '127.0.0.1', type: 's19xp', serial: 'AM-001', password: 'root' })
+// Start a mock Whatsminer M56S on port 14028
+wmMock.createServer({ port: 14028, host: '127.0.0.1', type: 'm56s', serial: 'WM-001', password: 'admin' })
 
-// Start ORK — the orchestration kernel that manages all workers
-const ork = await getOrk()
-
-// Start the Antminer worker — it joins the same DHT topic as ORK, allowing ORK to discover and pull the worker's identity and capabilities
-const { manager } = await startWorker(AM_S19XP, { ork })
-
-// Register the mock Antminer device with the worker so it starts polling
-await manager.registerThing({
-  info: { container: 'site-1', serialNum: 'AM-001' },   // logical identity
-  opts: { address: '127.0.0.1', port: 14021, username: 'root', password: 'root' } // connection details
+// Start the Whatsminer Worker with one seeded device
+const worker = await startWhatsminerWorker({
+  workerId: 'whatsminer-m56s-e2e',
+  model: 'm56s',
+  storeDir: path.join(ROOT, 'worker-store'),
+  kernelTopic: TOPIC,
+  seedDevices: [{
+    id: 'WM-001',
+    info: { serialNum: 'WM-001' },
+    opts: { address: '127.0.0.1', port: 14028, password: 'admin' }
+  }]
 })
+
+// Start Kernel — discovers the Worker via DHT
+const kernel = await getKernel({ root: ROOT, topic: TOPIC })
+await waitForDiscovery(kernel)
+
+// Connect an MDK client over HRPC
+const client = createMdkClient({ hrpc: { key: kernel.getPublicKey() } })
+await client.connect()
+
+// Query the device and print results
+const list = await client.pullTelemetry(deviceId, 'list')
+const tel = await client.pullTelemetry(deviceId, 'metrics')
+const caps = await client.getCapabilities(deviceId)
 ```
 
-Five steps, in order:
+Six steps, in order:
 
-1. **Starts a mock miner.** `amMock.createServer({ port: 14021, type: 's19xp', serial: 'AM-001', password: 'root' })` binds port 14021 with a Bitmain-compatible HTTP API serving canned telemetry. It exposes Bitmain CGI paths only — there is no root route (so `curl http://127.0.0.1:14021/` would return 404). To verify the mock directly, use a CGI path with Digest auth: `curl --digest -u root:root http://127.0.0.1:14021/cgi-bin/miner_type.cgi`
-2. **Starts ORK.** `getOrk()` brings up the kernel and joins a freshly generated DHT topic.
-3. **Starts a worker.** `startWorker(AM_S19XP, { ork })` instantiates the `AM_S19XP` manager class, mounts the protocol adapter, and joins the same DHT topic — ORK detects the new peer and pulls the worker's identity and capabilities.
-4. **Registers a thing.** `manager.registerThing({ info, opts })` tells the worker about one device at `127.0.0.1:14021`. The worker stores the registration and begins polling the mock.
-5. **Prints the IDs and waits.** The script logs ORK's public HRPC key and the device ID, then sits idle. Ctrl+C tears everything down.
+1. **Starts a mock miner.** `wmMock.createServer({ port: 14028, type: 'm56s', serial: 'WM-001', password: 'admin' })` binds port 14028 with a Whatsminer-compatible API serving canned telemetry.
+2. **Starts a Worker.** `startWhatsminerWorker({ ...seedDevices })` instantiates the Whatsminer manager and seeds it with one device registration at `127.0.0.1:14028`. The Worker stores the registration and begins polling the mock.
+3. **Starts Kernel.** `getKernel({ topic })` brings up the kernel and joins the DHT topic. It discovers the Worker and pulls its identity and capabilities.
+4. **Waits for discovery.** `waitForDiscovery(kernel)` blocks until the Worker appears in Kernel's registry.
+5. **Connects a client.** `createMdkClient({ hrpc: { key: kernel.getPublicKey() } })` creates an MDK Protocol client that speaks to Kernel over HRPC.
+6. **Queries and prints.** The script pulls device list, telemetry, and capabilities, prints them, cleans up, and exits.
 
 > [!NOTE]
-> No App Node here? Right. App Node is the translator that lets non-Node consumers — browser UIs, AI agents over MCP — speak MDK Protocol to ORK. This script already speaks MDK Protocol over IPC, so it talks to ORK directly. See [`architecture.md#app-node`][architecture-app-node] for when App Node is mandatory.
+> No Gateway here? Right. Gateway is the translator that lets non-Node consumers — browser UIs, AI agents over MCP — speak MDK Protocol to Kernel. This script holds the Kernel handle in-process and speaks MDK Protocol to it directly. See [`architecture.md#gateway`][architecture-gateway] for when Gateway is mandatory.
 
 ## Cleanup
 
-`Ctrl+C` stops the mock, worker, and ORK cleanly. The script uses the default ORK root at `os.tmpdir()/mdk/` — safe to ignore, or remove with:
+The script cleans up automatically on exit. Temporary data lives at `os.tmpdir()/e2e-run/` and is removed by the script. If needed, you can manually clean with:
 
 ```bash
-rm -rf "$TMPDIR/mdk" /tmp/mdk
+rm -rf "$TMPDIR/e2e-run" /tmp/e2e-run
 ```
 
 ## Continue
@@ -130,17 +146,16 @@ Next: [2. Control devices from the CLI][cli-tutorial] — keep a stack running a
 
 ## Next steps
 
-- For the four supported Antminer models (`AM_S19XP`, `AM_S19XPH`, `AM_S21`, `AM_S21PRO`) and how to swap them, see [`backend/workers/miners/antminer/USAGE.md`][antminer-usage]
-- Run a full site (5 workers, 26 devices) — [`examples/backend/mdk-site/site.js`][site-example]
-- See ORK and a worker as separate OS processes — [`dht-worker.js`][dht-worker] + [`dht-ork.js`][dht-ork] + [`client.js`][dht-client]
-- Understand the install pattern for any worker — [`backend/workers/docs/install-pattern.md`][worker-install]
-- Use ORK directly without `getOrk()` — [`backend/workers/docs/orchestrator.md`][worker-orchestrator]
+- Try different miner hardware — the same MDK API works with [Antminers][antminer-usage], [Avalonminers][examples-readme], and more
+- Run a full site (5 Workers, 26 devices) — [`examples/backend/mdk-site/site.js`][site-example]
+- See Kernel and a Worker as separate OS processes — [`dht-worker.js`][dht-worker] + [`dht-kernel.js`][dht-kernel] + [`client.js`][dht-client]
+- Understand the install pattern for any Worker — [`backend/workers/docs/install-pattern.md`][worker-install]
 - Read all runnable examples in one place — [`examples/backend/README.md`][examples-readme]
 
 ## Links
 
-[terminology]: ../../concepts/terminology.md
-<!-- docs@tether.io: terminology → concepts/terminology -->
+[terminology]: ../../reference/glossary.md
+<!-- docs@tether.io: terminology → reference/glossary -->
 
 [get-started]: index.md
 <!-- docs@tether.io: get-started → tutorials/backend-stack -->
@@ -148,14 +163,14 @@ Next: [2. Control devices from the CLI][cli-tutorial] — keep a stack running a
 [cli-tutorial]: cli.md
 <!-- docs@tether.io: cli-tutorial → tutorials/backend-stack/cli -->
 
-[architecture-app-node]: ../../concepts/architecture.md#app-node
-<!-- docs@tether.io: architecture-app-node → concepts/architecture#app-node -->
+[architecture-gateway]: ../../concepts/architecture.md#gateway
+<!-- docs@tether.io: architecture-gateway → concepts/architecture#gateway -->
 
 [workers-connect]: ../../concepts/stack/workers.md
 <!-- docs@tether.io: workers-connect → concepts/stack/workers -->
 
-[run-s19xp-example]: ../../../backend/workers/miners/antminer/examples/run-s19xp.js
-<!-- docs@tether.io: run-s19xp-example → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/examples/run-s19xp.js -->
+[network-troubleshooting]: ../../guides/miners/troubleshooting.md#example-does-not-print-a-kernel-key
+<!-- docs@tether.io: network-troubleshooting → guides/miners/troubleshooting#example-does-not-print-a-kernel-key -->
 
 [antminer-usage]: ../../../backend/workers/miners/antminer/USAGE.md
 <!-- docs@tether.io: antminer-usage → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/antminer/USAGE.md -->
@@ -166,17 +181,14 @@ Next: [2. Control devices from the CLI][cli-tutorial] — keep a stack running a
 [dht-worker]: ../../../examples/backend/mdk-e2e/dht-worker.js
 <!-- docs@tether.io: dht-worker → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/dht-worker.js -->
 
-[dht-ork]: ../../../examples/backend/mdk-e2e/dht-ork.js
-<!-- docs@tether.io: dht-ork → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/dht-ork.js -->
+[dht-kernel]: ../../../examples/backend/mdk-e2e/dht-kernel.js
+<!-- docs@tether.io: dht-kernel → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/dht-kernel.js -->
 
 [dht-client]: ../../../examples/backend/mdk-e2e/client.js
 <!-- docs@tether.io: dht-client → https://github.com/tetherto/mdk/blob/main/examples/backend/mdk-e2e/client.js -->
 
 [worker-install]: ../../../backend/workers/docs/install-pattern.md
 <!-- docs@tether.io: worker-install → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->
-
-[worker-orchestrator]: ../../../backend/workers/docs/orchestrator.md
-<!-- docs@tether.io: worker-orchestrator → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/orchestrator.md -->
 
 [examples-readme]: ../../../examples/backend/README.md
 <!-- docs@tether.io: examples-readme → https://github.com/tetherto/mdk/blob/main/examples/backend/README.md -->

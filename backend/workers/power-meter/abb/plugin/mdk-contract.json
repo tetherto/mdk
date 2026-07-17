@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "abb",
+    "deviceFamily": "power-meter",
+    "brand": "ABB",
+    "modelsSupported": ["B23", "B24", "M1M20", "M4M20", "REU615"],
+    "overview": "Reads ABB power meters via Modbus TCP. Read-only device — no write commands."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "voltage_v1", "unit": "V", "type": "number", "handler": "src/telemetry/voltage-v1.js", "description": "Phase 1 voltage." },
+      { "name": "voltage_v2", "unit": "V", "type": "number", "handler": "src/telemetry/voltage-v2.js", "description": "Phase 2 voltage." },
+      { "name": "voltage_v3", "unit": "V", "type": "number", "handler": "src/telemetry/voltage-v3.js", "description": "Phase 3 voltage." },
+      { "name": "current_i1", "unit": "A", "type": "number", "handler": "src/telemetry/current-i1.js", "description": "Phase 1 current." },
+      { "name": "current_i2", "unit": "A", "type": "number", "handler": "src/telemetry/current-i2.js", "description": "Phase 2 current." },
+      { "name": "current_i3", "unit": "A", "type": "number", "handler": "src/telemetry/current-i3.js", "description": "Phase 3 current." },
+      { "name": "active_power", "unit": "W", "type": "number", "handler": "src/telemetry/active-power.js", "description": "Total active power." },
+      { "name": "reactive_power", "unit": "VAR", "type": "number", "handler": "src/telemetry/reactive-power.js", "description": "Total reactive power." },
+      { "name": "snap", "unit": "", "type": "object", "handler": "src/telemetry/snap.js", "description": "Full structured snapshot (stats + config), same shape the legacy metrics pull returned." }
+    ],
+    "commands": [],
+    "config": {
+      "schema": "abb_powermeter_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.medium_voltage_low", "alert.medium_voltage_high"],
+      "troubleshooting": [
+        "If readings stall, verify Modbus TCP reachability (address, port, unitId).",
+        "If status is OFFLINE, check meter power and network cabling."
+      ]
+    },
+    "errors": {
+      "E_MODBUS_TIMEOUT": "Modbus read timed out",
+      "E_MODBUS_CONN": "Modbus TCP connection failed"
+    }
+  }
+}

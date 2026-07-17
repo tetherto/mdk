@@ -1,5 +1,7 @@
 'use strict'
 
-const libAlerts = require('../../base/lib/templates/alerts')
+const { templates } = require('../../../../../core/mdk')
 
-module.exports = libAlerts
+module.exports = {
+  specs: { ...templates.alerts.specs }
+}

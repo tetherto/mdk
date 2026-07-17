@@ -6,7 +6,7 @@ export default {
   rules: {},
   overrides: [
     {
-      files: ['packages/react-devkit/src/foundation/**/*.scss'],
+      files: ['packages/react-devkit/src/domain/**/*.scss'],
       rules: {
         'custom/no-relative-core-use': true,
       },

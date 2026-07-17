@@ -1,5 +1,5 @@
-import type { IChartApi } from '@tetherto/mdk-react-devkit/core'
-import { ChartContainer, CURRENCY, LineChart, UNITS } from '@tetherto/mdk-react-devkit/core'
+import type { IChartApi } from '@tetherto/mdk-react-devkit/primitives'
+import { ChartContainer, CURRENCY, LineChart, UNITS } from '@tetherto/mdk-react-devkit/primitives'
 import { type Dispatch, type JSX, type SetStateAction, useCallback, useRef, useState } from 'react'
 import { DemoPageHeader } from '../components/demo-page-header'
 

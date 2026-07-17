@@ -1,6 +1,7 @@
 'use strict'
 
 const fs = require('fs')
+const path = require('path')
 const initialState = require('./initialState.js')
 
 // Hardcoded to 5000 as the it's hardcoded in the container
@@ -13,7 +14,7 @@ module.exports = function (ctx, server, existedState) {
   const _state = existedState || initialState(ctx).state
 
   function publishAll () {
-    fs.readdirSync('./mock/d40/data').forEach(file => {
+    fs.readdirSync(path.join(__dirname, 'data')).forEach(file => {
       const name = file.split('.')[0]
       const data = require(`./data/${file}`)
       const payload = data(ctx, _state)
@@ -23,7 +24,7 @@ module.exports = function (ctx, server, existedState) {
 
   server.once('connect', publishAll)
 
-  fs.readdirSync('./mock/d40/data').forEach(file => {
+  fs.readdirSync(path.join(__dirname, 'data')).forEach(file => {
     const name = file.split('.')[0]
     const data = require(`./data/${file}`)
 
@@ -36,7 +37,7 @@ module.exports = function (ctx, server, existedState) {
     }, UPDATE_STATE_INTERVAL))
   })
 
-  fs.readdirSync('./mock/d40/cmd').forEach(file => {
+  fs.readdirSync(path.join(__dirname, 'cmd')).forEach(file => {
     const name = file.split('.')[0]
     const cmd = require(`./cmd/${file}`)
     _cmds[name] = cmd

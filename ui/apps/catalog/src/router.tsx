@@ -1,4 +1,4 @@
-import { Spinner } from '@tetherto/mdk-react-devkit/core'
+import { Spinner } from '@tetherto/mdk-react-devkit/primitives'
 import { lazy, Suspense } from 'react'
 import type { JSX } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
@@ -104,6 +104,10 @@ const FormElementsPage = lazy(() =>
 const GaugeChartPage = lazy(() =>
   import('./pages/gauge-chart-page').then((module) => ({ default: module.GaugeChartPage })),
 )
+
+const HeatmapPage = lazy(() =>
+  import('./pages/heatmap-page').then((module) => ({ default: module.HeatmapPage })),
+)
 const ThresholdLineChartPage = lazy(() =>
   import('./pages/threshold-line-chart-page').then((module) => ({
     default: module.ThresholdLineChartPage,
@@ -148,7 +152,7 @@ const SelectPage = lazy(() =>
   import('./pages/select-page').then((module) => ({ default: module.SelectPage })),
 )
 const MultiSelectPage = lazy(() =>
-  import('./pages/multi-select-page').then((m) => ({ default: m.MultiSelectPage })),
+  import('./pages/multi-select-page').then((module) => ({ default: module.MultiSelectPage })),
 )
 const SelectorPage = lazy(() =>
   import('./pages/selector-page').then((module) => ({ default: module.SelectorPage })),
@@ -258,6 +262,10 @@ const DeviceExplorerPage = lazy(() =>
   })),
 )
 
+const ExplorerPage = lazy(() =>
+  import('./pages/explorer-page').then((module) => ({ default: module.ExplorerPage })),
+)
+
 const SettingsDemoPage = lazy(() =>
   import('./pages/settings/settings-demo').then((module) => ({ default: module.SettingsDemoPage })),
 )
@@ -350,54 +358,54 @@ const MinersSummaryBoxPage = lazy(() =>
   })),
 )
 
+const ContainerWidgetsPage = lazy(() =>
+  import('./pages/container-widgets-page').then((module) => ({
+    default: module.ContainerWidgetsPage,
+  })),
+)
+
 const EnergyBalanceDemo = lazy(() =>
-  import('./pages/reporting-tool/financial/energy-balance/energy-balance-demo').then((m) => ({
-    default: m.EnergyBalanceDemo,
+  import('./pages/reporting-tool/financial/energy-balance/energy-balance-demo').then((module) => ({
+    default: module.EnergyBalanceDemo,
   })),
 )
 
 const MovementDetailsModalDemo = lazy(() =>
-  import('./pages/inventory/movement-details-modal/movement-details-modal-demo').then((m) => ({
-    default: m.MovementDetailsModalDemo,
+  import('./pages/inventory/movement-details-modal/movement-details-modal-demo').then((module) => ({
+    default: module.MovementDetailsModalDemo,
+  })),
+)
+
+const SparePartsModalsDemo = lazy(() =>
+  import('./pages/inventory/spare-parts-modals/spare-parts-modals-demo').then((module) => ({
+    default: module.SparePartsModalsDemo,
   })),
 )
 
 const AppHeaderPage = lazy(() =>
-  import('./pages/app-header-page').then((m) => ({ default: m.AppHeaderPage })),
+  import('./pages/app-header-page').then((module) => ({ default: module.AppHeaderPage })),
 )
 
 const HeaderStatsBarPage = lazy(() =>
-  import('./pages/header-stats-bar-page').then((m) => ({ default: m.HeaderStatsBarPage })),
+  import('./pages/header-stats-bar-page').then((module) => ({ default: module.HeaderStatsBarPage })),
 )
 
 const AlarmsBellButtonPage = lazy(() =>
-  import('./pages/alarms-bell-button-page').then((m) => ({ default: m.AlarmsBellButtonPage })),
+  import('./pages/alarms-bell-button-page').then((module) => ({ default: module.AlarmsBellButtonPage })),
 )
 
 const ProfileMenuPage = lazy(() =>
-  import('./pages/profile-menu-page').then((m) => ({ default: m.ProfileMenuPage })),
+  import('./pages/profile-menu-page').then((module) => ({ default: module.ProfileMenuPage })),
 )
 
 const DashboardDateRangePickerPage = lazy(() =>
-  import('./pages/dashboard-date-range-picker-page').then((m) => ({
-    default: m.DashboardDateRangePickerPage,
+  import('./pages/dashboard-date-range-picker-page').then((module) => ({
+    default: module.DashboardDateRangePickerPage,
   })),
 )
 
 const ExportButtonPage = lazy(() =>
-  import('./pages/export-button-page').then((m) => ({ default: m.ExportButtonPage })),
-)
-
-const SiteReportsDemo = lazy(() =>
-  import('./pages/reporting-tool/multi-site/site-reports/site-reports-demo').then((m) => ({
-    default: m.SiteReportsDemo,
-  })),
-)
-
-const ReportCoverDemo = lazy(() =>
-  import('./pages/reporting-tool/multi-site/report-cover/report-cover-demo').then((m) => ({
-    default: m.ReportCoverDemo,
-  })),
+  import('./pages/export-button-page').then((module) => ({ default: module.ExportButtonPage })),
 )
 
 const SectionLoader = (): JSX.Element => (
@@ -461,6 +469,7 @@ export const router = createBrowserRouter(
         { path: 'area-chart', element: withSuspense(AreaChartExample) },
         { path: 'doughnut-chart', element: withSuspense(DoughnutChartPage) },
         { path: 'gauge-chart', element: withSuspense(GaugeChartPage) },
+        { path: 'heatmap', element: withSuspense(HeatmapPage) },
         { path: 'threshold-line-chart', element: withSuspense(ThresholdLineChartPage) },
         { path: 'operations-energy-cost-chart', element: withSuspense(OperationsEnergyCostChartPage) },
         { path: 'average-downtime-chart', element: withSuspense(AverageDowntimeChartPage) },
@@ -496,6 +505,10 @@ export const router = createBrowserRouter(
           path: 'miners-summary-box',
           element: withSuspense(MinersSummaryBoxPage),
         },
+        {
+          path: 'container-widgets',
+          element: withSuspense(ContainerWidgetsPage),
+        },
         { path: 'app-header', element: withSuspense(AppHeaderPage) },
         { path: 'header-stats-bar', element: withSuspense(HeaderStatsBarPage) },
         { path: 'alarms-bell-button', element: withSuspense(AlarmsBellButtonPage) },
@@ -512,6 +525,7 @@ export const router = createBrowserRouter(
         { path: 'pool-details-card', element: withSuspense(PoolDetailsCardPage) },
         { path: 'pool-details-popover', element: withSuspense(PoolDetailsPopoverPage) },
         { path: 'device-explorer', element: withSuspense(DeviceExplorerPage) },
+        { path: 'explorer-list-detail', element: withSuspense(ExplorerPage) },
         { path: 'bitdeer-container', element: withSuspense(BitdeerPage) },
         { path: 'bitmain-container', element: withSuspense(BitmainPage) },
         {
@@ -535,6 +549,7 @@ export const router = createBrowserRouter(
         { path: 'miner-socket', element: withSuspense(SocketDemo) },
         { path: 'settings', element: withSuspense(SettingsDemoPage) },
         { path: 'movement-details-modal', element: withSuspense(MovementDetailsModalDemo) },
+        { path: 'spare-parts-modals', element: withSuspense(SparePartsModalsDemo) },
         { path: 'pool-manager-assign-pool-modal', element: withSuspense(PoolManagerAssignPoolModalPage) },
         { path: 'pool-manager-dashboard', element: withSuspense(PoolManagerDashboardPage) },
         {
@@ -567,10 +582,6 @@ export const router = createBrowserRouter(
           path: 'energy-balance',
           element: withSuspense(EnergyBalanceDemo),
         },
-        { path: 'site-reports', element: withSuspense(SiteReportsDemo) },
-        { path: 'site-reports/report', element: withSuspense(ReportCoverDemo) },
-        { path: 'sites/:siteId/site-reports', element: withSuspense(SiteReportsDemo) },
-        { path: 'sites/:siteId/site-reports/report', element: withSuspense(ReportCoverDemo) },
         { path: '*', element: withSuspense(NotFoundPage) },
       ],
     },

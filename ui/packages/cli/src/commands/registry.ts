@@ -1,4 +1,4 @@
-import { loadRegistry, type Registry, type Tier } from '../registry-loader.js'
+import { loadRegistry, type Registry, type Tier, TIERS } from '../registry-loader.js'
 
 export type RegistryCommandOptions = {
   packageName: string
@@ -22,7 +22,7 @@ export type RegistryCommandOptions = {
 const padRight = (s: string, n: number): string =>
   s.length >= n ? `${s.slice(0, n - 1)}…` : s.padEnd(n)
 
-const tierOrDefault = (tier: string | undefined): Tier => (tier as Tier | undefined) ?? 'advanced'
+const tierOrDefault = (tier: string | undefined): Tier => (tier as Tier | undefined) ?? TIERS.advanced
 
 /** `public` is `undefined` on registries < 1.3.0 — treat those as public. */
 const isPublic = (entry: { public?: boolean }): boolean => entry.public !== false

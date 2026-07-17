@@ -17,14 +17,14 @@ Three tiers, one decision:
 
 | Tier          | Use when…                                            | Must add                                                                                                                  |
 | ------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `agent-ready` | LLMs / non-experts will pick this component directly | JSDoc summary + `@category` + `@domain` + `@tier` + `@orkCapability` + `USAGE.md` + `*.example.tsx`                       |
+| `agent-ready` | LLMs / non-experts will pick this component directly | JSDoc summary + `@category` + `@domain` + `@tier` + `@kernelCapability` + `USAGE.md` + `*.example.tsx`                       |
 | `advanced`    | Engineers extending the library use it directly      | JSDoc summary + `@category` + `@domain` + `@tier`                                                                         |
 | `internal`    | Implementation detail, never part of the public API  | `@tier internal` (the registry generator drops these — no `USAGE.md` or examples required)                                |
 
 ```mermaid
 flowchart TD
   ask{"Will an LLM (or non-expert) pick this directly when building a page?"}
-  ask -- yes --> agentReady["@tier agent-ready (+ USAGE.md + example + @orkCapability)"]
+  ask -- yes --> agentReady["@tier agent-ready (+ USAGE.md + example + @kernelCapability)"]
   ask -- no --> ask2{"Is it exported for downstream engineers to compose with?"}
   ask2 -- yes --> advanced["@tier advanced"]
   ask2 -- no --> internal["@tier internal (hidden from registry)"]
@@ -37,12 +37,12 @@ flowchart TD
 | `@tier`          | every public export  | `agent-ready` &#124; `advanced` &#124; `internal`                                                    |
 | `@category`      | tier ≠ `internal`    | `charts` &#124; `tables` &#124; `cards` &#124; `forms` &#124; `dialogs` &#124; `navigation` &#124; `layout` &#124; `widgets` &#124; `dashboards` &#124; `actions` &#124; `feedback` &#124; `misc` |
 | `@domain`        | tier ≠ `internal`    | `mining-operations` &#124; `financial-reporting` &#124; `device-management` &#124; `generic`         |
-| `@orkCapability` | `agent-ready` **with** `@domain ≠ generic` | `hashrate-monitoring` &#124; `pool-performance` &#124; `energy-consumption` &#124; `incident-alerts` &#124; `device-telemetry` &#124; `device-management` &#124; *(extendable)* — required for mining domains, skipped for generic primitives |
+| `@kernelCapability` | `agent-ready` **with** `@domain ≠ generic` | `hashrate-monitoring` &#124; `pool-performance` &#124; `energy-consumption` &#124; `incident-alerts` &#124; `device-telemetry` &#124; `device-management` &#124; *(extendable)* — required for mining domains, skipped for generic primitives |
 | `@example`       | optional, encouraged | inline TSX in the JSDoc                                                                              |
 
 The first paragraph of the JSDoc above an export becomes the registry
 `description`. Keep it ≤ 200 chars; longer prose belongs in co-located
-[`USAGE.md`](src/foundation/components/active-incidents-card/USAGE.md)
+[`USAGE.md`](src/domain/components/active-incidents-card/USAGE.md)
 next to each export (see skeleton in [`CONTRIBUTING.md`](../../../CONTRIBUTING.md))
 or the filled reference under [Pointers](#pointers).
 
@@ -58,7 +58,7 @@ or the filled reference under [Pointers](#pointers).
  *
  * @category cards
  * @domain mining-operations
- * @orkCapability incident-alerts
+ * @kernelCapability incident-alerts
  * @tier agent-ready
  */
 export const MyCard = forwardRef<HTMLDivElement, MyCardProps>(
@@ -99,6 +99,26 @@ One-paragraph summary of what the component does.
 - Anything non-obvious about composition, accessibility, performance.
 ```
 
+> **How this renders — write the prose, let the pipeline own props & examples.**
+> The docs site does **not** render `USAGE.md` verbatim. `<ComponentDoc>`
+> renders the description (from your JSDoc), the props table (from the registry
+> types), and the runnable examples (from `*.example.tsx`) *structurally* from
+> those authoritative sources. To avoid printing the same thing twice, it then
+> strips the leading `# Title`, the `## Props` section, and the
+> `## Example`/`## Examples` section out of your `USAGE.md` before rendering the
+> rest — so only your **intro paragraph and `## Notes`** (and any other prose)
+> reach the page.
+>
+> Practical takeaways when authoring `USAGE.md`:
+> - Put your effort into the **summary and Notes** — composition, gotchas,
+>   accessibility, performance. That prose is what the site actually shows, and
+>   the pipeline can't generate it.
+> - The `## Props` and example blocks above are **optional and harmless**: the
+>   site ignores them, but the standalone `mdk-ui doc <name>` CLI serves the raw
+>   file, so keeping a self-contained `USAGE.md` still helps agents reading it
+>   directly. If you keep them, keep them accurate — the props table in the
+>   registry (from your types) is the source of truth, not this copy.
+
 ### Advanced component
 
 ```tsx
@@ -133,7 +153,7 @@ required, but prefer **not exporting** if it truly is private.
  *
  * @category data
  * @domain device-management
- * @orkCapability device-management
+ * @kernelCapability device-management
  * @tier agent-ready
  *
  * @returns devices keyed by id, plus an `isLoading` flag.
@@ -187,7 +207,7 @@ Every rule emitted by `check:agent-ready` and the one-line fix:
 | `missing-domain`                        | Add `@domain <area>` — one of `mining-operations`, `financial-reporting`, `device-management`, `generic`.      |
 | `agent-ready-missing-usage`             | Create `USAGE.md` next to the component (summary + props table + minimal example + notes).                     |
 | `agent-ready-missing-example`           | Add `<name>.example.tsx` next to the component (mock data only; imports must use `@tetherto/mdk-react-devkit`).|
-| `agent-ready-missing-ork-capability`    | Add at least one `@orkCapability <id>` tag so agents can find the component by capability.                     |
+| `agent-ready-missing-kernel-capability`    | Add at least one `@kernelCapability <id>` tag so agents can find the component by capability.                     |
 | `blueprint:<id>: component <X> ...`     | The blueprint references a component that's missing from the registry or not `agent-ready`. Fix or remove.     |
 | `blueprint:<id>: hook <X> ...`          | The blueprint references a hook that doesn't exist in the registry. Fix or remove.                             |
 
@@ -205,7 +225,7 @@ The registry ships indexes alongside the flat arrays:
   "componentsByName":          { "ActiveIncidentsCard": 0, "DataTable": 1, /* … */ },
   "componentsByCategory":      { "charts": ["LineChartCard", …], … },
   "componentsByDomain":        { "mining-operations": [...], … },
-  "componentsByOrkCapability": { "hashrate-monitoring": [...], … },
+  "componentsByKernelCapability": { "hashrate-monitoring": [...], … },
   "componentsByTier":          { "agent-ready": [...] }
 }
 ```
@@ -264,7 +284,7 @@ Worked examples — three intents, three paths through the tools:
 
 - Registry schema: [`scripts/registry-types.ts`](scripts/registry-types.ts).
 - Reference for "well-documented agent-ready component":
-  [`src/foundation/components/active-incidents-card/`](src/foundation/components/active-incidents-card/USAGE.md).
+  [`src/domain/components/active-incidents-card/`](src/domain/components/active-incidents-card/USAGE.md).
 - Reference for "well-documented agent-ready hook" — coming when we tier
   the first hook as `agent-ready`.
 - Downstream usage (consumer apps): [`../cli/README.md`](../cli/README.md).

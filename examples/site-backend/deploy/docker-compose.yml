@@ -1,0 +1,100 @@
+# Multi-container topology: one container per process, on HOST networking.
+#
+#   MDK_MINERS=3 docker compose -f deploy/docker-compose.yml up -d
+#   docker compose -f deploy/docker-compose.yml ps
+#   docker compose -f deploy/docker-compose.yml down -v
+#
+# Why host networking: the Kernel<->worker data plane is Hyperswarm HRPC (a P2P/DHT
+# transport). Across an isolated Docker bridge, holepunching between containers is
+# slow and unreliable, so worker discovery stalls. Sharing the host network
+# namespace gives every container one loopback — connections are direct and fast,
+# exactly like the PM2 (single-host) run. Requires Linux, or Docker Desktop with
+# host networking enabled (Settings -> Resources -> Network).
+#
+# Wiring on the shared loopback:
+#   - mocks         : bind + dial on 127.0.0.1.
+#   - shared volume : /data holds the Kernel key, local-discovery keys, and each
+#                     service's store (only the network namespace is shared).
+#   - gateway       : connects to the Kernel by its .kernel-key over HRPC and serves
+#                     HTTP on the host's :3007.
+name: mdk-site-backend
+
+x-mdk-image: &mdk-image
+  image: mdk-site-backend
+  build:
+    context: ../../..
+    dockerfile: examples/site-backend/deploy/Dockerfile
+
+x-host: &host
+  <<: *mdk-image
+  network_mode: host
+  restart: unless-stopped
+  volumes:
+    - mdk-data:/data
+
+x-worker: &worker
+  <<: *host
+  depends_on:
+    - mocks
+    - kernel
+  environment: &worker-env
+    MDK_DISCOVERY: local
+    MDK_MINERS: ${MDK_MINERS:-3}
+
+services:
+  mocks:
+    <<: *host
+    command: node backend/proc/mocks.js --miners ${MDK_MINERS:-3}
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 8192
+
+  kernel:
+    <<: *host
+    command: node backend/proc/kernel.js --root /data --discovery local
+    environment:
+      MDK_DISCOVERY: local
+
+  whatsminer:
+    <<: *worker
+    command: node backend/proc/worker.js --worker whatsminer --root /data --miners ${MDK_MINERS:-3}
+  antminer:
+    <<: *worker
+    command: node backend/proc/worker.js --worker antminer --root /data --miners ${MDK_MINERS:-3}
+  avalon:
+    <<: *worker
+    command: node backend/proc/worker.js --worker avalon --root /data --miners ${MDK_MINERS:-3}
+  antspace:
+    <<: *worker
+    command: node backend/proc/worker.js --worker antspace --root /data --miners ${MDK_MINERS:-3}
+  bitdeer:
+    <<: *worker
+    command: node backend/proc/worker.js --worker bitdeer --root /data --miners ${MDK_MINERS:-3}
+  abb:
+    <<: *worker
+    command: node backend/proc/worker.js --worker abb --root /data --miners ${MDK_MINERS:-3}
+  satec:
+    <<: *worker
+    command: node backend/proc/worker.js --worker satec --root /data --miners ${MDK_MINERS:-3}
+  schneider:
+    <<: *worker
+    command: node backend/proc/worker.js --worker schneider --root /data --miners ${MDK_MINERS:-3}
+  seneca:
+    <<: *worker
+    command: node backend/proc/worker.js --worker seneca --root /data --miners ${MDK_MINERS:-3}
+  minerpool:
+    <<: *worker
+    command: node backend/proc/worker.js --worker minerpool --root /data --miners ${MDK_MINERS:-3}
+  f2pool:
+    <<: *worker
+    command: node backend/proc/worker.js --worker f2pool --root /data --miners ${MDK_MINERS:-3}
+
+  gateway:
+    <<: *host
+    depends_on:
+      - kernel
+    command: node backend/proc/gateway.js --root /data --port 3007
+
+volumes:
+  mdk-data:

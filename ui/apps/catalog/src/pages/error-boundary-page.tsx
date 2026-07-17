@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { JSX } from 'react'
-import { Button, ErrorBoundary, withErrorBoundary } from '@tetherto/mdk-react-devkit/core'
+import { Button, ErrorBoundary, withErrorBoundary } from '@tetherto/mdk-react-devkit/primitives'
 
 const BuggyCounter = (): JSX.Element => {
   const [count, setCount] = useState(0)

@@ -1,10 +1,10 @@
 'use strict'
 
-const Miner = require('../../base/lib/miner.js')
+const { Miner } = require('../../../../core/mdk')
 const utils = require('./utils')
 const async = require('async')
 const assert = require('assert')
-const { STATUS, POWER_MODE } = require('../../base/lib/utils/constants.js')
+const { STATUS, POWER_MODE } = require('../../../../core/mdk').constants
 
 function isResOk (res) {
   return res.Code === '119' || res.Code === '118'

@@ -2,13 +2,13 @@
 
 /**
  * Watch-mode wrapper that runs `tsc --watch`, then pipes `tsc-alias` (to
- * rewrite `@core` / `@/*` paths) and `strip-style-imports.mjs` (to remove
+ * rewrite `@primitives` / `@/*` paths) and `strip-style-imports.mjs` (to remove
  * side-effect `.scss` imports) after every successful rebuild.
  *
  * `npm run build:ts` chains all three in one-shot mode. Watch mode
  * (`tsc --watch`) re-emits files on every change and would otherwise:
- * - leave bare `@core` imports in dist, which Vite can't resolve →
- *   "Failed to resolve import '@core'" at the demo;
+ * - leave bare `@primitives` imports in dist, which Vite can't resolve →
+ *   "Failed to resolve import '@primitives'" at the demo;
  * - re-introduce the side-effect `.scss` / `.css` imports that strip-style-
  *   imports removes → "Failed to resolve import './foo.scss'".
  *

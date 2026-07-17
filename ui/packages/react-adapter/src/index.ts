@@ -1,5 +1,5 @@
 /**
- * @tetherto/mdk-react-adapter — React adapter for @tetherto/mdk-ui-core.
+ * @tetherto/mdk-react-adapter — React adapter for @tetherto/mdk-ui-foundation.
  *
  * Provides:
  *   - `<MdkProvider>` — wraps `QueryClientProvider` and exposes the resolved
@@ -15,8 +15,8 @@
  *   - Re-exports    — `useQuery`, `useMutation`, `useQueryClient`, …
  *
  * Pure-TS helpers (auth/token/settings utilities, shared types) live in
- * `@tetherto/mdk-ui-core`; UI-coupled hooks/utilities (toast portal, alert
- * renderers, chart helpers) live in `@tetherto/mdk-react-devkit/foundation`.
+ * `@tetherto/mdk-ui-foundation`; UI-coupled hooks/utilities (toast portal, alert
+ * renderers, chart helpers) live in `@tetherto/mdk-react-devkit/domain`.
  */
 
 export * from './hooks/index.js'

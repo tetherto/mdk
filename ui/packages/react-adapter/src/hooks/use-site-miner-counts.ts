@@ -1,4 +1,4 @@
-import { type ListThingsDevice, listThingsQuery } from '@tetherto/mdk-ui-core'
+import { type ListThingsDevice, listThingsQuery } from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 
 const COUNT_QUERY = JSON.stringify({ type: { $regex: '^miner-' } })

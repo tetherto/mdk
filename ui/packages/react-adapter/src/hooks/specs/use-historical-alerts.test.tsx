@@ -1,4 +1,4 @@
-import { authStore, ONE_DAY_MS } from '@tetherto/mdk-ui-core'
+import { authStore, ONE_DAY_MS } from '@tetherto/mdk-ui-foundation'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'

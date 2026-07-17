@@ -1,5 +1,5 @@
-import type { CascaderOption, CascaderValue } from '@tetherto/mdk-react-devkit/core'
-import { Card, Cascader } from '@tetherto/mdk-react-devkit/core'
+import type { CascaderOption, CascaderValue } from '@tetherto/mdk-react-devkit/primitives'
+import { Card, Cascader } from '@tetherto/mdk-react-devkit/primitives'
 import { DemoPageHeader } from '../components/demo-page-header'
 
 import { useState } from 'react'

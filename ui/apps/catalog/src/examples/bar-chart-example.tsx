@@ -1,5 +1,5 @@
-import { BarChart, ChartContainer, CURRENCY, UNITS } from '@tetherto/mdk-react-devkit/core'
-import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/core'
+import { BarChart, ChartContainer, CURRENCY, UNITS } from '@tetherto/mdk-react-devkit/primitives'
+import type { ChartTooltipConfig } from '@tetherto/mdk-react-devkit/primitives'
 import { DemoPageHeader } from '../components/demo-page-header'
 import {
   BAR_CHART_GROUPED_SITES,

@@ -1,6 +1,6 @@
 'use strict'
 
-const PowerMeter = require('../../base/lib/powermeter')
+const { PowerMeter } = require('../../../../core/mdk')
 const { PROTOCOL } = require('svc-facs-modbus/lib/constants')
 
 class SchneiderPowerMeter extends PowerMeter {

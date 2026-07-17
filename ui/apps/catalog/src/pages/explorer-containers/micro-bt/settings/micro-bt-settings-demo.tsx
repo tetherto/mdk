@@ -1,4 +1,4 @@
-import { MicroBTSettings } from '@tetherto/mdk-react-devkit/foundation'
+import { MicroBTSettings } from '@tetherto/mdk-react-devkit/domain'
 import type { ReactElement } from 'react'
 import './micro-bt-settings-demo.scss'
 

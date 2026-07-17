@@ -1,6 +1,6 @@
 import { ClockIcon } from '@radix-ui/react-icons'
-import { SignOutIcon } from '@tetherto/mdk-react-devkit/core'
-import { ProfileMenu } from '@tetherto/mdk-react-devkit/foundation'
+import { SignOutIcon } from '@tetherto/mdk-react-devkit/primitives'
+import { ProfileMenu } from '@tetherto/mdk-react-devkit/domain'
 import type { JSX } from 'react'
 
 import { DemoBlock } from '../components/demo-block'
@@ -34,7 +34,7 @@ export const ProfileMenuPage = (): JSX.Element => {
       </DemoBlock>
 
       <DemoBlock
-        title="Moria-style structure"
+        title="Mining OS-style structure"
         description="Avatar + email/role on top, divider, Change Timezone with description line, Sign Out with exit icon."
       >
         <ProfileMenu

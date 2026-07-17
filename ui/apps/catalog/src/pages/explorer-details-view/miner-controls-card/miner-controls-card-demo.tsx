@@ -1,5 +1,5 @@
-import { MAINTENANCE_CONTAINER, MinerControlsCard } from '@tetherto/mdk-react-devkit/foundation'
-import { devicesStore } from '@tetherto/mdk-ui-core'
+import { MAINTENANCE_CONTAINER, MinerControlsCard } from '@tetherto/mdk-react-devkit/domain'
+import { devicesStore } from '@tetherto/mdk-ui-foundation'
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
 

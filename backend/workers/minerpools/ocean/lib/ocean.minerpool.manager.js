@@ -3,7 +3,7 @@
 const OceanMinerpoolApi = require('./ocean.minerpool.api')
 const { getWorkersStats, convertMsToSeconds, isCurrentMonth, getMonthlyDateRanges } = require('./utils')
 const { POOL_TYPE, BTC_SATS } = require('./utils/constants')
-const MinerpoolManager = require('../../base/lib/minerpool.manager')
+const MinerpoolManager = require('../../../../core/mdk').PoolService
 
 class OceanMinerpoolManager extends MinerpoolManager {
   constructor (conf, ctx) {

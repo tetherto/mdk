@@ -99,14 +99,14 @@ describe('runCreate', () => {
   })
 
   it('wires MDK deps to the workspace protocol when invoked inside the monorepo', () => {
-    // Build a fake monorepo containing packages/ui-core/package.json with the
+    // Build a fake monorepo containing packages/ui-foundation/package.json with the
     // sentinel name. runCreate should detect it and rewire the scaffolded
     // package.json's @tetherto/* deps to the npm workspace protocol ("*"),
     // and rename the package to @tetherto/<appName>.
-    mkdirSync(join(tempDir, 'packages', 'ui-core'), { recursive: true })
+    mkdirSync(join(tempDir, 'packages', 'ui-foundation'), { recursive: true })
     writeFileSync(
-      join(tempDir, 'packages', 'ui-core', 'package.json'),
-      JSON.stringify({ name: '@tetherto/mdk-ui-core' }),
+      join(tempDir, 'packages', 'ui-foundation', 'package.json'),
+      JSON.stringify({ name: '@tetherto/mdk-ui-foundation' }),
       'utf8',
     )
 
@@ -134,9 +134,9 @@ describe('runCreate', () => {
     expect(lines.some((l) => l.includes('Detected MDK monorepo'))).toBe(true)
   })
 
-  it('ignores a corrupt packages/ui-core/package.json when walking up', () => {
-    mkdirSync(join(tempDir, 'packages', 'ui-core'), { recursive: true })
-    writeFileSync(join(tempDir, 'packages', 'ui-core', 'package.json'), '{not valid json', 'utf8')
+  it('ignores a corrupt packages/ui-foundation/package.json when walking up', () => {
+    mkdirSync(join(tempDir, 'packages', 'ui-foundation'), { recursive: true })
+    writeFileSync(join(tempDir, 'packages', 'ui-foundation', 'package.json'), '{not valid json', 'utf8')
 
     const { appPath } = runCreate({
       appName: 'corrupt-monorepo',

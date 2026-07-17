@@ -7,7 +7,7 @@ intent: >
   an X dashboard?" when X isn't mining-operations, financial-reporting, or
   device-management.
 domain: generic
-orkCapabilities: []
+kernelCapabilities: []
 components:
   - Button
   - DataTable
@@ -93,9 +93,9 @@ export default function WeatherDashboardExample() {
 If a custom feature graduates into a long-lived domain (e.g. it gets reused
 across multiple consuming apps), open a proposal:
 
-1. Define the domain identifier and ORK capabilities it covers.
+1. Define the domain identifier and Kernel capabilities it covers.
 2. Add a tiered set of agent-ready components under
-   `src/foundation/components/<domain>/`.
+   `src/domain/components/<domain>/`.
 3. Author a dedicated blueprint here.
 
 Until then, custom features live in the consuming app.

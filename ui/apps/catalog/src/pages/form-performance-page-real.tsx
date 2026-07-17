@@ -1,4 +1,4 @@
-import { Button, Card, Spinner } from '@tetherto/mdk-react-devkit/core'
+import { Button, Card, Spinner } from '@tetherto/mdk-react-devkit/primitives'
 import { useEffect, useRef, useState } from 'react'
 import type { RealBenchmarkResult } from '../utils/real-form-benchmark'
 import { ReactHookFormTestComponent, runRealFormBenchmark } from '../utils/real-form-benchmark'

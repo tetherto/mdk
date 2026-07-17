@@ -1,0 +1,39 @@
+@use '@primitives/styles/mixins' as *;
+@use '../../../utils/reporting-panel' as reporting-panel;
+
+.mdk-efficiency-bar-view {
+  @include flex_column;
+
+  gap: 16px;
+
+  &__header {
+    @include flex_align_between;
+
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(var(--mdk-color-white-rgb), 0.1);
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--mdk-color-white);
+  }
+
+  &__panel {
+    @include reporting-panel.reporting-panel-base;
+  }
+
+  &__chart {
+    .mdk-chart-container__legend-area {
+      display: flex;
+      align-items: start;
+      width: 100%;
+    }
+
+    .mdk-chart-container__legend {
+      display: flex;
+      align-items: start;
+      width: 100%;
+    }
+  }
+}

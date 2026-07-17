@@ -1,16 +1,13 @@
 'use strict'
 
-const path = require('path')
 const { test } = require('brittle')
 const { createServer } = require('../../mock/server')
 const Antspace = require('../../lib/antspace')
 const AntspaceHydro = require('../../lib/antspace.hydro')
 const AntspaceImmersion = require('../../lib/antspace.immersion')
-const AnstspaceManager = require('../../lib/antspace.manager')
 const libAlerts = require('../../lib/templates/alerts')
 const libStats = require('../../lib/templates/stats')
 
-const pkgRoot = path.join(__dirname, '../..')
 const MOCK_HOST = '127.0.0.1'
 const MOCK_PORT_HYDRO = 48100
 const MOCK_PORT_IMMERSION = 48110
@@ -34,19 +31,18 @@ function createHttpClient () {
   }
 }
 
-test('package exports Antspace, AntspaceHydro, AntspaceImmersion, AnstspaceManager', (t) => {
-  t.ok(typeof Antspace === 'function', 'Antspace is constructor')
-  t.ok(typeof AntspaceHydro === 'function', 'AntspaceHydro is constructor')
-  t.ok(typeof AntspaceImmersion === 'function', 'AntspaceImmersion is constructor')
-  t.ok(typeof AnstspaceManager === 'function', 'AnstspaceManager is constructor')
+test('package exports plugin, boot and device classes', (t) => {
+  const pkg = require('../..')
+  t.ok(pkg.plugin && pkg.plugin.contract, 'plugin with contract')
+  t.is(typeof pkg.startAntspaceWorker, 'function', 'startAntspaceWorker is function')
+  t.is(pkg.Antspace, Antspace, 'Antspace exported')
+  t.is(pkg.AntspaceHydro, AntspaceHydro, 'AntspaceHydro exported')
+  t.is(pkg.AntspaceImmersion, AntspaceImmersion, 'AntspaceImmersion exported')
 })
 
-test('Antspace and AnstspaceManager type alignment', (t) => {
-  const ctx = { rack: 'test-rack' }
-  const manager = new AnstspaceManager({}, ctx)
+test('device type alignment', (t) => {
   const client = { get: async () => ({ body: { ok: true } }), request: async () => ({ body: { ok: true, params: {} } }) }
   const container = new Antspace({ client, address: '127.0.0.1', port: 8080 })
-  t.ok(manager.getThingType().endsWith('-as'), 'manager getThingType ends with -as')
   t.is(container._type, 'container', 'container _type is container')
 })
 
@@ -55,31 +51,6 @@ test('templates load', (t) => {
   t.ok(libAlerts.specs.container.supply_liquid_temp_low !== undefined, 'alerts supply_liquid_temp_low available')
   t.ok(libStats.specs.container !== undefined, 'stats container spec available')
   t.ok(libStats.specs.container.ops.container_specific_stats_group !== undefined, 'stats container_specific_stats_group available')
-})
-
-test('AnstspaceManager init with mocked facs completes', async (t) => {
-  const emptyAsyncIterable = { [Symbol.asyncIterator]: async function * () {} }
-  const ctx = {
-    rack: 'integration-rack',
-    storeDir: null,
-    root: pkgRoot,
-    facs: {
-      store_s1: {
-        getBee: async () => ({
-          ready: async () => {},
-          sub: () => ({ createReadStream: () => emptyAsyncIterable })
-        })
-      },
-      interval_0: { add: () => {} },
-      scheduler_0: { add: () => {} },
-      mdkThgWriteCalls_0: { whitelistActions: () => {} }
-    }
-  }
-  const manager = new AnstspaceManager({}, ctx)
-  await manager.init()
-  t.ok(manager._initialized, 'manager initialized')
-  t.ok(manager.rackId && typeof manager.rackId === 'string', 'rackId set')
-  t.ok(manager.http_0, 'http_0 facility created')
 })
 
 test('e2e: mock/server + AntspaceHydro getSnap returns snap', async (t) => {

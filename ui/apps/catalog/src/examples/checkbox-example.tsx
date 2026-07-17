@@ -1,4 +1,4 @@
-import { Checkbox, Label, Switch } from '@tetherto/mdk-react-devkit/core'
+import { Checkbox, Label, Switch } from '@tetherto/mdk-react-devkit/primitives'
 
 export const CheckboxExample = (): React.ReactElement => {
   return (

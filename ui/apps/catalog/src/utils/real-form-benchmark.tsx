@@ -139,7 +139,7 @@ export const measureReactHookFormPerformance = async (): Promise<{
       state: 'NY',
       zipCode: '10001',
       country: 'USA',
-      companyName: 'Acme Corp',
+      companyName: 'Demo Corp',
       jobTitle: 'Engineer',
       department: 'Engineering',
       employeeId: 'EMP001',

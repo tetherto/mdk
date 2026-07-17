@@ -7,7 +7,7 @@ intent: >
   someone says "build me a mining dashboard" or "I want to see the state of
   my miners".
 domain: mining-operations
-orkCapabilities:
+kernelCapabilities:
   - hashrate-monitoring
   - incident-alerts
   - pool-performance
@@ -30,7 +30,7 @@ covering one site or a small fleet, with telemetry refreshing in (near) real
 time. It is the highest-leverage starting point because it bundles every
 core mining-ops capability into one page.
 
-If only a subset of ORK capabilities is available at the target site, drop
+If only a subset of Kernel capabilities is available at the target site, drop
 the components corresponding to absent capabilities and keep the rest — the
 layout is composable.
 

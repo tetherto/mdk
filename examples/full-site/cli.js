@@ -4,7 +4,7 @@
 //
 //   node cli.js
 //
-// Boots and manages each MDK component (mocks, ORK, each worker, app-node, UI)
+// Boots and manages each MDK component (mocks, Kernel, each worker, gateway, UI)
 // as its own OS process, with per-process logs, live status over HRPC, and
 // device seeding. start.js (the one-shot single-process path) is unaffected.
 //
@@ -12,10 +12,13 @@
 // file is just the readline shell + lifecycle wiring around it. The MDK
 // integration the example teaches lives under backend/.
 
+const { checkDeps } = require('./preflight')
+checkDeps()
+
 const readline = require('readline')
 const { ProcessManager } = require('./cli/process-manager')
 const { createDispatcher, HELP } = require('./cli/commands')
-const { ROOT, HTTP_PORT, UI_PORT } = require('./backend/site')
+const { ROOT, HTTP_PORT, UI_PORT, MCP_PORT } = require('./backend/site')
 
 function main () {
   const pm = new ProcessManager({ root: ROOT, cwd: __dirname })
@@ -38,6 +41,7 @@ function main () {
     siteDir: __dirname,
     httpPort: HTTP_PORT,
     uiPort: UI_PORT,
+    mcpPort: MCP_PORT,
     // Core discovery mode for spawned components; override per-run with `up --discovery dht`.
     discovery: process.env.MDK_DISCOVERY || 'local',
     print: (s) => console.log(s),

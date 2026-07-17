@@ -18,7 +18,7 @@ const padRight = (s: string, n: number): string =>
   s.length >= n ? `${s.slice(0, n - 1)}…` : s.padEnd(n)
 
 /**
- * List every available blueprint with its domain, ORK capabilities and demo
+ * List every available blueprint with its domain, Kernel capabilities and demo
  * route. The first call an agent makes when interpreting an intent.
  */
 export const runBlueprints = (opts: ListBlueprintsOptions): void => {
@@ -83,7 +83,7 @@ export const runBlueprint = (opts: ShowBlueprintOptions): void => {
   out('')
   out(`Intent: ${bp.intent}`)
   out(`Domain: ${bp.domain}`)
-  if (bp.orkCapabilities.length) out(`ORK capabilities: ${bp.orkCapabilities.join(', ')}`)
+  if (bp.kernelCapabilities.length) out(`Kernel capabilities: ${bp.kernelCapabilities.join(', ')}`)
   out(`Components: ${bp.components.join(', ')}`)
   if (bp.hooks.length) out(`Hooks: ${bp.hooks.join(', ')}`)
   if (bp.demoRoute) out(`Demo route: ${bp.demoRoute}`)

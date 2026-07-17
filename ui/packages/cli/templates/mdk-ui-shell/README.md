@@ -2,7 +2,7 @@
 
 A minimalistic Operations Dashboard built with MDK. Signs in via Google
 OAuth, reads live data from a local
-[`miningos-app-node`](https://github.com/tetherto/miningos-app-node) backend,
+[`mdk-gateway`](https://github.com/tetherto/mdk-prv/blob/release/0.5.0/backend/core/gateway/package.json) backend,
 and renders four reusable widgets:
 
 - **Site stats bar** — title + current power + hashrate / miner / container
@@ -15,15 +15,15 @@ and renders four reusable widgets:
 
 This template is the canonical reference composition for MDK consumers.
 Anything more ambitious than this dashboard should still respect the same
-boundaries: **API/state in `@tetherto/mdk-ui-core`, hooks in
+boundaries: **API/state in `@tetherto/mdk-ui-foundation`, hooks in
 `@tetherto/mdk-react-adapter`, components in `@tetherto/mdk-react-devkit`**.
 
 ## Quick start
 
 ```bash
 # 1. Backend: clone, configure, start (one-time)
-git clone https://github.com/tetherto/miningos-app-node.git
-cd miningos-app-node
+git clone https://github.com/tetherto/miningos-gateway.git
+cd miningos-gateway
 ./setup-config.sh
 #  ↳ open config/facs/httpd-oauth2.config.json and paste a real Google
 #    OAuth client id + secret (see "Google OAuth setup" below).
@@ -47,7 +47,7 @@ The backend needs a Google OAuth 2.0 client to authenticate users.
 2. Add an **authorised redirect URI**:
    `http://localhost:3000/oauth/google/callback`.
 3. Copy the resulting client ID + secret into
-   `miningos-app-node/config/facs/httpd-oauth2.config.json` under
+   `miningos-gateway/config/facs/httpd-oauth2.config.json` under
    `h0.credentials.client.id` and `h0.credentials.client.secret`.
 4. Make sure `h0.callbackUriUI` is `http://localhost:3030` (matches the
    frontend port set in `vite.config.ts`).
@@ -57,7 +57,7 @@ The backend needs a Google OAuth 2.0 client to authenticate users.
 ## Environment variables
 
 `cp .env.example .env` to start; the file is already wired for local
-development against `miningos-app-node` on `localhost:3000`.
+development against `miningos-gateway` on `localhost:3000`.
 
 | Variable               | Required | Dev default                | What it controls                                                                                                                                                                                                                                            |
 | ---------------------- | -------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -71,13 +71,13 @@ typed shape, so missing/misnamed variables surface as type errors.
 
 ## Known limitation: no data without miners
 
-`miningos-app-node` is the *API surface*, not the data source. It expects
-ORK clusters with real miners reporting in. **Without that, the charts will
+`miningos-gateway` is the *API surface*, not the data source. It expects
+Kernel clusters with real miners reporting in. **Without that, the charts will
 render empty states.** This is the expected first-run experience for a
 community demo — the dashboard is honest about no data being available.
 
 To exercise the dashboard against simulated data, run the backend's
-integration test harness or wire up a mock ORK; both are out of scope for
+integration test harness or wire up a mock Kernel; both are out of scope for
 this template.
 
 ## Project layout
@@ -141,7 +141,7 @@ way to make the dashboard hard to maintain.
 - **Hooks (`@tetherto/mdk-react-adapter`)** own the fetch + shape +
   format pipeline. They return chart-ready / table-ready payloads
   (e.g. `ChartCardData`).
-- **All API + state interaction lives in `@tetherto/mdk-ui-core`** —
+- **All API + state interaction lives in `@tetherto/mdk-ui-foundation`** —
   query factories, query keys, query-param builders, Zustand stores,
   type contracts.
 - **Pages are thin glue** — read hooks, pass output to components.

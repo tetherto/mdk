@@ -4,7 +4,7 @@ const {
   isCurrentMonth,
   convertMsToSeconds,
   getTimeRanges
-} = require('../../../base/lib/utils/time')
+} = require('../../../../../core/mdk/lib/services/pool-utils/time')
 
 /**
  * @typedef {Object} Worker

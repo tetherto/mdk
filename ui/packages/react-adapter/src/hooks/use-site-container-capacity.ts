@@ -1,7 +1,7 @@
-import { type TailLogEntry, tailLogQuery } from '@tetherto/mdk-ui-core'
+import { type TailLogEntry, tailLogQuery } from '@tetherto/mdk-ui-foundation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
-/* Container nominal capacity changes slowly — Moria pulls it from the
+/* Container nominal capacity changes slowly — Mining OS pulls it from the
  * 5-minute tail-log aggregate, not the realtime stream. */
 const STAT_KEY = 'stat-5m'
 const CONTAINER_AGGR_FIELDS = JSON.stringify({

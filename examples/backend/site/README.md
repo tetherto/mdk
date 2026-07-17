@@ -1,6 +1,12 @@
 # MDK Site Example
 
-Example deployment of an MDK site in **microservices** mode: one HTTP app-node and multiple miner workers run as separate processes, orchestrated by **PM2** or **Docker**.
+Example deployment of an MDK site in **microservices** mode: one HTTP gateway and multiple miner Workers run as separate processes, orchestrated by **PM2** or **Docker**.
+
+> [!IMPORTANT]
+> This example starts only the Gateway and Worker processes. Kernel must already be running and its public key
+> must be available at `DEFAULT_KEY_FILE` (`<tmpdir>/mdk/.kernel-key`) or passed explicitly via `kernelKey`.
+> For a complete example that starts every service — including Kernel — see
+> [`examples/site-backend/`](../../site-backend/README.md).
 
 ## Prerequisites
 
@@ -35,9 +41,9 @@ cp config/mdk.config.json.example config/mdk.config.json
 
 | Name | Kind | Role |
 |------|------|------|
-| `app-node` | `app-node` | HTTP API on port `3000` |
-| `wm-m56s` | `worker` | Whatsminer M56S worker (`miner-whatsminer`) |
-| `am-s19xp` | `worker` | Antminer S19XP worker (`miner-antminer`) |
+| `gateway` | `gateway` | HTTP API on port `3000` |
+| `wm-m56s` | `worker` | Whatsminer M56S Worker (`miner-whatsminer`) |
+| `am-s19xp` | `worker` | Antminer S19XP Worker (`miner-antminer`) |
 
 Worker entries require `worker`, `type`, and `rack` fields.
 
@@ -72,17 +78,17 @@ examples/backend/site/
 ├── mdk/                      # Runtime entrypoints (copied from backend/core/mdk)
 │   ├── worker.js             # Process launcher
 │   └── utils/
-│       └── service-bootstrap.js   # Starts app-node or worker from env vars
+│       └── service-bootstrap.js   # Starts gateway or worker from env vars
 ├── ecosystem.config.js       # PM2 only — one app per service
 ├── docker-compose.generated.yml  # Docker only — one container per service
-└── data/                     # Per-worker runtime data (created at run time)
-    └── rack-<name>/          # Store, config copies per worker rack
+└── data/                     # Per-Worker runtime data (created at run time)
+    └── rack-<name>/          # Store, config copies per Worker rack
 ```
 
 Repo-level files touched by setup (not in this folder):
 
-- `tmp/` — MDK initialize layout (configs, worker stubs) under repo root
-- `backend/core/app-node/config/` — config files copied from `.example` when missing
+- `tmp/` — MDK initialize layout (configs, Worker stubs) under repo root
+- `backend/core/gateway/config/` — config files copied from `.example` when missing
 
 ---
 
@@ -90,16 +96,16 @@ Repo-level files touched by setup (not in this folder):
 
 All services share the same entry script: `mdk/worker.js`. Environment variables select what runs:
 
-| Variable | `app-node` | Worker (e.g. wm-m56s) |
+| Variable | `gateway` | Worker (e.g. wm-m56s) |
 |----------|------------|------------------------|
-| `SERVICE` | `app-node` | `worker` |
+| `SERVICE` | `gateway` | `worker` |
 | `PORT` | `3000` | — |
 | `WORKER` | — | `miner-whatsminer` |
 | `TYPE` | — | `M56S` |
 | `RACK` | — | `rack-m56s` |
 | `MDK_ENV` | `development` / `production` | same |
 
-`service-bootstrap.js` reads these and either spawns the app-node BFX worker or calls MDK `startWorker()` for the matching miner manager.
+`service-bootstrap.js` reads these and either spawns the gateway BFX Worker or calls MDK `startWorker()` for the matching miner manager.
 
 ```mermaid
 flowchart LR
@@ -112,13 +118,13 @@ flowchart LR
   subgraph runtime [Each process]
     WorkerJS[mdk/worker.js]
     Bootstrap[service-bootstrap.js]
-    AppNode[app-node BFX worker]
+    Gateway[gateway BFX worker]
     Miner[MDK startWorker]
   end
 
   Config --> Client --> MDK
   MDK --> WorkerJS --> Bootstrap
-  Bootstrap --> AppNode
+  Bootstrap --> Gateway
   Bootstrap --> Miner
 ```
 
@@ -176,9 +182,9 @@ Runs setup then `pm2 start`.
 
 | PM2 name | Service |
 |----------|---------|
-| `mdk-app-node` | HTTP app-node |
-| `mdk-wm-m56s` | Whatsminer worker |
-| `mdk-am-s19xp` | Antminer worker |
+| `mdk-gateway` | HTTP gateway |
+| `mdk-wm-m56s` | Whatsminer Worker |
+| `mdk-am-s19xp` | Antminer Worker |
 
 ---
 
@@ -250,9 +256,9 @@ npm run start:docker
 
 | Compose service | Port | Role |
 |-----------------|------|------|
-| `app-node` | `3000:3000` | HTTP API |
-| `wm-m56s` | — | Whatsminer worker |
-| `am-s19xp` | — | Antminer worker |
+| `gateway` | `3000:3000` | HTTP API |
+| `wm-m56s` | — | Whatsminer Worker |
+| `am-s19xp` | — | Antminer Worker |
 
 The repo is bind-mounted at `/app/repo` so code changes apply without rebuilding the image (restart containers to pick up changes).
 
@@ -278,7 +284,7 @@ The repo is bind-mounted at `/app/repo` so code changes apply without rebuilding
 | `Script not found: .../mdk/worker.js` | Run `npm run setup:pm2` or `setup:docker` first |
 | PM2 shows one process named `ecosystem.config` | Use `ecosystem.config.js` filename (must contain `.config.js`) |
 | PM2/Docker restarts immediately | Run `pm2 logs` or `docker compose logs`; ensure `backend/core` and `backend/workers` deps are installed |
-| Docker native module errors | Let entrypoint finish first-run `npm ci` in core/workers, or run install scripts on the host and recreate containers |
+| Docker native module errors | Let entrypoint finish first-run `npm ci` in core/Workers, or run install scripts on the host and recreate containers |
 | `Cannot find module './utils/service-bootstrap'` | Re-run setup to refresh `mdk/` copies |
 
 ---
@@ -288,6 +294,6 @@ The repo is bind-mounted at `/app/repo` so code changes apply without rebuilding
 | Path | Purpose |
 |------|---------|
 | `backend/core/mdk` | `startServices()`, config generation, `service-bootstrap.js` |
-| `backend/core/app-node` | HTTP worker (spawned for `SERVICE=app-node`) |
+| `backend/core/gateway` | HTTP worker (spawned for `SERVICE=gateway`) |
 | `backend/workers/miners/*` | Miner manager implementations |
 | `backend/core` / `backend/workers` | Run `npm run install:packages` before site setup |

@@ -1,11 +1,11 @@
-import { type DateRange, DateRangePicker } from '@tetherto/mdk-react-devkit/core'
+import { type DateRange, DateRangePicker } from '@tetherto/mdk-react-devkit/primitives'
 import {
   EnergyBalance,
   type EnergyBalanceResponse,
   type FinancialDateRange,
   PERIOD,
   useEnergyBalanceViewModel,
-} from '@tetherto/mdk-react-devkit/foundation'
+} from '@tetherto/mdk-react-devkit/domain'
 import { useState } from 'react'
 import type { ReactElement } from 'react'
 

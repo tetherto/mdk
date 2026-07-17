@@ -165,7 +165,10 @@ module.exports = async function overview (req, services) {
   const devices = await Promise.all(
     workers.flatMap((w) => (w.deviceIds || []).map(async (deviceId) => {
       const tel = await services.mdkClient.pullTelemetry(deviceId, 'metrics')
-      return { deviceId, workerId: w.workerId, workerState: w.state, ...tel.metrics }
+      // pullTelemetry returns null when the device is not yet resolvable —
+      // never spread tel.metrics blindly.
+      const metrics = (tel && tel.metrics) || {}
+      return { deviceId, workerId: w.workerId, workerState: w.state, ...metrics }
     }))
   )
 

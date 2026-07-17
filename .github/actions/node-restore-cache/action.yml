@@ -59,3 +59,22 @@ runs:
         else
           npm install --ignore-scripts --no-audit --no-fund
         fi
+
+    - name: Rebuild native addons
+      shell: bash
+      env:
+        PKG_DIR: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        WD="${PKG_DIR:-.}"
+        if [ "$WD" != "." ]; then
+          cd "$WD"
+        fi
+        # Rebuild native addons if they are in the dependency chain.
+        # npm ci --ignore-scripts skips the node-pre-gyp install step that
+        # these packages require to build their binaries.
+        for pkg in sqlite3 bcrypt; do
+          if npm ls "$pkg" --depth=99 --parseable 2>/dev/null | grep -qE "(^|/)${pkg}$"; then
+            npm rebuild "$pkg"
+          fi
+        done

@@ -76,29 +76,6 @@ runs:
           npm install --ignore-scripts --no-audit --no-fund
         fi
 
-    - name: Rebuild native modules skipped by --ignore-scripts
-      if: inputs.install-dependencies == 'true'
-      shell: bash
-      env:
-        PKG_DIR: ${{ inputs.working-directory }}
-      run: |
-        set -euo pipefail
-        WD="${PKG_DIR:-.}"
-        if [ "$WD" != "." ]; then
-          cd "$WD"
-        fi
-        find node_modules -name binding.gyp 2>/dev/null | while IFS= read -r gyp; do
-          dir=$(dirname "$gyp")
-          rest="${dir#node_modules/}"
-          case "$rest" in
-            */node_modules/*) continue ;;
-          esac
-          [ -f "$dir/package.json" ] || continue
-          name=$(node -p "require('./$dir/package.json').name" 2>/dev/null) || continue
-          echo "Rebuilding native module: $name"
-          npm rebuild "$name" --no-audit --no-fund
-        done
-
     - name: Save node_modules cache
       id: cache-node-modules
       uses: actions/cache@v4

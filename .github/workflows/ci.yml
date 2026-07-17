@@ -20,6 +20,7 @@ on:
           - ui
           - core
           - workers
+          - examples
           - all
 
 permissions:
@@ -44,6 +45,7 @@ jobs:
       run_ui: ${{ steps.flags.outputs.run_ui }}
       run_core: ${{ steps.flags.outputs.run_core }}
       run_workers: ${{ steps.flags.outputs.run_workers }}
+      run_examples: ${{ steps.flags.outputs.run_examples }}
       reason: ${{ steps.flags.outputs.reason }}
     steps:
       - name: Checkout repository
@@ -60,7 +62,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.sha }}
         run: |
-          ui=false; core=false; workers=false
+          ui=false; core=false; workers=false; examples=false; docs_only=false
           if [ "$EVENT_NAME" != "workflow_dispatch" ]; then
             if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
               git fetch origin main --depth=1 2>/dev/null || true
@@ -70,10 +72,22 @@ jobs:
             echo "$CHANGED" | grep -q "^ui/" && ui=true || true
             echo "$CHANGED" | grep -q "^backend/core/"      && core=true || true
             echo "$CHANGED" | grep -q "^backend/workers/"   && workers=true || true
+            echo "$CHANGED" | grep -q "^examples/"          && examples=true || true
+            # docs/meta-only: every changed file is docs or repo-meta with no build/runtime
+            # impact. Markdown link correctness is covered separately by link-check.yml, so
+            # these changes need none of the domain build/test suites. Anything NOT on this
+            # allowlist (root package.json, ci.yml, .gitignore, composite actions, source...)
+            # falls through to the conservative run-all below.
+            if [ -n "$CHANGED" ]; then
+              NON_DOCS=$(printf '%s\n' "$CHANGED" | grep -vE '(^docs/|\.md$|^LICENSE$|^linkinator\.config\.json$)' || true)
+              [ -z "$NON_DOCS" ] && docs_only=true
+            fi
           fi
-          echo "ui=$ui"       >> "$GITHUB_OUTPUT"
-          echo "core=$core"   >> "$GITHUB_OUTPUT"
-          echo "workers=$workers" >> "$GITHUB_OUTPUT"
+          echo "ui=$ui"             >> "$GITHUB_OUTPUT"
+          echo "core=$core"         >> "$GITHUB_OUTPUT"
+          echo "workers=$workers"   >> "$GITHUB_OUTPUT"
+          echo "examples=$examples" >> "$GITHUB_OUTPUT"
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
 
       - name: Resolve which pipelines should run
         id: flags
@@ -84,10 +98,13 @@ jobs:
           UI_CHANGED: ${{ steps.changed.outputs.ui }}
           CORE_CHANGED: ${{ steps.changed.outputs.core }}
           WORKERS_CHANGED: ${{ steps.changed.outputs.workers }}
+          EXAMPLES_CHANGED: ${{ steps.changed.outputs.examples }}
+          DOCS_ONLY: ${{ steps.changed.outputs.docs_only }}
         run: |
           run_ui=false
           run_core=false
           run_workers=false
+          run_examples=false
           reason=""
 
           has_ui_lock=false
@@ -95,21 +112,32 @@ jobs:
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$INPUT_TARGET" != "auto" ]; then
             case "$INPUT_TARGET" in
-              ui)      run_ui=true;  run_core=false; run_workers=false; reason="manual=ui" ;;
-              core)    run_ui=false; run_core=true;  run_workers=false; reason="manual=core" ;;
-              workers) run_ui=false; run_core=false; run_workers=true;  reason="manual=workers" ;;
-              all)     run_ui=true;  run_core=true;  run_workers=true;  reason="manual=all" ;;
-              *)       run_ui=true;  run_core=true;  run_workers=true;  reason="manual=unknown-fallback-all" ;;
+              ui)       run_ui=true;       run_core=false; run_workers=false; run_examples=false; reason="manual=ui" ;;
+              core)     run_ui=false;      run_core=true;  run_workers=false; run_examples=false; reason="manual=core" ;;
+              workers)  run_ui=false;      run_core=false; run_workers=true;  run_examples=false; reason="manual=workers" ;;
+              examples) run_ui=false;      run_core=false; run_workers=false; run_examples=true;  reason="manual=examples" ;;
+              all)      run_ui=true;       run_core=true;  run_workers=true;  run_examples=true;  reason="manual=all" ;;
+              *)        run_ui=true;       run_core=true;  run_workers=true;  run_examples=true;  reason="manual=unknown-fallback-all" ;;
             esac
           else
             if [ "$UI_CHANGED" = "true" ] && [ "$has_ui_lock" = "true" ]; then run_ui=true; fi
             if [ "$CORE_CHANGED" = "true" ]; then run_core=true; fi
             if [ "$WORKERS_CHANGED" = "true" ]; then run_workers=true; fi
-            if [ "$run_ui" = "false" ] && [ "$run_core" = "false" ] && [ "$run_workers" = "false" ]; then
-              run_ui=$([ "$has_ui_lock" = "true" ] && echo true || echo false)
-              run_core=true
-              run_workers=true
-              reason="auto=no-targeted-change->run-core-workers"
+            if [ "$EXAMPLES_CHANGED" = "true" ]; then run_examples=true; fi
+            if [ "$run_ui" = "false" ] && [ "$run_core" = "false" ] && [ "$run_workers" = "false" ] && [ "$run_examples" = "false" ]; then
+              if [ "$DOCS_ONLY" = "true" ]; then
+                # docs/meta-only change: nothing to build or test here (link-check.yml
+                # handles markdown links in its own workflow). Skip all domain suites.
+                reason="auto=docs/meta-only->skip-domains"
+              else
+                # No domain matched but the change touches shared/root files that can
+                # affect any domain (root package.json, ci.yml, .gitignore, ...): run all.
+                run_ui=$([ "$has_ui_lock" = "true" ] && echo true || echo false)
+                run_core=true
+                run_workers=true
+                run_examples=true
+                reason="auto=no-targeted-change->run-all"
+              fi
             else
               reason="auto=changed-paths"
             fi
@@ -118,8 +146,9 @@ jobs:
           echo "run_ui=$run_ui" >> "$GITHUB_OUTPUT"
           echo "run_core=$run_core" >> "$GITHUB_OUTPUT"
           echo "run_workers=$run_workers" >> "$GITHUB_OUTPUT"
+          echo "run_examples=$run_examples" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
-          echo "Selected: ui=$run_ui core=$run_core workers=$run_workers ($reason)"
+          echo "Selected: ui=$run_ui core=$run_core workers=$run_workers examples=$run_examples ($reason)"
 
   list-workers:
     name: List worker packages
@@ -206,6 +235,84 @@ jobs:
           fi
           echo "buildable_dirs=${buildable_json}" >> "$GITHUB_OUTPUT"
           echo "Buildable core packages: ${buildable_json}"
+
+  list-examples:
+    name: List example packages
+    runs-on: ubuntu-latest
+    needs: [detect-target]
+    if: needs.detect-target.outputs.run_examples == 'true'
+    outputs:
+      dirs: ${{ steps.list.outputs.dirs }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Discover example package directories
+        id: list
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t dirs < <(
+            find examples -name package.json -not -path '*/node_modules/*' \
+              | xargs -I{} dirname {} | sort -u
+          )
+          if [ "${#dirs[@]}" -eq 0 ]; then
+            echo "::error::No package.json under examples/"
+            exit 1
+          fi
+          json=$(printf '%s\n' "${dirs[@]}" | jq -R . | jq -s -c .)
+          echo "dirs=${json}" >> "$GITHUB_OUTPUT"
+          echo "Example packages: ${json}"
+
+  setup-examples:
+    name: 📦 Setup Example (${{ matrix.dir }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [detect-target, list-examples]
+    if: needs.detect-target.outputs.run_examples == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJson(needs.list-examples.outputs.dirs) }}
+    outputs:
+      cache-key: ${{ steps.setup-deps.outputs.cache-key }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies and cache node_modules
+        id: setup-deps
+        uses: ./.github/actions/node-setup-cache
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          working-directory: ${{ matrix.dir }}
+
+  test-examples:
+    name: 🧪 Test Example (${{ matrix.dir }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [detect-target, list-examples, setup-examples]
+    if: needs.detect-target.outputs.run_examples == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJson(needs.list-examples.outputs.dirs) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/node-restore-cache
+        with:
+          cache-key: ${{ needs.setup-examples.outputs.cache-key }}
+          node-version: ${{ env.NODE_VERSION }}
+          working-directory: ${{ matrix.dir }}
+      - run: npm run test:coverage --if-present || npm test --if-present
 
   setup-ui:
     name: 📦 Setup UI (ui)
@@ -295,7 +402,7 @@ jobs:
   # react-devkit is the bottleneck (~13 min, 296 test files), so it is split
   # across 4 parallel runners via `vitest --shard`. Each shard writes a blob
   # report; the coverage-ui job merges them and enforces thresholds. The smaller
-  # packages (ui-core, react-adapter, cli) run once on shard 1 via turbo.
+  # packages (ui-foundation, react-adapter, cli) run once on shard 1 via turbo.
   test-ui:
     name: 🧪 Test UI (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
@@ -336,7 +443,7 @@ jobs:
           # All tested packages set `cacheDir: '.cache'` in vitest.config.js.
           path: |
             ui/packages/react-devkit/.cache
-            ui/packages/ui-core/.cache
+            ui/packages/ui-foundation/.cache
             ui/packages/react-adapter/.cache
             ui/packages/cli/.cache
           key: vitest-ui-${{ runner.os }}-${{ hashFiles('ui/packages/**/*.ts', 'ui/packages/**/*.tsx', 'ui/packages/**/vitest.config.js') }}-shard-${{ matrix.shard }}
@@ -448,6 +555,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install dependencies and cache node_modules
+        id: setup-deps
+        uses: ./.github/actions/node-setup-cache
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          working-directory: ${{ matrix.dir }}
+
       - name: Lockfile consistency check
         id: lockfile
         shell: bash
@@ -465,12 +579,7 @@ jobs:
             exit 1
           )
 
-      - name: Install dependencies and cache node_modules
-        id: setup-deps
-        uses: ./.github/actions/node-setup-cache
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          working-directory: ${{ matrix.dir }}
+
 
   lint-core:
     name: ✨ Lint Core (${{ matrix.dir }})
@@ -547,7 +656,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           # Core packages use relative requires into sibling core packages
-          # (e.g. mdk -> ork) and into backend/workers/** (base, lib,
+          # (e.g. mdk -> kernel) and into backend/workers/** (base, lib,
           # http.node.wrk, containers). Each test runner only restores the
           # matrix package's node_modules, so the reachable sibling packages
           # must be installed here too.
@@ -701,26 +810,20 @@ jobs:
           cache-key: ${{ needs.setup-workers.outputs.cache-key }}
           node-version: ${{ env.NODE_VERSION }}
           working-directory: ${{ matrix.dir }}
-      - name: Install shared base package dependencies
+      - name: Install shared package dependencies
         shell: bash
         working-directory: ${{ github.workspace }}
         run: |
-          # Worker packages use relative requires into sibling base packages
-          # under backend/core (mdk, mdk-worker, lib-stats, client,
-          # mock-control-service). Each test runner only restores the matrix
-          # package's node_modules, so those shared packages must be
-          # installed here too.
-          find backend/workers -name package.json -not -path '*/node_modules/*' \
-            | xargs -I{} dirname {} \
-            | grep -E '(/base$|/base/)' \
-            | grep -v "^${{ matrix.dir }}$" \
-            | while read -r dir; do
-                echo "Installing deps: $dir"
-                (cd "$dir" && npm ci --ignore-scripts --no-audit --no-fund)
-              done
-          for dir in backend/core/mdk backend/core/mdk-worker backend/core/client backend/core/mock-control-service; do
-            [ -f "$dir/package.json" ] && \
-              (cd "$dir" && npm ci --ignore-scripts --no-audit --no-fund) || true
+          # Worker packages use relative requires into the shared core packages
+          # (mdk → kernel, mdk-worker, client) and the mock toolkit. Each test
+          # runner only restores the matrix package's node_modules, so those
+          # shared packages must be installed here too. The base packages this
+          # step used to install were deleted with the WorkerRuntime migration.
+          for dir in backend/core/kernel backend/core/client backend/core/mdk backend/core/mdk-worker backend/workers/mock backend/core/mock-control-service; do
+            [ -f "$dir/package.json" ] || continue
+            [ "$dir" = "${{ matrix.dir }}" ] && continue
+            echo "Installing deps: $dir"
+            (cd "$dir" && npm ci --ignore-scripts --no-audit --no-fund)
           done
       - run: npm run test:coverage --if-present || npm test --if-present
 
@@ -958,6 +1061,9 @@ jobs:
       - typecheck-workers
       - test-workers
       - build-workers
+      - list-examples
+      - setup-examples
+      - test-examples
     steps:
       - name: Write job summary
         shell: bash
@@ -966,6 +1072,7 @@ jobs:
           RUN_UI: ${{ needs.detect-target.outputs.run_ui }}
           RUN_CORE: ${{ needs.detect-target.outputs.run_core }}
           RUN_WORKERS: ${{ needs.detect-target.outputs.run_workers }}
+          RUN_EXAMPLES: ${{ needs.detect-target.outputs.run_examples }}
           SEC: ${{ needs.security_checks.result || 'skipped' }}
           SEC_UI: ${{ needs.security_audit_ui.result || 'skipped' }}
           SEC_CORE: ${{ needs.security_audit_core.result || 'skipped' }}
@@ -973,6 +1080,8 @@ jobs:
           UI_SETUP: ${{ needs.setup-ui.result || 'skipped' }}
           CORE_SETUP: ${{ needs.setup-core.result || 'skipped' }}
           WRK_SETUP: ${{ needs.setup-workers.result || 'skipped' }}
+          EX_SETUP: ${{ needs.setup-examples.result || 'skipped' }}
+          EX_TEST: ${{ needs.test-examples.result || 'skipped' }}
         run: |
           ic() {
             case "$1" in
@@ -986,7 +1095,7 @@ jobs:
           {
             echo "## CI Summary (mdk-prv monorepo)"
             echo ""
-            echo "**Selection:** ${REASON} (ui=${RUN_UI} core=${RUN_CORE} workers=${RUN_WORKERS})"
+            echo "**Selection:** ${REASON} (ui=${RUN_UI} core=${RUN_CORE} workers=${RUN_WORKERS} examples=${RUN_EXAMPLES})"
             echo ""
             echo "| Area | Setup | Security |"
             echo "|---|---|---|"
@@ -994,6 +1103,7 @@ jobs:
             echo "| 🎨 UI | $(ic "${UI_SETUP}") \`${UI_SETUP}\` | $(ic "${SEC_UI}") \`${SEC_UI}\` |"
             echo "| 🧱 Core | $(ic "${CORE_SETUP}") \`${CORE_SETUP}\` | $(ic "${SEC_CORE}") \`${SEC_CORE}\` |"
             echo "| ⚙️ Workers | $(ic "${WRK_SETUP}") \`${WRK_SETUP}\` | $(ic "${SEC_WRK}") \`${SEC_WRK}\` |"
+            echo "| 📋 Examples | $(ic "${EX_SETUP}") \`${EX_SETUP}\` (test: $(ic "${EX_TEST}") \`${EX_TEST}\`) | — |"
             echo ""
             echo "### What ran"
             echo "- Per-package **lockfile consistency** in setup jobs (npm \`package-lock.json\`)"

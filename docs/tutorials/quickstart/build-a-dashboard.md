@@ -1,6 +1,6 @@
 ---
 title: Build a minimal single-page dashboard
-description: "[⏱️ <15 min] From an empty directory to a running Kernel, Worker, Gateway plugin, and static HTML dashboard"
+description: "[⏱️ <15 min] From an empty directory to a running Kernel, Worker, Gateway plugin, and MDK UI dashboard"
 docs@tether_slug: tutorials/quickstart/build-a-dashboard
 ---
 

@@ -705,9 +705,11 @@ jobs:
         shell: bash
         working-directory: ${{ github.workspace }}
         run: |
-          # Worker packages use relative requires into sibling base packages.
-          # Each test runner only restores the matrix package's node_modules, so
-          # shared packages must be installed here too.
+          # Worker packages use relative requires into sibling base packages
+          # under backend/core (mdk, mdk-worker, lib-stats, client,
+          # mock-control-service). Each test runner only restores the matrix
+          # package's node_modules, so those shared packages must be
+          # installed here too.
           find backend/workers -name package.json -not -path '*/node_modules/*' \
             | xargs -I{} dirname {} \
             | grep -E '(/base$|/base/)' \
@@ -716,7 +718,7 @@ jobs:
                 echo "Installing deps: $dir"
                 (cd "$dir" && npm ci --ignore-scripts --no-audit --no-fund)
               done
-          for dir in backend/core/mock-control-service; do
+          for dir in backend/core/mdk backend/core/mdk-worker backend/core/client backend/core/mock-control-service; do
             [ -f "$dir/package.json" ] && \
               (cd "$dir" && npm ci --ignore-scripts --no-audit --no-fund) || true
           done

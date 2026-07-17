@@ -65,14 +65,14 @@ parts (router, sidebar, line charts, domain panels) this single-page, single-Wor
   and UI dependencies plus the full-site example and UI dependencies and builds the UI packages.
 - Commands below assume a new `examples/minimal-dashboard/` directory alongside `examples/full-site/`
 
-## Step 1 — Pick the one Worker
+## Step 1 — Pick the Worker
 
 Use [`backend/workers/samples/demo-worker`][demo-worker] as-is — it needs no worker-infra services (provisioning
 stores, alert templates), just `WorkerRuntime` and its own bundled mock device. Nothing in the steps below is
 specific to it, though: swap in `startWhatsminerWorker`, `startAntminerWorker`, or your own Worker from
 [Build a third-party Worker][build-a-worker] and everything past Step 2 is unchanged.
 
-## Step 2 — Boot Kernel + the one Worker, same process
+## Step 2 — Boot Kernel and Worker in same process
 
 The simplest of the three discovery modes ([full trade-offs here][deployment-trade-offs]): one Node process owns both the
 Kernel and the Worker, so there's no key file or DHT topic to manage.
@@ -126,7 +126,7 @@ sampling, and shutdown.
 This example then registers the Worker's public key directly because both objects are in the same process. See the
 [discovery model][workers-discovery] for the DHT, Local, and Same-process options to use in other deployments.
 
-## Step 3 — Write the one Gateway plugin route
+## Step 3 — Write one Gateway plugin route
 
 A [Gateway plugin][gateway-plugins] is a directory with a manifest and a controller. This one has a single read-only
 route that lists every registered Worker's devices and pulls each one's default `metrics` telemetry bundle — no

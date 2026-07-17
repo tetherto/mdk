@@ -560,23 +560,23 @@ This guide stops at one of everything on purpose. From here:
 [full-site-lib]: ../../../examples/full-site/plugins/site/lib/site.js
 <!-- docs@tether.io: full-site-lib → https://github.com/tetherto/mdk/blob/main/examples/full-site/plugins/site/lib/site.js -->
 
-[architecture]: ../../concepts/architecture.md
+[architecture]: ../../../docs/concepts/architecture.md
 <!-- docs@tether.io: architecture → concepts/architecture -->
 
-[build-a-worker]: ../../guides/workers/build-a-worker.md
+[build-a-worker]: build-a-worker.md
 <!-- docs@tether.io: build-a-worker → guides/workers/build-a-worker -->
 
-[demo-worker]: ../../../backend/workers/samples/demo-worker/index.js
+[demo-worker]: ../samples/demo-worker/index.js
 <!-- docs@tether.io: demo-worker → https://github.com/tetherto/mdk/blob/main/backend/workers/samples/demo-worker/index.js -->
 
 [demo-worker-caller]: ../../../examples/backend/demo-worker-caller/index.js
 <!-- docs@tether.io: demo-worker-caller → https://github.com/tetherto/mdk/blob/main/examples/backend/demo-worker-caller/index.js -->
 
-[deployment-trade-offs]: ../../concepts/deployment-topologies.md#the-trade-off
+[deployment-trade-offs]: ../../../docs/concepts/deployment-topologies.md#the-trade-off
 <!-- docs@tether.io: deployment-trade-offs → concepts/deployment-topologies#the-trade-off -->
 
-[workers-discovery]: ../../concepts/stack/workers.md#discovery-model
+[workers-discovery]: ../../../docs/concepts/stack/workers.md#discovery-model
 <!-- docs@tether.io: workers-discovery → concepts/stack/workers#discovery-model -->
 
-[gateway-plugins]: ../../guides/gateway/plugins.md
+[gateway-plugins]: ../../../docs/guides/gateway/plugins.md
 <!-- docs@tether.io: gateway-plugins → guides/gateway/plugins -->

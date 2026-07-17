@@ -76,6 +76,21 @@ runs:
           npm install --ignore-scripts --no-audit --no-fund
         fi
 
+    - name: Rebuild native modules skipped by --ignore-scripts
+      if: inputs.install-dependencies == 'true'
+      shell: bash
+      env:
+        PKG_DIR: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        WD="${PKG_DIR:-.}"
+        if [ "$WD" != "." ]; then
+          cd "$WD"
+        fi
+        if [ -d node_modules/sqlite3 ]; then
+          npm rebuild sqlite3 --no-audit --no-fund
+        fi
+
     - name: Save node_modules cache
       id: cache-node-modules
       uses: actions/cache@v4

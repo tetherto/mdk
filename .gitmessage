@@ -1,0 +1,10 @@
+# <type>: <short summary>   (max ~72 chars)
+#
+# Types: feat | fix | docs | refactor | test | chore | perf | style | ci | build
+# Format: <type>(<scope>): <summary>   e.g. feat(miner): add Antminer S21 support
+#
+# Body — what & why (wrap at 72 chars):
+#
+#
+# Asana task: <url>
+# Related PRs: <links>

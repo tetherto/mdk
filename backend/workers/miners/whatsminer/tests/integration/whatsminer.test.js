@@ -3,7 +3,7 @@
 const net = require('net')
 const test = require('brittle')
 const { createServer } = require('../../mock/server')
-const Whatsminer = require('../../lib/whatsminer')
+const Whatsminer = require('../../lib/whatsminer-api-v2-client')
 
 const DEFAULT_MOCK_PORT = 14028
 const MOCK_HOST = '127.0.0.1'

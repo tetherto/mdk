@@ -4,8 +4,8 @@
     "provider": "microbt",
     "deviceFamily": "miner",
     "brand": "Whatsminer",
-    "modelsSupported": ["M30SP", "M30SPP", "M53S", "M56S", "M63"],
-    "overview": "Controls MicroBT Whatsminer Bitcoin miners. Operations affect physical hardware — prioritize thermal safety."
+    "modelsSupported": [],
+    "overview": "Controls MicroBT Whatsminer Bitcoin miners through API v2 on port 4028 or API v3 on port 4433. Compatibility is determined by firmware API capabilities rather than a hard-coded model allowlist. Operations affect physical hardware — prioritize thermal safety."
   },
   "capabilities": {
     "telemetry": [
@@ -17,11 +17,19 @@
       { "name": "fan_speed_out", "unit": "RPM", "type": "number", "handler": "src/telemetry/fan-speed-out.js", "description": "Outlet fan speed." },
       { "name": "status", "unit": "", "type": "string", "handler": "src/telemetry/status.js", "description": "Device status." },
       { "name": "uptime", "unit": "s", "type": "number", "handler": "src/telemetry/uptime.js", "description": "Seconds since last boot." },
-      { "name": "accepted_shares", "unit": "", "type": "number", "handler": "src/telemetry/accepted-shares.js", "description": "Total accepted shares." },
-      { "name": "rejected_shares", "unit": "", "type": "number", "handler": "src/telemetry/rejected-shares.js", "description": "Total rejected shares." },
+      { "name": "accepted_shares", "unit": "", "type": "number", "handler": "src/telemetry/accepted-shares.js", "description": "Total accepted shares. API v3 on port 4433 does not expose share counts, so this channel returns 0 for that protocol." },
+      { "name": "rejected_shares", "unit": "", "type": "number", "handler": "src/telemetry/rejected-shares.js", "description": "Total rejected shares. API v3 on port 4433 does not expose share counts, so this channel returns 0 for that protocol." },
       { "name": "pool_url", "unit": "", "type": "string", "handler": "src/telemetry/pool-url.js", "description": "Active pool URL." },
       { "name": "efficiency", "unit": "W/TH", "type": "number", "handler": "src/telemetry/efficiency.js", "description": "Power efficiency." },
       { "name": "power_mode", "unit": "", "type": "string", "handler": "src/telemetry/power-mode.js", "description": "Current power mode." },
+      { "name": "api_version", "unit": "", "type": "string", "handler": "src/telemetry/api-version.js", "description": "Detected WhatsMiner API generation/version used for this connection (API v2 on port 4028 or API v3 on port 4433)." },
+      { "name": "firmware_info", "unit": "", "type": "object", "handler": "src/telemetry/firmware-info.js", "description": "Normalized control-board, platform, firmware and API version information." },
+      { "name": "device_info", "unit": "", "type": "object", "handler": "src/telemetry/device-info.js", "description": "Normalized miner identity and network information. Pool passwords and API credentials are never included." },
+      { "name": "psu_info", "unit": "", "type": "object", "handler": "src/telemetry/psu-info.js", "description": "Normalized power-supply identity, firmware, fan speed and electrical input information when exposed by the firmware." },
+      { "name": "miner_stats", "unit": "", "type": "object", "handler": "src/telemetry/miner-stats.js", "description": "Normalized mining performance, power, temperature, fan and tuning statistics. Values are cached briefly by the device client to avoid duplicate device requests." },
+      { "name": "hashboards", "unit": "", "type": "array", "handler": "src/telemetry/hashboards.js", "description": "Per-hashboard slot, hashrate, frequency, effective-chip and chip-temperature data." },
+      { "name": "pools", "unit": "", "type": "array", "handler": "src/telemetry/pools.js", "description": "Configured pool endpoints and runtime status. Worker passwords are never included; API v3 firmware may omit share counters." },
+      { "name": "errors", "unit": "", "type": "array", "handler": "src/telemetry/errors.js", "description": "Active device error codes with normalized names and messages. An empty array means that no active error was reported." },
       { "name": "snap", "unit": "", "type": "object", "handler": "src/telemetry/snap.js", "description": "Full structured snapshot (stats + config), same shape the legacy metrics pull returned." }
     ],
     "commands": [
@@ -35,9 +43,10 @@
       {
         "name": "setPowerMode",
         "description": "Changes the power mode.",
+        "constraints": "Supported modes and their physical limits depend on miner firmware and cooling configuration. Do not select a higher-power mode unless cooling is operational.",
         "handler": "src/commands/set-power-mode.js",
         "params": [
-          { "name": "mode", "type": "string" }
+          { "name": "mode", "type": "string", "enum": ["low", "normal", "high", "sleep"] }
         ]
       },
       {
@@ -51,6 +60,7 @@
       {
         "name": "setupPools",
         "description": "Configure mining pools. Uses the worker's configured pools when none are passed.",
+        "constraints": "Changes active mining destinations. Preserve the previous pool configuration before applying. A timeout has an unknown physical outcome and must not be retried automatically.",
         "handler": "src/commands/setup-pools.js",
         "params": [
           { "name": "pools", "type": "object" }
@@ -59,17 +69,44 @@
       {
         "name": "setPowerPct",
         "description": "Set power percentage.",
+        "constraints": "Values above 100 percent are accepted only by supported hydro or immersion miners. Air-cooled miners are limited to 100 percent. Verify cooling before increasing power.",
         "handler": "src/commands/set-power-pct.js",
         "params": [
           { "name": "pct", "type": "number", "min": 0, "max": 200 }
         ]
       },
       {
-        "name": "setUpfreqSpeed",
-        "description": "Adjust the up-frequency speed (M63).",
-        "handler": "src/commands/set-upfreq-speed.js",
+        "name": "downloadLogs",
+        "description": "Package and download the miner diagnostic logs as a Base64-encoded .tgz archive with size and SHA-256 metadata.",
+        "constraints": "Log archives may be large. Store or decode the returned data promptly and avoid concurrent downloads from the same miner.",
+        "handler": "src/commands/download-logs.js",
+        "params": []
+      },
+      {
+        "name": "setNetwork",
+        "description": "Configure DHCP or a static IPv4 address. Pass network.dhcp=true for DHCP, or network.dhcp=false with ip, netmask, gateway and dns fields for static addressing.",
+        "constraints": "The miner reboots and the current connection drops after this command. Preserve the old address and verify reachability at the new address. A timeout or connection reset has an unknown physical outcome and must not be retried automatically.",
+        "handler": "src/commands/set-network.js",
         "params": [
-          { "name": "speed", "type": "number" }
+          { "name": "network", "type": "object" }
+        ]
+      },
+      {
+        "name": "setHostname",
+        "description": "Set the miner controller hostname. The configured name becomes fully effective after a controller restart.",
+        "constraints": "Use a valid 1-63 character hostname containing only letters, digits and internal hyphens.",
+        "handler": "src/commands/set-hostname.js",
+        "params": [
+          { "name": "hostname", "type": "string", "required": true }
+        ]
+      },
+      {
+        "name": "updateFirmware",
+        "description": "Verify a Base64-encoded firmware image, select the payload matching the miner control-board platform and upload the raw bytes directly to the miner.",
+        "constraints": "Firmware updates reboot the controller and can render the miner unreachable. The firmware object must include filename, encoding=base64, size, sha256 and data and must not exceed 64 MiB. The upload is sent once and is never retried; a timeout or disconnect after transmission has an unknown physical outcome.",
+        "handler": "src/commands/update-firmware.js",
+        "params": [
+          { "name": "firmware", "type": "object", "required": true }
         ]
       }
     ],
@@ -86,6 +123,54 @@
       ]
     },
     "errors": {
+      "ERR_DEVICE_CONFIG_INVALID": "The device address or API password is missing.",
+      "ERR_UNSUPPORTED_API_VERSION": "The requested WhatsMiner API version is not supported.",
+      "ERR_API_VERSION_REQUIRED_FOR_CUSTOM_PORT": "A custom port with probing disabled requires an explicit API version.",
+      "ERR_AUTH_FAILED": "The API v3 device rejected authentication.",
+      "ERR_TOKEN_FETCH_IP_LIMIT": "The miner rejected the salt or token request because the API client limit or permission policy was reached.",
+      "ERR_INVALID_AUTH_RESPONSE": "The API v3 salt response was successful but did not contain a usable salt.",
+      "ERR_API_RESPONSE_INVALID": "The device returned an invalid API response.",
+      "ERR_API_V3_FRAME_LENGTH_INVALID": "The API v3 length-prefixed response frame is invalid.",
+      "ERR_API_V3_FRAME_INCOMPLETE": "The API v3 TCP connection ended before the declared response frame was complete.",
+      "ERR_API_V3_TIMEOUT": "The API v3 request did not receive a complete response before its deadline. For writes, the physical outcome is unknown and the command must not be retried automatically.",
+      "ERR_API_V3_CONNECTION": "The API v3 TCP connection failed or was reset. For writes, the physical outcome may be unknown and the command must not be retried automatically.",
+      "ERR_FAIL": "The API v3 firmware returned its generic failure code.",
+      "ERR_INVALID_CMD": "The installed firmware does not expose the requested command.",
+      "ERR_JSON_CMD": "The API v2 firmware rejected the command JSON.",
+      "ERR_PERMISSION_DENIED": "The API v2 firmware rejected the authenticated command.",
+      "ERR_TOKEN_EXPIRED": "The API v2 authentication token expired.",
+      "ERR_IP_LIMIT": "The API v2 firmware rejected the request because the API client limit was reached.",
+      "ERR_NO_PERMISSION": "The API v3 firmware rejected the authenticated command.",
+      "ERR_UNKNOWN_API_CODE": "The API v3 firmware returned an unrecognized response code.",
+      "ERR_READ_FAILED": "The device telemetry request failed.",
+      "ERR_MINER_STATS_FAILED": "The miner statistics response was missing or invalid.",
+      "ERR_INVALID_ARG_TYPE": "A command parameter has an invalid type.",
+      "ERR_INVALID_MODE": "The requested power mode is not supported.",
+      "ERR_SET_LED_ENABLED_INVALID": "The LED enabled parameter must be boolean.",
+      "ERR_SET_POWER_MODE_INVALID": "The requested power mode is not valid for a write action.",
+      "ERR_COMMAND_FAILED": "The device command failed without a more specific error code.",
+      "ERR_POWER_PCT_NOT_SUPPORTED": "The requested power percentage is not supported by this miner or cooling type.",
+      "ERR_LOG_DOWNLOAD_RESPONSE_INVALID": "The miner returned an invalid diagnostic-log response.",
+      "ERR_LOG_DOWNLOAD_SIZE_INVALID": "The diagnostic-log size is invalid or exceeds the 64 MiB safety limit.",
+      "ERR_LOG_DOWNLOAD_INCOMPLETE": "The miner connection ended before the complete diagnostic-log archive was received.",
+      "ERR_LOG_DOWNLOAD_TIMEOUT": "The API v2 diagnostic-log download timed out.",
+      "ERR_LOG_DOWNLOAD_CONNECTION": "The API v2 diagnostic-log download connection failed or was reset.",
+      "ERR_NETWORK_CONFIG_INVALID": "The network parameter must explicitly select DHCP or provide a static IPv4 configuration.",
+      "ERR_NETWORK_ADDRESS_INVALID": "The static IP, netmask, gateway or DNS address is not a valid IPv4 address.",
+      "ERR_NETWORK_OUTCOME_UNKNOWN": "The API v2 network-setting connection failed after transmission; the miner may already be rebooting with the new address, so do not retry automatically.",
+      "ERR_HOSTNAME_INVALID": "The hostname must be 1-63 characters and contain only letters, digits and internal hyphens.",
+      "ERR_FIRMWARE_PAYLOAD_INVALID": "The firmware parameter must be an object containing serializable firmware metadata and data.",
+      "ERR_FIRMWARE_FILENAME_INVALID": "The firmware filename must be a non-empty basename without directory components.",
+      "ERR_FIRMWARE_ENCODING_INVALID": "The firmware encoding must be canonical Base64.",
+      "ERR_FIRMWARE_SIZE_INVALID": "The firmware image is empty or exceeds the configured size limit.",
+      "ERR_FIRMWARE_SHA256_INVALID": "A 64-character hexadecimal SHA-256 digest is required.",
+      "ERR_FIRMWARE_SHA256_MISMATCH": "The downloaded firmware image does not match the required SHA-256 digest.",
+      "ERR_INVALID_FIRMWARE": "The firmware image does not contain a payload matching the miner control-board platform.",
+      "ERR_FIRMWARE_READY_INVALID": "The miner did not enter the firmware-upload ready state.",
+      "ERR_FIRMWARE_UPDATE_FAILED": "The miner rejected or failed the firmware update.",
+      "ERR_FIRMWARE_UPDATE_TIMEOUT": "The firmware update request timed out before the image was transmitted.",
+      "ERR_FIRMWARE_UPDATE_CONNECTION": "The firmware update connection failed before the image was transmitted.",
+      "ERR_FIRMWARE_OUTCOME_UNKNOWN": "The firmware image was transmitted but the final result could not be confirmed. Do not retry; verify the miner version after it reconnects.",
       "E_TEMP_HIGH": "Chip temperature exceeded safe thresholds",
       "E_FAN_FAIL": "Fan RPM below required threshold",
       "E_PSU_ERR": "Power supply unit reporting error"

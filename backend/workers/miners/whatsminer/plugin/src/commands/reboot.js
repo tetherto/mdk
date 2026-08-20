@@ -1,5 +1,7 @@
 'use strict'
 
+const commandResult = require('./command-result')
+
 module.exports = async (ctx) => {
-  return ctx.device.reboot()
+  return commandResult(await ctx.device.reboot())
 }

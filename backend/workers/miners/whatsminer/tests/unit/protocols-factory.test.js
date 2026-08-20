@@ -110,14 +110,14 @@ test('protocols/factory - getHandlerClass', (t) => {
 test('protocols/factory - getDefaultPort', (t) => {
   t.is(ApiHandlerFactory.getDefaultPort('2.0.5'), 4028, 'V2 port should be 4028')
   t.is(ApiHandlerFactory.getDefaultPort('3.0.3'), 4433, 'V3 port should be 4433')
-  t.is(ApiHandlerFactory.getDefaultPort('invalid'), 4028, 'should default to V2 port for invalid')
-  t.is(ApiHandlerFactory.getDefaultPort(null), 4028, 'should default to V2 port for null')
-  t.is(ApiHandlerFactory.getDefaultPort(undefined), 4028, 'should default to V2 port for undefined')
+  t.is(ApiHandlerFactory.getDefaultPort('invalid'), 4433, 'should default to V3 port for invalid')
+  t.is(ApiHandlerFactory.getDefaultPort(null), 4433, 'should default to V3 port for null')
+  t.is(ApiHandlerFactory.getDefaultPort(undefined), 4433, 'should default to V3 port for undefined')
 })
 
 test('protocols/factory - DEFAULT_API_VERSION', (t) => {
-  t.is(DEFAULT_API_VERSION, '2.0.5', 'DEFAULT_API_VERSION should be 2.0.5')
-  t.is(DEFAULT_API_VERSION, API_VERSIONS.V2, 'DEFAULT_API_VERSION should equal API_VERSIONS.V2')
+  t.is(DEFAULT_API_VERSION, '3.0.3', 'DEFAULT_API_VERSION should be 3.0.3')
+  t.is(DEFAULT_API_VERSION, API_VERSIONS.V3, 'DEFAULT_API_VERSION should equal API_VERSIONS.V3')
 })
 
 test('protocols/factory - isVersionSupported', (t) => {
@@ -146,7 +146,7 @@ test('protocols/factory - created handlers have correct properties', (t) => {
   t.is(v2Handler.transformCommand('summary'), 'summary', 'V2 should not transform commands')
 
   t.is(v3Handler.getAuthCommand(), 'get.device.info', 'V3 auth command should be get.device.info')
-  t.is(v3Handler.transformCommand('get_version'), 'get.version', 'V3 should transform commands')
+  t.is(v3Handler.transformCommand('get.device.info'), 'get.device.info', 'V3 native commands should remain unchanged')
 })
 
 test('protocols/factory - API_VERSIONS matches handler static properties', (t) => {

@@ -3,11 +3,13 @@
 const MinerMock = require('../../../mock/miner.mock')
 const TcpTransport = require('../../../mock/transports/tcp.transport')
 const { promiseSleep } = require('@bitfinex/lib-js-util-promise')
+const zlib = require('node:zlib')
 const { decryptCommand, encryptResponse } = require('./utils')
 const md5 = require('../lib/utils/md5')
 
 const DEFAULT_KEY = 'x5JSSQzqF0lEACIGSL0Ld1'
 const SALT = '5QAHiKMb'
+const MOCK_LOG_ARCHIVE = zlib.gzipSync(Buffer.from('mock WhatsMiner diagnostic logs\n'))
 
 class WhatsminerMock extends MinerMock {
   static dir = __dirname
@@ -77,6 +79,11 @@ class WhatsminerMock extends MinerMock {
         socket.end()
         return
       }
+      if (command === 'download_logs') {
+        res.Msg.logfilelen = String(MOCK_LOG_ARCHIVE.length)
+        await this._sendDownload(socket, res, isEncrypted, delay)
+        return
+      }
       await this._send(socket, res, isEncrypted, delay)
     } catch (e) {
       await this._sendError(socket, 14, 'invalid cmd', isEncrypted, delay)
@@ -97,6 +104,12 @@ class WhatsminerMock extends MinerMock {
       ? JSON.stringify(encryptResponse(resp, this.ctx.encryptionKey))
       : JSON.stringify(resp))
     socket.destroy()
+  }
+
+  async _sendDownload (socket, response, isEncrypted, delay) {
+    if (delay) await promiseSleep(delay)
+    socket.write(isEncrypted ? encryptResponse(response, this.ctx.encryptionKey) : JSON.stringify(response))
+    socket.end(MOCK_LOG_ARCHIVE)
   }
 }
 

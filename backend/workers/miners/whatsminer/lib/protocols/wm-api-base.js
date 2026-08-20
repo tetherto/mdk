@@ -11,6 +11,7 @@ class WMApiBase {
     this.opts = opts
     this.rpc = opts.rpc
     this.password = opts.password
+    this.account = opts.account || 'super'
     this.debugError = opts.debugError || (() => {})
   }
 

@@ -1,5 +1,7 @@
 'use strict'
 
+const commandResult = require('./command-result')
+
 module.exports = async (ctx, params) => {
-  return ctx.device.setPowerMode(params.mode)
+  return commandResult(await ctx.device.setPowerMode(params.mode))
 }

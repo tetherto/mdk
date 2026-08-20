@@ -1,7 +1,7 @@
 'use strict'
 
 const test = require('brittle')
-const Whatsminer = require('../../lib/whatsminer')
+const Whatsminer = require('../../lib/whatsminer-api-v2-client')
 const { STATUS, POWER_MODE } = require('../../../../../core/mdk').constants
 
 function makeWhatsminer (opts = {}) {
@@ -261,6 +261,20 @@ test('getMinerStats - parses legacy v2 SUMMARY response unchanged', async (t) =>
   t.is(stats.power, 3400)
 })
 
+test('getMinerStats - uses chip temperature fallback when summary omits Temperature', async (t) => {
+  const miner = makeWhatsminer()
+  miner._requestReadEndpoint = async () => ({
+    SUMMARY: [{
+      Elapsed: 100,
+      'MHS av': 295000000,
+      'Chip Temp Avg': 82.5
+    }]
+  })
+
+  const stats = await miner.getMinerStats()
+  t.is(stats.temperature, 82.5)
+})
+
 test('getMinerStats - throws ERR_MINER_STATS_FAILED when summary missing', async (t) => {
   const miner = makeWhatsminer()
   miner.rpc.request = async () => JSON.stringify({ STATUS: 'E', Code: 14, Msg: 'invalid cmd' })
@@ -312,15 +326,13 @@ test('init - resolves V2 handler from port 4028', async (t) => {
   t.is(miner.protocolHandler.constructor.name, 'WMApiV2')
 })
 
-test('init - resolves V3 handler from port 4433', async (t) => {
-  const miner = makeWhatsminer({ port: 4433 })
-  await miner.init()
-  t.is(miner.apiVersion, '3.0.3')
-  t.is(miner.protocolHandler.constructor.name, 'WMApiV3')
+test('constructor - rejects API v3 because it has a separate plain client', (t) => {
+  t.exception(() => makeWhatsminer({ port: 4433, apiVersion: '3.0.3' }), /ERR_USE_API_V3_CLIENT/)
 })
 
-test('init - honors explicit apiVersion over port', async (t) => {
-  const miner = makeWhatsminer({ port: 4028, apiVersion: '3.0.3' })
+test('constructor - port alone does not turn the legacy client into API v3', async (t) => {
+  const miner = makeWhatsminer({ port: 4433 })
   await miner.init()
-  t.is(miner.protocolHandler.constructor.name, 'WMApiV3')
+  t.is(miner.apiVersion, '2.0.5')
+  t.is(miner.protocolHandler.constructor.name, 'WMApiV2')
 })

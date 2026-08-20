@@ -1,8 +1,11 @@
 # @tetherto/mdk-worker-whatsminer
 
-MDK Worker for MicroBT Whatsminer Bitcoin miners. Supports the M30SP, M30SPP, M53S, M56S, and M63 model families.
+MDK Worker for MicroBT Whatsminer Bitcoin miners. Supports API v2 on port `4028` and API v3 on port `4433`.
 
-## Supported Models
+## Runtime Model Profiles
+
+Compatibility is determined by the API exposed by the installed firmware, not by a hard-coded model allowlist.
+The following `model` values select the existing runtime profile and cooling-specific behavior:
 
 | `model` value | Model | Notes |
 |--------|-------|-------|
@@ -10,7 +13,7 @@ MDK Worker for MicroBT Whatsminer Bitcoin miners. Supports the M30SP, M30SPP, M5
 | `m30spp` | M30S++ | — |
 | `m53s` | M53S | — |
 | `m56s` | M56S | Used in examples |
-| `m63` | M63 | Extra `setUpfreqSpeed` command |
+| `m63` | M63 | — |
 
 ## Install
 
@@ -39,7 +42,7 @@ const worker = await startWhatsminerWorker({
     },
     opts: {
       address: '192.168.1.10',
-      port: 4028,             // API v2 default (4433 for v3); omit to auto-detect
+      // Omit port to auto-detect; API v3 on 4433 is preferred
       password: 'admin'
     }
   }]
@@ -57,19 +60,16 @@ Whatsminer devices speak one of two API generations. The Worker auto-detects whi
 
 | API version | Default port | Auth command |
 | --- | --- | --- |
-| v2 (default) | `4028` | `get_token` |
-| v3 | `4433` | `get.device.info` |
+| v2 (legacy) | `4028` | `get_token` |
+| v3 (default) | `4433` | `get.device.info` |
 
-`opts.port === 4028` or `4433` short-circuits detection to v2 or v3 respectively; any other port probes both
-auth commands and falls back to v2. Pass `opts.apiVersion` (e.g. `'3.0.3'`) to skip detection entirely.
-
-Callers always use v2-style command names (`get_miner_info`, underscore notation); against a v3 device the
-Worker translates them to v3's dot notation (`get.miner.info`) internally, and back-translates the response
-shape (`{code, when, msg, desc}` → the v2-compatible shape).
+Omit `opts.port` to probe API v3 first and fall back to API v2. Ports `4433` and `4028` select the corresponding
+protocol directly. Pass `opts.apiVersion` to skip detection.
 
 Authentication differs by version: v2 uses a salted MD5-crypt challenge-response token; v3 generates a fresh
-SHA-256-derived token per command. Both encrypt write payloads with AES-256 (ECB mode, key derived from the
-device password).
+SHA-256-derived token per command. The framed protocol keeps the outer command in plaintext and encrypts only
+sensitive parameters (`set.miner.pools` and `set.user.change_passwd`) with AES-256-ECB. API v3 write commands
+are sent once and are never automatically retried because a timeout leaves the physical outcome unknown.
 
 ## Telemetry
 
@@ -85,11 +85,20 @@ Live metrics collected on each poll cycle:
 | `fan_speed_out` | RPM | Outlet fan speed |
 | `status` | — | Device operational status |
 | `uptime` | s | Seconds since last boot |
-| `accepted_shares` | — | Total accepted shares |
-| `rejected_shares` | — | Total rejected shares |
+| `accepted_shares` | — | Total accepted shares (`0` on `api-v3`, where firmware does not expose the count) |
+| `rejected_shares` | — | Total rejected shares (`0` on `api-v3`, where firmware does not expose the count) |
 | `pool_url` | — | Active pool URL |
 | `efficiency` | W/TH | Power efficiency ratio |
 | `power_mode` | — | Current power mode (e.g. `normal`, `low`, `high`) |
+| `api_version` | — | Detected API generation/version |
+| `firmware_info` | — | Control-board, platform, firmware and API versions |
+| `device_info` | — | Miner identity and network information, without credentials |
+| `psu_info` | — | PSU identity, firmware, fan and electrical input information |
+| `miner_stats` | — | Normalized performance, power, thermal and tuning statistics |
+| `hashboards` | — | Per-board hashrate, frequency, chips and temperatures |
+| `pools` | — | Pool endpoints and runtime status, without passwords |
+| `errors` | — | Active device error codes and messages |
+| `snap` | — | Full normalized stats and configuration snapshot |
 
 ## Commands
 
@@ -98,9 +107,12 @@ Live metrics collected on each poll cycle:
 | `reboot` | — | Takes 2–3 min to resume; max once per 5 min |
 | `setPowerMode` | `mode: string` | e.g. `normal`, `low`, `high`, `sleep` |
 | `setLED` | `enabled: boolean` | Physical LED blink |
-| `setupPools` | `pools: object` | Pool URL, worker, password |
-| `setPowerPct` | `pct: number (0–100)` | Fine-grained power control |
-| `downloadLogs` | — | Pull raw diagnostic logs from hardware |
+| `setupPools` | `pools: object` | Pool URL, worker and password; the password is only sent to the miner |
+| `setPowerPct` | `pct: number (0–200)` | Above 100% is accepted only for supported hydro/immersion models |
+| `downloadLogs` | — | Returns the `.tgz` archive as Base64 with size and SHA-256 metadata |
+| `setNetwork` | `network: object` | Select DHCP or set static IPv4 details; the miner reboots after applying |
+| `setHostname` | `hostname: string` | Set a 1–63 character controller hostname |
+| `updateFirmware` | `firmware: object` | Verify and upload Base64 firmware bytes; requires filename, size and SHA-256 metadata; max 64 MiB |
 
 Plus the standard device management commands: `registerThing`, `updateThing`, `forgetThings`, `saveSettings`, `saveComment`, `editComment`, `deleteComment`.
 

@@ -15,6 +15,9 @@ const WRITE_ACTIONS = [
   ['setLED', 1],
   ['setupPools', 1],
   ['setPowerPct', 1],
+  ['setNetwork', 1],
+  ['setHostname', 1],
+  ['updateFirmware', 3],
   ['registerThing', 1],
   ['updateThing', 1],
   ['forgetThings', 1]
@@ -44,12 +47,7 @@ async function startWhatsminerWorker (opts) {
   const deviceType = `miner-wm-${opts.model}`
   const conf = opts.conf || {}
 
-  // M63 is the only model with extra spec tags and write actions, mirroring
-  // its legacy type manager (getSpecTags + setUpfreqSpeed whitelist).
   const specTags = opts.model === 'm63' ? ['miner', deviceType] : ['miner']
-  const writeActions = opts.model === 'm63'
-    ? [...WRITE_ACTIONS, ['setUpfreqSpeed', 2]]
-    : WRITE_ACTIONS
 
   const infra = await createWorkerInfra({
     storeDir: opts.storeDir,
@@ -62,7 +60,7 @@ async function startWhatsminerWorker (opts) {
     thingConf: { allowDuplicateIPs: conf.allowDuplicateIPs, ...conf.thing },
     provisioningConf: { pools: conf.pools },
     seedDevices: opts.seedDevices,
-    writeActions
+    writeActions: WRITE_ACTIONS
   })
   const { services, store, seeded, thingConf } = infra
   const { provisioning } = services

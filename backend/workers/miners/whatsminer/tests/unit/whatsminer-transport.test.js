@@ -2,7 +2,7 @@
 
 const test = require('brittle')
 const CryptoJS = require('crypto-js')
-const Whatsminer = require('../../lib/whatsminer')
+const Whatsminer = require('../../lib/whatsminer-api-v2-client')
 const { STATUS } = require('../../../../../core/mdk').constants
 
 const TOKEN = { sign: 'test-sign', key: 'test-key' }
@@ -144,6 +144,16 @@ test('_requestWriteEndpoint - exhausts retries on persistent code 135', async (t
   t.is(await miner._requestWriteEndpoint('power_on'), null)
 })
 
+test('_requestWriteEndpoint - retry=false sends a network write only once', async (t) => {
+  const { miner, requests } = makeWhatsminer([
+    JSON.stringify({ Code: 45, Msg: 'Permission denied' })
+  ])
+  const refreshes = await stubToken(miner)
+  await t.exception(miner._requestWriteEndpoint('net_config', { param: 'dhcp' }, true, false), /ERR_PERMISSION_DENIED/)
+  t.is(requests.length, 1)
+  t.is(refreshes(), 1)
+})
+
 test('_requestWriteFirmwareEndpoint - encrypts command and targets miner platform', async (t) => {
   const { miner } = makeWhatsminer()
   await stubToken(miner)
@@ -165,10 +175,27 @@ test('_requestWriteFirmwareEndpoint - encrypts command and targets miner platfor
 test('getDevices / getDevicesInfo / getErrors / getMinerInfo - tolerate empty responses', async (t) => {
   const { miner } = makeWhatsminer()
   miner._requestReadEndpoint = async () => ({})
-  t.is(await miner.getDevices(), undefined)
-  t.is(await miner.getDevicesInfo(), undefined)
-  t.is(await miner.getErrors(), undefined)
+  t.alike(await miner.getDevices(), [])
+  t.alike(await miner.getDevicesInfo(), [])
+  t.alike(await miner.getErrors(), [])
   t.is(await miner.getMinerInfo(), undefined)
+})
+
+test('getPSUInformation - accepts vendor and legacy vender spellings', async (t) => {
+  const { miner } = makeWhatsminer()
+  miner._requestReadEndpoint = async () => ({
+    Msg: {
+      name: 'P221B',
+      hw_version: 'HW',
+      sw_version: 'SW',
+      model: 'MODEL',
+      vendor: '1'
+    }
+  })
+  t.is((await miner.getPSUInformation()).vendor, '1')
+
+  miner._requestReadEndpoint = async () => ({ Msg: { vender: 'legacy' } })
+  t.is((await miner.getPSUInformation()).vendor, 'legacy')
 })
 
 function stubSnapReads (miner, { errors, minerInfo }) {
@@ -242,4 +269,33 @@ test('_prepSnap - errored miner snapshot includes errors and upfreq speed', asyn
   t.is(snap.stats.miner_specific.upfreq_speed, 5)
   t.is(snap.config.led_status, true)
   t.alike(miner._errorLog, errors)
+})
+
+test('_prepSnap - uses summary chip temperature and legacy device PCB temperature', async (t) => {
+  const { miner } = makeWhatsminer()
+  stubSnapReads(miner, { errors: [], minerInfo: { ...BASE_MINER_INFO } })
+  miner.getMinerStats = async () => ({
+    elapsed: '100',
+    mhs_av: '295000000',
+    mhs_5s: '294000000',
+    mhs_1m: '295000000',
+    mhs_5m: '296000000',
+    mhs_15m: '293000000',
+    chip_temp_max: '87.5',
+    chip_temp_avg: '81.7',
+    env_temp: '33',
+    power: '3300',
+    power_rate: '30',
+    power_mode: 'Normal'
+  })
+  miner.getDevices = async () => [{ temperature: '55.8' }, { temperature: '56.2' }]
+
+  const snap = await miner._prepSnap()
+  t.is(snap.stats.temperature_c.max, 87.5)
+  t.is(snap.stats.temperature_c.avg, 81.7)
+  t.alike(snap.stats.temperature_c.chips, [])
+  t.alike(snap.stats.temperature_c.pcb, [
+    { index: 0, current: 55.8 },
+    { index: 1, current: 56.2 }
+  ])
 })

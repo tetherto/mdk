@@ -1,7 +1,7 @@
 'use strict'
 
 const test = require('brittle')
-const Whatsminer = require('../../lib/whatsminer')
+const Whatsminer = require('../../lib/whatsminer-api-v2-client')
 
 function makeWhatsminer (opts = {}) {
   const mockRpc = { request: async () => '{}', stop: async () => {} }
@@ -24,8 +24,8 @@ function makeWhatsminer (opts = {}) {
 // stubs _requestWriteEndpoint, records calls, resolves per-command results
 function stubWrite (miner, results = {}) {
   const calls = []
-  miner._requestWriteEndpoint = async (cmd, params, json) => {
-    calls.push({ cmd, params, json })
+  miner._requestWriteEndpoint = async (cmd, params, json, retry) => {
+    calls.push({ cmd, params, json, retry })
     const res = results[cmd] !== undefined ? results[cmd] : { Code: 131 }
     if (res instanceof Error) throw res
     return res
@@ -232,16 +232,6 @@ test('setPowerLimit - stringifies power, success and failure', async (t) => {
   t.is((await miner.setPowerLimit(3300)).success, false)
 })
 
-test('setUpfreqSpeed - stringifies speed, success and failure', async (t) => {
-  const miner = makeWhatsminer()
-  const calls = stubWrite(miner)
-  t.alike(await miner.setUpfreqSpeed(5), { success: true })
-  t.alike(calls[0].params, { upfreq_speed: '5' })
-
-  stubWriteFail(miner)
-  t.is((await miner.setUpfreqSpeed(5)).success, false)
-})
-
 test('setPowerMode - power_on OK triggers set_<mode>_power', async (t) => {
   const miner = makeWhatsminer()
   const calls = stubWrite(miner)
@@ -390,8 +380,15 @@ test('getPools - returns empty array when device sends no POOLS', async (t) => {
 
 test('updateFirmware - success wraps response, failure returns error_msg', async (t) => {
   const miner = makeWhatsminer()
-  miner._requestWriteFirmwareEndpoint = async () => ({ Code: 131, Msg: 'ok' })
-  t.alike(await miner.updateFirmware('/tmp/fw.bin'), { data: { Code: 131, Msg: 'ok' } })
+  const content = Buffer.from('firmware')
+  miner._requestWriteFirmwareEndpoint = async () => ({
+    response: { Code: 131, Msg: 'ok' },
+    firmware: { content, size: content.length }
+  })
+  const result = await miner.updateFirmware(content)
+  t.is(result.success, true)
+  t.is(result.size, content.length)
+  t.is(result.message, 'ok')
 
   miner._requestWriteFirmwareEndpoint = async () => { throw new Error('ERR_INVALID_FIRMWARE') }
   const res = await miner.updateFirmware('/tmp/fw.bin')
@@ -405,6 +402,7 @@ test('setNetworkInformation - dhcp mode', async (t) => {
   t.alike(await miner.setNetworkInformation({ dhcp: true }), { success: true })
   t.is(calls[0].cmd, 'net_config')
   t.alike(calls[0].params, { param: 'dhcp' })
+  t.is(calls[0].retry, false)
 })
 
 test('setNetworkInformation - static mode', async (t) => {
@@ -431,4 +429,8 @@ test('setNetworkInformation - failure returns error_msg', async (t) => {
   const res = await miner.setNetworkInformation({ dhcp: true })
   t.is(res.success, false)
   t.is(res.error_msg, 'ERR_WRITE_FAILED')
+
+  miner._requestWriteEndpoint = async () => { throw new Error('socket closed') }
+  const unknown = await miner.setNetworkInformation({ dhcp: true })
+  t.alike(unknown, { success: false, error_msg: 'ERR_NETWORK_OUTCOME_UNKNOWN' })
 })

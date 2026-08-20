@@ -25,7 +25,7 @@ const { plugin, startWhatsminerWorker, Whatsminer } = require('@tetherto/mdk-wor
 `startWhatsminerWorker(opts)` boots a `WorkerRuntime` host for one or more Whatsminer devices of the same `model`; it
 is the entry point every `run` invocation below uses. `plugin` is the raw Worker Plugin object
 (`{ contract, dir, connect, disconnect }`) for hosts that construct `WorkerRuntime` themselves. `Whatsminer` is the
-internal device-driver class used by `plugin.connect()` — most integrations never touch it directly.
+backward-compatible API v2 device-driver export — most integrations never touch it directly.
 
 ## Run a mock device
 
@@ -97,11 +97,10 @@ await kernel.registerWorker(worker.runtime.getPublicKey())
 | `kernelTopic` | string | Optional | DHT discovery topic (hex); omit to register directly with `kernel.registerWorker()`. |
 | `seedDevices` | array | Optional | `{ id?, info, opts }` entries applied once, only when the store is empty. |
 
-Each `seedDevices`/`registerThing` entry's `opts` shape: `address` (string, required, device IP or hostname), `port`
-(number, required — `4028` selects API v2, `4433` selects API v3, any other value probes both and falls back to
-v2; mocks use the bound port), `apiVersion` (string, optional, e.g. `'3.0.3'`, skips auto-detection when set),
-`password` (string, required, Whatsminer API password; v2 and v3 each derive a session token from it
-differently; there is no separate username). `info` is free-form metadata stored alongside the device; common
+Each `seedDevices`/`registerThing` entry's `opts` shape: `address` (string, required), `port` (number, optional;
+omit to auto-detect API v3 on `4433` and then API v2 on `4028`), `apiVersion` (string, optional override),
+`password` (string, required), and `account` (string, optional for API v3). Ports `4433` and `4028` select the
+corresponding protocol directly. `info` is free-form metadata stored alongside the device; common
 fields read by the dashboard are `container`, `serialNum`, `macAddress`, `pos`, and `site`. Nothing in `info`
 affects Worker behavior.
 
@@ -143,7 +142,7 @@ For a model other than M56S, run that model's mock directly (`npm run mock <type
 
 ## Capabilities
 
-The full telemetry list (real-time/average hashrate, power, temperature, fan speeds, efficiency, accepted/rejected shares, ...) and command list (`reboot`, `setPowerMode`, `setLED`, `setupPools`, `setPowerPct`, ...) is in [`mdk-contract.json`](plugin/mdk-contract.json). Per-model alert thresholds live in [`config/base.thing.json.example`](config/base.thing.json.example) under the `alerts.<rack-type>` blocks.
+The full telemetry list (real-time/average hashrate, power, temperature, fan speeds, efficiency, accepted/rejected shares, ...) and command list (`reboot`, `setPowerMode`, `setLED`, `setupPools`, `setPowerPct`, `downloadLogs`, `setNetwork`, `setHostname`, `updateFirmware`, ...) is in [`mdk-contract.json`](plugin/mdk-contract.json). Firmware is supplied directly as a Base64 object with `filename`, `encoding`, `size`, `sha256`, and `data`; the Worker never fetches firmware from a URL. Per-model alert thresholds live in [`config/base.thing.json.example`](config/base.thing.json.example) under the `alerts.<rack-type>` blocks.
 
 ## Next steps
 

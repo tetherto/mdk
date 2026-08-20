@@ -50,6 +50,13 @@ test('readFirmware - extracts the package matching the chip', (t) => {
   t.is(fw.content.toString(), 'BBBBCCCC')
 })
 
+test('readFirmware - accepts an in-memory Buffer', (t) => {
+  const content = Buffer.from('standalone firmware')
+  const fw = readFirmware('h616', content)
+  t.is(fw.size, content.length)
+  t.ok(fw.content.equals(content))
+})
+
 test('readFirmware - full-width chip name without NUL terminator', (t) => {
   const chip = 'a'.repeat(PI_SIZE)
   const payload = Buffer.from('PAYLOAD1')

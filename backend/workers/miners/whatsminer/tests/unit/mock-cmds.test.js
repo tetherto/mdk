@@ -6,6 +6,7 @@ const setLed = require('../../mock/cmds/set_led')
 const setPowerPctV2 = require('../../mock/cmds/set_power_pct_v2')
 const updatePools = require('../../mock/cmds/update_pools')
 const setHostname = require('../../mock/cmds/set_hostname')
+const downloadLogs = require('../../mock/cmds/download_logs')
 const libUtils = require('../../mock/utils')
 const defaultState = require('../../mock/initial_states/default')
 const m56sState = require('../../mock/initial_states/m56s')
@@ -83,6 +84,12 @@ test('set_hostname - updates hostname, invalid args rejected', (t) => {
   t.is(state.miner_info.hostname, 'rig-9')
 
   t.is(setHostname({}, state, {}).Code, 14)
+})
+
+test('download_logs - returns the legacy log-size response shape', (t) => {
+  const response = downloadLogs()
+  t.is(response.Code, 131)
+  t.alike(response.Msg, { logfilelen: '0' })
 })
 
 test('initial_states/default - error flag injects error codes, cleanup restores', (t) => {

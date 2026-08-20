@@ -5,8 +5,6 @@ const {
   API_VERSIONS,
   DEFAULT_API_VERSION,
   API_DEFAULTS,
-  COMMAND_MAP_V3,
-  COMMAND_MAP_V2,
   RESPONSE_CODES
 } = require('../../lib/protocols/constants')
 
@@ -18,8 +16,8 @@ test('protocols/constants - API_VERSIONS exports', (t) => {
 
 test('protocols/constants - DEFAULT_API_VERSION', (t) => {
   t.ok(DEFAULT_API_VERSION, 'should export DEFAULT_API_VERSION')
-  t.is(DEFAULT_API_VERSION, '2.0.5', 'DEFAULT_API_VERSION should be 2.0.5')
-  t.is(DEFAULT_API_VERSION, API_VERSIONS.V2, 'DEFAULT_API_VERSION should equal API_VERSIONS.V2')
+  t.is(DEFAULT_API_VERSION, '3.0.3', 'DEFAULT_API_VERSION should be 3.0.3')
+  t.is(DEFAULT_API_VERSION, API_VERSIONS.V3, 'DEFAULT_API_VERSION should equal API_VERSIONS.V3')
 })
 
 test('protocols/constants - API_DEFAULTS structure', (t) => {
@@ -38,77 +36,6 @@ test('protocols/constants - V3 defaults', (t) => {
   const v3 = API_DEFAULTS['3.0.3']
   t.is(v3.port, 4433, 'V3 default port should be 4433')
   t.is(v3.authCommand, 'get.device.info', 'V3 auth command should be get.device.info')
-})
-
-test('protocols/constants - COMMAND_MAP_V3 structure', (t) => {
-  t.ok(COMMAND_MAP_V3, 'should export COMMAND_MAP_V3')
-  t.is(typeof COMMAND_MAP_V3, 'object', 'should be an object')
-})
-
-test('protocols/constants - COMMAND_MAP_V3 auth commands', (t) => {
-  t.is(COMMAND_MAP_V3.get_token, 'get.device.info', 'get_token should map to get.device.info')
-})
-
-test('protocols/constants - COMMAND_MAP_V3 read commands', (t) => {
-  t.is(COMMAND_MAP_V3.get_version, 'get.version', 'get_version should map correctly')
-  t.is(COMMAND_MAP_V3.get_miner_info, 'get.miner.info', 'get_miner_info should map correctly')
-  t.is(COMMAND_MAP_V3.get_error_code, 'get.error.code', 'get_error_code should map correctly')
-  t.is(COMMAND_MAP_V3.get_psu, 'get.psu', 'get_psu should map correctly')
-  t.is(COMMAND_MAP_V3.summary, 'get.miner.status', 'summary should map to get.miner.status')
-  t.is(COMMAND_MAP_V3.pools, 'get.miner.status', 'pools should map to get.miner.status')
-  t.is(COMMAND_MAP_V3.edevs, 'get.miner.status', 'edevs should map to get.miner.status')
-  t.is(COMMAND_MAP_V3.devdetails, 'get.miner.status', 'devdetails should map to get.miner.status')
-})
-
-test('protocols/constants - COMMAND_MAP_V3 write commands', (t) => {
-  t.is(COMMAND_MAP_V3.update_pools, 'set.miner.pools', 'update_pools should map correctly')
-  t.is(COMMAND_MAP_V3.update_pwd, 'set.miner.passwd', 'update_pwd should map correctly')
-  t.is(COMMAND_MAP_V3.reboot, 'set.system.reboot', 'reboot should map correctly')
-  t.is(COMMAND_MAP_V3.power_on, 'set.miner.service', 'power_on should map correctly')
-  t.is(COMMAND_MAP_V3.power_off, 'set.miner.service', 'power_off should map correctly')
-  t.is(COMMAND_MAP_V3.restart_btminer, 'set.miner.service', 'restart_btminer should map correctly')
-  t.is(COMMAND_MAP_V3.factory_reset, 'set.system.factory_reset', 'factory_reset should map correctly')
-})
-
-test('protocols/constants - COMMAND_MAP_V3 power mode commands', (t) => {
-  t.is(COMMAND_MAP_V3.set_low_power, 'set.miner.power_mode', 'set_low_power should map correctly')
-  t.is(COMMAND_MAP_V3.set_normal_power, 'set.miner.power_mode', 'set_normal_power should map correctly')
-  t.is(COMMAND_MAP_V3.set_high_power, 'set.miner.power_mode', 'set_high_power should map correctly')
-  t.is(COMMAND_MAP_V3.set_power_pct_v2, 'set.miner.power_percent', 'set_power_pct_v2 should map correctly')
-})
-
-test('protocols/constants - COMMAND_MAP_V3 config commands', (t) => {
-  t.is(COMMAND_MAP_V3.set_led, 'set.system.led', 'set_led should map correctly')
-  t.is(COMMAND_MAP_V3.set_hostname, 'set.system.hostname', 'set_hostname should map correctly')
-  t.is(COMMAND_MAP_V3.set_zone, 'set.system.timezone', 'set_zone should map correctly')
-  t.is(COMMAND_MAP_V3.net_config, 'set.network.config', 'net_config should map correctly')
-})
-
-test('protocols/constants - COMMAND_MAP_V2 reverse mapping', (t) => {
-  t.ok(COMMAND_MAP_V2, 'should export COMMAND_MAP_V2')
-  t.is(COMMAND_MAP_V2['get.device.info'], 'get_token', 'get.device.info should reverse map to get_token')
-  t.is(COMMAND_MAP_V2['get.version'], 'get_version', 'get.version should reverse map correctly')
-  t.is(COMMAND_MAP_V2['set.miner.pools'], 'update_pools', 'set.miner.pools should reverse map correctly')
-})
-
-test('protocols/constants - COMMAND_MAP_V2 bidirectional consistency', (t) => {
-  // Several v2 commands map many-to-one onto a v3 command; the reverse map keeps one.
-
-  const multiMappedV3Commands = [
-    'get.miner.status',
-    'set.miner.service',
-    'set.miner.power_mode',
-    'set.miner.fastboot',
-    'set.miner.web_pools'
-  ]
-
-  for (const [v2Cmd, v3Cmd] of Object.entries(COMMAND_MAP_V3)) {
-    if (multiMappedV3Commands.includes(v3Cmd)) {
-      t.ok(COMMAND_MAP_V2[v3Cmd], `${v3Cmd} should have a reverse mapping`)
-    } else {
-      t.is(COMMAND_MAP_V2[v3Cmd], v2Cmd, `${v3Cmd} should reverse map to ${v2Cmd}`)
-    }
-  }
 })
 
 test('protocols/constants - RESPONSE_CODES', (t) => {

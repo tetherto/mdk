@@ -132,6 +132,26 @@ class WMApiV2 extends WMApiBase {
     return null
   }
 
+  async requestWriteOnce (command, params = {}, json = true) {
+    if (this.token === undefined) await this.refreshToken()
+
+    const { sign, key } = this.token
+    const cmd = JSON.stringify({ token: sign, cmd: command, ...params })
+    const data = CryptoJS.AES.encrypt(cmd, CryptoJS.SHA256(key), { mode: CryptoJS.mode.ECB }).toString()
+    const res = await this._requestMiner({ enc: 1, data }, json)
+
+    if (res.length === 0) return null
+    if (!res.enc) throw new Error(this._getAPICodeMsg(res))
+
+    const decrypted = CryptoJS.AES.decrypt(res.enc, CryptoJS.SHA256(key), { mode: CryptoJS.mode.ECB }).toString()
+    const response = JSON.parse(hex2a(decrypted))
+    if (response.Code === RESPONSE_CODES.TOKEN_EXPIRED) {
+      this.token = undefined
+      throw new Error('ERR_TOKEN_EXPIRED')
+    }
+    return response
+  }
+
   async _requestMiner (command, json = true) {
     const response = await this.rpc.request(JSON.stringify(command))
     return json ? JSON.parse(response) : response

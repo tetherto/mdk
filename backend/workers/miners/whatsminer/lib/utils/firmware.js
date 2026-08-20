@@ -16,8 +16,10 @@ const sliceSubArray = (buf, s, e) => {
 
 function _readCombineFirmwareToBuffer (fw) {
   const ret = []
-  const fileSize = fs.statSync(fw).size
-  const headerBuf = fs.readFileSync(fw, null, IMAGE_HEADER_SIZE)
+  const content = Buffer.isBuffer(fw) ? fw : fs.readFileSync(fw)
+  const fileSize = content.length
+  if (fileSize < IMAGE_HEADER_SIZE) return ret
+  const headerBuf = content.subarray(0, IMAGE_HEADER_SIZE)
   const ihDatasize = headerBuf.readUInt32LE(4 * 4)
   const ihPackagecount = headerBuf.readUInt32LE(5 * 4)
   const ihPackageinfo = headerBuf.subarray(6 * 4, 6 * 4 + MAX_PACKAGE_COUNT * PACKAGE_INFO_SIZE)
@@ -42,6 +44,7 @@ function _readCombineFirmwareToBuffer (fw) {
 }
 
 function readFirmware (chip, fw) {
+  const content = Buffer.isBuffer(fw) ? fw : fs.readFileSync(fw)
   const ret = _readCombineFirmwareToBuffer(fw)
   if (ret.length > 0) {
     const correctUpdate = ret.find((item) => {
@@ -49,7 +52,7 @@ function readFirmware (chip, fw) {
     })
     if (correctUpdate) {
       return {
-        content: fs.readFileSync(fw).subarray(correctUpdate.offset, correctUpdate.offset + correctUpdate.size),
+        content: content.subarray(correctUpdate.offset, correctUpdate.offset + correctUpdate.size),
         size: correctUpdate.size
       }
     } else {
@@ -57,8 +60,8 @@ function readFirmware (chip, fw) {
     }
   } else {
     return {
-      content: fs.readFileSync(fw),
-      size: fs.statSync(fw).size
+      content,
+      size: content.length
     }
   }
 }

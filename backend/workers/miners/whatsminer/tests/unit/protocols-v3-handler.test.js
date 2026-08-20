@@ -2,7 +2,7 @@
 
 const test = require('brittle')
 const WMApiV3 = require('../../lib/protocols/wm-api-v3')
-const { API_VERSIONS, COMMAND_MAP_V3 } = require('../../lib/protocols/constants')
+const { API_VERSIONS } = require('../../lib/protocols/constants')
 
 const createMockRpc = (responses) => {
   let callIndex = 0
@@ -39,44 +39,10 @@ test('protocols/v3-handler - getAuthCommand', (t) => {
   t.is(handler.getAuthCommand(), 'get.device.info', 'should return get.device.info')
 })
 
-test('protocols/v3-handler - transformCommand basic', (t) => {
+test('protocols/v3-handler - accepts native API v3 commands unchanged', (t) => {
   const handler = new WMApiV3({ rpc: {}, password: 'super' })
 
-  t.is(handler.transformCommand('get_token'), 'get.device.info', 'get_token should map to get.device.info')
-  t.is(handler.transformCommand('get_version'), 'get.version', 'get_version should map correctly')
-  t.is(handler.transformCommand('summary'), 'get.miner.status', 'summary should map to get.miner.status')
-})
-
-test('protocols/v3-handler - transformCommand all mappings', (t) => {
-  const handler = new WMApiV3({ rpc: {}, password: 'super' })
-
-  for (const [v2Cmd, v3Cmd] of Object.entries(COMMAND_MAP_V3)) {
-    t.is(handler.transformCommand(v2Cmd), v3Cmd, `${v2Cmd} should map to ${v3Cmd}`)
-  }
-})
-
-test('protocols/v3-handler - transformCommand unknown returns unchanged', (t) => {
-  const handler = new WMApiV3({ rpc: {}, password: 'super' })
-
-  t.is(handler.transformCommand('unknown_cmd'), 'unknown_cmd', 'unknown command should remain unchanged')
   t.is(handler.transformCommand('custom.command'), 'custom.command', 'dot notation should remain unchanged')
-})
-
-test('protocols/v3-handler - getStatusParam', (t) => {
-  const handler = new WMApiV3({ rpc: {}, password: 'super' })
-
-  t.is(handler.getStatusParam('summary'), 'summary', 'summary should return summary param')
-  t.is(handler.getStatusParam('pools'), 'pools', 'pools should return pools param')
-  t.is(handler.getStatusParam('edevs'), 'edevs', 'edevs should return edevs param')
-  t.is(handler.getStatusParam('devdetails'), 'devdetails', 'devdetails should return devdetails param')
-  t.is(handler.getStatusParam('unknown'), undefined, 'unknown command should return undefined')
-})
-
-test('protocols/v3-handler - parseResponse returns unchanged', (t) => {
-  const handler = new WMApiV3({ rpc: {}, password: 'super' })
-
-  const response = { Code: 131, Msg: { data: 'test' } }
-  t.alike(handler.parseResponse(response, 'cmd'), response, 'should return response unchanged')
 })
 
 test('protocols/v3-handler - authenticate success with V3 format', async (t) => {
@@ -164,14 +130,15 @@ test('protocols/v3-handler - authenticate fail response', async (t) => {
     await handler.authenticate()
     t.fail('should throw error')
   } catch (error) {
-    t.is(error.message, 'ERR_AUTH_FAILED_-1', 'should throw auth failed error')
+    t.is(error.message, 'ERR_AUTH_FAILED', 'should throw stable auth failed error')
   }
 })
 
 test('protocols/v3-handler - requestRead success', async (t) => {
   const mockRpc = createMockRpc([{
-    Code: 131,
-    Msg: { api_ver: '3.0.3' }
+    code: 0,
+    msg: { api: '3.0.3' },
+    desc: 'get.device.info'
   }])
 
   const handler = new WMApiV3({
@@ -179,10 +146,10 @@ test('protocols/v3-handler - requestRead success', async (t) => {
     password: 'super'
   })
 
-  const response = await handler.requestRead('get.version')
+  const response = await handler.requestRead('get.device.info')
   t.ok(response, 'should return response')
-  t.is(response.Code, 131, 'should have correct code')
-  t.is(response.Msg.api_ver, '3.0.3', 'should have correct data')
+  t.is(response.code, 0, 'should have correct code')
+  t.is(response.msg.api, '3.0.3', 'should have correct data')
 })
 
 test('protocols/v3-handler - requestRead with params', async (t) => {
@@ -190,7 +157,7 @@ test('protocols/v3-handler - requestRead with params', async (t) => {
   const mockRpc = {
     request: async (cmd) => {
       capturedCmd = JSON.parse(cmd)
-      return JSON.stringify({ Code: 131, Msg: {} })
+      return JSON.stringify({ code: 0, msg: {}, desc: 'test.cmd' })
     }
   }
 
@@ -217,7 +184,7 @@ test('protocols/v3-handler - requestRead error', async (t) => {
   })
 
   try {
-    await handler.requestRead('get.version')
+    await handler.requestRead('get.device.info')
     t.fail('should throw error')
   } catch (error) {
     t.is(error.message, 'ERR_READ_FAILED', 'should throw read failed error')
@@ -266,13 +233,7 @@ test('protocols/v3-handler - _getAPICodeMsg V3 format', (t) => {
   t.is(handler._getAPICodeMsg({ code: -2 }), 'ERR_INVALID_CMD', 'should return INVALID_CMD for V3 code -2')
   t.is(handler._getAPICodeMsg({ code: -4 }), 'ERR_NO_PERMISSION', 'should return NO_PERMISSION for V3 code -4')
 
-  t.is(handler._getAPICodeMsg({ Code: 14 }), 'ERR_INVALID_CMD', 'should return correct message for V2 14')
-  t.is(handler._getAPICodeMsg({ Code: 23 }), 'ERR_JSON_CMD', 'should return correct message for V2 23')
-  t.is(handler._getAPICodeMsg({ Code: 45 }), 'ERR_PERMISSION_DENIED', 'should return correct message for V2 45')
-  t.is(handler._getAPICodeMsg({ Code: 131 }), 'OK', 'should return correct message for V2 131')
-  t.is(handler._getAPICodeMsg({ Code: 135 }), 'ERR_TOKEN_EXPIRED', 'should return correct message for V2 135')
-  t.is(handler._getAPICodeMsg({ Code: 136 }), 'ERR_IP_LIMIT', 'should return correct message for V2 136')
-  t.is(handler._getAPICodeMsg({ Code: 999 }), 'ERR_UNKNOWN_CODE_999', 'should return unknown for 999')
+  t.is(handler._getAPICodeMsg({ code: 999 }), 'ERR_UNKNOWN_API_CODE', 'should return stable unknown-code error')
 })
 
 test('protocols/v3-handler - isResponseOK', (t) => {
@@ -285,28 +246,4 @@ test('protocols/v3-handler - isResponseOK', (t) => {
   t.ok(handler.isResponseOK({ Code: 131 }), 'should return true for V2 Code 131')
   t.not(handler.isResponseOK({ Code: 135 }), 'should return false for V2 Code 135')
   t.not(handler.isResponseOK(null), 'should return false for null')
-})
-
-test('protocols/v3-handler - command transformation patterns', (t) => {
-  const handler = new WMApiV3({ rpc: {}, password: 'super' })
-
-  const underscoreCommands = [
-    'get_token',
-    'get_version',
-    'get_miner_info',
-    'update_pools',
-    'power_on',
-    'power_off',
-    'set_led'
-  ]
-
-  for (const cmd of underscoreCommands) {
-    const transformed = handler.transformCommand(cmd)
-    if (cmd !== 'summary' && cmd !== 'pools' && cmd !== 'edevs' && cmd !== 'devdetails' && cmd !== 'reboot') {
-      t.ok(
-        transformed.includes('.') || transformed === cmd,
-        `${cmd} should be transformed or remain unchanged`
-      )
-    }
-  }
 })

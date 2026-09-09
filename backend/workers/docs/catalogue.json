@@ -121,6 +121,22 @@
     },
     {
       "source": "in-repo",
+      "family": "minerpool",
+      "brand": "SpiderPool",
+      "provider": "spiderpool",
+      "models": [
+        "SPIDERPOOL-BTC"
+      ],
+      "package": "backend/workers/minerpools/spiderpool",
+      "contract": "backend/workers/minerpools/spiderpool/plugin/mdk-contract.json",
+      "link": "backend/workers/minerpools/spiderpool/README.md",
+      "usage": null,
+      "usageLabel": "USAGE.md",
+      "conformant": true,
+      "confirmed": true
+    },
+    {
+      "source": "in-repo",
       "family": "power-meter",
       "brand": "ABB",
       "provider": "abb",

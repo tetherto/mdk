@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "spiderpool",
+    "deviceFamily": "minerpool",
+    "brand": "SpiderPool",
+    "modelsSupported": ["SPIDERPOOL-BTC"],
+    "overview": "Reports SpiderPool mining pool subaccount data: hashrate, workers, balances and revenue. Read-only — pool state is polled over HTTPS, no device writes."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate", "unit": "H/s", "type": "number", "handler": "src/telemetry/hashrate.js", "description": "Latest pool-side hashrate across configured subaccounts." },
+      { "name": "workers_online", "unit": "", "type": "number", "handler": "src/telemetry/workers-online.js", "description": "Workers currently known to the pool." },
+      { "name": "balance", "unit": "BTC", "type": "number", "handler": "src/telemetry/balance.js", "description": "Total income balance across subaccounts." },
+      { "name": "estimated_earnings", "unit": "BTC", "type": "number", "handler": "src/telemetry/estimated-earnings.js", "description": "Estimated income for the current day across subaccounts." }
+    ],
+    "commands": [],
+    "config": {
+      "schema": "spiderpool_config_v1"
+    },
+    "health": {
+      "supportedStates": ["OK", "DEGRADED", "OFFLINE"],
+      "alerts": ["alert.pool_unreachable", "alert.hashrate_low"],
+      "troubleshooting": [
+        "If alert.pool_unreachable, verify the apiUrl, accessKey, privateKey and outbound HTTPS connectivity.",
+        "If alert.hashrate_low, cross-check the fleet's own hashrate before escalating."
+      ]
+    },
+    "errors": {
+      "E_POOL_API": "Pool REST API request failed"
+    }
+  }
+}

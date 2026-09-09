@@ -20,6 +20,7 @@
     "backend/workers/containers/bitdeer",
     "backend/workers/minerpools/f2pool",
     "backend/workers/minerpools/ocean",
+    "backend/workers/minerpools/spiderpool",
     "backend/workers/miners/antminer",
     "backend/workers/miners/avalon",    
     "backend/workers/mock",

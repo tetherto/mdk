@@ -139,6 +139,17 @@ the [F2Pool Worker package][f2pool-readme] holds its managers, mock server, and 
 node examples/backend/minerpools/f2pool/index.js
 ```
 
+### [`spiderpool/`](./minerpools/spiderpool/README.md) — SpiderPool minerpool example (project)
+
+A clone-and-run **SpiderPool** example backed by a mock SpiderPool API: it drives the `SPIDER_POOL`
+Worker directly (stats, Workers, payment records), prints a snapshot, and exits. The mock verifies
+the real MD5withRSA request signing against a bundled test keypair. Standalone like Ocean — the
+[SpiderPool Worker package][spiderpool-readme] holds its manager, mock server, and [`mdk-contract.json`](../../backend/workers/minerpools/spiderpool/plugin/mdk-contract.json).
+
+```bash
+node examples/backend/minerpools/spiderpool/index.js
+```
+
 ## Kernel standalone ([`kernel/`](./kernel/))
 
 ### [`kernel-shell.js`](./kernel/kernel-shell.js) — bare Kernel
@@ -257,3 +268,5 @@ Re-run the example. Each start recreates its own isolated store directory.
 [ocean-readme]: minerpools/ocean/README.md
 
 [f2pool-readme]: ../../backend/workers/minerpools/f2pool/README.md
+
+[spiderpool-readme]: ../../backend/workers/minerpools/spiderpool/README.md

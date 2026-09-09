@@ -1,0 +1,7 @@
+{
+  "apiUrl": "https://api.spiderpool.com",
+  "accessKey": "access-key",
+  "privateKey": "paste the base64 private key from SpiderPool Account Management (a PEM block also works)",
+  "coin": "btc",
+  "accounts": []
+}

@@ -59,6 +59,12 @@ const EXAMPLES = [
     timeout: 20000
   },
   {
+    script: 'minerpools/spiderpool/index.js',
+    description: 'SpiderPool minerpool standalone example (mock API fetch, port 5064)',
+    mode: 'auto',
+    timeout: 20000
+  },
+  {
     script: 'kernel/demo.js',
     description: 'Kernel full feature parity demo (all telemetry + command types)',
     mode: 'auto',

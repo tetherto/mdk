@@ -95,6 +95,12 @@ const WORKER_BOOTS = {
     factory: 'startF2poolWorker',
     prefix: 'f2pool',
     pool: true
+  },
+  'minerpool-spiderpool': {
+    pkg: 'workers/minerpools/spiderpool',
+    factory: 'startSpiderpoolWorker',
+    prefix: 'spiderpool',
+    pool: true
   }
 }
 

@@ -31,6 +31,7 @@ Also under [`backend/core/`](../../../../../../backend/core/README.md): [`plugin
 | `@tetherto/mdk-worker-bitdeer` | [`backend/workers/containers/bitdeer`](../../../../../../backend/workers/containers/bitdeer/README.md) | MQTT |
 | `@tetherto/mdk-worker-f2pool` | [`backend/workers/minerpools/f2pool`](../../../../../../backend/workers/minerpools/f2pool/README.md) | Pool HTTP API |
 | `@tetherto/mdk-worker-ocean` | [`backend/workers/minerpools/ocean`](../../../../../../backend/workers/minerpools/ocean/README.md) | Pool HTTP API |
+| `@tetherto/mdk-worker-spiderpool` | [`backend/workers/minerpools/spiderpool`](../../../../../../backend/workers/minerpools/spiderpool/README.md) | Pool HTTP API |
 | `@tetherto/mdk-worker-demo` | [`backend/workers/samples/demo-worker`](../../../../../../backend/workers/samples/demo-worker/) | HTTP JSON (canonical minimal sample) |
 
 Whatsminer support is no longer an in-repo package — it's the external [`whatsminer-mdk-worker`](https://github.com/whatsminer/whatsminer-mdk-worker) contract plugin (CGMiner JSON over TCP, AES-encrypted), hosted directly on `WorkerRuntimeV2` via a thin per-deployment adapter (see `examples/full-site/backend/whatsminer-adapter.js`).

@@ -19,7 +19,8 @@ const LIB_TYPES = {
   SCHNEIDER: 'workers/power-meter/schneider',
   SENECA: 'workers/temperature',
   OCEAN_POOL: 'workers/minerpools/ocean',
-  F2_POOL: 'workers/minerpools/f2pool'
+  F2_POOL: 'workers/minerpools/f2pool',
+  SPIDER_POOL: 'workers/minerpools/spiderpool'
 }
 
 module.exports = {

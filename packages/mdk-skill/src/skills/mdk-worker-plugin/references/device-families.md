@@ -31,6 +31,7 @@ for that model; the rest of this page describes the older shape's conventions.
 | **seneca** | [`temperature/seneca`](../../../../../../backend/workers/temperature/seneca/README.md) | Modbus TCP | 2 / 0 | Minimal read-only sensor; per-device `register` in config; fault-sentinel semantics (850.0) in the contract |
 | **antspace** | [`containers/antspace`](../../../../../../backend/workers/containers/antspace/README.md) | HTTP JSON | 5 / 5 | Cooling containers; model variants (hydro/immersion); approval-gated commands via `constraints` |
 | **bitdeer** | [`containers/bitdeer`](../../../../../../backend/workers/containers/bitdeer/README.md) | MQTT | — | Subscription-style transports |
+| **emcd** | [`minerpools/emcd`](../../../../../../backend/workers/minerpools/emcd/README.md) | HTTP with HMAC-SHA256 | 4 / 0 | Signed pool requests, account-scoped history and unavailable metrics |
 | **f2pool / ocean** | [`minerpools/f2pool`](../../../../../../backend/workers/minerpools/f2pool/README.md), [`minerpools/ocean`](../../../../../../backend/workers/minerpools/ocean/README.md) | Pool HTTP APIs | — | Non-hardware "device" integrations |
 
 Whatsminer (CGMiner JSON over TCP, AES-encrypted, token auth) is no longer an in-repo family to copy from — it's the

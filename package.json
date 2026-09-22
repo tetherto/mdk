@@ -18,6 +18,7 @@
     "backend/core/plugins",
     "backend/workers/containers/antspace",
     "backend/workers/containers/bitdeer",
+    "backend/workers/minerpools/emcd",
     "backend/workers/minerpools/f2pool",
     "backend/workers/minerpools/ocean",
     "backend/workers/miners/antminer",

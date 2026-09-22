@@ -29,6 +29,7 @@ Also under [`backend/core/`](../../../../../../backend/core/README.md): [`plugin
 | `@tetherto/mdk-worker-seneca` | [`backend/workers/temperature/seneca`](../../../../../../backend/workers/temperature/seneca/README.md) | Modbus TCP |
 | `@tetherto/mdk-worker-antspace` | [`backend/workers/containers/antspace`](../../../../../../backend/workers/containers/antspace/README.md) | HTTP JSON |
 | `@tetherto/mdk-worker-bitdeer` | [`backend/workers/containers/bitdeer`](../../../../../../backend/workers/containers/bitdeer/README.md) | MQTT |
+| `@tetherto/mdk-worker-emcd` | [`backend/workers/minerpools/emcd`](../../../../../../backend/workers/minerpools/emcd/README.md) | EMCD Pool API v1 |
 | `@tetherto/mdk-worker-f2pool` | [`backend/workers/minerpools/f2pool`](../../../../../../backend/workers/minerpools/f2pool/README.md) | Pool HTTP API |
 | `@tetherto/mdk-worker-ocean` | [`backend/workers/minerpools/ocean`](../../../../../../backend/workers/minerpools/ocean/README.md) | Pool HTTP API |
 | `@tetherto/mdk-worker-demo` | [`backend/workers/samples/demo-worker`](../../../../../../backend/workers/samples/demo-worker/) | HTTP JSON (canonical minimal sample) |

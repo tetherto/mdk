@@ -52,6 +52,7 @@ Built and maintained in this repository, with a bundled mock and unit and integr
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
+| EMCD | emcd | EMCD-BTC | [`backend/workers/minerpools/emcd`](../minerpools/emcd/README.md) | — |
 | F2Pool | f2pool | F2POOL-BTC | [`backend/workers/minerpools/f2pool`](../minerpools/f2pool/README.md) | — |
 | Ocean | ocean | OCEAN-BTC | [`backend/workers/minerpools/ocean`](../minerpools/ocean/README.md) | — |
 

@@ -8,6 +8,7 @@ Mining pool API Workers. These Workers connect to mining pool REST APIs and expo
 |-----------|---------|------|
 | [`ocean/`](./ocean/README.md) | `@tetherto/mdk-worker-ocean` | Ocean.xyz |
 | [`f2pool/`](./f2pool/README.md) | `@tetherto/mdk-worker-f2pool` | F2Pool |
+| [`emcd/`](./emcd/README.md) | `@tetherto/mdk-worker-emcd` | EMCD |
 
 ## Common Telemetry
 

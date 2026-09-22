@@ -1,0 +1,38 @@
+{
+  "name": "@tetherto/mdk-worker-emcd",
+  "version": "0.8.0",
+  "description": "EMCD Bitcoin mining pool worker",
+  "keywords": [
+    "tether"
+  ],
+  "author": "EMCD",
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "mock": "node mock/server.js",
+    "test": "npm run lint && npm run test:unit && npm run test:integration",
+    "test:unit": "NODE_ENV=test brittle tests/unit/**/*.test.js",
+    "test:integration": "NODE_ENV=test brittle tests/integration/**/*.test.js",
+    "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
+  },
+  "dependencies": {
+    "@tetherto/mdk-core": "0.8.0",
+    "@tetherto/mdk-worker": "0.8.0"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0",
+    "fastify": "5.12.1",
+    "standard": "17.1.0",
+    "@hyperswarm/rpc": "3.5.0",
+    "hyperdht": "^6.32.0"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.9"
+  }
+}

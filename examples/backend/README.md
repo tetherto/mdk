@@ -139,6 +139,15 @@ the [F2Pool Worker package][f2pool-readme] holds its managers, mock server, and 
 node examples/backend/minerpools/f2pool/index.js
 ```
 
+### [`emcd/`](./minerpools/emcd/README.md) — EMCD minerpool example (project)
+
+Run the EMCD pool manager against a local API mock that checks HMAC signatures.
+The example prints the account snapshot and then exits.
+
+```bash
+node examples/backend/minerpools/emcd/index.js
+```
+
 ## Kernel standalone ([`kernel/`](./kernel/))
 
 ### [`kernel-shell.js`](./kernel/kernel-shell.js) — bare Kernel

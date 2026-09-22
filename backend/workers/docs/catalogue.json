@@ -90,6 +90,22 @@
     {
       "source": "in-repo",
       "family": "minerpool",
+      "brand": "EMCD",
+      "provider": "emcd",
+      "models": [
+        "EMCD-BTC"
+      ],
+      "package": "backend/workers/minerpools/emcd",
+      "contract": "backend/workers/minerpools/emcd/plugin/mdk-contract.json",
+      "link": "backend/workers/minerpools/emcd/README.md",
+      "usage": null,
+      "usageLabel": "USAGE.md",
+      "conformant": true,
+      "confirmed": true
+    },
+    {
+      "source": "in-repo",
+      "family": "minerpool",
       "brand": "F2Pool",
       "provider": "f2pool",
       "models": [

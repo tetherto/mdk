@@ -1,0 +1,7 @@
+{
+  "apiUrl": "https://endpoint.emcd.io/pool/v1",
+  "apiKey": "",
+  "apiSecret": "",
+  "coin": "btc",
+  "accounts": []
+}

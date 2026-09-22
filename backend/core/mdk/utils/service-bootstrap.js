@@ -95,6 +95,12 @@ const WORKER_BOOTS = {
     factory: 'startF2poolWorker',
     prefix: 'f2pool',
     pool: true
+  },
+  'minerpool-emcd': {
+    pkg: 'workers/minerpools/emcd',
+    factory: 'startEmcdWorker',
+    prefix: 'emcd',
+    pool: true
   }
 }
 

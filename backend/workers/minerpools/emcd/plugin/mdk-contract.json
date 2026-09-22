@@ -1,0 +1,66 @@
+{
+  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "metadata": {
+    "provider": "emcd",
+    "deviceFamily": "minerpool",
+    "brand": "EMCD",
+    "modelsSupported": [
+      "EMCD-BTC"
+    ],
+    "overview": "Reports EMCD Bitcoin pool hashrate, active workers, mining balance and daily earnings over the read-only Pool API v1."
+  },
+  "capabilities": {
+    "telemetry": [
+      {
+        "name": "hashrate",
+        "unit": "H/s",
+        "type": "number",
+        "handler": "src/telemetry/hashrate.js",
+        "description": "Current pool-side hashrate across configured accounts."
+      },
+      {
+        "name": "workers_online",
+        "unit": "",
+        "type": "number",
+        "handler": "src/telemetry/workers-online.js",
+        "description": "Active workers across configured accounts."
+      },
+      {
+        "name": "balance",
+        "unit": "BTC",
+        "type": "number",
+        "handler": "src/telemetry/balance.js",
+        "description": "Credited mining balance across accounts, excluding funds blocked for payout. Unavailable when the key lacks master:read:balance or the API lacks /balance."
+      },
+      {
+        "name": "estimated_earnings",
+        "unit": "BTC",
+        "type": "number",
+        "handler": "src/telemetry/estimated-earnings.js",
+        "description": "Previous UTC day mining earnings, used as an estimate for today."
+      }
+    ],
+    "commands": [],
+    "config": {
+      "schema": "emcd_config_v1"
+    },
+    "health": {
+      "supportedStates": [
+        "OK",
+        "DEGRADED",
+        "OFFLINE"
+      ],
+      "alerts": [
+        "alert.pool_unreachable",
+        "alert.hashrate_low"
+      ],
+      "troubleshooting": [
+        "If alert.pool_unreachable, verify apiUrl, apiKey, apiSecret, key permissions and outbound HTTPS connectivity.",
+        "If alert.hashrate_low, cross-check the fleet's own hashrate before escalating."
+      ]
+    },
+    "errors": {
+      "E_POOL_API": "Pool REST API request failed"
+    }
+  }
+}

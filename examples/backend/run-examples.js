@@ -59,6 +59,12 @@ const EXAMPLES = [
     timeout: 20000
   },
   {
+    script: 'minerpools/emcd/index.js',
+    description: 'EMCD minerpool example (signed mock API, port 5065)',
+    mode: 'auto',
+    timeout: 30000
+  },
+  {
     script: 'kernel/demo.js',
     description: 'Kernel full feature parity demo (all telemetry + command types)',
     mode: 'auto',

@@ -22,6 +22,7 @@ const schneiderMock = require(path.join(WORKERS, 'power-meter', 'schneider', 'mo
 const oceanMock = require(path.join(WORKERS, 'minerpools', 'ocean', 'mock', 'server'))
 const f2poolMock = require(path.join(WORKERS, 'minerpools', 'f2pool', 'mock', 'server'))
 const senecaMock = require(path.join(WORKERS, 'temperature', 'seneca', 'mock', 'server'))
+const { remoteOceanConfig } = require('./backend/ocean-remote-config')
 
 // Stable port plan — site.js seeds each device's opts.port to match.
 const PORTS = {
@@ -106,7 +107,12 @@ function startMocks ({ minerCount }) {
   handles.push(abbMock.createServer({ host: HOST, port: PORTS.POWERMETER, type: 'b23', powerW: perMeterPowerW }))
   handles.push(satecMock.createServer({ host: HOST, port: PORTS.SATEC_POWERMETER, type: 'pm180', powerW: perMeterPowerW }))
   handles.push(schneiderMock.createServer({ host: HOST, port: PORTS.SCHNEIDER_POWERMETER, type: 'pm5340', powerW: perMeterPowerW }))
-  handles.push(oceanMock.createServer({ host: HOST, port: PORTS.POOL, workerCount: siteMinerCount }))
+  const oceanRemote = remoteOceanConfig()
+  if (!oceanRemote) {
+    handles.push(oceanMock.createServer({ host: HOST, port: PORTS.POOL, workerCount: siteMinerCount }))
+  } else {
+    debug('ocean mock skipped — minerpool bridged to remote worker %s…', oceanRemote.serverKey.slice(0, 16))
+  }
   handles.push(f2poolMock.createServer({ host: HOST, port: PORTS.F2POOL, usernames: 'sample-f2pool-account', workerCount: siteMinerCount }))
   // Sensor 0 sits on the antspace container (whatsminer+antminer), sensor 1 on
   // the bitdeer container (avalon only, see site.js) — matching SENSOR_CONTAINERS
@@ -116,11 +122,12 @@ function startMocks ({ minerCount }) {
   for (let i = 0; i < 2; i++) {
     handles.push(senecaMock.createServer({ host: HOST, port: PORTS.SENSOR_BASE + i, type: 'seneca', minerCount: sensorMinerCounts[i] }))
   }
-  debug('started antspace (%d), abb (%d), satec (%d), schneider (%d), ocean (%d), f2pool (%d), sensors (%d..%d)',
+  debug('started antspace (%d), abb (%d), satec (%d), schneider (%d), ocean (%s), f2pool (%d), sensors (%d..%d)',
     PORTS.ANTSPACE, PORTS.POWERMETER, PORTS.SATEC_POWERMETER, PORTS.SCHNEIDER_POWERMETER,
-    PORTS.POOL, PORTS.F2POOL, PORTS.SENSOR_BASE, PORTS.SENSOR_BASE + 1)
+    oceanRemote ? 'remote' : PORTS.POOL, PORTS.F2POOL, PORTS.SENSOR_BASE, PORTS.SENSOR_BASE + 1)
 
   return {
+    oceanRemote: !!oceanRemote,
     close () {
       for (const h of handles) _close(h)
       debug('closed %d mock device(s)', handles.length)

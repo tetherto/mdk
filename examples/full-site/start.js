@@ -50,7 +50,8 @@ async function main () {
   console.log('\n  MDK full-site example — booting (data dir: %s)\n', ROOT)
 
   const mocks = startMocks({ minerCount: MINER_COUNT })
-  console.log('  Mock devices up: %d×3 miners + 2 containers + 3 powermeters + 2 sensors + 2 pools', MINER_COUNT)
+  console.log('  Mock devices up: %d×3 miners + 2 containers + 3 powermeters + 2 sensors + %s',
+    MINER_COUNT, mocks.oceanRemote ? '1 pool (Ocean bridged to a running worker over HRPC)' : '2 pools')
 
   const kernel = await bootKernel({ root: ROOT })
   const kernelKey = kernel.getPublicKey().toString('hex')

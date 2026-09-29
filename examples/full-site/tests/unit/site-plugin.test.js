@@ -5,6 +5,7 @@ const path = require('path')
 const overview = require('../../plugins/site/controllers/overview')
 const history = require('../../plugins/site/controllers/history')
 const command = require('../../plugins/site/controllers/command')
+const ocean = require('../../plugins/site/controllers/ocean')
 const { loadPlugin } = require('../../../../backend/core/gateway/workers/lib/plugin-loader')
 
 const PLUGIN_DIR = path.join(__dirname, '..', '..', 'plugins', 'site')
@@ -116,6 +117,9 @@ function fakeMdkClient ({ commands } = {}) {
         }
         return { extData: { ts: 1000, stats: [{ username: 'test', poolType: 'ocean', hashrate: 104.7e12, hashrate_24h: 102e12, worker_count: 50, active_workers_count: 5, balance: 0.12, revenue_24h: 0.03 }] } }
       }
+      if (query.type === 'ext_data' && deviceId === 'minerpool-worker') {
+        return { extData: oceanExtData(query) }
+      }
       if (query.type === 'ext_data' && query.key === 'stats-history') {
         const base = 1000000
         return { extData: [0, 1, 2].map(i => ({ ts: base + i * 1000, stats: [{ hashrate: 100e12 + i * 1e12 }] })) }
@@ -129,12 +133,47 @@ function fakeMdkClient ({ commands } = {}) {
   }
 }
 
-test('site plugin manifest loads with three routes and normalized paths', (t) => {
+// ext_data fixtures for the Ocean pool worker: the keys PoolService serves plus
+// the DATUM ones only the MiningOS worker (or the HRPC bridge) adds.
+// `stratum-list` is omitted on purpose — on a real gateway it needs an admin
+// password, so the controller must tolerate its absence.
+function oceanExtData (query) {
+  switch (query.key) {
+    case 'workers':
+      return {
+        ts: 2000,
+        workers: [
+          { poolType: 'ocean', username: 'test', id: 'rig-a', name: 'rig-a', online: 1, last_updated: 1700000000, hashrate: 60e12, hashrate_1h: 58e12, hashrate_24h: 55e12 },
+          { poolType: 'ocean', username: 'test', id: 'rig-b', name: 'rig-b', online: 0, last_updated: 1700000000, hashrate: 0, hashrate_1h: 1e12, hashrate_24h: 2e12 }
+        ]
+      }
+    case 'alerts':
+      return { ts: 4000, alerts: [{ uuid: 'a-1', name: 'Datum_Offline', description: 'DATUM gateway is offline', severity: 'critical', createdAt: 1700000000000 }] }
+    case 'datum-stats':
+      return { datum: { poolType: 'ocean', status: 'online', error: null, connections: 12, hashrate: 104.7 } }
+    case 'datum-client-stats':
+      return { acceptedShares: 9000, acceptedSharesDiff: 12345, rejectedShares: 12, rejectedSharesDiff: 34, ready: true, poolHost: 'datum.ocean.xyz:28915', poolTag: 'OCEAN', minerTag: 'mdk-site', poolMinDiff: 16384, poolPubKey: 'f00ba4'.repeat(10), uptime: 93784 }
+    case 'stratum-info':
+      return { activeThread: 4, totalConnections: 12, totalWorkSubscriptions: 11, estimatedHashrate: 104.7 }
+    case 'stratum-job':
+      return { block_height: 870200, block_value: 312500000, previous_block: '0000beef', block_target: '00ff', witness_commitment: 'aa', block_difficulty: 1.1e14, block_version: { int: 536870912, hex: '20000000' }, bits: '17030ecd', time: { current: 1700000500, minimum: 1700000000 }, limits: { size: 4000000, weight: 4000000, sigops: 80000 }, size: 1500000, weight: 3900000, sigops: 45000, tx_count: 3100 }
+    case 'thread-stats':
+      return { 1: { connection_count: 5, subscription_count: 5, approx_hashrate: 44.7 }, 0: { connection_count: 7, subscription_count: 6, approx_hashrate: 60 } }
+    case 'coinbaser':
+      return { bc1qpool: 300000000, bc1qminer: 12500000 }
+    default:
+      return undefined
+  }
+}
+
+test('site plugin manifest loads with four routes and normalized paths', (t) => {
   const plugin = loadPlugin(PLUGIN_DIR)
   t.is(plugin.manifest.name, '@tetherto/mdk-plugin-full-site')
-  t.is(plugin.routes.length, 3, 'three routes')
+  t.is(plugin.routes.length, 4, 'four routes')
   const byId = Object.fromEntries(plugin.routes.map(r => [r.id, r]))
   t.is(byId['site.overview'].path, '/site/overview')
+  t.is(byId['site.ocean'].path, '/site/ocean')
+  t.is(byId['site.ocean'].method, 'GET')
   t.is(byId['site.miner-command'].method, 'POST')
   t.is(byId['site.miner-command'].path, '/site/miners/:deviceId/command', 'path param normalized to :deviceId')
 })
@@ -263,4 +302,119 @@ test('command rejects an invalid mode before dispatch', async (t) => {
   const commands = []
   await t.exception(() => command({ params: { deviceId: 'whatsminer-7' }, body: { mode: 'turbo' } }, { mdkClient: fakeMdkClient({ commands }) }), /ERR_INVALID_POWER_MODE/)
   t.is(commands.length, 0)
+})
+
+test('ocean returns only the ocean-type pool, with account, worker and alert detail', async (t) => {
+  const out = await ocean({ params: {}, query: {} }, { mdkClient: fakeMdkClient() })
+
+  t.is(out.pools.length, 1, 'f2pool is filtered out — only poolType ocean appears')
+  const pool = out.pools[0]
+  t.is(pool.deviceId, 'minerpool-worker')
+  t.is(pool.poolType, 'ocean')
+
+  t.is(pool.accounts.length, 1)
+  t.is(pool.accounts[0].username, 'test')
+  t.is(pool.accounts[0].hashrate, 104.7e12)
+  t.is(pool.accounts[0].activeWorkersCount, 5)
+  t.is(pool.accounts[0].workerCount, 50)
+
+  t.is(pool.workers.length, 2)
+  t.is(pool.workers[0].name, 'rig-a')
+  t.is(pool.workers[0].online, true, 'ocean serves online as 0|1; the route normalizes to boolean')
+  t.is(pool.workers[1].online, false)
+
+  t.is(pool.alerts.length, 1)
+  t.is(pool.alerts[0].name, 'Datum_Offline')
+})
+
+test('ocean maps the DATUM gateway surface the pool worker proxies', async (t) => {
+  const out = await ocean({ params: {}, query: {} }, { mdkClient: fakeMdkClient() })
+  const { gateway, gatewayAvailable } = out.pools[0]
+
+  t.is(gatewayAvailable, true)
+  t.is(gateway.status, 'online')
+  t.is(gateway.connections, 12)
+  t.is(gateway.hashrateThs, 104.7)
+
+  t.is(gateway.clientStats.acceptedShares, 9000)
+  t.is(gateway.clientStats.ready, true)
+  t.is(gateway.clientStats.uptimeS, 93784)
+  t.is(gateway.stratumInfo.activeThreads, 4)
+  t.is(gateway.stratumInfo.estimatedHashrateThs, 104.7)
+
+  t.is(gateway.job.blockHeight, 870200)
+  t.is(gateway.job.blockValueBtc, 3.125, 'block_value sats converted to BTC')
+  t.is(gateway.job.txCount, 3100)
+  t.is(gateway.job.versionHex, '20000000')
+
+  t.is(gateway.threads.length, 2)
+  t.alike(gateway.threads.map(th => th.id), ['0', '1'], 'threads sorted by numeric id')
+  t.is(gateway.threads[0].connectionCount, 7)
+
+  t.is(gateway.clients.length, 0, 'admin-only stratum_client_list absent — empty, not an error')
+
+  t.is(gateway.coinbaser.length, 2)
+  t.is(gateway.coinbaser[0].address, 'bc1qpool', 'coinbaser sorted by value')
+  t.is(gateway.coinbaser[0].valueBtc, 3)
+})
+
+test('ocean flattens the nested stratum client list when admin access is available', async (t) => {
+  const client = fakeMdkClient()
+  const orig = client.pullTelemetry
+  client.pullTelemetry = async (deviceId, query) => {
+    if (query.type === 'ext_data' && query.key === 'stratum-list' && deviceId === 'minerpool-worker') {
+      return {
+        extData: {
+          0: {
+            3: { remote_host: '10.0.0.5', auth_username: 'test.rig-a', subscribed: true, sid: '1a2b', sid_time: 900.5, last_share: 12.5, vdiff: 16384, accepted_diff: 1e9, accepted_count: 500, rejected_diff: 1e6, rejected_count: 2, rejected_percentage: 0.1, hash_rate: '60.25', hash_rate_age: 3.5, coinbase: 'OCEAN', useragent: 'cgminer/4.12' },
+            4: { remote_host: '10.0.0.6', auth_username: 'test.rig-b', subscribed: false }
+          }
+        }
+      }
+    }
+    return orig(deviceId, query)
+  }
+
+  const out = await ocean({ params: {}, query: {} }, { mdkClient: client })
+  const clients = out.pools[0].gateway.clients
+  t.is(clients.length, 2)
+  t.is(clients[0].id, '0:3', 'row id is thread:client')
+  t.is(clients[0].hashrateThs, 60.25, 'hash_rate string parsed')
+  t.is(clients[0].authUsername, 'test.rig-a')
+  t.is(clients[1].subscribed, false)
+  t.is(clients[1].hashrateThs, 0, 'an unsubscribed client reports no hash_rate')
+})
+
+test('ocean reports the gateway unavailable when the pool worker serves no DATUM keys', async (t) => {
+  const client = fakeMdkClient()
+  const orig = client.pullTelemetry
+  const DATUM_KEYS = new Set(['datum-stats', 'datum-client-stats', 'stratum-info', 'stratum-job', 'thread-stats', 'stratum-list', 'coinbaser'])
+  client.pullTelemetry = async (deviceId, query) => {
+    // What PoolService does with an unknown key: `this.data[key]`, i.e. undefined.
+    if (query.type === 'ext_data' && DATUM_KEYS.has(query.key)) return { deviceId }
+    return orig(deviceId, query)
+  }
+
+  const out = await ocean({ params: {}, query: {} }, { mdkClient: client })
+  const pool = out.pools[0]
+  t.is(pool.gatewayAvailable, false, 'mock-backed pool worker → no DATUM surface')
+  t.is(pool.gateway.status, null)
+  t.alike(pool.gateway.threads, [])
+  t.is(pool.gateway.clientStats, null)
+  t.is(pool.workers.length, 2, 'the Ocean sections still resolve')
+})
+
+test('ocean survives a failing ext_data pull without dropping the other sections', async (t) => {
+  const client = fakeMdkClient()
+  const orig = client.pullTelemetry
+  client.pullTelemetry = async (deviceId, query) => {
+    if (query.type === 'ext_data' && query.key === 'alerts') throw new Error('ERR_REMOTE_POOL: boom')
+    return orig(deviceId, query)
+  }
+
+  const out = await ocean({ params: {}, query: {} }, { mdkClient: client })
+  const pool = out.pools[0]
+  t.alike(pool.alerts, [], 'the failing section degrades to empty')
+  t.is(pool.workers.length, 2)
+  t.is(pool.gateway.status, 'online')
 })

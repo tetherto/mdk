@@ -2,6 +2,7 @@ node_modules/
 .mdk-data/
 ui/node_modules/
 ui/dist/
+config/ocean-remote.json
 # transient runtime dirs created by gateway facilities (cwd-relative)
 store/
 status/

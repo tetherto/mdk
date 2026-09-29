@@ -24,6 +24,7 @@ const { startSchneiderWorker } = require('../../../backend/workers/power-meter/s
 const { startOceanPoolWorker } = require('../../../backend/workers/minerpools/ocean')
 const { startF2poolWorker } = require('../../../backend/workers/minerpools/f2pool')
 const { startSenecaWorker } = require('../../../backend/workers/temperature/seneca')
+const { remoteOceanConfig } = require('./ocean-remote-config')
 
 const bitdeerMock = require(path.join(__dirname, '..', '..', '..', 'backend', 'workers', 'containers', 'bitdeer', 'mock', 'server'))
 
@@ -167,6 +168,24 @@ function startBitdeerMock (minerCount) {
   return handle
 }
 
+function minerpoolSpec () {
+  const remote = remoteOceanConfig()
+  if (!remote) {
+    return { name: 'minerpool', workerId: 'minerpool-worker', boot: startOceanPoolWorker, pkg: 'minerpools/ocean', pool: true, poolKey: 'ocean', poolConf: () => ({ apiUrl: `http://${HOST}:${PORTS.POOL}`, accounts: [POOL_ACCOUNT] }) }
+  }
+  const { startRemoteOceanPoolWorker } = require('./remote-ocean-pool')
+  return {
+    name: 'minerpool',
+    workerId: 'minerpool-worker',
+    boot: startRemoteOceanPoolWorker,
+    pkg: 'minerpools/ocean',
+    pool: true,
+    selfPaced: true,
+    poolKey: 'ocean',
+    poolConf: () => ({ serverKey: remote.serverKey, refreshMs: remote.refreshMs, timeoutMs: remote.timeoutMs })
+  }
+}
+
 // One worker per device family, each hosted on the WorkerRuntime through its
 // package's plugin boot. workerId is fixed so the persistent store and RPC
 // seed are reused on every restart. `name` is the short CLI/argv token.
@@ -183,7 +202,7 @@ const WORKER_SPECS = [
   { name: 'satec', workerId: 'satec-powermeter-worker', boot: startSatecWorker, model: 'pm180', pkg: 'power-meter/satec', seed: seedSatecPowermeter },
   { name: 'schneider', workerId: 'schneider-powermeter-worker', boot: startSchneiderWorker, model: 'pm5340', pkg: 'power-meter/schneider', seed: seedSchneiderPowermeter },
   { name: 'seneca', workerId: 'seneca-sensor-worker', boot: startSenecaWorker, noModelOpt: true, pkg: 'temperature/seneca', seed: seedSenecaSensors },
-  { name: 'minerpool', workerId: 'minerpool-worker', boot: startOceanPoolWorker, pkg: 'minerpools/ocean', pool: true, poolKey: 'ocean', poolConf: () => ({ apiUrl: `http://${HOST}:${PORTS.POOL}`, accounts: [POOL_ACCOUNT] }) },
+  { name: 'minerpool', ...minerpoolSpec() },
   { name: 'f2pool', workerId: 'f2pool-worker', boot: startF2poolWorker, pkg: 'minerpools/f2pool', pool: true, poolKey: 'f2pool', poolConf: () => ({ apiUrl: `http://${HOST}:${PORTS.F2POOL}`, apiSecret: 'secret-key', accounts: [F2POOL_ACCOUNT] }) }
 ]
 
@@ -297,6 +316,12 @@ async function bootWorker (spec, { kernel, kernelTopic, root, minerCount, mode =
   const mockHandle = spec.afterBoot ? spec.afterBoot(minerCount) : null
 
   if (spec.pool) {
+    // A remote-backed pool already has a scheduler running in the worker it bridges
+    // to — pacing it from here would just re-read the same cached numbers faster.
+    if (spec.selfPaced) {
+      debug('%s bridged to a remote pool worker (self-paced)', spec.workerId)
+      return { ...handle, seeded: 0, mockHandle }
+    }
     // Scheduler-driven pool worker — no things to seed; just pace it.
     const poolDriver = drivePool(handle.pool)
     // unshift, not push: this must run before this worker's own handle.stop()

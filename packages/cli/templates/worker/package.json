@@ -1,6 +1,6 @@
 {
   "name": "__WORKER_NAME__",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK Worker Plugin — an mdk-contract.json plus src/ handler files, loaded from this directory and instantiated per device by WorkerRuntimeV2 (see `mdk run worker`). It exports no module of its own.",
   "keywords": [
     "mdk",
@@ -14,7 +14,7 @@
     "mock": "node -e \"require('./mock/server').createServer({ host: '127.0.0.1', port: 18080, serial: 'DEV-0' })\""
   },
   "dependencies": {
-    "@tetherto/mdk-worker": "^0.9.0",
+    "@tetherto/mdk-worker": "^0.10.0",
     "debug": "4.4.1"
   }
 }

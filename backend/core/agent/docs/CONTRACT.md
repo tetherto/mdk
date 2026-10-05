@@ -5,11 +5,10 @@ front doors: the **CLI** consumes it in-process, the **Gateway** re-serializes i
 Events (SSE), the **UI** renders it. Nobody re-implements agent logic — they render a fixed set
 of events.
 
-The definitions live in [`src/events.js`](../src/events.js) as a zod discriminated union and
-are exported from the package (`EVENT`, `CONTRACT_VERSION`, `TERMINAL_EVENTS`, `isTerminal`,
-`isAgentEvent`, `AgentEventSchema`). Switch on `EVENT.*`, never on the raw strings. The
-gateway can validate events at the SSE boundary with `AgentEventSchema.safeParse(ev)`;
-`isAgentEvent(ev)` is the boolean shorthand.
+The definitions live in [`src/events.js`](../src/events.js) as a zod discriminated union, which also
+carries the `CONTRACT_VERSION` this page documents. The package exports the three a consumer builds
+against: `EVENT`, `isTerminal` and `AgentEventSchema`. Switch on `EVENT.*`, never on the raw strings.
+The gateway validates events at the SSE boundary with `AgentEventSchema.safeParse(ev)`.
 
 ## The six events (agent → consumer)
 

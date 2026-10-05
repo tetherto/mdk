@@ -5,7 +5,7 @@ const path = require('path')
 const os = require('os')
 const fs = require('fs')
 const { loadPlugin } = require('../../../workers/lib/plugin-loader')
-const { buildFastifyRoutes } = require('../../../workers/lib/plugin-adapter')
+const { buildFastifyRoutes, errorResponse } = require('../../../workers/lib/plugin-adapter')
 
 const FIXTURES_DIR = path.join(os.tmpdir(), 'mdk-plugin-loader-test-' + Date.now())
 
@@ -329,6 +329,37 @@ test('buildFastifyRoutes - cache uses route id + extracted field values as key',
   t.pass()
 })
 
+test('buildFastifyRoutes - overwriteCache needs an Authorization header and the value true', async (t) => {
+  const dir = path.join(FIXTURES_DIR, 'overwrite')
+  writeFixture(dir, {
+    'mdk-plugin.json': {
+      name: '@test/p',
+      version: '1.0.0',
+      routes: [{ id: 'test.overwrite', method: 'GET', path: '/test/overwrite', handler: './controllers/fresh.js', cache: ['query.k'] }]
+    },
+    'controllers/fresh.js': '\'use strict\'\nmodule.exports = async function () { return { fresh: true } }'
+  })
+
+  const cache = new Map([['test.overwrite:a', { fresh: false }]])
+  const mockCtx = {
+    conf: { cacheTiming: {} },
+    lru_30s: { get (k) { return cache.get(k) }, set (k, v) { cache.set(k, v) } },
+    queuedRequests: new Map()
+  }
+  const mockRep = { status () { return this }, send () { return this } }
+  const [route] = buildFastifyRoutes(loadPlugin(dir), mockCtx)
+  const call = (overwriteCache, headers) => route.handler({ params: {}, query: { k: 'a', overwriteCache }, body: {}, headers, _info: {} }, mockRep)
+
+  await call(true, {})
+  t.is(cache.get('test.overwrite:a').fresh, false, 'ignored without an Authorization header')
+
+  await call('false', { authorization: 'Bearer x' })
+  t.is(cache.get('test.overwrite:a').fresh, false, 'the string false does not bypass the cache')
+
+  await call('true', { authorization: 'Bearer x' })
+  t.is(cache.get('test.overwrite:a').fresh, true, 'refreshed with an Authorization header')
+})
+
 function makeRawRes () {
   return {
     headersSent: false,
@@ -413,4 +444,16 @@ test('buildFastifyRoutes - stream route ends the socket on a mid-stream throw', 
   t.is(raw.chunks.length, 1, 'no error body after headers were sent')
   t.ok(raw.writableEnded, 'socket was ended, not left hanging')
   t.pass()
+})
+
+test('errorResponse - forwards ERR_* and Fastify 4xx messages, masks and logs the rest', (t) => {
+  const logged = []
+  const log = { error (err) { logged.push(err.message) } }
+
+  t.alike(errorResponse(Object.assign(new Error('ERR_AGENT_TURN_ACTIVE'), { statusCode: 409 }), log), { statusCode: 409, error: 'Conflict', message: 'ERR_AGENT_TURN_ACTIVE' })
+  t.alike(errorResponse(new Error('ERR_KERNEL_CLIENT_NOT_CONNECTED'), log), { statusCode: 400, error: 'Bad Request', message: 'ERR_KERNEL_CLIENT_NOT_CONNECTED' })
+  t.alike(errorResponse(Object.assign(new Error('body/q must be string'), { statusCode: 400, code: 'FST_ERR_VALIDATION' }), log), { statusCode: 400, error: 'Bad Request', message: 'body/q must be string' })
+  t.alike(errorResponse(new Error('ENOENT: /srv/secret.json'), log), { statusCode: 400, error: 'Bad Request', message: 'Bad Request' })
+  t.alike(errorResponse(Object.assign(new Error('pool exhausted'), { statusCode: 503 }), log), { statusCode: 503, error: 'Service Unavailable', message: 'Service Unavailable' })
+  t.alike(logged, ['ENOENT: /srv/secret.json', 'pool exhausted'], 'only masked errors are logged')
 })

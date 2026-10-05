@@ -55,7 +55,7 @@ Uses the F2Pool REST API over HTTPS. Authenticated with an API key in the reques
 
 **States:** `OK`, `DEGRADED`, `OFFLINE`
 
-## Mock Server
+## Mock server
 
 Run the mock standalone (f2pool has no model `type`):
 

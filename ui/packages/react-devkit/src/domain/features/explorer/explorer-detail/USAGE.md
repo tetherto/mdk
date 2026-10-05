@@ -1,4 +1,4 @@
-# ExplorerDetail
+# `ExplorerDetail`
 
 Per-type Explorer detail panel. Reads the current selection the `useExplorerSelection` bridge writes into the shared `devicesStore` and composes the matching cards for the active tab:
 
@@ -8,13 +8,15 @@ Per-type Explorer detail panel. Reads the current selection the `useExplorerSele
 
 Write actions queue into the actions draft store; submission stays gated behind the `ActionsSidebar`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop         | Status   | Type                     | Default | Description                                                    |
-| ------------ | -------- | ------------------------ | ------- | -------------------------------------------------------------- |
-| `deviceType` | Required | `DeviceExplorerDeviceType` (`"container" \| "miner" \| "cabinet"`) | —       | The active Explorer tab — selects which per-type panel renders |
-| `onNavigate` | Optional | `(path: string) => void` | no-op   | Router navigate used by alarm rows to deep-link into the alert |
-| `isCompact`  | Optional | `boolean`                | `true`  | Compact layout for the narrower Explorer detail column         |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `deviceType` | Required | `"container" \| "miner" \| "cabinet"` | - | The active Explorer tab — selects which per-type panel renders |
+| `isCompact` | Optional | `boolean` | `true` | Compact layout for the narrower Explorer detail column |
+| `onNavigate` | Optional | `((path: string) => void)` | `no-op` | Router navigate used by alarm rows to deep-link into `/alerts/:id` |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 
@@ -30,4 +32,4 @@ const navigate = useNavigate();
 />;
 ```
 
-Pair it with `useExplorerSelection` (which bridges the `<DeviceExplorer>` table selection into `devicesStore`) so the panel reflects the row(s) the user selects.
+Pair it with `useExplorerSelection` (which bridges the `<DeviceExplorer>` table selection into `devicesStore`) so the panel reflects the rows the user selects.

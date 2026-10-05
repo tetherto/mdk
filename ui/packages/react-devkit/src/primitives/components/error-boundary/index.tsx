@@ -21,6 +21,7 @@ export type ErrorBoundaryProps = {
    * Additional CSS class name for the default fallback container
    */
   className?: string
+  /** Subtree to protect */
   children: ReactNode
 }
 

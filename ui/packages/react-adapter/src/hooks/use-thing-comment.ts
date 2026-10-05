@@ -35,7 +35,7 @@ export type UseThingCommentResult = {
  * your Worker/business logic. No reference implementation of `/auth/thing/comment`
  * ships in this repo.
  *
- * @category op-centre
+ * @category op-center
  */
 export const useThingComment = (): UseThingCommentResult => {
   const queryClient = useQueryClient()

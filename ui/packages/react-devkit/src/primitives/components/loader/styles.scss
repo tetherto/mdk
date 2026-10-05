@@ -15,7 +15,7 @@
  * The block height is actively wrong here. Centring 8px dots inside 200px puts them ~100px
  * below whatever they belong to, with dead space between — which reads as a frozen UI rather
  * than a working one. Seen in the agent transcript, where the dots landed 103px under the
- * speaker label and horizontally centred against left-aligned messages. */
+ * speaker label and horizontally centered against left-aligned messages. */
 .mdk-loader--inline {
   @include flex_center_justify_start;
 

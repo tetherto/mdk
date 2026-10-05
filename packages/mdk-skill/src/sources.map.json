@@ -7,12 +7,12 @@
       "note": "Hand-authored suite content: router + mdk-worker-plugin, mdk-gateway-plugin, mdk-ui-component, mdk-deployment, mdk-site-sizing (full workflows). One file in this tree is generated, not hand-authored: skills/mdk-ui-component/references/ui-registry.json is copied verbatim from ui/packages/react-devkit/dist/registry.json by docs/scripts/sync-ui-registry.mjs. Regenerate it with `npm run generate:ui-registry` from the repo root; never hand-edit it. mdk-site-sizing/references/envelope.json is compiled from eval/profiles (or harness results) by skills/mdk-site-sizing/scripts/compile-envelope.mjs."
     },
     {
-      "source": "packages/mdk-skill/src/mdk-contract.schema.json",
+      "source": "backend/core/mdk-worker/mdk-contract.schema.json",
       "dest": "mdk/references/mdk-contract.schema.json",
-      "note": "Schema owned here — derived from backend/core/mdk-worker/mdk-contract.schema.json; deltas documented in its $comment."
+      "note": "Verbatim copy of the runtime contract schema owned by backend/core/mdk-worker, so agents author against exactly what generate-catalogue.js and the Kernel validate. Change the schema there, never in a bundle."
     },
     {
-      "source": "packages/mdk-skill/src/mdk-contract.schema.json",
+      "source": "backend/core/mdk-worker/mdk-contract.schema.json",
       "dest": "mdk-worker-plugin/references/mdk-contract.schema.json",
       "note": "Second copy so the device-worker skill is self-contained when installed alone; same source, cannot drift apart."
     },

@@ -1,4 +1,4 @@
-# PoolManagerSiteOverviewDetails
+# `PoolManagerSiteOverviewDetails`
 
 Pool-manager site detail page: drilldown for a single site showing configured
 pools, recent miner activity, and performance charts. Renders the breadcrumb
@@ -7,16 +7,18 @@ header (`Site Overview / <unitName>`) and delegates the body to
 
 Use this as the `/pool-manager/sites/:id` route.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop              | Status   | Type                             | Default | Description                                              |
-| ----------------- | -------- | -------------------------------- | ------- | -------------------------------------------------------- |
-| `unit`            | Required | `UnitData`                       | —       | The site (container unit) to render details for          |
-| `unitName`        | Required | `string`                         | —       | Display name shown in the breadcrumb                     |
-| `poolConfig`      | Required | `PoolConfigData[]`               | —       | Pool configurations powering the per-pool detail rows    |
-| `backButtonClick` | Required | `VoidFunction`                   | —       | Called when the operator clicks the "Site Overview" link |
-| `dataOptions`     | Optional | `SiteOverviewDetailsDataOptions` | —       | Knobs forwarded to `useSiteOverviewDetailsData`          |
-| `isLoading`       | Optional | `boolean`                        | `false` | Show a centered loader instead of the detail container   |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `backButtonClick` | Required | `VoidFunction` | - | Called when the operator clicks the "Site Overview" back link |
+| `poolConfig` | Required | `PoolConfigEntry[]` | - | Pool configurations powering the per-pool detail rows |
+| `unit` | Required | `UnitData` | - | The site (container unit) to render details for |
+| `unitName` | Required | `string` | - | Display name shown in the breadcrumb (`Site Overview / <unitName>`) |
+| `dataOptions` | Optional | `SiteOverviewDetailsDataOptions` | - | Optional data-fetch knobs forwarded to `useSiteOverviewDetailsData` |
+| `isLoading` | Optional | `boolean` | `false` | Show a centered loader instead of the detail container |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

@@ -12,7 +12,7 @@ import { createIcon } from '@tetherto/mdk-react-devkit/primitives'
  * bottom-right corner.
  *
  * Geometry fitted to the design's 22×22 `Chat` instance rather than eyeballed —
- * the ring fills the box (centre 11, r 10.2) and the tail is a wedge between two
+ * the ring fills the box (center 11, r 10.2) and the tail is a wedge between two
  * points on the arc, tipped at the corner. Drawn as a single arc-plus-wedge path
  * so the stroke stays continuous through the join.
  *
@@ -54,7 +54,7 @@ export const SendIcon = createIcon({
 })
 
 /**
- * New conversation: a square-cornered message box with a centre-bottom tail and
+ * New conversation: a square-cornered message box with a center-bottom tail and
  * a plus inside.
  *
  * Squared off, not rounded — the design's box runs the full 16px width with hard

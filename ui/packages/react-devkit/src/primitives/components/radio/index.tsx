@@ -4,7 +4,12 @@ import type { BorderRadius, ComponentColor, ComponentSize } from '../../types'
 import { cn } from '../../utils'
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef, type ReactNode } from 'react'
 
+type RadioItemProps = ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
 export type RadioProps = {
+  // Key prop re-declared from the Radix item so it surfaces in the generated docs
+  // (type reuses Radix's via indexed access — cannot drift).
+  /** Value associated with this option */
+  value: RadioItemProps['value']
   /**
    * Size variant of the radio
    * @default 'md'
@@ -12,7 +17,7 @@ export type RadioProps = {
   size?: ComponentSize
   /**
    * Color variant when checked
-   * @default 'default'
+   * @default 'primary'
    */
   color?: ComponentColor
   /**
@@ -36,7 +41,7 @@ export type RadioProps = {
    * Custom className for the indicator element
    */
   indicatorClassName?: string
-} & ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
+} & RadioItemProps
 
 /**
  * Radio button component (use within RadioGroup)

@@ -16,16 +16,22 @@ import { ALERTS_FILTER_OPTIONS } from './tag-filter-bar.const'
 import './tag-filter-bar.scss'
 
 export type TagFilterBarProps = {
+  /** Active tag filter values */
   filterTags: string[]
+  /** Current local filter state */
   localFilters: AlertLocalFilters
+  /** Called when tag filter changes */
   onSearchTagsChange: (tags: string[]) => void
+  /** Called when any local filter changes */
   onLocalFiltersChange: (filters: AlertLocalFilters) => void
   /**
    * Site-specific overrides for the "type" filter children.
    * If provided, the "Type" filter group will use these instead of the defaults.
    */
   typeFiltersForSite?: CascaderOption[]
+  /** Search input placeholder */
   placeholder?: string
+  /** Additional CSS class */
   className?: string
 }
 

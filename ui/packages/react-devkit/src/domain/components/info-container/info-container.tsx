@@ -39,6 +39,7 @@ export const InfoContainer = ({ title, value }: InfoItem): ReactNode => {
 }
 
 type DeviceInfoProps = {
+  /** Rows to render */
   data: InfoItem[]
 }
 

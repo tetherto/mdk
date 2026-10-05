@@ -4,10 +4,29 @@ import { type ComponentPropsWithoutRef, forwardRef } from 'react'
 
 type TabsVariant = 'default' | 'side' | 'underline'
 
-type TabsProps = ComponentPropsWithoutRef<typeof TabsPrimitives.Root> & {
+type TabsRootProps = ComponentPropsWithoutRef<typeof TabsPrimitives.Root>
+type TabsProps = TabsRootProps & {
   variant?: TabsVariant
+  // Key controlled-state props re-declared from the Radix root so they surface in
+  // the generated docs with descriptions (types reuse Radix's via indexed access,
+  // so this can never drift from or conflict with the underlying primitive).
+  /** Controlled active tab value */
+  value?: TabsRootProps['value']
+  /** Uncontrolled initial active value */
+  defaultValue?: TabsRootProps['defaultValue']
+  /** Fired when the active tab changes */
+  onValueChange?: TabsRootProps['onValueChange']
+  /**
+   * Keyboard navigation orientation
+   * @default "horizontal"
+   */
+  orientation?: TabsRootProps['orientation']
 }
 type TabsListProps = ComponentPropsWithoutRef<typeof TabsPrimitives.List> & {
+  /**
+   * `default` (baseline), `side` (left rail), or `underline` (per-tab underline indicator, white active label)
+   * @default "default"
+   */
   variant?: TabsVariant
 }
 type TabsTriggerProps = ComponentPropsWithoutRef<typeof TabsPrimitives.Trigger> & {

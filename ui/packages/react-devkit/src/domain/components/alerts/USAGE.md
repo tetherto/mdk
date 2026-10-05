@@ -1,4 +1,4 @@
-# AlertsTable family — `CurrentAlerts` and `HistoricalAlerts`
+# `AlertsTable` family — `CurrentAlerts` and `HistoricalAlerts`
 
 The MDK doesn't ship a single "AlertsTable" component. The agent-first design
 document uses the name as a category — there are two concrete components:
@@ -10,36 +10,6 @@ document uses the name as a category — there are two concrete components:
   controlled date range, with an embedded `DateRangePicker`
 
 Both render a `DataTable` with shared columns from [`alerts-table-columns.tsx`](./alerts-table-columns.tsx).
-
-## `CurrentAlerts` props
-
-| Prop                   | Status   | Type                                      | Default | Description                                                    |
-| ---------------------- | -------- | ----------------------------------------- | ------- | -------------------------------------------------------------- |
-| `localFilters`         | Required | `AlertLocalFilters`                       | —       | Filters controlled outside (e.g. URL severity)                 |
-| `onLocalFiltersChange` | Required | `(filters: AlertLocalFilters) => void`    | —       | Setter for the filters above                                   |
-| `filterTags`           | Required | `string[]`                                | —       | Search tag chips (controlled)                                  |
-| `onFilterTagsChange`   | Required | `(tags: string[]) => void`                | —       | Setter for the tags above                                      |
-| `devices`              | Optional | `Device[]`                                | —       | Raw devices payload (alerts derived from `device.last.alerts`) |
-| `isLoading`            | Optional | `boolean`                                 | `false` | Show DataTable loading overlay                                 |
-| `selectedAlertId`      | Optional | `string`                                  | —       | Optional deep-link id                                          |
-| `onAlertClick`         | Optional | `(id?: string, uuid?: string) => void`    | —       | Called when the user opens an alert                            |
-| `isSoundEnabled`       | Optional | `boolean`                                 | `false` | Enable critical alert beep                                     |
-| `isDemoMode`           | Optional | `boolean`                                 | `false` | Skip sound entirely (demos / previews)                         |
-| `typeFiltersForSite`   | Optional | `TagFilterBarProps["typeFiltersForSite"]` | —       | Site-specific overrides for the type filter                    |
-| `className`            | Optional | `string`                                  | —       | Additional class names                                         |
-
-## `HistoricalAlerts` props
-
-| Prop                | Status   | Type                                              | Default | Description                          |
-| ------------------- | -------- | ------------------------------------------------- | ------- | ------------------------------------ |
-| `localFilters`      | Required | `AlertLocalFilters`                               | —       | Shared with `CurrentAlerts`          |
-| `filterTags`        | Required | `string[]`                                        | —       | Shared with `CurrentAlerts`          |
-| `dateRange`         | Required | `{ start: number; end: number }`                  | —       | Controlled date range                |
-| `onDateRangeChange` | Required | `(range: { start: number; end: number }) => void` | —       | Setter for the date range            |
-| `alerts`            | Optional | `Alert[]`                                         | `[]`    | Pre-fetched historical alert entries |
-| `isLoading`         | Optional | `boolean`                                         | `false` | Show DataTable loading overlay       |
-| `onAlertClick`      | Optional | `(id?: string, uuid?: string) => void`            | —       | Called when the user opens an alert  |
-| `className`         | Optional | `string`                                          | —       | Additional class names               |
 
 ## Minimal example
 

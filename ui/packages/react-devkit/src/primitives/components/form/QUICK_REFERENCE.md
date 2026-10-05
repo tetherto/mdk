@@ -1,8 +1,8 @@
-# Form System Quick Reference
+# Form system quick reference
 
 Quick reference guide for the enhanced form system. Copy and paste examples to get started fast.
 
-## 🚀 Quick Start
+## 🚀 Quickstart
 
 ```tsx
 import { useForm } from 'react-hook-form'
@@ -58,7 +58,7 @@ const MyForm = () => {
 }
 ```
 
-## 📦 Component Cheat Sheet
+## 📦 Component cheat sheet
 
 ### FormInput
 
@@ -74,7 +74,7 @@ const MyForm = () => {
 />
 ```
 
-### FormTextArea
+### `FormTextArea`
 
 ```tsx
 <FormTextArea
@@ -102,7 +102,7 @@ const MyForm = () => {
 />
 ```
 
-### FormCheckbox
+### `FormCheckbox`
 
 ```tsx
 <FormCheckbox
@@ -114,7 +114,7 @@ const MyForm = () => {
 />
 ```
 
-### FormSwitch
+### `FormSwitch`
 
 ```tsx
 <FormSwitch
@@ -126,7 +126,7 @@ const MyForm = () => {
 />
 ```
 
-### FormRadioGroup
+### `FormRadioGroup`
 
 ```tsx
 <FormRadioGroup
@@ -142,7 +142,7 @@ const MyForm = () => {
 />
 ```
 
-### FormDatePicker
+### `FormDatePicker`
 
 ```tsx
 <FormDatePicker
@@ -192,7 +192,7 @@ const MyForm = () => {
 />
 ```
 
-## 🔐 Validator Cheat Sheet
+## 🔐 Validator cheat sheet
 
 ```tsx
 import { validators } from '@tetherto/mdk-react-devkit'
@@ -235,9 +235,9 @@ const schema = z.object({
 })
 ```
 
-## 🔧 Validation Helpers
+## 🔧 Validation helpers
 
-### Password Confirmation
+### Password confirmation
 
 ```tsx
 const schema = z
@@ -248,7 +248,7 @@ const schema = z
   .refine(...createPasswordMatch('password', 'confirmPassword'))
 ```
 
-### Date Range
+### Date range
 
 ```tsx
 const schema = z
@@ -272,9 +272,9 @@ const schema = z
   .refine(...createConditionalRequired('type', 'phone', 'phone', 'Phone required'))
 ```
 
-## 🪝 Hook Cheat Sheet
+## 🪝 Hook cheat sheet
 
-### Built-in RHF State (Default - Recommended)
+### Built-in RHF state (default - recommended)
 
 ```tsx
 // React Hook Form already tracks submission state!
@@ -292,7 +292,7 @@ const onSubmit = async (data: FormValues): Promise<void> => {
 </Button>
 ```
 
-### Optional: Custom Error/Success Messages
+### Optional: Custom error/success messages
 
 Only add `useState` if you need custom success/error messages beyond RHF's field errors:
 
@@ -322,7 +322,7 @@ const onSubmit = async (data: FormValues): Promise<void> => {
 }
 ```
 
-### useFormReset
+### `useFormReset`
 
 ```tsx
 const { resetForm, isDirty } = useFormReset({
@@ -335,14 +335,14 @@ const { resetForm, isDirty } = useFormReset({
 </Button>
 ```
 
-### useFormField (built-in)
+### `useFormField` (built-in)
 
 ```tsx
 // Use inside FormField render prop or custom components
 const { error, isDirty, isTouched, name } = useFormField()
 ```
 
-## 📋 Pre-built Schemas
+## 📋 Pre-built schemas
 
 ```tsx
 import { loginSchema, registerSchema, profileSchema, contactSchema } from '@tetherto/mdk-react-devkit'
@@ -358,23 +358,23 @@ const extendedLogin = loginSchema.extend({
 })
 ```
 
-### Available Schemas
+### Available schemas
 
-**loginSchema:**
+**`loginSchema`:**
 
 - email
 - password
-- rememberMe (boolean)
+- `rememberMe` (boolean)
 
-**registerSchema:**
+**`registerSchema`:**
 
 - username
 - email
 - password
-- confirmPassword (auto-validated)
+- `confirmPassword` (auto-validated)
 - terms (required true)
 
-**profileSchema:**
+**`profileSchema`:**
 
 - username
 - email
@@ -382,14 +382,14 @@ const extendedLogin = loginSchema.extend({
 - phone (optional)
 - website (optional)
 
-**contactSchema:**
+**`contactSchema`:**
 
 - name
 - email
 - subject
 - message
 
-## 🎯 Type-Safe Field Names
+## 🎯 Type-safe field names
 
 ```tsx
 type FormValues = {
@@ -408,9 +408,9 @@ const field = createFieldNames<FormValues>()
 <FormInput control={form.control} name={field('invalid')} /> // ❌ Error
 ```
 
-## 🎨 Common Patterns
+## 🎨 Common patterns
 
-### Login Form
+### Login form
 
 ```tsx
 const form = useForm({
@@ -431,7 +431,7 @@ const onSubmit = async (data: LoginFormValues): Promise<void> => {
 </Form>
 ```
 
-### Registration Form
+### Registration form
 
 ```tsx
 const form = useForm({
@@ -448,7 +448,7 @@ const form = useForm({
 </Form>
 ```
 
-### Settings Form
+### Settings form
 
 ```tsx
 const schema = z.object({
@@ -482,7 +482,7 @@ const schema = z.object({
 </Form>
 ```
 
-### Profile Form with Tags and Cascader
+### Profile form with tags and cascader
 
 ```tsx
 const schema = z.object({

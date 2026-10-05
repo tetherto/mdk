@@ -34,7 +34,7 @@ plugin first, then hand off to `mdk-ui-component`.
 
 ## Workflow
 
-### 1. Site Capability Discovery (mandatory)
+### 1. site capability discovery (mandatory)
 
 Do **not** invent channel names, units, or device brands. Ground every field
 in an installed Worker contract.
@@ -57,7 +57,7 @@ Then:
 3. Read `metadata.brand` / `deviceFamily` / `provider` for how to recognize
    the device family at runtime.
 4. Confirm the Kernel actually has the Worker online (`mdk run worker <name>`
-   or `mdk status`) before assuming data will flow.
+   or `mdk status`) before assuming data flows.
 
 `getCapabilities` returns the capability list only — not full contract
 metadata (no `brand`/`provider`) — so the fingerprint you match against at
@@ -175,7 +175,7 @@ Only then build UI against it.
 
 ## References
 
-- [`references/plugin-authoring.md`](./references/plugin-authoring.md): `mdk-plugin.json` fields + a fully-populated route example
-- [`references/controller-patterns.md`](./references/controller-patterns.md): list / filter / pullTelemetry patterns
+- [`references/plugin-authoring.md`](./references/plugin-authoring.md): `mdk-plugin.json` fields + a fully populated route example
+- [`references/controller-patterns.md`](./references/controller-patterns.md): list / filter / `pullTelemetry` patterns
 - [`../mdk/references/protocol.md`](../mdk/references/protocol.md): envelope / action set
 - Shipped monorepo examples (when present): [`backend/core/plugins/`](../../../../../backend/core/plugins/README.md)

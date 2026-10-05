@@ -7,19 +7,13 @@
 | `MinerChipsCard` | Container-level card rendering a grid of `MinerChip` tiles |
 | `MinerChip` | Individual chip tile showing slot index, frequency, and temperature |
 
-## MinerChipsCard Props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `data` | Required | `ContainerStats` | — | Container stats including chip frequency and temperature arrays |
-
-## MinerChip Props
-
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `index` | Required | `number` | — | Chip slot index |
-| `frequency` | Required | `{ current: number }` | — | Current frequency in MHz |
-| `temperature` | Required | `{ avg: number; min: number; max: number }` | — | Temperature readings in °C |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Required | `ContainerStats` | - | Container stats including chip frequency and temperature arrays |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

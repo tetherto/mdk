@@ -1,4 +1,4 @@
-# MDK Bitdeer Container Example
+# MDK Bitdeer container example
 
 A small, self-contained **Bitdeer D40** container example you can clone and run with **no real
 hardware**. It brings up a Kernel and one Bitdeer Worker, points a mock MQTT device at the Worker's

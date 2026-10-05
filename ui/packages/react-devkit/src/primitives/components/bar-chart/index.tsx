@@ -1,11 +1,7 @@
 import type { Chart as ChartJS } from 'chart.js'
 import type { FlexAlign, Position } from '../../types'
 import { cn } from '../../utils'
-import {
-  defaultChartColors,
-  defaultChartOptions,
-  makeBarGradient,
-} from '../../utils/chart-options'
+import { defaultChartColors, defaultChartOptions, makeBarGradient } from '../../utils/chart-options'
 import { buildChartTooltip } from '../../utils/chart-tooltip'
 import type { ChartTooltipConfig } from '../../utils/chart-tooltip'
 import { forwardRef, lazy, Suspense, useMemo } from 'react'
@@ -39,26 +35,48 @@ export type BarChartProps = {
   data: any
   /** Chart.js options - merged with defaults */
   options?: ChartJS<'bar'>['options']
-  /** Stack bars on top of each other */
+  /**
+   * Stack bars on top of each other
+   * @default false
+   */
   isStacked?: boolean
-  /** Render bars horizontally (indexAxis: 'y') */
+  /**
+   * Render bars horizontally (indexAxis: 'y')
+   * @default false
+   */
   isHorizontal?: boolean
   /** Format Y-axis tick labels */
   formatYLabel?: (value: number) => string
-  /** Show built-in Chart.js legend (default: true) */
+  /**
+   * Show built-in Chart.js legend
+   * @default true
+   */
   showLegend?: boolean
-  /** Position of the legend (default: 'top') */
+  /**
+   * Position of the legend
+   * @default 'top'
+   */
   legendPosition?: Position
-  /** Alignment of the legend labels within their position (default: 'start') */
+  /**
+   * Alignment of the legend labels within their position
+   * @default 'start'
+   */
   legendAlign?: FlexAlign
-  /** Show values above each bar */
+  /**
+   * Show values above each bar
+   * @default false
+   */
   showDataLabels?: boolean
   /** Format data label values (default: round to nearest integer) */
   formatDataLabel?: (value: number) => string
   /** Custom HTML tooltip configuration. When provided, replaces the default Chart.js tooltip. */
   tooltip?: ChartTooltipConfig
-  /** Chart height in pixels */
+  /**
+   * Chart height in pixels
+   * @default 300
+   */
   height?: number
+  /** Additional class for the wrapper `div` */
   className?: string
 }
 

@@ -14,7 +14,10 @@ import { HashrateSiteView } from './tabs/site-view/site-view'
 export type HashrateTabValue = (typeof HashrateTabTypes)[keyof typeof HashrateTabTypes]
 
 export type HashrateProps = {
-  /** Tab selected on first render. Defaults to the Site View. */
+  /**
+   * Tab selected on first render. Defaults to the Site View.
+   * @default "site-view"
+   */
   defaultTab?: HashrateTabValue
   /** Props forwarded to the Site View tab. */
   siteView?: HashrateSiteViewProps

@@ -2,6 +2,30 @@
 
 A modal dialog built on Radix UI `@radix-ui/react-dialog`. Provides composable primitives plus a high-level `DialogContent` that handles the overlay, portal, title, description, and optional close button in one component.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
+
+### `DialogContent` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `bare` | Optional | `boolean` | `false` | Applies `mdk-dialog__header--bare` to the header |
+| `closable` | Optional | `boolean` | - | Shows an ✕ close button in the header |
+| `closeOnClickOutside` | Optional | `boolean` | `true` | Whether clicking the overlay closes the dialog |
+| `closeOnEscape` | Optional | `boolean` | `true` | Whether pressing Escape closes the dialog |
+| `description` | Optional | `string` | - | Renders `DialogDescription` below the title |
+| `onClose` | Optional | `VoidFunction` | - | Fired when the ✕ button is clicked |
+| `title` | Optional | `string` | - | Renders `DialogTitle` (and optional `DialogDescription`) inside the header |
+
+### `DialogHeader` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `bare` | Optional | `boolean` | `false` | Applies `mdk-dialog__header--bare` to the header |
+| `closable` | Optional | `boolean` | - | Shows an ✕ close button in the header |
+| `onClose` | Optional | `VoidFunction` | - | Fired when the ✕ button is clicked |
+<!-- END GENERATED: props -->
+
 ## Exports
 
 | Name | Description |
@@ -16,27 +40,6 @@ A modal dialog built on Radix UI `@radix-ui/react-dialog`. Provides composable p
 | `DialogDescription` | Accessible description |
 | `DialogFooter` | Footer container |
 | `DialogClose` | Raw Radix close primitive |
-
-## `DialogContent` Props
-
-| Prop                  | Status   | Type           | Default | Description                                                                |
-| --------------------- | -------- | -------------- | ------- | -------------------------------------------------------------------------- |
-| `title`               | Optional | `string`       | —       | Renders `DialogTitle` (and optional `DialogDescription`) inside the header |
-| `description`         | Optional | `string`       | —       | Renders `DialogDescription` below the title                                |
-| `closable`            | Optional | `boolean`      | —       | Shows an ✕ close button in the header                                      |
-| `onClose`             | Optional | `VoidFunction` | —       | Fired when the ✕ button is clicked                                         |
-| `bare`                | Optional | `boolean`      | `false` | Applies `mdk-dialog__header--bare` to the header                           |
-| `closeOnClickOutside` | Optional | `boolean`      | `true`  | Whether clicking the overlay closes the dialog                             |
-| `closeOnEscape`       | Optional | `boolean`      | `true`  | Whether pressing Escape closes the dialog                                  |
-| `className`           | Optional | `string`       | —       | Additional class for the content panel                                     |
-
-## `DialogHeader` Props
-
-| Prop       | Status   | Type           | Default | Description                            |
-| ---------- | -------- | -------------- | ------- | -------------------------------------- |
-| `closable` | Optional | `boolean`      | —       | Renders a close button                 |
-| `onClose`  | Optional | `VoidFunction` | —       | Fired when the close button is clicked |
-| `bare`     | Optional | `boolean`      | `false` | Applies bare header style              |
 
 ## Example
 

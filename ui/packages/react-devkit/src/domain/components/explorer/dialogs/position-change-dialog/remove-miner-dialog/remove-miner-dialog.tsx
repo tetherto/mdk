@@ -3,8 +3,14 @@ import type { Device } from '../../../../../types'
 import { RemoveMinerDialogContent } from './remove-miner-dialog-content'
 
 type RemoveMinerDialogProps = {
+  /**
+   * The miner being removed
+   * @default {}
+   */
   headDevice?: Device
+  /** Controls whether the dialog is open; `false` renders nothing */
   isRemoveMinerFlow: boolean
+  /** Called when the action is cancelled */
   onCancel: VoidFunction
 }
 

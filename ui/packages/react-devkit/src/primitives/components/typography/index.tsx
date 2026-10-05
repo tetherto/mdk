@@ -6,18 +6,16 @@ type TypographyElement = 'h1' | 'h2' | 'h3' | 'p' | 'span'
 
 export type TypographyProps = {
   /**
-   * Typography variant
+   * Determines the rendered HTML element and base style
    * @default 'body'
    */
   variant?: 'heading1' | 'heading2' | 'heading3' | 'body' | 'secondary' | 'caption'
   /**
-   * Text size
-   * @default undefined (uses variant default)
+   * Text size; defaults to the variant's size when unset.
    */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl'
   /**
-   * Font weight
-   * @default undefined (uses variant default)
+   * Font weight; defaults to the variant's weight when unset.
    */
   weight?: 'light' | 'normal' | 'medium' | 'semibold' | 'bold'
   /**
@@ -25,11 +23,13 @@ export type TypographyProps = {
    */
   align?: TextAlign
   /**
-   * Text color variant
+   * Token-based text color
+   * @default "default"
    */
   color?: TypographyColor
   /**
    * Truncate text with ellipsis
+   * @default false
    */
   truncate?: boolean
   /**

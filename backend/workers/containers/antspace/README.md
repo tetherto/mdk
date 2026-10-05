@@ -2,7 +2,7 @@
 
 MDK Worker for Antspace (Bitmain) mining container systems. Supports the HK3 and immersion-cooling models.
 
-## Supported Models
+## Supported models
 
 | `model` value | Model              | Description                        |
 | ------------- | ------------------ | ---------------------------------- |
@@ -74,7 +74,7 @@ Antspace uses a REST HTTP API. The Worker connects over HTTP and polls the conta
 **Error codes:**
 - `E_COOLING_FAIL` — Cooling system failure
 
-## Mock Server
+## Mock server
 
 Run the mock standalone — the model `type` (`hk3` or `immersion`, case-insensitive) is the first
 argument:

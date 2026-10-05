@@ -27,31 +27,67 @@ type Pdu = {
 }
 
 export type SocketProps = {
-  /** Current in amperes */
+  /**
+   * Current in amperes
+   * @default null
+   */
   current_a?: number | null
-  /** Power in watts */
+  /**
+   * Power in watts
+   * @default null
+   */
   power_w?: number | null
-  /** Whether socket is enabled */
+  /**
+   * Whether socket is enabled
+   * @default false
+   */
   enabled?: boolean
-  /** Socket number/index */
+  /**
+   * Socket number/index
+   * @default null
+   */
   socket?: number | null
-  /** Whether socket is selected */
+  /**
+   * Whether socket is selected
+   * @default false
+   */
   selected?: boolean
   /** Forwarded ref for the container */
   innerRef?: ForwardedRef<HTMLDivElement>
-  /** Miner data */
+  /**
+   * Miner data
+   * @default null
+   */
   miner?: Miner | null
-  /** Heatmap configuration */
+  /**
+   * Heatmap configuration
+   * @default null
+   */
   heatmap?: Heatmap | null
-  /** Whether in edit flow mode */
+  /**
+   * Whether in edit flow mode
+   * @default false
+   */
   isEditFlow?: boolean
-  /** Whether click is disabled */
+  /**
+   * Whether click is disabled
+   * @default false
+   */
   clickDisabled?: boolean
-  /** Cooling status */
+  /**
+   * Cooling status
+   * @default undefined
+   */
   cooling?: boolean | undefined
-  /** Whether to show dashed border for empty power */
+  /**
+   * Whether to show dashed border for empty power
+   * @default false
+   */
   isEmptyPowerDashed?: boolean
-  /** Whether container control is supported */
+  /**
+   * Whether container control is supported
+   * @default false
+   */
   isContainerControlSupported?: boolean
   /** PDU information */
   pdu?: Pdu

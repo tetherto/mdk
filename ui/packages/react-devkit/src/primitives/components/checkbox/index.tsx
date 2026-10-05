@@ -8,7 +8,19 @@ export type { CheckedState } from '@radix-ui/react-checkbox'
 
 export type CheckboxSize = 'xs' | ComponentSize
 
+type CheckboxRootProps = ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
 export type CheckboxProps = {
+  // Key controlled-state props re-declared from the Radix root so they surface in
+  // the generated docs (types reuse Radix's via indexed access — cannot drift).
+  /** Controlled checked state */
+  checked?: CheckboxRootProps['checked']
+  /** Uncontrolled initial checked state */
+  defaultChecked?: CheckboxRootProps['defaultChecked']
+  /**
+   * Disable the input
+   * @default false
+   */
+  disabled?: CheckboxRootProps['disabled']
   /**
    * Size variant of the checkbox
    * @default 'md'
@@ -36,7 +48,7 @@ export type CheckboxProps = {
    * Callback when the checked state changes
    */
   onCheckedChange?: (checked: CheckboxPrimitive.CheckedState) => void
-} & ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+} & CheckboxRootProps
 
 /**
  * Checkbox component with full customization

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-plugin-demo",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK gateway plugin: aggregates live telemetry and history from the demo-worker sample across registered devices.",
   "author": "Tether",
   "license": "Apache-2.0",

@@ -1,4 +1,4 @@
-# MDK Avalon Miner Example
+# MDK Avalon miner example
 
 A small, self-contained **Avalon A1346 miner** site you can run with **no real hardware**.
 One Kernel and one Avalon A1346 Worker in a single Node.js process, backed by a **mock** Avalon

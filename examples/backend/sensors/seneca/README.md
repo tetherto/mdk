@@ -1,4 +1,4 @@
-# MDK Seneca Sensor Example
+# MDK Seneca sensor example
 
 A small, self-contained **Seneca** temperature-sensor example you can clone and run with **no real
 hardware**. It starts a mock Seneca sensor, brings up a Kernel, registers the sensor as a thing, and

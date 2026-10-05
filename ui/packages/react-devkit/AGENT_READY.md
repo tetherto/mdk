@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-# Agent-Ready Contract — `@tetherto/mdk-react-devkit`
+# Agent-ready contract — `@tetherto/mdk-react-devkit`
 
 The single source of truth for **what to ship with every public export** so
 AI agents and humans can both consume the devkit reliably. Linked from the
@@ -17,7 +17,7 @@ Three tiers, one decision:
 
 | Tier          | Use when…                                            | Must add                                          |
 | ------------- | ---------------------------------------------------- | ------------------------------------------------- |
-| `agent-ready` | LLMs / non-experts will pick this component directly | JSDoc summary + `@category` + `@domain` + `@tier` + `@kernelCapability` + `USAGE.md` + `*.example.tsx` |
+| `agent-ready` | LLMs / non-experts pick this component directly | JSDoc summary + `@category` + `@domain` + `@tier` + `@kernelCapability` + `USAGE.md` + `*.example.tsx` |
 | `advanced`    | Engineers extending the library use it directly      | JSDoc summary + `@category` + `@domain` + `@tier` |
 | `internal`    | Implementation detail, never part of the public API  | `@tier internal` (the registry generator drops these — no `USAGE.md` or examples required) |
 
@@ -171,7 +171,8 @@ npm run check:agent-ready --workspace @tetherto/mdk-react-devkit
 ```bash
 # As part of the full suite (lint + typecheck + format + agent-ready + tests)
 npm run fullcheck
-# Auto-runs on every PR in the `quality` CI job.
+# Auto-runs on every PR that touches ui/ or CI infra, as the
+# "🤖 Agent-readiness contract (UI)" job in the root .github/workflows/ci.yml.
 ```
 
 The check loads [`dist/registry.json`](./dist/registry.json) and [`dist/blueprints.json`](./dist/blueprints.json), applies the
@@ -193,6 +194,14 @@ To audit total debt locally (ignore the baseline):
 ```bash
 node packages/react-devkit/scripts/check-agent-ready.mjs --no-baseline
 ```
+
+The `USAGE.md` prop-table policy (`check-usage-proptables.mjs`, also run by
+`check:agent-ready`) works the same way against its own
+[`scripts/usage-proptable-baseline.json`](scripts/usage-proptable-baseline.json).
+That baseline is additionally guarded in root CI by the **🔒 USAGE baseline
+monotonicity** job, which compares it against the pull request base as sets:
+removing a path passes, adding one fails. So the baseline cannot be grown to
+baseline-in a new prop table — it can only shrink as tables migrate to JSDoc.
 
 ## Error catalogue
 

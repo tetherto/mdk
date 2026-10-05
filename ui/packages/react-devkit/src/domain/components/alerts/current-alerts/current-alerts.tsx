@@ -32,18 +32,24 @@ export type CurrentAlertsProps = {
    * Shape mirrors the API response from the source app.
    */
   devices?: Device[]
+  /**
+   * Show DataTable loading overlay
+   * @default false
+   */
   isLoading?: boolean
 
   /**
    * Filters controlled outside (typically by URL severity param).
    */
   localFilters: AlertLocalFilters
+  /** Setter for the filters above */
   onLocalFiltersChange: (filters: AlertLocalFilters) => void
 
   /**
    * Search tags (controlled). Mirrors the redux `selectFilterTags` slice in the source app.
    */
   filterTags: string[]
+  /** Setter for the tags above */
   onFilterTagsChange: (tags: string[]) => void
 
   /**
@@ -73,6 +79,7 @@ export type CurrentAlertsProps = {
    */
   typeFiltersForSite?: TagFilterBarProps['typeFiltersForSite']
 
+  /** Additional class names */
   className?: string
 }
 

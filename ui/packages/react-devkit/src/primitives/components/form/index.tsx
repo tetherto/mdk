@@ -2,9 +2,9 @@ import { Slot } from '@radix-ui/react-slot'
 import { Controller, FormProvider, useFormContext } from 'react-hook-form'
 import type {
   ControllerProps,
+  FieldError,
   FieldPath,
   FieldValues,
-  UseFormGetFieldState,
   UseFormReturn,
 } from 'react-hook-form'
 
@@ -42,12 +42,18 @@ const FormItemContext = createContext<FormItemContextValue | null>(null)
  * Hook to access the current form field's state and generated IDs.
  * Must be used inside a `<FormField>` and `<FormItem>`.
  */
-type UseFormFieldReturn = ReturnType<UseFormGetFieldState<FieldValues>> & {
+type UseFormFieldReturn = {
   id: string
   name: string
   formItemId: string
   formDescriptionId: string
   formMessageId: string
+  // Field state from react-hook-form's `getFieldState`, spread onto the result.
+  invalid: boolean
+  isDirty: boolean
+  isTouched: boolean
+  isValidating: boolean
+  error?: FieldError
 }
 
 /**

@@ -41,10 +41,11 @@ package. `apps/*` is deliberately left out of the workspaces: the dashboard link
 the MDK UI packages by `file:` path, and hoisting its React through the root
 alongside those links invites a duplicate-React bug, so it installs in place.
 
-`.mdk/` gives each component its own data root (`kernel/`, `gateway/`,
+`.mdk/` gives each component its own data root (`kernel/`, `gateway/`, `mcp/`,
 `workers/<name>/`) plus the two cross-process handoff artifacts both sides look
-for: `kernel.key` (read by the Gateway) and `keys/` (written by Workers, watched
-by the Kernel). Delete the whole directory to reset a stack.
+for: `kernel.key` (read by the Gateway and the MCP server) and `keys/` (written
+by Workers, watched by the Kernel). Delete the whole directory to reset a
+stack.
 
 ## Develop
 
@@ -105,9 +106,11 @@ npm run dev -- onboard
 
 `mdk run` boots the components declared in `mdk.yaml` against project-local state
 under `.mdk/`. With no target, it boots the Kernel, every Worker, and the
-Gateway together in one process. Prefer separate terminals instead? Run each
-component on its own (`mdk run kernel`, `mdk run worker <name>`, `mdk run
-gateway`) — that's just which command(s) you type, not a spec setting.
+Gateway together in one process (the MCP server is never part of `all` — it's
+always started explicitly, see [Run the MCP server](#run-the-mcp-server)).
+Prefer separate terminals instead? Run each component on its own (`mdk run
+kernel`, `mdk run worker <name>`, `mdk run gateway`) — that's just which
+commands you type, not a spec setting.
 
 A **Worker** is a plugin package (contract + handlers) that the CLI hosts on
 `WorkerRuntimeV2` — the same "caller hosts the plugin" split the monorepo examples
@@ -180,7 +183,7 @@ stopped in reverse boot order — gateway, then Workers and their mocks, then th
 Kernel — but the process exits regardless of how that goes: a stop that throws is
 skipped, a stop that wedges is abandoned after 5s with a forced exit, and a
 second Ctrl+C exits immediately. So the ports a run holds are always released
-when it is stopped. If a port is still busy afterwards, the run did not actually
+when it is stopped. If a port is still busy afterward, the run did not actually
 exit — check for a forgotten foreground `mdk run` in another terminal
 (`ps -o pid,stat,etime,command -p <pid>`; a `+` in `STAT` means it is still the
 foreground job of a live tab).
@@ -221,12 +224,44 @@ node "$CLI" run --dir /tmp/mdk-try                      # everything together: k
 node "$CLI" run worker demo-miner --dir /tmp/mdk-try    # just the worker (+ its mocks)
 ```
 
+### Run the MCP server
+
+`mdk run mcp` boots a standalone [`@tetherto/mdk-mcp`](../../backend/core/mcp/README.md)
+server — a separate process from the Gateway, which has no MCP code of its own.
+It requires `mdk.yaml` exactly like every other `run` target, and reads the same
+`spec.gateway.plugins` the Gateway itself loads: each declared plugin's
+`mdk-plugin.json` contract is converted into MCP tools with no separate tool
+authoring. Like `dashboard`, `mcp` is never part of the default `all` target —
+it's always started explicitly, and needs the Kernel already reachable (an
+in-process handle isn't available to a standalone `run mcp`, so start the
+Kernel first: `mdk run kernel`).
+
+```bash
+node "$CLI" run kernel --dir /tmp/mdk-try    # first, in its own terminal
+node "$CLI" run mcp --dir /tmp/mdk-try       # then, in another terminal
+```
+
+The server listens on `spec.mcp.port` if set in `mdk.yaml`, else
+`spec.gateway.port + 100`:
+
+```yaml
+spec:
+  gateway:
+    port: 3000
+  mcp:
+    port: 3100   # optional — defaults to gateway.port + 100
+```
+
+This is distinct from `mdk mcp register` (a separate, still-`(stub)` command
+for registering an MCP endpoint in a coding-agent's own client config) — `run
+mcp` is what actually starts the server that command would point a client at.
+
 ### Check the stack
 
-`mdk status` is a one-shot, read-only report — it never starts, stops or repairs
+`mdk status` is a one-shot, read-only report — it never starts, stops, or repairs
 anything. It covers the **environment** (Node version, package manager, `mdk.yaml`
 validity, and whether every declared Worker plugin package actually resolves) and
-the **stack** (Kernel, Gateway, and each Worker with its state, health and device
+the **stack** (Kernel, Gateway, and each Worker with its state, health, and device
 count).
 
 ```bash
@@ -298,14 +333,14 @@ mdk onboard
 Stub commands are wired up (name, arguments, options, help) but not implemented: each prints
 `mdk <command>: not implemented yet (stub).` to stderr and exits 0.
 
-| Group            | Implemented commands                    | Stub commands                                                               |
-| ---------------- | --------------------------------------- | --------------------------------------------------------------------------- |
-| Onboarding       | `mdk onboard`                           |                                                                             |
-| Scaffold         | `mdk create worker <name>`, `mdk create plugin <name>`, `mdk create dashboard [name]` |                               |
-| Run & manage     | `mdk run [target] [name]`, `mdk status` | `mdk get <resource>`, `mdk describe <resource> <name>`, `mdk logs <target>` |
-| Discover         | `mdk discover`                          |                                                                             |
-| Agent enablement | `mdk skill add`                         | `mdk mcp register`                                                          |
-| Meta             | `mdk version`                           | `mdk manifest` (alias `json-help`)                                          |
+| Group            | Implemented commands                                                                  | Stub commands                                                               |
+| ---------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Onboarding       | `mdk onboard`                                                                         |                                                                             |
+| Scaffold         | `mdk create worker <name>`, `mdk create plugin <name>`, `mdk create dashboard [name]` |                                                                             |
+| Run & manage     | `mdk run [target] [name]` (target: `all`\|`kernel`\|`gateway`\|`mcp`\|`worker <name>`\|`dashboard`), `mdk status` | `mdk get <resource>`, `mdk describe <resource> <name>`, `mdk logs <target>` |
+| Discover         |                                                                                       | `mdk discover`                                                              |
+| Agent enablement | `mdk skill add`                                                                       | `mdk mcp register`                                                          |
+| Meta             | `mdk version`                                                                         | `mdk manifest` (alias `json-help`)                                          |
 
 Global flags:
 

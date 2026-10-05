@@ -60,7 +60,7 @@ it would a published package.
 - Name numeric fields with the unit suffix when helpful (`powerW`, not `power`
   next to a separate `unit`), so cards can round without guessing.
 
-## Fully-populated route example
+## Fully populated route example
 
 Every field from the table above, together, on one route:
 

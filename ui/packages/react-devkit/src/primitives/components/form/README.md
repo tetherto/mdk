@@ -1,19 +1,19 @@
-# Form Components & Utilities
+# Form components & utilities
 
 Enhanced form system built on top of [react-hook-form](https://react-hook-form.com/) with pre-built components, hooks, and validation utilities to reduce boilerplate and improve developer experience.
 
-## Table of Contents
+## Table of contents
 
-- [Quick Start](#quick-start)
+- [Quickstart](#quickstart)
 - [Pre-built Field Components](#pre-built-field-components)
 - [Custom Hooks](#custom-hooks)
 - [Validation Utilities](#validation-utilities)
 - [Type Safety](#type-safety)
 - [Advanced Examples](#advanced-examples)
 
-## Quick Start
+## Quickstart
 
-### Before (Basic Approach)
+### Before (basic approach)
 
 ```tsx
 import { useForm } from 'react-hook-form'
@@ -56,7 +56,7 @@ const MyForm = () => {
 }
 ```
 
-### After (Enhanced Approach)
+### After (enhanced approach)
 
 ```tsx
 import { useForm } from 'react-hook-form'
@@ -85,7 +85,7 @@ const MyForm = () => {
 
 **Benefits:** 50% less code, cleaner syntax, built-in best practices.
 
-## Pre-built Field Components
+## Pre-built field components
 
 All pre-built components automatically handle:
 
@@ -112,7 +112,7 @@ Text input field with optional label and description.
 />
 ```
 
-### FormTextArea
+### `FormTextArea`
 
 Multi-line text input field.
 
@@ -126,7 +126,7 @@ Multi-line text input field.
 />
 ```
 
-### FormSelect
+### `FormSelect`
 
 Dropdown select field with predefined options.
 
@@ -145,7 +145,7 @@ Dropdown select field with predefined options.
 />
 ```
 
-### FormCheckbox
+### `FormCheckbox`
 
 Checkbox input with optional label.
 
@@ -158,7 +158,7 @@ Checkbox input with optional label.
 />
 ```
 
-### FormSwitch
+### `FormSwitch`
 
 Toggle switch input.
 
@@ -172,7 +172,7 @@ Toggle switch input.
 />
 ```
 
-### FormRadioGroup
+### `FormRadioGroup`
 
 Radio button group with predefined options.
 
@@ -190,7 +190,7 @@ Radio button group with predefined options.
 />
 ```
 
-### FormDatePicker
+### `FormDatePicker`
 
 Date picker input.
 
@@ -246,9 +246,9 @@ Hierarchical select for categories and subcategories.
 />
 ```
 
-## Custom Hooks
+## Custom hooks
 
-### useFormField
+### `useFormField`
 
 Already available in the base form system. Access field state and IDs inside form components.
 
@@ -266,11 +266,11 @@ const CustomFormComponent = () => {
 }
 ```
 
-### Form Submission (Modern Approach)
+### Form submission (modern approach)
 
 React Hook Form already tracks submission state - just use `form.formState.isSubmitting`!
 
-#### Simple Pattern (Recommended)
+#### Simple pattern (recommended)
 
 ```tsx
 const form = useForm<FormValues>({
@@ -291,7 +291,7 @@ return (
 )
 ```
 
-#### With Custom Error/Success Messages (Optional)
+#### With custom error/Success messages (optional)
 
 Only add `useState` if you need custom messages beyond RHF's field errors:
 
@@ -338,7 +338,7 @@ return (
 - Works perfectly with Zod validation (which is synchronous)
 - `useState` only when you actually need custom messages
 
-### useFormReset
+### `useFormReset`
 
 Handle form reset with callbacks.
 
@@ -357,9 +357,9 @@ return (
 )
 ```
 
-## Validation Utilities
+## Validation utilities
 
-### Common Validators
+### Common validators
 
 Pre-built Zod validators for common field types.
 
@@ -385,7 +385,7 @@ const schema = z.object({
 })
 ```
 
-### Validation Helpers
+### Validation helpers
 
 ```tsx
 import {
@@ -421,7 +421,7 @@ const schema = z
   .refine(...createConditionalRequired('type', 'phone', 'phone', 'Phone is required'))
 ```
 
-### Pre-built Schemas
+### Pre-built schemas
 
 ```tsx
 import { loginSchema, registerSchema, profileSchema, contactSchema } from '@tetherto/mdk-react-devkit'
@@ -437,9 +437,9 @@ const extendedSchema = loginSchema.extend({
 })
 ```
 
-## Type Safety
+## Type safety
 
-### Type-safe Field Names
+### Type-safe field names
 
 Prevent typos and get autocomplete for field names.
 
@@ -476,9 +476,9 @@ const field = createFieldNames<FormValues>()
 />
 ```
 
-## Advanced Examples
+## Advanced examples
 
-### Complete Registration Form
+### Complete registration form
 
 ```tsx
 import { useForm } from 'react-hook-form'
@@ -546,7 +546,7 @@ export const RegistrationForm = () => {
 }
 ```
 
-### Dynamic Field Arrays
+### Dynamic field arrays
 
 ```tsx
 import { useFieldArray } from 'react-hook-form'
@@ -585,7 +585,7 @@ const DynamicForm = () => {
 
 ## Migration Guide
 
-### From Basic FormField to Pre-built Components
+### From basic FormField to pre-built components
 
 **Before:**
 
@@ -619,7 +619,7 @@ const DynamicForm = () => {
 />
 ```
 
-### From Custom Validators to Built-in Validators
+### From custom validators to built-in validators
 
 **Before:**
 
@@ -650,7 +650,7 @@ const schema = z.object({
 })
 ```
 
-## Best Practices
+## Best practices
 
 1. **Use pre-built components for standard fields** - Less code, better consistency
 2. **Leverage validators for common patterns** - Avoid reinventing validation logic
@@ -659,6 +659,6 @@ const schema = z.object({
 5. **Extend pre-built schemas** - Start with common schemas and customize as needed
 6. **Keep validation logic in schemas** - Don't mix validation in components
 
-## API Reference
+## API reference
 
 See the TypeScript definitions for complete API documentation. All components and utilities are fully typed with JSDoc comments.

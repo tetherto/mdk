@@ -1,24 +1,39 @@
-# DatePicker & DateRangePicker
+# `DatePicker` & `DateRangePicker`
 
 Single-date and range-date pickers built on `react-day-picker`. The range
 picker includes presets and a modal-style popover with Clear / Apply actions.
 
-## `DatePicker` props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop                | Status   | Type                    | Default         | Description                       |
-| ------------------- | -------- | ----------------------- | --------------- | --------------------------------- |
-| `selected`          | Optional | `Date`                  | —               | Selected date                     |
-| `onSelect`          | Optional | `(date?: Date) => void` | —               | Setter                            |
-| `placeholder`       | Optional | `string`                | `"Pick a date"` | Trigger button placeholder        |
-| `dateFormat`        | Optional | `string`                | `"MM/dd/yyyy"`  | `date-fns` format string          |
-| `disabled`          | Optional | `boolean`               | `false`         | Disable the trigger               |
-| `triggerClassName`  | Optional | `string`                | —               | Class names on the trigger button |
-| `calendarClassName` | Optional | `string`                | —               | Class names on the day-picker     |
+### `DatePicker` props
 
-## `DateRangePicker` props
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `calendarClassName` | Optional | `string` | - | Custom className for the calendar |
+| `dateFormat` | Optional | `string` | `"MM/dd/yyyy"` | Date format for display |
+| `disabled` | Optional | `(boolean & (Matcher \| Matcher[]))` | `false` | Whether the picker is disabled |
+| `onSelect` | Optional | `((date: Date \| undefined) => void)` | - | Callback when date changes |
+| `placeholder` | Optional | `string` | `"Pick a date"` | Placeholder text when no date is selected |
+| `selected` | Optional | `Date` | - | Currently selected date |
+| `triggerClassName` | Optional | `string` | - | Custom className for the trigger button |
 
-Adds `showPresets`, `presets: PresetItem[]`, `allowFutureDates`, and
-`modalClassName`. `selected` / `onSelect` use `DateRange`.
+### `DateRangePicker` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `allowFutureDates` | Optional | `boolean` | `false` | Whether to allow future dates |
+| `calendarClassName` | Optional | `string` | - | Custom className for the calendar |
+| `dateFormat` | Optional | `string` | `"MM/dd/yyyy"` | Date format for display |
+| `disabled` | Optional | `(boolean & (Matcher \| Matcher[]))` | `false` | Whether the picker is disabled |
+| `modalClassName` | Optional | `string` | - | Custom className for the modal |
+| `onSelect` | Optional | `((range: DateRange \| undefined) => void)` | - | Callback when date range changes |
+| `placeholder` | Optional | `string` | `"Pick a date range"` | Placeholder text when no range is selected |
+| `presets` | Optional | `PresetItem[]` | - | Custom preset items |
+| `selected` | Optional | `DateRange` | - | Selected date range |
+| `showPresets` | Optional | `boolean` | `true` | Whether to show preset buttons |
+| `triggerClassName` | Optional | `string` | - | Custom className for the trigger button |
+<!-- END GENERATED: props -->
 
 ## Example
 

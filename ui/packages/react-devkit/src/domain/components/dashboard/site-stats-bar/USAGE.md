@@ -1,22 +1,24 @@
-# SiteStatsBar
+# `SiteStatsBar`
 
 Site-level summary strip sitting at the top of a dashboard page. Composes
 `WidgetTopRow` (title + current power) and `GenericDataBox` (hashrate, miner
 count, container count) into one horizontal card.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop             | Status   | Type      | Default  | Description                                 |
-| ---------------- | -------- | --------- | -------- | ------------------------------------------- |
-| `title`          | Required | `string`  | —        | Site label, rendered in the header row      |
-| `power`          | Optional | `number`  | —        | Current power, expressed in `powerUnit`     |
-| `powerUnit`      | Optional | `string`  | `'kW'`   | Display unit for `power`                    |
-| `totalHashrate`  | Optional | `number`  | —        | Aggregate hashrate                          |
-| `hashrateUnit`   | Optional | `string`  | `'TH/s'` | Display unit for `totalHashrate`            |
-| `minerCount`     | Optional | `number`  | —        | Total miner count across the site           |
-| `containerCount` | Optional | `number`  | —        | Total container count across the site       |
-| `isLoading`      | Optional | `boolean` | `false`  | Render a skeleton bar while data is loading |
-| `className`      | Optional | `string`  | —        | Class hook                                  |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `title` | Required | `string` | - | Site label rendered in the header row |
+| `className` | Optional | `string` | - | Optional class hook |
+| `containerCount` | Optional | `number` | - | Total container count across the site |
+| `hashrateUnit` | Optional | `string` | `"TH/s"` | Hashrate display unit — defaults to `TH/s` |
+| `isLoading` | Optional | `boolean` | `false` | Render a skeleton bar while data is loading |
+| `minerCount` | Optional | `number` | - | Total miner count across the site |
+| `power` | Optional | `number` | - | Current site-level power consumption, in watts (or whatever `powerUnit` says) |
+| `powerUnit` | Optional | `string` | `"kW"` | Display unit for `power` — defaults to `kW` |
+| `totalHashrate` | Optional | `number` | - | Aggregate hashrate, in TH/s |
+<!-- END GENERATED: props -->
 
 ## Example
 

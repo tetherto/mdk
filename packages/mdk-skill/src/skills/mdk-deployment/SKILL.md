@@ -48,6 +48,8 @@ spec:
     plugins:
       - package: <plugin-package-name>   # e.g. fleet-summary, or @org/name
         config: {}
+  mcp:
+    port: 3947   # optional — defaults to gateway.port + 100
   workers:
     - name: <worker-name>
       package: ./workers/<worker-name>   # local path, or an installed npm name
@@ -74,12 +76,19 @@ mdk run kernel
 mdk run gateway
 mdk run worker <name>       # e.g. mdk run worker demo-miner
 mdk run dashboard           # the scaffolded UI shell's dev server
+mdk run mcp                 # standalone MCP server for AI agents (needs Kernel running first)
 ```
 
 `mdk run` with no target boots everything together; that's not a spec setting,
 just which command you type. Use the per-component targets and separate
 terminals when debugging one tier. Gateway port is `spec.gateway.port`
 (example: `3847`); curl plugins at `http://127.0.0.1:<gateway-port>/api/...`.
+
+Like the dashboard, `mcp` is never part of the default `all` target — always
+start it explicitly, in its own terminal, after `mdk run kernel` (a standalone
+`run mcp` has no in-process Kernel handle to reuse). It exposes each declared
+Gateway plugin's routes as agent-callable tools, over `spec.mcp.port` if set,
+else `spec.gateway.port + 100`.
 
 Ctrl+C / SIGTERM stops components in reverse boot order (Gateway → Workers →
 Kernel) and always exits, even if a component's own shutdown hangs.

@@ -2,7 +2,7 @@
 
 MDK Worker for Canaan Avalon Bitcoin miners. Supports the A1346 family.
 
-## Supported Models
+## Supported models
 
 | `model` value | Model |
 |--------|-------|

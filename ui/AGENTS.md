@@ -1,4 +1,4 @@
-# MDK — Agent guide
+# MDK — agent guide
 
 MDK (Mining Development Kit) is a UI toolkit for mining dashboards designed
 so AI agents can build features from plain-language intents without parsing
@@ -37,7 +37,7 @@ exports, so no tooling sits between you and the data.
 | Package                       | Artifact                | Subpath import                                | What it describes                                                  |
 | ----------------------------- | ----------------------- | --------------------------------------------- | ------------------------------------------------------------------ |
 | `@tetherto/mdk-react-devkit`  | `dist/registry.json`    | `@tetherto/mdk-react-devkit/registry.json`    | Every public component + hook with props, JSDoc, tier, indexes.    |
-| `@tetherto/mdk-react-devkit`  | `dist/blueprints.json`  | `@tetherto/mdk-react-devkit/blueprints.json`  | Intent → recipe map (markdown body included).                      |
+| `@tetherto/mdk-react-devkit`  | `dist/blueprints.json`  | `@tetherto/mdk-react-devkit/blueprints.json`  | Intent → recipe map (Markdown body included).                      |
 | `@tetherto/mdk-react-adapter` | `dist/hooks.json`       | `@tetherto/mdk-react-adapter/hooks.json`      | React hooks (store / utility / permission / ui / external) + provider. |
 | `@tetherto/mdk-ui-foundation` | `dist/stores.json`      | `@tetherto/mdk-ui-foundation/stores.json`     | Zustand stores (state + actions) and TanStack Query helpers.       |
 
@@ -108,7 +108,7 @@ the single source for this rule.
    or run [`mdk create dashboard`](../packages/cli/README.md) to get the same
    template alongside a running backend stack.
 1. **Intent → recipe** — scan `blueprints.json` for a blueprint whose
-   `intent` matches the user's goal; its markdown `body` is the recipe.
+   `intent` matches the user's goal; its Markdown `body` is the recipe.
 2. **Recipe → component** — intersect `registry.json`'s `indexes`
    (`componentsByDomain`, `componentsByKernelCapability`,
    `componentsByCategory`, `componentsByTier`) to find the component.
@@ -133,3 +133,9 @@ npm run fullcheck
 If `check:agent-ready` reports a NEW violation, the error message names the
 file, the rule, and the one-line fix. The full catalogue lives in
 [`packages/react-devkit/AGENT_READY.md`](packages/react-devkit/AGENT_READY.md).
+
+This runs as a blocking gate in root CI too — the **🤖 Agent-readiness
+contract (UI)** job in the repo's `.github/workflows/ci.yml` — so a new
+violation fails the pull request, not just the local run. A companion **🔒
+USAGE baseline monotonicity** job blocks any growth of
+`usage-proptable-baseline.json`.

@@ -2,7 +2,7 @@
 title: Workers
 description: Device protocol adapters that wrap APIs and expose them through the MDK Protocol
 docs@tether_slug: reference/worker
-todo: Ported to user docs as reference, breaks diataxis
+todo: Ported to user docs as reference, breaks Diátaxis
 ---
 
 # Workers
@@ -15,13 +15,13 @@ logic.
 
 Workers are organized by categories, for example:
 
-| Directory | Description |
-|-----------|-------------|
-| [`miners/`][miners-readme] | Bitcoin ASIC miners — Antminer, Avalon |
+| Directory                          | Description                                        |
+|------------------------------------|----------------------------------------------------|
+| [`miners/`][miners-readme]         | Bitcoin ASIC miners — Antminer, Avalon             |
 | [`containers/`][containers-readme] | Mining container orchestration — Antspace, Bitdeer |
-| [`minerpools/`][minerpools-readme] | Pool API integrations — Ocean, F2Pool |
-| [`power-meter/`][power-meter-readme] | Power metering — ABB, SATEC, Schneider |
-| [`temperature/`][temperature-readme] | Temperature/humidity sensors — Seneca |
+| [`minerpools/`][minerpools-readme] | Pool API integrations — Ocean, F2Pool              |
+| [`power-meter/`][power-meter-readme] | Power metering — ABB, SATEC, Schneider           |
+| [`temperature/`][temperature-readme] | Temperature/humidity sensors — Seneca            |
 
 ## How Workers fit into MDK
 
@@ -54,7 +54,7 @@ source of truth. Declares every telemetry field
 (name, unit, type) and every command (name, params)
 - **A [mock server][mdk-e2e-server]**, a local HTTP server with canned responses for hardware-free development
 
-### 1. Worker Plugin
+### 1. Worker plugin
 
 The plugin is the object `WorkerRuntime` is constructed with — the contract, the plugin's own directory, and a
 `connect` function that turns one device's config into the `device` object every handler sees. There is no
@@ -70,7 +70,7 @@ miners/antminer/
   lib/antminer.js           # the device driver plugin.connect() returns
 ```
 
-### 2. WorkerRuntime
+### 2. `WorkerRuntime`
 
 [`WorkerRuntime`][mdk-worker-runtime] hosts every device behind one HRPC channel to Kernel. It:
 - Starts a Hyperswarm RPC server and responds to every MDK Protocol action
@@ -96,7 +96,9 @@ field — *"Outlet temperature > 85C requires intervention"*, not *"Outlet tempe
 - `constraints` governs orchestration limits, publishing the bounds a caller is expected to respect
 - `troubleshooting` pairs if/then recovery behaviours with the payload they evaluate
 
-Kernel fetches this contract once via `capability.request` and caches it. The Gateway and AI agents use it to derive available operations dynamically.
+Kernel fetches this contract once via `capability.request` and caches it, and validates commands against it. A plugin can query the same
+capabilities to derive available operations dynamically. (Agent MCP tools are not derived from the contract — they come from a plugin's
+`mcp-plugin.json` or the Gateway plugin's `mdk-plugin.json`.)
 
 ## Start a Worker
 

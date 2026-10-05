@@ -11,13 +11,24 @@ import './position-change-dialog.scss'
 import { useEffect, useState } from 'react'
 
 type PositionChangeDialogProps = {
+  /** Controls dialog visibility */
   open: boolean
+  /** Called when dialog closes */
   onClose: (currentDialogFlow: string, isDontReset?: boolean) => void
+  /** Socket being replaced */
   selectedSocketToReplace?: UnknownRecord
+  /** Socket being edited */
   selectedEditSocket?: UnknownRecord
+  /** Callback when position change is triggered */
   onChangePositionClicked?: VoidFunction
+  /** Callback on successful position change */
   onPositionChangedSuccess?: VoidFunction
+  /**
+   * Whether the target container slot is empty
+   * @default false
+   */
   isContainerEmpty?: boolean
+  /** Initial dialog step/flow identifier */
   dialogFlow?: string
 }
 

@@ -33,7 +33,7 @@ The model routes and narrates; the tools compute. Nothing leaves the machine.
 > on this machine additionally needs `@qvac/cli` — see
 > [Run the agent as a standalone CLI](../../../docs/guides/agent/run-standalone.md).
 
-## Quick start
+## Quickstart
 
 Serve a model, boot the demo fleet, and start the CLI:
 

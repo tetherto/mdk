@@ -1,4 +1,4 @@
-# MultiLevelSelect
+# `MultiLevelSelect`
 
 Grouped select control with collapsible sections, built on the MDK `Select` primitive.
 
@@ -15,7 +15,10 @@ All sub-components are accessed through the `MultiLevelSelect` namespace.
 | `MultiLevelSelect.Item`    | Selectable option                                |
 | `MultiLevelSelect.Section` | Collapsible group of items with a section header |
 
-## Props — MultiLevelSelect.Section
+## `MultiLevelSelect.Section` Props detail
+
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 | Prop           | Status   | Type                      | Default | Description                                      |
 | -------------- | -------- | ------------------------- | ------- | ------------------------------------------------ |

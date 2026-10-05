@@ -3,7 +3,12 @@ import { DeviceInfo } from '../../../info-container/info-container'
 import './miner-info-card.scss'
 
 type MinerInfoCardProps = {
+  /** Array of label/value pairs to display */
   data: InfoItem[]
+  /**
+   * Card heading label
+   * @default "Miner info"
+   */
   label: string
 }
 

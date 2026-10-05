@@ -95,6 +95,7 @@ export type LightWeightLineChartProps = {
   uniformDistribution?: boolean
   /**
    * The unit to display with values
+   * @default ""
    */
   unit?: string
   /**
@@ -106,7 +107,8 @@ export type LightWeightLineChartProps = {
    */
   showPointMarkers?: boolean
   /**
-   * Controls the height of the chart. Default: 240
+   * Controls the height of the chart
+   * @default 240
    */
   height?: number
 }

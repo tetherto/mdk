@@ -1,16 +1,24 @@
-# TextArea
+# `TextArea`
 
 A multi-line text input with optional label, error message, and accessible markup. Renders as a `<textarea>` element.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `error` | Optional | `string` | - | Validation error message. When provided, displays error styling (red border) and the message below the textarea |
+| `id` | Optional | `string` | `auto-generated` | HTML id for the textarea. Required when using label for accessibility |
+| `label` | Optional | `string` | - | Optional label displayed above the textarea |
+| `wrapperClassName` | Optional | `string` | - | Custom className for the root wrapper |
+<!-- END GENERATED: props -->
+
+## Props detail
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 | Prop               | Status   | Type      | Default  | Description                                                                       |
 | ------------------ | -------- | --------- | ---------| --------------------------------------------------------------------------------- |
-| `label`            | Optional | `string`  | —        | Label text rendered above the `<textarea>`                                        |
-| `id`               | Optional | `string`  | auto-generated | HTML id for the `<textarea>`; required for label association when providing `label` |
-| `error`            | Optional | `string`  | —        | Validation error message shown below the `<textarea>`; also applies error styling |
-| `wrapperClassName` | Optional | `string`  | —        | Additional class for the root wrapper element                                     |
-| `className`        | Optional | `string`  | —        | Additional class for the `<textarea>` element                                     |
 | `disabled`         | Optional | `boolean` | —        | Disables the `<textarea>`                                                         |
 
 All other native `<textarea>` HTML attributes are forwarded (e.g. `rows`, `placeholder`, `value`, `onChange`).

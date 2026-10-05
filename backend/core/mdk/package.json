@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-core",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK bootstrap utilities and worker-infra services — kernel/gateway lifecycle plus injectable log/comment/alert/stats/settings/provisioning services for runtime-hosted workers",
   "main": "index.js",
   "keywords": [

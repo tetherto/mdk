@@ -22,7 +22,7 @@ export type LoaderProps = {
    *
    * The default reserves a fixed 200px so a panel standing in for absent content does not
    * collapse and then jump. Inline, that height is wrong: it strands the dots ~100px below the
-   * thing they belong to and centres them against surrounding text, which reads as frozen.
+   * thing they belong to and centers them against surrounding text, which reads as frozen.
    * @default false
    */
   inline?: boolean

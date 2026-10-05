@@ -3,6 +3,23 @@
 Floating panel anchored to a trigger element. Built on Radix UI; use the
 composable parts for full control, or `SimplePopover` for the common case.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `content` | Required | `React.ReactNode` | - | Popover content |
+| `trigger` | Required | `React.ReactNode` | - | Element that triggers the popover |
+| `align` | Optional | `"center" \| "start" \| "end"` | `"center"` | Alignment of the popover |
+| `className` | Optional | `string` | - | Additional class for content |
+| `onOpenChange` | Optional | `((open: boolean) => void)` | - | Callback when open state changes |
+| `open` | Optional | `boolean` | - | Controlled open state |
+| `showArrow` | Optional | `boolean` | `false` | Whether to show the arrow |
+| `showClose` | Optional | `boolean` | `false` | Whether to show a close button |
+| `side` | Optional | `"left" \| "right" \| "top" \| "bottom"` | `"bottom"` | Position of the popover relative to trigger |
+| `sideOffset` | Optional | `number` | `8` | Distance from the trigger in pixels |
+<!-- END GENERATED: props -->
+
 ## Composition
 
 ```tsx
@@ -14,7 +31,9 @@ composable parts for full control, or `SimplePopover` for the common case.
 </Popover>
 ```
 
-## `Popover` (root) props
+## `Popover` (root) Props detail
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 | Prop           | Status   | Type      | Default | Description                 |
 | -------------- | -------- | --------- | ------- | --------------------------- |
@@ -23,7 +42,7 @@ composable parts for full control, or `SimplePopover` for the common case.
 | `onOpenChange` | Optional | `(open: boolean) => void` | —       | Open-state change handler   |
 | `modal`        | Optional | `boolean` | `false` | Trap focus inside the panel |
 
-## `PopoverContent` props
+## `PopoverContent` Props detail
 
 | Prop         | Status   | Type                                     | Default    | Description                    |
 | ------------ | -------- | ---------------------------------------- | ---------- | ------------------------------ |

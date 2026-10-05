@@ -9,6 +9,7 @@ export type BtcAveragePriceProps = Partial<{
   price: number | null
   /**
    * Label for the BTC average price.
+   * @default "BTC Average Price"
    */
   label: string
 }>

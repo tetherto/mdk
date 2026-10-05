@@ -2,10 +2,18 @@ import React from 'react'
 import { cn, toCssSize } from '../../utils'
 
 export type SkeletonBlockProps = Partial<{
+  /**
+   * Renders a perfect circle using `height` as the diameter
+   * @default false
+   */
   circle: boolean
+  /** Additional class for the element */
   className: string
+  /** Width in pixels (number) or any CSS value (string) */
   width: number | string
+  /** Height in pixels (number) or any CSS value (string) */
   height: number | string
+  /** Border radius; ignored when `circle` is true */
   borderRadius: number | string
 }>
 

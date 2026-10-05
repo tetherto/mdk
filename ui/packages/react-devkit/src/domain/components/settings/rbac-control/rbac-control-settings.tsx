@@ -11,15 +11,28 @@ import { ManageUserModal } from '../manage-user-modal'
 import './rbac-control-settings.scss'
 
 export type RBACControlSettingsProps = {
+  /** List of current users */
   users: SettingsUser[]
+  /** Available role options */
   roles: RoleOption[]
+  /** Permission levels per role */
   rolePermissions: Record<string, Record<string, PermLevel>>
+  /** Display labels for permission keys */
   permissionLabels: Record<string, string>
+  /** Whether the current user may edit access settings */
   canWrite: boolean
+  /**
+   * Show loading state
+   * @default false
+   */
   isLoading?: boolean
+  /** Create a new user */
   onCreateUser: (data: { name: string; email: string; role: string }) => Promise<void>
+  /** Update an existing user's role */
   onUpdateUser: (data: { id: string; name: string; email: string; role: string }) => Promise<void>
+  /** Delete a user */
   onDeleteUser: (userId: string) => Promise<void>
+  /** Additional CSS class */
   className?: string
 }
 

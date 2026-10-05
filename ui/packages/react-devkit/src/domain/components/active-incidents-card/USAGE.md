@@ -3,17 +3,19 @@
 Summary card displaying a list of active incidents/alerts with severity
 indicators, loading skeleton, and empty state.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop           | Status   | Type                   | Default           | Description                                       |
-| -------------- | -------- | ---------------------- | ----------------- | ------------------------------------------------- |
-| `label`        | Optional | `string`               | `"Active Alerts"` | Header label shown above the list                 |
-| `isLoading`    | Optional | `boolean`              | `false`           | Show skeleton rows instead of items               |
-| `className`    | Optional | `string`               | —                 | Additional class names appended to the root       |
-| `skeletonRows` | Optional | `number`               | `4`               | Number of skeleton rows shown when `isLoading`    |
-| `emptyMessage` | Optional | `string`               | —                 | Message rendered when no items                    |
-| `items`        | Optional | `TIncidentRowProps[]`  | `[]`              | Incident rows to render                           |
-| `onItemClick`  | Optional | `(id: string) => void` | —                 | Called with the incident id when a row is clicked |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Additional class names appended to the root |
+| `emptyMessage` | Optional | `string` | - | Message rendered when no items |
+| `isLoading` | Optional | `boolean` | `false` | Show skeleton rows instead of items |
+| `items` | Optional | `TIncidentRowProps[]` | `[]` | Incident rows to render |
+| `label` | Optional | `string` | `"Active Alerts"` | Header label shown above the list |
+| `onItemClick` | Optional | `(id: string) => void` | - | Called with the incident id when a row is clicked |
+| `skeletonRows` | Optional | `number` | `4` | Number of skeleton rows shown when `isLoading` |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

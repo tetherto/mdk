@@ -2,7 +2,10 @@ import { ArrowLeftIcon } from '@radix-ui/react-icons'
 
 import { Button, Loader } from '@primitives'
 
-import type { SiteOverviewDetailsDataOptions, UnitData } from '../../../components/pool-manager/site-overview-details/use-site-overview-details-data'
+import type {
+  SiteOverviewDetailsDataOptions,
+  UnitData,
+} from '../../../components/pool-manager/site-overview-details/use-site-overview-details-data'
 import type { PoolConfigData } from '../../../components'
 import { SiteOverviewDetailsContainer } from '../../../components/pool-manager/site-overview-details/site-overview-details-container'
 import './pool-manager-site-overview-details.scss'
@@ -16,7 +19,10 @@ export type PoolManagerSiteOverviewDetailsProps = {
   poolConfig: PoolConfigData[]
   /** Optional data-fetch knobs forwarded to `useSiteOverviewDetailsData`. */
   dataOptions?: SiteOverviewDetailsDataOptions
-  /** Show a centered loader instead of the detail container. */
+  /**
+   * Show a centered loader instead of the detail container.
+   * @default false
+   */
   isLoading?: boolean
   /** Called when the operator clicks the "Site Overview" back link. */
   backButtonClick: VoidFunction

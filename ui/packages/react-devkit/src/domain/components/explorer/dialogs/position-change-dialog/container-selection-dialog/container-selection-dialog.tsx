@@ -4,10 +4,18 @@ import type { Device } from '../../../../../types'
 import { ContainerSelectionDialogContent } from '../container-selection-dialog-content/container-selection-dialog-content'
 
 type ContainerSelectionDialogProps = {
+  /** The miner being moved */
   miner?: Device
+  /**
+   * Available target containers
+   * @default []
+   */
   containers?: Device[]
+  /** Show loading spinner */
   isLoading?: boolean
+  /** Controls visibility */
   open: boolean
+  /** Called when dialog closes */
   onClose: (value?: boolean) => void
 }
 

@@ -24,24 +24,33 @@ export type HistoricalAlertsRange = {
 export type HistoricalAlertsProps = {
   /**
    * Pre-fetched historical alerts log entries (each with a `thing` device payload).
+   * @default []
    */
   alerts?: Alert[]
+  /**
+   * Show DataTable loading overlay
+   * @default false
+   */
   isLoading?: boolean
 
   /**
    * Filters and search tags coming from the parent (typically shared with `CurrentAlerts`).
    */
   localFilters: AlertLocalFilters
+  /** Shared with `CurrentAlerts` */
   filterTags: string[]
 
   /**
    * Selected date range for the historical query (controlled).
    */
   dateRange: HistoricalAlertsRange
+  /** Setter for the date range */
   onDateRangeChange: (range: HistoricalAlertsRange) => void
 
+  /** Called when the user opens an alert */
   onAlertClick?: (id?: string, uuid?: string) => void
 
+  /** Additional class names */
   className?: string
 }
 

@@ -16,6 +16,10 @@ import {
 import './bitdeer-settings.scss'
 
 type BitdeerSettingsProps = {
+  /**
+   * Container settings payload from the API
+   * @default {}
+   */
   data?: UnknownRecord
 }
 

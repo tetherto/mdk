@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "description": "MDK umbrella repository - root orchestrator. Every publishable backend package (backend/core/*, backend/plugins/*, backend/workers/**, backend/tests/*), the standalone packages/* tools, and examples/{backend,full-site,mvp-site} are members of the root npm workspace below, so a single root install hoists and links them all. The UI toolkit (ui/) stays a separate Turborepo-driven workspace with its own lockfile; root scripts forward to it by prefix.",
   "license": "Apache-2.0",
@@ -21,18 +21,19 @@
   ],
   "devDependencies": {
     "mdk-crypto-lib": "file:backend/lib/mdk-crypto-lib",
-    "markdownlint-cli2": "^0.23.1"
+    "markdownlint-cli": "^0.49.1"
   },
   "overrides": {
     "crypto-js": "file:backend/lib/mdk-crypto-lib",
-    "brace-expansion": "5.0.9",
+    "brace-expansion": "5.0.12",
+    "serialport": "npm:noop@1.0.0",
     "@tootallnate/once": "3.0.1",
     "tar": ">=7.5.4",
-    "fastify": "5.12.1",
+    "fastify": "5.12.5",
     "@fastify/static": "10.1.2",
     "@fastify/oauth2": "8.2.0",
-    "@hono/node-server": "2.0.12",    
-    "fast-uri": "4.1.4",
+    "@hono/node-server": "2.0.12",
+    "fast-uri": "4.2.1",
     "hono": ">=4.12.34",
     "js-yaml": "5.4.1",
     "ip-address": ">=10.3.1",
@@ -61,12 +62,15 @@
     "mock": "node backend/workers/scripts/run-mocks.js",
     "generate:catalogue": "node backend/workers/scripts/generate-catalogue.js",
     "generate:ui-registry": "node docs/scripts/sync-ui-registry.mjs",
+    "generate:usage-proptables": "node docs/scripts/generate-usage-proptables.mjs",
+    "generate:package-catalog": "node docs/scripts/generate-package-catalog.mjs",
     "generate:plugin-reference": "node docs/scripts/generate-plugin-reference.js",
     "regenerate-docs": "node docs/scripts/regenerate-docs.mjs",
-    "link-check": "node scripts/link-check.mjs",
-    "check:example-paths": "node scripts/check-example-paths.mjs",
-    "lint:md": "markdownlint-cli2",
-    "lint:md:pr": "bash scripts/lint-md-pr.sh",
+    "link-check": "node docs/scripts/link-check.mjs",
+    "check:example-paths": "node docs/scripts/check-example-paths.mjs",
+    "check:table-refs": "node docs/scripts/check-table-refs.mjs",
+    "lint:md": "markdownlint \"docs/**/*.md\" README.md \"**/README.md\"",
+    "lint:md:pr": "bash docs/scripts/lint-md-pr.sh",
     "test:scripts": "node --test 'test/**/*.test.mjs'",
     "check:external-contracts": "node docs/scripts/check-external-contracts.mjs"
   }

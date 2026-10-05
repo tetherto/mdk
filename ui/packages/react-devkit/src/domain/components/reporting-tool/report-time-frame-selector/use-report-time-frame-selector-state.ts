@@ -8,9 +8,13 @@ import { useState } from 'react'
 export type ReportTimeFrameSelectorState = {
   start: Date
   end: Date
+  /** Selected preset in days (`1`, `7`, `30`); `null` means the custom range is active */
   presetTimeFrame: number | null
+  /** Custom date range as a `[start, end]` tuple */
   dateRange: [Date, Date]
+  /** Update the preset selection */
   setPresetTimeFrame: (value: number | null) => void
+  /** Update the custom date range */
   setDateRange: (value: [Date, Date]) => void
 }
 

@@ -4,12 +4,22 @@ import { AddReplaceMinerDialogContent } from './add-replace-miner-dialog-content
 import { getTitle } from './helper'
 
 type AddReplaceMinerDialogProps = {
+  /** Controls dialog visibility */
   open: boolean
+  /** Called when the dialog should close */
   onClose: VoidFunction
+  /** Socket being replaced */
   selectedSocketToReplace?: UnknownRecord
+  /** Socket being edited */
   selectedEditSocket?: UnknownRecord
+  /** Active flow identifier */
   currentDialogFlow?: string
+  /**
+   * Skip add/replace and go directly to maintenance
+   * @default false
+   */
   isDirectToMaintenanceMode?: boolean
+  /** Miner hardware type filter */
   minersType?: string
 }
 

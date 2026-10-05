@@ -12,7 +12,10 @@ export type AlarmsBellButtonCounts = {
 }
 
 export type AlarmsBellButtonProps = {
-  /** Severity-bucketed alarm counts rendered in the stacked badge. */
+  /**
+   * Severity-bucketed alarm counts rendered in the stacked badge.
+   * @default {}
+   */
   counts?: AlarmsBellButtonCounts
   /** Click handler — typically opens an alerts panel or routes to /alerts. */
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void
@@ -23,8 +26,12 @@ export type AlarmsBellButtonProps = {
    * omitted, the counts render as plain (non-interactive) text.
    */
   onSeverityClick?: (severity: AlarmSeverity, event: MouseEvent<HTMLButtonElement>) => void
-  /** Accessible label. Defaults to "Active alarms". */
+  /**
+   * Accessible label. Defaults to "Active alarms".
+   * @default "Active alarms"
+   */
   label?: string
+  /** Additional class names */
   className?: string
 }
 
@@ -64,7 +71,10 @@ export const AlarmsBellButton = ({
   return (
     <div className={cn('mdk-alarms-bell-button-group', className)}>
       {hasAny ? (
-        <span className="mdk-alarms-bell-button__badge" aria-hidden={onSeverityClick ? undefined : true}>
+        <span
+          className="mdk-alarms-bell-button__badge"
+          aria-hidden={onSeverityClick ? undefined : true}
+        >
           {SEVERITY_ORDER.map((severity) => {
             const value = formatted[severity]
             if (value === undefined) return null

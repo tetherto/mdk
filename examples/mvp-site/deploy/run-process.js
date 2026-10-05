@@ -11,7 +11,7 @@ const crypto = require('crypto')
 const { startGateway, onShutdown } = require('@tetherto/mdk-core')
 const { createMcpServer } = require('@tetherto/mdk-mcp')
 const {
-  ROOT, GATEWAY_PORT, GATEWAY_HOST, AUTO_GENERATE_MCP, MCP_PORT, PLUGIN_DIRS, STATIC_ROOT_PATH, DISCOVERY,
+  ROOT, GATEWAY_PORT, GATEWAY_HOST, PLUGIN_DIRS, STATIC_ROOT_PATH, DISCOVERY,
   MCP_AGENT_TOOLS_PORT, MCP_PLUGIN_DIRS,
   loadSeedDevices, startMocks, startSatecMocks, startOceanMock,
   bootKernel, bootWorker, bootOceanWorker, bootSatecWorker
@@ -130,10 +130,9 @@ const runSatecWorker = async () => {
 
 // Boots the gateway (HRPC mdkClient + site plugin + static UI), connecting to
 // the Kernel by its .kernel-key public key (RPC-listener-only — no in-process
-// Kernel handle). The site plugin's autoGenerateMcp flag makes the gateway
-// also auto-start an in-process MCP server exposing that plugin's HTTP routes
-// as tools (site_overview, site_history, site_miner_command, site_miner_pools) —
-// no separate mcp-plugin.json or MCP process needed.
+// Kernel handle). HTTP only: the site plugin's routes also reach agents as MCP
+// tools, but that is the --role mcp process reading the same plugin dir, not
+// anything this gateway hosts.
 const runGateway = async () => {
   const root = arg('--root', ROOT)
   const port = Number(arg('--port', GATEWAY_PORT))
@@ -144,9 +143,8 @@ const runGateway = async () => {
 
   await startGateway({
     kernelKey,
-    extraPluginDirs: PLUGIN_DIRS.map((dir) => ({ dir, autoGenerateMcp: AUTO_GENERATE_MCP })),
+    extraPluginDirs: PLUGIN_DIRS,
     port,
-    mcp: { port: MCP_PORT },
     httpd: { h0: { host: GATEWAY_HOST } },
     root: path.join(root, 'gateway'),
     common: { staticRootPath: STATIC_ROOT_PATH }
@@ -159,12 +157,16 @@ const runGateway = async () => {
   console.log('MDK_READY gateway port=%d kernel=%s', port, kernelKey.slice(0, 16))
 }
 
-// Boots the standalone MCP server (Streamable HTTP) serving the hand-authored
-// agent-contract tools (backend/mcp-plugins/site) — curated granularity and
-// descriptions the auto-generated gateway tools don't provide. The Kernel's
-// .kernel-key public key goes into the ambient plugin config — each tool
-// plugin authors its own HRPC client from it (lib/client.js), so no client is
-// built here. Tools come from MCP_PLUGIN_DIRS (mcp-plugin.json manifests).
+// Boots the standalone MCP server (Streamable HTTP) serving both tool sources
+// this example has: the hand-authored agent-contract tools from MCP_PLUGIN_DIRS
+// (mcp-plugin.json manifests — curated granularity and descriptions), and the
+// site gateway plugin's own HTTP routes, read straight off PLUGIN_DIRS and
+// converted into tools (site_overview, site_history, site_miner_command,
+// site_miner_pools). The gateway serves those routes over HTTP; this process
+// reads the same contract to serve them over MCP, and neither knows about the
+// other. The Kernel's .kernel-key public key goes into the ambient plugin
+// config — each tool plugin authors its own HRPC client from it (lib/client.js),
+// so no client is built here.
 const runMcp = async () => {
   const root = arg('--root', ROOT)
   const port = Number(arg('--port', MCP_AGENT_TOOLS_PORT))
@@ -173,7 +175,7 @@ const runMcp = async () => {
   if (!fs.existsSync(kernelKeyFile)) throw new Error('ERR_KERNEL_KEY_MISSING: start the Kernel first')
   const kernelKey = fs.readFileSync(kernelKeyFile, 'utf8').trim()
 
-  await createMcpServer(root, port, { kernelKey }, MCP_PLUGIN_DIRS)
+  await createMcpServer(root, port, { kernelKey }, MCP_PLUGIN_DIRS, PLUGIN_DIRS)
 
   // createMcpServer handles SIGINT/SIGTERM (stops the HTTP server).
   console.log('MDK_READY mcp port=%d kernel=%s', port, kernelKey.slice(0, 16))

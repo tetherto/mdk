@@ -8,13 +8,30 @@ export type BreadcrumbItem = {
 }
 
 export type BreadcrumbsProps = {
+  /** Ordered trail; the last item is rendered as current */
   items: BreadcrumbItem[]
+  /**
+   * Show a leading "Back" button
+   * @default false
+   */
   showBack?: boolean
+  /**
+   * Label for the back button
+   * @default "Back"
+   */
   backLabel?: string
+  /** Root class names */
   className?: string
+  /** Class names applied to each item */
   itemClassName?: string
+  /** Class names applied to the back button */
   backClassName?: string
+  /** Callback fired when the back button is clicked */
   onBackClick?: VoidFunction
+  /**
+   * Custom separator between items
+   * @default "/"
+   */
   separator?: ReactNode
 }
 
@@ -68,7 +85,7 @@ const renderBreadcrumbItem = (
  * current view. Each item can be a link (`href` or `onClick`) or plain text;
  * the last item is rendered as the current page. Pass `showBack` to prepend a
  * "back" affordance for mobile/touch layouts. The separator between items is
- * customisable via `separator` (defaults to a chevron).
+ * customisable via `separator` (defaults to `/`).
  *
  * @category navigation
  * @domain generic

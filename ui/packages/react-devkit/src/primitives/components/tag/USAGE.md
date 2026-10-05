@@ -2,15 +2,15 @@
 
 A small inline label used to display categories, statuses, or metadata. Renders as a `<span>` with a color variant modifier.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type              | Default  | Description   |
-| ----------- | -------- | ----------------- | -------- | ------------- |
-| `color`     | Optional | `'dark' \| 'red' \| 'green' \| 'amber' \| 'blue'` | `'dark'` | Color variant |
-| `children`  | Optional | `React.ReactNode` | —        | Tag content   |
-| `className` | Optional | `string`          | —        | Additional class for the root element |
-
-All other `span` HTML attributes are forwarded.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Optional | `React.ReactNode` | - | Children content |
+| `className` | Optional | `string` | - | Custom className for the root element |
+| `color` | Optional | `"red" \| "blue" \| "green" \| "amber" \| "dark"` | `"dark"` | Color variant of the tag |
+<!-- END GENERATED: props -->
 
 ## Example
 

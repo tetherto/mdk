@@ -2,7 +2,7 @@
 
 MDK Worker for Bitmain Antminer Bitcoin miners. Supports S19XP, S19XP Hydro, S21, and S21 Pro.
 
-## Supported Models
+## Supported models
 
 | `model` value | Model |
 |--------|-------|
@@ -94,7 +94,7 @@ Antminer uses the **CGMiner-derived HTTP API** with **Digest authentication** fo
 
 **Alerts:** `alert.overheat`, `alert.fan_failure`, `alert.hashrate_low`
 
-## Development with Mock Server
+## Development with mock server
 
 Run the mock standalone — the model `type` is the first argument (case-insensitive):
 

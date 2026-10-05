@@ -8,7 +8,7 @@ Temperature and humidity sensor Workers. These Workers connect to environmental 
 |-----------|---------|--------|
 | [`seneca/`](./seneca/README.md) | `@tetherto/mdk-worker-seneca` | Seneca Z-4RTD-2 (Modbus TCP) |
 
-## Common Telemetry
+## Common telemetry
 
 | Field | Unit | Description |
 |-------|------|-------------|
@@ -25,7 +25,7 @@ container-A
 └── Seneca Z-4RTD-2 (temperature/seneca Worker) ← inlet monitoring
 ```
 
-## Quick Start
+## Quickstart
 
 ```js
 const { getKernel } = require('@tetherto/mdk-core')

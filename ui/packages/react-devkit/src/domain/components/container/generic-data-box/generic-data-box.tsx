@@ -9,7 +9,10 @@ type DataItem = {
 } & DataRowItem
 
 type GenericDataBoxProps = {
-  /** Array of data items to display */
+  /**
+   * Array of data items to display
+   * @default []
+   */
   data?: DataItem[]
   /** Fallback value when value is undefined */
   fallbackValue?: unknown

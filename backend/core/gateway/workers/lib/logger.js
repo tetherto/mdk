@@ -60,7 +60,7 @@ function pluginLogger (name, conf) {
 
 /**
  * The same logger for the few things the gateway itself has to tell an operator
- * — a plugin withheld from the MCP tool set, say. Tagged like a plugin's so the
+ * — a plugin's `onReady` callback throwing, say. Tagged like a plugin's so the
  * line names its source, and on the one stream, so it is ordered with the rest.
  */
 function gatewayLogger (conf) {

@@ -1,4 +1,4 @@
-# Position-Change Dialog Components
+# Position-change dialog components
 
 Multi-step dialog flow for moving a miner between rack slots or performing maintenance. Composed of a top-level orchestrator and three swappable content panels.
 
@@ -9,18 +9,20 @@ Multi-step dialog flow for moving a miner between rack slots or performing maint
 | `RemoveMinerDialog` | Confirmation step for removing a miner from its current slot |
 | `MaintenanceDialogContent` | Form for capturing work-order details before applying the maintenance flag |
 
-## PositionChangeDialog Props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `open` | Required | `boolean` | — | Controls dialog visibility |
-| `onClose` | Required | `(flow, isDontReset?) => void` | — | Called when dialog closes |
-| `selectedSocketToReplace` | Optional | `UnknownRecord` | — | Socket being replaced |
-| `selectedEditSocket` | Optional | `UnknownRecord` | — | Socket being edited |
-| `onChangePositionClicked` | Optional | `VoidFunction` | — | Callback when position change is triggered |
-| `onPositionChangedSuccess` | Optional | `VoidFunction` | — | Callback on successful position change |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `onClose` | Required | `(currentDialogFlow: string, isDontReset?: boolean \| undefined) => void` | - | Called when dialog closes |
+| `open` | Required | `boolean` | - | Controls dialog visibility |
+| `dialogFlow` | Optional | `string` | - | Initial dialog step/flow identifier |
 | `isContainerEmpty` | Optional | `boolean` | `false` | Whether the target container slot is empty |
-| `dialogFlow` | Optional | `string` | — | Initial dialog step/flow identifier |
+| `onChangePositionClicked` | Optional | `VoidFunction` | - | Callback when position change is triggered |
+| `onPositionChangedSuccess` | Optional | `VoidFunction` | - | Callback on successful position change |
+| `selectedEditSocket` | Optional | `UnknownRecord` | - | Socket being edited |
+| `selectedSocketToReplace` | Optional | `UnknownRecord` | - | Socket being replaced |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

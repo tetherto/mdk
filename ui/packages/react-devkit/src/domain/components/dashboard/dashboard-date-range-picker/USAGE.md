@@ -1,19 +1,21 @@
-# DashboardDateRangePicker
+# `DashboardDateRangePicker`
 
 Dashboard wrapper around the core `DateRangePicker`. It speaks
 `{ start, end }` epoch-millisecond timestamps so it drops straight into
 `useDashboardDateRange` from `@tetherto/mdk-react-adapter` without any
 intermediate `Date <-> number` plumbing in the page.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop         | Status   | Type                                             | Default        | Description                                         |
-| ------------ | -------- | ------------------------------------------------ | -------------- | --------------------------------------------------- |
-| `value`      | Required | `{ start: number; end: number }`                 | —              | Current range as epoch-millisecond timestamps       |
-| `onChange`   | Required | `(next: { start: number; end: number }) => void` | —              | Fires when the user applies a range                 |
-| `dateFormat` | Optional | `string`                                         | `'dd/MM/yyyy'` | `date-fns` format string used for the trigger label |
-| `disabled`   | Optional | `boolean`                                        | `false`        | Disable the trigger                                 |
-| `className`  | Optional | `string`                                         | —              | Class hook applied to the trigger button            |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `onChange` | Required | `(next: DashboardDateRange) => void` | - | Fires with the next `{ start, end }` window when the user applies a range |
+| `value` | Required | `DashboardDateRange` | - | Current range as `{ start, end }` epoch-millisecond timestamps |
+| `className` | Optional | `string` | - | Optional class hook |
+| `dateFormat` | Optional | `string` | `"dd/MM/yyyy"` | Display format. Defaults to `dd/MM/yyyy` |
+| `disabled` | Optional | `boolean` | `false` | Disable the trigger |
+<!-- END GENERATED: props -->
 
 ## Example
 

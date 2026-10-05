@@ -53,11 +53,9 @@
     "port": 3000,
     "host": "0.0.0.0",
     "pluginDirs": ["backend/gateway-plugins/site"],
-    "autoGenerateMcp": true,
     "staticRootPath": "ui/dist"
   },
   "mcp": {
-    "port": 3100,
     "agentTools": {
       "port": 3101,
       "pluginDirs": ["backend/mcp-plugins/site"]

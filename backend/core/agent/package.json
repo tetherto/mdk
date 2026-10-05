@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-agent",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK operator agent — headless loop over a local (QVAC) model, consuming MDK tools via MCP.",
   "private": true,
   "type": "module",
@@ -8,6 +8,10 @@
     "node": ">=24"
   },
   "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
   "bin": {
     "mdk-agent": "./bin/mdk-agent.js",
     "qvac-cache-reaper": "./bin/qvac-cache-reaper.js"

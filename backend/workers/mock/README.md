@@ -61,7 +61,7 @@ From the repo root, via the shared runner (comma-separated `type|device [port] [
 npm run mock m56s 14028, s19xp 14029, b23 5071, ocean 8061
 ```
 
-bitdeer is an MQTT **client**, so it needs a broker reachable at its `--port` before it will serve.
+bitdeer is an MQTT **client**, so it needs a broker reachable at its `--port` before it serves.
 
 ## Add a new device
 

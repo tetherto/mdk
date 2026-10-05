@@ -1,12 +1,14 @@
-# BitMainCoolingSystem
+# `BitMainCoolingSystem`
 
-Cooling subsystem panel for a BitMain container showing pumps, fans, and dry-cooler running state.
+Cooling subsystem panel for a Bitmain container showing pumps, fans, and dry-cooler running state.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `data` | Optional | `Device` | — | Live device object |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Optional | `Device` | - | Container data |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

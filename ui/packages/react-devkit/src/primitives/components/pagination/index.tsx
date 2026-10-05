@@ -24,10 +24,12 @@ type PageItem = 'page' | 'ellipsis'
 export type PaginationProps = {
   /**
    * Current active page number
+   * @default 1
    */
   current?: number
   /**
    * Total number of items
+   * @default 0
    */
   total?: number
   /**

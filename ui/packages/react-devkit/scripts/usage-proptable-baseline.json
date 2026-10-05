@@ -1,0 +1,32 @@
+{
+  "generatedAt": "2026-10-02T11:14:06.586Z",
+  "description": "USAGE.md files that still carry a prop-style table or Props heading. These are intentional: either the component is not emitted to the registry (USAGE is its only reference), or the table is supplementary content the generated props reference does not capture (object-prop shapes, allowed values, ref methods, passthrough props) and is fronted by a source-of-truth note. Prop facts the registry already covers must NOT reappear here. Only `--update-baseline` writes this file; PRs that grow it MUST fail CI.",
+  "violations": [
+    "src/domain/components/alarm/USAGE.md",
+    "src/domain/components/auth/sign-in-google-button/USAGE.md",
+    "src/domain/components/container-charts-builder/USAGE.md",
+    "src/domain/components/explorer/containers/bitdeer/charts/USAGE.md",
+    "src/domain/components/explorer/containers/bitmain-immersion/unit-control-box/USAGE.md",
+    "src/domain/components/explorer/containers/bitmain/USAGE.md",
+    "src/domain/components/explorer/containers/bitmain/charts/USAGE.md",
+    "src/domain/components/explorer/containers/bitmain/status-item/settings/USAGE.md",
+    "src/domain/components/info-container/USAGE.md",
+    "src/primitives/components/action-button/USAGE.md",
+    "src/primitives/components/cascader/USAGE.md",
+    "src/primitives/components/chart-container/USAGE.md",
+    "src/primitives/components/chart-stats-footer/USAGE.md",
+    "src/primitives/components/currency-toggler/USAGE.md",
+    "src/primitives/components/data-table/USAGE.md",
+    "src/primitives/components/detail-legend/USAGE.md",
+    "src/primitives/components/doughnut-chart/USAGE.md",
+    "src/primitives/components/dropdown-menu/USAGE.md",
+    "src/primitives/components/error-boundary/USAGE.md",
+    "src/primitives/components/icons/USAGE.md",
+    "src/primitives/components/logs/USAGE.md",
+    "src/primitives/components/mosaic/USAGE.md",
+    "src/primitives/components/multi-level-select/USAGE.md",
+    "src/primitives/components/popover/USAGE.md",
+    "src/primitives/components/tabs/USAGE.md",
+    "src/primitives/components/textarea/USAGE.md"
+  ]
+}

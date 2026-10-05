@@ -12,12 +12,22 @@ import { RBACControlSettings } from '../rbac-control'
 import './settings-dashboard.scss'
 
 export type SettingsDashboardProps = {
+  /** Danger-zone action buttons (reset, delete) */
   dangerActions?: ActionButtonProps[]
+  /** Props forwarded to `HeaderControlsSettings` */
   headerControlsProps?: HeaderControlsSettingsProps
+  /** Props forwarded to `RBACControlSettings` */
   rbacControlProps?: RBACControlSettingsProps
+  /** Props forwarded to `ImportExportSettings` */
   importExportProps?: ImportExportSettingsProps
+  /** Props forwarded to `FeatureFlagsSettings` */
   featureFlagsProps?: FeatureFlagsSettingsProps
+  /**
+   * Whether to show the feature-flags section
+   * @default false
+   */
   showFeatureFlags?: boolean
+  /** Additional CSS class */
   className?: string
 }
 

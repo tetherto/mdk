@@ -1,5 +1,5 @@
 import type { ListThingsDevice } from '@tetherto/mdk-ui-foundation'
-import { flattenKernelEnvelope, getByIdsQuery, listThingsQuery, OP_CENTRE_LIST_THINGS_FIELDS  } from '@tetherto/mdk-ui-foundation/presets/mining'
+import { flattenKernelEnvelope, getByIdsQuery, listThingsQuery, OP_CENTER_LIST_THINGS_FIELDS  } from '@tetherto/mdk-ui-foundation/presets/mining'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { ALERTS_POLL_INTERVAL_MS } from './poll-intervals'
@@ -13,7 +13,7 @@ export type UseThingDetailOptions = {
 }
 
 export type UseThingDetailResult = {
-  /** The thing row (full Op Centre projection), or `undefined` when absent. */
+  /** The thing row (full Op Center projection), or `undefined` when absent. */
   thing: ListThingsDevice | undefined
   isLoading: boolean
   error: unknown
@@ -22,7 +22,7 @@ export type UseThingDetailResult = {
 
 /**
  * Fetches a single thing by id from `GET /auth/list-things` with the full
- * Op Centre field projection — the data source for the Explorer detail
+ * Op Center field projection — the data source for the Explorer detail
  * panel and the container Thing-detail view.
  *
  * @remarks
@@ -32,7 +32,7 @@ export type UseThingDetailResult = {
  * your Worker/business logic. No reference implementation of `/auth/list-things`
  * ships in this repo.
  *
- * @category op-centre
+ * @category op-center
  */
 export const useThingDetail = (
   id: string | undefined,
@@ -45,7 +45,7 @@ export const useThingDetail = (
     ...listThingsQuery(queryClient, {
       query: getByIdsQuery(id ? [id] : []),
       status: 1,
-      fields: OP_CENTRE_LIST_THINGS_FIELDS,
+      fields: OP_CENTER_LIST_THINGS_FIELDS,
       limit: 1,
     }),
     refetchInterval: options.refetchInterval ?? ALERTS_POLL_INTERVAL_MS,

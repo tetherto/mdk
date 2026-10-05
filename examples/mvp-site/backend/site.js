@@ -32,8 +32,6 @@ const MOCK_PORT_BASE = deploy.mocks.portBase
 const SATEC_MOCK_PORT_BASE = deploy.satec.mocks.portBase
 const GATEWAY_PORT = deploy.gateway.port
 const GATEWAY_HOST = deploy.gateway.host
-const AUTO_GENERATE_MCP = deploy.gateway.autoGenerateMcp === true
-const MCP_PORT = deploy.mcp.port
 const MCP_AGENT_TOOLS_PORT = deploy.mcp.agentTools?.port
 const DISCOVERY = deploy.discovery
 const WORKER_ID = deploy.worker.id
@@ -244,8 +242,6 @@ module.exports = {
   SATEC_MOCK_PORT_BASE,
   GATEWAY_PORT,
   GATEWAY_HOST,
-  AUTO_GENERATE_MCP,
-  MCP_PORT,
   MCP_AGENT_TOOLS_PORT,
   PLUGIN_DIRS,
   MCP_PLUGIN_DIRS,

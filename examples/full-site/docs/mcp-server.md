@@ -238,7 +238,7 @@ Override the starting port before launching the CLI:
 MDK_MCP_PORT=4000 node cli.js
 ```
 
-## Claude Desktop
+## Claude desktop
 
 Claude Desktop requires an HTTP proxy wrapper to reach a `Streamable HTTP` MCP server.
 Add the following to its config file:
@@ -260,7 +260,7 @@ Add the following to its config file:
 }
 ```
 
-Restart Claude Desktop. The **mdk-site** tools will appear in the tool picker for any
+Restart Claude Desktop. The **mdk-site** tools appear in the tool picker for any
 new conversation.
 
 > **Note:** Claude Desktop connects once on startup. If you restart the MCP server

@@ -30,7 +30,7 @@ auto-registers: a plugin contributes its routes only when a stack names it. MDK 
 | Method | Path | Description |
 | --- | --- | --- |
 | `GET` | `/auth/site` | Returns the site name from the gateway config (common.json `site`) |
-| `GET` | `/auth/featureConfig` | Returns the featureConfig object from the gateway config (common.json `featureConfig`) |
+| `GET` | `/auth/featureConfig` | Returns the `featureConfig` object from the gateway config (common.json `featureConfig`) |
 | `GET` | `/site-monitor/hashrate` | Pulls metrics telemetry from every READY worker's devices via the MDK protocol and returns per-device hashrate/power plus site totals |
 
 #### `telemetry`
@@ -73,8 +73,8 @@ auto-registers: a plugin contributes its routes only when a stack names it. MDK 
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/api/demo/summary` | Fans out metrics telemetry to every registered demo-worker device (fingerprint: hashrate_rt + history) and returns fleet totals plus a per-device breakdown. Aggregation lives here — workers only ever answer for one device |
-| `GET` | `/api/demo/history` | Pulls the demo-worker `history` telemetry channel (SQLite recent samples: ts, hashrate_ths, power_w, board_temp_c) for every matched device, or a single device when deviceId is set |
+| `GET` | `/api/demo/summary` | Fans out metrics telemetry to every registered demo-worker device (fingerprint: `hashrate_rt` + history) and returns fleet totals plus a per-device breakdown. Aggregation lives here — workers only ever answer for one device |
+| `GET` | `/api/demo/history` | Pulls the demo-worker `history` telemetry channel (SQLite recent samples: ts, `hashrate_ths`, `power_w`, `board_temp_c`) for every matched device, or a single device when `deviceId` is set |
 
 <!-- END GENERATED: supported-plugins -->
 

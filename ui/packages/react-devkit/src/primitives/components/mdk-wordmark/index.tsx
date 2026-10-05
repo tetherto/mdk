@@ -7,11 +7,17 @@ import './mdk-wordmark.scss'
 export type MdkWordmarkSize = 'sm' | 'md' | 'lg'
 
 export type MdkWordmarkProps = {
-  /** Visual size of the wordmark. `sm` ≈ 24px tall, `md` ≈ 32px, `lg` ≈ 64px. */
+  /**
+   * Visual size of the wordmark. `sm` ≈ 24px tall, `md` ≈ 32px, `lg` ≈ 64px
+   * @default 'md'
+   */
   size?: MdkWordmarkSize
   /** Optional class hook on the outer `<svg>`. */
   className?: string
-  /** Accessible label. Defaults to "MDK". */
+  /**
+   * Accessible label
+   * @default 'MDK'
+   */
   title?: string
 }
 

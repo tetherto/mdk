@@ -13,17 +13,53 @@ export type LabeledCardNavigateOptions = Partial<{
 }>
 
 export type LabeledCardProps = Partial<{
+  /**
+   * Applies a dark background modifier
+   * @default false
+   */
   isDark: boolean
+  /** Additional class for the root element */
   className: string
+  /**
+   * Prevents content from wrapping
+   * @default false
+   */
   hasNoWrap: boolean
+  /**
+   * Sets `position: relative` on the container
+   * @default false
+   */
   isRelative: boolean
+  /**
+   * Stretches the card to full container width
+   * @default false
+   */
   isFullWidth: boolean
+  /**
+   * Removes default margin
+   * @default false
+   */
   hasNoMargin: boolean
+  /**
+   * Removes the card border
+   * @default false
+   */
   hasNoBorder: boolean
+  /**
+   * Stretches the card to full container height
+   * @default false
+   */
   isFullHeight: boolean
+  /**
+   * Enables vertical scroll on the card body
+   * @default false
+   */
   isScrollable: boolean
+  /** Header content shown above the card body */
   label: ReactNode
+  /** Card body content */
   children: ReactNode
+  /** Returns a link `href`/`target` for the label when provided */
   getNavigateOptions: (label: string) => LabeledCardNavigateOptions
 }>
 

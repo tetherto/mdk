@@ -8,9 +8,9 @@ remove one of those failure modes, and each was derived from a failure observed 
 
 The machine-readable definition lives in [`src/tools.js`](../src/tools.js) (`validateTool`,
 `validateToolResult`, `admitTools`, `renderTools`, and the `VERB`/`ENTITY`/`AXIS`/`RESULT`/
-`CAPABILITY` constants), exported from the package so a consumer in another repo — the gateway
-— validates against the same definition rather than a copy. It is versioned as
-`TOOL_CONTRACT_VERSION`; widening a vocabulary is additive, while adding, removing or renaming
+`CAPABILITY` constants). A tool server in this repo imports that module directly, so it validates
+against the same definition rather than a copy. It is versioned as
+`TOOL_CONTRACT_VERSION`; widening a vocabulary is additive, while adding, removing, or renaming
 a **required** field is a bump. `v2` made `total` required on a `list` result.
 
 Every tool carries the version it was authored against, in its `_meta` block as `contract`.
@@ -107,7 +107,7 @@ regression test). In a [`backend/core/mcp`](../../mcp/README.md) plugin manifest
 Mutability is declared in standard MCP `annotations.readOnlyHint` (it survives the wire), and
 an `act_*` tool must declare `readOnlyHint: false` — the approval gate keys off the
 declaration, not a name list. (If `readOnlyHint` is unstated, `destructiveHint: true` is also
-recognised as declaring a write).
+recognized as declaring a write).
 
 > [!NOTE]
 > For tools generated from a Gateway plugin's HTTP routes, that declaration comes from the route's own `safety` field in
@@ -251,7 +251,7 @@ a model routes to it, or it does not ship.
 change to the contract — propose it — not a tool with a new name shape.
 
 **2. Write the handler so it computes the answer.** Never return a raw dump for the model to
-filter, count or classify. If the operator asked "how many", the tool returns the number.
+filter, count, or classify. If the operator asked "how many", the tool returns the number.
 
 **3. Return the shape your verb promises** (the table above), with a `summary` the model can
 speak word for word.

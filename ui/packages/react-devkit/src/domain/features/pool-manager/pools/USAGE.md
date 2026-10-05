@@ -1,4 +1,4 @@
-# PoolManagerPools
+# `PoolManagerPools`
 
 Pool-manager pools page: accordion list of every configured pool. Each item
 shows a one-line header (name, status, priority) and expands to reveal the
@@ -8,12 +8,14 @@ the `ADD_POOL_ENABLED` feature flag.
 Use this as the `/pool-manager/pools` route. For just the row primitives, drop
 down to `PoolCollapseItemHeader` / `PoolCollapseItemBody`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop              | Status   | Type               | Default | Description                                             |
-| ----------------- | -------- | ------------------ | ------- | ------------------------------------------------------- |
-| `poolConfig`      | Required | `PoolConfigData[]` | —       | Pool configurations to render (typically from the API)  |
-| `backButtonClick` | Required | `VoidFunction`     | —       | Called when the operator clicks the "Pool Manager" link |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `backButtonClick` | Required | `VoidFunction` | - | Called when the operator clicks the "Pool Manager" back link |
+| `poolConfig` | Required | `PoolConfigEntry[]` | - | Array of pool configurations to render |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

@@ -1,4 +1,4 @@
-# AssignPoolModal
+# `AssignPoolModal`
 
 Modal dialog for bulk-assigning a set of selected miners to a pool config.
 Displays the miner list, a pool selector with metadata (unit/miner counts,
@@ -6,15 +6,17 @@ last-updated time), an endpoints preview, and an optional credential template
 preview. Submission is async; the modal stays open with a loading state until
 the parent resolves.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop         | Status   | Type                                               | Default | Description                                 |
-| ------------ | -------- | -------------------------------------------------- | ------- | ------------------------------------------- |
-| `isOpen`     | Required | `boolean`                                          | —       | Controls modal visibility                   |
-| `onClose`    | Required | `() => void`                                       | —       | Called when the modal is dismissed (× button or backdrop) |
-| `onSubmit`   | Required | `(values: { pool: PoolSummary }) => Promise<void>` | —       | Called with the selected pool when the form is submitted |
-| `miners`     | Required | `Device[]`                                         | —       | Miners to display in the selection table     |
-| `poolConfig` | Required | `PoolConfigData[]`                                 | —       | Available pool configurations to populate the pool selector |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `isOpen` | Required | `boolean` | - | Controls modal visibility |
+| `miners` | Required | `Device[]` | - | Miners to display in the selection table |
+| `onClose` | Required | `() => void` | - | Called when the modal is dismissed (× button or backdrop) |
+| `onSubmit` | Required | `(values: { pool: PoolSummary; }) => Promise<void>` | - | Called with the selected pool when the form is submitted |
+| `poolConfig` | Required | `PoolConfigEntry[]` | - | Available pool configurations to populate the pool selector |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

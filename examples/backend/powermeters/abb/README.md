@@ -1,4 +1,4 @@
-# MDK ABB Power Meter Example
+# MDK ABB power meter example
 
 A small, self-contained **ABB B23** power-meter example you can clone and run with **no real
 hardware**. It starts a mock ABB meter, brings up a Kernel, registers the meter as a thing, and stays

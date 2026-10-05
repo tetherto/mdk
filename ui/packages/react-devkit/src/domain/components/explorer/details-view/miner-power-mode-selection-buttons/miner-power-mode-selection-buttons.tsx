@@ -7,11 +7,26 @@ import { getCurrentPowerModes } from '../miner-controls-card/miner-controls-util
 import { PowerModeSelectionDropdown } from './power-mode-selection-dropdown'
 
 type MinerPowerModeSelectionButtonsProps = {
+  /**
+   * Devices to apply the power mode to
+   * @default []
+   */
   selectedDevices?: Device[]
+  /** Callback to apply the selected mode */
   setPowerMode?: (devices: Device[], mode: string) => void
+  /** Currently connected miners */
   connectedMiners?: Device[]
+  /** Log of previous power mode selections */
   powerModesLog?: UnknownRecord
+  /**
+   * Disable all buttons
+   * @default false
+   */
   disabled?: boolean
+  /**
+   * Add margin around the button group
+   * @default false
+   */
   hasMargin?: boolean
 }
 

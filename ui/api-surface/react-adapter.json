@@ -100,7 +100,7 @@
         "kind": "type"
       },
       {
-        "name": "OP_CENTRE_REALTIME_POLL_INTERVAL_MS",
+        "name": "OP_CENTER_REALTIME_POLL_INTERVAL_MS",
         "kind": "const"
       },
       {
@@ -966,7 +966,7 @@
         "kind": "type"
       },
       {
-        "name": "OP_CENTRE_REALTIME_POLL_INTERVAL_MS",
+        "name": "OP_CENTER_REALTIME_POLL_INTERVAL_MS",
         "kind": "const"
       },
       {

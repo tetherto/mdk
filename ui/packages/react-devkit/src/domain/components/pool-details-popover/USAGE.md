@@ -1,17 +1,19 @@
-# PoolDetailsPopover
+# `PoolDetailsPopover`
 
 Trigger button + modal dialog revealing a `PoolDetailsCard`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop           | Status   | Type               | Default | Description             |
-| -------------- | -------- | ------------------ | ------- | ----------------------- |
-| `details`      | Required | `PoolDetailItem[]` | —       | Detail rows             |
-| `triggerLabel` | Optional | `string`           | —       | Trigger button label    |
-| `title`        | Optional | `string`           | —       | Dialog title            |
-| `description`  | Optional | `string`           | —       | Dialog body description |
-| `disabled`     | Optional | `boolean`          | `false` | Disable the trigger     |
-| `className`    | Optional | `string`           | —       | Additional class names  |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `details` | Required | `PoolDetailItem[]` | - | Detail rows |
+| `className` | Optional | `string` | - | Additional class names |
+| `description` | Optional | `string` | - | Dialog body description |
+| `disabled` | Optional | `boolean` | `false` | Disable the trigger |
+| `title` | Optional | `string` | - | Dialog title |
+| `triggerLabel` | Optional | `string` | - | Trigger button label |
+<!-- END GENERATED: props -->
 
 ## Example
 

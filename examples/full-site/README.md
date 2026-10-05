@@ -205,7 +205,7 @@ Per-process logs are written to `.mdk-data/logs/<proc>.log`.
 
 ### How out-of-process Workers find the Kernel
 
-A separately-spawned Worker has no in-process `kernel` handle (the one [`start.js`](./start.js)
+A separately spawned Worker has no in-process `kernel` handle (the one [`start.js`](./start.js)
 uses to register Workers directly), so it discovers the Kernel one of two ways,
 chosen with `up --discovery <mode>` (default `local`):
 
@@ -255,7 +255,7 @@ npx brittle tests/e2e/site-cli.test.js    # e2e: scripted live CLI run (boots re
 
 Localhost only; chosen to avoid the Workers' default ports.
 
-| Device | Port(s) |
+| Device | Ports |
 | ------ | ------- |
 | Whatsminer ×N | `14100`–`14199` |
 | Antminer ×N | `14200`–`14299` |

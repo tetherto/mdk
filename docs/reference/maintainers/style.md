@@ -16,15 +16,15 @@ Context: globs: docs/**/*.md, **/README.md, backend/**/docs/**/*.md, ui/**/docs/
 - Restrict line length to ~150 chars (context is prose; tables are an exception)
 - Bullet lists: single-sentence bullet no stop (e.g. `- Avalon` not `- Avalon.`); compound/multi-sentence bullet, stop after every sentence including the last
 - Numbered lists stop (e.g. 1. Do this action.)
-- Diataxis ia
-- No positional references ("Swap the filename for any other model from the table” NOT "Swap the filename for any other model from the table above,”)
+- Diátaxis IA
+- No positional references ("Swap the filename for any other model from the table" NOT "Swap the filename for any other model from the table above,")
 - No --- divider, use headings H1, H2, H3 etc to impose structure
 - No em dash; people may use those, not llms
 - Colons go **outside of bullets**: as this example is written, notice bullet NOT emdash
 
 ## Frontmatter and linking strategy
 
-Links are from relevent text NOT "see ..." (do `The [Worker install pattern][install-pattern] defines the per-Worker mechanics.` NOT `See the Worker [install pattern][install-pattern] for the per-Worker mechanics.`).
+Links are from relevant text NOT "see ..." (do `The [Worker install pattern][install-pattern] defines the per-Worker mechanics.` NOT `See the Worker [install pattern][install-pattern] for the per-Worker mechanics.`).
 
 The link text is the concept or action being described, never the page name or location.
 
@@ -33,7 +33,7 @@ If a file is being referenced also link to it (do [`README.md`](../../README.md)
 Mechanically:
 
 - Start the bullet with a verb phrase ("Understand...", "Learn how...", "Choose a...", "Start...")
-- Wrap the concept or outcome in the link: the thing the reader will learn or do
+- Wrap the concept or outcome in the link: the thing the reader learns or does
 
 Ask maintainer if the page you are building is to be ported to user docs `tether.io`, if so follow reference-style link definitions plus routing comments [porting signals](single-source-of-truth.md).
 

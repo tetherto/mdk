@@ -1,0 +1,13 @@
+{
+  "skipFiles": [],
+  "skipIdentifiers": [
+    { "file": "backend/plugins/agent/README.md", "identifier": "apiKey" },
+    { "file": "backend/plugins/agent/README.md", "identifier": "modelConfig" },
+    { "file": "backend/plugins/agent/README.md", "identifier": "mode" }
+  ],
+  "_skip_notes": {
+    "backend/plugins/agent/README.md::apiKey": "Provider shape table documents backend/core/agent/src/provider.js (a different package, per its own inline link) — apiKey is defined there, not in this plugin's own source",
+    "backend/plugins/agent/README.md::modelConfig": "same cross-package cause as apiKey above — defined in backend/core/agent/src/provider.js",
+    "backend/plugins/agent/README.md::mode": "same cross-package cause as apiKey above — defined in backend/core/agent/src/provider.js; only surfaced once the existence check moved from a raw substring match to a bounded-token match (previously `mode` happened to substring-match unrelated text elsewhere in this package)"
+  }
+}

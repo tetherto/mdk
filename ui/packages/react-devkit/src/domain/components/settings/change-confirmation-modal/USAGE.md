@@ -1,18 +1,20 @@
-# ChangeConfirmationModal
+# `ChangeConfirmationModal`
 
 Generic confirmation dialog that presents a summary of pending changes before applying them. Supports both standard (primary) and destructive (danger) confirmation actions. The body content is passed as `children`, making it flexible enough to render diffs, item lists, or plain text.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop          | Status   | Type           | Default     | Description                                               |
-| ------------- | -------- | -------------- | ----------- | --------------------------------------------------------- |
-| `open`        | Required | `boolean`      | —           | Controls whether the dialog is visible                    |
-| `title`       | Required | `string`       | —           | Dialog header title                                       |
-| `onConfirm`   | Required | `VoidFunction` | —           | Called when the user clicks the confirm button            |
-| `onClose`     | Required | `VoidFunction` | —           | Called when the user cancels or dismisses the dialog      |
-| `children`    | Required | `ReactNode`    | —           | Body content — use to describe the change being confirmed |
-| `confirmText` | Optional | `string`       | `"Confirm"` | Label for the confirm button                              |
-| `destructive` | Optional | `boolean`      | `false`     | When `true`, the confirm button uses the danger variant   |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Required | `React.ReactNode` | - | Body content — use to describe the change being confirmed |
+| `onClose` | Required | `VoidFunction` | - | Called when the user cancels or dismisses the dialog |
+| `onConfirm` | Required | `VoidFunction` | - | Called when the user clicks the confirm button |
+| `open` | Required | `boolean` | - | Controls whether the dialog is visible |
+| `title` | Required | `string` | - | Dialog header title |
+| `confirmText` | Optional | `string` | `"Confirm"` | Label for the confirm button |
+| `destructive` | Optional | `boolean` | `false` | When `true`, the confirm button uses the danger variant |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

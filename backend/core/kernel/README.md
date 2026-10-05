@@ -20,7 +20,8 @@ Kernel does **not** extend any Worker class. It is a standalone `EventEmitter`-b
 
 Kernel is a pass-through coordinator, and the list of what it leaves alone is deliberately long: it has no HTTP surface, performs no
 user authentication, and holds no business logic or cross-Worker aggregation. Consumers reach it through the
-[Gateway](../gateway/README.md)'s REST or MCP endpoints, and everything above routing is the caller's responsibility — see
+[Gateway](../gateway/README.md)'s REST API, or through the standalone [`@tetherto/mdk-mcp`](../mcp/README.md) server's tools
+(each backed by its own [`@tetherto/mdk-client`](../client/README.md), the same way the Gateway connects) — everything above routing is the caller's responsibility — see
 [responsibility boundaries](../../../docs/concepts/control-plane.md#responsibility-boundaries). Its one brush with permissions is the
 write-action path, which requires a device-family permission such as `miner:w` in the `authPerms` the caller sends.
 
@@ -40,7 +41,7 @@ write-action path, which requires a device-family permission such as `miner:w` i
 npm install @tetherto/mdk-kernel
 ```
 
-## Quick start
+## Quickstart
 
 ```js
 const { createKernel } = require('@tetherto/mdk-kernel')
@@ -245,14 +246,14 @@ allowlist is what restricts connections to approved callers:
 
 ```js
 createKernel({
-  auth: { whitelist: ['<gateway-pubkey-hex>'] }
+  auth: { whitelist: ['<gateway-pubkey-hex>', '<mcp-pubkey-hex>'] }
 })
 ```
 
 This is a transport-level check on which backend processes may connect. It says nothing about the person or agent behind a
 request — see [control plane](../../../docs/concepts/control-plane.md#transport-identity-and-admission) for that distinction.
 
-## MDK Protocol
+## MDK protocol
 
 All messages use the envelope format:
 

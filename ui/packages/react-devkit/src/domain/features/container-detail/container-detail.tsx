@@ -1,9 +1,9 @@
-import { ArrowLeftIcon } from "@radix-ui/react-icons"
-import type { JSX, ReactNode } from "react"
+import { ArrowLeftIcon } from '@radix-ui/react-icons'
+import type { JSX, ReactNode } from 'react'
 
-import { Button, cn, EmptyState, Tabs, TabsList, TabsTrigger } from "@primitives"
+import { Button, cn, EmptyState, Tabs, TabsList, TabsTrigger } from '@primitives'
 
-import "./container-detail.scss"
+import './container-detail.scss'
 
 /** A single tab in the container detail strip. */
 export type ContainerDetailTab = {
@@ -28,10 +28,14 @@ export type ContainerDetailProps = {
   onTabChange: (tab: string) => void
   /** Fired when the back link is clicked (the page decides where to go). */
   onBack: () => void
-  /** Back-link label. Defaults to "Explorer". */
+  /**
+   * Back-link label. Defaults to "Explorer".
+   * @default "Explorer"
+   */
   backLabel?: ReactNode
   /** The active tab's body — supplied by the page (real content or a placeholder). */
   children?: ReactNode
+  /** Additional class for the root element */
   className?: string
 }
 
@@ -52,11 +56,11 @@ export const ContainerDetail = ({
   activeTab,
   onTabChange,
   onBack,
-  backLabel = "Explorer",
+  backLabel = 'Explorer',
   children,
   className,
 }: ContainerDetailProps): JSX.Element => (
-  <div className={cn("mdk-container-detail", className)}>
+  <div className={cn('mdk-container-detail', className)}>
     <div className="mdk-container-detail__header">
       <Button
         variant="link"
@@ -88,4 +92,4 @@ export const ContainerDetail = ({
   </div>
 )
 
-ContainerDetail.displayName = "ContainerDetail"
+ContainerDetail.displayName = 'ContainerDetail'

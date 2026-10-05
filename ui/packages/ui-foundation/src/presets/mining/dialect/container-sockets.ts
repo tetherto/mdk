@@ -14,7 +14,7 @@
  * (`isAntspaceHydroContainer` / `isAntspaceImmersionContainer`), with
  * Bitdeer / MicroBT as the fallback that joins the live PDU row.
  *
- * @category op-centre
+ * @category op-center
  */
 
 import { isAntspaceHydroContainer, isAntspaceImmersionContainer } from './container-tabs'

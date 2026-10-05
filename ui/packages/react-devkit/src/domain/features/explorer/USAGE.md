@@ -1,20 +1,22 @@
-# ExplorerLayout
+# `ExplorerLayout`
 
 Explorer split-view shell: a header, a scrollable list column, and a sticky
 detail column that appears when a row is selected (stacking on narrow
 viewports). Purely presentational — the page supplies the list (tabs + table)
 and the detail panel, and owns selection/routing state.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop            | Status   | Type        | Default | Description                                                                  |
-| --------------- | -------- | ----------- | ------- | ---------------------------------------------------------------------------- |
-| `list`          | Required | `ReactNode` | —       | List column content (tab switch + device/container table)                    |
-| `detail`        | Optional | `ReactNode` | —       | Detail column content, shown in the sticky panel when `hasSelection`         |
-| `hasSelection`  | Optional | `boolean`   | `false` | Splits into list (70%) + sticky detail (30%); otherwise list fills the width |
-| `title`         | Optional | `string`    | —       | Page heading; nothing renders when omitted                                   |
-| `headerActions` | Optional | `ReactNode` | —       | Controls shown next to the title (e.g. an export button)                     |
-| `className`     | Optional | `string`    | —       | Additional class for the root element                                        |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `list` | Required | `React.ReactNode` | - | The list column — typically a tab switch plus the device/container table |
+| `className` | Optional | `string` | - | Additional class for the root element |
+| `detail` | Optional | `React.ReactNode` | - | The detail column content (shown in the sticky panel when `hasSelection`) |
+| `hasSelection` | Optional | `boolean` | `false` | When true the layout splits into list (70%) + a sticky detail column (30%); otherwise the list fills the width. Driven by whether a row is selected |
+| `headerActions` | Optional | `React.ReactNode` | - | Optional header controls (export button, etc.) shown next to the title |
+| `title` | Optional | `string` | - | Page heading; nothing renders when omitted |
+<!-- END GENERATED: props -->
 
 ## Example
 

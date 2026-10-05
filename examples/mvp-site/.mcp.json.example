@@ -1,9 +1,5 @@
 {
   "mcpServers": {
-    "mdk-site": {
-      "type": "http",
-      "url": "http://127.0.0.1:3100/mcp"
-    },
     "mdk-site-agent-tools": {
       "type": "http",
       "url": "http://127.0.0.1:3101/mcp"

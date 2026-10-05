@@ -39,6 +39,7 @@ type DryCoolerItem = {
 }
 
 type DryCoolerProps = {
+  /** Container settings payload. `cooling_system.dry_cooler` is read for fan state; `cooling_system.oil_pump` and `cooling_system.water_pump` are read for pump state. */
   data?: UnknownRecord
 }
 
@@ -60,8 +61,7 @@ type DryCoolerProps = {
 export const DryCooler = ({ data }: DryCoolerProps): ReactElement => {
   // Extract cooling system data from container_specific stats
   const coolingSystem = getContainerSpecificStats(data as Device)?.cooling_system as
-    | UnknownRecord
-    | undefined
+    UnknownRecord | undefined
 
   // Extract dry cooler array data
   const dryCoolerDataRaw = coolingSystem?.dry_cooler

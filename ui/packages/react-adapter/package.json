@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-react-adapter",
   "type": "module",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "description": "React framework adapter for @tetherto/mdk-ui-foundation. Binds Zustand vanilla stores and TanStack QueryClient to React-native hooks. No Redux.",
   "sideEffects": false,
@@ -27,10 +27,10 @@
   "types": "./dist/index.d.ts",
   "files": ["dist", "src"],
   "scripts": {
-    "build": "rimraf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json && npm run build:hooks",
-    "build:ts": "tsc -p tsconfig.build.json",
+    "build": "npm run build:ts && npm run build:hooks",
+    "build:ts": "rimraf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json",
     "build:hooks": "tsx scripts/generate-hooks.mts",
-    "clean": "rimraf dist node_modules .turbo",
+    "clean": "rimraf --glob dist node_modules .turbo \"*.tsbuildinfo\"",
     "dev": "tsc --watch -p tsconfig.build.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

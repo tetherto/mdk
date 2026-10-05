@@ -11,10 +11,10 @@ worker, Ocean pool worker, SATEC powermeter worker, and the MDK React UI.
 - **SATEC powermeter worker** — mock power readings, scaled to the seeded miner count
 - **MDK React UI** — Dashboard, Containers, Monitoring, Pools, and Control pages, served
   from the Gateway
-- **Two MCP surfaces** — the Gateway auto-exposes its own routes as tools, and a second,
-  hand-authored tool set ([`backend/mcp-plugins/site`](./backend/mcp-plugins/site/)) with agent-contract metadata and curated
-  granularity the auto-exported routes can't provide. Both listed in
-  [`.mcp.json.example`](./.mcp.json.example).
+- **One MCP surface, two tool sources** — a standalone MCP process (`--role mcp`) serves both a hand-authored tool set
+  ([`backend/mcp-plugins/site`](./backend/mcp-plugins/site/)), with agent-contract metadata and curated granularity, and the
+  site Gateway plugin's own HTTP routes, read off the same plugin dir the Gateway loads and converted into tools. The Gateway
+  itself hosts no MCP server. Listed in [`.mcp.json.example`](./.mcp.json.example).
 - **Independent processes** — every component above runs as its own PM2-supervised OS process
 
 ## Prerequisites
@@ -116,8 +116,8 @@ The Ocean pool is not a LAN device — its config lives in
 - `ocean.pool.apiUrl` — the pool REST API. Defaults to the local mock
   (`http://127.0.0.1:8010`). To go live, point it at the real Ocean API and
   remove the `mocks-ocean` role from `pm2.roles`.
-- `ocean.pool.accounts` — the pool account username(s) to track. Replace
-  `sample-ocean-account` with your account(s) to go live.
+- `ocean.pool.accounts` — the pool account usernames to track. Replace
+  `sample-ocean-account` with your accounts to go live.
 - `ocean.worker.tickMs` — demo pacer interval; stats refresh this often.
 
 ### SATEC config

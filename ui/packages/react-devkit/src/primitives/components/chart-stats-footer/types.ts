@@ -15,7 +15,10 @@ export type ChartStatsFooterProps = Partial<{
   minMaxAvg: MinMaxAvgValues
   /** Additional stats displayed in a columnar grid */
   stats: ChartStatsFooterItem[]
-  /** Number of stat items per column (default: 1) */
+  /**
+   * Number of stat items per column (default: 1)
+   * @default 1
+   */
   statsPerColumn: number
   /** Secondary label displayed below stats */
   secondaryLabel: SecondaryLabel

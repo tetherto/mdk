@@ -5,17 +5,19 @@ Hover-triggered floating label built on Radix UI. Two ways to use it:
 - **`SimpleTooltip`** — one-prop wrapper, recommended for most cases.
 - **`Tooltip` + sub-parts** — full composition for advanced control.
 
-## `SimpleTooltip` props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop            | Status   | Type        | Default | Description                          |
-| --------------- | -------- | ----------- | ------- | ------------------------------------ |
-| `content`       | Required | `ReactNode` | —       | Tooltip body (string or JSX)         |
-| `children`      | Required | `ReactNode` | —       | Trigger element (any focusable node) |
-| `side`          | Optional | `"top" \| "right" \| "bottom" \| "left"` | `"top"` | Side relative to trigger |
-| `sideOffset`    | Optional | `number`    | `8`     | Distance from the trigger (px)       |
-| `delayDuration` | Optional | `number`    | `200`   | Hover delay before showing (ms)      |
-| `showArrow`     | Optional | `boolean`   | `true`  | Render a directional arrow           |
-| `className`     | Optional | `string`    | —       | Content class names                  |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Required | `React.ReactNode` | - | Element that triggers the tooltip |
+| `content` | Required | `React.ReactNode` | - | Tooltip content (string or JSX) |
+| `className` | Optional | `string` | - | Additional class for content |
+| `delayDuration` | Optional | `number` | `200` | Delay before showing tooltip (ms) |
+| `showArrow` | Optional | `boolean` | `true` | Whether to show the arrow |
+| `side` | Optional | `"left" \| "right" \| "top" \| "bottom"` | `"top"` | Position of the tooltip relative to trigger |
+| `sideOffset` | Optional | `number` | `8` | Distance from the trigger in pixels |
+<!-- END GENERATED: props -->
 
 ## Composable parts
 

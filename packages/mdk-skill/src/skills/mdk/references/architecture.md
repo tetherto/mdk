@@ -23,7 +23,7 @@ Each module has one job and modules never cross-call, they interact through the 
 
 | Module                  | Job                                                                                                                    |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `worker-registry`       | deviceId → workerId → channel mapping; source of truth for routability; explicit state transition table                |
+| `worker-registry`       | `deviceId` → `workerId` → channel mapping; source of truth for routability; explicit state transition table                |
 | `command-dispatcher`    | Validates a command against the Worker's declared capabilities (name, param types, `min`/`max` bounds → `ERR_PARAM_RANGE`) and routes it |
 | `command-state-machine` | Command lifecycle with explicit transition table; every mutation is WAL'd before it takes effect; emits `command:done` |
 | `telemetry-collector`   | Pull-based: sends `telemetry.pull`, returns the raw Worker payload                                                     |
@@ -33,7 +33,7 @@ Each module has one job and modules never cross-call, they interact through the 
 
 The protocol layer ([`backend/core/kernel/lib/protocol/`](../../../../../../backend/core/kernel/lib/protocol/)) owns the envelope
 ([`envelope.js`](../../../../../../backend/core/kernel/lib/protocol/envelope.js)), the action set ([`actions.js`](../../../../../../backend/core/kernel/lib/protocol/actions.js)) and per-action payload
-validators ([`schemas.js`](../../../../../../backend/core/kernel/lib/protocol/schemas.js)) — see [`protocol.md`](./protocol.md).
+validators ([`schemas.js`](../../../../../../backend/core/kernel/lib/protocol/schemas.js)); [`protocol.md`](./protocol.md) documents these in full.
 
 ## Worker side
 
@@ -51,7 +51,7 @@ per device via `connect()`, answers the `'mdk'` HRPC method by dispatching
 envelopes to handlers, and announces itself on the Kernel's DHT topic. One
 runtime hosts N same-type devices; a device whose `connect()` fails is held
 `offline` (requests return `ERR_DEVICE_UNAVAILABLE`) without affecting
-siblings. This is the shape every currently-shipped device family
+siblings. This is the shape every currently shipped device family
 (`backend/workers/miners/*`, `power-meter/*`, `containers/*`, `minerpools/*`,
 `temperature/*`) still uses.
 
@@ -77,8 +77,8 @@ implementation on it so far.
    `identity.request` and `capability.request`; the registry records the
    Worker's devices and its published contract (handler paths stripped).
 3. The scheduler then drives `telemetry.pull` / `state.pull` / `health.ping`
-   on a cadence; consumers trigger `command.request` through the Gateway.
-4. Commands flow Gateway → dispatcher (capability + bounds validation) →
+   on a cadence; consumers trigger `command.request` through the Gateway (agents through the standalone MCP server).
+4. Commands flow Gateway (or MCP server) → dispatcher (capability + bounds validation) →
    state machine (WAL) → Worker → `command.result` back up.
 
 ## Where things run

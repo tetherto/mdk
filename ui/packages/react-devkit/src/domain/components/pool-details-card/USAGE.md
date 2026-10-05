@@ -1,16 +1,18 @@
-# PoolDetailsCard
+# `PoolDetailsCard`
 
 Compact key/value card for pool metadata. Empty list renders a "No data
 available" placeholder.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type               | Default | Description                         |
-| ----------- | -------- | ------------------ | ------- | ----------------------------------- |
-| `details`   | Required | `PoolDetailItem[]` | —       | Detail rows to render               |
-| `label`     | Optional | `string`           | —       | Header label                        |
-| `underline` | Optional | `boolean`          | `false` | Render an underline under the label |
-| `className` | Optional | `string`           | —       | Additional class names              |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `details` | Required | `PoolDetailItem[]` | - | Detail rows to render |
+| `className` | Optional | `string` | - | Additional class names |
+| `label` | Optional | `string` | - | Header label |
+| `underline` | Optional | `boolean` | `false` | Render an underline under the label |
+<!-- END GENERATED: props -->
 
 ## Example
 

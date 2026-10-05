@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { ReactNode } from 'react'
 
 /** A single heatmap cell. */
 export type HeatmapCell = {
@@ -23,15 +23,30 @@ export type HeatmapCellContext = {
 export type HeatmapProps = {
   /** Rows of cells (row-major). Rows may be ragged. */
   data: HeatmapCell[][]
-  /** Range floor; auto-derived from the finite values when omitted. */
+  /**
+   * Range floor (maps to the first gradient stop); auto-derived from the finite values when omitted.
+   * @default auto
+   */
   min?: number
-  /** Range ceiling; auto-derived from the finite values when omitted. */
+  /**
+   * Range ceiling (maps to the last gradient stop); auto-derived from the finite values when omitted.
+   * @default auto
+   */
   max?: number
-  /** Gradient stops low→high. Defaults to the cold→hot `HEATMAP_GRADIENT`. */
+  /**
+   * Gradient stops low→high. Defaults to the cold→hot `HEATMAP_GRADIENT`.
+   * @default HEATMAP_GRADIENT
+   */
   colors?: readonly string[]
-  /** Colour used for `null` cells. */
+  /**
+   * Colour used for `null` cells.
+   * @default #000000
+   */
   emptyColor?: string
-  /** Render each cell's value/label as text. */
+  /**
+   * Render each cell's value/label as text.
+   * @default false
+   */
   showValues?: boolean
   /**
    * Override the cell's inner content — e.g. to overlay socket borders,
@@ -39,8 +54,12 @@ export type HeatmapProps = {
    * background colour (passed via `context.color`).
    */
   renderCell?: (cell: HeatmapCell, context: HeatmapCellContext) => ReactNode
-  /** Accessible label for the grid. */
+  /**
+   * Accessible label for the grid.
+   * @default "Heatmap"
+   */
   ariaLabel?: string
+  /** Additional class for the root element */
   className?: string
 }
 
@@ -53,7 +72,11 @@ export type HeatmapLegendProps = {
   unit?: string
   /** Heading above the gradient bar (e.g. "Temperature"). */
   label?: string
-  /** Gradient stops low→high. Defaults to `HEATMAP_GRADIENT`. */
+  /**
+   * Gradient stops low→high.
+   * @default HEATMAP_GRADIENT
+   */
   colors?: readonly string[]
+  /** Additional class for the root element */
   className?: string
 }

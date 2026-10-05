@@ -1,20 +1,22 @@
-# SingleStatCard
+# `SingleStatCard`
 
 Prominent stat tile for displaying a single key metric. Supports flash animations and four visual variants.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `name` | Optional | `string` | — | Metric label |
-| `subtitle` | Optional | `string` | `''` | Optional subtitle text |
-| `value` | Optional | `number \| string \| null` | `null` | Metric value |
-| `unit` | Optional | `string` | `''` | Unit of measurement (e.g. `"TH/s"`, `"W"`) |
-| `color` | Optional | `string` | `'inherit'` | Accent color for the border or flash effect |
-| `flash` | Optional | `boolean` | `false` | Enable flash animation on value change |
-| `superflash` | Optional | `boolean` | `false` | Faster flash animation |
-| `variant` | Optional | `"primary" \| "secondary" \| "tertiary" \| "highlighted"` | `"primary"` | Visual style variant |
-| `row` | Optional | `boolean` | `false` | Use row layout instead of column |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `color` | Optional | `string` | `"inherit"` | Color for flash/border |
+| `flash` | Optional | `boolean` | `false` | Enable flash animation |
+| `name` | Optional | `string` | - | Stat name/label |
+| `row` | Optional | `boolean` | `false` | Row layout |
+| `subtitle` | Optional | `string` | `""` | Subtitle text |
+| `superflash` | Optional | `boolean` | `false` | Enable superflash animation (faster) |
+| `unit` | Optional | `string` | `""` | Unit of measurement |
+| `value` | Optional | `string \| number \| null` | `null` | Stat value |
+| `variant` | Optional | `"primary" \| "secondary" \| "tertiary" \| "highlighted"` | `"primary"` | Card variant |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

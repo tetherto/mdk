@@ -26,7 +26,7 @@ This page is not about *how those processes are packaged* on a host (one process
 A single Kernel process routes commands and telemetry for every Worker registered to it, with no per-Worker partitioning.
 Each Kernel is paired with its own Gateway (`startGateway()` connects to exactly one Kernel, and `mdk.yaml` declares exactly one Kernel per stack).
 
-Add a second Kernel when you're adding a second physically- or organizationally-distinct site, not to work around a
+Add a second Kernel when you're adding a second physically or organizationally distinct site, not to work around a
 single site's device count. You can run multiple independent sites with one Kernel per physical site (for example, Site A and
 Site B). Each Kernel is fully isolated: Kernel instances do not federate registries, share queues, or synchronize state with
 each other, and each runs behind its own Gateway.

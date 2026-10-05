@@ -62,7 +62,7 @@ keeps the lockfile clean.
 > [!IMPORTANT]
 > The port and flag above aren't arbitrary: `11500` avoids Ollama's default `11434` (whichever
 > starts second on a machine with both dies on `EADDRINUSE`), and `--no-cancel-load-on-disconnect`
-> stops a lazily-loaded model's first request from failing with a `503` that isn't really about a
+> stops a lazily loaded model's first request from failing with a `503` that isn't really about a
 > disconnect.
 
 If this doesn't work first try, see [troubleshooting](#troubleshooting).
@@ -132,7 +132,7 @@ command above does) if both run on this machine.
 
 ### The first request 503s with `model_load_failed`, blaming a disconnect that didn't happen
 
-`serve.load.cancelOnDisconnect` defaults to `true`, which cancels a lazily-loaded model's first
+`serve.load.cancelOnDisconnect` defaults to `true`, which cancels a lazily loaded model's first
 request. `--no-cancel-load-on-disconnect` fixes it. Models declared `preload: true` (like
 `qwen3-4b` in `qvac-runtime/qvac.config.json`) never hit this, but the flag costs nothing.
 

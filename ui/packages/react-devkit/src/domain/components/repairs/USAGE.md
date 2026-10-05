@@ -1,17 +1,19 @@
-# RepairLogChangesSubRow
+# `RepairLogChangesSubRow`
 
 Expandable sub-row that lists the spare-part changes recorded in a repair batch
 action. Each non-miner repair action is resolved against its device to show the
 part type, serial number, MAC address, and whether the part was added or
 removed. It renders a non-paginated `DataTable`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop          | Status   | Type                | Default | Description                                                       |
-| ------------- | -------- | ------------------- | ------- | ----------------------------------------------------------------- |
-| `batchAction` | Required | `RepairBatchAction` | —       | The repair batch action whose part changes are displayed          |
-| `devices`     | Required | `RepairDevice[]`    | —       | Devices referenced by the batch action, pre-fetched by the parent |
-| `isLoading`   | Optional | `boolean`           | `false` | Renders a spinner while the parent is still fetching `devices`    |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `batchAction` | Required | `object` | - | The repair batch action whose part changes should be displayed |
+| `devices` | Required | `Partial<{ id: string; rack: string; info: Partial<{ serialNum: string; macAddress: string; }>; }>[]` | - | Devices referenced by the batch action, pre-fetched by the parent |
+| `isLoading` | Optional | `boolean` | `false` | Show a spinner while the parent is still fetching `devices` |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

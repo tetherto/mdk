@@ -3,17 +3,16 @@
 Compound Radix-based select with `Select`, `SelectTrigger`, `SelectContent`,
 `SelectItem`, `SelectValue`, and `SelectGroup` pieces.
 
-## `Select` props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop            | Status   | Type                  | Default | Description                |
-| --------------- | -------- | --------------------- | ------- | -------------------------- |
-| `value`         | Optional | `string`              | —       | Controlled value           |
-| `defaultValue`  | Optional | `string`              | —       | Uncontrolled initial value |
-| `onValueChange` | Optional | `(v: string) => void` | —       | Setter for the value       |
-| `allowClear`    | Optional | `boolean`             | `false` | Show a clear (X) button when a value is set |
-
-`SelectTrigger` accepts `size` (`"sm" \| "md" \| "lg"`) and `variant`
-(`"default" \| "colored"`).
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `allowClear` | Optional | `boolean` | `false` | Show a clear button when a value is selected |
+| `defaultValue` | Optional | `string` | - | Uncontrolled initial value |
+| `onValueChange` | Optional | `((value: string) => void)` | - | Setter for the value |
+| `value` | Optional | `string` | - | Controlled value |
+<!-- END GENERATED: props -->
 
 ## Example
 

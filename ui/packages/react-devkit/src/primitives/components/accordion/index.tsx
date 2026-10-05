@@ -16,15 +16,49 @@ const AccordionRoot = AccordionPrimitive.Root
 type TAccordionToggleIconPosition = 'left' | 'right'
 
 type AccordionProps = {
-  title: string
+  /**
+   * Header label shown in the trigger button
+   * @default ''
+   */
+  title?: string
+  /**
+   * Lays out the content area as a flex row instead of column
+   * @default false
+   */
   isRow?: boolean
+  /**
+   * Whether the panel starts expanded
+   * @default false
+   */
   isOpened?: boolean
+  /**
+   * Removes the default inner padding from the content area
+   * @default false
+   */
   unpadded?: boolean
+  /**
+   * Removes the bottom border from the trigger
+   * @default false
+   */
   noBorder?: boolean
+  /**
+   * Shows/hides the expand/collapse chevron icon
+   * @default true
+   */
   showToggleIcon?: boolean
+  /**
+   * Applies a solid background to the accordion container
+   * @default false
+   */
   solidBackground?: boolean
+  /** Extra content (e.g. a badge) rendered in the trigger header */
   customLabel?: ReactNode
+  /**
+   * Side on which the toggle icon appears
+   * @default 'left'
+   */
   toggleIconPosition?: TAccordionToggleIconPosition
+  /** Fired when the open/close state changes */
   onValueChange?: (value: string | string[]) => void
 } & Omit<
   ComponentPropsWithoutRef<typeof AccordionPrimitive.Root>,
@@ -72,9 +106,19 @@ AccordionItem.displayName = 'AccordionItem'
 const AccordionTrigger = forwardRef<
   ComponentRef<typeof AccordionPrimitive.Trigger>,
   ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> & {
+    /** Forwarded to the underlying Radix trigger element; not rendered by the component. */
     timestamp?: string
+    /**
+     * Shows/hides the toggle icon
+     * @default true
+     */
     showToggleIcon?: boolean
+    /**
+     * Side on which the toggle icon appears
+     * @default 'left'
+     */
     toggleIconPosition?: TAccordionToggleIconPosition
+    /** Slot for extra content in the trigger header */
     customLabel?: ReactNode
   }
 >(

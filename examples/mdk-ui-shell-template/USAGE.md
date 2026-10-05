@@ -1,4 +1,4 @@
-# MDK UI Shell Template — Assembly Contract
+# MDK UI shell template — assembly contract
 
 Read this before modifying anything. This template is a **bare backbone** —
 auth + the app frame + a Home landing page, with no example feature pages.

@@ -1,6 +1,6 @@
-# BitMain Immersion Container Components
+# Bitmain immersion container components
 
-Components for the BitMain immersion-cooled container explorer view.
+Components for the Bitmain immersion-cooled container explorer view.
 
 | Component | Description |
 |---|---|
@@ -14,12 +14,14 @@ Components for the BitMain immersion-cooled container explorer view.
 
 Each of the other six components has its own props, documented in its co-located USAGE.md.
 
-## BitMainImmersionSettings props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `data` | Optional | `Device` | — | Live device object from the devices store |
-| `containerSettings` | Optional | `{ thresholds?: Record<string, unknown> } \| null` | `null` | Container settings with custom thresholds |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `containerSettings` | Optional | `{ thresholds?: Record<string, unknown> \| undefined; } \| null` | `null` | Container settings with custom thresholds |
+| `data` | Optional | `Device` | - | Device data |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

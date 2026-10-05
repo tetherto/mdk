@@ -2,7 +2,11 @@ import { BarChart, ChartContainer, COLOR, CURRENCY, UNITS } from '@primitives'
 import { type ReactElement, useEffect, useState } from 'react'
 
 import type { PeriodValue } from '../../../../constants/ranges'
-import type { FinanceQueryParams, SubsidyFeesLogEntry, SubsidyFeesResponse } from '@domain/types/finance'
+import type {
+  FinanceQueryParams,
+  SubsidyFeesLogEntry,
+  SubsidyFeesResponse,
+} from '@domain/types/finance'
 import { SingleStatCard } from '../../../explorer/details-view'
 import { TimeframeControls, type TimeframeControlsOnRangeChange } from '../../timeframe-controls'
 import { type FinancialDateRange, toFinancePeriod } from '../../utils/financial-period'
@@ -19,12 +23,31 @@ import { useSubsidyFees } from './use-subsidy-fee'
 import './subsidy-fee.scss'
 
 type SubsidyFeeProps = Partial<{
+  /**
+   * Show error state
+   * @default false
+   */
   isError: boolean
+  /**
+   * Show loading state
+   * @default false
+   */
   isLoading: boolean
+  /**
+   * Error message to display
+   * @default 'Error loading block data. Please try again later.'
+   */
   errorMessage: string
+  /**
+   * Show summary stat cards
+   * @default false
+   */
   showSummaryCards: boolean
+  /** Fee log entries */
   log: SubsidyFeesLogEntry[]
+  /** Subsidy fee data */
   data: SubsidyFeesResponse | null
+  /** Called when date range changes */
   onDateRangeChange: (dateRange: FinancialDateRange, query: FinanceQueryParams) => void
 }>
 

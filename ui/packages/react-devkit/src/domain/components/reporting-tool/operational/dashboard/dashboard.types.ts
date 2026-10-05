@@ -106,9 +106,13 @@ export type OperationalDashboardMinersInput = Pick<
 
 /** Props for the operational dashboard composite. */
 export type OperationalDashboardProps = Partial<{
+  /** Shaped hashrate trend (`LineChartCardData`) */
   hashrate: OperationalDashboardTrendInput
+  /** Shaped power-consumption trend */
   consumption: OperationalDashboardTrendInput
+  /** Shaped site-efficiency trend */
   efficiency: OperationalDashboardTrendInput
+  /** Shaped stacked miners-status data */
   miners: OperationalDashboardMinersInput
   /** Optional controls (e.g. a date-range picker) rendered above the grid. */
   controls: ReactElement

@@ -1,13 +1,15 @@
-# MinersSummaryBox
+# `MinersSummaryBox`
 
 Headline card that summarises miner statistics (hash rate, efficiency, temperature) for one container in a 2-column grid. Accepts pre-formatted value strings so no numeric formatting is done inside the component.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type                   | Default | Description |
-| ----------- | -------- | ---------------------- | ------- | ----------- |
-| `params`    | Required | `MinersSummaryParam[]` | —       | Array of `{ label, value }` pairs. `value` is a pre-formatted display string including units. |
-| `className` | Optional | `string`               | —       | Additional CSS class on the root element |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `params` | Required | `MinersSummaryParam[]` | - | Array of label-value pairs to display in a 2-column grid |
+| `className` | Optional | `string` | - | Additional CSS class name |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

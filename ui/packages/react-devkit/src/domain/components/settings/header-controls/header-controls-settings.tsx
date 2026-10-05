@@ -6,10 +6,18 @@ import { HEADER_ITEMS } from '../../../constants/header-controls.constants'
 import './header-controls-settings.scss'
 
 export type HeaderControlsSettingsProps = {
+  /** Current header preference values */
   preferences: HeaderPreferences
+  /**
+   * Show loading state
+   * @default false
+   */
   isLoading?: boolean
+  /** Called when a preference toggle changes */
   onToggle: (key: keyof HeaderPreferences, value: boolean) => void
+  /** Reset all preferences to defaults */
   onReset: VoidFunction
+  /** Additional CSS class */
   className?: string
 }
 

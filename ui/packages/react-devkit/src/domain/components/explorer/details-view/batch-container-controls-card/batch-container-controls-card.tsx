@@ -8,10 +8,18 @@ import { ContentBox } from '../../../container/content-box/content-box'
 import './batch-container-controls-card.scss'
 
 type BatchContainerControlsCardProps = {
+  /**
+   * Whether in batch (multi-select) mode
+   * @default true
+   */
   isBatch: boolean
+  /** Compact layout for tighter spaces */
   isCompact: boolean
+  /** Array of currently connected miners */
   connectedMiners: unknown
+  /** Alarm timeline entries to display */
   alarmsDataItems: TimelineItemData[]
+  /** Navigation callback for alarm deep-links */
   onNavigate: (path: string) => void
 }
 

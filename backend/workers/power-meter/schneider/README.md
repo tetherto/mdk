@@ -2,7 +2,7 @@
 
 MDK Worker for Schneider Electric power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports P3U30 and PM5340 models.
 
-## Supported Models
+## Supported models
 
 | `model` value | Model |
 |--------|--------|

@@ -9,12 +9,19 @@ export type PoolDetailItem = {
 }
 
 type PoolDetailsCardPartialProps = Partial<{
+  /** Header label */
   label: string
+  /**
+   * Render an underline under the label
+   * @default false
+   */
   underline: boolean
+  /** Additional class names */
   className: string
 }>
 
 export type PoolDetailsCardProps = PoolDetailsCardPartialProps & {
+  /** Detail rows to render */
   details: PoolDetailItem[]
 }
 

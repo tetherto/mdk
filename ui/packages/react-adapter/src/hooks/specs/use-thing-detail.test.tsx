@@ -36,7 +36,7 @@ describe('useThingDetail', () => {
     vi.unstubAllGlobals()
   })
 
-  it('fetches the thing by id with the Op Centre projection and unwraps the row', async () => {
+  it('fetches the thing by id with the Op Center projection and unwraps the row', async () => {
     const row = { id: 'miner-1', type: 'miner-wm-m56s', info: { container: 'bitdeer-1a' } }
     const fetchSpy = respondWith([[row]])
     vi.stubGlobal('fetch', fetchSpy)

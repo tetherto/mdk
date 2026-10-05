@@ -15,6 +15,7 @@ export type DataLabelProps = Partial<{
   endDate: Date | null
   /**
    * Label text; defaults to `PERIOD`.
+   * @default "PERIOD"
    */
   label: string
 }>

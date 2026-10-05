@@ -4,7 +4,7 @@
 
 import test from 'brittle'
 import { MockLanguageModelV3, convertArrayToReadableStream } from 'ai/test'
-import { createAgent } from '../../index.js'
+import { createAgent } from '../../src/agent.js'
 import { Session } from '../../src/session.js'
 import { MemorySessionStore, SESSION_GONE } from '../../src/session-store.js'
 import { EVENT } from '../../src/events.js'

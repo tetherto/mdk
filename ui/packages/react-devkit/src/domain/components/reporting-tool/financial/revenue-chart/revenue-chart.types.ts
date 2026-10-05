@@ -16,10 +16,30 @@ export type SiteItem = {
 
 /** Props for `RevenueChart`; pass pre-fetched data and optional legend layout overrides. */
 export type RevenueChartProps = Partial<{
+  /**
+   * Raw API response, each entry is one time period with site IDs as dynamic keys
+   * @default []
+   */
   data: RevenueDataItem[]
+  /**
+   * Shows a loading spinner while data is being fetched
+   * @default false
+   */
   isLoading: boolean
+  /**
+   * List to resolve site IDs to display names
+   * @default []
+   */
   siteList: (string | SiteItem)[]
+  /**
+   * Chart legend position
+   * @default 'bottom'
+   */
   legendPosition: Position
+  /**
+   * Chart legend alignment
+   * @default 'start'
+   */
   legendAlign: 'start' | 'center' | 'end'
 }>
 

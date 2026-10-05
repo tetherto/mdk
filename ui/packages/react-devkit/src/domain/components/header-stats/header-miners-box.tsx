@@ -24,8 +24,12 @@ export type HeaderMinersBoxProps = {
   poolOnline?: number
   /** Optional pool-side mismatch count (red). */
   poolMismatch?: number
-  /** Label for the app-side row — defaults to `APP` (`WEBAPP_SHORT_NAME`). */
+  /**
+   * Label for the app-side row
+   * @default WEBAPP_SHORT_NAME ("APP")
+   */
   appLabel?: string
+  /** Additional class names */
   className?: string
 }
 
@@ -57,7 +61,9 @@ export const HeaderMinersBox = ({
     <div className="mdk-header-stat-box__body">
       <div className="mdk-header-stat-box__row">
         <span className="mdk-header-stat-box__label">Miners</span>
-        <span className="mdk-header-stat-box__muted">{appLabel} ({fmt(appTotal)})</span>
+        <span className="mdk-header-stat-box__muted">
+          {appLabel} ({fmt(appTotal)})
+        </span>
         <span className="mdk-header-stat-box__success">{fmt(online)}</span>
         <span className="mdk-header-stat-box__warning">{fmt(error)}</span>
         <span className="mdk-header-stat-box__danger">{fmt(offline)}</span>

@@ -1,25 +1,25 @@
-# LabeledCard
+# `LabeledCard`
 
 A generic card container with a header label, optional navigation link, and configurable layout modifiers.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-All props are optional.
-
-| Prop                 | Status   | Type              | Default | Description                                                |
-| -------------------- | -------- | ----------------- | ------- | ---------------------------------------------------------- |
-| `label`              | Optional | `React.ReactNode` | —       | Header content shown above the card body                   |
-| `isDark`             | Optional | `boolean`         | `false` | Applies a dark background modifier                         |
-| `isFullWidth`        | Optional | `boolean`         | `false` | Stretches the card to full container width                 |
-| `isFullHeight`       | Optional | `boolean`         | `false` | Stretches the card to full container height                |
-| `isRelative`         | Optional | `boolean`         | `false` | Sets `position: relative` on the container                 |
-| `isScrollable`       | Optional | `boolean`         | `false` | Enables vertical scroll on the card body                   |
-| `hasNoWrap`          | Optional | `boolean`         | `false` | Prevents content from wrapping                             |
-| `hasNoMargin`        | Optional | `boolean`         | `false` | Removes default margin                                     |
-| `hasNoBorder`        | Optional | `boolean`         | `false` | Removes the card border                                    |
-| `children`           | Optional | `React.ReactNode` | —       | Card body content                                          |
-| `className`          | Optional | `string`          | —       | Additional class for the root element                      |
-| `getNavigateOptions` | Optional | `(label: string) => { href?: string; target?: string }` | —       | Returns a link `href`/`target` for the label when provided |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Optional | `React.ReactNode` | - | Card body content |
+| `className` | Optional | `string` | - | Additional class for the root element |
+| `getNavigateOptions` | Optional | `(label: string) => Partial<{ href: string; target: string; }>` | - | Returns a link `href`/`target` for the label when provided |
+| `hasNoBorder` | Optional | `boolean` | `false` | Removes the card border |
+| `hasNoMargin` | Optional | `boolean` | `false` | Removes default margin |
+| `hasNoWrap` | Optional | `boolean` | `false` | Prevents content from wrapping |
+| `isDark` | Optional | `boolean` | `false` | Applies a dark background modifier |
+| `isFullHeight` | Optional | `boolean` | `false` | Stretches the card to full container height |
+| `isFullWidth` | Optional | `boolean` | `false` | Stretches the card to full container width |
+| `isRelative` | Optional | `boolean` | `false` | Sets `position: relative` on the container |
+| `isScrollable` | Optional | `boolean` | `false` | Enables vertical scroll on the card body |
+| `label` | Optional | `React.ReactNode` | - | Header content shown above the card body |
+<!-- END GENERATED: props -->
 
 ## Example
 

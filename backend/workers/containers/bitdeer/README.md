@@ -2,7 +2,7 @@
 
 MDK Worker for Bitdeer D40 mining container systems. Communicates via MQTT. Supports A1346, M30, M56, and S19XP container variants.
 
-## Supported Models
+## Supported models
 
 | `model` value | Model                                   |
 | ------------- | --------------------------------------- |

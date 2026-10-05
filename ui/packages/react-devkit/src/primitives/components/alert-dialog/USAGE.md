@@ -1,4 +1,4 @@
-# AlertDialog
+# `AlertDialog`
 
 A set of composable primitives wrapping Radix UI `@radix-ui/react-alert-dialog` with MDK class names. Use for destructive confirmations that should block interaction with the rest of the page.
 

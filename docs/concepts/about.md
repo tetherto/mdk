@@ -25,9 +25,9 @@ MDK ships three conceptual layers, each containing one or more packages:
 2. [Universal SDK][universal-sdk-section].
 3. [MDK App Toolkit][mdk-app-toolkit-section].
 
-All three communicate through the **MDK protocol**. Clients — browsers and [AI agents][ai-agents-section] alike — reach the kernel exclusively through
-the Gateway, the consumer-facing integration boundary your team builds with the SDK. MDK ships no authentication of its own at any tier: your team
-supplies it in the Gateway plugin controllers you write. Tying everything together is a **single contract per device type**: the same
+All three communicate through the **MDK protocol**. Browsers reach the Kernel through the Gateway, the consumer-facing integration boundary your team builds with the SDK;
+[AI agents][ai-agents-section] reach it instead through the standalone MCP server. MDK ships no authentication of its own at any tier: your team
+supplies it in the Gateway plugin controllers you write (native MCP tools authenticate at the MCP endpoint instead, not through those controllers). Tying everything together is a **single contract per device type**: the same
 [`mdk-contract.json`][capability-contract] is designed to serve the UI (data labels), the orchestrator (validation rules), and AI agents (reasoning
 context) — today, only the orchestrator's validation rules are actually wired to it; UI and agent tooling don't read it yet.
 One file, one intended source of truth for three audiences.
@@ -40,7 +40,7 @@ and serves as a controller: it knows which devices are online, routes commands t
 `@tetherto/mdk-kernel` communicates with Workers, never devices directly, through a standardized language called the **MDK Protocol**, a common set
 of messages every Worker in the system understands, regardless of the device manufacturer or model behind it. Adding a new device type never impacts
 `@tetherto/mdk-kernel` thanks to the Worker, a
-device-specific translator that sits between the kernel and your hardware: it speaks the MDK Protocol upward, and the device's native API downward.
+device-specific translator that sits between the Kernel and your hardware: it speaks the MDK Protocol upward, and the device's native API downward.
 
 The Kernel is **pull-only**, **device-agnostic**, and **self-healing**.
 
@@ -57,9 +57,9 @@ handling all the connection details so developers can focus on building their ap
   `getStatus()` and an optional connect warm-up. There is no background reconnect loop, and HRPC is the only transport
 - **No lock-in**: developers bring their own stack and connect via the SDK. No framework requirements
 
-### MDK App toolkit
+### MDK app toolkit
 
-For teams that want to ship fast, the [**MDK App Toolkit**][app-toolkit] is the optional, batteries-included application
+For teams that want to ship fast, the [**MDK App toolkit**][app-toolkit] is the optional, batteries-included application
 layer that sits on top of `@tetherto/mdk-kernel`. It ships in three parts:
 
 - **Frontend tools**: a headless state brain ([`@tetherto/mdk-ui-foundation`][ui-foundation]), framework adapters
@@ -71,7 +71,10 @@ layer that sits on top of `@tetherto/mdk-kernel`. It ships in three parts:
   tools widget is application code you write, not a manifest mechanism the Toolkit provides for you today. Third parties
 can ship whole features without forking the Gateway.
 
-The Gateway is the recommended integration path for applications — it adds HTTP routing, request caching, and a plugin system for extending routes. Nothing above the Gateway is required, though: for lightweight tools, standalone scripts, or CI/CD integrations, [`@tetherto/mdk-client`][mdk-client] can talk to Kernel directly. Some Worker-scoped operations (device provisioning, historical log/stat aggregation) go through a direct Worker connection instead of the usual Kernel round-trip — see [the client's own guide][client-paths] for when to use which.
+The Gateway is the recommended integration path for applications — it adds HTTP routing, request caching, and a plugin system for extending routes.
+Nothing above the Gateway is required, though: for lightweight tools, standalone scripts, or CI/CD integrations, [`@tetherto/mdk-client`][mdk-client]
+can talk to Kernel directly. Some Worker-scoped operations (device provisioning, historical log/stat aggregation) go through a direct Worker
+connection instead of the usual Kernel round-trip; [when to use which][client-paths] is covered by the client's own guide.
 
 ## Who MDK is for
 
@@ -88,13 +91,13 @@ issues autonomously, then act on them once an operator approves the write
 
 ## Architecture overview
 
-`@tetherto/mdk-kernel` is [the kernel][architecture-kernel]. [`@tetherto/mdk-client`][mdk-client] is the protocol connector every caller uses
+`@tetherto/mdk-kernel` is [the Kernel][architecture-kernel]. [`@tetherto/mdk-client`][mdk-client] is the protocol connector every caller uses
 to reach it. Above those two layers, the supported development path builds in two levels:
 
 - **Gateway**: the [Gateway][gateway-concept] hosts plugins and adds request-level caching and an HTTP interface; each plugin
   builds its own `@tetherto/mdk-client` and does its own fleet aggregation. Authenticating callers is left to the plugin
-  controllers you write. AI agents can drive the fleet over MCP — a standalone [`@tetherto/mdk-mcp`][mcp-readme] process, or one
-  the Gateway auto-generates in-process from a plugin's routes
+  controllers you write. AI agents can drive the fleet over MCP — a standalone [`@tetherto/mdk-mcp`][mcp-readme] process that
+  derives tools from a plugin's routes.
 - **MDK App Toolkit**: sits on top of the Gateway. Adds a plugin system for declarative route extensions and frontend
   packages ([`@tetherto/mdk-ui-foundation`][ui-foundation], React adapter, React UI kit) for teams building operator dashboards
 
@@ -118,7 +121,7 @@ In addition to the technical schemas, every device's contract file ([`mdk-contra
 
 The intent is that an AI agent connecting to MDK wouldn't need a separate knowledge base or custom prompts per device: the
 same contract that Kernel already validates commands against would also determine how AI reasons about that hardware. That
-wiring is not built yet: MCP tools today come from a separate, hand-authored manifest, not from a Worker's contract (see
+wiring is not built yet: MCP tools today come from a hand-authored manifest or a Gateway plugin's routes, not from a Worker's contract (see
 [Connecting intelligent agents][ai-agents-docs]).
 
 ## What you can build

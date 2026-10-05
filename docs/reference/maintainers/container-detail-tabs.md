@@ -4,7 +4,7 @@ Follow-on to the container-detail **basement** (shell + routing + back-nav). The
 are the tab bodies that mount into the `ContainerDetail` shell, written so a
 junior dev can pick one up cold.
 
-## Definition of Done — applies to EVERY task below
+## Definition of done — applies to EVERY task below
 
 **Main goal:** the tab works in the **generated shell app** against **real
 reference app backend data** — not mocks, not hardcoded values.
@@ -45,7 +45,7 @@ models, Charts, Heatmap primitive, socket cell, the `react-selecto` grid in
 pool-manager). Most tasks are **assembly + wiring + demo + refactor**, not new
 plumbing — check what exists first.
 
-## M1 — Home tab
+## M1 — home tab
 
 - **Sees:** container summary — status/content box, controls box, stats group card
   (temp/power/hashrate), and a table of connected miners.
@@ -60,9 +60,9 @@ plumbing — check what exists first.
 - **Done:** real Bitdeer Home tab shows live status + real connected miners;
   catalog demo seeded.
 
-## M2 — PDU Layout tab *(biggest — split read vs write)*
+## M2 — PDU layout tab *(biggest — split read vs write)*
 
-- **Sees:** socket grid colour-coded by state; rubber-band **multi-select**;
+- **Sees:** socket grid color-coded by state; rubber-band **multi-select**;
   socket + heatmap legends; zoom/pan; add/replace miner + change position via
   **voting**.
 - **Port from:** `.../Tabs/PduTab/PduTab.tsx`.
@@ -77,7 +77,7 @@ plumbing — check what exists first.
 - **Done:** real sockets render + select; each write creates a pending voting
   action you can approve/cancel; catalog demo seeded.
 
-## M3 — Power Adjustment tab *(from scratch — no building block)*
+## M3 — power adjustment tab *(from scratch — no building block)*
 
 - **Sees:** power/limit controls for **Whatsminer** containers, applied via voting.
 - **Port from:** `.../Tabs/PowerAdjustmentTab/PowerAdjustmentTab.tsx` — **strip the
@@ -88,7 +88,7 @@ plumbing — check what exists first.
 - **Done:** on a real M56, submit creates a pending voting action; tab absent for
   non-Whatsminer models; catalog demo seeded.
 
-## M4 — Settings tab
+## M4 — settings tab
 
 - **Sees:** per-model settings incl. **editable thresholds** saved via voting.
 - **Port from:** `.../Tabs/SettingsTab/SettingsTab.tsx`.
@@ -99,7 +99,7 @@ plumbing — check what exists first.
 - **Done:** editing+saving a threshold on a real container creates a pending
   voting action; catalog demo per model seeded.
 
-## M5 — Charts tab
+## M5 — charts tab
 
 - **Sees:** container time-series (hashrate/power/temp…), with a generic-builder
   fallback for MicroBT/immersion.
@@ -130,7 +130,7 @@ plumbing — check what exists first.
 - **Lands:** mostly assembly — hook → existing `alarm-contents` → tab slot.
 - **Done:** real hydro/immersion container shows live alarms; catalog demo seeded.
 
-## M7 — Container-widgets alerts logic *(Site Overview page, not a tab)*
+## M7 — container-widgets alerts logic *(site overview page, not a tab)*
 
 - **What:** real alarm tooltip + counts (replace raw `JSON.stringify`), wire card
   alarm **badges** (populate `alarms`, not just `flash`), critical-alarm

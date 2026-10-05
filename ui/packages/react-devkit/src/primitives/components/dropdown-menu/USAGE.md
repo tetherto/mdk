@@ -1,4 +1,4 @@
-# DropdownMenu
+# `DropdownMenu`
 
 A composable dropdown menu built on Radix UI `@radix-ui/react-dropdown-menu`. Provides both "interactive" Radix-based components (for keyboard-accessible menus) and "static" `div`-based variants (for controlled renders or non-Radix contexts).
 
@@ -24,7 +24,7 @@ A composable dropdown menu built on Radix UI `@radix-ui/react-dropdown-menu`. Pr
 | `DropdownMenuEmpty` (`Empty`) | Empty-state message |
 | `DropdownMenuSearchable` (`Searchable`) | Compound component combining `Search` + filtered `StaticItem` list |
 
-### `DropdownMenuContent` Props
+### `DropdownMenuContent` Props detail
 
 | Prop         | Status   | Type                   | Default | Description                                              |
 | ------------ | -------- | ---------------------- | ------- | -------------------------------------------------------- |
@@ -32,7 +32,7 @@ A composable dropdown menu built on Radix UI `@radix-ui/react-dropdown-menu`. Pr
 | `alignWidth` | Optional | `boolean`              | `false` | Stretches the menu panel to the trigger width            |
 | `sideOffset` | Optional | `number`               | `4`     | Pixel gap between trigger and panel                      |
 
-### `DropdownMenuItem` / `DropdownMenuStaticItem` Props
+### `DropdownMenuItem` / `DropdownMenuStaticItem` Props detail
 
 | Prop       | Status   | Type              | Default | Description                                     |
 | ---------- | -------- | ----------------- | ------- | ----------------------------------------------- |
@@ -40,7 +40,7 @@ A composable dropdown menu built on Radix UI `@radix-ui/react-dropdown-menu`. Pr
 | `disabled` | Optional | `boolean`         | —       | Disables the item                               |
 | `active`   | Optional | `boolean`         | —       | Marks the item as active (static variants only) |
 
-### `DropdownMenuSearchable` Props
+### `DropdownMenuSearchable` Props detail
 
 | Prop           | Status   | Type             | Default    | Description                   |
 | -------------- | -------- | ---------------- | ---------- | ----------------------------- |

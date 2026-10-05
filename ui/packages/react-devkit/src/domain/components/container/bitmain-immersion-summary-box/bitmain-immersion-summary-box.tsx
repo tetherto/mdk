@@ -16,7 +16,12 @@ export type BitMainImmersionSummaryBoxContainerSettings = {
 }
 
 export type BitMainImmersionSummaryBoxProps = {
+  /** Live device object from the devices store. Returns `null` when omitted. */
   data?: Device
+  /**
+   * Optional threshold configuration that drives colour/flash states on temperature stats
+   * @default null
+   */
   containerSettings?: BitMainImmersionSummaryBoxContainerSettings | null
 }
 

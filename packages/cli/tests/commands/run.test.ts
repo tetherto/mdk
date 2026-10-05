@@ -6,12 +6,14 @@ import { ProcessExitSignal, cleanupTmpDirs, makeTmpDir, mockProcessExit } from '
 
 const runKernelMock = vi.hoisted(() => vi.fn());
 const runGatewayMock = vi.hoisted(() => vi.fn());
+const runMcpMock = vi.hoisted(() => vi.fn());
 const runWorkerMock = vi.hoisted(() => vi.fn());
 const assertGatewayPortFreeMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const declaredMockPortsMock = vi.hoisted(() => vi.fn(() => []));
 vi.mock('../../src/lib/runtime.js', () => ({
   runKernel: runKernelMock,
   runGateway: runGatewayMock,
+  runMcp: runMcpMock,
   runWorker: runWorkerMock,
   assertGatewayPortFree: assertGatewayPortFreeMock,
   declaredMockPorts: declaredMockPortsMock,
@@ -164,6 +166,17 @@ describe('mdk run', () => {
     writeSpec(dir, SPEC_BASE);
     await program.parseAsync(['node', 'mdk', 'run', 'gateway', '--dir', dir]);
     expect(runGatewayMock).toHaveBeenCalled();
+  });
+
+  it('runs target "mcp" standalone', async () => {
+    const program = buildProgram();
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    runMcpMock.mockResolvedValue({ stop: vi.fn() });
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_BASE);
+    await program.parseAsync(['node', 'mdk', 'run', 'mcp', '--dir', dir]);
+    expect(runMcpMock).toHaveBeenCalled();
+    expect(stderr.mock.calls.join('')).toContain('MCP server running.');
   });
 
   it('dies when `run worker` is given no name', async () => {

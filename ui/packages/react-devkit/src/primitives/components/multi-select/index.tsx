@@ -29,24 +29,50 @@ export type MultiSelectOption = {
 }
 
 export type MultiSelectProps = {
+  /** `{ value, label, disabled? }` entries to render as option rows */
   options: MultiSelectOption[]
   /** Controlled selected values. Omit to use `defaultValue` for uncontrolled mode. */
   value?: string[]
-  /** Initial values for uncontrolled mode. Ignored when `value` is provided. */
+  /**
+   * Initial values for uncontrolled mode. Ignored when `value` is provided.
+   * @default []
+   */
   defaultValue?: string[]
+  /** Fires with the next array on toggle / chip remove / clear-all */
   onValueChange?: (next: string[]) => void
+  /**
+   * Rendered when nothing is selected
+   * @default 'Select...'
+   */
   placeholder?: ReactNode
+  /**
+   * Disables the trigger (popover does not open)
+   * @default false
+   */
   disabled?: boolean
+  /**
+   * Trigger sizing tokens. Mirror the `<Select>` sizes.
+   * @default 'lg'
+   */
   size?: MultiSelectSize
+  /**
+   * `'colored'` paints the trigger in the primary tint (matches `<Select>`'s colored variant)
+   * @default 'default'
+   */
   variant?: MultiSelectVariant
-  /** Rendered inside the popover when `options` is empty. */
+  /**
+   * Rendered inside the popover when `options` is empty.
+   * @default 'No options'
+   */
   emptyMessage?: ReactNode
   /**
    * Max number of selected chips rendered in the trigger before collapsing the rest into a
    * "+N more" badge. `undefined` (default) renders every chip.
    */
   maxSelectedDisplay?: number
+  /** Extra class on the trigger button */
   className?: string
+  /** Extra class on the popover content */
   contentClassName?: string
   /** Accessible label - applied to the trigger button. */
   'aria-label'?: string

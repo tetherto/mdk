@@ -37,7 +37,7 @@ export type UseContainerSettingsResult = {
  * your Worker/business logic. No reference implementation of `/auth/global/*`
  * ships in this repo.
  *
- * @category op-centre
+ * @category op-center
  */
 export const useContainerSettings = (
   options: UseContainerSettingsOptions = {},

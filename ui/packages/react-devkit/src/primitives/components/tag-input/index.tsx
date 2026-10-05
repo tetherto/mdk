@@ -71,6 +71,7 @@ export type TagInputDropdownProps = {
 export type TagInputProps = {
   /**
    * Controlled tags (array of tag values)
+   * @default []
    */
   value?: string[]
   /**
@@ -88,14 +89,17 @@ export type TagInputProps = {
   onSubmit?: (tags: string[]) => void
   /**
    * Options to show in the dropdown when input is focused
+   * @default []
    */
   options?: TagInputOption[]
   /**
    * Placeholder when input is empty
+   * @default 'Search...'
    */
   placeholder?: string
   /**
    * Disabled state
+   * @default false
    */
   disabled?: boolean
   /**
@@ -106,10 +110,11 @@ export type TagInputProps = {
   /**
    * Filter options by input value. Receives options and query, returns filtered options.
    * When undefined, filters by case-insensitive includes.
+   * @default case-insensitive includes
    */
   filterOptions?: (options: TagInputOption[], query: string) => TagInputOption[]
   /**
-   * Input variant - 'search' shows magnifying glass icon
+   * Input variant; `'search'` shows a magnifying-glass icon that doubles as a clear-all button
    * @default 'search'
    */
   variant?: 'default' | 'search'
@@ -119,10 +124,11 @@ export type TagInputProps = {
   label?: string
   /**
    * HTML id for the input
+   * @default auto-generated
    */
   id?: string
   /**
-   * Custom className for the root
+   * Additional class for the inner `<input>`
    */
   className?: string
   /**

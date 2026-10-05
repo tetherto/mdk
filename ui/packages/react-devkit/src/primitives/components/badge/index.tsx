@@ -11,6 +11,7 @@ export type BadgeProps = {
   /**
    * Number to display in badge
    * If > overflowCount, will show "overflowCount+"
+   * @default 0
    */
   count?: number
 

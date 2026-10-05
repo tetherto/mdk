@@ -52,11 +52,29 @@ const TARGETS = [
     paths: ['docs/reference/supported-plugins.md', 'backend/plugins/docs/plugins.json']
   },
   {
+    key: 'packages',
+    label: 'Package reference page',
+    cwd: '.',
+    command: ['npm', ['run', 'generate:package-catalog']],
+    paths: ['docs/reference/packages.md']
+  },
+  {
     key: 'ui-registry',
     label: 'Component reference in the mdk-ui-component skill',
     cwd: '.',
     command: ['npm', ['run', 'generate:ui-registry']],
     paths: ['packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry.json'],
+    // Needs ui/'s dependencies, which a docs-only checkout may not have.
+    skippable: true
+  },
+  {
+    key: 'usage-proptables',
+    label: 'Generated props sections in devkit USAGE.md files',
+    cwd: '.',
+    command: ['npm', ['run', 'generate:usage-proptables']],
+    // A glob pathspec, deliberately NOT the src/ directory: diffing the whole
+    // directory would let any dirty source file abort --check or read as stale.
+    paths: [':(glob)ui/packages/react-devkit/src/**/USAGE.md'],
     // Needs ui/'s dependencies, which a docs-only checkout may not have.
     skippable: true
   }
@@ -126,11 +144,14 @@ function main () {
     results.push({ target, ...runTarget(target) })
   }
 
+  // Each entry records which target owns the stale path: a path cannot be
+  // matched back to its target afterwards, because a target's `paths` may be a
+  // pathspec (the USAGE.md glob) that no literal file path string equals.
   const stale = []
   if (check) {
     for (const { target, status } of results) {
       if (status !== 'ok') continue
-      for (const p of changedPaths(target.paths)) stale.push(p)
+      for (const p of changedPaths(target.paths)) stale.push({ key: target.key, path: p })
     }
     // Restore the tree to exactly how it was found.
     const restore = git(['checkout', '--', ...allPaths])
@@ -149,7 +170,7 @@ function main () {
     } else if (status === 'failed') {
       warn(`${target.label}: FAILED (${reason})`)
     } else if (check) {
-      const own = stale.filter((p) => target.paths.includes(p))
+      const own = stale.filter((s) => s.key === target.key)
       log(own.length > 0 ? `  x ${target.label}: out of date` : `  ok ${target.label}: current`)
     } else {
       log(`  ok ${target.label}: ${target.paths.join(', ')}`)
@@ -166,14 +187,14 @@ function main () {
 
   if (check && stale.length > 0) {
     console.error('\n[regenerate-docs] these generated files are out of date:')
-    for (const p of stale) console.error(`    ${p}`)
+    for (const s of stale) console.error(`    ${s.path}`)
     console.error('[regenerate-docs] run `npm run regenerate-docs` and commit the result.')
     process.exit(EXIT_STALE)
   }
 
   // A skip is reported, not fatal. Installing ui/'s dependencies costs hundreds of megabytes, which
-  // is a lot to ask of someone who only edits Markdown, and the two Markdown targets still get
-  // checked. Where every target must genuinely run, the caller enforces it: the docs-freshness
+  // is a lot to ask of someone who only edits Markdown, and the targets that need no ui/ install
+  // still get checked. Where every target must genuinely run, the caller enforces it: the docs-freshness
   // workflow treats a skip as a failure, because there it means the install broke.
   if (check && skipped.length > 0) {
     log(`\n[regenerate-docs] ${skipped.length} target(s) skipped, so this run does not cover every generated file.`)

@@ -10,7 +10,7 @@ Power metering Workers. These Workers connect to electrical measurement devices,
 | [`satec/`](./satec/README.md) | `@tetherto/mdk-worker-satec` | Satec PM180 (Modbus TCP) |
 | [`schneider/`](./schneider/README.md) | `@tetherto/mdk-worker-schneider` | Schneider meters (Modbus TCP) |
 
-## Common Telemetry
+## Common telemetry
 
 All hardware power meter Workers report 3-phase electrical measurements:
 
@@ -27,7 +27,7 @@ SATEC and Schneider additionally report `power_factor` and `frequency`.
 
 All meters use **Modbus TCP**.
 
-## Quick Start
+## Quickstart
 
 ```js
 const { getKernel } = require('@tetherto/mdk-core')
@@ -47,7 +47,7 @@ const worker = await startAbbWorker({
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
 
-## Deployment Topology
+## Deployment topology
 
 Typically one power meter Worker manages 1–2 meters, one per container:
 

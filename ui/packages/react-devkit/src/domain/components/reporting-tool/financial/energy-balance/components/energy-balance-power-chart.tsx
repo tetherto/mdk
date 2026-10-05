@@ -11,9 +11,19 @@ import {
 import type { ThresholdLineChartInput } from '../energy-balance.types'
 
 export type EnergyBalancePowerChartProps = {
+  /**
+   * Chart height when `fillHeight` is false
+   * @default 280
+   */
   height?: number
+  /**
+   * Stretch the panel and chart to fill a mosaic cell (uses height `320` and `mdk-energy-balance__panel--fill`). Used on the revenue tab power column in `EnergyBalanceRevenueCharts`.
+   * @default false
+   */
   fillHeight?: boolean
+  /** Controls x-axis date formatting (`month` uses `MM-yy`) */
   periodType: PeriodType
+  /** Series and optional threshold line for power vs availability */
   chartInput: ThresholdLineChartInput
 }
 

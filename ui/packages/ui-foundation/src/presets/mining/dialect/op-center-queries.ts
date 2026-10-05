@@ -1,5 +1,5 @@
 /**
- * Operational Centre query parameter builders — the Explorer list tabs and
+ * Operational Center query parameter builders — the Explorer list tabs and
  * the Container Widgets realtime snapshot. Centralised so the adapter hooks
  * derive identical params from the same inputs and no `t-*` tag or
  * aggregate-field string leaks past the data layer.
@@ -7,7 +7,7 @@
  * Tag sets and field projections mirror the reference app's Explorer / Site Overview
  * queries (verified against staging 2026-07-01).
  *
- * @category op-centre
+ * @category op-center
  */
 
 import type { ListThingsParams, TailLogParams } from '../../../types/api-mining.types'
@@ -43,7 +43,7 @@ export const EXPLORER_TAB_TAGS: Record<ExplorerTabValue, readonly string[]> = {
  * Widgets cards read — the reference app's `LIST_THINGS_FIELDS`, kept as one projection
  * so every consumer sees the same row shape.
  */
-export const OP_CENTRE_LIST_THINGS_FIELDS = JSON.stringify({
+export const OP_CENTER_LIST_THINGS_FIELDS = JSON.stringify({
   id: 1,
   info: 1,
   code: 1,
@@ -78,7 +78,7 @@ export const OP_CENTRE_LIST_THINGS_FIELDS = JSON.stringify({
 
 /**
  * List-things params for one Explorer tab: tag-filtered, status-enriched,
- * projected to {@link OP_CENTRE_LIST_THINGS_FIELDS}.
+ * projected to {@link OP_CENTER_LIST_THINGS_FIELDS}.
  */
 export const buildExplorerListThingsParams = (
   tab: ExplorerTabValue,
@@ -86,7 +86,7 @@ export const buildExplorerListThingsParams = (
 ): ListThingsParams => ({
   query: getByTagsQuery([...EXPLORER_TAB_TAGS[tab]]),
   status: 1,
-  fields: OP_CENTRE_LIST_THINGS_FIELDS,
+  fields: OP_CENTER_LIST_THINGS_FIELDS,
   limit: options.limit ?? CONTAINER_LIST_THINGS_LIMIT,
   offset: options.offset,
 })
@@ -98,7 +98,7 @@ export const buildExplorerListThingsParams = (
  * vendor boxes (e.g. the Bitdeer immersion tanks box) read. Mirrors the reference app's
  * ContainerWidgets query.
  */
-export const OP_CENTRE_CONTAINER_WIDGETS_FIELDS = JSON.stringify({
+export const OP_CENTER_CONTAINER_WIDGETS_FIELDS = JSON.stringify({
   id: 1,
   info: 1,
   type: 1,
@@ -116,7 +116,7 @@ export const OP_CENTRE_CONTAINER_WIDGETS_FIELDS = JSON.stringify({
 export const buildContainerWidgetsListParams = (): ListThingsParams => ({
   query: getByTagsQuery(['t-container']),
   status: 1,
-  fields: OP_CENTRE_CONTAINER_WIDGETS_FIELDS,
+  fields: OP_CENTER_CONTAINER_WIDGETS_FIELDS,
   limit: CONTAINER_LIST_THINGS_LIMIT,
 })
 
@@ -127,7 +127,7 @@ export const buildContainerWidgetsListParams = (): ListThingsParams => ({
  * `last.snap.config` (power mode, tank / cooling / LED state the controls
  * read). The Explorer list projection omits these to keep list rows lean.
  */
-export const OP_CENTRE_CONTAINER_DETAIL_FIELDS = JSON.stringify({
+export const OP_CENTER_CONTAINER_DETAIL_FIELDS = JSON.stringify({
   id: 1,
   info: 1,
   code: 1,
@@ -157,7 +157,7 @@ export const buildContainerDetailParams = (containerKeys: string[]): ListThingsP
   return {
     query: getContainerByContainerTagsQuery(tags),
     status: 1,
-    fields: OP_CENTRE_CONTAINER_DETAIL_FIELDS,
+    fields: OP_CENTER_CONTAINER_DETAIL_FIELDS,
     limit: tags.length || CONTAINER_LIST_THINGS_LIMIT,
   }
 }
@@ -167,7 +167,7 @@ export const buildContainerDetailParams = (containerKeys: string[]): ListThingsP
  * cabinet detail reads: each device's `power_w` / `temp_c` reading, status
  * (for the offline marker) and `last.alerts` (for the warnings timeline).
  */
-export const OP_CENTRE_CABINET_DETAIL_FIELDS = JSON.stringify({
+export const OP_CENTER_CABINET_DETAIL_FIELDS = JSON.stringify({
   id: 1,
   info: 1,
   code: 1,
@@ -186,12 +186,12 @@ export const OP_CENTRE_CABINET_DETAIL_FIELDS = JSON.stringify({
  * List-things params for one LV cabinet's family of devices — the powermeters
  * and temperature sensors whose `info.pos` sits under the cabinet `root`.
  * Mirrors the reference app's `getLvCabinetDevicesByRoot(root)`; the detail hook groups the
- * result back into a single cabinet ({@link OP_CENTRE_CABINET_DETAIL_FIELDS}).
+ * result back into a single cabinet ({@link OP_CENTER_CABINET_DETAIL_FIELDS}).
  */
 export const buildCabinetDetailParams = (root: string): ListThingsParams => ({
   query: getLvCabinetDevicesByRoot(root),
   status: 1,
-  fields: OP_CENTRE_CABINET_DETAIL_FIELDS,
+  fields: OP_CENTER_CABINET_DETAIL_FIELDS,
 })
 
 /* Per-miner realtime groups the Container Widgets cards aggregate into

@@ -4,6 +4,7 @@ import { MinerChip } from './miner-chip/miner-chip'
 import './miner-chips-card.scss'
 
 type MinerChipsCardProps = {
+  /** Container stats including chip frequency and temperature arrays */
   data: ContainerStats
 }
 

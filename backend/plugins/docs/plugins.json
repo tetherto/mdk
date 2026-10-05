@@ -29,7 +29,7 @@
         {
           "method": "GET",
           "path": "/auth/featureConfig",
-          "description": "Returns the featureConfig object from the gateway config (common.json `featureConfig`)."
+          "description": "Returns the `featureConfig` object from the gateway config (common.json `featureConfig`)."
         },
         {
           "method": "GET",
@@ -156,12 +156,12 @@
         {
           "method": "GET",
           "path": "/api/demo/summary",
-          "description": "Fans out metrics telemetry to every registered demo-worker device (fingerprint: hashrate_rt + history) and returns fleet totals plus a per-device breakdown. Aggregation lives here — workers only ever answer for one device."
+          "description": "Fans out metrics telemetry to every registered demo-worker device (fingerprint: `hashrate_rt` + history) and returns fleet totals plus a per-device breakdown. Aggregation lives here — workers only ever answer for one device."
         },
         {
           "method": "GET",
           "path": "/api/demo/history",
-          "description": "Pulls the demo-worker `history` telemetry channel (SQLite recent samples: ts, hashrate_ths, power_w, board_temp_c) for every matched device, or a single device when deviceId is set."
+          "description": "Pulls the demo-worker `history` telemetry channel (SQLite recent samples: ts, `hashrate_ths`, `power_w`, `board_temp_c`) for every matched device, or a single device when `deviceId` is set."
         }
       ]
     }

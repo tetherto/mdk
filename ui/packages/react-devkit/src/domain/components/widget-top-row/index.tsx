@@ -14,11 +14,17 @@ import type { JSX } from 'react'
 type AlarmsMap = Partial<Record<AlarmPropKey, AlarmInfoItem[]>>
 
 export type WidgetTopRowProps = {
+  /** Widget title */
   title: string
+  /** Power reading; rendered in kilo-units */
   power?: number
+  /** Power unit (e.g. `"kW"`) */
   unit?: string
+  /** Error tooltip content; replaces power */
   statsErrorMessage?: string | ErrorWithTimestamp[] | null
+  /** Per-category alarm badges */
   alarms?: AlarmsMap
+  /** Additional class names */
   className?: string
 }
 

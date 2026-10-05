@@ -11,7 +11,7 @@
  * Ported from the reference app's `Views/ContainerWidgets/ContainerWidget.util.ts` and
  * `app/utils/containerThresholdsHelpers` (verified against staging 2026-07-01).
  *
- * @category op-centre
+ * @category op-center
  */
 
 import { CONTAINER_SETTINGS_MODEL } from '../../../constants/container-constants'
@@ -194,7 +194,7 @@ const NO_ALARM: ContainerAlarmState = { shouldFlash: false, isCriticallyHigh: fa
 /**
  * Resolve a container's alarm state from its live stats and matched settings.
  *
- * TODO(MDK Op Centre #7): port the per-vendor threshold comparisons
+ * TODO(MDK Op Center #7): port the per-vendor threshold comparisons
  * (`bitdeerHasAlarmingValue`, `immersionHasAlarmingValue`,
  * `microBtHasAlarmingValue`, `antspaceHydroHasAlarmingValue`) that read
  * `last.snap.stats.container_specific`. Until the vendor boxes land, every
@@ -237,7 +237,7 @@ const readNum = (value: unknown): number | undefined =>
  * present) the tank pressure. Returns an empty array for containers without an
  * immersion cooling system (non-immersion vendors), so the tanks box only
  * renders where it applies. Mirrors the reference app's `getTanksBoxData`; the per-vendor
- * temperature/pressure threshold colouring is a follow-up (MDK Op Centre #7).
+ * temperature/pressure threshold colouring is a follow-up (MDK Op Center #7).
  */
 export const deriveContainerTanks = (container: ListThingsDevice): TankReading[] => {
   const containerSpecific = container.last?.snap?.stats?.container_specific as

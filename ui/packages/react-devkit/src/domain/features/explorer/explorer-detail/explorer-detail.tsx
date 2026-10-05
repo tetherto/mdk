@@ -1,10 +1,10 @@
-import { useDevices } from "@tetherto/mdk-react-adapter"
-import { useMemo } from "react"
+import { useDevices } from '@tetherto/mdk-react-adapter'
+import { useMemo } from 'react'
 
-import { DEVICE_EXPLORER_DEVICE_TYPE } from "../../../components/device-explorer/types"
-import type { DeviceExplorerDeviceType } from "../../../components/device-explorer/types"
-import { AlarmContents } from "../../../components/alarm/alarm-contents/alarm-contents"
-import { ContentBox } from "../../../components/container/content-box/content-box"
+import { DEVICE_EXPLORER_DEVICE_TYPE } from '../../../components/device-explorer/types'
+import type { DeviceExplorerDeviceType } from '../../../components/device-explorer/types'
+import { AlarmContents } from '../../../components/alarm/alarm-contents/alarm-contents'
+import { ContentBox } from '../../../components/container/content-box/content-box'
 import {
   BatchContainerControlsCard,
   CabinetDetailCard,
@@ -13,19 +13,25 @@ import {
   MinerControlsCard,
   MinerInfoCard,
   StatsGroupCard,
-} from "../../../components/explorer/details-view"
-import type { Device } from "../../../types/device"
-import { useCabinetDetail } from "../use-cabinet-detail"
-import { useDeviceAlarms } from "../use-device-alarms"
-import { useMinerDetail } from "../use-miner-detail"
-import "./explorer-detail.scss"
+} from '../../../components/explorer/details-view'
+import type { Device } from '../../../types/device'
+import { useCabinetDetail } from '../use-cabinet-detail'
+import { useDeviceAlarms } from '../use-device-alarms'
+import { useMinerDetail } from '../use-miner-detail'
+import './explorer-detail.scss'
 
 export type ExplorerDetailProps = {
   /** The active Explorer tab — selects which per-type panel renders. */
   deviceType: DeviceExplorerDeviceType
-  /** Router navigate used by alarm rows to deep-link into `/alerts/:id`. */
+  /**
+   * Router navigate used by alarm rows to deep-link into `/alerts/:id`.
+   * @default no-op
+   */
   onNavigate?: (path: string) => void
-  /** Compact layout for the narrower Explorer detail column. */
+  /**
+   * Compact layout for the narrower Explorer detail column.
+   * @default true
+   */
   isCompact?: boolean
 }
 

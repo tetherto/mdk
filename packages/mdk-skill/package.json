@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-skill",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK Developer Skill Suite — Agent Skills (SKILL.md) bundle assembled from the MDK monorepo's real artifacts and versioned to track the MDK release line. Copy-only assembler: each library owns its artifacts, this package curates them into dist/skills/ and installs them flat into .cursor/skills/ or .claude/skills/.",
   "keywords": [
     "tether",

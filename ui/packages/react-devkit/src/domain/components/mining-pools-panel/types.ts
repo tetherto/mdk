@@ -21,17 +21,35 @@ export type MiningPoolRow = {
 }
 
 export type MiningPoolsPanelProps = Partial<{
-  /** Override the card title — defaults to `Mining Pools`. */
+  /**
+   * Override the card title — defaults to `Mining Pools`.
+   * @default "Mining Pools"
+   */
   label: string
-  /** Hide the title row entirely. */
+  /**
+   * Hide the title row entirely.
+   * @default false
+   */
   hideHeader: boolean
-  /** Loading state — renders skeleton rows. */
+  /**
+   * Loading state — renders skeleton rows.
+   * @default false
+   */
   isLoading: boolean
-  /** Number of skeleton rows to show while loading. */
+  /**
+   * Number of skeleton rows to show while loading.
+   * @default 3
+   */
   skeletonRows: number
-  /** Message shown when `rows` is empty. */
+  /**
+   * Message shown when `rows` is empty.
+   * @default "No pools configured"
+   */
   emptyMessage: string
-  /** Pool rows, in display order. */
+  /**
+   * Pool rows, in display order.
+   * @default []
+   */
   rows: MiningPoolRow[]
   /** Called when the user clicks the per-row "Show details" button. */
   onShowDetails: (row: MiningPoolRow) => void

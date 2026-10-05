@@ -88,7 +88,7 @@ describe('gaugeChart', () => {
     expect(container.querySelector('svg circle')).not.toBeInTheDocument()
   })
 
-  it('renders a custom centre label via formatTextValue', () => {
+  it('renders a custom center label via formatTextValue', () => {
     render(<GaugeChart percent={0.5} id="gauge" formatTextValue={(p) => `${Math.round(p * 200)} W`} />)
     expect(screen.getByText('100 W')).toBeInTheDocument()
     expect(screen.queryByText('50%')).not.toBeInTheDocument()

@@ -1,17 +1,19 @@
 # BitMainImmersionPumpStationControlBox
 
-Pump-station status card showing alarm, ready, operation, and start states for a BitMain immersion container's pump station.
+Pump-station status card showing alarm, ready, operation, and start states for a Bitmain immersion container's pump station.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `title` | Optional | `string` | — | Card heading |
-| `alarmStatus` | Optional | `boolean` | `false` | Whether an alarm is active |
-| `ready` | Optional | `boolean` | — | Pump station is in ready state |
-| `operation` | Optional | `boolean` | — | Pump station is in operation |
-| `start` | Optional | `boolean` | — | Pump station has started |
-| `className` | Optional | `string` | — | Additional CSS class |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `alarmStatus` | Optional | `boolean` | `false` | Alarm/fault status |
+| `className` | Optional | `string` | - | Custom className |
+| `operation` | Optional | `boolean` | - | Operation status |
+| `ready` | Optional | `boolean` | - | Ready status |
+| `start` | Optional | `boolean` | - | Start status |
+| `title` | Optional | `string` | - | Box title |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

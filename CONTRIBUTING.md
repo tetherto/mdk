@@ -65,7 +65,7 @@ By contributing, you agree that:
 
 - You retain copyright over your contributions
 - You grant a perpetual, worldwide, royalty-free license for their use
-- Contributions are provided **“AS IS”**, without warranty
+- Contributions are provided **"AS IS"**, without warranty
 
 ## Development environment setup
 

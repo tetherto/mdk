@@ -10,7 +10,7 @@ Built and maintained by the device manufacturer, fetched and schema-validated fr
 
 > A row flagged "not confirmed this run" means the fetch itself failed (see [Contract conformance](#contract-conformance)); the row is kept rather than dropped.
 
-### Manufacturer-maintained Miners
+### Manufacturer-maintained miners
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
@@ -20,21 +20,21 @@ Built and maintained by the device manufacturer, fetched and schema-validated fr
 
 Built and maintained in this repository, with a bundled mock and unit and integration tests.
 
-### MDK-maintained Miners
+### MDK-maintained miners
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
 | Antminer | Bitmain | S19XP, S19XPH, S21, S21PRO | [`backend/workers/miners/antminer`](../miners/antminer/README.md) | [USAGE.md](../miners/antminer/USAGE.md) |
 | Avalon | Canaan | A1346 | [`backend/workers/miners/avalon`](../miners/avalon/README.md) | [USAGE.md](../miners/avalon/USAGE.md) |
 
-### MDK-maintained Containers
+### MDK-maintained containers
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
 | Antspace | Bitmain | HK3, IMM | [`backend/workers/containers/antspace`](../containers/antspace/README.md) | — |
 | Bitdeer | Bitdeer | D40-A1346, D40-M30, D40-M56, D40-S19XP | [`backend/workers/containers/bitdeer`](../containers/bitdeer/README.md) | — |
 
-### MDK-maintained Power meters
+### MDK-maintained power meters
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
@@ -42,13 +42,13 @@ Built and maintained in this repository, with a bundled mock and unit and integr
 | SATEC | Satec | PM180 | [`backend/workers/power-meter/satec`](../power-meter/satec/README.md) | — |
 | Schneider Electric | Schneider | P3U30, PM5340 | [`backend/workers/power-meter/schneider`](../power-meter/schneider/README.md) | — |
 
-### MDK-maintained Sensors
+### MDK-maintained sensors
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
 | Seneca | Seneca | Z-4RTD-2 | [`backend/workers/temperature/seneca`](../temperature/seneca/README.md) | — |
 
-### MDK-maintained Mining pools
+### MDK-maintained mining pools
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|

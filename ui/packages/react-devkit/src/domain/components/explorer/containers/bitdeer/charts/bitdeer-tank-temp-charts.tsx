@@ -9,7 +9,10 @@ import type {
 import ContainerChartsBuilder from '../../../../container-charts-builder'
 
 type BitdeerTankTempChartsProps = {
-  /** Tank number (1 or 2) */
+  /**
+   * Tank number (1 or 2)
+   * @default 1
+   */
   tankNumber?: number | string
   /** Date range for chart data */
 } & ContainerChartsBuilderProps

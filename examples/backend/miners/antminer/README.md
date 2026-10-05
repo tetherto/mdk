@@ -1,4 +1,4 @@
-# MDK Antminer Example (single-process)
+# MDK Antminer example (single-process)
 
 A small, self-contained **Antminer** mining site you can clone and run with **no real hardware**.
 One Kernel, one HTTP gateway, and four Antminer Workers — S19 XP, S19 XP Hydro, S21, and S21 Pro —

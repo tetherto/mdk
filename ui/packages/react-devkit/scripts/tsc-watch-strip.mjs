@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Watch-mode wrapper that runs `tsc --watch`, then pipes `tsc-alias` (to
- * rewrite `@primitives` / `@/*` paths) and `strip-style-imports.mjs` (to remove
- * side-effect `.scss` imports) after every successful rebuild.
+ * Watch-mode wrapper that runs `tsc --watch`, then pipes `resolve-path-aliases.mjs`
+ * (to rewrite `@primitives` / `@domain/*` paths) and `strip-style-imports.mjs` (to
+ * remove side-effect `.scss` imports) after every successful rebuild.
  *
  * `npm run build:ts` chains all three in one-shot mode. Watch mode
  * (`tsc --watch`) re-emits files on every change and would otherwise:
@@ -22,18 +22,19 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PACKAGE_ROOT = resolve(__dirname, '..')
+const ALIAS_SCRIPT = resolve(__dirname, 'resolve-path-aliases.mjs')
 const STRIP_SCRIPT = resolve(__dirname, 'strip-style-imports.mjs')
 const DIST_DIR = resolve(PACKAGE_ROOT, 'dist')
 
 const READY_MARKER = /Watching for file changes\./
 
-const runTscAlias = () => {
-  const result = spawnSync('npx', ['tsc-alias', '-p', 'tsconfig.build.json'], {
+const runResolveAliases = () => {
+  const result = spawnSync(process.execPath, [ALIAS_SCRIPT, 'tsconfig.build.json'], {
     stdio: 'inherit',
     cwd: PACKAGE_ROOT,
   })
   if (result.status !== 0) {
-    console.error(`tsc-alias exited with status ${result.status}`)
+    console.error(`resolve-path-aliases exited with status ${result.status}`)
   }
 }
 
@@ -48,7 +49,7 @@ const runStrip = () => {
 }
 
 const runPostSteps = () => {
-  runTscAlias()
+  runResolveAliases()
   runStrip()
 }
 

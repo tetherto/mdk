@@ -11,15 +11,37 @@ export type TimeframeControlsOnRangeChange = (
 ) => void
 
 export type TimeframeControlsProps = Partial<{
+  /** Helper text below the controls */
   hint: string
+  /** Called when the Reset button is clicked */
   onReset: VoidFunction
+  /**
+   * Shows the Reset button
+   * @default false
+   */
   showResetButton: boolean
+  /**
+   * Show week selector
+   * @default true
+   */
   isWeekSelectVisible: boolean
+  /**
+   * Show month selector
+   * @default true
+   */
   isMonthSelectVisible: boolean
+  /**
+   * Layout direction
+   * @default 'horizontal'
+   */
   layout: 'horizontal' | 'stacked'
+  /** Current date range */
   dateRange: TimeframeControlsDateRange
+  /** Active timeframe type */
   timeframeType: TimeframeTypeValue | null
+  /** Called when the range changes */
   onRangeChange: TimeframeControlsOnRangeChange
+  /** Called when timeframe type changes */
   onTimeframeTypeChange: (type: TimeframeTypeValue) => void
 }>
 

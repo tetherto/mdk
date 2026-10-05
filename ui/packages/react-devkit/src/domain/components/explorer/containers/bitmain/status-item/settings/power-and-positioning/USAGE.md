@@ -1,12 +1,14 @@
-# BitMainPowerAndPositioning
+# `BitMainPowerAndPositioning`
 
-Power and GPS-positioning panel for a BitMain container. Shows distribution-box power consumption and rack-slot GPS coordinates.
+Power and GPS-positioning panel for a Bitmain container. Shows distribution-box power consumption and rack-slot GPS coordinates.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `data` | Optional | `Device` | — | Live device object |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Optional | `Device` | - | Container data |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

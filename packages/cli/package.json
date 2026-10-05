@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-cli",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK command-line tool: onboard, scaffold, run and inspect an MDK stack. Commands marked (stub) are wired up but not implemented yet.",
   "type": "module",
   "bin": {
@@ -27,6 +27,7 @@
     "@clack/prompts": "^1.7.0",
     "@tetherto/mdk-client": "*",
     "@tetherto/mdk-core": "*",
+    "@tetherto/mdk-mcp": "*",
     "@tetherto/mdk-skill": "*",
     "@tetherto/mdk-worker": "*",
     "commander": "^15.0.0",

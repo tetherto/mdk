@@ -1,4 +1,4 @@
-# MDK Client
+# MDK client
 
 > A developer-first toolkit providing pre-built components, a headless state
 > core and ergonomic React bindings for building mining-operations
@@ -10,7 +10,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/tetherto/mdk/blob/main/LICENSE)
 
-## Table of Contents
+## Table of contents
 
 - [Overview](#overview)
 - [Packages](#packages)
@@ -54,11 +54,11 @@ Framework-agnostic headless package. Pure TypeScript, no React.
   `timezoneStore`, `actionsStore`
 - TanStack `QueryClient` factory (`createMdkQueryClient`)
 - `queryKeys`: centralized key factories for all read endpoints,
-  including Op Centre reads (site, racks, PDU layout, global data,
+  including Op Center reads (site, racks, PDU layout, global data,
   `thingConfig`), Pool Manager, and `thing` comment mutations
 - Query factories and pool factories: `{ queryKey, queryFn }` objects
   for mining read endpoints
-- Query parameter builders: Op Centre, alert, dashboard, and pool
+- Query parameter builders: Op Center, alert, dashboard, and pool
   builders (`buildExplorerListThingsParams`, `buildContainerDetailParams`,
   `buildContainerWidgetsListParams`, etc.)
 - Container tab utilities: `CONTAINER_TAB_MATRIX`, `resolveContainerModelFamily`,
@@ -67,7 +67,7 @@ Framework-agnostic headless package. Pure TypeScript, no React.
 - Telemetry primitives (subscription manager, stale detection, ring
   buffer)
 - Command lifecycle state machine
-- Shared API types (including Op Centre: `ListRacksParams`,
+- Shared API types (including Op Center: `ListRacksParams`,
   `PduLayoutParams`, `GlobalDataParams`, `ThingConfigParams`,
   `ThingCommentBody`)
 
@@ -111,7 +111,7 @@ discovery surface for humans and agents alike. See [`AGENTS.md`](AGENTS.md).
 📖 **See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the dependency
 graph.**
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
@@ -128,7 +128,7 @@ npm install
 npm run build
 ```
 
-### Quick start
+### Quickstart
 
 ```bash
 npm run dev              # watch all packages + run catalog

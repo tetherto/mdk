@@ -1,4 +1,13 @@
-import { cn, COLOR, CoreAlert, formatNumber, hexToRgba, Indicator, SimpleTooltip, Spinner } from '@primitives'
+import {
+  cn,
+  COLOR,
+  CoreAlert,
+  formatNumber,
+  hexToRgba,
+  Indicator,
+  SimpleTooltip,
+  Spinner,
+} from '@primitives'
 import type { JSX } from 'react'
 import {
   MINERS_ACTIVITY_ITEMS,
@@ -23,14 +32,45 @@ type MinerActivityChartErrorProp = {
 export type MinersActivityVariant = 'indicators' | 'tiles'
 
 type MinersActivityChartProps = {
+  /**
+   * Time-series data for online/offline/faulted counts
+   * @default {}
+   */
   data: MinersActivityData
+  /**
+   * Use tall variant
+   * @default false
+   */
   large: boolean
+  /**
+   * Show loading state
+   * @default false
+   */
   isLoading: boolean
+  /**
+   * Show error state
+   * @default false
+   */
   isError: boolean
+  /**
+   * Error details to display
+   * @default null
+   */
   error: MinerActivityChartErrorProp | null
+  /**
+   * Show axis labels
+   * @default true
+   */
   showLabel: boolean
+  /**
+   * Use demo/mock data
+   * @default false
+   */
   isDemoMode: boolean
-  /** `indicators` (default) renders coloured dots; `tiles` renders tinted status tiles. */
+  /**
+   * `indicators` (default) renders coloured dots; `tiles` renders tinted status tiles.
+   * @default 'indicators'
+   */
   variant: MinersActivityVariant
 }
 
@@ -103,7 +143,12 @@ export const MinersActivityChart = ({
     formatNumber((displayData[value] as number | undefined) || 0)
 
   return (
-    <div className={cn('mdk-miners-activity-chart__root', variant === 'tiles' && 'mdk-miners-activity-chart__root--tiles')}>
+    <div
+      className={cn(
+        'mdk-miners-activity-chart__root',
+        variant === 'tiles' && 'mdk-miners-activity-chart__root--tiles',
+      )}
+    >
       {items.map((value) => {
         if (variant === 'tiles') {
           const color = tileColor(value)
@@ -116,7 +161,9 @@ export const MinersActivityChart = ({
               )}
               style={{ color, backgroundColor: hexToRgba(color, TILE_BACKGROUND_ALPHA) }}
             >
-              {showLabel && <span className="mdk-miners-activity-chart__tile-label">{label(value)}</span>}
+              {showLabel && (
+                <span className="mdk-miners-activity-chart__tile-label">{label(value)}</span>
+              )}
               <span className="mdk-miners-activity-chart__tile-value">{count(value)}</span>
             </div>
           )

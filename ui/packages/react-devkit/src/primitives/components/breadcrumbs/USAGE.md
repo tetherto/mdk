@@ -3,28 +3,20 @@
 Horizontal breadcrumb navigation. Renders an ordered trail of links / buttons /
 plain labels with an optional "Back" button on the left.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop            | Status   | Type               | Default  | Description                                         |
-| --------------- | -------- | ------------------ | -------- | --------------------------------------------------- |
-| `items`         | Required | `BreadcrumbItem[]` | —        | Ordered trail; the last item is rendered as current |
-| `showBack`      | Optional | `boolean`          | `false`  | Show a leading "Back" button                        |
-| `backLabel`     | Optional | `string`           | `"Back"` | Label for the back button                           |
-| `onBackClick`   | Optional | `VoidFunction`     | —        | Callback fired when the back button is clicked      |
-| `separator`     | Optional | `ReactNode`        | `"/"`    | Custom separator between items                      |
-| `className`     | Optional | `string`           | —        | Root class names                                    |
-| `itemClassName` | Optional | `string`           | —        | Class names applied to each item                    |
-| `backClassName` | Optional | `string`           | —        | Class names applied to the back button              |
-
-### `BreadcrumbItem`
-
-```ts
-type BreadcrumbItem = {
-  label: string;
-  href?: string;       // renders as <a>
-  onClick?: VoidFunction; // renders as <button>
-};
-```
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `items` | Required | `BreadcrumbItem[]` | - | Ordered trail; the last item is rendered as current |
+| `backClassName` | Optional | `string` | - | Class names applied to the back button |
+| `backLabel` | Optional | `string` | `"Back"` | Label for the back button |
+| `className` | Optional | `string` | - | Root class names |
+| `itemClassName` | Optional | `string` | - | Class names applied to each item |
+| `onBackClick` | Optional | `VoidFunction` | - | Callback fired when the back button is clicked |
+| `separator` | Optional | `React.ReactNode` | `"/"` | Custom separator between items |
+| `showBack` | Optional | `boolean` | `false` | Show a leading "Back" button |
+<!-- END GENERATED: props -->
 
 ## Example
 

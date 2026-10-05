@@ -55,21 +55,41 @@ const applyDatasetBorderColors = (
 export type ContainerChartsProps = {
   /** When false, shows an empty state (feature gate). @default true */
   featureEnabled?: boolean
-  /** Message when `featureEnabled` is false */
+  /**
+   * Message when `featureEnabled` is false
+   * @default 'Container Charts feature is not enabled'
+   */
   disabledMessage?: string
   /** Options for the combination selector */
   combinations: ContainerChartCombinationOption[]
-  /** Loading state for combination options */
+  /**
+   * Loading state for combination options
+   * @default false
+   */
   isLoadingCombinations?: boolean
-  /** Section heading */
+  /**
+   * Section heading
+   * @default 'Container Charts'
+   */
   title?: string
   /** Controlled selected combination value */
   selectedCombination?: string | null
-  /** Initial selection when uncontrolled */
+  /**
+   * Initial selection when uncontrolled
+   * @default null
+   */
   defaultSelectedCombination?: string | null
+  /** Called when the selected combination changes */
   onSelectedCombinationChange?: (value: string | null) => void
-  /** Raw overview stats rows passed to chart adapters */
+  /**
+   * Raw overview stats rows passed to chart adapters
+   * @default null
+   */
   chartRawData?: ChartEntry[] | null
+  /**
+   * Loading state for the chart panels
+   * @default false
+   */
   isLoadingCharts?: boolean
   /** Optional per-dataset line colors after adapters run (e.g. demo or host branding). */
   getDatasetBorderColor?: ContainerChartsDatasetBorderColorResolver

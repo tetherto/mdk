@@ -231,7 +231,7 @@ export function SitePage(): JSX.Element {
   }
 
   if (!data) {
-    // Centred full-viewport gate. An unreachable or erroring gateway must not
+    // Centered full-viewport gate. An unreachable or erroring gateway must not
     // read as "still loading": react-query keeps retrying, so without the
     // isError branch the spinner spins forever with nothing to act on.
     return (

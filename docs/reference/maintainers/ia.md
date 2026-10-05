@@ -101,7 +101,7 @@ this gate would make that same validation blocking if adopted.
 from browse without telling anyone.
 
 **If not adopted:** docs maintainers notice the missing Worker during integration audits and ping the Worker author for a contract fix. The
-warn-only validation in [`generate-catalogue.js`](../../../backend/workers/scripts/generate-catalogue.js) surfaces the error in its own output, so contracts that ship cleanly through that path will catch typos there.
+warn-only validation in [`generate-catalogue.js`](../../../backend/workers/scripts/generate-catalogue.js) surfaces the error in its own output, so contracts that ship cleanly through that path catches typos there.
 
 ### `check:facets-fresh`
 
@@ -124,10 +124,10 @@ kind grouping. Adding a new family is the one case where the overlay actually ne
 **If not adopted:** docs maintainers reconcile the overlay against shipping slugs on each integration audit. The fallback to raw slug means the
 catalogue keeps working in the meantime — no production blocker.
 
-### `check:agent-ready` (UI side, already exists upstream)
+### `check:agent-ready` (UI side)
 
-The UI workspace's lint gate already exists in `fork-mdk-ui`: it fails when a public export is missing required JSDoc tags (`@tier`, `@category`,
-`@domain`, `@orkCapability`) or its co-located `USAGE.md` / `*.example.tsx`. Whether it lands here verbatim and stays in CI is the UI team's call as part of their port.
+The UI workspace's lint gate fails when a public export is missing required JSDoc tags (`@tier`, `@category`,
+`@domain`, `@orkCapability`) or its co-located `USAGE.md` / `*.example.tsx`. It runs as a blocking root-CI gate — the **🤖 Agent-readiness contract (UI)** job in [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) — paired with a **🔒 USAGE baseline monotonicity** job that compares `usage-proptable-baseline.json` against the pull request base as sets, so the baseline can only shrink.
 
 **Why it matters:** the contract this IA describes only holds if every UI export actually carries the JSDoc that drives `dist/registry.json`. The
 gate is what keeps that promise honest.
@@ -154,11 +154,11 @@ Until then, port signals are eyeballed during docs review.
 > `backend/workers/**/mdk-contract.json`, validates each against the vendored schema
 > with ajv, and generates the catalogue at [`backend/workers/docs/supported-hardware.md`](../../../backend/workers/docs/supported-hardware.md) plus
 > [`catalogue.json`](../../../backend/workers/docs/catalogue.json). The user-facing entrypoint is [`docs/reference/supported-hardware.md`](../supported-hardware.md). The hand-maintained tables
-> under [`integrations/hardware/`](integrations/hardware/index.md) are now thin pointers to the generated catalogue. Validation is warn-only
+> under [`integrations/hardware/`](integrations/hardware/index.md) are thin pointers to the generated catalogue. Validation is warn-only
 > (it does not block); wiring it as a blocking CI gate is still engineering's call.
 >
 > Freshness of the generated catalogue is covered by [`npm run regenerate-docs -- --check`](single-source-of-truth.md#generation-scripts) and the
-> `docs-freshness` workflow, which warn when `supported-hardware.md` or `catalogue.json` no longer matches the contracts. What remains ungated is the
+> `docs-freshness` workflow, which **blocks** when `supported-hardware.md` or `catalogue.json` no longer matches the contracts. What remains ungated is the
 > drift described below, between shipping Workers and the hand-maintained tables under [`integrations/`](integrations/index.md).
 
 Drift detector for the hand-maintained catalogue tables under [`integrations/`](integrations/index.md). Would walk
@@ -182,7 +182,7 @@ stay under [`maintainers/`](./README.md) and never graduate to user-facing `docs
 
 ### `check:plugin-reference-fresh`
 
-> Implemented, warn-only. [`docs/scripts/generate-plugin-reference.js`](../../scripts/generate-plugin-reference.js)
+> Implemented, blocking. [`docs/scripts/generate-plugin-reference.js`](../../scripts/generate-plugin-reference.js)
 > (run `npm run regenerate-docs` from the repo root, or `npm run generate:plugin-reference` from the repo root for this generator alone)
 > reads each plugin's `mdk-plugin.json` across both plugin roots and regenerates the route tables in
 > [`supported-plugins.md`](../supported-plugins.md). The
@@ -195,8 +195,8 @@ It catches one kind of drift:
 1. **Tables stale after a manifest change** — a route added, removed, or re-described in a plugin's `mdk-plugin.json` is not reflected
 in the generated tables.
 
-The check annotates the pull request and does not block it, because a manifest change and its regenerated tables may legitimately land in separate
-pull requests. The pages stay wrong for readers until someone regenerates, so the warning is work owed rather than noise.
+The check **blocks** the pull request when the generated tables are stale: a route change and its regenerated tables must land together. Run
+`npm run regenerate-docs` and commit the result in the same pull request.
 
 **Why it matters:** the route tables are the published API surface of the plugins MDK ships — which a stack declares like any other package,
 and which serve nothing until it does. A table that lags the manifest documents routes that no longer exist or omits ones that do. Only the
@@ -239,7 +239,7 @@ With all eight wired, an LLM browsing the catalogue can rely on eight guarantees
 3. The presentation overlay does not silently drift from what actually ships (`check:facets-fresh`).
 4. Every cross-reference in user-facing Markdown carries a port-time routing hint (`check:port-signals`).
 5. The hand-maintained integration catalogue tables stay in step with shipping Workers (`check:integrations-fresh`).
-6. The generated supported-plugins page stays in step with each plugin's `mdk-plugin.json` (`check:plugin-reference-fresh`, shipping as a warn-only check).
+6. The generated supported-plugins page stays in step with each plugin's `mdk-plugin.json` (`check:plugin-reference-fresh`, shipping as a blocking check).
 7. Every `mdk-plugin.json` in the repo is well-formed against the machine-readable schema (`check:plugin-manifest`).
 8. Hardwired command lists in tutorial prose stay in step with the source code they document (`check:tutorial-commands-fresh`).
 

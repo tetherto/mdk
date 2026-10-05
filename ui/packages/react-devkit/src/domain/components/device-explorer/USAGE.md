@@ -3,25 +3,28 @@
 Top-level device explorer: filter toolbar + searchable, sortable table of
 miners, containers, or cabinets. Designed to be controlled by URL state in the host app.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop                      | Status   | Type                                                    | Default | Description                                   |
-| ------------------------- | -------- | ------------------------------------------------------- | ------- | --------------------------------------------- |
-| `deviceType`              | Required | `DeviceExplorerDeviceType`                              | —       | Active device-type tab                        |
-| `onDeviceTypeChange`      | Required | `(deviceType: DeviceExplorerDeviceType) => void`        | —       | Setter for the device type                    |
-| `data`                    | Required | `Device[]`                                              | —       | Rows                                          |
-| `onFiltersChange`         | Required | `(filters: LocalFilters) => void`                       | —       | Setter for filters                            |
-| `filterOptions`           | Required | `DeviceExplorerToolbarProps["filterOptions"]`           | —       | Filter category definitions                   |
-| `searchOptions`           | Required | `DeviceExplorerToolbarProps["searchOptions"]`           | —       | Searchable column definitions                 |
-| `searchTags`              | Required | `string[]`                                              | —       | Active search-tag chips                       |
-| `onSearchTagsChange`      | Required | `(tags: string[]) => void`                              | —       | Setter for search tags                        |
-| `getFormattedDate`        | Required | `(date: Date) => string`                                | —       | Date formatter from the host's timezone setup |
-| `renderAction`            | Required | `(device: DeviceExplorerDeviceData) => React.ReactNode` | —       | Renderer for the per-row action cell          |
-| `filters`                 | Optional | `LocalFilters`                                          | —       | Controlled filter values                      |
-| `selectedDevices`         | Optional | `DataTableRowSelectionState`                            | —       | Controlled row-selection state                |
-| `onSelectedDevicesChange` | Optional | `(selections: DataTableRowSelectionState) => void`      | —       | Setter for row selection                      |
-| `onRowClick`              | Optional | `(device: DeviceExplorerDeviceData) => void`            | —       | Makes rows interactive (click/Enter/Space); see the `DataTable` USAGE.md for the click-target exclusions this inherits |
-| `className`               | Optional | `string`                                                | —       | Additional class names                        |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Required | `Device[]` | - | Rows |
+| `deviceType` | Required | `"container" \| "miner" \| "cabinet"` | - | Active device-type tab |
+| `filterOptions` | Required | `DeviceExplorerFilterOption[]` | - | Filter category definitions |
+| `getFormattedDate` | Required | `(date: Date) => string` | - | Date formatter from the host's timezone setup |
+| `onDeviceTypeChange` | Required | `(type: DeviceExplorerDeviceType) => void` | - | Setter for the device type |
+| `onFiltersChange` | Required | `(value: LocalFilters) => void` | - | Setter for filters |
+| `onSearchTagsChange` | Required | `(tags: string[]) => void` | - | Setter for search tags |
+| `renderAction` | Required | `(device: Device) => React.ReactNode` | - | Renderer for the per-row action cell |
+| `searchOptions` | Required | `DeviceExplorerSearchOption[]` | - | Searchable column definitions |
+| `searchTags` | Required | `string[]` | - | Active search-tag chips |
+| `className` | Optional | `string` | - | Additional class names |
+| `filters` | Optional | `LocalFilters` | - | Controlled filter values |
+| `onRowClick` | Optional | `((device: Device) => void)` | - | Called when a row is clicked (e.g. to open the device's detail page) |
+| `onSelectedDevicesChange` | Optional | `((selections: RowSelectionState) => void)` | - | Setter for row selection |
+| `onSortingChange` | Optional | `((sorting: SortingState) => void)` | - | - |
+| `selectedDevices` | Optional | `RowSelectionState` | - | Controlled row-selection state |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

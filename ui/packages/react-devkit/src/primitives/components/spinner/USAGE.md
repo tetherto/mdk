@@ -3,19 +3,19 @@
 Loading indicator. Two animation styles (`square` and `circle`), three sizes,
 optional label and a fullscreen overlay mode.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop         | Status   | Type                           | Default     | Description                        |
-| ------------ | -------- | ------------------------------ | ----------- | ---------------------------------- |
-| `size`       | Optional | `"sm" \| "md" \| "lg"`         | `"md"`      | Size variant                       |
-| `color`      | Optional | `"primary" \| "secondary"`     | `"primary"` | Color variant                      |
-| `type`       | Optional | `"square" \| "circle"`         | `"square"`  | Animation style                    |
-| `speed`      | Optional | `"slow" \| "normal" \| "fast"` | `"normal"`  | Animation speed                    |
-| `label`      | Optional | `string`                       | —           | Caption shown below the spinner    |
-| `fullScreen` | Optional | `boolean`                      | `false`     | Cover the viewport with a backdrop |
-| `className`  | Optional | `string`                       | —           | Additional class names             |
-
-All other `<div>` attributes are forwarded.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Custom className for the root element |
+| `color` | Optional | `"primary" \| "secondary"` | `"primary"` | Color variant of the spinner |
+| `fullScreen` | Optional | `boolean` | `false` | Whether to display in fullscreen mode |
+| `label` | Optional | `string` | - | Optional label text to display below the spinner |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Size variant of the spinner |
+| `speed` | Optional | `"slow" \| "normal" \| "fast"` | `"normal"` | Speed of the animation |
+| `type` | Optional | `"circle" \| "square"` | `"square"` | Type of spinner animation |
+<!-- END GENERATED: props -->
 
 ## Example
 

@@ -18,12 +18,7 @@ type ToastViewportProps = ComponentPropsWithoutRef<typeof ToastPrimitives.Viewpo
 
 type ToastVariant = NotificationVariant
 type ToastPosition =
-  | 'top-left'
-  | 'top-right'
-  | 'bottom-left'
-  | 'bottom-right'
-  | 'top-center'
-  | 'bottom-center'
+  'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center'
 
 const TOAST_POSITIONS: ToastPosition[] = [
   'top-left',
@@ -35,16 +30,31 @@ const TOAST_POSITIONS: ToastPosition[] = [
 ]
 
 type ToastProps = ToastRootProps & {
+  // Key controlled-state props re-declared from the Radix root so they surface in
+  // the generated docs (types reuse Radix's via indexed access — cannot drift).
+  /** Controlled open state */
+  open?: ToastRootProps['open']
+  /** Open-state change handler */
+  onOpenChange?: ToastRootProps['onOpenChange']
+  /** Auto-dismiss after N ms */
+  duration?: ToastRootProps['duration']
+  /** Title shown at the top of the toast */
   title: string
+  /** Body text */
   description?: string
+  /**
+   * Determines the icon and accent
+   * @default "info"
+   */
   variant?: ToastVariant
+  /** Override the default variant icon */
   icon?: JSX.Element
 }
 
 /**
  * Single transient notification rendered inside the `<Toaster>` viewport.
- * Use `variant` to convey intent (`default`, `success`, `error`, `warning`,
- * `info`); pair with `<ToastTitle>` and `<ToastDescription>` for structured
+ * Use `variant` to convey intent (`success`, `info`, `warning`,
+ * `error`); pair with `<ToastTitle>` and `<ToastDescription>` for structured
  * content, or wrap a `<ToastAction>` for a single inline call-to-action. Most
  * apps will trigger toasts imperatively via the `useToast` hook rather than
  * mounting `<Toast>` directly.
@@ -152,7 +162,12 @@ ToastViewport.displayName = 'ToastViewport'
  * ```
  */
 type ToasterProps = ToastProviderProps & {
+  /** The `<Toast>` elements to render */
   children: ReactNode
+  /**
+   * Where the viewport is anchored
+   * @default "top-left"
+   */
   position?: ToastPosition
 }
 
@@ -161,7 +176,7 @@ type ToasterProps = ToastProviderProps & {
  * `useToast`. Mount once near the root of your app (typically inside
  * `<MdkProvider>`). Without a `<Toaster>` in the tree, `useToast` calls are
  * no-ops. Position and visual stacking are controlled by CSS tokens; no props
- * are required for the default bottom-right placement.
+ * are required for the default top-left placement.
  *
  * @category feedback
  * @domain generic

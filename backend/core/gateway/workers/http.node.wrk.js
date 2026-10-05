@@ -1,17 +1,13 @@
 'use strict'
 
-const { STATUS_CODES } = require('http')
 const async = require('async')
 const TetherWrkBase = require('@tetherto/tether-wrk-base/workers/base.wrk.tether')
 const createLogger = require('debug')
 const debug = createLogger('store:aggr')
 const { loadPlugin } = require('./lib/plugin-loader')
-const { buildFastifyRoutes } = require('./lib/plugin-adapter')
+const { buildFastifyRoutes, errorResponse } = require('./lib/plugin-adapter')
 const { buildPluginContext } = require('./lib/plugin-gateway')
 const { fastifyLoggerOptions, gatewayLogger } = require('./lib/logger')
-const { startMcpHttpServer, generateToolsFromGatewayPlugin } = require('@tetherto/mdk-mcp')
-
-const DEFAULT_MCP_PORT_OFFSET = 100
 
 class WrkServerHttp extends TetherWrkBase {
   constructor (conf, ctx) {
@@ -49,7 +45,6 @@ class WrkServerHttp extends TetherWrkBase {
     ])
 
     this._plugins = []
-    this._mcpTools = []
     // Before the first registerPlugin call below, because loading a plugin is
     // what fills this: onReady is registered from a plugin's module code.
     this._readyWaiters = []
@@ -63,30 +58,23 @@ class WrkServerHttp extends TetherWrkBase {
     // @tetherto/mdk-plugins; a stack that wants one names it like any other
     // package (bundledPluginDir() / a "@tetherto/mdk-plugins/<name>" subpath).
     //
-    // Entries are a plugin dir, or { dir, config, autoGenerateMcp } when the
-    // stack spec carries per-plugin config (spec.gateway.plugins[].config).
+    // Entries are a plugin dir, or { dir, config } when the stack spec carries
+    // per-plugin config (spec.gateway.plugins[].config).
     for (const entry of this.ctx.extraPluginDirs || []) {
       if (typeof entry === 'string') this.registerPlugin(entry)
-      else this.registerPlugin(entry.dir, entry.config, entry.autoGenerateMcp)
+      else this.registerPlugin(entry.dir, entry.config)
     }
   }
 
-  // When autoGenerateMcp is true, the plugin's HTTP routes are converted into
-  // MCP tools (params/body -> Zod schema, bound route handler reused as-is)
-  // and queued for the in-process MCP server started in _start().
-  registerPlugin (pluginDir, pluginConf, autoGenerateMcp) {
+  // Loads a plugin's manifest and controllers, binding them to a per-plugin
+  // context exposed to the plugin as '@tetherto/mdk-gateway/plugin'.
+  registerPlugin (pluginDir, pluginConf) {
     // buildPluginContext constructs everything a plugin sees as
     // '@tetherto/mdk-gateway/plugin' — plugins never touch the worker.
     const { context } = buildPluginContext(this, pluginDir, pluginConf)
     const plugin = loadPlugin(pluginDir, context)
     this._plugins.push(plugin)
     debug('registered plugin %s (%d routes)', plugin.manifest.name, plugin.routes.length)
-
-    if (autoGenerateMcp) {
-      const tools = generateToolsFromGatewayPlugin(plugin)
-      this._mcpTools.push(...tools)
-      debug('auto-generated %d MCP tool(s) from plugin %s', tools.length, plugin.manifest.name)
-    }
   }
 
   debugGeneric (msg) {
@@ -140,20 +128,9 @@ class WrkServerHttp extends TetherWrkBase {
           })
         }
 
-        httpd.addHook('onError', async (request, reply, error) => {
-          const isSafe = error.message && error.message.startsWith('ERR_')
-          const message = isSafe ? error.message : 'Bad Request'
-          const status = Number.isInteger(error.statusCode) && error.statusCode >= 400 ? error.statusCode : 400
-
-          if (!isSafe) {
-            debug('onError handler:', error.message)
-          }
-
-          return reply.status(status).send({
-            statusCode: status,
-            error: STATUS_CODES[status] || 'Bad Request',
-            message
-          })
+        httpd.addErrorHandler((err, request, reply) => {
+          const body = errorResponse(err, request.log)
+          reply.status(body.statusCode).send(body)
         })
 
         await httpd.startServer()
@@ -162,24 +139,12 @@ class WrkServerHttp extends TetherWrkBase {
         this.status.rpcClientKey = this.net_r0.dht.defaultKeyPair.publicKey.toString('hex')
         this.saveStatus()
 
-        if (this._mcpTools.length) {
-          const mcpPort = this.ctx.mcp?.port || (this.ctx.port + DEFAULT_MCP_PORT_OFFSET)
-          this._mcpServer = await startMcpHttpServer(mcpPort, this._mcpTools)
-          debug('MCP server auto-started on port %d (%d tool(s))', mcpPort, this._mcpTools.length)
-        }
-
-        // Last, so that a plugin waiting on the gateway waits for all of it —
-        // the standalone MCP listener above included, since a plugin pointed at
-        // that port would otherwise race exactly the way one pointed at the main
-        // HTTP port did before this existed.
+        // Last, so that a plugin waiting on the gateway waits for all of it:
+        // the HTTP listener is up and every route is mounted by this point, so a
+        // plugin that calls out from onReady cannot race the server it needs.
         this._notifyGatewayReady()
       }
     ], cb)
-  }
-
-  _stop (cb) {
-    if (!this._mcpServer) return super._stop(cb)
-    this._mcpServer.close(() => super._stop(cb))
   }
 }
 

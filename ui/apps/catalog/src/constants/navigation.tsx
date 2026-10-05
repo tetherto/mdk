@@ -220,8 +220,8 @@ export const COMPONENT_NAV: SidebarMenuItem[] = [
         ],
       },
       {
-        id: 'operations-centre',
-        label: 'Operations Centre',
+        id: 'operations-center',
+        label: 'Operations Center',
         icon: <MagnifyingGlassIcon />,
         items: [
           {

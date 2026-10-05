@@ -21,8 +21,8 @@ flowchart TB
 
     subgraph yours ["Yours: the app"]
         Spec["mdk.yaml: Worker + Gateway plugin selection, config"]
-        WP["Worker plugin(s)"]
-        GP["Gateway plugin(s)"]
+        WP["Worker plugins"]
+        GP["Gateway plugins"]
         UI["UI or headless consumer"]
     end
 
@@ -38,9 +38,9 @@ flowchart TB
 
 - **`mdk.yaml`**: the deployment unit. Names the stack, ports, which Worker packages run with what device config, and
   which Gateway plugins load with what config. This is what `mdk onboard`/`mdk create` write and `mdk run` reads.
-- **Worker plugin(s)**: yours if you're integrating a new device family; reused if you picked one that already ships
+- **Worker plugins**: yours if you're integrating a new device family; reused if you picked one that already ships
   (an Antminer worker, a demo worker).
-- **Gateway plugin(s)**: yours if you need a route no existing plugin exposes; reused for anything already bundled.
+- **Gateway plugins**: yours if you need a route no existing plugin exposes; reused for anything already bundled.
 - **UI or headless consumer**: optional. A scaffolded dashboard, a script calling `@tetherto/mdk-client` directly, or
   nothing at all: Kernel and the Gateway don't require one.
 - **Kernel and the Gateway container**: never yours to modify. They're the invariant core every app runs unchanged

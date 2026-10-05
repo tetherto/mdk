@@ -15,6 +15,6 @@ export type GaugeSvgProps = {
   arcsLength?: number[]
   /** Hide the needle + hub (e.g. for a progress-style gauge). */
   hideNeedle?: boolean
-  /** Format the centre label from the clamped fraction (0–1). */
+  /** Format the center label from the clamped fraction (0–1). */
   formatTextValue?: (percent: number) => string
 }

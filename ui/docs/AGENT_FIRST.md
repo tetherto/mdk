@@ -144,9 +144,22 @@ What it contains, per entry (component or hook):
 
 - `name`, `path`, `tier`, `description` (truncated to 200 chars),
   `category`, `domainContext`, `kernelCapabilities`.
-- `props[]` (components) or `signature` (hooks). Inherited DOM/HTML/ARIA
-  props are filtered out — agents already know `onClick`, `aria-label`,
-  etc.
+- `props[]` (components) or `signature` (hooks). **Inherited standard props are
+  intentionally excluded** — generic DOM/HTML/ARIA attributes and framework props
+  such as `className`, `children`, `style`, `onClick`, `aria-label`, and native
+  element attributes. Agents already know this surface, and emitting it per
+  component would bloat the registry ~10x. Only props declared on the component's
+  own `*Props` type are emitted; to surface a specific inherited prop (e.g. a Radix
+  controlled-state prop), **re-declare it locally with JSDoc**.
+  - **Consequence for `USAGE.md` (maintainers):** these standard props are absent
+    from the registry *and* from the generated docs tables **by design**. `USAGE.md`
+    must not hand-maintain a prop table for them; when a legacy USAGE prop table is
+    migrated to JSDoc and stripped, its rows for these standard props are dropped
+    deliberately — that is not a lost fact, it's the standard React/DOM surface.
+    (Concrete current examples of intentionally-absent rows: `DialogContent.className`,
+    `Label.className`, `Label.children`, `Tabs.className`, `Accordion.className`,
+    `Accordion.children`, `TextArea.className`, `Typography.children` — all inherited
+    via a Radix/DOM spread rather than declared on the component's own `*Props` type.)
 - For `agent-ready`: `examples[]` (paths) and `usageDoc` (path).
 
 It also ships O(1) **lookup indexes** so agents skip linear scans:
@@ -353,7 +366,7 @@ npm run check:agent-ready --workspace @tetherto/mdk-react-devkit -- --no-baselin
 ```
 
 Should print `0 violations`. If you delete a `USAGE.md` or strip a
-`@tier` tag, it will fail; try it.
+`@tier` tag, it fails; try it.
 
 ### 2. Try it as an agent would
 
@@ -437,7 +450,7 @@ docs) just makes it easier to navigate.
 - **Domain** — mining business area
   (`mining-operations`, `financial-reporting`, `device-management`,
   `generic`).
-- **Blueprint** — curated markdown recipe mapping a user intent to a
+- **Blueprint** — curated Markdown recipe mapping a user intent to a
   concrete set of `agent-ready` components and hooks.
 - **Agent-ready** — a component or hook stable and well-documented
   enough that an LLM can pick it directly when generating code. Ships
@@ -461,7 +474,7 @@ locally, against a local
 backend, which ships in this repo at [`backend/core/gateway`](../../backend/core/gateway/README.md).
 The frontend is scaffolded with one CLI command.
 
-There are two ways to run it, with or without authentication:
+You can run it two ways, with or without authentication:
 
 - **[Without sign-in](#run-it-without-sign-in)** — where to start. Two edits to
   the scaffolded app and the dashboard loads against your Gateway.
@@ -551,7 +564,7 @@ Google OAuth 2.0 client.
    ```
 5. Hit **Create**. Copy the **Client ID** and **Client secret**.
 6. If this is your first OAuth client in this Google Cloud project,
-   Google will prompt you to configure an "OAuth consent screen". Pick
+   Google prompts you to configure an "OAuth consent screen". Pick
    **External** + **Testing**. Add your own email under "Test users" so
    you can sign in.
 

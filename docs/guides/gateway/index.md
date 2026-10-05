@@ -10,12 +10,12 @@ The Gateway is a container that hosts plugins and delivers an HTTP interface for
 [`@tetherto/mdk-client`][mdk-client-readme] from its context. These guides cover how to run it and extend it with the plugin system.
 
 > [!NOTE]
-> An AI agent reaches MDK over MCP, not the Gateway's HTTP surface directly. MCP is served either by a standalone
-> [`@tetherto/mdk-mcp`][mcp-readme] process, or by the Gateway itself when it auto-generates tools from a mounted plugin's routes.
+> An AI agent reaches MDK over MCP, not the Gateway's HTTP surface directly. MCP is served by a standalone
+> [`@tetherto/mdk-mcp`][mcp-readme] process that derives tools from a mounted plugin's routes; the Gateway hosts no MCP itself.
 
 > [!NOTE]
-> If Gateway, Kernel, or plugin are unfamiliar, read [terminology][terminology] first. For the full developer model (extension, data access,
-> auth design), read the [Gateway concept page][gateway-concept].
+> If Gateway, Kernel, or plugin are unfamiliar, [terminology][terminology] defines them. The [Gateway concept page][gateway-concept] covers the full developer model (extension, data access,
+> auth design).
 
 ## Choose a guide
 

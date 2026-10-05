@@ -1,7 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@primitives'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  Form,
+  FormInput,
+  FormSelect,
+} from '@primitives'
 
 import type { RoleOption } from '@tetherto/mdk-ui-foundation'
 
@@ -16,10 +24,18 @@ const addUserSchema = z.object({
 type AddUserFormValues = z.infer<typeof addUserSchema>
 
 export type AddUserModalProps = {
+  /** Controls whether the dialog is visible */
   open: boolean
+  /** Called when the user dismisses the modal (cancel or backdrop) */
   onClose: VoidFunction
+  /** List of assignable roles rendered in the role select drop-down */
   roles: RoleOption[]
+  /** Async handler called with validated form values on submission */
   onSubmit: (data: { name: string; email: string; role: string }) => Promise<void>
+  /**
+   * Disables the submit button and shows a loading label while the parent is saving
+   * @default false
+   */
   isSubmitting?: boolean
 }
 

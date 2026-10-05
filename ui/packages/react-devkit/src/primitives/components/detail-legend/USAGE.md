@@ -1,16 +1,20 @@
-# DetailLegend
+# `DetailLegend`
 
 An enhanced chart legend that displays color swatches, current values, units, and percentage-change indicators. Each item is a clickable button for toggling dataset visibility.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-### `DetailLegend`
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `items` | Required | `DetailLegendItem[]` | - | Legend items to display |
+| `className` | Optional | `string` | - | Custom class name |
+| `onToggle` | Optional | `((label: string, index: number) => void)` | - | Callback when a legend item is toggled |
+<!-- END GENERATED: props -->
 
-| Prop        | Status   | Type                 | Default | Description                           |
-| ----------- | -------- | -------------------- | ------- | ------------------------------------- |
-| `items`     | Required | `DetailLegendItem[]` | —       | Legend items to render                |
-| `onToggle`  | Optional | `(label: string, index: number) => void` | —       | Fired when a legend item is clicked   |
-| `className` | Optional | `string`             | —       | Additional class for the root element |
+## Props detail
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 ### `DetailLegendItem`
 

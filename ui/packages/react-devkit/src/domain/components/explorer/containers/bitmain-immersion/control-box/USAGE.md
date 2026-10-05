@@ -1,17 +1,19 @@
 # BitMainImmersionControlBox
 
-Generic layout box used inside BitMain immersion container panels. Provides a two-column main area (left + right) and an optional bottom row.
+Generic layout box used inside Bitmain immersion container panels. Provides a two-column main area (left + right) and an optional bottom row.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `title` | Optional | `string` | — | Box heading |
-| `leftContent` | Optional | `ReactNode` | — | Content for the left column |
-| `rightContent` | Optional | `ReactNode` | — | Content for the right column |
-| `bottomContent` | Optional | `ReactNode` | — | Content for the bottom row |
-| `secondary` | Optional | `boolean` | `false` | Render without border (secondary style) |
-| `className` | Optional | `string` | — | Additional CSS class |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `bottomContent` | Optional | `React.ReactNode` | - | Content for bottom row |
+| `className` | Optional | `string` | - | Custom className |
+| `leftContent` | Optional | `React.ReactNode` | - | Content for left column |
+| `rightContent` | Optional | `React.ReactNode` | - | Content for right column |
+| `secondary` | Optional | `boolean` | `false` | Secondary variant (no border) |
+| `title` | Optional | `string` | - | Box title |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

@@ -8,7 +8,7 @@ Mining-domain feedback components for rendering alarm timelines and alert detail
 
 Body region of an alarm card. Renders a scrollable list of `AlarmRow` entries from a `TimelineItemData` array, or an `EmptyState` when no data is present.
 
-#### Props
+#### Props detail
 
 | Prop         | Status   | Type                            | Default | Description                  |
 | ------------ | -------- | ------------------------------- | ------- | ---------------------------- |
@@ -19,7 +19,7 @@ Body region of an alarm card. Renders a scrollable list of `AlarmRow` entries fr
 
 Single alarm-feed row with a severity dot, timestamp, source device label, and the alert message.
 
-#### Props
+#### Props detail
 
 | Prop         | Status   | Type                     | Default | Description                                                      |
 | ------------ | -------- | ------------------------ | ------- | ---------------------------------------------------------------- |

@@ -74,7 +74,7 @@ export const ROUTE_TITLES_MAP = {
   [ROUTE.CONTAINERS_PAGE]: 'Containers',
   [ROUTE.POOL_MANAGER]: 'Pool Manager',
   [ROUTE.SETTINGS_DASHBOARD]: 'Dashboard',
-  [ROUTE.OPERATIONS]: 'Operations Centre',
+  [ROUTE.OPERATIONS]: 'Operations Center',
   [ROUTE.INVENTORY_DASHBOARD]: 'Dashboard',
   [ROUTE.SETTINGS_USERS]: 'User Management',
   [ROUTE.REPORTS_FINANCIAL_EBITDA]: 'EBITDA',

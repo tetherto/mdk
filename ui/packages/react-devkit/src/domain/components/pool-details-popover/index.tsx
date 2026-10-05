@@ -7,14 +7,23 @@ import { forwardRef } from 'react'
 const TRIGGER_BUTTON_VARIANT: ButtonVariant = 'secondary'
 
 type PoolDetailsPopoverPartialProps = Partial<{
+  /** Dialog title */
   title: string
+  /** Dialog body description */
   description: string
+  /**
+   * Disable the trigger
+   * @default false
+   */
   disabled: boolean
+  /** Additional class names */
   className: string
+  /** Trigger button label */
   triggerLabel: string
 }>
 
 type PoolDetailsPopoverProps = PoolDetailsPopoverPartialProps & {
+  /** Detail rows */
   details: PoolDetailItem[]
 }
 

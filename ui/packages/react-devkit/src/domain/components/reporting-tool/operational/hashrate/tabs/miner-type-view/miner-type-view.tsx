@@ -15,7 +15,11 @@ import { useMemo, useState } from 'react'
 import { toBarChartData } from '../../../../utils/to-bar-chart-data'
 import { useSingleSeriesBarLegend } from '../../../../utils/use-single-series-bar-legend'
 import { hashrateBarChartTooltip } from '../../hashrate-chart.constants'
-import { BAR_HASHRATE_COLOR, HASHRATE_BAR_WIDTH, HASHRATE_CHART_HEIGHT } from '../../hashrate-chart-shared'
+import {
+  BAR_HASHRATE_COLOR,
+  HASHRATE_BAR_WIDTH,
+  HASHRATE_CHART_HEIGHT,
+} from '../../hashrate-chart-shared'
 import { MINER_TYPE_BAR_SERIES_LABEL } from '../../hashrate.constants'
 import type { HashrateDateRange } from '../../hashrate.constants'
 import { getMinerTypeOptionsFromLog, transformToMinerTypeBarData } from '../../hashrate-utils'
@@ -23,11 +27,21 @@ import type { HashrateGroupedLog } from '../../hashrate.types'
 import './miner-type-view.scss'
 
 export type HashrateMinerTypeViewProps = {
-  /** Hashrate log grouped by miner type (groupBy=miner). */
+  /**
+   * Hashrate log grouped by miner type (groupBy=miner).
+   * @default []
+   */
   log?: HashrateGroupedLog
+  /**
+   * Drives the chart spinner
+   * @default false
+   */
   isLoading?: boolean
+  /** Selected date range */
   dateRange?: HashrateDateRange
+  /** Fires when the user picks a new range */
   onDateRangeChange?: (range: HashrateDateRange) => void
+  /** Optional reset handler */
   onReset?: VoidFunction
 }
 

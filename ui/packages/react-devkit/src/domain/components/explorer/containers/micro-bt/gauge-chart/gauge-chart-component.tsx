@@ -7,17 +7,32 @@ type GaugeChartComponentProps = {
   max: number
   /** Current value */
   value: number
-  /** Label/title for the chart */
+  /**
+   * Label/title for the chart
+   * @default ''
+   */
   label?: string
   /** Unit of measurement */
   unit: string
-  /** Custom chart style */
+  /**
+   * Custom chart style
+   * @default {}
+   */
   chartStyle?: React.CSSProperties
-  /** Arc colors in HEX format */
+  /**
+   * Arc colors in HEX format
+   * @default [COLOR.EMERALD, COLOR.SOFT_TEAL]
+   */
   colors?: string[]
-  /** Hide the percentage text inside the chart */
+  /**
+   * Hide the percentage text inside the chart
+   * @default true
+   */
   hideText?: boolean
-  /** Chart height in pixels */
+  /**
+   * Chart height in pixels
+   * @default 200
+   */
   height?: number
   /** Custom className */
   className?: string

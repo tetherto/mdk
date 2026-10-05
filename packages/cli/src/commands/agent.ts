@@ -42,6 +42,6 @@ export function registerMcp(program: Command): void {
 
   mcp
     .command('register')
-    .description('Register the Gateway MCP endpoint in the client config (stub)')
+    .description('Register the MCP endpoint in the client config (stub)')
     .action(() => stub('mcp register'));
 }

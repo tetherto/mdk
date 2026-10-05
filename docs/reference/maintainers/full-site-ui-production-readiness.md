@@ -37,7 +37,7 @@ indistinguishable from a Gateway still responding, and the page showed a spinner
 `PowermeterChart.tsx`, `SensorChart.tsx`, and `DashboardPage.tsx` still read only `isLoading` and `data`, and none handles `isError`.
 Every query needs an error branch that states what failed and offers a retry.
 
-### There is no shared request layer
+### No shared request layer
 
 `utils.ts:7` is a bare `fetch` wrapper, and `SitePage.tsx:215` calls `fetch` inline inside the page component. Nothing carries authentication
 headers, applies a timeout, retries, or reports failures consistently. A single client module has to own those concerns before any of the
@@ -98,7 +98,7 @@ reached the working tree unnoticed. Component tests need to land with the hook e
 
 ### The bundle ships as a single chunk
 
-`npm run build` emits a 683 kB JavaScript chunk and Vite warns on it. There is no route-level lazy loading and no `manualChunks` configuration.
+`npm run build` emits a 683 KB JavaScript chunk and Vite warns on it. There is no route-level lazy loading and no `manualChunks` configuration.
 
 ### HashRouter suits a demo, not a deployment
 
@@ -174,7 +174,7 @@ Each task links to the section that describes it. `Area` is the discipline that 
 
 | ID | Task | Detail | Status |
 | --- | --- | --- | --- |
-| FE-1 | Build a shared request client owning auth headers, timeouts, retries, and error shape | [Shared request layer](#there-is-no-shared-request-layer) | Open |
+| FE-1 | Build a shared request client owning auth headers, timeouts, retries, and error shape | [Shared request layer](#no-shared-request-layer) | Open |
 | FE-2 | Add an `isError` branch with a retry to every query | [Query failures render as loading](#query-failures-render-as-loading) | Partial, site gate done |
 | FE-3 | Add sign-in, session handling, and route guards | [Authentication](#authentication-does-not-exist) | Open |
 | FE-4 | Source the API base URL from configuration instead of the dev proxy | [Production API base URL](#the-production-api-base-url-is-missing) | Open |

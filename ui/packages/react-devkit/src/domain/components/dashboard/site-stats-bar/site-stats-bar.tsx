@@ -9,17 +9,26 @@ export type SiteStatsBarProps = {
   title: string
   /** Current site-level power consumption, in watts (or whatever `powerUnit` says). */
   power?: number
-  /** Display unit for `power` — defaults to `kW`. */
+  /**
+   * Display unit for `power` — defaults to `kW`.
+   * @default 'kW'
+   */
   powerUnit?: string
   /** Aggregate hashrate, in TH/s. */
   totalHashrate?: number
-  /** Hashrate display unit — defaults to `TH/s`. */
+  /**
+   * Hashrate display unit — defaults to `TH/s`.
+   * @default 'TH/s'
+   */
   hashrateUnit?: string
   /** Total miner count across the site. */
   minerCount?: number
   /** Total container count across the site. */
   containerCount?: number
-  /** Render a skeleton bar while data is loading. */
+  /**
+   * Render a skeleton bar while data is loading.
+   * @default false
+   */
   isLoading?: boolean
   /** Optional class hook. */
   className?: string

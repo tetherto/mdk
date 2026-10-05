@@ -1,4 +1,4 @@
-# MultiSelect
+# `MultiSelect`
 
 Pick multiple values from a dropdown. Built on Radix Popover + the core
 Checkbox so it stays open on toggle - the canonical Radix pattern for
@@ -8,26 +8,27 @@ Use for filter rows (miner type, mining unit, status), multi-target
 actions, or any tag-style input. For a single-value picker use `<Select>`
 instead.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop                 | Status   | Type                       | Default        | Description                                                                                      |
-| -------------------- | -------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------ |
-| `options`            | Required | `MultiSelectOption[]`      | —              | `{ value, label, disabled? }` entries to render as option rows                                   |
-| `value`              | Optional | `string[]`                 | —              | Controlled selected values; omitting switches to uncontrolled mode driven by `defaultValue`      |
-| `defaultValue`       | Optional | `string[]`                 | `[]`           | Initial values for uncontrolled mode. Ignored when `value` is provided.                          |
-| `onValueChange`      | Optional | `(next: string[]) => void` | —              | Fires with the next array on toggle / chip remove / clear-all                                    |
-| `placeholder`        | Optional | `ReactNode`                | `'Select...'`  | Rendered when nothing is selected                                                                |
-| `disabled`           | Optional | `boolean`                  | `false`        | Disables the trigger (popover does not open)                                                     |
-| `size`               | Optional | `'sm' \| 'md' \| 'lg'`     | `'lg'`         | Trigger sizing tokens. Mirror the `<Select>` sizes.                                              |
-| `variant`            | Optional | `'default' \| 'colored'`   | `'default'`    | `'colored'` paints the trigger in the primary tint (matches `<Select>`'s colored variant)        |
-| `emptyMessage`       | Optional | `ReactNode`                | `'No options'` | Rendered inside the popover when `options` is empty                                              |
-| `maxSelectedDisplay` | Optional | `number`                   | —              | Collapse selections beyond this count into a `+N more` chip. Omit to render every selected chip. |
-| `className`          | Optional | `string`                   | —              | Extra class on the trigger button                                                                |
-| `contentClassName`   | Optional | `string`                   | —              | Extra class on the popover content                                                               |
-| `aria-label`         | Optional | `string`                   | —              | Accessible label applied to the trigger                                                          |
-
-`MultiSelectOption.disabled` blocks toggling that row only; the rest of the
-list remains interactive.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `options` | Required | `MultiSelectOption[]` | - | `{ value, label, disabled? }` entries to render as option rows |
+| `aria-label` | Optional | `string` | - | Accessible label - applied to the trigger button |
+| `className` | Optional | `string` | - | Extra class on the trigger button |
+| `contentClassName` | Optional | `string` | - | Extra class on the popover content |
+| `defaultValue` | Optional | `string[]` | `[]` | Initial values for uncontrolled mode. Ignored when `value` is provided |
+| `disabled` | Optional | `boolean` | `false` | Disables the trigger (popover does not open) |
+| `emptyMessage` | Optional | `React.ReactNode` | `"No options"` | Rendered inside the popover when `options` is empty |
+| `id` | Optional | `string` | - | - |
+| `maxSelectedDisplay` | Optional | `number` | - | Max number of selected chips rendered in the trigger before collapsing the rest into a "+N more" badge. `undefined` (default) renders every chip |
+| `name` | Optional | `string` | - | - |
+| `onValueChange` | Optional | `((next: string[]) => void)` | - | Fires with the next array on toggle / chip remove / clear-all |
+| `placeholder` | Optional | `React.ReactNode` | `"Select..."` | Rendered when nothing is selected |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"lg"` | Trigger sizing tokens. Mirror the `<Select>` sizes |
+| `value` | Optional | `string[]` | - | Controlled selected values. Omit to use `defaultValue` for uncontrolled mode |
+| `variant` | Optional | `"default" \| "colored"` | `"default"` | `'colored'` paints the trigger in the primary tint (matches `<Select>`'s colored variant) |
+<!-- END GENERATED: props -->
 
 ## Example
 

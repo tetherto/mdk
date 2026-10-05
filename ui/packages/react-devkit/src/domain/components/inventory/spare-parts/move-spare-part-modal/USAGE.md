@@ -1,27 +1,29 @@
-# MoveSparePartModal
+# `MoveSparePartModal`
 
 Two-step modal for moving a single spare part. Step one shows the part details (`SparePartDetails`)
 alongside its current location and status, and lets the user pick a new location, status, and an
 observation. Step two previews the before → after transition with color-coded badges for
 confirmation before submitting.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `locationOptions` | Required | `FormSelectOption[]` | - | Location options |
+| `onSubmit` | Required | `(values: { location: string; status: string; observation: string; }, sparePart: MoveSparePartModalSparePart) => void \| Promise<void>` | - | Submit handler with the new `{ location, status, observation }` and the original part |
+| `statusOptions` | Required | `FormSelectOption[]` | - | Status options |
+| `isOpen` | Optional | `boolean` | - | Whether the modal is open |
+| `onClose` | Optional | `VoidFunction` | - | Called when the modal requests to close |
+| `requestedValues` | Optional | `{ location?: string \| undefined; status?: string \| undefined; }` | - | Pre-seeds the target location/status |
+| `sparePart` | Optional | `MoveSparePartModalSparePart` | - | The part to move; when omitted the modal renders nothing |
+<!-- END GENERATED: props -->
+
 ## When to use
 
 Use this from a spare-parts inventory row action when an operator moves one part and you want an
-explicit confirm step showing exactly what will change. For moving many parts at once, use
+explicit confirm step showing exactly what changes. For moving many parts at once, use
 `BatchMoveSparePartsModal` instead.
-
-## Props
-
-| Prop              | Status   | Type                                           | Default | Description                                                                           |
-| ----------------- | -------- | ---------------------------------------------- | ------- | ------------------------------------------------------------------------------------- |
-| `locationOptions` | Required | `FormSelectOption[]`                           | —       | Location options                                                                      |
-| `statusOptions`   | Required | `FormSelectOption[]`                           | —       | Status options                                                                        |
-| `onSubmit`        | Required | `(values, sparePart) => Promise<void> \| void` | —       | Submit handler with the new `{ location, status, observation }` and the original part |
-| `isOpen`          | Optional | `boolean`                                      | —       | Whether the modal is open                                                             |
-| `onClose`         | Optional | `() => void`                                   | —       | Called when the modal requests to close                                               |
-| `sparePart`       | Optional | `MoveSparePartModalSparePart`                  | —       | The part to move; when omitted the modal renders nothing                              |
-| `requestedValues` | Optional | `{ location?: string; status?: string }`       | —       | Pre-seeds the target location/status                                                  |
 
 ## Data shape
 

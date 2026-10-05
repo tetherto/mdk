@@ -5,7 +5,8 @@
 
 import process from 'node:process'
 import { performance } from 'node:perf_hooks'
-import { createAgent, EVENT } from '../index.js'
+import { createAgent } from '../src/agent.js'
+import { EVENT } from '../src/events.js'
 import { parseArgs } from '../src/args.js'
 import { DEFAULT_ENDPOINTS } from '../src/constants.js'
 

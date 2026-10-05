@@ -1,26 +1,26 @@
-# API Integration TODO
+# API integration TODO
 
-## Components to Update
+## Components to update
 
 ### RackIdSelectionDropdown
 
 - [ ] Replace `MOCK_RACKS` with `useGetListRacksQuery({ type: 'miner' })`
 - [ ] Connect `isLoading` to the query's loading state
-- [ ] Ensure `handleChange` correctly updates the parent form state with the rackId string
+- [ ] Ensure `handleChange` correctly updates the parent form state with the `rackId` string
 
-### AddReplaceMinerDialogContent
+### `AddReplaceMinerDialogContent`
 
-- [ ] Short Code Logic: Replace `MOCK_SHORT_CODES` with a `useGetThingConfigQuery` call triggered when rackId changes.
-- [ ] Controller Check: Re-enable `useGetListThingsQuery` for `inventory-miner_part-controller`. If data exists, set the `macAddress` field to readOnly.
-- [ ] Site Context: Connect `useGetSiteQuery` to retrieve the currentSite for the final submission payload.
-- [ ] Submission: Map onSubmit to the `setAddPendingSubmissionAction` `actionsStore` (Zustand) action using the `ACTION_TYPES` (Update vs Register).
+- [ ] Short Code Logic: Replace `MOCK_SHORT_CODES` with a `useGetThingConfigQuery` call triggered when `rackId` changes.
+- [ ] Controller Check: Re-enable `useGetListThingsQuery` for `inventory-miner_part-controller`. If data exists, set the `macAddress` field to `readOnly`.
+- [ ] Site Context: Connect `useGetSiteQuery` to retrieve the `currentSite` for the final submission payload.
+- [ ] Submission: Map `onSubmit` to the `setAddPendingSubmissionAction` `actionsStore` (Zustand) action using the `ACTION_TYPES` (Update vs Register).
 
-### ContainerSelectionDialogContent
+### `ContainerSelectionDialogContent`
 
 - [ ] Dynamic Fetching: Replace `MOCK_CONTAINERS` with the `useGetListThingsQuery` call we initially discussed.
 - [ ] Query Params: Ensure `getByTypesQuery(supportedContainerTypes)` is correctly filtering based on the miner type passed from the parent.
 
-## ConfirmChangePositionDialogContent
+## `ConfirmChangePositionDialogContent`
 
 - [ ] **Spare Parts Fetching**: Replace `MOCK_SPARE_PARTS` with `useGetListThingsQuery`.
   - Query should target `info.parentDeviceId` equal to the selected miner ID.
@@ -29,7 +29,7 @@
 - [ ] **Feature Config**: In `useStaticMinerIpAssignment`, replace hardcoded `true` with `useGetFeatureConfigQuery`.
 - [ ] **Submit Action**: Ensure the `actionsStore` (Zustand) action `setAddPendingSubmissionAction` correctly formats the payload for the API Gateway.
 
-## Hooks to Update
+## Hooks to update
 
 ### usePoolConfigs
 
@@ -73,7 +73,7 @@ export const useGetAvailableDevices = () => {
 }
 ```
 
-### useContainerThresholds
+### `useContainerThresholds`
 
 - [ ] Replace `MOCK_SITE_DATA` with `useGetSiteQuery()`
 - [ ] Replace `MOCK_CONTAINER_SETTINGS` with `useGetContainerSettingsQuery()`
@@ -81,7 +81,7 @@ export const useGetAvailableDevices = () => {
 - [ ] Update `isSiteLoading` to use real query state
 - [ ] Update `isSettingsLoading` to use real query state
 
-### useMinerDuplicateValidation
+### `useMinerDuplicateValidation`
 
 - [ ] Replace `MOCK_MINERS_DB` search with `useLazyGetListThingsQuery()`
 - [ ] Implement `$or` query logic (Regex for MAC, `$in` for SN/Address/Code)
@@ -90,9 +90,9 @@ export const useGetAvailableDevices = () => {
 ### useStaticMinerIpAssignment
 
 - [ ] Replace `useState({ isStaticIpAssignment: true })` with `useGetFeatureConfigQuery()`
-- [ ] Ensure featureConfig type matches the global API response schema
+- [ ] Ensure `featureConfig` type matches the global API response schema
 
-## API Hooks Needed
+## API hooks needed
 
 ```typescript
 // From @/app/services/api

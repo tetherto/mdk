@@ -26,8 +26,14 @@ import { getLedButtonsStatus } from './miner-controls-utils'
 import { useState } from 'react'
 
 type MinerControlsCardProps = {
+  /** Map of action name → loading/disabled state */
   buttonsStates: Record<string, boolean | undefined>
+  /** Whether the card itself is in a loading state */
   isLoading: boolean
+  /**
+   * Show the power-mode selection button
+   * @default true
+   */
   showPowerModeSelector?: boolean
 }
 

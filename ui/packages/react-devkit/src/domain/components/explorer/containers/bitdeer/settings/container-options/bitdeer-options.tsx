@@ -6,6 +6,7 @@ import { BitdeerPumps } from './bitdeer-pumps'
 import { DryCooler } from './dry-cooler/dry-cooler'
 
 type BitdeerOptionsProps = {
+  /** Container settings payload; both components derive state from `cooling_system` fields */
   data?: UnknownRecord
 }
 

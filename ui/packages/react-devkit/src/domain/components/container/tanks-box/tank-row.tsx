@@ -12,14 +12,23 @@ export type TankRowPressure = Partial<{
 }>
 
 export type TankRowProps = {
+  /** Tank identifier label (e.g. "Tank 1") */
   label: string
+  /** Current temperature value */
   temperature: number
+  /** Temperature unit string (e.g. "°C") */
   unit: string
+  /** Running state for the oil pump */
   oilPumpEnabled: boolean
+  /** Running state for the water pump */
   waterPumpEnabled: boolean
+  /** CSS colour for the temperature value (threshold-driven) */
   color: string
+  /** Enables flash animation on the temperature row */
   flash?: boolean
+  /** Tooltip text for the temperature value */
   tooltip?: string
+  /** Pressure reading with optional flash/colour/tooltip */
   pressure: TankRowPressure
 }
 

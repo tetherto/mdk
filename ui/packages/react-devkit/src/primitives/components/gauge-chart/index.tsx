@@ -12,31 +12,56 @@ import { forwardRef } from 'react'
 export type GaugeChartProps = {
   /** Value between 0 and 1 (e.g. 0.75 = 75%). Values outside the range are clamped. */
   percent: number
-  /** Arc colours in HEX format. */
+  /**
+   * Arc colours in HEX format.
+   * @default [COLOR.GREEN, COLOR.RED]
+   */
   colors?: string[]
-  /** Arc thickness as a fraction of the gauge radius (0–1). */
+  /**
+   * Arc thickness as a fraction of the gauge radius (0–1).
+   * @default 0.2
+   */
   arcWidth?: number
-  /** Number of arc segments. Ignored when `arcsLength` is provided. */
+  /**
+   * Number of arc segments. Ignored when `arcsLength` is provided.
+   * @default 3
+   */
   nrOfLevels?: number
   /**
    * Custom arc-segment proportions (auto-normalised), overriding `nrOfLevels`.
    * e.g. `[0.7, 0.3]` for a progress-style gauge whose first arc is the fill.
    */
   arcsLength?: number[]
-  /** Needle + hub colour. */
+  /**
+   * Needle + hub colour.
+   * @default COLOR.STEEL_GRAY
+   */
   needleColor?: string
-  /** Hide the needle + hub (e.g. for a progress-style gauge). */
+  /**
+   * Hide the needle + hub (e.g. for a progress-style gauge).
+   * @default false
+   */
   hideNeedle?: boolean
-  /** Format the centre label from the clamped fraction (0–1). */
+  /** Format the center label from the clamped fraction (0–1). */
   formatTextValue?: (percent: number) => string
-  /** Hide the percentage text rendered inside the gauge. */
+  /**
+   * Hide the percentage text rendered inside the gauge.
+   * @default false
+   */
   hideText?: boolean
-  /** Stable id used for the gauge's accessibility labels. */
+  /**
+   * Stable id used for the gauge's accessibility labels.
+   * @default 'mdk-gauge-chart'
+   */
   id?: string
-  /** Chart height in pixels or any CSS length (e.g. `'200px'` or `'50%'`). */
+  /**
+   * Chart height in pixels or any CSS length (e.g. `'200px'` or `'50%'`).
+   * @default 200
+   */
   height?: number | string
   /** Maximum width in pixels. */
   maxWidth?: number
+  /** Additional class for the root `div` */
   className?: string
 }
 

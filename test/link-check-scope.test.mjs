@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { resolveCrawlFiles } from '../scripts/link-check.mjs'
+import { resolveCrawlFiles } from '../docs/scripts/link-check.mjs'
 
 const ALL = ['README.md', 'docs/a.md', 'docs/b.md', 'guides/c.md']
 

@@ -11,17 +11,16 @@ Each tab fetches independently (different `groupBy` axes and date ranges);
 the composite is a thin tabs shell that stitches them together via per-tab
 prop bags.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop             | Status   | Type                          | Default       | Description                                 |
-| ---------------- | -------- | ----------------------------- | ------------- | ------------------------------------------- |
-| `defaultTab`     | Optional | `HashrateTabValue`            | `"site-view"` | Tab selected on first render                |
-| `siteView`       | Optional | `HashrateSiteViewProps`       | —             | Props forwarded to the Site View tab        |
-| `minerTypeView`  | Optional | `HashrateMinerTypeViewProps`  | —             | Props forwarded to the Miner Type View tab  |
-| `miningUnitView` | Optional | `HashrateMiningUnitViewProps` | —             | Props forwarded to the Mining Unit View tab |
-
-Each `*ViewProps` bag exposes `log`, `isLoading`, `dateRange`, `onDateRangeChange`, and `onReset`. The filter state
-(which miner types / mining units are selected) is owned internally by each tab.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `defaultTab` | Optional | `"site-view" \| "miner-type-view" \| "mining-unit-view"` | `"site-view"` | Tab selected on first render. Defaults to the Site View |
+| `minerTypeView` | Optional | `HashrateMinerTypeViewProps` | - | Props forwarded to the Miner Type View tab |
+| `miningUnitView` | Optional | `HashrateMiningUnitViewProps` | - | Props forwarded to the Mining Unit View tab |
+| `siteView` | Optional | `HashrateSiteViewProps` | - | Props forwarded to the Site View tab |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

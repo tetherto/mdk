@@ -1890,19 +1890,19 @@
         "kind": "function"
       },
       {
-        "name": "OP_CENTRE_CABINET_DETAIL_FIELDS",
+        "name": "OP_CENTER_CABINET_DETAIL_FIELDS",
         "kind": "const"
       },
       {
-        "name": "OP_CENTRE_CONTAINER_DETAIL_FIELDS",
+        "name": "OP_CENTER_CONTAINER_DETAIL_FIELDS",
         "kind": "const"
       },
       {
-        "name": "OP_CENTRE_CONTAINER_WIDGETS_FIELDS",
+        "name": "OP_CENTER_CONTAINER_WIDGETS_FIELDS",
         "kind": "const"
       },
       {
-        "name": "OP_CENTRE_LIST_THINGS_FIELDS",
+        "name": "OP_CENTER_LIST_THINGS_FIELDS",
         "kind": "const"
       },
       {

@@ -2,11 +2,13 @@
 
 Summary card for a MicroBT-equipped container showing the circulation pump status and cooling fan state as coloured indicators.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop   | Status   | Type     | Default | Description |
-| ------ | -------- | -------- | ------- | ----------- |
-| `data` | Optional | `Device` | —       | Live device object. Returns `null` when omitted. |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Optional | `Device` | - | Live device object. Returns `null` when omitted |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

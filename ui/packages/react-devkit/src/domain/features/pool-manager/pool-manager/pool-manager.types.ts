@@ -8,11 +8,7 @@ import type { SiteOverviewDetailsDataOptions } from '../../../components/pool-ma
 
 /** Internal surfaces the wrapper switches between on a single route. */
 export type PoolManagerView =
-  | 'dashboard'
-  | 'pools'
-  | 'sites-overview'
-  | 'miner-explorer'
-  | 'site-detail'
+  'dashboard' | 'pools' | 'sites-overview' | 'miner-explorer' | 'site-detail'
 
 export type PoolManagerProps = {
   /** Pool configurations shared by every sub-view (Pools, Miner Explorer, Sites). */
@@ -25,21 +21,33 @@ export type PoolManagerProps = {
   alerts?: Alert[]
   /** Dashboard "View All Alerts" handler (e.g. navigate to `/alerts`). */
   onViewAllAlerts?: VoidFunction
-  /** Miners for the Miner Explorer view. */
+  /**
+   * Miners for the Miner Explorer view.
+   * @default []
+   */
   miners?: ListThingsDevice[]
-  /** Normalised site units for the Sites Overview view. */
+  /**
+   * Normalised site units for the Sites Overview view.
+   * @default []
+   */
   units?: ProcessedContainerUnit[]
   /** Sites Overview loading flag. */
   isSitesLoading?: boolean
   /** Sites Overview error. */
   sitesError?: unknown
-  /** Raw container devices used to resolve the selected unit for Site Detail. */
+  /**
+   * Raw container devices used to resolve the selected unit for Site Detail.
+   * @default []
+   */
   siteDevices?: ContainerUnit[]
   /** Extra data-fetch knobs forwarded to the Site Detail container. */
   siteDetailDataOptions?: SiteOverviewDetailsDataOptions
   /** Site Detail loading flag. */
   isSiteDetailLoading?: boolean
-  /** Initial view (defaults to `dashboard`). */
+  /**
+   * Initial view (defaults to `dashboard`).
+   * @default 'dashboard'
+   */
   initialView?: PoolManagerView
   /**
    * Controlled view — when provided the component syncs its internal state to
@@ -51,5 +59,6 @@ export type PoolManagerProps = {
   onViewChange?: (view: PoolManagerView) => void
   /** Notified with the selected unit id when a site card is opened. */
   onSiteSelect?: (unitId: string) => void
+  /** Additional class names */
   className?: string
 }

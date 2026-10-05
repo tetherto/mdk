@@ -16,7 +16,7 @@ Instead, report security issues privately via:
 
 Include as much detail as possible:
 
-- Affected component(s) and version/commit
+- Affected components and version/commit
 - Steps to reproduce
 - Impact assessment
 - Any proof-of-concept or logs (if safe to share)

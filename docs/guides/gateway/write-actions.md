@@ -189,7 +189,7 @@ To enable approval-gated writes, create a plugin that exposes HTTP routes for th
 
 ### Required routes
 
-| Method | Example Path | mdkClient Method | Purpose |
+| Method | Example Path | `mdkClient` method | Purpose |
 |--------|--------------|------------------|---------|
 | `GET` | `/auth/actions` | `queryActions()` | Query actions by lifecycle state (voting/ready/executing/done) |
 | `POST` | `/auth/actions/voting` | `pushAction()` | Submit a single action for approval |

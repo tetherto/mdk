@@ -41,6 +41,7 @@ export type RequireAuthProps = {
   /**
    * When true (default), the current location is persisted to sessionStorage
    * before rendering the fallback so the sign-in flow can return there.
+   * @default true
    */
   rememberPath?: boolean
 }

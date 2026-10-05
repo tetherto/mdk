@@ -13,7 +13,10 @@ type MinerMetricCardProps = {
   primaryStats: StatItem[]
   /** Secondary statistics to display in grid */
   secondaryStats: StatItem[]
-  /** Whether to show secondary stats section */
+  /**
+   * Whether to show secondary stats section
+   * @default true
+   */
   showSecondaryStats: boolean
 }
 

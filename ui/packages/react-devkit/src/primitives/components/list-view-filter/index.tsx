@@ -20,6 +20,7 @@ type ListViewFilterProps = {
   /**
    * Optional key to force re-mounting the Cascader when filters change
    * Useful if you want to reset the internal state of the Cascader when filters change
+   * @default 'default'
    */
   filterKey?: string
   /**

@@ -2,12 +2,14 @@
 
 Info card for a single miner: serial number, model, firmware version, physical location, and a recent-activity summary. Renders a labelled list of `InfoItem` entries.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `data` | Optional | `InfoItem[]` | — | Array of label/value pairs to display |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Optional | `InfoItem[]` | - | Array of label/value pairs to display |
 | `label` | Optional | `string` | `"Miner info"` | Card heading label |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

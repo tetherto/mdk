@@ -8,10 +8,21 @@ import type { DashboardStats } from './dashboard-types'
 import './styles.scss'
 
 export type DashboardProps = {
+  /** Top-of-page stat blocks; hidden while loading */
   stats?: DashboardStats
+  /**
+   * Hide stats while loading
+   * @default false
+   */
   isStatsLoading?: boolean
+  /**
+   * Recent alerts list (capped to `MAX_ALERTS_DISPLAYED`)
+   * @default []
+   */
   alerts?: Alert[]
+  /** Called when a navigation block is clicked */
   onNavigationClick: (url: string) => void
+  /** Called when "View All Alerts" is clicked */
   onViewAllAlerts: VoidFunction
 }
 

@@ -1,24 +1,26 @@
-# BulkAddSparePartsModal
+# `BulkAddSparePartsModal`
 
 Modal for bulk-adding spare parts from a CSV file. Provides a CSV template download, file selection
 with client-side parsing, and submits the parsed records. CSV parsing and validation helpers
 (`parseCsvText`, `validateCSVRecords`, `mapRawRowToRecord`, `downloadCsvTemplate`, `CSVRecord`) are
 exported alongside the component for use in the consuming submit handler.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `isOpen` | Required | `boolean` | - | Whether the modal is open |
+| `onClose` | Required | `VoidFunction` | - | Called when the modal requests to close |
+| `onSubmit` | Required | `(records: CSVRecord[]) => Promise<void \| { error?: string \| undefined; }>` | - | Submit handler; return `{ error }` to show an inline error |
+| `isLoading` | Optional | `boolean` | - | Renders a loader instead of the form |
+<!-- END GENERATED: props -->
+
 ## When to use
 
 Use this when operators need to register many spare parts at once. Validate the parsed records in
 your `onSubmit` with `validateCSVRecords` (location/status/model checks, duplicate detection) and
 return an `{ error }` to surface a message in the modal.
-
-## Props
-
-| Prop        | Status   | Type         | Default | Description                                                |
-| ----------- | -------- | ------------ | ------- | ---------------------------------------------------------- |
-| `isOpen`    | Required | `boolean`    | —       | Whether the modal is open                                  |
-| `onClose`   | Required | `() => void` | —       | Called when the modal requests to close                    |
-| `onSubmit`  | Required | `(records: CSVRecord[]) => Promise<{ error?: string } \| void>` | —       | Submit handler; return `{ error }` to show an inline error |
-| `isLoading` | Optional | `boolean`    | —       | Renders a loader instead of the form                       |
 
 ## Example
 

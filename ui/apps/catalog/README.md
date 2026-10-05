@@ -28,7 +28,7 @@ This catalog showcases:
 - Accordions
 - Dashboard components (Active Incidents, Pool Details)
 - Charts and data visualization
-- And more!
+- And more
 
 ## Development
 

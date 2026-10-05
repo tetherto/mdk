@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker-demo",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Third-party plugin-authoring demo Worker Plugin with its own SQLite persistence — an mdk-contract.json plus src/ handler files, loaded from this directory and instantiated per device by the Worker Runtime (see examples/backend/demo-worker-caller); it exports no module of its own",
   "keywords": [
     "tether"
@@ -18,7 +18,7 @@
     "test:coverage": "NODE_ENV=test brittle --coverage tests/unit/*.test.js"
   },
   "dependencies": {
-    "@tetherto/mdk-worker": "^0.9.0",
+    "@tetherto/mdk-worker": "^0.10.0",
     "debug": "4.4.1"
   },
   "devDependencies": {

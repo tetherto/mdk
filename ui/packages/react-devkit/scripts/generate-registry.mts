@@ -30,6 +30,7 @@ import {
   type ParameterDeclaration,
   Project,
   type SourceFile,
+  SymbolFlags,
   type Type,
   type VariableDeclaration,
 } from "ts-morph";
@@ -124,20 +125,24 @@ const truncateType = (text: string): string => {
   return `${text.slice(0, TYPE_MAX_CHARS).trimEnd()}… /* see source */`;
 };
 
+// Docs descriptions read as table-cell / summary fragments, so a single trailing
+// full stop is dropped for consistency (multi-sentence internal stops are kept).
+const stripTerminalStop = (text: string): string => text.replace(/\s*\.\s*$/, "");
+
 const getJsDocDescription = (jsDocs: JSDoc[]): string => {
   if (!jsDocs.length) return "";
-  return firstParagraph(jsDocs[0]!.getDescription());
+  return stripTerminalStop(firstParagraph(jsDocs[0]!.getDescription()));
 };
 
 /** Full JSDoc description: all paragraphs, trimmed, paragraph breaks preserved. */
 const getJsDocDescriptionFull = (jsDocs: JSDoc[]): string => {
   if (!jsDocs.length) return "";
-  return jsDocs[0]!
+  return stripTerminalStop(jsDocs[0]!
     .getDescription()
     .split(/\n\s*\n/)
     .map((p) => p.replace(/\s+/g, " ").trim())
     .filter(Boolean)
-    .join("\n\n");
+    .join("\n\n"));
 };
 
 /**
@@ -184,6 +189,36 @@ const formatType = (type: Type): string => {
   return cleanImportPaths(type.getText()).replace(/\s+/g, " ").trim();
 };
 
+// Display form of a prop's type for the docs table. Optionality is shown in the
+// separate `Status` column, so a trailing `| undefined` is dropped as noise. A
+// huge expanded object type (e.g. Chart.js `ChartJS<'line'>['options']` resolving
+// to `_DeepPartialObject<CoreChartOptions<…> & …>`) is collapsed to `object` —
+// the source alias is unreadable and adds no value in a table cell.
+const OBJECT_COLLAPSE_CHARS = 120;
+const formatPropType = (type: Type): string => {
+  // Expand a string-literal union (enum-like options) to its members even when it
+  // is written as a named alias (e.g. `TextAlign` -> `"left" | "center" | …`), so
+  // every option-set prop uniformly shows its allowed values. Drop only `undefined`
+  // (optionality is in the Status column) — a `null` member is meaningful and kept.
+  if (type.isUnion()) {
+    const members = type.getUnionTypes().filter((m) => !m.isUndefined());
+    if (members.length > 1 && members.every((m) => m.isStringLiteral() || m.isNull())) {
+      return members.map((m) => (m.isNull() ? "null" : m.getText())).join(" | ");
+    }
+  }
+  const core = type.getNonNullableType();
+  let text = formatType(type).replace(/\s*\|\s*undefined\s*$/, "").trim();
+  if (
+    text.length > OBJECT_COLLAPSE_CHARS
+    && core.isObject() && !core.isArray()
+    && core.getCallSignatures().length === 0
+    && core.getProperties().length > 0
+  ) {
+    text = "object";
+  }
+  return text;
+};
+
 const isExcludedSourceFile = (filePath: string): boolean =>
   EXCLUDED_FILE_PATTERNS.some((re) => re.test(filePath)) || isExampleFile(filePath);
 
@@ -203,12 +238,18 @@ const propsFromType = (type: Type): PropMeta[] => {
 
   for (const prop of unwrapped.getProperties()) {
     const declarations = prop.getDeclarations();
-    const declaration = declarations[0];
+    // Prefer a local declaration when a prop is declared both locally and in an
+    // inherited type: a component can deliberately re-declare an inherited prop
+    // (e.g. a Radix controlled-state prop) in its own `Props` literal with JSDoc
+    // to surface it in the docs, and that local declaration must win.
+    const declaration = declarations.find(
+      d => !d.getSourceFile().getFilePath().includes("/node_modules/"),
+    ) ?? declarations[0];
 
-    // Skip props inherited from `node_modules/` (HTMLAttributes, SVGAttributes,
-    // AriaAttributes, Radix primitive props, etc.). An LLM already knows the
-    // standard React/DOM surface; surfacing them per component would bloat
-    // the registry by 10x with zero added value.
+    // Skip props declared ONLY in `node_modules/` (HTMLAttributes, SVGAttributes,
+    // AriaAttributes, un-re-declared Radix primitive props, etc.). An LLM already
+    // knows the standard React/DOM surface; surfacing them per component would
+    // bloat the registry by 10x with zero added value.
     if (declaration) {
       const declFile = declaration.getSourceFile().getFilePath();
       if (declFile.includes("/node_modules/")) continue;
@@ -220,7 +261,13 @@ const propsFromType = (type: Type): PropMeta[] => {
     } catch {
       propType = undefined;
     }
-    const propTypeText = propType ? formatType(propType) : "unknown";
+    const propTypeText = propType ? formatPropType(propType) : "unknown";
+
+    // Resolved optionality — true when the property is optional in the final type,
+    // including optionality applied by an intersected `Partial<…>` alias (e.g.
+    // `Props = SomeOptions & SomeCallbacks & {…}`), which the syntactic `?` check
+    // below and the top-level `isPartial` unwrap both miss.
+    const isOptionalResolved = (prop.getFlags() & SymbolFlags.Optional) !== 0;
 
     let description: string | undefined;
     let descriptionFull: string | undefined;
@@ -234,7 +281,11 @@ const propsFromType = (type: Type): PropMeta[] => {
       const raw = getJsDocDescription(docs);
       description = raw ? truncate(raw, PROP_DESCRIPTION_MAX_CHARS) : undefined;
       descriptionFull = descriptionFullIfDiffers(getJsDocDescriptionFull(docs), description ?? "");
-      defaultValue = getJsDocTagValues(docs, "default")[0];
+      // Normalize a single-quoted string default to double quotes so the docs
+      // Default column is consistent with repo style and the `Type / Options`
+      // column (which shows string literals double-quoted). Arrays, JSX, numbers,
+      // booleans and bare identifiers are left untouched.
+      defaultValue = getJsDocTagValues(docs, "default")[0]?.replace(/^'([^']*)'$/, '"$1"');
       const hasQ = (declaration as { hasQuestionToken?: () => boolean }).hasQuestionToken;
       isOptionalFromDecl = hasQ ? hasQ.call(declaration) : false;
     }
@@ -242,7 +293,7 @@ const propsFromType = (type: Type): PropMeta[] => {
     props.push({
       name: prop.getName(),
       type: truncateType(propTypeText),
-      required: !isPartial && !isOptionalFromDecl,
+      required: !isPartial && !isOptionalFromDecl && !isOptionalResolved,
       ...(defaultValue ? { default: defaultValue } : {}),
       description,
       ...(descriptionFull ? { descriptionFull } : {}),

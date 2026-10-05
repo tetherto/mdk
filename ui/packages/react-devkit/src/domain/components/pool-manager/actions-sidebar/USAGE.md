@@ -1,18 +1,17 @@
-# ActionsSidebar
+# `ActionsSidebar`
 
 Full-height side panel that surfaces the reference app voting/approval workflow.
 Lists local draft actions pending submission, actions already submitted (in
 review), and actions raised by other operators that await your vote. Mirrors
 the reference app's sidebar but is built on MDK primitives — no Redux, no Ant Design.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type     | Default | Description                             |
-| ----------- | -------- | -------- | ------- | --------------------------------------- |
-| `className` | Optional | `string` | —       | Extra class on the sidebar root element |
-
-The sidebar is intentionally prop-light: it reads all state from `actionsStore`
-and the `useLiveActions` hook internally.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Extra class names merged onto the sidebar root element |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

@@ -9,7 +9,7 @@ Mining pool API Workers. These Workers connect to mining pool REST APIs and expo
 | [`ocean/`](./ocean/README.md)   | `@tetherto/mdk-worker-ocean`  | Ocean.xyz |
 | [`f2pool/`](./f2pool/README.md) | `@tetherto/mdk-worker-f2pool` | F2Pool    |
 
-## Common Telemetry
+## Common telemetry
 
 All pool Workers report:
 
@@ -20,7 +20,7 @@ All pool Workers report:
 | `balance`            | BTC  | Current unpaid balance                 |
 | `estimated_earnings` | BTC  | Estimated daily earnings               |
 
-## Notes on Pool Workers
+## Notes on pool Workers
 
 Pool Workers are read-only (no hardware commands). They poll the pool REST API on each telemetry cycle. Unlike device
 Workers (miners, containers, power meters), a pool Worker hosts a single logical device on `WorkerRuntime` whose
@@ -29,7 +29,7 @@ not a `registerThing`-provisioned device. There is no `allowEmptyDevices`/provis
 
 Pool Workers do not participate in command dispatch, they only respond to `telemetry.pull`.
 
-## Quick Start
+## Quickstart
 
 ```js
 const { getKernel } = require('@tetherto/mdk-core')

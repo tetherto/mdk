@@ -27,6 +27,7 @@ type ChartWrapperProps = {
 
   /**
    * Custom loader component to show when loading (overrides default spinner)
+   * @default <Loader />
    */
   customLoader?: ReactNode
 
@@ -43,12 +44,14 @@ type ChartWrapperProps = {
 
   /**
    * Minimum height for the container (in pixels)
+   * @default 400
    */
   minHeight?: number
 
   /**
    * Minimum height for the loading skeleton (in pixels)
    * Falls back to minHeight if not provided
+   * @default minHeight
    */
   loadingMinHeight?: number
 

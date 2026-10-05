@@ -1,20 +1,22 @@
-# TimelineChart
+# `TimelineChart`
 
 Discrete-event timeline chart (e.g. miner state over time) with a category
 legend. Supports streaming updates via `newData`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop            | Status   | Type                | Default                | Description           |
-| --------------- | -------- | ------------------- | ---------------------- | --------------------- |
-| `initialData`   | Required | `TimelineChartData` | —                      | Initial timeline data |
-| `newData`       | Optional | `TimelineChartData` | —                      | Streaming updates appended to the initial data |
-| `skipUpdates`   | Optional | `boolean`           | `false`                | Ignore `newData`      |
-| `range`         | Optional | `{ min: Date \| number; max: Date \| number }` | —                      | Visible time window   |
-| `axisTitleText` | Optional | `{ x; y }`          | `{ x: "Time", y: "" }` | Axis title strings    |
-| `isLoading`     | Optional | `boolean`           | `false`                | Show loader           |
-| `title`         | Optional | `string`            | —                      | Chart title           |
-| `height`        | Optional | `number`            | —                      | Chart pixel height    |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `initialData` | Required | `TimelineChartData` | - | Initial timeline data |
+| `axisTitleText` | Optional | `AxisTitleText` | `{ x: "Time", y: "" }` | Axis title strings |
+| `height` | Optional | `number` | - | Chart pixel height |
+| `isLoading` | Optional | `boolean` | `false` | Show loader |
+| `newData` | Optional | `TimelineChartData` | - | Streaming updates appended to the initial data |
+| `range` | Optional | `ChartRange` | - | Visible time window |
+| `skipUpdates` | Optional | `boolean` | `false` | Ignore `newData` |
+| `title` | Optional | `string` | - | Chart title |
+<!-- END GENERATED: props -->
 
 ## Example
 

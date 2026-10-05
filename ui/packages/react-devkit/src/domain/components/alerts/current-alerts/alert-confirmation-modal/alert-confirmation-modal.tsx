@@ -5,7 +5,9 @@ import './alert-confirmation-modal.scss'
 import type { JSX } from 'react'
 
 export type AlertConfirmationModalProps = {
+  /** Controls dialog visibility */
   isOpen: boolean
+  /** Called when the user confirms the action */
   onOk: VoidFunction
 }
 

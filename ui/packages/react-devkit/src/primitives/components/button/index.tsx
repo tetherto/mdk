@@ -8,20 +8,44 @@ import { Spinner } from '../spinner'
  */
 export type ButtonProps = Partial<
   {
-    /** Show a spinner instead of the content and disable the button. */
+    /**
+     * Show a spinner instead of the content and disable the button.
+     * @default false
+     */
     loading: boolean
-    /** Make the button stretch to fill its container. */
+    /**
+     * Make the button stretch to fill its container.
+     * @default false
+     */
     fullWidth: boolean
     /** Icon node rendered alongside `children`. */
     icon: ReactNode
-    /** Visual variant (e.g. `primary`, `secondary`, `ghost`). */
+    /**
+     * Visual variant (e.g. `primary`, `secondary`, `ghost`).
+     * @default "secondary"
+     */
     variant: ButtonVariant
     /** Class names applied to the inner content wrapper. */
     contentClassName: string
-    /** Icon placement relative to children. */
+    /**
+     * Icon placement relative to children.
+     * @default "left"
+     */
     iconPosition: ButtonIconPosition
     /** Size token (`sm`, `md`, `lg`). */
     size: ComponentSize
+    // Key native props re-declared so they surface in the generated docs (types
+    // reuse React's via indexed access — cannot drift).
+    /**
+     * Disable the button
+     * @default false
+     */
+    disabled: ButtonHTMLAttributes<HTMLButtonElement>['disabled']
+    /**
+     * Native button type
+     * @default "button"
+     */
+    type: ButtonHTMLAttributes<HTMLButtonElement>['type']
   } & ButtonHTMLAttributes<HTMLButtonElement>
 >
 

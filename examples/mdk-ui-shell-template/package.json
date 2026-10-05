@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-ui-shell-template",
   "type": "module",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -36,7 +36,7 @@
     "vite": "^7.0.0"
   },
   "overrides": {
-    "brace-expansion": "5.0.9",
+    "brace-expansion": "5.0.12",
     "js-yaml": "5.4.1",
     "nanoid@<3.3.18": ">=3.3.18 <4.0.0",
     "postcss": ">=8.5.23",

@@ -3,15 +3,13 @@
 Accessible `<label>` element for form fields. Built on Radix UI Label so that
 clicks anywhere on the label focus the associated input.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type        | Default | Description                    |
-| ----------- | -------- | ----------- | ------- | ------------------------------ |
-| `htmlFor`   | Optional | `string`    | —       | Id of the input being labelled |
-| `className` | Optional | `string`    | —       | Additional class names         |
-| `children`  | Optional | `ReactNode` | —       | Label content                  |
-
-All other native `<label>` attributes are forwarded.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `htmlFor` | Optional | `string` | - | Id of the input being labelled |
+<!-- END GENERATED: props -->
 
 ## Example
 

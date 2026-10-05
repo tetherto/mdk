@@ -3,24 +3,26 @@
 Small status indicator displayed standalone or overlaid on another element.
 Renders as a number, dot, custom text, or status pill.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop               | Status   | Type               | Default     | Description                                         |
-| ------------------ | -------- | ------------------ | ----------- | --------------------------------------------------- |
-| `children`         | Optional | `ReactNode`        | —           | Element to overlay the badge onto                   |
-| `count`            | Optional | `number`           | `0`         | Number to display                                   |
-| `overflowCount`    | Optional | `number`           | `99`        | Above this, renders as e.g. `99+`                   |
-| `showZero`         | Optional | `boolean`          | `false`     | Render the badge when `count === 0`                 |
-| `dot`              | Optional | `boolean`          | `false`     | Render as a dot instead of a number                 |
-| `text`             | Optional | `string`           | —           | Custom text content (overrides `count`)             |
-| `color`            | Optional | `ColorVariant`     | `"primary"` | Color variant                                       |
-| `size`             | Optional | `ComponentSize`    | `"md"`      | `"sm" \| "md" \| "lg"`                              |
-| `square`           | Optional | `boolean`          | `false`     | Square (no border-radius) badge                     |
-| `status`           | Optional | `"success" \| "processing" \| "error" \| "warning" \| "default"` | —  | Renders a status dot with optional text             |
-| `offset`           | Optional | `[number, number]` | `[0, 0]`    | Pixel offset when overlaid on `children`            |
-| `className`        | Optional | `string`           | —           | Badge element class names                           |
-| `wrapperClassName` | Optional | `string`           | —           | Wrapper class names (only when wrapping `children`) |
-| `title`            | Optional | `string`           | —           | Accessible label                                    |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Optional | `React.ReactNode` | - | Badge content (wraps children with badge) |
+| `className` | Optional | `string` | - | Custom className for badge |
+| `color` | Optional | `"success" \| "info" \| "warning" \| "error" \| "primary" \| "secondary" \| "default"` | `"primary"` | Color variant |
+| `count` | Optional | `number` | `0` | Number to display in badge If > overflowCount, will show "overflowCount+" |
+| `dot` | Optional | `boolean` | `false` | Show badge as a dot |
+| `offset` | Optional | `[number, number]` | `[0, 0]` | Offset position [x, y] in pixels |
+| `overflowCount` | Optional | `number` | `99` | Maximum count to display |
+| `showZero` | Optional | `boolean` | `false` | Whether to show badge when count is 0 |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Badge size |
+| `square` | Optional | `boolean` | `false` | Square badge (no border-radius) |
+| `status` | Optional | `"success" \| "warning" \| "error" \| "default" \| "processing"` | - | Status badge (small dot badge with text) |
+| `text` | Optional | `string` | - | Custom badge content (overrides count) |
+| `title` | Optional | `string` | - | Badge title for accessibility |
+| `wrapperClassName` | Optional | `string` | - | Custom className for wrapper |
+<!-- END GENERATED: props -->
 
 ## Example
 

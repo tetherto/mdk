@@ -16,19 +16,29 @@ import type {
  * pass an object of this shape without coupling to the hook's full return.
  */
 export type CostViewModelProps = {
+  /** Headline $/MWh tiles (all-in, energy, operations). Pass `null` while loading. */
   metrics: CostSummaryDisplayMetrics | null
+  /** Monthly/weekly production-cost time series for the Production Cost / Price chart */
   costLog: ReadonlyArray<CostTimeSeriesEntry>
+  /** BTC price time series aligned to `costLog` buckets */
   btcPriceLog: ReadonlyArray<BtcPriceTimeSeriesEntry>
+  /** Period totals (energy + operations USD) for the Operations vs Energy doughnut */
   totals: CostSummaryMonetaryTotals | null
 }
 
 export type CostQueryStateProps = {
+  /**
+   * Shows a loading spinner overlay over the chart grid
+   * @default false
+   */
   isLoading?: boolean
+  /** When truthy, renders an error message in place of the chart grid */
   error?: unknown
 }
 
 export type CostContentProps = CostViewModelProps &
   CostQueryStateProps & {
+    /** Active date range; drives x-axis labels across all charts */
     dateRange: FinancialDateRange | null
     /** Optional revenue/cost time-series for the Avg All-in Cost panel. */
     avgAllInCostData?: ReadonlyArray<AvgAllInCostDataPoint>

@@ -1,4 +1,4 @@
-# MDK Schneider Power Meter Example
+# MDK Schneider power meter example
 
 A small, self-contained **Schneider PM5340** power-meter example you can clone and run with **no real
 hardware**. It starts a mock Schneider meter, brings up a Kernel, registers the meter as a thing, and

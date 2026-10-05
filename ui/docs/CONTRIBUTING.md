@@ -1,6 +1,6 @@
 # Contributing
 
-Welcome! This document describes the day-to-day workflow inside the MDK
+Welcome. This document describes the day-to-day workflow inside the MDK
 monorepo.
 
 ## Contribution workflow
@@ -91,7 +91,7 @@ npm run clean                            # remove dist/ and node_modules/ across
 ## Adding dependencies
 
 See [`CLAUDE.md`](../CLAUDE.md#adding-dependencies) for the canonical
-workspace-vs-root install commands and the centrally-managed version policy.
+workspace-vs-root install commands and the centrally managed version policy.
 
 ## Creating a new package
 
@@ -288,12 +288,12 @@ When you change behaviour, update the matching docs:
 ### Component and hook documentation tiers
 
 Every public export in `@tetherto/mdk-react-devkit` must declare its
-audience via a `@tier` JSDoc tag. There are three tiers — pick the right
+audience via a `@tier` JSDoc tag. Three tiers exist — pick the right
 one and add what it requires:
 
 | Tier | Use when… | Must add |
 |------|-----------|----------|
-| `agent-ready` | An LLM or non-expert will pick this directly to build a page | JSDoc + `@category` + `@domain` + `@tier` + `USAGE.md` + `*.example.tsx` (+ `@kernelCapability` when `@domain ≠ generic`) |
+| `agent-ready` | An LLM or non-expert picks this directly to build a page | JSDoc + `@category` + `@domain` + `@tier` + `USAGE.md` + `*.example.tsx` (+ `@kernelCapability` when `@domain ≠ generic`) |
 | `advanced` | A downstream engineer composes or extends with this | JSDoc + `@category` + `@domain` + `@tier` |
 | `internal` | Implementation detail, never part of the public API | `@tier internal` only |
 

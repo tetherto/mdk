@@ -5,9 +5,9 @@ import {
   buildExplorerListThingsParams,
   EXPLORER_TAB,
   EXPLORER_TAB_TAGS,
-  OP_CENTRE_CABINET_DETAIL_FIELDS,
-  OP_CENTRE_LIST_THINGS_FIELDS,
-} from '../op-centre-queries'
+  OP_CENTER_CABINET_DETAIL_FIELDS,
+  OP_CENTER_LIST_THINGS_FIELDS,
+} from '../op-center-queries'
 
 describe('EXPLORER_TAB_TAGS', () => {
   it('maps each tab to its thing tags', () => {
@@ -23,7 +23,7 @@ describe('buildExplorerListThingsParams', () => {
 
     expect(JSON.parse(params.query ?? '')).toEqual({ tags: { $in: ['t-container'] } })
     expect(params.status).toBe(1)
-    expect(params.fields).toBe(OP_CENTRE_LIST_THINGS_FIELDS)
+    expect(params.fields).toBe(OP_CENTER_LIST_THINGS_FIELDS)
     expect(params.limit).toBe(1000)
     expect(params.offset).toBeUndefined()
   })
@@ -50,7 +50,7 @@ describe('buildCabinetDetailParams', () => {
       $and: [{ 'info.pos': { $regex: 'lv1' } }, { tags: { $in: ['t-powermeter', 't-sensor-temp'] } }],
     })
     expect(params.status).toBe(1)
-    expect(params.fields).toBe(OP_CENTRE_CABINET_DETAIL_FIELDS)
+    expect(params.fields).toBe(OP_CENTER_CABINET_DETAIL_FIELDS)
   })
 })
 
@@ -93,9 +93,9 @@ describe('buildContainerWidgetsRealtimeTailLogParams', () => {
   })
 })
 
-describe('OP_CENTRE_LIST_THINGS_FIELDS', () => {
+describe('OP_CENTER_LIST_THINGS_FIELDS', () => {
   it('projects the identity, snap-stats, and snap-config fields the tables read', () => {
-    const fields = JSON.parse(OP_CENTRE_LIST_THINGS_FIELDS)
+    const fields = JSON.parse(OP_CENTER_LIST_THINGS_FIELDS)
     expect(fields.id).toBe(1)
     expect(fields.type).toBe(1)
     expect(fields.tags).toBe(1)

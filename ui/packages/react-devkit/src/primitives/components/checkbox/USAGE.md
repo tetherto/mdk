@@ -3,19 +3,21 @@
 Controlled or uncontrolled checkbox built on Radix UI. Supports size, color
 and border-radius variants. Indeterminate state via `checked="indeterminate"`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop                 | Status   | Type                              | Default     | Description                        |
-| -------------------- | -------- | --------------------------------- | ----------- | ---------------------------------- |
-| `checked`            | Optional | `boolean \| "indeterminate"`      | —           | Controlled checked state           |
-| `defaultChecked`     | Optional | `boolean`                         | —           | Uncontrolled initial checked state |
-| `onCheckedChange`    | Optional | `(checked: CheckedState) => void` | —           | Change handler                     |
-| `size`               | Optional | `"xs" \| "sm" \| "md" \| "lg"`    | `"md"`      | Size variant                       |
-| `color`              | Optional | `ComponentColor`                  | `"primary"` | Color when checked                 |
-| `radius`             | Optional | `BorderRadius`                    | `"none"`    | Border radius variant              |
-| `disabled`           | Optional | `boolean`                         | `false`     | Disable the input                  |
-| `className`          | Optional | `string`                          | —           | Root class names                   |
-| `indicatorClassName` | Optional | `string`                          | —           | Indicator (check icon) class names |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `checked` | Optional | `CheckedState` | - | Controlled checked state |
+| `className` | Optional | `string` | - | Custom className for the root element |
+| `color` | Optional | `"success" \| "warning" \| "error" \| "primary" \| "default"` | `"primary"` | Color variant when checked |
+| `defaultChecked` | Optional | `CheckedState` | - | Uncontrolled initial checked state |
+| `disabled` | Optional | `boolean` | `false` | Disable the input |
+| `indicatorClassName` | Optional | `string` | - | Custom className for the indicator element |
+| `onCheckedChange` | Optional | `(((checked: CheckedState) => void) & ((checked: CheckedState) => void))` | - | Callback when the checked state changes |
+| `radius` | Optional | `"small" \| "none" \| "medium" \| "large" \| "full"` | `"none"` | Border radius variant |
+| `size` | Optional | `"sm" \| "md" \| "lg" \| "xs"` | `"md"` | Size variant of the checkbox |
+<!-- END GENERATED: props -->
 
 ## Example
 

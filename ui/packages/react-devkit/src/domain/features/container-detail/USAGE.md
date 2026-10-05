@@ -1,4 +1,4 @@
-# ContainerDetail
+# `ContainerDetail`
 
 Container detail page shell: a back link, the container name, and a per-model
 tab strip. Purely presentational — the page resolves the tab list (via the
@@ -6,18 +6,20 @@ foundation tab matrix `getSupportedContainerTabs`), owns the active tab and
 routing, and supplies the active tab's body as `children`. This is the frame
 every container detail tab mounts into.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop          | Status   | Type                               | Default      | Description                                                            |
-| ------------- | -------- | ---------------------------------- | ------------ | ---------------------------------------------------------------------- |
-| `tabs`        | Required | `{ key: string; label: string }[]` | —            | Ordered tabs for this container model (resolved by the page)           |
-| `activeTab`   | Required | `string`                           | —            | Currently active tab key                                               |
-| `onTabChange` | Required | `(tab: string) => void`            | —            | Fired with the next tab key when the operator switches tabs            |
-| `onBack`      | Required | `() => void`                       | —            | Fired when the back link is clicked (the page decides where to go)     |
-| `name`        | Optional | `ReactNode`                        | —            | Container display name shown in the header; omit when the host already renders the name elsewhere (e.g. the shell's `PageLayout`) |
-| `backLabel`   | Optional | `ReactNode`                        | `"Explorer"` | Back-link label                                                        |
-| `children`    | Optional | `ReactNode`                        | —            | The active tab's body (real content or `<ContainerDetailPlaceholder>`) |
-| `className`   | Optional | `string`                           | —            | Additional class for the root element                                  |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `activeTab` | Required | `string` | - | Currently active tab key |
+| `onBack` | Required | `() => void` | - | Fired when the back link is clicked (the page decides where to go) |
+| `onTabChange` | Required | `(tab: string) => void` | - | Fired with the next tab key when the operator switches tabs |
+| `tabs` | Required | `ContainerDetailTab[]` | - | Ordered tabs for this container model (already resolved by the page) |
+| `backLabel` | Optional | `React.ReactNode` | `"Explorer"` | Back-link label. Defaults to "Explorer" |
+| `children` | Optional | `React.ReactNode` | - | The active tab's body — supplied by the page (real content or a placeholder) |
+| `className` | Optional | `string` | - | Additional class for the root element |
+| `name` | Optional | `React.ReactNode` | - | Container display name shown in the header. Optional — omit it when the host already renders the container name as the page title (e.g. the shell's `PageLayout`), so the name is not shown twice |
+<!-- END GENERATED: props -->
 
 ## Example
 

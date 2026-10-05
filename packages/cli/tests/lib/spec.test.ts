@@ -272,6 +272,49 @@ describe('loadStackSpec', () => {
     expect(() => loadStackSpec(dir)).toThrow(/spec\.gateway\.config.*must be a mapping/);
   });
 
+  it('parses spec.mcp.port and defaults mcp to an empty mapping when absent', () => {
+    const dir = makeTmpDir();
+    writeSpec(
+      dir,
+      ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847', '  mcp:', '    port: 3947'].join(
+        '\n',
+      ),
+    );
+    expect(loadStackSpec(dir).spec.mcp).toEqual({ port: 3947 });
+
+    const dir2 = makeTmpDir();
+    writeSpec(dir2, 'kind: Stack\napiVersion: mdk/v1\nspec:\n  gateway:\n    port: 3847\n');
+    expect(loadStackSpec(dir2).spec.mcp).toEqual({});
+  });
+
+  it('throws when spec.mcp.port is not a number', () => {
+    const dir = makeTmpDir();
+    writeSpec(
+      dir,
+      [
+        'kind: Stack',
+        'apiVersion: mdk/v1',
+        'spec:',
+        '  gateway:',
+        '    port: 3847',
+        '  mcp:',
+        '    port: "abc"',
+      ].join('\n'),
+    );
+    expect(() => loadStackSpec(dir)).toThrow(StackSpecError);
+    expect(() => loadStackSpec(dir)).toThrow(/spec\.mcp\.port.*must be a number/);
+  });
+
+  it('throws when spec.mcp is not a mapping', () => {
+    const dir = makeTmpDir();
+    writeSpec(
+      dir,
+      ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847', '  mcp: [1, 2]'].join('\n'),
+    );
+    expect(() => loadStackSpec(dir)).toThrow(StackSpecError);
+    expect(() => loadStackSpec(dir)).toThrow(/spec\.mcp.*must be a mapping/);
+  });
+
   it('throws when a gateway plugin has no package', () => {
     const dir = makeTmpDir();
     writeSpec(

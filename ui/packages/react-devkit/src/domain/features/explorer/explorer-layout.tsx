@@ -1,11 +1,11 @@
-import type { JSX, ReactNode } from "react"
+import type { JSX, ReactNode } from 'react'
 
-import { cn } from "@primitives"
+import { cn } from '@primitives'
 
-import "./explorer-layout.scss"
+import './explorer-layout.scss'
 
 export type ExplorerLayoutProps = {
-  /** Page heading. */
+  /** Page heading; nothing renders when omitted */
   title?: string
   /** Optional header controls (export button, etc.) shown next to the title. */
   headerActions?: ReactNode
@@ -16,8 +16,10 @@ export type ExplorerLayoutProps = {
   /**
    * When true the layout splits into list (70%) + a sticky detail column (30%);
    * otherwise the list fills the width. Driven by whether a row is selected.
+   * @default false
    */
   hasSelection?: boolean
+  /** Additional class for the root element */
   className?: string
 }
 
@@ -43,7 +45,7 @@ export const ExplorerLayout = ({
   const showDetail = hasSelection && detail !== undefined
 
   return (
-    <div className={cn("mdk-explorer-layout", className)}>
+    <div className={cn('mdk-explorer-layout', className)}>
       {(title || headerActions) && (
         <div className="mdk-explorer-layout__header">
           {title && <h2 className="mdk-explorer-layout__title">{title}</h2>}
@@ -52,10 +54,7 @@ export const ExplorerLayout = ({
       )}
 
       <div
-        className={cn(
-          "mdk-explorer-layout__row",
-          showDetail && "mdk-explorer-layout__row--split",
-        )}
+        className={cn('mdk-explorer-layout__row', showDetail && 'mdk-explorer-layout__row--split')}
       >
         <div className="mdk-explorer-layout__list">{list}</div>
         {showDetail && <aside className="mdk-explorer-layout__detail">{detail}</aside>}
@@ -64,4 +63,4 @@ export const ExplorerLayout = ({
   )
 }
 
-ExplorerLayout.displayName = "ExplorerLayout"
+ExplorerLayout.displayName = 'ExplorerLayout'

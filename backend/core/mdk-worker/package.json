@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK Worker Runtime — hosts a Worker Plugin's devices behind one HRPC channel to the Kernel",
   "main": "index.js",
   "keywords": [

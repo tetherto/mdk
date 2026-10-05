@@ -53,7 +53,7 @@ const readNumber = (value: unknown): number | undefined =>
  * Build the vendor-specific card content — currently the immersion tanks box.
  * Returns `undefined` for containers without an immersion cooling system, so
  * the generic card carries no per-model branching. Threshold-based temperature
- * colouring is a follow-up (MDK Op Centre #7); the pump Running/Off status is
+ * colouring is a follow-up (MDK Op Center #7); the pump Running/Off status is
  * already conveyed by the box.
  */
 const buildVendorContent = (container: ListThingsDevice): ReactNode => {

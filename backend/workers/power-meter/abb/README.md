@@ -2,7 +2,7 @@
 
 MDK Worker for ABB power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports B23, B24, M1M20, M4M20, and REU615 models.
 
-## Supported Models
+## Supported models
 
 | `model` value | Model |
 |--------|--------|
@@ -72,7 +72,7 @@ Power meters are primarily read-only. Standard device management commands are su
 
 **States:** `OK`, `DEGRADED`, `OFFLINE`
 
-## Mock Server
+## Mock server
 
 Run the mock standalone — the model `type` is the first argument (case-insensitive):
 

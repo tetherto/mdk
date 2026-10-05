@@ -10,7 +10,10 @@ type BitMainImmersionControlBoxProps = {
   rightContent?: ReactNode
   /** Content for bottom row */
   bottomContent?: ReactNode
-  /** Secondary variant (no border) */
+  /**
+   * Secondary variant (no border)
+   * @default false
+   */
   secondary?: boolean
   /** Custom className */
   className?: string

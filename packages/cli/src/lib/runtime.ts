@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import { once, type EventEmitter } from 'node:events';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { isLocalPackagePath, type StackSpec, type WorkerInstance } from './spec.js';
 import { DEFAULT_HOST, findFreePort, isPortFree } from './ports.js';
@@ -95,6 +95,31 @@ function localDiscovery(): LocalDiscovery {
   return require('@tetherto/mdk-core/lib/local-discovery') as LocalDiscovery;
 }
 
+// --- @tetherto/mdk-mcp runtime ---------------------------------------------
+// Same lazy-`require` contract as `mdkCore` above: the standalone MCP server
+// is only loaded when `mdk run mcp` actually boots it.
+
+/** Handle returned by `createMcpServer`. */
+interface McpServerHandle {
+  close: (cb?: () => void) => void;
+  [key: string]: unknown;
+}
+interface MdkMcp {
+  createMcpServer(
+    root: string,
+    port: number,
+    config: Record<string, unknown>,
+    pluginDirs: string[],
+    gatewayPluginDirs: Array<string | { dir: string; config?: Record<string, unknown> }>,
+  ): Promise<McpServerHandle>;
+  [key: string]: unknown;
+}
+
+/** Lazily loads the `@tetherto/mdk-mcp` runtime (a workspace dependency). */
+function mdkMcp(): MdkMcp {
+  return require('@tetherto/mdk-mcp') as MdkMcp;
+}
+
 // --- project-local runtime state ------------------------------------------
 // Everything `mdk run` writes lives under `<project>/.mdk` — gitignored and safe
 // to delete. Each component gets its own data root so no two of them share a
@@ -127,6 +152,9 @@ export function kernelKeyFile(projectDir: string): string {
 export function workerKeysDir(projectDir: string): string {
   return componentDir(projectDir, 'keys');
 }
+
+/** Default gap between the Gateway's port and the MCP server's, when `spec.mcp.port` is not set. */
+export const DEFAULT_MCP_PORT_OFFSET = 100;
 
 /**
  * Splits a spec `package` into the npm package to resolve and the subdirectory
@@ -201,17 +229,40 @@ export async function runKernel(projectDir: string): Promise<KernelHandle> {
 }
 
 /**
- * Unlike a mock port, the gateway's port is a published endpoint (the dashboard
- * proxies to it, `mdk status` probes it), so it is never relocated behind the
+ * Shared by assertGatewayPortFree/assertMcpPortFree below: unlike a mock port,
+ * these are published endpoints (the dashboard proxies to the gateway's, agents
+ * dial the MCP one directly), so neither is ever relocated behind the
  * operator's back — fail with the fix instead of a bare EADDRINUSE from deep
- * inside the server. Exported so `run all` can check it before booting anything.
+ * inside the server. One implementation keeps the two messages from drifting
+ * apart as the wording around them changes.
  */
-export async function assertGatewayPortFree(port: number): Promise<void> {
+async function assertPortFree(port: number, label: string, specKey: string): Promise<void> {
   if (await isPortFree(port)) return;
   throw new Error(
-    `Gateway port ${port} is already in use.\n` +
-      'Another stack is probably running — stop it, or change `spec.gateway.port` in mdk.yaml.',
+    `${label} port ${port} is already in use.\n` +
+      `Another stack is probably running — stop it, or change \`${specKey}\` in mdk.yaml.`,
   );
+}
+
+/** Exported so `run all` can check the gateway's port before booting anything. */
+export async function assertGatewayPortFree(port: number): Promise<void> {
+  return assertPortFree(port, 'Gateway', 'spec.gateway.port');
+}
+
+/**
+ * Resolves each declared gateway plugin's package to an absolute dir, pairing
+ * it with its per-plugin config (if any) — the shape both the Gateway and the
+ * MCP server expect for their respective `extraPluginDirs`/`gatewayPluginDirs`
+ * lists.
+ */
+function resolveGatewayPluginDirs(
+  projectDir: string,
+  plugins: StackSpec['spec']['gateway']['plugins'],
+): Array<{ dir: string; config?: Record<string, unknown> }> {
+  return plugins.map((p) => ({
+    dir: resolveProjectPackageDir(projectDir, p.package),
+    ...(Object.keys(p.config ?? {}).length ? { config: p.config } : {}),
+  }));
 }
 
 /**
@@ -232,10 +283,7 @@ export async function runGateway(
   const root = componentDir(projectDir, 'gateway');
   // Each plugin travels with its own config block (spec.gateway.plugins[].config)
   // so its settings reach that plugin alone, not the gateway-wide conf.
-  const extraPluginDirs = spec.spec.gateway.plugins.map((p) => ({
-    dir: resolveProjectPackageDir(projectDir, p.package),
-    ...(Object.keys(p.config ?? {}).length ? { config: p.config } : {}),
-  }));
+  const extraPluginDirs = resolveGatewayPluginDirs(projectDir, spec.spec.gateway.plugins);
 
   // Out-of-process gateway: the Kernel must already be running so its HRPC key
   // is on disk. Fail early with an actionable message instead of silently
@@ -273,6 +321,76 @@ export async function runGateway(
       `${theme.muted(connected ? '(kernel connected)' : '(kernel pending)')}\n`,
   );
   return gateway;
+}
+
+/** Same reasoning as `assertGatewayPortFree` — see `assertPortFree` above. */
+export async function assertMcpPortFree(port: number): Promise<void> {
+  return assertPortFree(port, 'MCP', 'spec.mcp.port');
+}
+
+/** Handle returned by `runMcp`. */
+export interface McpHandle {
+  stop: () => Promise<void>;
+}
+
+/**
+ * Boots the standalone MCP server, pointed at the same Gateway plugins
+ * `mdk.yaml` declares under `spec.gateway.plugins` — their routes become MCP
+ * tools with no separate mcp-specific plugin authoring required. Requires the
+ * Kernel to already be reachable: an in-process `kernel` handle (target
+ * `all`, if this is ever wired into it), or the shared key file written by a
+ * separately-running `mdk run kernel` — the same contract `runGateway` uses.
+ */
+export async function runMcp(
+  projectDir: string,
+  spec: StackSpec,
+  kernel?: KernelHandle,
+): Promise<McpHandle> {
+  const mcp = mdkMcp();
+
+  const keyFile = kernelKeyFile(projectDir);
+  const root = componentDir(projectDir, 'mcp');
+  const gatewayPluginDirs = resolveGatewayPluginDirs(projectDir, spec.spec.gateway.plugins);
+
+  let kernelKey: string | undefined;
+  if (kernel) {
+    const key = typeof kernel.getPublicKey === 'function' ? kernel.getPublicKey() : undefined;
+    kernelKey = key ? (Buffer.isBuffer(key) ? key.toString('hex') : String(key)) : undefined;
+  } else if (existsSync(keyFile)) {
+    kernelKey = readFileSync(keyFile, 'utf8').trim();
+  } else {
+    throw new Error(
+      'Kernel is not running (no key file found).\nStart it first: `mdk run kernel`.',
+    );
+  }
+
+  const port = spec.spec.mcp.port ?? spec.spec.gateway.port + DEFAULT_MCP_PORT_OFFSET;
+  await assertMcpPortFree(port);
+  mkdirSync(root, { recursive: true });
+
+  process.stderr.write(`${theme.muted('Starting mcp')} ${arrow} ${theme.value(`:${port}`)}\n`);
+  // Forward the gateway-wide config the same way `runGateway` does (as the base
+  // layer under each plugin's own config), so a plugin reading a gateway-wide
+  // config key sees the same value whether it's mounted under `mdk run gateway`
+  // or read here by `mdk run mcp`.
+  const server = await mcp.createMcpServer(
+    root,
+    port,
+    { ...(spec.spec.gateway.config ?? {}), kernelKey },
+    // `pluginDirs` (native, author-written `mcp-plugin.json` tools) is not yet
+    // reachable from `mdk.yaml` — there is no `spec.mcp.plugins` list. Gateway-
+    // derived tools (via `gatewayPluginDirs` below) are deliberately the only
+    // CLI path today: every declared gateway plugin's routes already become
+    // tools with no separate authoring, which covers the common case. Add a
+    // `spec.mcp.plugins` list here if native MCP-only plugins need a CLI path.
+    [],
+    gatewayPluginDirs,
+  );
+  process.stderr.write(
+    `${tick} ${theme.label('mcp')} listening on ${theme.value(`http://localhost:${port}/mcp`)}\n`,
+  );
+
+  return { stop: () => new Promise((resolve) => server.close(() => resolve())) };
 }
 
 // --- worker boot ----------------------------------------------------------

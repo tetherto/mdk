@@ -28,6 +28,8 @@ flowchart LR
         GP["Gateway plugin\n(extension point)"]
     end
 
+    MCP["MCP server\n(@tetherto/mdk-mcp)"]
+
     K["Kernel"]
 
     subgraph wk ["Worker"]
@@ -36,9 +38,10 @@ flowchart LR
 
     Devices[("Devices")]
 
-    Agent -->|"MCP"| GP
+    Agent -->|"MCP"| MCP
     Dashboard -->|"HTTP"| GP
     GP <-->|"HRPC"| K
+    MCP <-->|"HRPC"| K
     K <-->|"HRPC"| WP
     WP --> Devices
 
@@ -48,8 +51,8 @@ flowchart LR
 
 One request, traced end to end: an AI agent or a dashboard reaches a Gateway plugin's capability. A dashboard calls the
 plugin's HTTP route directly; an [AI agent][ai-agents-docs] arrives instead through an MCP endpoint — a standalone
-[`@tetherto/mdk-mcp`][mcp-readme] process, or one the Gateway auto-generates in-process from that plugin's routes. Either
-way the plugin builds its own [`@tetherto/mdk-client`][client-concept] and dispatches a command through it.
+[`@tetherto/mdk-mcp`][mcp-readme] process that derives tools from that plugin's routes (the Gateway doesn't host the MCP itself).
+Either way the plugin builds its own [`@tetherto/mdk-client`][client-concept] and dispatches a command through it.
 [Kernel][kernel-concept] resolves which Worker owns the target device, forwards the command over the Worker's own
 connection, and relays the result back through the same path: Gateway plugin, then caller. Telemetry travels the same
 round trip in reverse, on demand: the Gateway plugin's client asks Kernel for a device's telemetry, Kernel forwards that

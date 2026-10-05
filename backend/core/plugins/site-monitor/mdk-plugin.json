@@ -34,7 +34,7 @@
           }
         }
       },
-      "description": "Returns the featureConfig object from the gateway config (common.json `featureConfig`).",
+      "description": "Returns the `featureConfig` object from the gateway config (common.json `featureConfig`).",
       "safety": "read-only"
     },
     {

@@ -10,11 +10,16 @@ const fmt = (value: number | undefined, fractionDigits = 2): string =>
     : '—'
 
 export type HeaderEfficiencyBoxProps = {
+  /** Icon shown next to the stat */
   icon?: ReactNode
   /** Efficiency in watts per TH/s. */
   valueWthS?: number
-  /** Unit label — defaults to `W/TH/S`. */
+  /**
+   * Unit label — defaults to `W/TH/S`.
+   * @default W/TH/S
+   */
   unit?: string
+  /** Additional class names */
   className?: string
 }
 

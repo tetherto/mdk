@@ -12,6 +12,12 @@
 // with EXIT_PREREQUISITE and leaves the committed copy untouched, so a docs-only checkout reports a
 // skip rather than writing a partial file.
 //
+// The build goes through turbo, not `npm run` in the devkit alone. The generator resolves the
+// devkit's imports from mdk-ui-foundation and mdk-react-adapter through their dist/ type output;
+// turbo's build:registry -> build:ts -> ^build:ts chain builds those first. Calling the devkit's
+// script directly on an unbuilt checkout resolves every such import to `any` and writes a registry
+// that never matches one produced from a built tree.
+//
 // Usage: `npm run generate:ui-registry` from the repo root. `npm run regenerate-docs` runs it alongside
 // the repo's other generators.
 
@@ -36,23 +42,30 @@ const fail = (msg, code = 1) => {
   process.exit(code)
 }
 
-function main () {
+// Shared with generate-usage-proptables.mjs — every consumer of the registry must
+// build it the same way (through turbo, so sibling dist/ types exist) or prop
+// types silently resolve to `any`. Exits EXIT_PREREQUISITE on a docs-only checkout.
+export function ensureDevkitRegistry () {
   if (!fs.existsSync(path.join(UI_ROOT, 'node_modules'))) {
     fail(`ui/ dependencies are not installed, so the devkit registry cannot be built. Run \`npm run setup:ui\` from ${rel(REPO_ROOT) || 'the repo root'}, then re-run.`, EXIT_PREREQUISITE)
   }
 
-  log('building the devkit registry')
-  const build = spawnSync('npm', ['run', 'build:registry', '--workspace', '@tetherto/mdk-react-devkit'], {
+  log('building the devkit registry (and the sibling packages it reads types from)')
+  const build = spawnSync('npx', ['turbo', 'run', 'build:registry', '--filter=@tetherto/mdk-react-devkit'], {
     cwd: UI_ROOT,
     stdio: 'inherit',
     shell: process.platform === 'win32'
   })
-  if (build.error) fail(`could not run npm in ${rel(UI_ROOT)}: ${build.error.message}`)
-  if (build.status !== 0) fail(`build:registry exited ${build.status}; the committed copy is unchanged`)
+  if (build.error) fail(`could not run turbo in ${rel(UI_ROOT)}: ${build.error.message}`)
+  if (build.status !== 0) fail(`turbo run build:registry exited ${build.status}; nothing was changed`)
 
   if (!fs.existsSync(REGISTRY)) {
-    fail(`build:registry reported success but ${rel(REGISTRY)} is missing; the committed copy is unchanged`)
+    fail(`build:registry reported success but ${rel(REGISTRY)} is missing; nothing was changed`)
   }
+}
+
+function main () {
+  ensureDevkitRegistry()
 
   const raw = fs.readFileSync(REGISTRY, 'utf8')
 

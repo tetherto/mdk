@@ -6,16 +6,32 @@ export type DividerOrientation = 'horizontal' | 'vertical'
 export type DividerType = 'solid' | 'dashed' | 'dotted'
 
 export type DividerProps = {
-  /** Line orientation */
+  /**
+   * Line orientation
+   * @default 'horizontal'
+   */
   orientation?: DividerOrientation
-  /** Line style */
+  /**
+   * Line style
+   * @default false
+   */
   dashed?: boolean
+  /**
+   * Renders a dotted line (takes precedence over `dashed`)
+   * @default false
+   */
   dotted?: boolean
   /** Text or node rendered in the middle of the divider */
   children?: ReactNode
-  /** Horizontal alignment of the label */
+  /**
+   * Horizontal alignment of the label
+   * @default 'center'
+   */
   align?: 'left' | 'center' | 'right'
-  /** Plain text style — no border around label */
+  /**
+   * Plain text style — no border around label
+   * @default false
+   */
   plain?: boolean
   /** Custom className */
   className?: string

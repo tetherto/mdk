@@ -37,7 +37,7 @@ export type UseExplorerSelectionResult = {
  * reset whenever the selection or tab changes and on unmount, so a stale
  * selection can never drive the panel.
  *
- * @category op-centre
+ * @category op-center
  * @domain device-management
  * @tier advanced
  */

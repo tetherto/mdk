@@ -8,10 +8,9 @@ docs@tether_slug: guides/agent/gateway-deployment
 
 [`@tetherto/mdk-plugin-agent`][agent-plugin-readme] mounts [`@tetherto/mdk-agent`][agent-core-readme] behind the Gateway as a chat API.
 
-Enabling the plugin brings session, message, and approval routes with it, and every write the agent proposes pauses for an operator's
-decision. The agent itself still reaches fleet data the way [any AI agent does][ai-agents-mcp],
-over an MCP server reachable at `agent.mcp.url` — standalone, or the Gateway's own auto-generated one; this plugin only gives a
-human operator a chat surface to talk to it through.
+Enable the plugin for session, message, and approval routes: every write the agent proposes pauses for an operator's
+decision. The agent itself still reaches fleet data the way [any AI agent does][ai-agents-mcp], over an MCP server reachable at `agent.mcp.url`
+— the standalone `@tetherto/mdk-mcp` process; this plugin gives a human operator a chat surface to talk to it through.
 
 This is one of [two ways to run the agent][agent-guides-index]. If you've already run it [standalone][run-standalone],
 it's the same agent with HTTP on it, not a second product: the same provider, the same MCP client, the same approval gate,
@@ -28,7 +27,6 @@ just reached over sessions instead of a REPL.
 > behind it fails with `ERR_AGENT_UNAVAILABLE`. [Serving a model locally with QVAC][serve-the-model] covers the install, the first-run
 > download, and the flags a lazily loaded model needs.
 
-
 <Steps>
 
 <Step>
@@ -39,14 +37,14 @@ Either:
 - [Select it during onboarding](#11-a-select-it-during-onboarding), or
 - [Already have an `mdk.yaml`? Add it by hand](#11-b-add-it-to-an-existing-mdkyaml)
 
-#### 1.1 A Select it during onboarding
+#### 1.1 A. Select it during onboarding
 
 Run [`mdk onboard`][mdk-onboard] and select [`mdk-plugin-agent`][agent-plugin-readme] from its Gateway plugin catalog.
 `mdk onboard`'s wizard supports creating a compliant `mdk.yaml` from scratch, interactively.
 Its entry carries a real `repoPath` ([`backend/plugins/agent`][agent-plugin-readme]), not a stub, so selecting it installs
 a working plugin rather than a placeholder.
 
-#### 1.1 B Add it to an existing `mdk.yaml`
+#### 1.1 B. Add it to an existing `mdk.yaml`
 
 Already have one from a previous onboarding run? Add the plugin under `spec.gateway.plugins` by hand, with the model
 provider, the MCP url, and the approval timeout under `agent`. Once published, that directory is
@@ -137,7 +135,7 @@ or letting the approval window expire, resolves to false, and the write never ru
 ## Troubleshooting
 
 - **Sessions and messages work, but the agent never calls a tool.** `agent.mcp` (or its `url`) is missing from the
-  config — see [the plugin's troubleshooting entry][agent-plugin-troubleshooting] for the fix
+  config — [how to fix it][agent-plugin-troubleshooting] is in the plugin's troubleshooting entry
 - Every other failure (`503`, `404`, `409`, `400`) maps to a specific cause and fix in
   [the plugin's error reference][agent-plugin-errors]
 - **`npm ci` fails to resolve a stack that mounts only this plugin.** `@tetherto/mdk-plugin-agent` declares

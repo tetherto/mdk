@@ -4,18 +4,23 @@ Single component for all text rendering. Pick a semantic `variant` to get the
 right element + base style; override `size` / `weight` / `color` ad hoc when
 needed.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type                                                                           | Default     | Description                              |
-| ----------- | -------- | ------------------------------------------------------------------------------ | ----------- | ---------------------------------------- |
-| `children`  | Optional | `ReactNode`                                                                    | —           | Text or inline content                   |
-| `variant`   | Optional | `"heading1" \| "heading2" \| "heading3" \| "body" \| "secondary" \| "caption"` | `"body"`    | Determines the element and base style    |
-| `size`      | Optional | `"xs" \| "sm" \| "md" \| "lg" \| "xl" \| "2xl" \| "3xl" \| "4xl"`              | —           | Override font size (per-variant default) |
-| `weight`    | Optional | `"light" \| "normal" \| "medium" \| "semibold" \| "bold"`                      | —           | Override font weight                     |
-| `color`     | Optional | `TypographyColor`                                                              | `"default"` | Token-based text color                   |
-| `align`     | Optional | `"left" \| "center" \| "right" \| "justify"`                                   | —           | Text alignment                           |
-| `truncate`  | Optional | `boolean`                                                                      | `false`     | Single-line truncation with ellipsis     |
-| `className` | Optional | `string`                                                                       | —           | Additional class names                   |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `align` | Optional | `"center" \| "left" \| "right" \| "justify"` | - | Text alignment |
+| `className` | Optional | `string` | - | Custom className |
+| `color` | Optional | `"success" \| "warning" \| "error" \| "primary" \| "default" \| "muted"` | `"default"` | Token-based text color |
+| `size` | Optional | `"sm" \| "md" \| "lg" \| "xs" \| "xl" \| "2xl" \| "3xl" \| "4xl"` | - | Text size; defaults to the variant's size when unset |
+| `truncate` | Optional | `boolean` | `false` | Truncate text with ellipsis |
+| `variant` | Optional | `"body" \| "caption" \| "secondary" \| "heading1" \| "heading2" \| "heading3"` | `"body"` | Determines the rendered HTML element and base style |
+| `weight` | Optional | `"medium" \| "normal" \| "light" \| "semibold" \| "bold"` | - | Font weight; defaults to the variant's weight when unset |
+<!-- END GENERATED: props -->
+
+## Props detail
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 All other native HTML attributes are forwarded onto the underlying element.
 

@@ -1,4 +1,4 @@
-# MDK Protocol
+# MDK protocol
 
 Load this before writing anything that builds, sends, or answers an envelope.
 Source of truth: [`backend/core/kernel/lib/protocol/`](../../../../../../backend/core/kernel/lib/protocol/) ([`actions.js`](../../../../../../backend/core/kernel/lib/protocol/actions.js),
@@ -54,7 +54,7 @@ Also defined there: `COMMAND_SCOPES` (`device` | `worker` | `rack`),
 
 ## Reads: `telemetry.pull`
 
-Payload shape: `{ query: { type, ...params } }`, deviceId in the envelope.
+Payload shape: `{ query: { type, ...params } }`, `deviceId` in the envelope.
 `type` selects what a Worker returns (dispatch in
 [`backend/core/mdk-worker/lib/worker-runtime.js`](../../../../../../backend/core/mdk-worker/lib/worker-runtime.js) `_handleTelemetry`):
 
@@ -74,7 +74,7 @@ Per-field handler errors come back inside the payload
 
 ## Writes: `command.request`
 
-Payload: `{ commandId, command, params }`, deviceId in the envelope.
+Payload: `{ commandId, command, params }`, `deviceId` in the envelope.
 The **Kernel's dispatcher validates before dispatch**
 ([`backend/core/kernel/lib/modules/command-dispatcher/index.js`](../../../../../../backend/core/kernel/lib/modules/command-dispatcher/index.js)):
 the command must appear in the Worker's declared capabilities

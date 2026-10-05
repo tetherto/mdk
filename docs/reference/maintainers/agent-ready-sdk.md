@@ -22,7 +22,6 @@ Required top-level shape:
     "modelsSupported": ["M30SP", "M30SPP", "M53S", "M56S", "M63"],
     "overview": "Controls MicroBT Whatsminer Bitcoin miners. Operations affect physical hardware — prioritize thermal safety."
   },
-  "devices": [],
   "capabilities": {
     "telemetry": [ /* per-metric: name, unit, type, description (semantic boundaries) */ ],
     "commands":  [ /* per-command: name, description, constraints, params, examples (intent + steps) */ ],
@@ -110,7 +109,7 @@ Once `dist/index.json` is shipping, it would also unlock [`check:integrations-fr
 
 The default Gateway plugins in [`backend/core/plugins/`](../../../backend/core/plugins/README.md) each ship an `mdk-plugin.json` manifest — the source of truth for their HTTP routes. [`docs/scripts/generate-plugin-reference.js`](../../scripts/generate-plugin-reference.js) (run via `npm run regenerate-docs` from the repo root, or `npm run generate:plugin-reference` in [`backend/core/plugins`](../../../backend/core/plugins/README.md) for this generator alone) reads those manifests and regenerates the route tables inside the marked region of [`backend/core/plugins/README.md`](../../../backend/core/plugins/README.md), so the published route list never drifts from the manifests. This is the same read-source-of-truth, generate, ship pattern as the Worker catalogue.
 
-Only plugins that ship in the repo are generated — plugins mounted at runtime via `startGateway({ extraPluginDirs })` live outside the repo and document their own routes. The [`check:plugin-reference-fresh`](ia.md#checkplugin-reference-fresh) gate keeps the generated tables honest, shipping as the warn-only `docs-freshness` workflow. It annotates rather than blocks, so regenerate with `npm run regenerate-docs` and commit when a shipped plugin's routes change.
+Only plugins that ship in the repo are generated — plugins mounted at runtime via `startGateway({ extraPluginDirs })` live outside the repo and document their own routes. The [`check:plugin-reference-fresh`](ia.md#checkplugin-reference-fresh) gate keeps the generated tables honest, shipping as the **blocking** `docs-freshness` workflow. A stale table fails the pull request, so when a shipped plugin's routes change, run `npm run regenerate-docs` and commit the result in the same pull request.
 
 ## Decisions deferred
 

@@ -2,7 +2,15 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { Button, Dialog, DialogContent, DialogFooter, Form, FormInput, FormSelect } from '@primitives'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  Form,
+  FormInput,
+  FormSelect,
+} from '@primitives'
 
 import { PERM_LEVEL_LABELS } from '../../../constants/settings.constants'
 import type { PermLevel, RoleOption, SettingsUser } from '@tetherto/mdk-ui-foundation'
@@ -19,13 +27,24 @@ const manageUserSchema = z.object({
 type ManageUserFormValues = z.infer<typeof manageUserSchema>
 
 export type ManageUserModalProps = {
+  /** Controls dialog visibility */
   open: boolean
+  /** Called when the dialog closes */
   onClose: VoidFunction
+  /** The user being edited */
   user: SettingsUser
+  /** Available role options */
   roles: RoleOption[]
+  /** Permission levels per role */
   rolePermissions: Record<string, Record<string, PermLevel>>
+  /** Display labels for permission keys */
   permissionLabels: Record<string, string>
+  /** Save handler */
   onSubmit: (data: { id: string; name: string; email: string; role: string }) => Promise<void>
+  /**
+   * Show loading on submit button
+   * @default false
+   */
   isSubmitting?: boolean
 }
 

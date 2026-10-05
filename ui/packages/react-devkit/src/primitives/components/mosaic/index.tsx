@@ -12,16 +12,29 @@ import {
 } from 'react'
 
 type MosaicItemComponentProps = HTMLAttributes<HTMLDivElement> & {
+  /** Grid area name (must match a name used in `template`) */
   area?: string
   children?: ReactNode
 }
 
 type MosaicProps = {
+  /** Grid area layout. 1D: each string is a row of space-separated area names. 2D: each inner array is a row */
   template: string[] | string[][]
+  /**
+   * CSS gap between grid cells
+   * @default '12px'
+   */
   gap?: string
+  /**
+   * CSS height for each row
+   * @default 'auto'
+   */
   rowHeight?: string
+  /** Custom `grid-template-columns` value or array of track sizes. Defaults to equal-width fractional tracks. */
   columns?: string | string[]
+  /** `Mosaic.Item` elements */
   children: ReactNode
+  /** Additional class for the grid element */
   className?: string
 }
 

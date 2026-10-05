@@ -73,7 +73,7 @@ the list still report normally.
 
 **States:** `OK`, `DEGRADED`, `OFFLINE`
 
-## Mock Server
+## Mock server
 
 Run the mock standalone (ocean has no model `type`):
 

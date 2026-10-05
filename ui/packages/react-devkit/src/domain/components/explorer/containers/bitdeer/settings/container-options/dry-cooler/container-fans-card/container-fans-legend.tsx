@@ -5,7 +5,10 @@ import './container-fans-legend.scss'
 type ContainerFanLegendProps = {
   /** Fan index/number to display */
   index?: number | null
-  /** Whether the fan is enabled/running */
+  /**
+   * Running state; controls the icon and colour class
+   * @default false
+   */
   enabled?: boolean
   /** Custom className */
   className?: string

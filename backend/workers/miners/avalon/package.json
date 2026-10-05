@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker-avalon",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Miner Avalon",
   "keywords": [
     "tether"

@@ -19,10 +19,17 @@ export type ProfileMenuProps = {
   items: ProfileMenuItem[]
   /** Optional user label rendered at the top of the dropdown (e.g. an email). */
   user?: ReactNode
-  /** Override the trigger icon — defaults to the user-avatar icon. */
+  /**
+   * Override the trigger icon — defaults to the user-avatar icon.
+   * @default <UserAvatarIcon />
+   */
   icon?: ReactNode
-  /** Accessible label for the trigger button. */
+  /**
+   * Accessible label for the trigger button.
+   * @default "Profile menu"
+   */
   label?: string
+  /** Additional class names */
   className?: string
 }
 

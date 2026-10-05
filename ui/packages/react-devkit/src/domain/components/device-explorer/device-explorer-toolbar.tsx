@@ -10,13 +10,19 @@ import type {
 import type { JSX } from 'react'
 
 export type DeviceExplorerToolbarProps = {
+  /** Controlled filter values */
   filters: LocalFilters
+  /** Filter category definitions */
   filterOptions: DeviceExplorerFilterOption[]
   onFiltersChange: (value: CascaderValue[]) => void
+  /** Searchable column definitions */
   searchOptions: DeviceExplorerSearchOption[]
+  /** Active search-tag chips */
   searchTags: string[]
+  /** Setter for search tags */
   onSearchTagsChange: (tags: string[]) => void
   deviceType: DeviceExplorerDeviceType
+  /** Setter for the device type */
   onDeviceTypeChange: (type: DeviceExplorerDeviceType) => void
 }
 

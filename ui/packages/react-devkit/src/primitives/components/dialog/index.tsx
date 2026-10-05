@@ -18,15 +18,31 @@ const DialogPortal = DialogPrimitive.Portal
 const DialogClose = DialogPrimitive.Close
 
 export type DialogHeaderProps = {
+  /**
+   * Applies `mdk-dialog__header--bare` to the header
+   * @default false
+   */
   bare?: boolean
+  /** Shows an ✕ close button in the header */
   closable?: boolean
+  /** Fired when the ✕ button is clicked */
   onClose?: VoidFunction
 }
 
 export type DialogContentProps = {
+  /** Renders `DialogTitle` (and optional `DialogDescription`) inside the header */
   title?: string
+  /** Renders `DialogDescription` below the title */
   description?: string
+  /**
+   * Whether clicking the overlay closes the dialog
+   * @default true
+   */
   closeOnClickOutside?: boolean
+  /**
+   * Whether pressing Escape closes the dialog
+   * @default true
+   */
   closeOnEscape?: boolean
 } & DialogHeaderProps
 

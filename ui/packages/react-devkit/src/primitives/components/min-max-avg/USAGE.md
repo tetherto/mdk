@@ -1,15 +1,17 @@
-# MinMaxAvg
+# `MinMaxAvg`
 
 Displays Min, Max, and Avg labels with MDK chart footer styling (orange labels, grey values).
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type     | Default | Description                     |
-| ----------- | -------- | -------- | ------- | ------------------------------- |
-| `min`       | Optional | `string` | —       | Minimum value (hidden if empty) |
-| `max`       | Optional | `string` | —       | Maximum value (hidden if empty) |
-| `avg`       | Optional | `string` | —       | Average value (hidden if empty) |
-| `className` | Optional | `string` | —       | Additional root class           |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `avg` | Optional | `string` | - | Average value (hidden if empty) |
+| `className` | Optional | `string` | - | Additional root class |
+| `max` | Optional | `string` | - | Maximum value (hidden if empty) |
+| `min` | Optional | `string` | - | Minimum value (hidden if empty) |
+<!-- END GENERATED: props -->
 
 ## Usage
 

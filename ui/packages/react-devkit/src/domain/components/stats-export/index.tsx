@@ -4,9 +4,19 @@ import { useState } from 'react'
 import { EXPORT_ITEM_KEYS, EXPORT_ITEMS, EXPORT_LABEL } from './constants'
 
 type StatsExportProps = {
+  /**
+   * Hides the textual "Export" label
+   * @default false
+   */
   hideLabel?: boolean
+  /**
+   * Disable the trigger
+   * @default false
+   */
   disabled?: boolean
+  /** Awaited; spinner shown while pending */
   onCsvExport: () => Promise<void>
+  /** Awaited; spinner shown while pending */
   onJsonExport: () => Promise<void>
 }
 

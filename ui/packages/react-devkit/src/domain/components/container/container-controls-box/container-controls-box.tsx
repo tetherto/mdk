@@ -65,15 +65,34 @@ type ButtonsStates = {
 }
 
 export type ContainerControlsBoxProps = {
+  /** The container device object */
   data?: Device
+  /**
+   * When `true`, operates on `selectedDevices` instead of a single `data` record
+   * @default false
+   */
   isBatch?: boolean
   isCompact?: boolean
   // --- data from outside (no API calls inside) ---
+  /**
+   * Devices included in a batch operation
+   * @default []
+   */
   selectedDevices?: Device[]
+  /**
+   * In-flight command queue; disables conflicting actions
+   * @default []
+   */
   pendingSubmissions?: PendingSubmission[]
+  /**
+   * Active alarm feed items to display inline
+   * @default []
+   */
   alarmsDataItems?: TimelineItemData[]
+  /** Recent log tail entries */
   tailLogData?: UnknownRecord[]
   powerModesLog?: UnknownRecord
+  /** Navigation callback used by alarm row click-throughs */
   onNavigate: (path: string) => void
 }
 

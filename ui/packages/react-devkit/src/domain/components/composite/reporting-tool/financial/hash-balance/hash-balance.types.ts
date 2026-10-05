@@ -1,4 +1,8 @@
-import type { FinanceQueryParams, HashRevenueLogEntry, HashRevenueResponse } from '@domain/types/finance'
+import type {
+  FinanceQueryParams,
+  HashRevenueLogEntry,
+  HashRevenueResponse,
+} from '@domain/types/finance'
 
 import type { CURRENCY } from '@primitives'
 import type { TimeframeTypeValue } from '../../../../../constants/ranges'
@@ -24,10 +28,21 @@ export type FormatHashBalanceValueOptions = {
 }
 
 export type UseHashBalanceInput = {
+  /** Optional log override */
   log?: HashRevenueLogEntry[]
+  /** `USD` or `BTC` label for per-PH/day units */
   currency: HashBalanceCurrency
+  /** Active reporting window */
   dateRange: FinancialDateRange
+  /**
+   * Revenue / cost log and summary payload
+   * @default null
+   */
   data?: HashRevenueResponse | null
+  /**
+   * Year / month / week mode
+   * @default null
+   */
   timeframeType?: TimeframeTypeValue | null
 }
 
@@ -35,25 +50,55 @@ export type HashBalancePanelProps = Pick<
   UseHashBalanceInput,
   'data' | 'log' | 'dateRange' | 'timeframeType'
 > & {
+  /**
+   * Loading state
+   * @default false
+   */
   isLoading?: boolean
 }
 
 export type HashBalanceCostPanelProps = HashBalancePanelProps
 
 export type HashBalanceRevenuePanelProps = HashBalancePanelProps & {
+  /** `USD` or `BTC` label for per-PH/day units */
   currency: HashBalanceCurrency
+  /** Currency toggle handler */
   onCurrencyChange: (currency: HashBalanceCurrency) => void
 }
 
 export type HashBalanceProps = Partial<{
+  /**
+   * Show error state
+   * @default false
+   */
   isError: boolean
+  /**
+   * Show loading state
+   * @default false
+   */
   isLoading: boolean
+  /**
+   * Error copy when `isError`
+   * @default 'Error loading hash balance data. Please try again later.'
+   */
   errorMessage: string
+  /** Root layout class */
   className: string
+  /** Tabs wrapper class */
   tabsClassName: string
+  /** Tab list class */
   tabsListClassName: string
+  /**
+   * Revenue / cost log and summary
+   * @default null
+   */
   data: HashRevenueResponse | null
+  /**
+   * Initial period
+   * @default year-to-date
+   */
   initialDateRange: FinancialDateRange
+  /** Fired when the user changes the period */
   onDateRangeChange: (dateRange: FinancialDateRange, query: FinanceQueryParams) => void
 }>
 

@@ -34,7 +34,7 @@ const EMPTY_FLAGS: FeatureConfigResponse = {}
  * ([`backend/core/plugins/site-monitor`](https://github.com/tetherto/mdk/tree/main/backend/core/plugins/site-monitor))
  * — no custom plugin needed.
  *
- * @category op-centre
+ * @category op-center
  */
 export const useFeatureFlags = (options: UseFeatureFlagsOptions = {}): UseFeatureFlagsResult => {
   const queryClient = useQueryClient()

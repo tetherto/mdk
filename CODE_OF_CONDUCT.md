@@ -1,12 +1,12 @@
-# Code of Conduct
+# Code of conduct
 
-## Our Commitment
+## Our commitment
 
 MDK is committed to fostering an open, professional, and respectful community.
 
 We welcome contributors of all backgrounds and experience levels. Participation in the MDK community should be harassment-free and inclusive for everyone.
 
-## Expected Behavior
+## Expected behavior
 
 All participants in the MDK community are expected to:
 
@@ -16,7 +16,7 @@ All participants in the MDK community are expected to:
 - Focus on what is best for the project
 - Accept constructive criticism gracefully
 
-## Unacceptable Behavior
+## Unacceptable behavior
 
 The following behaviors are not tolerated:
 
@@ -45,7 +45,7 @@ The Community Manager is responsible for enforcing this Code of Conduct.
 
 If you experience or witness unacceptable behavior, report it privately to the Community Manager.
 
-Reports will be handled confidentially and reviewed in coordination with the MDK team.
+Reports are handled confidentially and reviewed in coordination with the MDK team.
 
 ## Enforcement Guidelines
 

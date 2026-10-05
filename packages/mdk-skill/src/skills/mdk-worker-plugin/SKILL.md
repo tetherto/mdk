@@ -173,7 +173,7 @@ a Worker.**
 
 - **Unidirectional protocol**: a Worker never calls the Kernel — it only
   answers. If you think you need to push, you need a telemetry channel that
-  the Kernel will pull.
+  the Kernel pulls.
 - **`deviceId` ownership is exclusive** per Worker; duplicate ids in
   `opts.devices` throw `ERR_DEVICE_ID_DUPLICATE` at construction.
 - One device offline must never affect siblings — failures stay inside that

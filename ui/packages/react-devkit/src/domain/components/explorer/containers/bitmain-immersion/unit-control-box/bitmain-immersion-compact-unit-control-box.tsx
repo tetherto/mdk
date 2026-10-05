@@ -5,11 +5,20 @@ import './bitmain-immersion-compact-unit-control-box.scss'
 type BitMainImmersionCompactUnitControlBoxProps = {
   /** Box title */
   title?: string
-  /** Whether the unit is opening */
+  /**
+   * Whether the unit is opening
+   * @default false
+   */
   opening?: boolean
-  /** Whether the unit is closing */
+  /**
+   * Whether the unit is closing
+   * @default false
+   */
   closing?: boolean
-  /** Whether the unit is open */
+  /**
+   * Whether the unit is open
+   * @default false
+   */
   isOpen?: boolean
   /** Custom className */
   className?: string

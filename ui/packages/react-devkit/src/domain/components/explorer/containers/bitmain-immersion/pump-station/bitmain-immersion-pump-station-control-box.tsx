@@ -5,7 +5,10 @@ import './bitmain-immersion-pump-station-control-box.scss'
 type BitMainImmersionPumpStationControlBoxProps = {
   /** Box title */
   title?: string
-  /** Alarm/fault status */
+  /**
+   * Alarm/fault status
+   * @default false
+   */
   alarmStatus?: boolean
   /** Ready status */
   ready?: boolean

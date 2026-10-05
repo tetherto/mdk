@@ -33,7 +33,7 @@ export type SpinnerProps = {
   speed?: 'slow' | 'normal' | 'fast'
   /**
    * Type of spinner animation
-   * @default 'dot'
+   * @default 'square'
    * @remarks
    * - 'circle': Rotating circle animation
    * - 'square': Rotating squares animation

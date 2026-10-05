@@ -1,4 +1,4 @@
-# PoolManagerMinerExplorer
+# `PoolManagerMinerExplorer`
 
 Pool-manager miner explorer page: searchable / filterable table of miners
 with multi-select and an "Assign Pool" bulk action. Submits the chosen pool
@@ -7,13 +7,15 @@ assignment as a pending action through the adapter `actions` store.
 Use this as the `/pool-manager/miners` route. For just the table primitive,
 drop down to `MinerExplorer`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop              | Status   | Type                 | Default | Description                                                |
-| ----------------- | -------- | -------------------- | ------- | ---------------------------------------------------------- |
-| `miners`          | Required | `ListThingsDevice[]` | —       | Devices to render. Same shape consumed by `MinerExplorer`. |
-| `poolConfig`      | Required | `PoolConfigData[]`   | —       | Powers the "Assign Pool" modal's pool picker               |
-| `backButtonClick` | Required | `VoidFunction`       | —       | Called when the operator clicks the "Pool Manager" link    |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `backButtonClick` | Required | `VoidFunction` | - | Called when the operator clicks the "Pool Manager" back link |
+| `miners` | Required | `ListThingsDevice[]` | - | Miners to render in the explorer table |
+| `poolConfig` | Required | `PoolConfigEntry[]` | - | Pool configurations powering the "Assign Pool" dropdown |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

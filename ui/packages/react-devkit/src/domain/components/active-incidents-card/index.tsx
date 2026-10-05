@@ -5,12 +5,31 @@ import { IncidentRow } from './incident-row'
 import type { TIncidentRowProps } from './incident-row'
 
 export type ActiveIncidentsCardPartialProps = Partial<{
+  /**
+   * Header label shown above the list
+   * @default "Active Alerts"
+   */
   label: string
+  /**
+   * Show skeleton rows instead of items
+   * @default false
+   */
   isLoading: boolean
+  /** Additional class names appended to the root */
   className: string
+  /**
+   * Number of skeleton rows shown when `isLoading`
+   * @default 4
+   */
   skeletonRows: number
+  /** Message rendered when no items */
   emptyMessage: string
+  /**
+   * Incident rows to render
+   * @default []
+   */
   items: TIncidentRowProps[]
+  /** Called with the incident id when a row is clicked */
   onItemClick: (id: string) => void
 }>
 

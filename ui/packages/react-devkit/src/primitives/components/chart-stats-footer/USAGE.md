@@ -1,24 +1,22 @@
-# ChartStatsFooter
+# `ChartStatsFooter`
 
 Displays Min/Max/Avg values and an optional grid of additional stat items below a chart.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop             | Status   | Type                     | Default | Description                                       |
-| ---------------- | -------- | ------------------------ | ------- | ------------------------------------------------- |
-| `minMaxAvg`      | Optional | `MinMaxAvg`              | —       | Min, Max, and Avg values to display               |
-| `stats`          | Optional | `ChartStatsFooterItem[]` | —       | Additional label/value pairs displayed in columns |
-| `statsPerColumn` | Optional | `number`                 | `1`     | How many stat items to stack per column           |
-| `secondaryLabel` | Optional | `SecondaryLabel`         | —       | A single label/value row shown below `stats`      |
-| `className`      | Optional | `string`                 | —       | Additional class for the root element             |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Custom class name |
+| `minMaxAvg` | Optional | `Partial<{ min: string; max: string; avg: string; }>` | - | Min/Max/Avg values row |
+| `secondaryLabel` | Optional | `SecondaryLabel` | - | Secondary label displayed below stats |
+| `stats` | Optional | `ChartStatsFooterItem[]` | - | Additional stats displayed in a columnar grid |
+| `statsPerColumn` | Optional | `number` | `1` | Number of stat items per column (default: 1) |
+<!-- END GENERATED: props -->
 
-### `MinMaxAvg`
+## Props detail
 
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `min` | `string` | no | Minimum value string |
-| `max` | `string` | no | Maximum value string |
-| `avg` | `string` | no | Average value string |
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 ### `ChartStatsFooterItem`
 

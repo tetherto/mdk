@@ -21,7 +21,7 @@ headless core into React-native hooks.
   `editComment`, `deleteComment`, `canComment` (`comments:w`), `isSaving`,
   and `error`; invalidates `list-things` queries on every write so the
   detail panel refreshes automatically.
-- [Op Centre read hooks](#op-centre-read-hooks) — fetch, poll, and shape data for the Operational Centre pages.
+- [Op Center read hooks](#op-center-read-hooks) — fetch, poll, and shape data for the Operational Center pages.
 - Write-action hooks — submit, vote, cancel, and query the server-side
   approval queue. Submission and direct vote/cancel hooks check `actions:w`;
   `useLiveActions()` also recognizes approver roles from the auth token.
@@ -50,12 +50,12 @@ the seam `useMdkAuth()` reads back. Three are available:
 Hiding a write control in the UI is not authorization: the Gateway still denies a request the token is not allowed to
 make. Gate controls for UX, but enforce identity in the [Gateway controller](../../../docs/guides/gateway/plugins.md#auth-and-permissions).
 
-## Op Centre read hooks
+## Op Center read hooks
 
 These hooks own the fetch → render-shape transformation for the Operational
-Centre pages (Site Overview and Explorer). All are tagged `@category
-op-centre` in the machine-readable manifest (filter `hooks.json` on
-`category === 'op-centre'`).
+Center pages (Site Overview and Explorer). All are tagged `@category
+op-center` in the machine-readable manifest (filter `hooks.json` on
+`category === 'op-center'`).
 
 | Hook | Endpoint | Polling |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ op-centre` in the machine-readable manifest (filter `hooks.json` on
 `useContainerWidgets` runs two independent queries: the container inventory
 at the standard 60 s cadence (`POOL_MANAGER_POLL_INTERVAL_MS`) and the
 per-miner realtime aggregate at a faster 20 s cadence
-(`OP_CENTRE_REALTIME_POLL_INTERVAL_MS`). Both intervals are configurable via
+(`OP_CENTER_REALTIME_POLL_INTERVAL_MS`). Both intervals are configurable via
 `containersRefetchInterval` / `realtimeRefetchInterval` options.
 
 `useFeatureFlags` and `usePduLayout` use `staleTime: Infinity` — the MDK is

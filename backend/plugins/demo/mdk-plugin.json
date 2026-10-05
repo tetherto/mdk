@@ -38,7 +38,7 @@
           }
         }
       },
-      "description": "Fans out metrics telemetry to every registered demo-worker device (fingerprint: hashrate_rt + history) and returns fleet totals plus a per-device breakdown. Aggregation lives here — workers only ever answer for one device.",
+      "description": "Fans out metrics telemetry to every registered demo-worker device (fingerprint: `hashrate_rt` + history) and returns fleet totals plus a per-device breakdown. Aggregation lives here — workers only ever answer for one device.",
       "constraints": [
         "Requires the MDK client to be connected to a Kernel instance for live data.",
         "Devices must expose demo-worker telemetry channels (hashrate_rt, power, temperature, power_mode, history)."
@@ -109,7 +109,7 @@
           }
         }
       },
-      "description": "Pulls the demo-worker `history` telemetry channel (SQLite recent samples: ts, hashrate_ths, power_w, board_temp_c) for every matched device, or a single device when deviceId is set.",
+      "description": "Pulls the demo-worker `history` telemetry channel (SQLite recent samples: ts, `hashrate_ths`, `power_w`, `board_temp_c`) for every matched device, or a single device when `deviceId` is set.",
       "constraints": [
         "limit defaults to 10 and is capped at 500.",
         "Samples come from the worker's own store — the device is not contacted for this channel."

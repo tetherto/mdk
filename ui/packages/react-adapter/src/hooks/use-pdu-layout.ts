@@ -39,7 +39,7 @@ export type UsePduLayoutResult = {
  * your Worker/business logic. No reference implementation of `/auth/pdu-layout`
  * ships in this repo.
  *
- * @category op-centre
+ * @category op-center
  */
 export const usePduLayout = (
   params: UsePduLayoutParams,

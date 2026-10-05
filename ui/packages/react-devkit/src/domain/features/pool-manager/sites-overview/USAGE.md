@@ -1,4 +1,4 @@
-# PoolManagerSitesOverview
+# `PoolManagerSitesOverview`
 
 Pool-manager sites overview page: landing screen listing every site as a
 status card with a snapshot of pools, miners online, hashrate, and active
@@ -7,16 +7,18 @@ incidents. Each card navigates to the site detail page.
 Use this as the `/pool-manager/sites` route. For just the card list
 primitive, drop down to `SitesOverviewStatusCardList`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop              | Status   | Type                       | Default | Description                                                                                           |
-| ----------------- | -------- | -------------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
-| `units`           | Required | `ProcessedContainerUnit[]` | —       | Sites to render (already normalized through `useSitesOverviewData`)                                   |
-| `poolConfig`      | Required | `PoolConfigData[]`         | —       | Pool configurations powering each card's pool summary                                                 |
-| `backButtonClick` | Required | `VoidFunction`             | —       | Called when the operator clicks the "Pool Manager" link                                               |
-| `onCardClick`     | Required | `(unitId: string) => void` | —       | Called with the clicked unit id — typically navigates                                                 |
-| `isLoading`       | Optional | `boolean`                  | `false` | Show a skeleton placeholder while site data is fetching                                               |
-| `error`           | Optional | `unknown`                  | —       | Shows a "Failed to load data" alert when defined (together with the internal pool-config fetch error) |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `backButtonClick` | Required | `VoidFunction` | - | Called when the operator clicks the "Pool Manager" back link |
+| `onCardClick` | Required | `(unitId: string) => void` | - | Called with the clicked unit id — typically navigates to `/sites/:id` |
+| `poolConfig` | Required | `PoolConfigEntry[]` | - | Pool configurations powering each card's pool summary |
+| `units` | Required | `ProcessedContainerUnit[]` | - | Sites to render (already normalised through `useSitesOverviewData`) |
+| `error` | Optional | `unknown` | - | Shows a "Failed to load data" alert when defined (together with the internal pool-config fetch error) |
+| `isLoading` | Optional | `boolean` | `false` | Show a skeleton placeholder while site data is fetching |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

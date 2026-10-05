@@ -65,7 +65,7 @@ your-worker-repo/
 ```
 
 This tree is [`demo-worker`][demo-worker]'s own layout with its vendor name replaced by the placeholder `vendor`:
-`demo-worker` itself builds and tests with **zero** dependency on `WorkerRuntimeV2`, and your package will too.
+`demo-worker` itself builds and tests with **zero** dependency on `WorkerRuntimeV2`, and your package does too.
 
 > [!NOTE]
 > The `src/telemetry/`, `src/commands/`, and `client.js` naming above is a convention, **not** a requirement.
@@ -89,7 +89,7 @@ This tree is [`demo-worker`][demo-worker]'s own layout with its vendor name repl
 ### Scaffold the package
 
 Create your own repo (or a directory inside your existing one) with a `package.json`. Pick your own npm scope (as an external
-Worker provider, you will publish under your own domain (not `@tetherto`)):
+Worker provider, you publish under your own domain (not `@tetherto`)):
 
 ```json
 {
@@ -334,7 +334,7 @@ Every `handler` path in the contract resolves (relative to your package root) to
 first time that device's context opens. A missing file, a non-function export, or a duplicate name throws before
 your Worker serves a request (see Troubleshooting). **Every entry in `capabilities.telemetry` and
 `capabilities.commands` needs a matching file**: declaring `power` / `temperature` / `reboot` in the contract without
-writing those handlers will fail.
+writing those handlers fails.
 
 #### 4.1 Telemetry handler
 

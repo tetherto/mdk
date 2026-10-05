@@ -224,8 +224,11 @@ is `commandId`, `status`, `result`, `error`.
 
 ### Caching
 
-Add a `"cache"` array of dot-path strings to a route to enable request-level caching, bypassed with
-`?overwriteCache=true`. [The manifest reference][plugins-manifest] shows the field in a real manifest.
+Add a `"cache"` array of dot-path strings to a route to enable request-level caching. The cache is bypassed for a
+forced refresh only when `overwriteCache` is literally `true` and the request carries a non-empty `Authorization`
+header; any other value, including `false`, uses normal cache behavior. The Gateway does not authenticate or validate
+the header, so [protecting the route](#auth-and-permissions) stays the controller's job.
+[The manifest reference][plugins-manifest] shows the field in a real manifest.
 
 ### Stream routes
 
@@ -258,9 +261,11 @@ module.exports = async function protectedRoute (req) {
 ```
 
 > [!IMPORTANT]
-> A controller's return value always goes out as `200`. A thrown error's status comes from `err.statusCode` when it is an integer 400 or
-> higher, and falls back to `400` otherwise. Attach `.statusCode` to get a specific code, the way `protectedRoute` does here; the bundled
-> agent plugin uses this same pattern for its 503, 404, and 409 responses.
+> A controller's return value always goes out as `200`. A thrown error is shaped by [`errorResponse`][error-response]: its status comes
+> from `err.statusCode` when it is an integer 400 or higher, and falls back to `400` otherwise. Attach `.statusCode` to get a specific
+> code, the way `protectedRoute` does here; the bundled agent plugin uses this same pattern for its 503, 404, and 409 responses. The
+> body is `{ statusCode, error, message }`, and `message` carries the error's own text for `ERR_*` codes and for Fastify's own 4xx
+> errors (validation, content type, body size); any other message is replaced with the status text and logged.
 
 ### Manifest validation errors
 
@@ -337,6 +342,9 @@ The plugin loader validates every manifest and handler at startup and throws if 
 
 [plugins-readme-runtime-errors]: ../../../backend/core/plugins/README.md#runtime-plugin-errors
 <!-- docs@tether.io: plugins-readme-runtime-errors → https://github.com/tetherto/mdk/blob/main/backend/core/plugins/README.md#runtime-plugin-errors -->
+
+[error-response]: ../../../backend/core/gateway/workers/lib/plugin-adapter.js
+<!-- docs@tether.io: error-response → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/workers/lib/plugin-adapter.js -->
 
 [mdk-client-readme]: ../../../backend/core/client/README.md
 <!-- docs@tether.io: mdk-client-readme → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md -->

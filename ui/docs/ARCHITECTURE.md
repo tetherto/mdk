@@ -2,7 +2,7 @@
 
 **Audience**: Engineering team
 
-How the repo is laid out and why: what MDK is, the toolkit packages and how
+How the repo is laid out and why: what MDK is, the toolkit packages, and how
 they depend on each other, the monorepo directory layout, the per-package
 surface map, and how build / state / styling / testing fit together. For
 machine-readable manifests, see [`AGENTS.md`](../AGENTS.md).
@@ -42,9 +42,9 @@ Pure TypeScript, no React:
   the `@tetherto/mdk-react-adapter` package entry in `## Packages`.
 - One React hook per core store (`useAuth`, `useDevices`, …) built on
   `useStore(<vanillaStore>)` from `zustand`.
-- Op Centre read hooks (`useExplorerList`, `useContainerWidgets`,
+- Op Center read hooks (`useExplorerList`, `useContainerWidgets`,
   `useSite`, `useFeatureFlags`, `usePduLayout`, and more) — fetch, poll,
-  and shape data for the Operational Centre pages. See the [package README](../packages/react-adapter/README.md#op-centre-read-hooks).
+  and shape data for the Operational Center pages. See the [package README](../packages/react-adapter/README.md#op-center-read-hooks).
 - Pass-through re-exports of `useQuery`, `useMutation`, `useQueryClient`.
 - Designed so adding a future React Native or Web Components adapter is a
   matter of writing a sibling package — no changes to the core.
@@ -131,7 +131,7 @@ mdk-ui/
   factory for testing
 - TanStack `QueryClient` factory: `createMdkQueryClient`
 - `queryKeys`: centralized key factories for auth, devices, telemetry,
-  Op Centre reads (`site`, `listRacks`, `pduLayout`, `globalData`,
+  Op Center reads (`site`, `listRacks`, `pduLayout`, `globalData`,
   `thingConfig`, `globalConfig`), Pool Manager reads/mutations, and
   thing-comment mutations (`addThingComment`, `editThingComment`,
   `deleteThingComment`)
@@ -152,7 +152,7 @@ mdk-ui/
   `buildSetTankEnabledAction`, `buildSetAirExhaustEnabledAction`,
   `buildResetAlarmAction`, `buildSwitchSocketAction`,
   `buildSetPlcRegistersAction`, `buildUpdateThingBatchEntry`)
-- Query parameter builders: Op Centre (`buildExplorerListThingsParams`,
+- Query parameter builders: Op Center (`buildExplorerListThingsParams`,
   `buildContainerDetailParams`, `buildContainerWidgetsListParams`, etc.),
   alert, dashboard, and pool builders
 - Container tab utilities: `CONTAINER_TAB_MATRIX` keyed by model family,
@@ -162,7 +162,7 @@ mdk-ui/
   nested envelopes from `list-things` / `list-racks` into a flat row array
 - Command lifecycle state machine
 - Shared API types: tail-log, list-things, history-log, ext-data, auth,
-  and Op Centre contracts (`ListRacksParams`, `PduLayoutParams`,
+  and Op Center contracts (`ListRacksParams`, `PduLayoutParams`,
   `PduLayoutResponse`, `GlobalDataParams`, `ThingConfigParams`,
   `ThingCommentBody`, `ContainerSettingsEntry`)
 
@@ -215,11 +215,11 @@ actionsStore.getState().setAddPendingSubmissionAction({ action: "noop" });
   voting/approval pipeline; `toVotingPayload` (in [`action-write-utils.ts`](../packages/react-adapter/src/hooks/action-write-utils.ts))
   derives targeting solely from `query` (built from `tags`), stripping
   `tags` / `crossThing` and every other client-only field
-- Op Centre read hooks (`@category op-centre`): `useExplorerList`,
+- Op Center read hooks (`@category op-center`): `useExplorerList`,
   `useThingDetail`, `useRackLayout`, `useCabinetGroups`, `useSite`,
   `useFeatureFlags`, `usePduLayout`, `useContainerSettings`,
   `useContainerWidgets` — fetch/poll/shape data for the Operational
-  Centre pages. Full list and polling behaviour in the [package README](../packages/react-adapter/README.md#op-centre-read-hooks)
+  Center pages. Full list and polling behaviour in the [package README](../packages/react-adapter/README.md#op-center-read-hooks)
 - Re-exports of `useQuery`, `useMutation`, `useQueryClient` from
   `@tanstack/react-query`
 - Subpath `./hooks` for hook modules; `./provider` for `MdkProvider`
@@ -229,7 +229,7 @@ actionsStore.getState().setAddPendingSubmissionAction({ action: "noop" });
 `npm run build:hooks` during `build`.
 
 **Build**: `tsc -p tsconfig.build.json` emits a `dist/` (ESM + `.d.ts`).
-The package `exports` map resolves to `dist/`, so external NPM consumers
+The package `exports` map resolves to `dist/`, so external npm consumers
 import the pre-built declarations and runtime JS directly.
 
 **Usage**:

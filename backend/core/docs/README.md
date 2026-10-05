@@ -1,4 +1,4 @@
-## MDK Core
+## MDK core
 
 See the [architecture overview](../../../docs/concepts/architecture.md) to understand Core's part in the MDK. Core ships the following packages:
 
@@ -35,7 +35,7 @@ Kernel is **pull-only and passive** — it never pushes to your app. You query i
 ## Gateway
 
 Lives in [`backend/core/gateway/`](../gateway/worker.js). The Gateway is where your business logic is defined. It's your Node.js server that connects to
-Kernel over HRPC, sends typed queries and receives aggregated responses. You decide what happens to your telemetry data.
+Kernel over HRPC, sends typed queries, and receives aggregated responses. You decide what happens to your telemetry data.
 
 ```js
 // connect using the key the Kernel publishes to its key file
@@ -67,9 +67,10 @@ HRPC (by the Kernel's public key). Gateways embed it to talk to Kernel.
 ## MCP server (`@tetherto/mdk-mcp`)
 
 Lives in [`backend/core/mcp/`](../mcp/README.md). Exposes MDK data and actions to AI agents as declarative tools, using the
-same `@tetherto/mdk-client` connection to Kernel that the Gateway uses. Runs either as its own standalone server — a
-separate process from the Gateway — or in-process inside the Gateway when a plugin is mounted with
-`autoGenerateMcp: true` (see [Expose Gateway data to an agent](../../../docs/guides/agent/expose-data.md)).
+same `@tetherto/mdk-client` connection to Kernel that the Gateway uses. Always runs as its own standalone server — a
+separate process from the Gateway, which has no MCP code of its own — and can derive tools directly from a Gateway
+plugin's own manifest, in addition to hand-authored `mcp-plugin.json` tool directories (see
+[Expose Gateway data to an agent](../../../docs/guides/agent/expose-data.md)).
 
 ## Connection and deployment model
 

@@ -1,20 +1,27 @@
-# DoughnutChart
+# `DoughnutChart`
 
 A Chart.js doughnut chart with a custom HTML legend, slice toggle, and percentage display.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop             | Status   | Type                             | Default | Description                                                 |
-| ---------------- | -------- | -------------------------------- | ------- | ----------------------------------------------------------- |
-| `data`           | Required | `DoughnutChartDataset[]`         | —       | Array of labelled slices                                    |
-| `unit`           | Optional | `string`                         | `''`    | Unit suffix appended to values in tooltips and legends      |
-| `options`        | Optional | `ChartJS<'doughnut'>['options']` | —       | Chart.js options merged with defaults                       |
-| `cutout`         | Optional | `string`                         | `'75%'` | Doughnut hole size as a percentage string                   |
-| `borderWidth`    | Optional | `number`                         | `4`     | Gap between segments in pixels                              |
-| `height`         | Optional | `number`                         | `260`   | Chart canvas height in pixels                               |
-| `legendPosition` | Optional | `Position`                       | `'top'` | Legend placement (`'top' \| 'bottom' \| 'left' \| 'right'`) |
-| `tooltip`        | Optional | `ChartTooltipConfig`             | —       | Custom HTML tooltip (replaces the built-in tooltip)         |
-| `className`      | Optional | `string`                         | —       | Additional class for the root element                       |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Required | `DoughnutChartDataset[]` | - | Array of labelled slices |
+| `borderWidth` | Optional | `number` | `4` | Border width between segments (default: 4) |
+| `className` | Optional | `string` | - | Additional class for the root element |
+| `cutout` | Optional | `string` | `"75%"` | Doughnut cutout percentage (default: '75%') |
+| `formatValue` | Optional | `((value: number) => string)` | - | Formats slice values in the built-in legend and default tooltip (default: raw number) |
+| `height` | Optional | `number` | `260` | Chart height in pixels |
+| `legendPosition` | Optional | `"left" \| "right" \| "top" \| "bottom"` | `"top"` | Where to place the legend relative to the chart (default: 'top') |
+| `options` | Optional | `object` | - | Chart.js options – merged with defaults |
+| `tooltip` | Optional | `ChartTooltipConfig` | - | Custom HTML tooltip configuration. When provided, replaces the default doughnut tooltip (which shows label, value with unit, and percentage). Use `valueFormatter` to replicate the percentage display if needed |
+| `unit` | Optional | `string` | `""` | Unit suffix appended to values in tooltips and legends |
+<!-- END GENERATED: props -->
+
+## Props detail
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 ### `DoughnutChartDataset`
 

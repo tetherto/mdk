@@ -145,6 +145,7 @@ export type DataTableProps<I = unknown> = {
   renderExpandedContent?: (row: DataTableRow<I>) => React.ReactNode
   /**
    * Get the row ID for a row. If not specified index is the default row ID.
+   * @default index
    */
   getRowId?: (row: I, index: number, parent?: DataTableRow<I>) => string
   /**
@@ -396,7 +397,7 @@ export const DataTable = <I = unknown,>({
               />
             )}
             {/* Initial load: shimmer rows shaped like real rows, so the table
-              * keeps its final geometry and nothing jumps when data lands. */}
+             * keeps its final geometry and nothing jumps when data lands. */}
             {loading && !hasData && (
               <SkeletonTableBody columnCount={tableBackend.getAllLeafColumns().length} />
             )}

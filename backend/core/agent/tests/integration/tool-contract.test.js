@@ -5,7 +5,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { connectMcp } from '../../src/mcp.js'
 import { buildToolSystem } from '../../src/loop.js'
-import { createAgent } from '../../index.js'
+import { createAgent } from '../../src/agent.js'
 import { admitTools, renderTools, agentMeta, AGENT_META_KEY, AXIS, CAPABILITY, TOOL_CONTRACT_VERSION } from '../../src/tools.js'
 
 const compliantTool = {

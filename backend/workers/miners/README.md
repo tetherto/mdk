@@ -33,7 +33,7 @@ miners/<vendor>/
   mock/                # a standalone fake of the vendor's native API
 ```
 
-## Common Telemetry Fields
+## Common telemetry fields
 
 All miner Workers report these standard telemetry fields:
 
@@ -53,7 +53,7 @@ All miner Workers report these standard telemetry fields:
 | `efficiency` | W/TH | Power efficiency |
 | `power_mode` | — | Current power mode |
 
-## Common Commands
+## Common commands
 
 All miner Workers support these commands (declared in `mdk-contract.json`):
 
@@ -73,13 +73,13 @@ All miner Workers support these commands (declared in `mdk-contract.json`):
 | `deleteComment` | `commentId` | Delete annotation |
 | `downloadLogs` | — | Download raw diagnostic logs |
 
-## Health States
+## Health states
 
 All miner contracts declare: `OK`, `DEGRADED`, `OFFLINE`
 
 Common alerts: `alert.overheat`, `alert.fan_failure`, `alert.psu_failure`, `alert.hashrate_low`
 
-## Quick Start
+## Quickstart
 
 ```js
 const { getKernel } = require('@tetherto/mdk-core')

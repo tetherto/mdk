@@ -1,15 +1,17 @@
-# EmptyState
+# `EmptyState`
 
 Placeholder shown when a list, table or panel has no data to display.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop          | Status   | Type                                 | Default     | Description                    |
-| ------------- | -------- | ------------------------------------ | ----------- | ------------------------------ |
-| `description` | Required | `ReactNode`                          | —           | Message shown below the image  |
-| `image`       | Optional | `"default" \| "simple" \| ReactNode` | `"default"` | Built-in illustration, simple icon, or custom node |
-| `size`        | Optional | `"sm" \| "md" \| "lg"`               | `"md"`      | Controls icon size and spacing |
-| `className`   | Optional | `string`                             | —           | Root class names               |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `description` | Required | `React.ReactNode` | - | Description text or ReactNode displayed below the image |
+| `className` | Optional | `string` | - | Additional CSS class name |
+| `image` | Optional | `EmptyStateImage` | `"default"` | Image to display. Use "default" for the standard illustration, "simple" for a minimal icon, or pass a custom ReactNode |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Size variant controlling spacing and icon dimensions |
+<!-- END GENERATED: props -->
 
 ## Example
 

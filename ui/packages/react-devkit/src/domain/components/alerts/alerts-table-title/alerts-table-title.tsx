@@ -5,8 +5,11 @@ import { cn } from '@primitives'
 import './alerts-table-title.scss'
 
 export type AlertsTableTitleProps = {
+  /** Section heading */
   title: ReactNode
+  /** Optional subtitle or count badge */
   subtitle?: ReactNode
+  /** Additional CSS class */
   className?: string
 }
 

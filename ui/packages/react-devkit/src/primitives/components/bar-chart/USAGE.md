@@ -1,24 +1,26 @@
-# BarChart
+# `BarChart`
 
 A Chart.js bar chart with gradient fills, optional stacking, horizontal layout, data labels, and a custom HTML tooltip.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop              | Status   | Type                        | Default   | Description                                                  |
-| ----------------- | -------- | --------------------------- | --------- | ------------------------------------------------------------ |
-| `data`            | Required | `any`                       | —         | Chart.js dataset object (`{ labels, datasets }`)             |
-| `options`         | Optional | `ChartJS<'bar'>['options']` | —         | Extra Chart.js options merged with the MDK defaults          |
-| `isStacked`       | Optional | `boolean`                   | `false`   | Stacks datasets on top of each other                         |
-| `isHorizontal`    | Optional | `boolean`                   | `false`   | Renders bars horizontally (sets `indexAxis: 'y'`)            |
-| `formatYLabel`    | Optional | `(value: number) => string` | —         | Formats Y-axis tick labels                                   |
-| `showLegend`      | Optional | `boolean`                   | `true`    | Displays the Chart.js built-in legend                        |
-| `legendPosition`  | Optional | `Position`                  | `'top'`   | Legend placement (`'top' \| 'bottom' \| 'left' \| 'right'`)  |
-| `legendAlign`     | Optional | `FlexAlign`                 | `'start'` | Horizontal alignment of legend labels                        |
-| `showDataLabels`  | Optional | `boolean`                   | `false`   | Renders values above each bar                                |
-| `formatDataLabel` | Optional | `(value: number) => string` | —         | Formats the data label text                                  |
-| `tooltip`         | Optional | `ChartTooltipConfig`        | —         | Custom HTML tooltip configuration (replaces the default Chart.js tooltip) |
-| `height`          | Optional | `number`                    | `300`     | Chart height in pixels                                       |
-| `className`       | Optional | `string`                    | —         | Additional class for the wrapper `div`                       |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Required | `any` | - | Chart data - required, provided by parent. Use `as any` for mixed bar+line datasets |
+| `className` | Optional | `string` | - | Additional class for the wrapper `div` |
+| `formatDataLabel` | Optional | `((value: number) => string)` | - | Format data label values (default: round to nearest integer) |
+| `formatYLabel` | Optional | `((value: number) => string)` | - | Format Y-axis tick labels |
+| `height` | Optional | `number` | `300` | Chart height in pixels |
+| `isHorizontal` | Optional | `boolean` | `false` | Render bars horizontally (indexAxis: 'y') |
+| `isStacked` | Optional | `boolean` | `false` | Stack bars on top of each other |
+| `legendAlign` | Optional | `"center" \| "start" \| "end"` | `"start"` | Alignment of the legend labels within their position |
+| `legendPosition` | Optional | `"left" \| "right" \| "top" \| "bottom"` | `"top"` | Position of the legend |
+| `options` | Optional | `object` | - | Chart.js options - merged with defaults |
+| `showDataLabels` | Optional | `boolean` | `false` | Show values above each bar |
+| `showLegend` | Optional | `boolean` | `true` | Show built-in Chart.js legend |
+| `tooltip` | Optional | `ChartTooltipConfig` | - | Custom HTML tooltip configuration. When provided, replaces the default Chart.js tooltip |
+<!-- END GENERATED: props -->
 
 ## Example
 

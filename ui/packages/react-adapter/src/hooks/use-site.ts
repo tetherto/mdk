@@ -25,7 +25,7 @@ export type UseSiteResult = {
  * ([`backend/core/plugins/site-monitor`](https://github.com/tetherto/mdk/tree/main/backend/core/plugins/site-monitor))
  * — no custom plugin needed.
  *
- * @category op-centre
+ * @category op-center
  */
 export const useSite = (options: UseSiteOptions = {}): UseSiteResult => {
   const queryClient = useQueryClient()

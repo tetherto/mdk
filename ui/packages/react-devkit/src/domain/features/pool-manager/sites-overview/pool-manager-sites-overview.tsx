@@ -13,7 +13,10 @@ export type PoolManagerSitesOverviewProps = {
   units: ProcessedContainerUnit[]
   /** Pool configurations powering each card's pool summary. */
   poolConfig: PoolConfigData[]
-  /** Show a skeleton placeholder while site data is fetching. */
+  /**
+   * Show a skeleton placeholder while site data is fetching.
+   * @default false
+   */
   isLoading?: boolean
   /** Shows a "Failed to load data" alert when defined (together with the internal pool-config fetch error). */
   error?: unknown

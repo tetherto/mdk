@@ -1,13 +1,13 @@
 ---
 name: bump-mdk
-description: Bump package version(s) across the MDK monorepo and resync every affected lockfile the way CI expects. Use when raising a release version, when the "package-lock.json is out of sync with package.json" gate is red, or after a merge that left package.json / package-lock.json versions mismatched.
+description: Bump package versions across the MDK monorepo and resync every affected lockfile the way CI expects. Use when raising a release version, when the "package-lock.json is out of sync with package.json" gate is red, or after a merge that left package.json / package-lock.json versions mismatched.
 argument-hint: "[target-version] [scope: ui|core|workers|examples|all — default all] "
 allowed-tools: [Bash, Read, Edit, Grep, Glob]
 ---
 
 # Bump MDK versions
 
-Raise version(s) across the monorepo and regenerate **every** lockfile that
+Raise versions across the monorepo and regenerate **every** lockfile that
 cascades from the change, so the lockfile-sync gate stays green.
 
 Target version: **$ARGUMENTS** (e.g. `0.4.0`, optionally a scope). If empty, ask
@@ -122,7 +122,7 @@ done | sort | grep -v '^<target>'   # lists everything not already at the target
    done
    git status --porcelain | grep package-lock.json   # the full set that changed
    ```
-   Zero `STILL DRIFTS` lines = CI's per-package gate will pass.
+   Zero `STILL DRIFTS` lines = CI's per-package gate passes.
 
 5. **Sanity the diffs.** Every changed lock line should be a version/range sync
    (`0.3.0`→`0.4.0`, `^0.3.0`→`^0.4.0`) or benign format normalization (npm

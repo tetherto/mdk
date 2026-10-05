@@ -9,21 +9,45 @@ export type SingleStatCardVariant = 'primary' | 'secondary' | 'tertiary' | 'high
 type SingleStatCardProps = {
   /** Stat name/label */
   name?: string
-  /** Subtitle text */
+  /**
+   * Subtitle text
+   * @default ''
+   */
   subtitle?: string
-  /** Stat value */
+  /**
+   * Stat value
+   * @default null
+   */
   value?: number | string | null
-  /** Unit of measurement */
+  /**
+   * Unit of measurement
+   * @default ''
+   */
   unit?: string
-  /** Color for flash/border */
+  /**
+   * Color for flash/border
+   * @default 'inherit'
+   */
   color?: string
-  /** Enable flash animation */
+  /**
+   * Enable flash animation
+   * @default false
+   */
   flash?: boolean
-  /** Enable superflash animation (faster) */
+  /**
+   * Enable superflash animation (faster)
+   * @default false
+   */
   superflash?: boolean
-  /** Card variant */
+  /**
+   * Card variant
+   * @default "primary"
+   */
   variant?: SingleStatCardVariant
-  /** Row layout */
+  /**
+   * Row layout
+   * @default false
+   */
   row?: boolean
 }
 

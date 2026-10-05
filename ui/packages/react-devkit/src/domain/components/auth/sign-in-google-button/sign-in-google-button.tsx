@@ -34,9 +34,15 @@ export type SignInGoogleButtonProps = Omit<ButtonProps, 'onClick' | 'children'> 
    * `${oauthBaseUrl}/oauth/google`.
    */
   oauthBaseUrl: string
-  /** Override the visible button label. */
+  /**
+   * Override the visible button label.
+   * @default "Sign in with Google"
+   */
   label?: string
-  /** Override the click behaviour entirely. When set, `oauthBaseUrl` is ignored. */
+  /**
+   * Override the click behaviour entirely. When set, `oauthBaseUrl` is ignored.
+   * @default redirect
+   */
   onClick?: () => void
 }
 

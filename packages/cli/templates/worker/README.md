@@ -8,7 +8,7 @@ server. It exports no module of its own; it is **directory-loaded** by
 package never constructs or depends on the runtime itself.
 
 This scaffold is a working example that talks to a hypothetical device over a
-tiny HTTP JSON API. Replace the device client, mock, contract and handlers with
+tiny HTTP JSON API. Replace the device client, mock, contract, and handlers with
 your own device's protocol.
 
 ## Layout

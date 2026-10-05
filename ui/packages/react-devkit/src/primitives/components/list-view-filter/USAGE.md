@@ -1,24 +1,18 @@
-# ListViewFilter
+# `ListViewFilter`
 
 A filter button that opens a popover containing a multi-select `Cascader`. Displays an active filter count badge on the button.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop           | Status   | Type               | Default     | Description                                                      |
-| -------------- | -------- | ------------------ | ----------- | ---------------------------------------------------------------- |
-| `options`      | Required | `CascaderOption[]` | —           | Hierarchical filter options (same shape as `Cascader`)           |
-| `onChange`     | Required | `(selections: CascaderValue[]) => void` | —           | Fired with all selected filter paths when selection changes      |
-| `localFilters` | Optional | `LocalFilters`     | —           | Current filter values as a key/value map (controls the Cascader) |
-| `filterKey`    | Optional | `string`           | `'default'` | Key used to force re-mount the Cascader when filters are reset   |
-| `className`    | Optional | `string`           | —           | Additional class for the root element                            |
-
-### `LocalFilters`
-
-```ts
-Record<string, string | number | boolean | (string | number | boolean)[]>
-```
-
-Example: `{ type: "Antminer S19XP", status: ["active", "pending"] }`
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `onChange` | Required | `(selections: CascaderValue[]) => void` | - | Callback when filters change |
+| `options` | Required | `CascaderOption[]` | - | Cascader options for filtering |
+| `className` | Optional | `string` | - | Custom className for the filter button |
+| `filterKey` | Optional | `string` | `"default"` | Optional key to force re-mounting the Cascader when filters change Useful if you want to reset the internal state of the Cascader when filters change |
+| `localFilters` | Optional | `LocalFilters` | - | Current filter values as key-value pairs Example: { type: 'Antminer S19XP H', status: ['active', 'pending'] } |
+<!-- END GENERATED: props -->
 
 ## Example
 

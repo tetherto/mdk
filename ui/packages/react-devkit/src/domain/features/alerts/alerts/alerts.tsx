@@ -25,6 +25,7 @@ export type AlertsProps = {
   devices?: Device[]
   /**
    * Loading flag for the "Current Alerts" table.
+   * @default false
    */
   isCurrentAlertsLoading?: boolean
 
@@ -32,6 +33,10 @@ export type AlertsProps = {
    * Pre-fetched historical alerts log entries.
    */
   historicalAlerts?: Alert[]
+  /**
+   * Loading flag for the historical log
+   * @default false
+   */
   isHistoricalAlertsLoading?: boolean
 
   /**
@@ -59,8 +64,10 @@ export type AlertsProps = {
 
   /**
    * Controlled date range for the historical alerts. Defaults to last 14 days.
+   * @default last 14 days
    */
   dateRange?: HistoricalAlertsRange
+  /** Called when the operator picks a new historical range */
   onDateRangeChange?: (range: HistoricalAlertsRange) => void
 
   /**
@@ -85,6 +92,7 @@ export type AlertsProps = {
    */
   header?: React.ReactNode
 
+  /** Extra class on the page wrapper */
   className?: string
 }
 
@@ -143,7 +151,9 @@ export const Alerts = ({
     }
   }, [initialSeverity])
 
-  const [internalRange, setInternalRange] = useState<HistoricalAlertsRange>(() => getDefaultHistoricalAlertsRange())
+  const [internalRange, setInternalRange] = useState<HistoricalAlertsRange>(() =>
+    getDefaultHistoricalAlertsRange(),
+  )
   const dateRange = providedDateRange ?? internalRange
   const handleDateRangeChange = useCallback(
     (next: HistoricalAlertsRange): void => {

@@ -1,15 +1,17 @@
-# LazyTabWrapper
+# `LazyTabWrapper`
 
-Wraps a lazily-loaded component in `React.Suspense`, displaying a fallback spinner while the module loads. Typed generically so the `data` prop is type-safe.
+Wraps a lazily loaded component in `React.Suspense`, displaying a fallback spinner while the module loads. Typed generically so the `data` prop is type-safe.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop          | Status   | Type                                | Default    | Description                                     |
-| ------------- | -------- | ----------------------------------- | ---------- | ----------------------------------------------- |
-| `Component`   | Required | `React.ComponentType<{ data?: T }>` | —          | The lazy-loaded component to render             |
-| `data`        | Optional | `T`                                 | —          | Data passed to the component as the `data` prop |
-| `fallback`    | Optional | `React.ReactNode`                   | `<Spinner type={spinnerType} fullScreen />` | Custom fallback shown during loading            |
-| `spinnerType` | Optional | `SpinnerProps['type']`              | `'circle'` | Spinner style used for the default fallback     |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `Component` | Required | `React.ComponentType<{ data?: T \| undefined; }>` | - | Lazy-loaded component to render |
+| `data` | Optional | `T` | - | Data to pass to the component |
+| `fallback` | Optional | `React.ReactNode` | `<Spinner />` | Custom fallback component while loading |
+| `spinnerType` | Optional | `"circle" \| "square"` | `"circle"` | Spinner type when using default fallback |
+<!-- END GENERATED: props -->
 
 ## Example
 

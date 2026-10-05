@@ -1,4 +1,4 @@
-# ChartWrapper
+# `ChartWrapper`
 
 Wrapper that handles three states for a chart's content area:
 
@@ -6,20 +6,22 @@ Wrapper that handles three states for a chart's content area:
 - **No data** — shows an `EmptyState` placeholder.
 - **Has data** — shows the chart `children`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop                    | Status   | Type                                   | Default      | Description                      |
-| ----------------------- | -------- | -------------------------------------- | ------------ | -------------------------------- |
-| `children`              | Optional | `ReactNode`                            | —            | Chart content                    |
-| `data`                  | Optional | `Record<string, unknown> \| unknown[]` | —            | Line-chart data (datasets list)  |
-| `dataset`               | Optional | `Record<string, unknown> \| unknown[]` | —            | Bar-chart dataset                |
-| `isLoading`             | Optional | `boolean`                              | `false`      | Show loader                      |
-| `customLoader`          | Optional | `ReactNode`                            | `<Loader />` | Replace the default loader       |
-| `showNoDataPlaceholder` | Optional | `boolean`                              | `true`       | Toggle empty placeholder         |
-| `customNoDataMessage`   | Optional | `string \| ReactNode`                  | —            | Custom empty content             |
-| `minHeight`             | Optional | `number`                               | `400`        | Min height (px)                  |
-| `loadingMinHeight`      | Optional | `number`                               | `minHeight`  | Min height for the loading state |
-| `className`             | Optional | `string`                               | —            | Additional class names           |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Optional | `React.ReactNode` | - | Chart content to render |
+| `className` | Optional | `string` | - | Custom className for the container |
+| `customLoader` | Optional | `React.ReactNode` | `<Loader />` | Custom loader component to show when loading (overrides default spinner) |
+| `customNoDataMessage` | Optional | `React.ReactNode` | - | Custom message or component to show when no data |
+| `data` | Optional | `unknown[] \| Record<string, unknown>` | - | Chart data object (for LineChart with datasets) |
+| `dataset` | Optional | `unknown[] \| Record<string, unknown>` | - | Chart dataset (for BarChart with direct dataset) |
+| `isLoading` | Optional | `boolean` | `false` | Loading state |
+| `loadingMinHeight` | Optional | `number` | `minHeight` | Minimum height for the loading skeleton (in pixels) Falls back to minHeight if not provided |
+| `minHeight` | Optional | `number` | `400` | Minimum height for the container (in pixels) |
+| `showNoDataPlaceholder` | Optional | `boolean` | `true` | Whether to show "no data" placeholder when data is empty |
+<!-- END GENERATED: props -->
 
 ## Example
 

@@ -4,7 +4,21 @@ import type { BorderRadius, ComponentColor, ComponentSize } from '../../types'
 import { cn } from '../../utils'
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from 'react'
 
+type SwitchRootProps = ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
 export type SwitchProps = {
+  // Key controlled-state props re-declared from the Radix root so they surface in
+  // the generated docs (types reuse Radix's via indexed access — cannot drift).
+  /** Controlled checked state */
+  checked?: SwitchRootProps['checked']
+  /** Uncontrolled initial checked state */
+  defaultChecked?: SwitchRootProps['defaultChecked']
+  /** Change handler */
+  onCheckedChange?: SwitchRootProps['onCheckedChange']
+  /**
+   * Disable the switch
+   * @default false
+   */
+  disabled?: SwitchRootProps['disabled']
   /**
    * Size variant of the switch
    * @default 'md'
@@ -28,7 +42,7 @@ export type SwitchProps = {
    * Custom className for the thumb element
    */
   thumbClassName?: string
-} & ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
+} & SwitchRootProps
 /**
  * Switch component for toggle controls with full customization
  *

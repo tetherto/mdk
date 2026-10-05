@@ -4,20 +4,78 @@ Composite financial reporting page for a single mining site. Renders a page head
 a period selector slot, and a 2×2 grid of charts and metric tiles driven by the
 cost-summary view model.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop               | Status   | Type                                     | Default | Description                  |
-| ------------------ | -------- | ---------------------------------------- | ------- | ---------------------------- |
-| `metrics`          | Required | `CostSummaryDisplayMetrics \| null`      | —       | Headline $/MWh tiles (all-in, energy, operations). Pass `null` while loading. |
-| `costLog`          | Required | `ReadonlyArray<CostTimeSeriesEntry>`     | —       | Monthly/weekly production-cost time series for the Production Cost / Price chart |
-| `btcPriceLog`      | Required | `ReadonlyArray<BtcPriceTimeSeriesEntry>` | —       | BTC price time series aligned to `costLog` buckets |
-| `totals`           | Required | `CostSummaryMonetaryTotals \| null`      | —       | Period totals (energy + operations USD) for the Operations vs Energy doughnut |
-| `dateRange`        | Required | `FinancialDateRange \| null`             | —       | Active date range; drives x-axis labels across all charts |
-| `controls`         | Required | `ReactElement`                           | —       | Period selector slot. Pass `<TimeframeControls>` for the OSS-style year/month picker. |
-| `avgAllInCostData` | Optional | `ReadonlyArray<AvgAllInCostDataPoint>`   | —       | Revenue/cost series for the Avg All-in Cost bar chart (sourced separately from cost-summary) |
-| `setCostAction`    | Optional | `ReactElement`                           | —       | Optional header action slot (e.g. a "Set Monthly Cost" link or button) |
-| `isLoading`        | Optional | `boolean`                                | `false` | Shows a loading spinner overlay over the chart grid |
-| `error`            | Optional | `unknown`                                | —       | When truthy, renders an error message in place of the chart grid |
+### `AvgAllInCostChart` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `dateRange` | Required | `FinancialDateRange \| null` | - | - |
+| `data` | Optional | `readonly AvgAllInCostDataPoint[]` | - | - |
+| `isLoading` | Optional | `boolean` | - | - |
+
+### `Cost` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `btcPriceLog` | Required | `readonly BtcPriceTimeSeriesEntry[]` | - | BTC price time series aligned to `costLog` buckets |
+| `controls` | Required | `React.ReactElement<unknown, string \| React.JSXElementConstructor<any>>` | - | Period selector element. Pass `<TimeframeControls>` for the OSS-style year/month picker |
+| `costLog` | Required | `readonly CostTimeSeriesEntry[]` | - | Monthly/weekly production-cost time series for the Production Cost / Price chart |
+| `dateRange` | Required | `FinancialDateRange \| null` | - | Active date range; drives x-axis labels across all charts |
+| `metrics` | Required | `CostSummaryDisplayMetrics \| null` | - | Headline $/MWh tiles (all-in, energy, operations). Pass `null` while loading |
+| `totals` | Required | `CostSummaryMonetaryTotals \| null` | - | Period totals (energy + operations USD) for the Operations vs Energy doughnut |
+| `avgAllInCostData` | Optional | `readonly AvgAllInCostDataPoint[]` | - | Optional revenue/cost time-series for the Avg All-in Cost panel |
+| `error` | Optional | `unknown` | - | When truthy, renders an error message in place of the chart grid |
+| `isLoading` | Optional | `boolean` | `false` | Shows a loading spinner overlay over the chart grid |
+| `setCostAction` | Optional | `React.ReactElement<unknown, string \| React.JSXElementConstructor<any>>` | - | Optional "Set Monthly Cost" header action slot. A `ReactElement` slot (rather than an href string) so consumers can hand in router-aware components like `<Link>` or `<Button onClick={...} />` without triggering a full page reload |
+
+### `CostCharts` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `btcPriceLog` | Required | `readonly BtcPriceTimeSeriesEntry[]` | - | - |
+| `costLog` | Required | `readonly CostTimeSeriesEntry[]` | - | - |
+| `dateRange` | Required | `FinancialDateRange \| null` | - | - |
+| `totals` | Required | `CostSummaryMonetaryTotals \| null` | - | - |
+| `avgAllInCostData` | Optional | `readonly AvgAllInCostDataPoint[]` | - | - |
+| `isLoading` | Optional | `boolean` | - | - |
+
+### `CostContent` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `btcPriceLog` | Required | `readonly BtcPriceTimeSeriesEntry[]` | - | BTC price time series aligned to `costLog` buckets |
+| `costLog` | Required | `readonly CostTimeSeriesEntry[]` | - | Monthly/weekly production-cost time series for the Production Cost / Price chart |
+| `dateRange` | Required | `FinancialDateRange \| null` | - | Active date range; drives x-axis labels across all charts |
+| `metrics` | Required | `CostSummaryDisplayMetrics \| null` | - | Headline $/MWh tiles (all-in, energy, operations). Pass `null` while loading |
+| `totals` | Required | `CostSummaryMonetaryTotals \| null` | - | Period totals (energy + operations USD) for the Operations vs Energy doughnut |
+| `avgAllInCostData` | Optional | `readonly AvgAllInCostDataPoint[]` | - | Optional revenue/cost time-series for the Avg All-in Cost panel |
+| `error` | Optional | `unknown` | - | When truthy, renders an error message in place of the chart grid |
+| `isLoading` | Optional | `boolean` | `false` | Shows a loading spinner overlay over the chart grid |
+
+### `CostMetrics` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `metrics` | Required | `CostSummaryDisplayMetrics` | - | - |
+
+### `OperationsEnergyChart` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `totals` | Required | `CostSummaryMonetaryTotals \| null` | - | - |
+| `isLoading` | Optional | `boolean` | - | - |
+
+### `ProductionCostChart` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `btcPriceLog` | Required | `readonly BtcPriceTimeSeriesEntry[]` | - | - |
+| `costLog` | Required | `readonly CostTimeSeriesEntry[]` | - | - |
+| `dateRange` | Required | `FinancialDateRange \| null` | - | - |
+| `isLoading` | Optional | `boolean` | - | - |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

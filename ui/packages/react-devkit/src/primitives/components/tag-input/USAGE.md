@@ -2,28 +2,34 @@
 
 An input that stores typed or selected values as removable tag chips, with an optional dropdown, keyboard navigation, and a `renderDropdown` escape hatch for fully custom dropdown content.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop                | Status   | Type                         | Default | Description                                             |
-| ------------------- | -------- | ---------------------------- | ------- | ------------------------------------------------------- |
-| `value`             | Optional | `string[]`                   | `[]`    | Controlled list of tag values                           |
-| `onTagsChange`      | Optional | `(tags: string[]) => void`   | —       | Fired when tags are added or removed                    |
-| `onInputChange`     | Optional | `(value: string) => void`    | —     | Fired on every keystroke; useful for async option loading |
-| `onSubmit`          | Optional | `(tags: string[]) => void`   | —       | Fired when the user presses Enter                       |
-| `options`           | Optional | `TagInputOption[]`           | `[]` | Dropdown options (string or `{ value, label, disabled? }`) |
-| `placeholder`       | Optional | `string`                     | `'Search...'` | Input placeholder when no tags are selected       |
-| `size`              | Optional | `'sm' \| 'md' \| 'lg'`       | `'lg'`  | Controls input height                                   |
-| `disabled`          | Optional | `boolean`                    | `false` | Disables the input                                      |
-| `allowCustomTags`   | Optional | `boolean`                    | `true`  | Allows adding arbitrary typed text as a tag via Enter   |
-| `filterOptions`     | Optional | `(options: TagInputOption[], query: string) => TagInputOption[]` | case-insensitive includes | Custom option filter function |
-| `variant`           | Optional | `'default' \| 'search'`      | `'search'` | `'search'` shows a magnifying-glass icon (doubles as a clear-all button) |
-| `label`             | Optional | `string`                     | —       | Label rendered above the input                          |
-| `id`                | Optional | `string`                     | auto-generated | HTML id for the input element                    |
-| `className`         | Optional | `string`                     | —       | Additional class for the inner `<input>`                |
-| `wrapperClassName`  | Optional | `string`                     | —       | Additional class for the root wrapper                   |
-| `dropdownMinHeight` | Optional | `string`                     | —       | CSS min-height for the dropdown panel                   |
-| `dropdownMaxHeight` | Optional | `string`                     | `'12rem'` | CSS max-height for the dropdown panel                 |
-| `renderDropdown`    | Optional | `(props: TagInputDropdownProps) => React.ReactNode` | —       | Replaces the built-in dropdown with custom content |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `allowCustomTags` | Optional | `boolean` | `true` | Whether to allow adding custom tags by typing and pressing Enter |
+| `className` | Optional | `string` | - | Additional class for the inner `<input>` |
+| `disabled` | Optional | `boolean` | `false` | Disabled state |
+| `dropdownMaxHeight` | Optional | `string` | `"12rem"` | Maximum height of the dropdown (CSS value, e.g. '300px', '20rem') |
+| `dropdownMinHeight` | Optional | `string` | - | Minimum height of the dropdown (CSS value, e.g. '100px', '6rem') |
+| `filterOptions` | Optional | `((options: TagInputOption[], query: string) => TagInputOption[])` | `case-insensitive includes` | Filter options by input value. Receives options and query, returns filtered options. When undefined, filters by case-insensitive includes |
+| `id` | Optional | `string` | `auto-generated` | HTML id for the input |
+| `label` | Optional | `string` | - | Label for the input |
+| `onInputChange` | Optional | `((value: string) => void)` | - | Callback when input value changes (typing). Receives current input value. Useful for async option loading or custom filtering |
+| `onSubmit` | Optional | `((tags: string[]) => void)` | - | Callback when user presses Enter (submit). Receives current tags. Called after adding a tag from selection or typed text, if applicable |
+| `onTagsChange` | Optional | `((tags: string[]) => void)` | - | Callback when tags change (add/remove) |
+| `options` | Optional | `TagInputOption[]` | `[]` | Options to show in the dropdown when input is focused |
+| `placeholder` | Optional | `string` | `"Search..."` | Placeholder when input is empty |
+| `renderDropdown` | Optional | `((props: TagInputDropdownProps) => React.ReactNode)` | - | Render custom dropdown content. When provided, replaces the default dropdown. Use this to apply your own styling or structure |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"lg"` | Size of the tag input — matches Select sizes - `sm`: 24px height - `md`: 32px height - `lg`: 40px height |
+| `value` | Optional | `string[]` | `[]` | Controlled tags (array of tag values) |
+| `variant` | Optional | `"search" \| "default"` | `"search"` | Input variant; `'search'` shows a magnifying-glass icon that doubles as a clear-all button |
+| `wrapperClassName` | Optional | `string` | - | Custom className for the wrapper |
+<!-- END GENERATED: props -->
+
+## Props detail
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 ### `TagInputRef` (imperative handle)
 

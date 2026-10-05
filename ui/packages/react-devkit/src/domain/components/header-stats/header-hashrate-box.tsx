@@ -11,17 +11,28 @@ const fmt = (value: number | undefined, fractionDigits = 3): string =>
     : '—'
 
 export type HeaderHashrateBoxProps = {
+  /** Icon shown next to the stat */
   icon?: ReactNode
   /** App-side aggregate hashrate in PH/s. */
   appPhs?: number
   /** Pool-side aggregate hashrate in PH/s. */
   poolPhs?: number
-  /** Hashrate unit label — defaults to `PH/s`. */
+  /**
+   * Hashrate unit label — defaults to `PH/s`.
+   * @default PH/s
+   */
   unit?: string
-  /** Decimal places shown for both values — defaults to `3`. */
+  /**
+   * Decimal places shown for both values — defaults to `3`.
+   * @default 3
+   */
   fractionDigits?: number
-  /** Label for the app-side row — defaults to `APP` (`WEBAPP_SHORT_NAME`). */
+  /**
+   * Label for the app-side row
+   * @default WEBAPP_SHORT_NAME ("APP")
+   */
   appLabel?: string
+  /** Additional class names */
   className?: string
 }
 

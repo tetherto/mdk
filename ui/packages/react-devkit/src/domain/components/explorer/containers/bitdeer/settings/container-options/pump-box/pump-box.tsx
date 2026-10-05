@@ -9,7 +9,9 @@ export type PumpItem = {
 }
 
 type PumpsProps = {
+  /** Label prefix for the pump (e.g. `"Circulation"`) */
   pumpTitle: string
+  /** Pump data. `index` is 0-based; displayed as `index + 1`. */
   pumpItem?: PumpItem
 }
 

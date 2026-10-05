@@ -3,7 +3,7 @@ import { buildContainerWidgetsListParams, buildContainerWidgetsRealtimeTailLogPa
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { headHead } from './list-things-utils'
-import { OP_CENTRE_REALTIME_POLL_INTERVAL_MS, POOL_MANAGER_POLL_INTERVAL_MS } from './poll-intervals'
+import { OP_CENTER_REALTIME_POLL_INTERVAL_MS, POOL_MANAGER_POLL_INTERVAL_MS } from './poll-intervals'
 import { useAuthToken } from './use-auth-token'
 
 export type UseContainerWidgetsOptions = {
@@ -16,7 +16,7 @@ export type UseContainerWidgetsOptions = {
 }
 
 export type UseContainerWidgetsResult = {
-  /** Container things with the full Op Centre projection — one widget card each. */
+  /** Container things with the full Op Center projection — one widget card each. */
   containers: ListThingsDevice[]
   /**
    * Latest `stat-realtime` sample across all miners, carrying the grouped
@@ -47,7 +47,7 @@ export type UseContainerWidgetsResult = {
  * each matching your Worker/business logic. No reference implementation of
  * either route ships in this repo.
  *
- * @category op-centre
+ * @category op-center
  */
 export const useContainerWidgets = (
   options: UseContainerWidgetsOptions = {},
@@ -65,7 +65,7 @@ export const useContainerWidgets = (
 
   const realtimeResult = useQuery({
     ...tailLogQuery(queryClient, buildContainerWidgetsRealtimeTailLogParams()),
-    refetchInterval: options.realtimeRefetchInterval ?? OP_CENTRE_REALTIME_POLL_INTERVAL_MS,
+    refetchInterval: options.realtimeRefetchInterval ?? OP_CENTER_REALTIME_POLL_INTERVAL_MS,
     enabled,
     // Realtime group aggregates are emitted by the site's aggregating node, so
     // the first envelope group carries the full miner map — same unwrap every

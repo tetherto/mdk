@@ -1,15 +1,15 @@
-import type { ReactNode } from "react"
+import type { ReactNode } from 'react'
 
-import { cn } from "@primitives"
-import type { ErrorWithTimestamp } from "@primitives"
+import { cn } from '@primitives'
+import type { ErrorWithTimestamp } from '@primitives'
 
-import { MinersActivityChart } from "../../explorer/details-view/miners-activity-chart/miners-activity-chart"
-import { WidgetTopRow } from "../../widget-top-row"
-import type { WidgetTopRowProps } from "../../widget-top-row"
-import { MinersSummaryBox } from "../miners-summary-box"
-import type { MinersSummaryParam } from "../miners-summary-box"
+import { MinersActivityChart } from '../../explorer/details-view/miners-activity-chart/miners-activity-chart'
+import { WidgetTopRow } from '../../widget-top-row'
+import type { WidgetTopRowProps } from '../../widget-top-row'
+import { MinersSummaryBox } from '../miners-summary-box'
+import type { MinersSummaryParam } from '../miners-summary-box'
 
-import "./container-widget-card.scss"
+import './container-widget-card.scss'
 
 /** Miner-state counts fed to the embedded activity chart (online / offline / faulted / …). */
 export type ContainerActivityData = { total?: number } & Record<string, number | undefined>
@@ -25,26 +25,42 @@ export type ContainerWidgetCardProps = {
   /** Power unit label shown next to the reading. */
   powerUnit?: string
   /** Per-category alarm badges for the header row. */
-  alarms?: WidgetTopRowProps["alarms"]
+  alarms?: WidgetTopRowProps['alarms']
   /** Raw stats error surfaced as a tooltip in place of the power reading. */
   statsErrorMessage?: string | ErrorWithTimestamp[] | null
   /** Pre-formatted miners-summary rows (label + display value incl. units). */
   summary: MinersSummaryParam[]
-  /** Miner-state activity counts for the embedded chart. */
+  /**
+   * Miner-state activity counts for the embedded chart.
+   * @default {}
+   */
   activity?: ContainerActivityData
-  /** Activity chart loading state. */
+  /**
+   * Activity chart loading state.
+   * @default false
+   */
   isActivityLoading?: boolean
-  /** Activity chart error state. */
+  /**
+   * Activity chart error state.
+   * @default false
+   */
   isActivityError?: boolean
-  /** Activity chart error payload. */
+  /**
+   * Activity chart error payload.
+   * @default null
+   */
   activityError?: ContainerActivityError
-  /** Render the offline banner instead of the body. */
+  /**
+   * Render the offline banner instead of the body.
+   * @default false
+   */
   isOffline?: boolean
   /** Container-level error message; renders an error banner instead of the body. */
   errorMessage?: string
   /**
    * Critical-high alarm flash. Computed upstream (by the data hook) so the card
    * stays presentational — never derive alarm state inside this component.
+   * @default false
    */
   flash?: boolean
   /**
@@ -55,6 +71,7 @@ export type ContainerWidgetCardProps = {
   vendorContent?: ReactNode
   /** Invoked when the card is clicked (navigation is the caller's concern). */
   onClick?: () => void
+  /** Additional class for the root element */
   className?: string
 }
 
@@ -108,9 +125,13 @@ export const ContainerWidgetCard = ({
 
   return (
     <div
-      className={cn("mdk-container-widget-card", flash && "mdk-container-widget-card--flash", className)}
+      className={cn(
+        'mdk-container-widget-card',
+        flash && 'mdk-container-widget-card--flash',
+        className,
+      )}
       onClick={onClick}
-      role={onClick ? "button" : undefined}
+      role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
       <WidgetTopRow
@@ -147,4 +168,4 @@ export const ContainerWidgetCard = ({
   )
 }
 
-ContainerWidgetCard.displayName = "ContainerWidgetCard"
+ContainerWidgetCard.displayName = 'ContainerWidgetCard'

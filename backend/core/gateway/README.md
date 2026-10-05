@@ -99,8 +99,8 @@ Note the resolution happens in `startGateway()`, not in the worker: the Gateway 
 `ctx.kernelKey` explicitly. The worker itself never dials Kernel; it only hands the resolved key to each plugin's context. If the
 HRPC connect fails, that plugin's own client fails its calls with `ERR_MDK_CLIENT_UNAVAILABLE` instead of crashing the HTTP server.
 
-Pre v1.0, Kernel's allowlist, `auth.whitelist` defaults to empty (any HRPC caller is admitted). When an allowlist is configured, the [Gateway's DHT
-public key must be added before the connection is accepted](../kernel/README.md#transports).
+Pre v1.0, Kernel's allowlist, `auth.whitelist` defaults to empty (any HRPC caller is admitted). When an allowlist is configured, the [Gateway's persistent DHT
+public key must be added before the connection is accepted](../kernel/README.md#transports); it stays stable across restarts.
 
 ## Security model
 
@@ -108,7 +108,7 @@ public key must be added before the connection is accepted](../kernel/README.md#
   does for itself, using an identity layer you supply
   ([auth and permissions](../../../docs/guides/gateway/plugins.md#auth-and-permissions))
 - **Kernel connection security**: the HRPC connection is an encrypted Noise channel. Kernel maintains an HRPC firewall; when
-  `auth.whitelist` is configured, the Gateway's DHT public key must be in Kernel's `auth.whitelist` (pre v1.0 the default is an
+  `auth.whitelist` is configured, the Gateway's persistent DHT public key must be in Kernel's `auth.whitelist` (pre v1.0 the default is an
   empty allowlist, so any caller is admitted).
   See [Kernel Transport](../kernel/README.md#transports) and the [`auth-whitelist` example](../../../examples/backend/kernel/auth-whitelist.js)
   for the key exchange pattern
@@ -200,7 +200,7 @@ gateway/
 - Browse the [supported plugins reference](../../../docs/reference/supported-plugins.md)
 - See a complete [worked example](../../../examples/full-site/README.md)
 - Browse the [`startGateway()` options](../mdk/README.md)
-- Reach MDK over MCP — a standalone [`@tetherto/mdk-mcp`](../mcp/README.md) process, or one this Gateway auto-generates
-  in-process from a mounted plugin's routes (`autoGenerateMcp: true`)
+- Reach MDK over MCP — run the standalone [`@tetherto/mdk-mcp`](../mcp/README.md) process (`mdk run mcp`), which derives
+  tools from this Gateway's own plugins without the Gateway hosting any MCP code itself
 - Skip the HTTP surface and plugin system entirely by [connecting to Kernel directly](../client/README.md) with
   `@tetherto/mdk-client` — viable for a background service that only dispatches commands, though most applications build on the Gateway

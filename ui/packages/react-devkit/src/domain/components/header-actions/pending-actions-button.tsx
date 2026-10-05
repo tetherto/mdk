@@ -7,8 +7,12 @@ import { ActionsTickIcon, cn } from '@primitives'
 const formatCount = (count: number): string => (count > 99 ? '99+' : String(count))
 
 export type PendingActionsButtonProps = {
-  /** Click handler override — defaults to toggling the actionsStore sidebar. */
+  /**
+   * Click handler override — defaults to toggling the actionsStore sidebar.
+   * @default toggles the actions sidebar
+   */
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void
+  /** Additional class names */
   className?: string
 }
 
@@ -22,7 +26,10 @@ export type PendingActionsButtonProps = {
  * @domain mining-operations
  * @tier agent-ready
  */
-export const PendingActionsButton = ({ onClick, className }: PendingActionsButtonProps): JSX.Element => {
+export const PendingActionsButton = ({
+  onClick,
+  className,
+}: PendingActionsButtonProps): JSX.Element => {
   const { pendingSubmissions, setSidebarOpen } = useActions()
   const { myVoting, myReady, myExecuting, othersVoting } = useLiveActions()
 

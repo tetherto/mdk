@@ -5,7 +5,7 @@ Generic, declarative chart builder for container telemetry. Given a
 per-tag values out of nested `container_specific_stats_group_aggr` log
 entries and renders a `LineChart` inside a `ChartContainer`.
 
-## Props
+## Props detail
 
 | Prop                | Status   | Type                      | Default      | Description                                                      |
 | ------------------- | -------- | ------------------------- | ------------ | ---------------------------------------------------------------- |

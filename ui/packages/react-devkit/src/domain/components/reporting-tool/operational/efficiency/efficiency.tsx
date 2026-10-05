@@ -13,9 +13,16 @@ import { EfficiencySiteView } from './tabs/site-view/site-view'
 export type EfficiencyTabValue = (typeof EfficiencyTabTypes)[keyof typeof EfficiencyTabTypes]
 
 export type OperationsEfficiencyProps = {
+  /**
+   * Initially selected tab
+   * @default 'site-view'
+   */
   defaultTab?: EfficiencyTabValue
+  /** Props forwarded to `EfficiencySiteView` */
   siteView?: EfficiencySiteViewProps
+  /** Props forwarded to `EfficiencyMinerTypeView` */
   minerTypeView?: EfficiencyMinerTypeViewProps
+  /** Props forwarded to `EfficiencyMinerUnitView` */
   minerUnitView?: EfficiencyMinerUnitViewProps
 }
 

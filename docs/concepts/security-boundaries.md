@@ -17,7 +17,7 @@ network policy and process isolation are the fleet's only boundaries.
 ## Overview
 
 This page describes the trust boundary at the Worker tier in depth and where it sits in the Worker → Kernel → Gateway → UI chain. Data flows
-outward along that chain; a request travels the other way, entering at the Gateway. It covers what each layer does and does not authenticate.
+outward along that chain; a request travels the other way, entering at the Gateway (or, for AI agents, the standalone MCP server). It covers what each layer does and does not authenticate.
 
 ## Worker security boundary
 
@@ -39,9 +39,9 @@ The `WorkerRuntime` does not enforce a caller allowlist before dispatching the r
 public key and can reach it with HRPC over the network may send requests.
 
 The Kernel's [HRPC allowlist][kernel-hrpc-allowlist] protects clients connecting to Kernel, not direct callers to a Worker. Consumers
-must enter through the Gateway → Kernel path, with request authentication in the Gateway's plugin controllers.
+must enter through the Gateway → Kernel path, with request authentication in the Gateway's plugin controllers. AI agents enter through the MCP server → Kernel path instead, where authentication is the MCP endpoint's concern — native MCP tools do not pass through those Gateway controllers. [Kernel's caller allowlist][mcp-allowlist] admits each path's caller by its HRPC public key.
 
-Given that the Worker will not turn an unwanted caller away, the surrounding controls are yours:
+Given that the Worker does not turn an unwanted caller away, the surrounding controls are yours:
 
 - Restrict direct Worker reachability to trusted backend networks, and apply a host/container firewall policy
 - Never expose device management interfaces publicly
@@ -77,6 +77,9 @@ records.
 
 [security-blueprint]: ../guides/security/index.md
 <!-- docs@tether.io: security-blueprint → guides/security -->
+
+[mcp-allowlist]: ../guides/security/index.md#step-2-admit-the-gateway-to-kernel
+<!-- docs@tether.io: mcp-allowlist → guides/security#step-2-admit-the-gateway-to-kernel -->
 
 [gateway-auth-design]: ../../backend/core/gateway/README.md#security-model
 <!-- docs@tether.io: gateway-auth-design → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#security-model -->

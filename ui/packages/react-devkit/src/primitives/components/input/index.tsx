@@ -27,6 +27,7 @@ export type InputProps = Omit<ComponentProps<'input'>, 'prefix' | 'size'> & {
   label?: string
   /**
    * HTML id for the input. Required when using label for accessibility.
+   * @default auto-generated
    */
   id?: string
   /**

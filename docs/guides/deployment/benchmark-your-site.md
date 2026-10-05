@@ -32,5 +32,5 @@ runs on your own hardware, instead of by hand. See [when to use this][benchmark-
 [benchmark-config]: ../../../backend/tests/benchmark/config/benchmark.config.json.example
 <!-- docs@tether.io: benchmark-config → https://github.com/tetherto/mdk/blob/main/backend/tests/benchmark/config/benchmark.config.json.example -->
 
-[benchmark-run]: ../../../backend/tests/benchmark/README.md#quick-start
-<!-- docs@tether.io: benchmark-run → guides/deployment/benchmark-your-site#quick-start -->
+[benchmark-run]: ../../../backend/tests/benchmark/README.md#quickstart
+<!-- docs@tether.io: benchmark-run → guides/deployment/benchmark-your-site#quickstart -->

@@ -22,8 +22,7 @@ src/
 │   ├── mdk-ui-component/   # Dashboard page workflow + ui-registry (generated)
 │   ├── mdk-deployment/     # mdk.yaml / mdk run workflow
 │   └── mdk-site-sizing/    # Size a site from a description + measured envelope
-├── mdk-contract.schema.json  # Derived contract schema (owned here; see its $comment)
-├── sources.map.json        # Source-of-truth -> bundle mapping
+├── sources.map.json        # Source-of-truth -> bundle mapping (contract schema comes from backend/core/mdk-worker)
 ├── index.mjs               # Programmatic entry point (assemble / installSkills)
 ├── index.d.ts              # TypeScript types for the entry point
 ├── assemble.mjs            # CLI wrapper -> dist/skills/
@@ -36,7 +35,8 @@ dist/skills/                # Assembled suite — build output, gitignored, neve
 `npm run generate:ui-registry` from the repo root, which rebuilds the devkit registry and rewrites this file. Hand-edits do not survive the next run,
 and a stale copy tells coding agents to use component props that no longer exist. The
 `docs-freshness` workflow watches this file and its devkit source on PRs and
-warns, rather than blocks, when it drifts.
+fails the check when it drifts. The job summary shows what differs; fix it by running `npm run generate:ui-registry` (or
+`npm run regenerate-docs`) and committing the result.
 
 Skills are assembled and installed **flat** — clients discover
 `<skills-dir>/<name>/SKILL.md` one level deep, and each skill's `description`
@@ -72,9 +72,9 @@ Also exported: `assemble()`, `isAssembled()`, `canAssemble()`, and `CLIENT_DIRS`
 ## Try it — routing prompts
 
 Open the repo in a skills-aware agent after installing, then check that each
-prompt activates the matching skill(s):
+prompt activates the matching skills:
 
-| Example prompt                                              | Skill(s) it should invoke           |
+| Example prompt                                              | Skills it should invoke           |
 | ----------------------------------------------------------- | ----------------------------------- |
 | "Add a new power meter Worker for our site"                 | `mdk-worker-plugin`                 |
 | "I need to integrate a new miner device into MDK"           | `mdk-worker-plugin`                 |
@@ -90,7 +90,7 @@ prompt activates the matching skill(s):
 ## Verify the device-Worker skill
 
 ```bash
-# contract validation (exit 0/1)
+# contract validation (exit 0/1); add --schema-only to skip the semantic checks
 node dist/skills/mdk-worker-plugin/scripts/validate-contract.mjs \
   packages/cli/templates/worker/mdk-contract.json
 

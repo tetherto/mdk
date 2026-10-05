@@ -56,7 +56,7 @@ export type UseMinerDetailResult = {
  * ({@link MinerControlsCard}) and the aggregate stats ({@link StatsGroupCard})
  * read the same store directly.
  *
- * @category op-centre
+ * @category op-center
  * @domain device-management
  * @tier advanced
  */

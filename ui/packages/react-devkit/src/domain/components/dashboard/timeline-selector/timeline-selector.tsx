@@ -11,9 +11,13 @@ export type TimelineSelectorProps = {
   /**
    * Available options — defaults to {@link getTimelineOptions}. Pass a custom
    * list to localise labels or restrict the range.
+   * @default getTimelineOptions()
    */
   options?: TimelineOption[]
-  /** ARIA label / placeholder for the trigger. */
+  /**
+   * ARIA label / placeholder for the trigger.
+   * @default "Time range"
+   */
   label?: string
   /** Tailwind/BEM class hook on the trigger. */
   className?: string

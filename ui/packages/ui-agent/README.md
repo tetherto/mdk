@@ -140,7 +140,7 @@ transport itself misbehaves.
 
 ## Rendering
 
-Answers render as GitHub-flavoured markdown once the turn finishes, and as plain
+Answers render as GitHub-flavoured Markdown once the turn finishes, and as plain
 text while it streams — a half-written fence breaks the parser and re-parsing on
 every token is wasted work. Raw HTML is deliberately not enabled, so untrusted
 model output cannot inject markup. Do not add `rehype-raw`.
@@ -236,8 +236,8 @@ together yet.
 ### 3. A gateway carrying the agent plugin
 
 Mount [`@tetherto/mdk-plugin-agent`](../../../backend/plugins/agent/README.md) behind its own Gateway, against the local model
-and MCP server this walkthrough already served. See [Mount the plugin](../../../docs/guides/agent/gateway-deployment.md#mount-the-plugin)
-for the complete `mdk.yaml` and `mdk run all`.
+and MCP server this walkthrough already served. [Mounting the plugin](../../../docs/guides/agent/gateway-deployment.md#mount-the-plugin)
+shows the complete `mdk.yaml` and `mdk run all`.
 
 ### 4. The UI
 
@@ -292,6 +292,4 @@ curl -N -X POST localhost:3847/agent/sessions/$SESSION/messages \
 - **No CORS, ever.** The stream route hijacks the reply, so the dev proxy in
   step 4 is not optional if the UI is on another port.
 
-Walked end to end on 2026-08-14 and the four steps above are what it took —
-including two bugs fixed on the way, in `full-site`'s preflight check and its MCP
-server, both of which stopped the example booting at all.
+Walked end to end on 2026-08-14; the four steps above are what it took.

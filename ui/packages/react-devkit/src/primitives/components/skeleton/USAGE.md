@@ -2,25 +2,23 @@
 
 A pulsing placeholder used to indicate loading content. Supports rectangular and circular shapes.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `borderRadius` | Optional | `string \| number` | - | Border radius; ignored when `circle` is true |
+| `circle` | Optional | `boolean` | `false` | Renders a perfect circle using `height` as the diameter |
+| `className` | Optional | `string` | - | Additional class for the element |
+| `height` | Optional | `string \| number` | - | Height in pixels (number) or any CSS value (string) |
+| `width` | Optional | `string \| number` | - | Width in pixels (number) or any CSS value (string) |
+<!-- END GENERATED: props -->
+
 ## Exports
 
 | Name            | Description |
 | --------------- | ----------- |
 | `SkeletonBlock` | A single skeleton element with configurable dimensions and border radius |
-
-## `SkeletonBlock` Props
-
-All props are optional.
-
-| Prop           | Status   | Type               | Default | Description                                             |
-| -------------- | -------- | ------------------ | ------- | ------------------------------------------------------- |
-| `width`        | Optional | `number \| string` | —       | Width in pixels (number) or any CSS value (string)      |
-| `height`       | Optional | `number \| string` | —       | Height in pixels (number) or any CSS value (string)     |
-| `borderRadius` | Optional | `number \| string` | —       | Border radius; ignored when `circle` is true            |
-| `circle`       | Optional | `boolean`          | `false` | Renders a perfect circle using `height` as the diameter |
-| `className`    | Optional | `string`           | —       | Additional class for the element                        |
-
-`SkeletonBlockProps` doesn't extend native `div` attributes, so only the props above are accepted.
 
 ## Example
 

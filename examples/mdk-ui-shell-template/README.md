@@ -1,4 +1,4 @@
-# MDK UI Shell
+# MDK UI shell
 
 This example provides a bare application shell built with MDK. It ships the **backbone** so a
 fresh app is wired end to end:
@@ -8,7 +8,7 @@ fresh app is wired end to end:
 - **App frame** — header (logo + user/timezone/sign-out menu) and sidebar.
 - **A Home landing page** — a placeholder that confirms auth + the frame work.
 
-There are **no example pages** out of the box. The full reference pages
+**No example pages** ship out of the box. The full reference pages
 (Dashboard, Alerts, Pool Manager, Site Overview, Explorer) ship under
 [`_managed/pages/`](./_managed/pages/) — copy the one you want into `src/pages/`
 and wire it up (see [Adding a new page](#adding-a-new-page)).
@@ -17,7 +17,7 @@ Everything you add respects the same boundaries this shell does: **API/state in
 `@tetherto/mdk-ui-foundation`, hooks in `@tetherto/mdk-react-adapter`,
 components in `@tetherto/mdk-react-devkit`**.
 
-## Quick start
+## Quickstart
 
 > [!NOTE]
 > [`mdk create dashboard`](../../packages/cli/README.md) performs step 2 below automatically, including the `.env` values.
@@ -56,7 +56,7 @@ This app needs that plugin to honour two ends of a redirect:
 - a **return redirect** to `http://localhost:3030/?authToken=<jwt>` (the
   frontend port set in [`vite.config.ts`](./vite.config.ts)).
 
-You will also need a Google OAuth 2.0 client:
+You also need a Google OAuth 2.0 client:
 
 1. Open <https://console.cloud.google.com/apis/credentials> → "Create
    credentials" → "OAuth client ID" → "Web application".
@@ -94,7 +94,7 @@ surface as type errors. `VITE_GATEWAY_URL` is a config-time-only variable read d
 This only applies once you add a data-backed page (e.g. the managed Dashboard).
 `miningos-gateway` is the *API surface*, not the data source. It
 expects Kernel clusters with real miners reporting in. **Without that, the
-charts will render empty states.** This is the expected first-run experience
+charts render empty states.** This is the expected first-run experience
 for a community demo — the pages are honest about no data being available.
 
 To exercise those pages against simulated data, run the backend's integration

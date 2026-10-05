@@ -2,7 +2,7 @@
 
 MDK Worker for Seneca temperature sensors. Reads ambient temperature via Modbus TCP. Supports the Z-4RTD-2 model.
 
-## Supported Models
+## Supported models
 
 Single device family — `startSenecaWorker` takes no `model` option.
 
@@ -64,7 +64,7 @@ Temperature sensors are read-only. Standard device management commands are suppo
 
 **States:** `OK`, `DEGRADED`, `OFFLINE`
 
-## Mock Server
+## Mock server
 
 Run the mock standalone — the model `type` is the first argument (case-insensitive):
 

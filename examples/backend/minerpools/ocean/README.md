@@ -1,4 +1,4 @@
-# MDK Ocean Minerpool Example (standalone)
+# MDK Ocean minerpool example (standalone)
 
 A small, self-contained **Ocean** minerpool example you can clone and run with **no real hardware,
 no Ocean.xyz account, and no network access**. It starts a mock Ocean API, drives the `OCEAN_POOL`
@@ -154,4 +154,4 @@ $TMPDIR/mdk-site-ocean/store/     # the pool's Hyperbee store
 | Path | Purpose |
 |---|---|
 | [`backend/workers/minerpools/ocean`](../../../../backend/workers/minerpools/ocean/README.md) | Ocean `OCEAN_POOL` manager, mock server, `mdk-contract.json`. |
-| [`examples/backend/miners/antminer`](../../miners/antminer/README.md) | A Kernel-integrated example (for comparison — what minerpools will look like once integrated). |
+| [`examples/backend/miners/antminer`](../../miners/antminer/README.md) | A Kernel-integrated example (for comparison — what minerpools look like once integrated). |

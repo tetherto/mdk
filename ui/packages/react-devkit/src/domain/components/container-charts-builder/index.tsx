@@ -27,17 +27,44 @@ export type ChartDataPayload = {
 }
 
 export type ContainerChartsBuilderProps = {
+  /** Container tag (any leading prefix is stripped) */
   tag?: string
+  /** Declarative chart configuration */
   chartDataPayload?: ChartDataPayload
+  /** Title shown in the chart header */
   chartTitle?: string
+  /** Custom date range as Unix epoch seconds. Currently unused — accepted by the shared props type but not read by the chart components. */
   dateRange?: { start?: number; end?: number }
+  /**
+   * Raw container telemetry entries (with `ts` + nested stats group)
+   * @default []
+   */
   data?: Array<UnknownRecord>
+  /**
+   * Initial / controlled timeline value
+   * @default "24h"
+   */
   timeline?: string
+  /** IANA timezone for x-axis ticks */
   fixedTimezone?: string
+  /** Chart pixel height */
   height?: number
+  /**
+   * Show the toggleable legend
+   * @default true
+   */
   showLegend?: boolean
+  /**
+   * Show the range selector buttons
+   * @default true
+   */
   showRangeSelector?: boolean
+  /**
+   * Override the default range selector options
+   * @default 5m/30m/3h/1D
+   */
   rangeOptions?: Array<{ label: string; value: string }>
+  /** Footer (e.g. min/max/avg stats) */
   footer?: React.ReactNode
 }
 
@@ -86,8 +113,7 @@ const ContainerChartsBuilder = ({
         const x = secondsToMs(tsInSeconds)
 
         const containerStats = entry?.container_specific_stats_group_aggr as
-          | Record<string, UnknownRecord>
-          | undefined
+          Record<string, UnknownRecord> | undefined
         const groupData = pureTag
           ? (containerStats?.[pureTag] as UnknownRecord | undefined)
           : undefined
@@ -126,8 +152,7 @@ const ContainerChartsBuilder = ({
         const x = tsInSeconds * 1000
 
         const containerStats = entry?.container_specific_stats_group_aggr as
-          | Record<string, UnknownRecord>
-          | undefined
+          Record<string, UnknownRecord> | undefined
         const groupData = pureTag
           ? (containerStats?.[pureTag] as UnknownRecord | undefined)
           : undefined

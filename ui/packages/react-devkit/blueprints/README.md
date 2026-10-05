@@ -1,4 +1,4 @@
-# MDK Blueprints
+# MDK blueprints
 
 A blueprint is a curated recipe that answers **"I want to build X — what do I use?"**.
 Each `.md` file in this folder defines one blueprint: structured frontmatter for

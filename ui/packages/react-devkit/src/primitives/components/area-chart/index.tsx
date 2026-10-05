@@ -21,8 +21,12 @@ export type AreaChartProps = {
   options?: ChartJS<'line'>['options']
   /** Custom HTML tooltip configuration. When provided, replaces the default Chart.js tooltip. */
   tooltip?: ChartTooltipConfig
-  /** Chart height in pixels */
+  /**
+   * Chart height in pixels
+   * @default 300
+   */
   height?: number
+  /** Additional class names */
   className?: string
 }
 

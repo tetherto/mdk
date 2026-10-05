@@ -25,7 +25,9 @@ const DropdownMenuPortal = DropdownMenuPrimitive.Portal
 type DropdownMenuSize = 'sm' | 'md' | 'lg'
 
 type BaseStaticItemProps = {
+  /** Disables the item */
   disabled?: boolean
+  /** Marks the item as active (static variants only) */
   active?: boolean
 }
 
@@ -34,8 +36,14 @@ const DropdownMenuSizeContext = createContext<DropdownMenuSize>('md')
 
 // Content
 type DropdownMenuContentProps = ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content> & {
+  /**
+   * Stretches the menu panel to the trigger width
+   * @default false
+   */
   alignWidth?: boolean
-  /** @default 'md' */
+  /**
+   * Controls item font/padding size (propagated via context)
+   * @default 'md' */
   size?: DropdownMenuSize
 }
 
@@ -85,6 +93,7 @@ DropdownMenuStaticContent.displayName = 'DropdownMenuStaticContent'
 
 // Item
 type DropdownMenuItemProps = ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
+  /** Icon prepended to the item content */
   icon?: ReactNode
 }
 
@@ -271,11 +280,17 @@ type SearchableItem = {
 } & BaseStaticItemProps
 
 type DropdownMenuSearchableProps = {
+  /** Items to search and render */
   items: SearchableItem[]
-  /** @default 'Search' */
+  /**
+   * Input placeholder
+   * @default 'Search' */
   placeholder?: string
-  /** @default 'No matching results found' */
+  /**
+   * Shown when no items match
+   * @default 'No matching results found' */
   emptyMessage?: string
+  /** Fired when an item is clicked */
   onItemSelect?: (item: SearchableItem) => void
 }
 

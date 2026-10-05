@@ -5,11 +5,23 @@ import { Button, EmptyState, Input, Switch } from '@primitives'
 import './feature-flags-settings.scss'
 
 export type FeatureFlagsSettingsProps = {
+  /** Current flag values keyed by flag name */
   featureFlags: Record<string, boolean>
+  /** Whether editing is permitted */
   isEditingEnabled: boolean
+  /**
+   * Show loading state
+   * @default false
+   */
   isLoading?: boolean
+  /**
+   * Show saving spinner on save button
+   * @default false
+   */
   isSaving?: boolean
+  /** Called with updated flags when saved */
   onSave: (flags: Record<string, boolean>) => void
+  /** Additional CSS class */
   className?: string
 }
 

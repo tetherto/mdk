@@ -9,15 +9,30 @@ import {
 
 /** Props for {@link PowerModeTimelineChart}. */
 export type PowerModeTimelineChartProps = Partial<{
-  /** Initial power-mode entries (each with start/end ts + mode). */
+  /**
+   * Initial power-mode entries (each with start/end ts + mode).
+   * @default []
+   */
   data: PowerModeTimelineEntry[]
-  /** Streaming updates appended to the initial data. */
+  /**
+   * Streaming updates appended to the initial data.
+   * @default []
+   */
   dataUpdates: PowerModeTimelineEntry[]
-  /** Show a loading skeleton instead of the chart. */
+  /**
+   * Show a loading skeleton instead of the chart.
+   * @default false
+   */
   isLoading: boolean
-  /** IANA timezone string for x-axis tick formatting. */
+  /**
+   * IANA timezone string for x-axis tick formatting.
+   * @default "UTC"
+   */
   timezone: string
-  /** Chart title. */
+  /**
+   * Chart title.
+   * @default CHART_TITLES.POWER_MODE_TIMELINE
+   */
   title: string
 }>
 

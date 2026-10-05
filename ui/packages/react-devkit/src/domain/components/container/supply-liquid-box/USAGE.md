@@ -1,13 +1,15 @@
 # SupplyLiquidBox
 
-Status card for the dielectric supply tank in a Bitmain Hydro container. Shows supply-liquid temperature, pressure, and flow readings with colour/flash states driven by configurable thresholds.
+Status card for the dielectric supply tank in a Bitmain Hydro container. Shows supply-liquid temperature, pressure, and flow readings with color/flash states driven by configurable thresholds.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop                | Status   | Type     | Default | Description                                                              |
-| ------------------- | -------- | -------- | ------- | ------------------------------------------------------------------------ |
-| `data`              | Optional | `Device` | —       | Live device object. Returns `null` when omitted.                         |
-| `containerSettings` | Optional | `SupplyLiquidBoxContainerSettings \| null` | `null`  | Optional threshold map that controls colour and flash states on readings |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `containerSettings` | Optional | `SupplyLiquidBoxContainerSettings \| null` | `null` | Optional threshold map that controls colour and flash states on readings |
+| `data` | Optional | `Device` | - | Live device object. Returns `null` when omitted |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

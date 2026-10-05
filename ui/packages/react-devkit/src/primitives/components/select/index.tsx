@@ -38,7 +38,16 @@ type SelectContextValue = Partial<{
 
 const SelectContext = createContext<SelectContextValue>({})
 
-export type SelectProps = ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & {
+type SelectRootProps = ComponentPropsWithoutRef<typeof SelectPrimitive.Root>
+export type SelectProps = SelectRootProps & {
+  // Key controlled-state props re-declared from the Radix root so they surface in
+  // the generated docs (types reuse Radix's via indexed access — cannot drift).
+  /** Controlled value */
+  value?: SelectRootProps['value']
+  /** Uncontrolled initial value */
+  defaultValue?: SelectRootProps['defaultValue']
+  /** Setter for the value */
+  onValueChange?: SelectRootProps['onValueChange']
   /**
    * Show a clear button when a value is selected
    * @default false

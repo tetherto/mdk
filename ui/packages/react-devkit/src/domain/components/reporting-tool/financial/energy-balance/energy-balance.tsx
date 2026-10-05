@@ -17,10 +17,18 @@ import { timeframeSelectLabel } from './energy-balance.constants'
 import type { DisplayMode, EnergyBalanceViewModel } from './use-energy-balance'
 
 export type EnergyBalanceProps = {
+  /** All display state: chart inputs, metrics, active tab, display modes, loading/error flags. Returned directly by `useEnergyBalanceViewModel`. */
   viewModel: EnergyBalanceViewModel
+  /** Called when the user switches between Revenue and Cost tabs */
   onTabChange: (tab: EnergyBalanceTab) => void
+  /** Called when the user toggles USD / BTC on the revenue tab */
   onRevenueDisplayModeChange: (mode: DisplayMode) => void
+  /** Called when the user toggles USD / BTC on the cost tab */
   onCostDisplayModeChange: (mode: DisplayMode) => void
+  /**
+   * Suppresses error banners in demo/mock environments
+   * @default false
+   */
   isDemoMode?: boolean
   /** Slot for timeframe / date-range controls rendered by the host app. */
   timeframeControls?: ReactNode

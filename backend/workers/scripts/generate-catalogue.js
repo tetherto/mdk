@@ -61,11 +61,11 @@ const FULL_SHA_RE = /^[0-9a-f]{40}$/i
 // won't get its own heading/label, and nothing here will tell you why until someone notices.
 // Add a schema-example family here when a real contract actually needs it.
 const FAMILY_LABELS = {
-  miner: 'Miners',
-  container: 'Containers',
-  'power-meter': 'Power meters',
-  sensor: 'Sensors',
-  minerpool: 'Mining pools'
+  miner: 'miners',
+  container: 'containers',
+  'power-meter': 'power meters',
+  sensor: 'sensors',
+  minerpool: 'mining pools'
 }
 const HARDWARE_FAMILIES = ['miner', 'container', 'power-meter', 'sensor']
 const POOL_FAMILIES = ['minerpool']

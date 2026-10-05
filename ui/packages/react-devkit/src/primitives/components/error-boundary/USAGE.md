@@ -1,8 +1,8 @@
-# ErrorBoundary
+# `ErrorBoundary`
 
 A React class component that catches rendering errors in its subtree and displays a fallback UI. Also exports a `withErrorBoundary` HOC for wrapping components declaratively.
 
-## Props
+## Props detail
 
 ### `ErrorBoundary`
 

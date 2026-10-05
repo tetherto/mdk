@@ -1,29 +1,31 @@
-# Toast / Toaster
+# Toast / toaster
 
 Transient notifications shown in a corner of the viewport, built on Radix UI.
 The simplest path is `<Toaster>` (Provider + Viewport in one) wrapping a
 list of `<Toast>` elements.
 
-## `Toaster` props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop       | Status   | Type        | Default      | Description                      |
-| ---------- | -------- | ----------- | ------------ | -------------------------------- |
-| `children` | Required | `ReactNode` | —            | The `<Toast>` elements to render |
-| `position` | Optional | `"top-left" \| "top-center" \| "top-right" \| "bottom-left" \| "bottom-center" \| "bottom-right"` | `"top-left"` | Where the viewport is anchored   |
+### `Toast` props
 
-All other `ToastProvider` props are forwarded.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `title` | Required | `string` | - | Title shown at the top of the toast |
+| `description` | Optional | `string` | - | Body text |
+| `duration` | Optional | `number` | - | Auto-dismiss after N ms |
+| `icon` | Optional | `React.JSX.Element` | - | Override the default variant icon |
+| `onOpenChange` | Optional | `((open: boolean) => void)` | - | Open-state change handler |
+| `open` | Optional | `boolean` | - | Controlled open state |
+| `variant` | Optional | `"success" \| "info" \| "warning" \| "error"` | `"info"` | Determines the icon and accent |
 
-## `Toast` props
+### `Toaster` props
 
-| Prop           | Status   | Type                      | Default  | Description                         |
-| -------------- | -------- | ------------------------- | -------- | ----------------------------------- |
-| `title`        | Required | `string`                  | —        | Title shown at the top of the toast |
-| `description`  | Optional | `string`                  | —        | Body text                           |
-| `variant`      | Optional | `"success" \| "error" \| "warning" \| "info"` | `"info"` | Determines the icon and accent      |
-| `icon`         | Optional | `JSX.Element`             | —        | Override the default variant icon   |
-| `open`         | Optional | `boolean`                 | —        | Controlled open state               |
-| `onOpenChange` | Optional | `(open: boolean) => void` | —        | Open-state change handler           |
-| `duration`     | Optional | `number`                  | —        | Auto-dismiss after N ms             |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Required | `React.ReactNode` | - | The `<Toast>` elements to render |
+| `position` | Optional | `"top-left" \| "top-right" \| "bottom-left" \| "bottom-right" \| "top-center" \| "bottom-center"` | `"top-left"` | Where the viewport is anchored |
+<!-- END GENERATED: props -->
 
 ## Example
 

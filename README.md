@@ -1,6 +1,6 @@
 # MDK
 
-[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.9.0)
+[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.10.0)
 [![CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/ci.yml?branch=main&label=CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql)
 [![Documentation](https://img.shields.io/badge/docs-mdk.tether.io-2ea44f?style=flat-square)](https://docs.mdk.tether.io)
@@ -11,9 +11,9 @@
 
 MDK is under active development and is **not yet considered stable**.
 
-Current release [v0.9.0](https://github.com/tetherto/mdk/releases/tag/v0.9.0).
+Current release [v0.10.0](https://github.com/tetherto/mdk/releases/tag/v0.10.0).
 
-## Table of Contents
+## Table of contents
 
 - [Overview](#overview)
 - [Architecture](#architecture)
@@ -53,7 +53,7 @@ instructions to, Workers.
 Kernel to agents,applications, dashboards, and automation services. At Layer 1, Workers translate vendor protocols for miners, power meters, sensors,
 facility platforms, and pool APIs into the MDK Protocol.
 
-Through the Gateway, AI agents, dashboards, and custom solutions monitor device state and issue authorized control commands
+Through the Gateway — and, for AI agents, the standalone MCP server — dashboards and custom solutions monitor device state and issue authorized control commands
 through a consistent API.
 
 That means that you can connect any physical hardware (e.g., miners, power meters, temperature sensors), facility management platforms

@@ -37,6 +37,7 @@ Start with the product, then the stack, then run something.
 | How the pieces fit together | [`concepts/architecture.md`](concepts/architecture.md) |
 | What the stack is made of, and where each piece is documented | [`concepts/architecture.md`](concepts/architecture.md#the-stack) |
 | The vocabulary you need (Kernel, Worker, manager, thing, mock) | [`reference/glossary.md`](reference/glossary.md) |
+| Every package MDK ships, and what each is for | [`reference/packages.md`](reference/packages.md) |
 | Run a complete site end to end | [`tutorials/run-a-site.md`](tutorials/run-a-site.md) |
 | How Gateway, Kernel, and Workers communicate | [`concepts/control-plane.md`](concepts/control-plane.md) |
 

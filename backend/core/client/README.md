@@ -281,7 +281,7 @@ const history = await client.pullWorkerTelemetry('miner-worker', { type: 'logs',
 
 #### `terminateWorker(workerId)` → `Promise<object>`
 
-Signal Kernel to evict a Worker from the registry. The Worker process itself continues running; it will re-register the next time it connects.
+Signal Kernel to evict a Worker from the registry. The Worker process itself continues running; it re-registers the next time it connects.
 
 ### Write-action methods
 

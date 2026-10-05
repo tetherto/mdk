@@ -2,20 +2,18 @@
 
 A colored pill/badge used to display statuses, counts, or labels. Supports color variants, sizes, vertical stacking, and an optional click handler.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type              | Default  | Description                                                      |
-| ----------- | -------- | ----------------- | -------- | ---------------------------------------------------------------- |
-| `color`     | Optional | `'red' \| 'gray' \| 'blue' \| 'yellow' \| 'green' \| 'purple' \| 'amber' \| 'slate'` | `'gray'` | Background color variant                                         |
-| `size`      | Optional | `ComponentSize` (`'sm' \| 'md' \| 'lg'`) | `'md'`   | Controls padding and font size                                   |
-| `vertical`  | Optional | `boolean`         | `false`  | Stacks child elements vertically and adds extra spacing          |
-| `children`  | Optional | `React.ReactNode` | —        | Content inside the indicator (text, icons, or multiple elements) |
-| `onClick`   | Optional | `VoidFunction`    | —        | Makes the indicator clickable and adds hover styles              |
-| `className` | Optional | `string`          | —        | Additional class for the root element                            |
-
-All other `div` HTML attributes are also forwarded.
-
-A convenience constant `INDICATOR_COLORS` is exported with typed keys for each valid color string.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Optional | `React.ReactNode` | - | Children content (can include text, icons, multiple elements) |
+| `className` | Optional | `string` | - | Custom className for the root element |
+| `color` | Optional | `"red" \| "gray" \| "blue" \| "yellow" \| "green" \| "purple" \| "amber" \| "slate"` | `"gray"` | Color variant of the indicator |
+| `onClick` | Optional | `(VoidFunction & React.MouseEventHandler<HTMLDivElement>)` | - | Click handler |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Size variant of the indicator |
+| `vertical` | Optional | `boolean` | `false` | When true, adds extra spacing between child elements and stacks them vertically. Useful for displaying multiple pieces of information (e.g. status + count) in a clear way |
+<!-- END GENERATED: props -->
 
 ## Example
 

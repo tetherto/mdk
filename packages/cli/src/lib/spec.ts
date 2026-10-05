@@ -41,6 +41,8 @@ export interface StackSpec {
        * gateway conf in its ambient context). */
       plugins: Array<{ package: string; config: Record<string, unknown> }>;
     };
+    /** Optional MCP server settings; `port` defaults to `gateway.port + 100` when the CLI boots it. */
+    mcp: { port?: number };
     workers: WorkerInstance[];
   };
 }
@@ -158,6 +160,9 @@ export function buildStackSpec(answers: StackAnswers): StackSpec {
           config: answers.pluginConfigs?.[pkg] ?? pluginConfig(pkg),
         })),
       },
+      // Onboarding never asks about MCP settings; `loadStackSpec` defaults
+      // this the same way when the section is absent from mdk.yaml entirely.
+      mcp: {},
       workers,
     },
   };
@@ -279,6 +284,15 @@ export function loadStackSpec(projectDir: string): StackSpec {
 
   const kernel = (s.kernel ?? {}) as Record<string, unknown>;
 
+  if (s.mcp != null && (typeof s.mcp !== 'object' || Array.isArray(s.mcp))) {
+    fail(`${file}: \`spec.mcp\` must be a mapping.`);
+  }
+  const rawMcp = (s.mcp ?? {}) as Record<string, unknown>;
+  if (rawMcp.port != null && typeof rawMcp.port !== 'number') {
+    fail(`${file}: \`spec.mcp.port\` must be a number.`);
+  }
+  const mcp = typeof rawMcp.port === 'number' ? { port: rawMcp.port } : {};
+
   const workers = Array.isArray(s.workers)
     ? (s.workers as Array<Record<string, unknown>>).map((w, i) => {
         if (typeof w?.name !== 'string' || !w.name) {
@@ -313,6 +327,7 @@ export function loadStackSpec(projectDir: string): StackSpec {
     spec: {
       kernel: { port: typeof kernel.port === 'number' ? (kernel.port as number) : 0 },
       gateway: { port: g.port, config: gatewayConfig, plugins },
+      mcp,
       workers,
     },
   };

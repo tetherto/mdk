@@ -166,9 +166,12 @@ target ES2022, ESM-only. All packages extend [`tsconfig.base.json`](./tsconfig.b
 
 ### Code style
 
-ESLint uses `@antfu/eslint-config`. Enforced: **double quotes**,
-**semicolons required**, 2-space indent, 120-char soft limit. Husky +
-lint-staged enforce on staged files.
+Formatting is owned by Prettier (`.prettierrc`); ESLint
+(`@antfu/eslint-config`) runs lint rules only, with its stylistic ruleset off
+(`stylistic: false`) so the two never fight. Prettier enforces: **single
+quotes** (double in JSX), **no semicolons**, 2-space indent, 100-char width,
+trailing commas. Husky + lint-staged run `eslint --fix` then `prettier --write`
+on staged files.
 
 ### Commits
 

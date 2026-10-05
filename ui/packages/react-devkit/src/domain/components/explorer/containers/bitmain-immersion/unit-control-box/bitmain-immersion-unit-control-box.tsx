@@ -7,17 +7,32 @@ import './bitmain-immersion-unit-control-box.scss'
 type BitMainImmersionUnitControlBoxProps = {
   /** Box title */
   title?: string
-  /** Alarm/fault status */
+  /**
+   * Alarm/fault status
+   * @default false
+   */
   alarmStatus?: boolean
   /** Frequency value in Hz */
   frequency?: number
-  /** Whether this is a dry cooler unit */
+  /**
+   * Whether this is a dry cooler unit
+   * @default false
+   */
   isDryCooler?: boolean
-  /** Whether the unit is running */
+  /**
+   * Whether the unit is running
+   * @default false
+   */
   running?: boolean
-  /** Show frequency in left column instead of right */
+  /**
+   * Show frequency in left column instead of right
+   * @default false
+   */
   showFrequencyInLeftColumn?: boolean
-  /** Secondary variant (no border) */
+  /**
+   * Secondary variant (no border)
+   * @default false
+   */
   secondary?: boolean
   /** Custom className */
   className?: string

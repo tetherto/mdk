@@ -1,16 +1,18 @@
-# DataLabel
+# `DataLabel`
 
 Read-only period range label (`PERIOD: start - end`). Dates are formatted as
 `dd/MM/yy` in the timezone from `useTimezone` (`@tetherto/mdk-react-adapter`).
 Invalid or missing dates render as `--/--/--`.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type           | Default    | Description |
-| ----------- | -------- | -------------- | ---------- | ----------- |
-| `startDate` | Optional | `Date \| null` | —          | Range start |
-| `endDate`   | Optional | `Date \| null` | —          | Range end   |
-| `label`     | Optional | `string`       | `"PERIOD"` | Header text before the colon |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `endDate` | Optional | `Date \| null` | - | Range end; formatted in the active timezone (`dd/MM/yy`) |
+| `label` | Optional | `string` | `"PERIOD"` | Label text; defaults to `PERIOD` |
+| `startDate` | Optional | `Date \| null` | - | Range start; formatted in the active timezone (`dd/MM/yy`) |
+<!-- END GENERATED: props -->
 
 ## Example
 

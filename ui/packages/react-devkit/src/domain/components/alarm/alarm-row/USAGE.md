@@ -1,13 +1,15 @@
-# AlarmRow
+# `AlarmRow`
 
 Single alarm-feed row with a severity dot, timestamp, source device label, and the alert message body. Clicking the row triggers `onNavigate` to route to the alarm detail page.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop         | Status   | Type                     | Default | Description                  |
-| ------------ | -------- | ------------------------ | ------- | ---------------------------- |
-| `data`       | Required | `TimelineItemData`       | —       | The alarm entry to render. Contains `item` (alarm metadata), `dot`, and `children` |
-| `onNavigate` | Required | `(path: string) => void` | —       | Called when the row is clicked; receives the alarm `uuid` as the path segment |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Required | `TimelineItemData` | - | The alarm entry to render |
+| `onNavigate` | Required | `(path: string) => void` | - | Called when the row is clicked; receives the alarm `uuid` as the path segment |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 
@@ -31,5 +33,5 @@ const alarm = {
 
 ## Notes
 
-- Severity colour is driven by `item.status` via `ALERT_COLOR_MAP`; supported values match the alert severity palette (`critical`, `warning`, `info`, etc.)
+- Severity color is driven by `item.status` via `ALERT_COLOR_MAP`; supported values match the alert severity palette (`critical`, `warning`, `info`, etc.)
 - The `body` string is split on `|` and each segment is rendered as a separate line

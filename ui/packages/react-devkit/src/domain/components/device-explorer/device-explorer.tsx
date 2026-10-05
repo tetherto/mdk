@@ -14,6 +14,7 @@ import type { JSX } from 'react'
 type OmittedToolbarProps = 'onFiltersChange' | 'filters'
 type OptionalToolbarProps = 'filters'
 type ForwardedToolbarProps = {
+  /** Setter for filters */
   onFiltersChange: (value: LocalFilters) => void
 } & Omit<DeviceExplorerToolbarProps, OmittedToolbarProps> &
   Partial<Pick<DeviceExplorerToolbarProps, OptionalToolbarProps>>
@@ -24,9 +25,13 @@ type ForwardedTableProps = Partial<Pick<DeviceExplorerTableProps, OptionalTableP
   Omit<DeviceExplorerTableProps, OmittedTableProps>
 
 export type DeviceExplorerProps = {
+  /** Active device-type tab */
   deviceType: DeviceExplorerDeviceType
+  /** Additional class names */
   className?: string
+  /** Controlled row-selection state */
   selectedDevices?: DataTableRowSelectionState
+  /** Setter for row selection */
   onSelectedDevicesChange?: (selections: DataTableRowSelectionState) => void
 } & ForwardedToolbarProps &
   ForwardedTableProps

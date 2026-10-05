@@ -3,19 +3,23 @@
 Page navigation control with prev/next, page numbers, first/last jumps and an
 optional page-size selector.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop              | Status   | Type            | Default             | Description                            |
-| ----------------- | -------- | --------------- | ------------------- | -------------------------------------- |
-| `current`         | Optional | `number`        | `1`                 | Current 1-indexed page number          |
-| `total`           | Optional | `number`        | `0`                 | Total number of items across all pages |
-| `pageSize`        | Optional | `number`        | `20`                | Items per page                         |
-| `pageSizeOptions` | Optional | `number[]`      | `[10, 20, 50, 100]` | Selectable page sizes                  |
-| `showSizeChanger` | Optional | `boolean`       | `true`              | Show the page-size dropdown            |
-| `showTotal`       | Optional | `boolean`       | `false`             | Show `"N items"` text on the left      |
-| `disabled`        | Optional | `boolean`       | `false`             | Disable all controls                   |
-| `size`            | Optional | `ComponentSize` | `"sm"`              | Size variant                           |
-| `onChange`        | Optional | `(page: number, pageSize: number) => void` | —                   | Fired when page or page size changes   |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Custom className for the root element |
+| `current` | Optional | `number` | `1` | Current active page number |
+| `disabled` | Optional | `boolean` | `false` | Disable pagination |
+| `onChange` | Optional | `((page: number, pageSize: number) => void)` | - | Callback when page number or page size changes |
+| `onSizeChange` | Optional | `((current: number, size: number) => void)` | - | Callback when page size changes |
+| `pageSize` | Optional | `number` | `20` | Number of items per page |
+| `pageSizeOptions` | Optional | `number[]` | `[10, 20, 50, 100]` | Page size options for the select dropdown |
+| `showSizeChanger` | Optional | `boolean` | `true` | Show page size changer |
+| `showTotal` | Optional | `boolean` | `false` | Show total count text |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"sm"` | Size variant |
+| `total` | Optional | `number` | `0` | Total number of items |
+<!-- END GENERATED: props -->
 
 ## Example
 

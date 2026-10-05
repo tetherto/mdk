@@ -1,5 +1,5 @@
 /**
- * Shared polling cadences for the Pool Manager and Op Centre read hooks.
+ * Shared polling cadences for the Pool Manager and Op Center read hooks.
  * Centralized so the same interval isn't duplicated as a raw literal across
  * every hook.
  */
@@ -16,5 +16,5 @@ export const ALERTS_POLL_INTERVAL_MS = 20_000
 /** Poll cadence (ms) for the live-actions feed (`/auth/actions`). */
 export const LIVE_ACTIONS_POLL_INTERVAL_MS = 5_000
 
-/** Poll cadence (ms) for the Operations Centre realtime snapshots (widgets, thing detail). */
-export const OP_CENTRE_REALTIME_POLL_INTERVAL_MS = 20_000
+/** Poll cadence (ms) for the Operations Center realtime snapshots (widgets, thing detail). */
+export const OP_CENTER_REALTIME_POLL_INTERVAL_MS = 20_000

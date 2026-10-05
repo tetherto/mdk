@@ -145,7 +145,7 @@ describe('mining query factories', () => {
   })
 })
 
-describe('operational centre query factories', () => {
+describe('operational center query factories', () => {
   const client = createMdkQueryClient({ apiBaseUrl: 'http://api.test' })
 
   it('tailLogMultiQuery serialises the batched params', async () => {

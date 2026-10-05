@@ -44,12 +44,14 @@ Beyond the validated fields, three are read:
   }
   ```
 
-  Pass `?overwriteCache=true` to bypass and refresh. See [the guide's Caching step](../../../docs/guides/gateway/plugins.md#caching)
-  for the how-to
+  Pass `?overwriteCache=true` with a non-empty `Authorization` header to bypass and refresh. The flag is honored only when
+  the value is literally `true` and the header is non-empty; the Gateway does not authenticate or validate it. Any other
+  value, including `false`, or a missing header is ignored. See
+  [the guide's Caching step](../../../docs/guides/gateway/plugins.md#caching) for the how-to
 - `description` is read by [`generate-plugin-reference.js`](../../../docs/scripts/generate-plugin-reference.js) to build the route tables
 - `stream` marks a route that owns the raw `ServerResponse` instead of returning a plain value: [`plugin-adapter.js`](../gateway/workers/lib/plugin-adapter.js)
-hijacks the reply so Fastify never serializes it, and calls the handler as `(req, raw)`. A throw before any header is written maps to a JSON error
-carrying `err.statusCode` (or `400` by default); a throw after headers are sent just ends the socket instead of leaving it open.
+hijacks the reply so Fastify never serializes it, and calls the handler as `(req, raw)`. A throw before any header is written returns the standard
+[error body](#error-responses); a throw after headers are sent just ends the socket instead of leaving it open.
 [`backend/plugins/agent`](../../plugins/agent/README.md) is the shipping example — its message route streams `text/event-stream` this way.
 See [the guide's Stream routes step](../../../docs/guides/gateway/plugins.md#stream-routes) for the how-to
 
@@ -82,6 +84,22 @@ as [`telemetry/lib/client.js`](telemetry/lib/client.js) does, and requires that 
 > [!TIP]
 > The [plugin authoring guide](../../../docs/guides/gateway/plugins.md) walks through building a controller and the
 > [plugin's context module](../../../docs/guides/gateway/plugins.md#the-plugins-context-module) — its full field list.
+
+## Error responses
+
+A returned value is serialized as a `200`. A throw is turned into one error body by `errorResponse()` in
+[`plugin-adapter.js`](../gateway/workers/lib/plugin-adapter.js), the same shape for normal and stream routes:
+
+| Field        | Type     | Contains                                                                                  |
+| ------------ | -------- | ----------------------------------------------------------------------------------------- |
+| `statusCode` | `number` | `err.statusCode` when an integer 400 or higher, otherwise `400`                           |
+| `error`      | `string` | The HTTP reason phrase for `statusCode` (e.g. `Conflict`), falling back to `Bad Request`  |
+| `message`    | `string` | The error's own text for `ERR_*` codes and Fastify 4xx errors, else the status phrase     |
+
+Attach `.statusCode` to a thrown error to choose the code. A `message` is returned verbatim only when it is safe: an
+`ERR_*` code, or a Fastify 4xx error (validation, content type, body size). Any other message is replaced with the
+status phrase and the real error is logged, so internal detail never reaches the client. Each plugin documents the
+`ERR_*` codes it throws in its own README, as the [agent plugin's error table](../../plugins/agent/README.md#errors) does.
 
 ## Plugins MDK ships
 

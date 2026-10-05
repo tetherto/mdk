@@ -25,6 +25,7 @@ export type WaterPump = {
 }
 
 export type TanksBoxProps = {
+  /** Tank telemetry arrays; returns `null` when omitted */
   data?: {
     oil_pump: Tank[]
     water_pump: WaterPump[]

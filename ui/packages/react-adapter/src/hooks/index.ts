@@ -4,8 +4,8 @@
  * Includes the raw store bindings, a curated set of React utility hooks
  * (pagination, local-storage, keyboard, sizing, etc.), bindings that
  * compose adapter stores with reusable behavior (permissions, timezone
- * formatting, action update flows), and Op Centre read hooks
- * (`@category op-centre`) for the Operational Centre pages.
+ * formatting, action update flows), and Op Center read hooks
+ * (`@category op-center`) for the Operational Center pages.
  */
 
 export type { MinerValidationData } from './hooks-types'
@@ -13,7 +13,7 @@ export type { MinerValidationData } from './hooks-types'
 export {
   ALERTS_POLL_INTERVAL_MS,
   LIVE_ACTIONS_POLL_INTERVAL_MS,
-  OP_CENTRE_REALTIME_POLL_INTERVAL_MS,
+  OP_CENTER_REALTIME_POLL_INTERVAL_MS,
   POOL_MANAGER_POLL_INTERVAL_MS,
   SITE_STATUS_POLL_INTERVAL_MS,
 } from './poll-intervals'

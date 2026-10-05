@@ -15,10 +15,18 @@ export type {
 } from '../select'
 
 export type MultiLevelSelectSectionProps = {
+  /** Controlled open state */
   open?: boolean
+  /** `MultiLevelSelect.Item` elements in the section */
   children?: ReactNode
+  /**
+   * Initial open state (uncontrolled)
+   * @default false
+   */
   defaultOpen?: boolean
+  /** Title displayed in the section header */
   sectionTitle: ReactNode
+  /** Called when the section is expanded or collapsed */
   onToggle?: (open: boolean) => void
 }
 

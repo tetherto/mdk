@@ -1,4 +1,4 @@
-# Reporting Tool
+# Reporting tool
 
 Hooks and components for the financial and operational reporting sections of a mining dashboard.
 
@@ -6,7 +6,7 @@ Hooks and components for the financial and operational reporting sections of a m
 |---|---|
 | `useFinancialDateRange` | Hook for managing financial date-range state (period, year, month). |
 
-## useFinancialDateRange
+## `useFinancialDateRange`
 
 ```tsx
 import { useFinancialDateRange } from "@tetherto/mdk-react-devkit";

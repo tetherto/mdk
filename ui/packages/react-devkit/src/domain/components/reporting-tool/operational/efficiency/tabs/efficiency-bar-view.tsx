@@ -1,4 +1,11 @@
-import { BarChart, CHART_COLORS, ChartContainer, type ChartTooltipConfig, formatValueUnit, UNITS } from '@primitives'
+import {
+  BarChart,
+  CHART_COLORS,
+  ChartContainer,
+  type ChartTooltipConfig,
+  formatValueUnit,
+  UNITS,
+} from '@primitives'
 import { useEffect, useMemo, useRef } from 'react'
 import {
   ReportTimeFrameSelector,
@@ -15,9 +22,22 @@ const efficiencyBarChartTooltip: ChartTooltipConfig = {
 
 export type EfficiencyBarViewProps = {
   title: string
+  /**
+   * Bar chart series data
+   * @default { series: [] }
+   */
   chartInput?: ToBarChartDataInput
+  /**
+   * Shows the empty state instead of the chart
+   * @default false
+   */
   isEmpty?: boolean
+  /**
+   * Loading state
+   * @default false
+   */
   isLoading?: boolean
+  /** Fired when the time-frame selector changes */
   onTimeFrameChange?: (start: Date, end: Date) => void
 }
 

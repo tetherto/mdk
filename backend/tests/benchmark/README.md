@@ -38,7 +38,7 @@ and [The config file](#the-config-file) for what it controls.
 - You want failure-drill numbers (Worker restart, Kernel restart, a fleet-wide device outage) measured on your own
   hardware, not assumed from another run
 
-## Quick start
+## Quickstart
 
 ```bash
 # fast correctness check (5 devices, ~seconds) — wired into `npm test`

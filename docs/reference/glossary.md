@@ -16,13 +16,13 @@ This section explains the terms you need to familiarize yourself with, using an 
 | Term | What it is | Lives at |
 | --- | --- | --- |
 | **Kernel** (Orchestration Kernel) | The pull-only kernel that owns the device registry, routes commands, and pulls telemetry on its own cadence — it performs no aggregation itself | [`backend/core/kernel/`][kernel-package] |
-| **Gateway** | The developer-owned entry point between non-Node clients (UI, AI agents) and Kernel. Mandatory whenever a non-Node consumer reaches the kernel; not used in the in-process Antminer-rack example below | [`backend/core/gateway/`][gateway-package] |
+| **Gateway** | The developer-owned HTTP entry point between non-Node clients (UI) and Kernel. Required for browser and HTTP consumers; AI agents reach Kernel through the standalone MCP server instead. Not used in the in-process Antminer-rack example below | [`backend/core/gateway/`][gateway-package] |
 | **Worker** | A device-family translator. Speaks the MDK Protocol upward to Kernel and the vendor's native API downward to one device family (one miner brand, one container type, one pool API). | [`backend/workers/`][worker-readme] |
 | **Worker Plugin** | The executable device integration: [`mdk-contract.json`][contract-schema] plus its handler files, loaded from a package directory by `WorkerRuntimeV2` | [`backend/workers/miners/antminer/plugin/index.js`][antminer-plugin] |
 | **Worker contract** | The declarative [`mdk-contract.json`][contract-schema] alone, as read, validated, published, rendered, or queried | [`backend/workers/miners/antminer/plugin/mdk-contract.json`][antminer-contract] |
 | **Driver class** | The JavaScript class a Worker exports, one per device family (for example `Antminer`, `Whatsminer`), not one per model. Drives every device that Worker registers. | [`backend/workers/miners/antminer/lib/antminer.js`][antminer-worker] |
 | **Thing** | One registered device instance. Created by sending a `registerThing` command to the Worker's provisioning service, not by calling a driver-class method directly. Identified by a generated `deviceId`. | [`backend/core/mdk/lib/services/provisioning.service.js`][provisioning-service] |
-| **MCP** (Model Context Protocol) | The protocol AI agents use to discover and call tools. `@tetherto/mdk-mcp` runs either as its own standalone process, or in-process inside the Gateway when a plugin's routes are auto-generated into tools | [`backend/core/mcp/`][mcp-package] |
+| **MCP** (Model Context Protocol) | The protocol AI agents use to discover and call tools. `@tetherto/mdk-mcp` runs as its own standalone process, deriving tools from a plugin's routes; the Gateway hosts no MCP itself | [`backend/core/mcp/`][mcp-package] |
 
 ### How they compose, for an Antminer rack
 
@@ -94,7 +94,7 @@ machine it routes locally over the local network interface; the application code
 - Learn more about:
   - Multi-process discovery across machines: [Worker discovery][worker-discovery]
   - Gateway implementation details, including HTTP routing and plugin registration: [`backend/core/gateway/README.md`][gateway-package]
-  - Building your own Worker for a new device family: see [the build walkthrough][build-a-worker]
+  - Building your own Worker for a new device family: [the build walkthrough][build-a-worker]
   - The install and run pattern every shipped Worker package follows: [`backend/workers/docs/install-pattern.md`][worker-install]
   - Per-device contract details (telemetry units, command shapes, error codes): those live in each Worker's `mdk-contract.json`, e.g. [`backend/workers/miners/antminer/plugin/mdk-contract.json`][antminer-contract]
 

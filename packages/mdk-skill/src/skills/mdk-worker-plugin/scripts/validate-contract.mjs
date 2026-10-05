@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Validate a worker's mdk-contract.json against ../references/mdk-contract.schema.json.
 //
-//   node validate-contract.mjs <path/to/mdk-contract.json>   # exit 0/1
+//   node validate-contract.mjs <path/to/mdk-contract.json>                 # exit 0/1
+//   node validate-contract.mjs --schema-only <path/to/mdk-contract.json>   # skip semantic checks
 //
 // Zero-dependency: implements the JSON Schema subset the schema uses, plus
 // semantic checks the schema cannot express — handler files exist, names are
@@ -92,9 +93,11 @@ function semanticChecks (contract, contractDir, errors) {
   })
 }
 
-const target = process.argv[2]
+const args = process.argv.slice(2)
+const schemaOnly = args.includes('--schema-only')
+const target = args.find((a) => !a.startsWith('--'))
 if (!target) {
-  console.error('usage: node validate-contract.mjs <path/to/mdk-contract.json>')
+  console.error('usage: node validate-contract.mjs [--schema-only] <path/to/mdk-contract.json>')
   process.exit(1)
 }
 
@@ -115,7 +118,7 @@ try {
 const schema = JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf8'))
 const errors = []
 validateNode(schema, contract, '', errors)
-semanticChecks(contract, path.dirname(contractPath), errors)
+if (!schemaOnly) semanticChecks(contract, path.dirname(contractPath), errors)
 
 if (errors.length) {
   console.error(`FAIL: ${target} — ${errors.length} problem(s):`)
@@ -123,4 +126,4 @@ if (errors.length) {
   process.exit(1)
 }
 
-console.log(`OK: ${target} conforms to mdk-contract.schema.json (+ semantic checks)`)
+console.log(`OK: ${target} conforms to mdk-contract.schema.json${schemaOnly ? '' : ' (+ semantic checks)'}`)

@@ -5,7 +5,16 @@ import { cn } from '../../utils'
 import { colorWithAlpha } from '../../utils/chart-options'
 import { buildChartTooltip } from '../../utils/chart-tooltip'
 import type { ChartTooltipConfig } from '../../utils/chart-tooltip'
-import { forwardRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  forwardRef,
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { formatPercentShare } from '../../utils/number'
 
 // chart.js + react-chartjs-2 are code-split into a lazy chunk so importing this
@@ -21,17 +30,32 @@ export type DoughnutChartDataset = {
 export type DoughnutChartProps = {
   /** Array of labelled slices */
   data: DoughnutChartDataset[]
-  /** Unit suffix shown in tooltips */
+  /**
+   * Unit suffix appended to values in tooltips and legends
+   * @default ''
+   */
   unit?: string
   /** Chart.js options – merged with defaults */
   options?: ChartJS<'doughnut'>['options']
-  /** Doughnut cutout percentage (default: '75%') */
+  /**
+   * Doughnut cutout percentage (default: '75%')
+   * @default '75%'
+   */
   cutout?: string
-  /** Border width between segments (default: 4) */
+  /**
+   * Border width between segments (default: 4)
+   * @default 4
+   */
   borderWidth?: number
-  /** Chart height in pixels */
+  /**
+   * Chart height in pixels
+   * @default 260
+   */
   height?: number
-  /** Where to place the legend relative to the chart (default: 'top') */
+  /**
+   * Where to place the legend relative to the chart (default: 'top')
+   * @default 'top'
+   */
   legendPosition?: Position
   /**
    * Custom HTML tooltip configuration. When provided, replaces the default doughnut tooltip
@@ -41,6 +65,7 @@ export type DoughnutChartProps = {
   tooltip?: ChartTooltipConfig
   /** Formats slice values in the built-in legend and default tooltip (default: raw number). */
   formatValue?: (value: number) => string
+  /** Additional class for the root element */
   className?: string
 }
 

@@ -2,7 +2,7 @@
 
 MDK Worker for Satec power meters. Reads 3-phase electrical measurements via Modbus TCP. Supports the PM180 model.
 
-## Supported Models
+## Supported models
 
 | `model` value | Model |
 |--------|-------|

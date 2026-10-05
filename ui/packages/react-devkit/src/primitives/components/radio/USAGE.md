@@ -2,35 +2,43 @@
 
 Accessible radio buttons built on Radix UI `@radix-ui/react-radio-group`. Provides three components: `Radio` (individual item), `RadioGroup` (container), and `RadioCard` (button-style radio).
 
-## `RadioGroup` Props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop          | Status   | Type      | Default      | Description      |
-| ------------- | -------- | --------- | ------------ | ---------------- |
-| `orientation` | Optional | `'horizontal' \| 'vertical'` | `'vertical'` | Layout direction |
-| `noGap`       | Optional | `boolean` | `false`      | Removes the default gap between radio items |
-| `className`   | Optional | `string`  | —            | Additional class |
+### `Radio` props
 
-All Radix `RadioGroupPrimitive.Root` props (e.g. `defaultValue`, `value`, `onValueChange`, `disabled`) are also accepted.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `value` | Required | `string` | - | Value associated with this option |
+| `children` | Optional | `React.ReactNode` | - | Children content (takes precedence over label) |
+| `className` | Optional | `string` | - | Custom className for the root element |
+| `color` | Optional | `"success" \| "warning" \| "error" \| "primary" \| "default"` | `"primary"` | Color variant when checked |
+| `indicatorClassName` | Optional | `string` | - | Custom className for the indicator element |
+| `label` | Optional | `string` | - | Label text (or use children for custom content) |
+| `radius` | Optional | `"small" \| "none" \| "medium" \| "large" \| "full"` | `"full"` | Border radius variant (full makes it circular) |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Size variant of the radio |
 
-## `Radio` Props
+### `RadioCard` props
 
-| Prop                 | Status   | Type              | Default     | Description                                    |
-| -------------------- | -------- | ----------------- | ----------- | ---------------------------------------------- |
-| `value`              | Required | `string`          | —           | Value associated with this option              |
-| `size`               | Optional | `ComponentSize` (`'sm' \| 'md' \| 'lg'`) | `'md'`      | Size variant                                   |
-| `color`              | Optional | `ComponentColor`  | `'primary'` | Color variant when checked                     |
-| `radius`             | Optional | `BorderRadius`    | `'full'`    | Border radius (`'full'` for circle)            |
-| `label`              | Optional | `string`          | —           | Text label rendered inside the item            |
-| `children`           | Optional | `React.ReactNode` | —           | Custom content (takes precedence over `label`) |
-| `indicatorClassName` | Optional | `string`          | —           | Additional class for the inner indicator dot   |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `value` | Required | `string` | - | Value associated with this option |
+| `children` | Optional | `React.ReactNode` | - | Children content (takes precedence over label) |
+| `className` | Optional | `string` | - | Custom className for the root element |
+| `color` | Optional | `"success" \| "warning" \| "error" \| "primary" \| "default"` | `"primary"` | Color variant when checked |
+| `indicatorClassName` | Optional | `string` | - | Custom className for the indicator element |
+| `label` | Optional | `string` | - | Label text (or use children for custom content) |
+| `radius` | Optional | `"small" \| "none" \| "medium" \| "large" \| "full"` | `"full"` | Border radius variant (full makes it circular) |
+| `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Size variant of the radio |
 
-All Radix `RadioGroupPrimitive.Item` props are also accepted.
+### `RadioGroup` props
 
-## `RadioCard` Props
-
-Accepts the same props as `Radio`. Renders as a button-styled card suitable for time-range selectors.
-
-Default overrides: `size='sm'`, `color='default'`, `radius='none'`.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Custom className for the group |
+| `noGap` | Optional | `boolean` | `false` | Remove gap between radio items |
+| `orientation` | Optional | `"horizontal" \| "vertical"` | `"vertical"` | Layout orientation |
+<!-- END GENERATED: props -->
 
 ## Example
 

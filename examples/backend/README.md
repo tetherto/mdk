@@ -1,4 +1,4 @@
-# MDK Examples
+# MDK examples
 
 All examples spin up their own mock hardware servers so nothing external needs to be running.
 Run each from the repo root.
@@ -36,7 +36,7 @@ node examples/backend/mdk-plugin-e2e/run.js
 
 ## Demo worker ([`demo-worker-caller/`](./demo-worker-caller/index.js))
 
-### [`index.js`](./demo-worker-caller/index.js) — hosting a bare Worker Plugin on `WorkerRuntime`
+### [`index.js`](./demo-worker-caller/index.js) — hosting a bare Worker plugin on `WorkerRuntime`
 
 Shows the "caller" side of authoring a Worker: the `demo-worker` package ships only a Worker Plugin (`{ contract, dir, connect }`) and its own SQLite helper, never touching `WorkerRuntime` directly. This example constructs `WorkerRuntime`, owns its lifecycle, seeds two mock devices, and runs a telemetry sampler loop against the live runtime, printing live metrics on an interval.
 
@@ -113,7 +113,7 @@ Each of these starts one mock hardware server, registers one device, waits for t
 node examples/backend/containers/antspace/index.js
 ```
 
-Run at most one at a time — they each bind a fixed port. If a previous run left a process alive, the next run will fail with `EADDRINUSE`.
+Run at most one at a time — they each bind a fixed port. If a previous run left a process alive, the next run fails with `EADDRINUSE`.
 
 ## Miner pool ([`minerpools/`](./minerpools/))
 
@@ -188,9 +188,9 @@ node examples/backend/kernel/auth-whitelist.js     # Ctrl+C to stop
 
 ## Notes
 
-**Store isolation** — each example writes to its own directory under the system temp folder (`/tmp/mdk-example-*`). Running two instances of the same example simultaneously will cause a hypercore file-lock error.
+**Store isolation** — each example writes to its own directory under the system temp folder (`/tmp/mdk-example-*`). Running two instances of the same example simultaneously causes a hypercore file-lock error.
 
-**Cleanup** — all long-running examples install a `SIGINT` handler (Ctrl+C) that stops the adapter, manager and Kernel gracefully before exiting.
+**Cleanup** — all long-running examples install a `SIGINT` handler (Ctrl+C) that stops the adapter, manager, and Kernel gracefully before exiting.
 
 **DHT discovery** — Workers register with the Kernel over HRPC by announcing on a shared discovery topic; single-process examples co-locate both in one process, so discovery is near-instant. Expect a few seconds of delay only when Kernel and Worker are started as genuinely separate processes.
 

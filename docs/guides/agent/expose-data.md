@@ -6,42 +6,54 @@ docs@tether_slug: guides/agent/expose-data
 
 ## Overview
 
-The operator agent calls fleet data and actions as MCP tools. A Gateway plugin's routes become those tools automatically when
-mounted with `autoGenerateMcp: true`, with no separate MCP manifest to author and keep in sync with the plugin's own routes.
+The operator agent calls fleet data and actions as MCP tools. A Gateway plugin's routes become those tools with no separate
+MCP manifest to author and keep in sync: the standalone MCP server reads the plugin's own `mdk-plugin.json` contract — the
+same file the Gateway loads — and converts each route into a tool.
 
-This page shows the shape of that `startGateway()` call, the same way [Mount a plugin][gateway-plugins] does. It's an addition
-to your own embedding code, not a fixture to boot as written. `kernel` and the plugin directory are whatever your app already
-has; `autoGenerateMcp` is set here, in your own `startGateway()` call, not in `mdk.yaml`.
+The MCP server is its own process. The Gateway hosts no MCP code and needs no MCP configuration; the two share nothing but
+the plugin directories they each read.
+
+This page shows the `mdk.yaml` shape that wires this up, the same way [mounting a plugin][gateway-plugins] does. It's an addition
+to your own site config, not a fixture to boot as written: the Kernel, Gateway, and plugin directory are whatever your app
+already has. Nothing MCP-related goes in your `startGateway()` call — the standalone `mdk run mcp` process reads the same
+`spec.gateway.plugins` list the Gateway loads.
 
 ## Prerequisites
 
-- The [Gateway is running][run-gateway], embedded in your own app via `startGateway()`
-- A [Gateway plugin][gateway-plugins] already mounted through that same call's `extraPluginDirs`
+- A [Gateway plugin][gateway-plugins] declared in `spec.gateway.plugins`
+- The Kernel is running — a standalone MCP server dials it by key, so `mdk run kernel` comes first. [Kernel's caller allowlist][mcp-allowlist] governs whether that MCP connection is admitted
 
 <Steps>
 
 <Step>
 
-### Auto-generate tools from a plugin
+### Serve a plugin's routes as tools
 
-Pass `{ dir, autoGenerateMcp: true }` instead of a plain path to also expose a plugin's HTTP routes as MCP tools:
+Nothing is added to the plugin. Declare it in `mdk.yaml` as usual and start the MCP server:
 
-```js
-await startGateway({
-  kernel,
-  port: 3000,
-  extraPluginDirs: [
-    { dir: path.join(__dirname, 'plugins/custom-metrics'), autoGenerateMcp: true }
-  ],
-  mcp: { port: 3100 }
-})
+```yaml
+spec:
+  gateway:
+    port: 3000
+    plugins:
+      - package: ./plugins/custom-metrics
+  mcp:
+    port: 3100   # optional — defaults to gateway.port + 100
 ```
 
-Each route becomes a tool named after its `id` (dots and other non-alphanumeric characters become underscores), with the
-description, safety hint, and input schema derived from the route's `http` block. Path, query, and header parameters and the
-`requestBody`'s top-level properties become the tool's input fields, and the same route handler and live `mdkClient`
-connection serve both interfaces. The Gateway starts one in-process MCP server (Streamable HTTP, default port
-`opts.port + 100`) covering every auto-generated tool across all mounted plugins.
+```bash
+mdk run kernel   # first, in its own terminal
+mdk run mcp      # then, in another
+```
+
+`mdk run mcp` reads the same `spec.gateway.plugins` list the Gateway loads, so a plugin's routes are reachable over HTTP and
+over MCP without being declared twice. Each route becomes a tool named after its `id` (dots and other non-alphanumeric
+characters become underscores), with the description, safety hint, and input schema derived from the route's `http` block.
+Path, query, and header parameters and the `requestBody`'s top-level properties become the tool's input fields, and the same
+route handler serves both interfaces — each plugin builds its own `mdkClient` from the ambient config, so it behaves
+identically whichever process loaded it.
+
+`mcp` is never part of the default `all` target; it is always started explicitly.
 
 </Step>
 
@@ -49,8 +61,14 @@ connection serve both interfaces. The Gateway starts one in-process MCP server (
 
 ### Write tools by hand instead
 
-A plugin that needs a different tool granularity, richer descriptions, or direct `mdkClient` calls can still author an
-`mcp-plugin.json` by hand and run it with a standalone [MCP server][mcp-server].
+A plugin that needs a different tool granularity, richer descriptions, or direct `mdkClient` calls can author an
+`mcp-plugin.json` by hand. A [standalone MCP server][mcp-server] serves both kinds at once — hand-authored tool plugins
+alongside Gateway-plugin-derived ones — so a curated tool set and auto-derived routes can live on one endpoint. Tool ids must
+be unique across both sources; a collision is a startup error, not a silent override.
+
+Serving hand-authored tools this way means embedding the standalone server through `createMcpServer()`, as the
+[`@tetherto/mdk-mcp` README][mcp-server] shows. `mdk run mcp` reads no `spec.mcp.plugins` list yet, so from `mdk.yaml` alone it
+serves only the Gateway-plugin-derived tools above.
 
 </Step>
 
@@ -64,9 +82,6 @@ A plugin that needs a different tool granularity, richer descriptions, or direct
 
 ## Links
 
-[run-gateway]: ../gateway/run.md
-<!-- docs@tether.io: run-gateway → guides/gateway/run -->
-
 [gateway-plugins]: ../gateway/plugins.md
 <!-- docs@tether.io: gateway-plugins → guides/gateway/plugins -->
 
@@ -77,4 +92,7 @@ A plugin that needs a different tool granularity, richer descriptions, or direct
 <!-- docs@tether.io: agent-concept → https://github.com/tetherto/mdk/blob/main/backend/core/agent/README.md -->
 
 [mcp-server]: ../../../examples/full-site/docs/mcp-server.md
+
+[mcp-allowlist]: ../security/index.md#step-2-admit-the-gateway-to-kernel
+<!-- docs@tether.io: mcp-allowlist → guides/security#step-2-admit-the-gateway-to-kernel -->
 <!-- docs@tether.io: mcp-server → https://github.com/tetherto/mdk/blob/main/examples/full-site/docs/mcp-server.md -->

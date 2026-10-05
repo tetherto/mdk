@@ -1,21 +1,23 @@
-# MovementDetailsModal
+# `MovementDetailsModal`
 
 Modal that shows the details of a single historical device movement: a device summary
 (code, model, site, container, serial number, MAC) and the origin → destination transition
 of both location and status, with color-coded badges.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `isOpen` | Optional | `boolean` | `false` | Whether the modal is open |
+| `movement` | Optional | `MovementData` | - | The selected movement; when omitted the modal renders nothing |
+| `onClose` | Optional | `() => void` | - | Called when the modal requests to close (overlay click, escape, or close button) |
+<!-- END GENERATED: props -->
+
 ## When to use
 
 Use this in an inventory "Historical Movements" view when a user selects a movement row and
 you want to show the full before/after detail of where a device moved and how its status changed.
-
-## Props
-
-| Prop       | Status   | Type           | Default | Description                                                                      |
-| ---------- | -------- | -------------- | ------- | -------------------------------------------------------------------------------- |
-| `isOpen`   | Optional | `boolean`      | `false` | Whether the modal is open                                                        |
-| `onClose`  | Optional | `() => void`   | —       | Called when the modal requests to close (overlay click, escape, or close button) |
-| `movement` | Optional | `MovementData` | —       | The selected movement; when omitted the modal renders nothing                    |
 
 ## Data shape
 

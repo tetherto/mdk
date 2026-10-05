@@ -8,11 +8,20 @@ export type ExportFormat = 'csv' | 'json'
 export type ExportButtonProps = {
   /** Fires with the chosen format when the user picks an item. */
   onExport: (format: ExportFormat) => void
-  /** Formats to offer in the dropdown — defaults to `['csv', 'json']`. */
+  /**
+   * Formats to offer in the dropdown — defaults to `['csv', 'json']`.
+   * @default ['csv', 'json']
+   */
   formats?: readonly ExportFormat[]
-  /** Button label — defaults to `'Export'`. */
+  /**
+   * Button label — defaults to `'Export'`.
+   * @default 'Export'
+   */
   label?: string
-  /** Disable the button. */
+  /**
+   * Disable the button.
+   * @default false
+   */
   disabled?: boolean
   /** Optional class hook on the wrapper. */
   className?: string

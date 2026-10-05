@@ -23,7 +23,7 @@ npm run dev        # watch everything and start the catalog app
   - TypeScript compiler (`tsc`) for `.ts/.tsx`. All three TypeScript
     packages are **pre-built** — `tsc` emits ESM JS + `.d.ts`
     declarations under `dist/` and every `exports` map resolves there,
-    so external NPM consumers never compile our source
+    so external npm consumers never compile our source
   - Vite for SCSS compilation in `@tetherto/mdk-react-devkit` and
     `@tetherto/mdk-fonts`
   - A small custom PostCSS plugin

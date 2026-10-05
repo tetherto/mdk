@@ -9,7 +9,7 @@ Mining container orchestration Workers. Containers are physical enclosures that 
 | [`antspace/`](./antspace/README.md) | `@tetherto/mdk-worker-antspace` | Antspace HK3 hyperscale container |
 | [`bitdeer/`](./bitdeer/README.md) | `@tetherto/mdk-worker-bitdeer` | Bitdeer platform integration |
 
-## What Container Workers Manage
+## What container Workers manage
 
 Container Workers manage the physical enclosure infrastructure — distinct from the miners inside it:
 
@@ -20,7 +20,7 @@ Container Workers manage the physical enclosure infrastructure — distinct from
 
 The miners inside a container each have their own separate Worker process (`workers/miners/*`). Container and miner Workers both register with the same Kernel, which routes commands to each independently.
 
-## Topology Example
+## Topology example
 
 ```text
 container-A (Antspace HK3)   ← managed by antspace Worker
@@ -31,7 +31,7 @@ container-A (Antspace HK3)   ← managed by antspace Worker
 └── Seneca sensor            ← managed by temperature/seneca Worker
 ```
 
-## Quick Start
+## Quickstart
 
 ```js
 const { getKernel } = require('@tetherto/mdk-core')

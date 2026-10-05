@@ -8,9 +8,13 @@ type CurrencyItem = {
 }
 
 type CurrencyTogglerProps = {
+  /** Currently selected currency value */
   value: string
+  /** Additional class for the root element */
   className?: string
+  /** List of currency options */
   currencies: (string | CurrencyItem)[]
+  /** Fired with the selected currency value when a button is clicked */
   onChange: (currency: string) => void
 }
 

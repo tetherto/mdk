@@ -2,25 +2,29 @@
 
 `TanksBox` renders the full tank list for an immersion container, one `TankRow` per tank. Each row shows per-tank temperature, pressure, and oil/water pump running status.
 
-## TanksBox Props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop   | Status   | Type | Default | Description |
-| ------ | -------- | ---- | ------- | ----------- |
-| `data` | Optional | `{ oil_pump: Tank[]; water_pump: WaterPump[]; pressure: TanksBoxPressure[] }` | —       | Tank telemetry arrays; returns `null` when omitted |
+### `TankRow` props
 
-## TankRow Props
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `color` | Required | `string` | - | CSS colour for the temperature value (threshold-driven) |
+| `label` | Required | `string` | - | Tank identifier label (e.g. "Tank 1") |
+| `oilPumpEnabled` | Required | `boolean` | - | Running state for the oil pump |
+| `pressure` | Required | `Partial<{ value: number; flash: boolean; color: string; tooltip: string; }>` | - | Pressure reading with optional flash/colour/tooltip |
+| `temperature` | Required | `number` | - | Current temperature value |
+| `unit` | Required | `string` | - | Temperature unit string (e.g. "°C") |
+| `waterPumpEnabled` | Required | `boolean` | - | Running state for the water pump |
+| `flash` | Optional | `boolean` | - | Enables flash animation on the temperature row |
+| `tooltip` | Optional | `string` | - | Tooltip text for the temperature value |
 
-| Prop               | Status   | Type              | Default | Description                                             |
-| ------------------ | -------- | ----------------- | ------- | ------------------------------------------------------- |
-| `label`            | Required | `string`          | —       | Tank identifier label (e.g. "Tank 1")                   |
-| `temperature`      | Required | `number`          | —       | Current temperature value                               |
-| `unit`             | Required | `string`          | —       | Temperature unit string (e.g. "°C")                     |
-| `oilPumpEnabled`   | Required | `boolean`         | —       | Running state for the oil pump                          |
-| `waterPumpEnabled` | Required | `boolean`         | —       | Running state for the water pump                        |
-| `color`            | Required | `string`          | —       | CSS colour for the temperature value (threshold-driven) |
-| `pressure`         | Required | `TankRowPressure` | —       | Pressure reading with optional flash/colour/tooltip     |
-| `flash`            | Optional | `boolean`         | —       | Enables flash animation on the temperature row          |
-| `tooltip`          | Optional | `string`          | —       | Tooltip text for the temperature value                  |
+### `TanksBox` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Optional | `{ oil_pump: Tank[]; water_pump: WaterPump[]; pressure: TanksBoxPressure[]; }` | - | Tank telemetry arrays; returns `null` when omitted |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

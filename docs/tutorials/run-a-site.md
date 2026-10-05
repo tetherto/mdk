@@ -5,7 +5,7 @@ docs@tether_slug: tutorials/run-a-site
 ---
 
 > [!NOTE]
-> If Kernel, Gateway, Worker, manager, or thing are unfamiliar, read [terminology][terminology] first.
+> If Kernel, Gateway, Worker, manager, or thing are unfamiliar, [terminology][terminology] defines them.
 
 ## Overview
 
@@ -19,8 +19,8 @@ What you'll have at the end:
   hardware
 - A Gateway API on `:3000` serving `/site/overview`, `/site/history`, `/site/miners/:id/command`, and `/site/miners/:id/pools`
 - A React dashboard on `:3000` with Dashboard, Containers, Monitoring, Pools, and Control pages
-- Two MCP surfaces exposing the site as tools for AI agents: the Gateway's auto-exported routes on `:3100`, and a hand-authored,
-  agent-contract tool set on `:3101`
+- One MCP surface on `:3101` exposing the site as tools for AI agents, served by a standalone MCP process: a hand-authored,
+  agent-contract tool set alongside the site Gateway plugin's own routes, read off the same plugin dir the Gateway loads
 
 Every component above runs as its own PM2-supervised OS process, discovering the Kernel over a shared local directory rather than a
 DHT.
@@ -100,7 +100,7 @@ Expected output:
 
 > [!NOTE]
 > [`config/devices.json`](../../examples/mvp-site/config/devices.json.example) seeds five miners and one powermeter by default. Add
-> or remove entries there to resize the fleet; see [configure devices][mvp-site-devices] for the format.
+> or remove entries there to resize the fleet; [configuring devices][mvp-site-devices] describes the format.
 
 </Step>
 
@@ -119,19 +119,19 @@ port. The Pools page reads the Ocean pool worker's stats; the Monitoring page ch
 ### (Optional) Connect an AI agent over MCP
 
 > [!TIP]
-> There are a range of agents and connection modes; apply the method for your agent. For Claude CLI:
+> Agents and connection modes vary; apply the method for your agent. For Claude CLI:
 > `cd examples/mvp-site`
 > `claude`
 > Accept `Use this MCP server`
 > Then your agent can query and act on the site's devices.
 
-The example exposes MCP two ways, both listed in [`.mcp.json.example`](../../examples/mvp-site/.mcp.json.example):
+The example exposes MCP as a single surface on `:3101`, served by a standalone MCP process and listed in [`.mcp.json.example`](../../examples/mvp-site/.mcp.json.example). It carries two tool sources:
 
-- The Gateway auto-exports its own `/site/*` routes as tools, on `:3100`
-- A hand-authored tool set with agent-contract metadata — [`backend/mcp-plugins/site/mcp-plugin.json`](../../examples/mvp-site/backend/mcp-plugins/site/mcp-plugin.json) — on `:3101`, giving an agent summary-first, closed-vocabulary tools (`summarize_site`, `count_devices`, `list_devices`,
+- A hand-authored tool set with agent-contract metadata — [`backend/mcp-plugins/site/mcp-plugin.json`](../../examples/mvp-site/backend/mcp-plugins/site/mcp-plugin.json) — giving an agent summary-first, closed-vocabulary tools (`summarize_site`, `count_devices`, `list_devices`,
   `get_device`, `rank_devices`, `act_device`) instead of raw route exports
+- The site Gateway plugin's own `/site/*` routes, read off the same plugin dir the Gateway loads and converted into tools
 
-Point an MCP client at either URL and it can query the fleet or, for the second surface, act on it with operator approval.
+Point an MCP client at that URL and it can query the fleet or, with the agent-contract tools, act on it with operator approval. This local site runs an empty Kernel allowlist; a hardened Kernel restricts the MCP connection through [Kernel's caller allowlist][mcp-allowlist].
 
 </Step>
 
@@ -143,7 +143,7 @@ Point an MCP client at either URL and it can query the fleet or, for the second 
 npm run stop:pm2
 ```
 
-This stops and removes every PM2-managed process for this site: mocks, Workers, Kernel, Gateway, and the MCP servers.
+This stops and removes every PM2-managed process for this site: mocks, Workers, Kernel, Gateway, and the MCP server.
 
 > [!NOTE]
 > The PM2 daemon itself (`pm2 list` still shows a `God Daemon` process) stays running in the background after this — that's expected,
@@ -168,8 +168,8 @@ This stops and removes every PM2-managed process for this site: mocks, Workers, 
    `config/devices.json`, and publish its RPC key for the Kernel to discover.
 5. **Gateway**: the `gateway` role mounted the site plugin declared by [`backend/gateway-plugins/site/mdk-plugin.json`](../../examples/mvp-site/backend/gateway-plugins/site/mdk-plugin.json) and the built UI from `ui/dist`, then opened the HTTP server on `:3000`. The plugin aggregates data across the
    three Workers through `mdkClient`.
-6. **MCP**: the `mcp` role started both MCP surfaces — the Gateway's auto-exported tools on `:3100`, and the hand-authored
-   agent-contract tool set on `:3101`.
+6. **MCP**: the `mcp` role started the standalone MCP process on `:3101`, serving both tool sources — the hand-authored
+   agent-contract tool set and the site Gateway plugin's own routes, derived from the same plugin dir the Gateway loads.
 
 ## Resetting state
 
@@ -216,6 +216,9 @@ run, [reset it][mvp-site-reset] before restarting — seed devices are only regi
 <!-- docs@tether.io: mvp-site-stale-pm2 → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/README.md#stale-pm2-processes-after-system-crash -->
 
 [mvp-site-troubleshooting]: ../../examples/mvp-site/README.md#troubleshooting
+
+[mcp-allowlist]: ../guides/security/index.md#step-2-admit-the-gateway-to-kernel
+<!-- docs@tether.io: mcp-allowlist → guides/security#step-2-admit-the-gateway-to-kernel -->
 <!-- docs@tether.io: mvp-site-troubleshooting → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/README.md#troubleshooting -->
 
 [all-workers]: ../guides/deployment/run-all-workers-site.md

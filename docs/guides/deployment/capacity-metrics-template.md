@@ -6,7 +6,7 @@ docs@tether_slug: guides/deployment/capacity-metrics-template
 
 ## Overview
 
-This template turns measured runs into **sizing answers**: given your hardware and `N` miners, how many Workers do you need, and what will they cost in CPU, RAM, and disk?
+This template turns measured runs into **sizing answers**: given your hardware and `N` miners, how many Workers do you need, and what do they cost in CPU, RAM, and disk?
 
 Fill each profile with what is running, record host resources and end-to-end latencies, then derive per-device cost, cycle headroom, and pass/fail status. Use the same percentile set, soak rules, and load definition across profiles so rows stay comparable.
 
@@ -154,13 +154,13 @@ The number that makes MDK credible for sizing is the **overhead MDK adds** on to
 
 ## Cycle headroom (devices per Worker signal)
 
-For each profile, record how long a full collection cycle takes against the interval it is configured for. The ratio is headroom; the point where it crosses **1.0** is the practical answer to “how many devices per Worker.”
+For each profile, record how long a full collection cycle takes against the interval it is configured for. The ratio is headroom; the point where it crosses **1.0** is the practical answer to "how many devices per Worker."
 
 | Metric | Value | Unit |
 | --- | --- | --- |
 | Configured telemetry interval | `_` | ms |
 | Full collection cycle time (all owned devices) | `_` | ms (p50 / p95 / p99: `_` / `_` / `_`) |
-| Cycle headroom ratio | cycle_time / interval | `_` |
+| Cycle headroom ratio | `cycle_time` / interval | `_` |
 | Devices owned by this Worker | `_` | count |
 | Unreachable devices during cycle | `_` | count |
 | Timeout budget consumed by unreachable devices | `_` | ms |
@@ -210,9 +210,9 @@ Split **submit** and **execution** so bottlenecks are visible. A separate approv
 | Action execution (Kernel dispatch → Worker → device ack) | Kernel ActionCaller → Worker → device | `_` | `_` | `_` | `_` | `_` | `_` |
 | End-to-end write action (submit → executed / terminal state) | Client → … → device → client-visible result | `_` | `_` | `_` | `_` | `_` | `_` |
 
-Record separately by action type (for example reboot vs setPowerMode vs updateThing).
+Record separately by action type (for example reboot vs setPowerMode vs `updateThing`).
 
-| Action type | reqVotes | e2e p50 ms | e2e p99 ms | exec-only p50 ms | exec-only p99 ms | n |
+| Action type | `reqVotes` | e2e p50 ms | e2e p99 ms | exec-only p50 ms | exec-only p99 ms | n |
 | --- | --- | --- | --- | --- | --- | --- |
 | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
 

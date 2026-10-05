@@ -2,10 +2,13 @@ import { formatNumber, UNITS } from '@primitives'
 import './miner-chip.scss'
 
 type MinerChipProps = {
+  /** Chip slot index */
   index: number
+  /** Current frequency in MHz */
   frequency: {
     current: number
   }
+  /** Temperature readings in °C */
   temperature: {
     avg: number
     min: number

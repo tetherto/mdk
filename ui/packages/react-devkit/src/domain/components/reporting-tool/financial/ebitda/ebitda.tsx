@@ -12,14 +12,29 @@ import { EbitdaMetrics } from './ebitda-metrics'
 import './ebitda.scss'
 
 export type EbitdaProps = {
+  /** Computed EBITDA metrics */
   metrics: EbitdaDisplayMetrics | null
+  /** Data for the EBITDA bar chart */
   ebitdaChartInput: ToBarChartDataInput | null
+  /** Data for the BTC produced chart */
   btcProducedChartInput: ToBarChartDataInput | null
+  /** Whether all BTC produced values are zero */
   hasBtcProducedAllZeros: boolean
+  /** Show the EBITDA bar chart */
   showEbitdaBarChart: boolean
+  /** Current Bitcoin price in USD */
   currentBTCPrice: number
+  /** Date picker element */
   datePicker: ReactElement
+  /**
+   * Loading state
+   * @default false
+   */
   isLoading?: boolean
+  /**
+   * Error messages to display
+   * @default []
+   */
   errors?: string[]
   /** When false, show the "select a period" hint instead of empty data. */
   hasDateSelection: boolean

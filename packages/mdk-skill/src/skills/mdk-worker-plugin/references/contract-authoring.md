@@ -1,7 +1,8 @@
 # Authoring `mdk-contract.json`
 
 Load this when writing or reviewing a Worker contract. The machine-checkable
-shape is [`mdk-contract.schema.json`](../../../mdk-contract.schema.json); validate with
+shape is [`mdk-contract.schema.json`](../../../../../../backend/core/mdk-worker/mdk-contract.schema.json) (bundled beside this file as
+`references/mdk-contract.schema.json`); validate with
 [`../scripts/validate-contract.mjs`](../scripts/validate-contract.mjs); this file covers the semantics the schema
 can't express. Real contracts to imitate:
 [`packages/cli/templates/worker/mdk-contract.json`](../../../../../cli/templates/worker/mdk-contract.json) (minimal scaffold / skill
@@ -45,7 +46,7 @@ One entry per channel:
 
 - `name` is the wire name — consumers pull it via
   `telemetry.pull { query: { type: 'metrics' } }` (all channels) or
-  `{ query: { type: 'temperature' } }` (just this one). Snake_case by
+  `{ query: { type: 'temperature' } }` (just this one). `Snake_case` by
   convention (`hashrate_rt`, `power_mode`).
 - `type` is one of `number | string | boolean | array | object` and is what
   the handler must return (the smoke harness asserts this).
@@ -115,20 +116,21 @@ payloads — keeping this map complete is what makes them actionable downstream.
 ## What does NOT go in the contract
 
 - **No device list.** Devices are supplied at runtime
-  (`WorkerRuntime opts.devices`); the schema's `devices` block is optional and
-  unused by shipped Workers.
+  (`WorkerRuntime opts.devices`); the schema rejects a top-level `devices` key.
 - **No secrets** (credentials live in per-device `config`).
 - **No handler implementation detail** — `handler` paths are stripped before
   the contract leaves the process.
 
 ## Validation
 
-```
+```bash
 node ../scripts/validate-contract.mjs <worker>/mdk-contract.json
 ```
 
 Checks schema conformance, handler file existence (relative to the contract's
 directory), duplicate telemetry/command names, and the numeric-bounds rule.
-Exit 0 = clean. The repo-wide catalogue
-([`backend/workers/scripts/generate-catalogue.js`](../../../../../../backend/workers/scripts/generate-catalogue.js)) separately lints shipped
-contracts against the upstream schema.
+Exit 0 = clean. Pass `--schema-only` to skip the semantic checks and test shape
+alone. The bundled schema is a verbatim copy of the runtime's
+[`backend/core/mdk-worker/mdk-contract.schema.json`](../../../../../../backend/core/mdk-worker/mdk-contract.schema.json); the repo-wide catalogue
+([`backend/workers/scripts/generate-catalogue.js`](../../../../../../backend/workers/scripts/generate-catalogue.js)) lints shipped
+contracts against that same file.

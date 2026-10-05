@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-mvp-site",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK MVP Site",
   "private": true,
   "engines": {
@@ -19,10 +19,10 @@
     "test": "npm run test:unit"
   },
   "dependencies": {
-    "@tetherto/mdk-core": "^0.9.0",
-    "@tetherto/mdk-worker": "^0.9.0",
-    "@tetherto/mdk-worker-ocean": "^0.9.0",
-    "@tetherto/mdk-worker-satec": "^0.9.0",
+    "@tetherto/mdk-core": "^0.10.0",
+    "@tetherto/mdk-worker": "^0.10.0",
+    "@tetherto/mdk-worker-ocean": "^0.10.0",
+    "@tetherto/mdk-worker-satec": "^0.10.0",
     "mdk-crypto-lib": "file:../../backend/lib/mdk-crypto-lib",
     "whatsminer-mdk-worker": "git+https://github.com/whatsminer/whatsminer-mdk-worker.git"
   },

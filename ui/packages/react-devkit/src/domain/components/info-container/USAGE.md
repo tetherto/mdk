@@ -3,14 +3,14 @@
 Labeled key/value containers. `InfoContainer` renders a single labeled row;
 `DeviceInfo` renders a list of them from a single `data` array.
 
-## `InfoContainer` props
+## `InfoContainer` Props detail
 
 | Prop    | Status   | Type     | Default | Description |
 | ------- | -------- | -------- | ------- | ----------- |
 | `title` | Optional | `string` | —       | Row label   |
 | `value` | Optional | `string \| string[] \| number` | — | Row value (arrays render multi-line) |
 
-## `DeviceInfo` props
+## `DeviceInfo` Props detail
 
 | Prop   | Status   | Type         | Default | Description    |
 | ------ | -------- | ------------ | ------- | -------------- |

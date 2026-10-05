@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-backend-examples",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK backend examples — kernel, worker runtime, and plugin-authoring runners",
   "private": true,
   "engines": {

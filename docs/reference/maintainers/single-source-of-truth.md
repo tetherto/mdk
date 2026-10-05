@@ -137,7 +137,7 @@ The UI packages ship these machine-readable manifests under `dist/`:
 | Manifest | Package | What it describes |
 |----------|---------|-------------------|
 | `registry.json` | `@tetherto/mdk-react-devkit` | Every public component + hook (props, JSDoc, tier, indexes) |
-| `blueprints.json` | `@tetherto/mdk-react-devkit` | Intent → recipe map (markdown body included) |
+| `blueprints.json` | `@tetherto/mdk-react-devkit` | Intent → recipe map (Markdown body included) |
 | `hooks.json` | `@tetherto/mdk-react-adapter` | React hooks (store / utility / permission / ui / external) + provider |
 | `stores.json` | `@tetherto/mdk-ui-foundation` | Zustand stores (state + actions) and TanStack Query helpers |
 
@@ -155,12 +155,14 @@ See [`ui/AGENTS.md`](../../../ui/AGENTS.md#machine-readable-artifacts) for the f
 
 Manifests regenerate automatically as part of `npm run build` in the [`ui/`](../../../ui/README.md) workspace. Turbo's task graph runs `build:registry` as the final step of each package's build, after TypeScript compilation and SCSS bundling complete.
 
-As a maintainter, **you can manually regenerate** before syncing with the user docs.
+As a maintainer, **you can manually regenerate** before syncing with the user docs. Go through turbo, not the devkit's script alone: the generator reads the devkit's imports from `mdk-ui-foundation` and `mdk-react-adapter` through their `dist/` type output, and turbo's `build:registry` task builds those first. Run the devkit script directly on an unbuilt checkout and every such import resolves to `any`.
 
 ```bash
 cd ui
-npm run build:registry
+npx turbo run build:registry --filter=@tetherto/mdk-react-devkit
 ```
+
+`npm run generate:ui-registry` from the repo root does the same and then copies the result into the skill.
 
 To regenerate **and** verify the agent-ready contract holds:
 
@@ -169,17 +171,17 @@ cd ui
 npm run check:agent-ready --workspace @tetherto/mdk-react-devkit
 ```
 
-This gate exists and passes locally, but it is **not wired into this repo's live CI today** — the workflow file that would run it lives at `ui/.github/workflows/ci.yml`, a path GitHub Actions never executes (only root `.github/workflows/` is read), and the root CI has no `check:agent-ready` step. Whether it lands in root CI is the UI team's call (see [`ia.md`](ia.md#qa-gates)). See [`ui/packages/react-devkit/AGENT_READY.md`](../../../ui/packages/react-devkit/AGENT_READY.md) for the rules it enforces.
+This gate runs in root CI as the **🤖 Agent-readiness contract (UI)** job in [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml), on any pull request that changes `ui/` or CI infrastructure. It builds the registry and checks registry completeness, the `USAGE.md` prop-table policy, and agent-ready metadata as one contract. A paired **🔒 USAGE baseline monotonicity** job compares `usage-proptable-baseline.json` against the pull request base as sets, so a new prop-table path cannot be baselined in to pass the check: additions fail, removals are allowed. See [`ui/packages/react-devkit/AGENT_READY.md`](../../../ui/packages/react-devkit/AGENT_READY.md) for the rules it enforces.
 
-### Socket Firewall note
+### Socket firewall note
 
-If your shell routes `npm` through Socket Firewall (`sfw`) and `npm run build:registry` hangs, you may need to source the repo's allowlist. The build process itself doesn't make outbound requests, but if you're running a broader `npm run build` (which includes dev tooling like linkinator during checks), socket.dev will block unrecognized hosts.
+If your shell routes `npm` through Socket Firewall (`sfw`) and `npm run build:registry` hangs, you may need to source the repo's allowlist. The build process itself doesn't make outbound requests, but if you're running a broader `npm run build` (which includes dev tooling like linkinator during checks), socket.dev blocks unrecognized hosts.
 
-Setup instructions: [`linters.md § Nightly and PR diff link verification — linkinator`](linters.md#nightly-and-pr-diff-link-verification--linkinator) (lines 16–28). The same [`scripts/sfw-env.sh`](../../../scripts/sfw-env.sh) allowlist applies.
+Setup instructions: [`linters.md § Nightly and PR diff link verification — linkinator`](linters.md#nightly-and-pr-diff-link-verification--linkinator) (lines 16–28). The same [`docs/scripts/sfw-env.sh`](../../scripts/sfw-env.sh) allowlist applies.
 
 ### PR workflow
 
-When a PR changes component source files (adds JSDoc tags, modifies props, updates `USAGE.md`), the manifests will reflect those changes the next time someone runs `npm run build` — locally or in CI.
+When a PR changes component source files (adds JSDoc tags, modifies props, updates `USAGE.md`), the manifests reflect those changes the next time someone runs `npm run build` — locally or in CI.
 
 **Do not commit `dist/*.json` files.** They're gitignored for a reason: committing them creates merge conflicts and drift. CI rebuilds the manifests fresh on every run, and published packages include the build output automatically.
 
@@ -189,11 +191,26 @@ Until that gate lands (if it lands — adoption is engineering's call), docs mai
 
 ## Generation scripts
 
-Three pages in this repo are written by a script rather than by a person. Each reads contract manifests or code annotations and rewrites its page, so what a reader sees
-cannot drift from what ships. Hand-editing them does not last, because the next run overwrites the edit.
+Generated docs are a **checked projection of the facts that ship**, not a second hand-maintained copy that can drift. A generator reads the canonical
+source and rewrites its projection; hand-editing generated output does not last, because the next run overwrites the edit.
 
-[`docs/scripts/regenerate-docs.mjs`](../../scripts/regenerate-docs.mjs) runs all three. It orchestrates only, calling each generator where it lives, so engineering keeps
-ownership of the generation logic.
+| Canonical source | Generated projection |
+|---|---|
+| Worker contracts | Supported-hardware catalogue |
+| Plugin manifests | Supported-plugins page and route references |
+| Package metadata | Package reference |
+| UI types and JSDoc | Component registry |
+| Component registry | Skill component reference, `## Props` sections in devkit `USAGE.md` files, docs-site props tables |
+
+Change a fact once at its source — a prop type, option, default, or JSDoc description; a Worker contract; a plugin manifest — and every projection follows
+on the next regeneration. Forget to regenerate and CI names the exact drift before it can merge. A companion gate (`check:usage-proptables`) keeps new
+hand-authored props tables from becoming competing sources of truth: existing debt is baselined, removing a violation is allowed, adding or swapping one
+fails.
+
+[`docs/scripts/regenerate-docs.mjs`](../../scripts/regenerate-docs.mjs) runs every generator; its `TARGETS` list is the authoritative inventory. It
+orchestrates only, calling each generator where it lives, so engineering keeps ownership of the generation logic. Exit codes: `0` — every checked
+projection is current; `3` — committed generated files are stale; `1` — generation itself was incomplete or broken. These are deterministic freshness
+checks, not flaky behavioural tests: keep them blocking wherever stale generated content could merge.
 
 ### Regenerating
 
@@ -206,19 +223,24 @@ npm run regenerate-docs
 The command prints one line per page and names the files it wrote. It runs every generator even when one fails, so a single broken source file cannot hide a second problem.
 
 A full run rebuilds the devkit component registry, so it needs [`ui/`](../../../ui/README.md)'s dependencies and can pull an unrelated diff into a narrow pull request. It is for a
-repo-wide pass and for releases.
+repo-wide pass and for releases. The registry build (`build:ts`, which cleans `dist/` first) rebuilds only the TypeScript output, so after a local run the devkit's
+`dist/` lacks its stylesheet bundles until the next full `npm run build` in [`ui/`](../../../ui/README.md) — harmless to the repo (`dist/` is gitignored) but worth knowing if
+something local consumes `dist/` directly.
 
 When one thing has changed, run that generator on its own. Each has its own command:
 
-| Generated page | Command | Run from |
+| Generated target | Command | Run from |
 |---|---|---|
 | Supported hardware | `npm run generate:catalogue` | repo root |
 | Gateway plugin route tables | `npm run generate:plugin-reference` | [`backend/core/plugins`](../../../backend/core/plugins/README.md) |
+| Package reference | `npm run generate:package-catalog` | repo root |
 | Component reference in the skill | `npm run generate:ui-registry` | repo root |
+| Props sections in devkit `USAGE.md` files | `npm run generate:usage-proptables` | repo root |
 
-The two Markdown targets repeat their command in a `DO NOT EDIT` header, which is the reliable route because it travels with the page a person is looking at.
+The Markdown page targets repeat their command in a `DO NOT EDIT` header, which is the reliable route because it travels with the page a person is looking at.
 The component reference is minified JSON and cannot carry a comment, so its command is recorded in [`packages/mdk-skill/README.md`](../../../packages/mdk-skill/README.md)
-and in `sources.map.json` instead.
+and in `sources.map.json` instead. The USAGE.md props sections carry the command in their `BEGIN GENERATED` marker, and everything between the markers is
+generator-owned — supplementary hand-authored prop notes live outside the markers, under a `… Props detail` heading.
 
 ### Checking without changing anything
 
@@ -232,9 +254,9 @@ files when a page is out of date. This is the pre-release check, and it is the o
 Two behaviours are worth knowing:
 
 - Report mode declines to run when a generated file already carries uncommitted edits, because it cannot tell a stale page from work in progress. Commit or stash first
-- The component reference needs [`ui/`](../../../ui/README.md)'s dependencies installed. Without them that one target is skipped with a named line in the output, and the other two still run. The
+- The component reference and the USAGE.md props sections need [`ui/`](../../../ui/README.md)'s dependencies installed. Without them those targets are skipped with a named line in the output, and the rest still run. The
   skip is reported, not fatal, because installing the UI workspace costs hundreds of megabytes and that is a lot to ask of someone who only edits Markdown. Run
-  [`npm run setup:ui`](../../../README.md) when you want the third target covered too
+  [`npm run setup:ui`](../../../README.md) when you want the component reference covered too
 
 ### Worker hardware catalogue
 
@@ -313,6 +335,24 @@ separate check tracked as a follow-up.
 
 The [contract validation and catalogue generation process](ia.md#checkintegrations-fresh) covers what the generator checks before it writes.
 
+#### Known issues with manufacturer contract pins
+
+This pipeline is temporary. Supported Workers are moving to separately published npm packages, which replaces the fetch-and-pin
+mechanism above. This note should expire before V1. Until then, these limits are known and accepted:
+
+- A pin that still resolves can be out of date. The nightly check reports breakage only, so nothing tells a maintainer that the
+  manufacturer has since changed the file. The `ref` in [`external-workers.json`](../../../backend/workers/external-workers.json)
+  advances only when someone edits it. The scoping is stated in
+  [`check-external-contracts.mjs`](../../scripts/check-external-contracts.mjs#L19-L23). Manufacturers such as Whatsminer publish
+  no version number to compare against.
+- The fetched bytes are not content-hashed. Integrity rests on GitHub serving the pinned SHA, which is checked for shape at
+  [`generate-catalogue.js`](../../../backend/workers/scripts/generate-catalogue.js#L317) and fetched at
+  [line 339](../../../backend/workers/scripts/generate-catalogue.js#L339).
+- Only `ref` is shape-checked. A malformed `name`, `repoUrl`, `contractPath`, `brand`, `provider` or `family` produces an
+  `undefined` label instead of a clear error, as the generator's own
+  [comment](../../../backend/workers/scripts/generate-catalogue.js#L307-L311) notes.
+- Private repositories and non-GitHub hosts are unsupported, as described under fetching a manufacturer's contract above.
+
 ### Gateway plugin reference
 
 Generates the route tables for default Gateway plugins from their manifest files.
@@ -324,6 +364,31 @@ markers is hand-maintained and the generator leaves it untouched.
 
 **Generator:** [`docs/scripts/generate-plugin-reference.js`](../../scripts/generate-plugin-reference.js), runnable on its own with `npm run generate:plugin-reference` from
 [`backend/core/plugins`](../../../backend/core/plugins/README.md)
+
+### Package reference
+
+Lists every package in the monorepo on one page, so a reader can see what exists without walking each workspace.
+
+**Source:** each `package.json` under `backend/core`, `backend/plugins`, `backend/workers`, `ui/packages`, and `packages`, plus each integration's `mdk-contract.json`
+
+**Output:** [`docs/reference/packages.md`](../packages.md)
+
+**Generator:** [`docs/scripts/generate-package-catalog.mjs`](../../scripts/generate-package-catalog.mjs), runnable on its own with `npm run generate:package-catalog` from the repo root
+
+Every column is inferred, so no `package.json` carries metadata for this page:
+
+- Group: where the package lives. `backend/core` is Core, `backend/plugins` and `backend/workers` are Extensions, `ui/packages` is UI, and `packages` is Tools
+- Integration: any package with an `mdk-contract.json` at its root or under `plugin/`. Its section, name, and models come from the contract's `deviceFamily`, `brand`, and
+  `modelsSupported`, and its purpose is the first sentence of `overview`
+- Purpose for every other package: its `package.json` `description`
+- Availability: `workspace` when the package is `"private": true`, otherwise `publishable`
+- Link: the package's `README.md`, or its `package.json` when there is no README
+
+Samples and demos (`backend/workers/samples/` and `backend/plugins/demo/`) are skipped by a list in the generator. Add to that list when a new sample or demo should stay off
+the page.
+
+The generator writes nothing and exits non-zero when a listed package has no description, shares its name with another, or has a contract that cannot be parsed. Contract
+schema conformance is not checked here, because the [Worker hardware catalogue](#worker-hardware-catalogue) already validates every contract.
 
 ### Component reference in the mdk-ui-component skill
 
@@ -340,9 +405,8 @@ The copy is verbatim on purpose. Trimming it to what the skill reads today would
 
 ### Freshness in CI
 
-`.github/workflows/docs-freshness.yml` runs report mode on pull requests that touch either the sources or the generated
-pages. It installs the UI workspace and treats a skipped target as a failure, since there a skip means the install broke rather than that someone is working light. It annotates the pull request and never blocks it: a device contract can land in one pull request and the regenerated page in the next, and a hard failure would
-force an unrelated docs commit into an engineering change. The pages stay wrong for readers until someone regenerates, so treat the warning as work owed rather than noise.
+`.github/workflows/docs-freshness.yml` runs `regenerate-docs --check` on pull requests that touch either the sources or the generated
+pages. It installs the UI workspace and treats a skipped target as a failure, since there a skip means the install broke rather than that someone is working light. It **blocks** the pull request whenever any generated page is stale — a stale page ships facts the sources no longer support — and lists every stale path in the job summary. When a source change requires regenerated output, run `npm run regenerate-docs` from the repo root and commit the deterministic result in the same pull request. A generator that crashes, or any target skipped in CI, also blocks, because then the run did not verify every page.
 
 ## Next steps
 

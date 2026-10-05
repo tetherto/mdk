@@ -1,18 +1,22 @@
-# ContainerControlsBox
+# `ContainerControlsBox`
 
 Control panel for a single container providing start/stop actions, operating mode selection, fan controls, and operator shortcuts. Can run in batch mode to drive multiple selected containers simultaneously.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop                 | Status   | Type                     | Default | Description                                                                  |
-| -------------------- | -------- | ------------------------ | ------- | ---------------------------------------------------------------------------- |
-| `onNavigate`         | Required | `(path: string) => void` | —       | Navigation callback used by alarm row click-throughs                         |
-| `data`               | Optional | `Device`                 | —       | The container device object                                                  |
-| `isBatch`            | Optional | `boolean`                | `false` | When `true`, operates on `selectedDevices` instead of a single `data` record |
-| `selectedDevices`    | Optional | `Device[]`               | `[]`    | Devices included in a batch operation                                        |
-| `pendingSubmissions` | Optional | `PendingSubmission[]`    | `[]`    | In-flight command queue; disables conflicting actions                        |
-| `alarmsDataItems`    | Optional | `TimelineItemData[]`     | `[]`    | Active alarm feed items to display inline                                    |
-| `tailLogData`        | Optional | `UnknownRecord[]`        | —       | Recent log tail entries                                                      |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `onNavigate` | Required | `(path: string) => void` | - | Navigation callback used by alarm row click-throughs |
+| `alarmsDataItems` | Optional | `TimelineItemData[]` | `[]` | Active alarm feed items to display inline |
+| `data` | Optional | `Device` | - | The container device object |
+| `isBatch` | Optional | `boolean` | `false` | When `true`, operates on `selectedDevices` instead of a single `data` record |
+| `isCompact` | Optional | `boolean` | - | - |
+| `pendingSubmissions` | Optional | `PendingSubmission[]` | `[]` | In-flight command queue; disables conflicting actions |
+| `powerModesLog` | Optional | `UnknownRecord` | - | - |
+| `selectedDevices` | Optional | `Device[]` | `[]` | Devices included in a batch operation |
+| `tailLogData` | Optional | `UnknownRecord[]` | - | Recent log tail entries |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

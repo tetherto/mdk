@@ -20,7 +20,12 @@ export type SupplyLiquidBoxContainerSettings = {
 }
 
 export type SupplyLiquidBoxProps = {
+  /** Live device object. Returns `null` when omitted. */
   data?: Device
+  /**
+   * Optional threshold map that controls colour and flash states on readings
+   * @default null
+   */
   containerSettings?: SupplyLiquidBoxContainerSettings | null
 }
 

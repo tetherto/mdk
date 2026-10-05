@@ -2,18 +2,22 @@
 
 A CSS Grid layout component that maps named areas to child `Mosaic.Item` elements. Supports 1D (space-separated string rows) and 2D array templates.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-### `Mosaic`
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Required | `React.ReactNode` | - | `Mosaic.Item` elements |
+| `template` | Required | `string[] \| string[][]` | - | Grid area layout. 1D: each string is a row of space-separated area names. 2D: each inner array is a row |
+| `className` | Optional | `string` | - | Additional class for the grid element |
+| `columns` | Optional | `string \| string[]` | - | Custom `grid-template-columns` value or array of track sizes. Defaults to equal-width fractional tracks |
+| `gap` | Optional | `string` | `"12px"` | CSS gap between grid cells |
+| `rowHeight` | Optional | `string` | `"auto"` | CSS height for each row |
+<!-- END GENERATED: props -->
 
-| Prop        | Status   | Type                     | Default  | Description                                                                                              |
-| ----------- | -------- | ------------------------ | -------- | -------------------------------------------------------------------------------------------------------- |
-| `template`  | Required | `string[] \| string[][]` | —        | Grid area layout. 1D: each string is a row of space-separated area names. 2D: each inner array is a row  |
-| `children`  | Required | `React.ReactNode`        | —        | `Mosaic.Item` elements                                                                                   |
-| `gap`       | Optional | `string`                 | `'12px'` | CSS gap between grid cells                                                                               |
-| `rowHeight` | Optional | `string`                 | `'auto'` | CSS height for each row                                                                                  |
-| `columns`   | Optional | `string \| string[]`     | —        | Custom `grid-template-columns` value or array of track sizes. Defaults to equal-width fractional tracks. |
-| `className` | Optional | `string`                 | —        | Additional class for the grid element                                                                    |
+## Props detail
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 ### `Mosaic.Item`
 

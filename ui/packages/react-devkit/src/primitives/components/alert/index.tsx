@@ -76,21 +76,33 @@ const CloseIcon = () => (
 export type AlertType = 'success' | 'info' | 'warning' | 'error'
 
 export type AlertProps = {
-  /** Alert type */
+  /**
+   * Controls the color scheme and default icon
+   * @default 'info'
+   */
   type?: AlertType
   /** Main message */
   title?: React.ReactNode
-  /** Additional description */
+  /** Secondary/detail content shown below the title */
   description?: React.ReactNode
-  /** Show the type icon */
+  /**
+   * Renders the type icon (or the `icon` override) before the content
+   * @default false
+   */
   showIcon?: boolean
   /** Custom icon (used when showIcon is true) */
   icon?: React.ReactNode
-  /** Makes the alert closable */
+  /**
+   * Shows an ✕ button; clicking it hides the alert
+   * @default false
+   */
   closable?: boolean
   /** Called when close button is clicked */
   onClose?: React.MouseEventHandler<HTMLButtonElement>
-  /** Display as full-width banner (no border radius, no margin) */
+  /**
+   * Display as full-width banner (no border radius, no margin)
+   * @default false
+   */
   banner?: boolean
   /** Action element rendered to the right */
   action?: React.ReactNode

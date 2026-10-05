@@ -1,4 +1,4 @@
-# OperationalDashboard
+# `OperationalDashboard`
 
 A 2x2 grid of the four site-operations charts - **Hashrate**, **Power
 Consumption**, **Site Efficiency** (line trends with an optional nominal
@@ -10,15 +10,19 @@ The composite is pure glue: it renders pre-shaped data. Use the
 payloads, then spread them in. Wire your own data layer (RTK Query, TanStack,
 fixtures) - the hook never fetches.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop          | Status   | Type                    | Default | Description                                             |
-| ------------- | -------- | ----------------------- | ------- | ------------------------------------------------------- |
-| `hashrate`    | Optional | `{ data?, isLoading? }` | —       | Shaped hashrate trend (`LineChartCardData`)             |
-| `consumption` | Optional | `{ data?, isLoading? }` | —       | Shaped power-consumption trend                          |
-| `efficiency`  | Optional | `{ data?, isLoading? }` | —       | Shaped site-efficiency trend                            |
-| `miners`      | Optional | `{ data?, isLoading? }` | —       | Shaped stacked miners-status data                       |
-| `controls`    | Optional | `ReactElement`          | —       | Controls (e.g. a date-range picker) rendered above grid |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `consumption` | Optional | `OperationalDashboardTrendInput` | - | Shaped power-consumption trend |
+| `controls` | Optional | `React.ReactElement<unknown, string \| React.JSXElementConstructor<any>>` | - | Optional controls (e.g. a date-range picker) rendered above the grid |
+| `efficiency` | Optional | `OperationalDashboardTrendInput` | - | Shaped site-efficiency trend |
+| `hashrate` | Optional | `OperationalDashboardTrendInput` | - | Shaped hashrate trend (`LineChartCardData`) |
+| `miners` | Optional | `OperationalDashboardMinersInput` | - | Shaped stacked miners-status data |
+<!-- END GENERATED: props -->
+
+## Props detail
 
 ### `useOperationsDashboard(input)`
 

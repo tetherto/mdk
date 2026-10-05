@@ -19,7 +19,7 @@
   overscroll-behavior: contain;
 }
 
-/** The muted, centred line a list or transcript shows when it has nothing in it. */
+/** The muted, centered line a list or transcript shows when it has nothing in it. */
 @mixin empty_note {
   margin: auto 0;
   color: var(--mdk-agent-text-muted);

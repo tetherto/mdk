@@ -1,20 +1,22 @@
-# GaugeChartComponent
+# `GaugeChartComponent`
 
 Arc-gauge chart for displaying a single metric against its maximum range. Used in MicroBT container views for temperature and pressure readings.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `max` | Required | `number` | — | Maximum gauge value |
-| `value` | Required | `number` | — | Current reading |
-| `label` | Optional | `string` | `''` | Chart title |
-| `unit` | Required | `string` | — | Unit of measurement (e.g. `"°C"`, `"bar"`) |
-| `chartStyle` | Optional | `React.CSSProperties` | `{}` | Custom inline styles for the chart wrapper |
-| `colors` | Optional | `string[]` | `[COLOR.EMERALD, COLOR.SOFT_TEAL]` | HEX color stops for the arc gradient |
-| `hideText` | Optional | `boolean` | `true` | Hide the percentage text inside the chart |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `max` | Required | `number` | - | Maximum value for the gauge |
+| `unit` | Required | `string` | - | Unit of measurement |
+| `value` | Required | `number` | - | Current value |
+| `chartStyle` | Optional | `React.CSSProperties` | `{}` | Custom chart style |
+| `className` | Optional | `string` | - | Custom className |
+| `colors` | Optional | `string[]` | `[COLOR.EMERALD, COLOR.SOFT_TEAL]` | Arc colors in HEX format |
 | `height` | Optional | `number` | `200` | Chart height in pixels |
-| `className` | Optional | `string` | — | Additional CSS class |
+| `hideText` | Optional | `boolean` | `true` | Hide the percentage text inside the chart |
+| `label` | Optional | `string` | `""` | Label/title for the chart |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

@@ -19,7 +19,9 @@ export type TimelineItemData = {
 }
 
 type AlarmRowProps = {
+  /** The alarm entry to render */
   data: TimelineItemData
+  /** Called when the row is clicked; receives the alarm `uuid` as the path segment */
   onNavigate: (path: string) => void
 }
 

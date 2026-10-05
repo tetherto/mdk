@@ -39,7 +39,7 @@ export const API_ENDPOINTS = {
   historyLog: '/auth/history-log',
   extData: '/auth/ext-data',
 
-  // Operational Centre — site / racks / PDU / config reads
+  // Operational Center — site / racks / PDU / config reads
   site: '/auth/site',
   siteStatusLive: '/auth/site/status/live',
   listRacks: '/auth/list-racks',

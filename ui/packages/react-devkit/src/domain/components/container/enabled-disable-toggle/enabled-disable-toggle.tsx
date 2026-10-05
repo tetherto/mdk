@@ -7,10 +7,15 @@ type EnabledDisableToggleCbParams = Pick<EnabledDisableToggleProps, 'tankNumber'
 }
 
 export type EnabledDisableToggleProps = {
+  /** Current state. A boolean drives a switch display; non-boolean shows action buttons. */
   value: unknown
+  /** Tank identifier used in the label (`Tank {N} Circulation`). Pass an empty string for the air exhaust label. */
   tankNumber: number | string
+  /** Disables the Enable/Disable buttons when a command is in-flight */
   isButtonDisabled: boolean
+  /** Disables all controls and shows an offline tooltip */
   isOffline: boolean
+  /** Callback fired when the user confirms a state change */
   onToggle: (params: EnabledDisableToggleCbParams) => void
 }
 

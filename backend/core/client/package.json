@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-client",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK protocol client — HRPC (RPC listener) transport for Kernel",
   "main": "index.js",
   "keywords": [

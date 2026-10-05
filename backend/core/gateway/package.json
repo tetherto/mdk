@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-gateway",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK Gateway",
   "keywords": [
     "tether"
@@ -30,9 +30,8 @@
   "dependencies": {
     "@bitfinex/bfx-facs-lru": "^1.0.0",
     "@bitfinex/bfx-svc-boot-js": "1.2.0",
-    "@tetherto/mdk-mcp": "^0.9.0",
-    "@tetherto/mdk-plugins": "^0.9.0",
-    "@tetherto/mdk-worker": "^0.9.0",
+    "@tetherto/mdk-plugins": "^0.10.0",
+    "@tetherto/mdk-worker": "^0.10.0",
     "@tetherto/svc-facs-httpd": "^2.0.0",
     "@tetherto/tether-wrk-base": "^2.0.0",
     "async": "3.2.6",

@@ -8,23 +8,52 @@ import { forwardRef, useState } from 'react'
 type TActionButtonVariant = 'primary' | 'danger' | 'secondary'
 
 type ActionButtonConfirmation = {
+  /** Heading shown in the confirmation UI */
   title: string
+  /**
+   * Label for the cancel button
+   * @default 'Cancel'
+   */
   cancelLabel?: string
+  /**
+   * Label for the confirm button. Defaults to `'OK'` in popover mode and
+   * `'Confirm'` in dialog mode.
+   * @default 'OK' (popover) / 'Confirm' (dialog)
+   */
   confirmLabel?: string
+  /**
+   * Icon shown in the popover header (popover mode only)
+   * @default <QuestionMarkCircledIcon>
+   */
   icon?: React.ReactNode
+  /** Fired when the user cancels */
   onCancel?: VoidFunction
+  /** Fired when the user confirms */
   onConfirm?: VoidFunction
+  /** Body text or node shown below the title */
   description?: React.ReactNode
 }
 
 type ActionButtonProps = {
+  /** Button label text */
   label?: string
+  /** Shows a spinner on the trigger button */
   loading?: boolean
+  /** Disables the trigger button */
   disabled?: boolean
+  /** Additional class for the trigger button */
   className?: string
+  /**
+   * Visual style of the trigger button
+   * @default 'secondary'
+   */
   variant?: TActionButtonVariant
+  /** Configuration for the confirmation UI */
   confirmation: ActionButtonConfirmation
-  /** Confirmation mode: popover (inline) or dialog (modal). Default: popover */
+  /**
+   * Confirmation mode: popover (inline) or dialog (modal)
+   * @default 'popover'
+   */
   mode?: 'popover' | 'dialog'
 }
 

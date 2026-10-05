@@ -30,7 +30,7 @@ export type UseCabinetGroupsResult = {
  * devices without a container assignment (site-level meters) collect under
  * the `site` group, sorted last.
  *
- * @category op-centre
+ * @category op-center
  */
 export const useCabinetGroups = (
   options: UseCabinetGroupsOptions = {},

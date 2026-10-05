@@ -24,7 +24,10 @@ import './stats-group-card.scss'
 type StatsGroupCardProps = {
   /** Array of miners to display stats for */
   miners?: DeviceData[] | Device[]
-  /** Whether to show miner metrics card layout */
+  /**
+   * Whether to show miner metrics card layout
+   * @default false
+   */
   isMinerMetrics?: boolean
 }
 

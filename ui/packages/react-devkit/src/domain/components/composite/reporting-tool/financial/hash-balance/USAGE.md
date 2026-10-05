@@ -2,44 +2,50 @@
 
 Composite financial view for site hash revenue, network hashrate, hashprice, and hash cost. Use `HashBalance` for the full page (tabs + timeframe controls), or compose `HashBalanceRevenuePanel` / `HashBalanceCostPanel` with your own chrome.
 
-## HashBalance
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `data` | Optional | `HashRevenueResponse \| null` | — | Revenue / cost log and summary |
-| `isLoading` | Optional | `boolean` | `false` | Show loading state |
+### `HashBalance` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Root layout class |
+| `data` | Optional | `HashRevenueResponse \| null` | `null` | Revenue / cost log and summary |
+| `errorMessage` | Optional | `string` | `"Error loading hash balance data. Please try again later."` | Error copy when `isError` |
+| `initialDateRange` | Optional | `FinancialDateRange` | `year-to-date` | Initial period |
 | `isError` | Optional | `boolean` | `false` | Show error state |
-| `errorMessage` | Optional | `string` | `'Error loading hash balance data. Please try again later.'` | Error copy when `isError` |
-| `initialDateRange` | Optional | `FinancialDateRange` | year-to-date | Initial period |
-| `onDateRangeChange` | Optional | `(range, query) => void` | — | Fired when the user changes the period |
-| `className` | Optional | `string` | — | Root layout class |
-| `tabsClassName` | Optional | `string` | — | Tabs wrapper class |
-| `tabsListClassName` | Optional | `string` | — | Tab list class |
+| `isLoading` | Optional | `boolean` | `false` | Show loading state |
+| `onDateRangeChange` | Optional | `(dateRange: FinancialDateRange, query: FinanceQueryParams) => void` | - | Fired when the user changes the period |
+| `tabsClassName` | Optional | `string` | - | Tabs wrapper class |
+| `tabsListClassName` | Optional | `string` | - | Tab list class |
+
+### `HashBalanceCostPanel` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `dateRange` | Required | `FinancialDateRange` | - | Active reporting window |
+| `data` | Optional | `HashRevenueResponse \| null` | `null` | Revenue / cost log and summary payload |
+| `isLoading` | Optional | `boolean` | `false` | Loading state |
+| `log` | Optional | `HashRevenueLogEntry[]` | - | Optional log override |
+| `timeframeType` | Optional | `null \| "month" \| "week" \| "year"` | `null` | Year / month / week mode |
+
+### `HashBalanceRevenuePanel` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `currency` | Required | `"BTC" \| "USD"` | - | `USD` or `BTC` label for per-PH/day units |
+| `dateRange` | Required | `FinancialDateRange` | - | Active reporting window |
+| `onCurrencyChange` | Required | `(currency: HashBalanceCurrency) => void` | - | Currency toggle handler |
+| `data` | Optional | `HashRevenueResponse \| null` | `null` | Revenue / cost log and summary payload |
+| `isLoading` | Optional | `boolean` | `false` | Loading state |
+| `log` | Optional | `HashRevenueLogEntry[]` | - | Optional log override |
+| `timeframeType` | Optional | `null \| "month" \| "week" \| "year"` | `null` | Year / month / week mode |
+<!-- END GENERATED: props -->
+
+## `HashBalance`
 
 ```tsx
 import { HashBalance } from "@tetherto/mdk-react-devkit";
 
 <HashBalance data={response} isLoading={false} />
 ```
-
-## HashBalanceRevenuePanel
-
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `data` | Optional | `HashRevenueResponse \| null` | — | Same payload as `HashBalance` |
-| `log` | Optional | `HashRevenueLogEntry[]` | — | Optional log override |
-| `dateRange` | Required | `FinancialDateRange` | — | Active reporting window |
-| `currency` | Required | `HashBalanceCurrency` | — | `USD` or `BTC` label for per-PH/day units |
-| `onCurrencyChange` | Required | `(currency) => void` | — | Currency toggle handler |
-| `isLoading` | Optional | `boolean` | `false` | Loading state |
-| `timeframeType` | Optional | `TimeframeTypeValue \| null` | `null` | Year / month / week mode |
-
-## HashBalanceCostPanel
-
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `data` | Optional | `HashRevenueResponse \| null` | — | Same payload as `HashBalance` |
-| `log` | Optional | `HashRevenueLogEntry[]` | — | Optional log override |
-| `dateRange` | Required | `FinancialDateRange` | — | Active reporting window |
-| `isLoading` | Optional | `boolean` | `false` | Loading state |
-| `timeframeType` | Optional | `TimeframeTypeValue \| null` | `null` | Year / month / week mode |

@@ -1,14 +1,16 @@
-# AlertsTableTitle
+# `AlertsTableTitle`
 
 Title strip for an alerts table section with a heading and an optional count badge.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop        | Status   | Type        | Default | Description                      |
-| ----------- | -------- | ----------- | ------- | -------------------------------- |
-| `title`     | Required | `ReactNode` | —       | Section heading                  |
-| `subtitle`  | Optional | `ReactNode` | —       | Optional subtitle or count badge |
-| `className` | Optional | `string`    | —       | Additional CSS class             |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `title` | Required | `React.ReactNode` | - | Section heading |
+| `className` | Optional | `string` | - | Additional CSS class |
+| `subtitle` | Optional | `React.ReactNode` | - | Optional subtitle or count badge |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

@@ -1,13 +1,15 @@
-# AlarmContents
+# `AlarmContents`
 
 Renders the body region of an alarm card as a scrollable list of `AlarmRow` entries from a `TimelineItemData` array. Shows an `EmptyState` placeholder when the data is empty or falsy.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop         | Status   | Type                            | Default | Description                  |
-| ------------ | -------- | ------------------------------- | ------- | ---------------------------- |
-| `alarmsData` | Required | `TimelineItemData[] \| unknown` | —       | Alert entries to render. Passes each entry to an `AlarmRow`; falls back to `EmptyState` when array is empty or falsy. Accepts a raw `ReactNode` as a passthrough fallback. |
-| `onNavigate` | Required | `(path: string) => void`        | —       | Navigation callback forwarded to each `AlarmRow` for click-through routing |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `alarmsData` | Required | `unknown` | - | Alert entries to render. Falls back to `EmptyState` when empty or falsy |
+| `onNavigate` | Required | `(path: string) => void` | - | Navigation callback forwarded to each `AlarmRow` for click-through routing |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

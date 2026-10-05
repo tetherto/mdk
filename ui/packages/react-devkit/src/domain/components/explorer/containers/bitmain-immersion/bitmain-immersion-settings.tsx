@@ -10,7 +10,10 @@ import {
 type BitMainImmersionSettingsProps = {
   /** Device data */
   data?: Device
-  /** Container settings with custom thresholds */
+  /**
+   * Container settings with custom thresholds
+   * @default null
+   */
   containerSettings?: {
     thresholds?: Record<string, unknown>
   } | null

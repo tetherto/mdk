@@ -45,7 +45,7 @@ export const queryKeys = {
   historyLog: (params: HistoryLogParams) => ['auth', 'history-log', params] as const,
   extData: (params: ExtDataParams) => ['auth', 'ext-data', params] as const,
 
-  // Operational Centre — site / racks / PDU / config reads
+  // Operational Center — site / racks / PDU / config reads
   site: () => ['auth', 'site'] as const,
   listRacks: (params: ListRacksParams) => ['auth', 'list-racks', params] as const,
   pduLayout: (params: PduLayoutParams) => ['auth', 'pdu-layout', params] as const,

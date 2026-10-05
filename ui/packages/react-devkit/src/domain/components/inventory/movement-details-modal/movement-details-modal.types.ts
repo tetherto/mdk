@@ -26,7 +26,13 @@ export type MovementData = {
 
 /** Props for `MovementDetailsModal`; pass the selected movement and open/close handlers. */
 export type MovementDetailsModalProps = Partial<{
+  /**
+   * Whether the modal is open
+   * @default false
+   */
   isOpen: boolean
+  /** Called when the modal requests to close (overlay click, escape, or close button) */
   onClose: () => void
+  /** The selected movement; when omitted the modal renders nothing */
   movement: MovementData
 }>

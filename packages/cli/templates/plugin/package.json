@@ -1,6 +1,6 @@
 {
   "name": "__PLUGIN_NAME__",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "description": "MDK Gateway Plugin (manifest + controllers). Loaded by the Gateway via `mdk run gateway` — it serves HTTP endpoints that aggregate worker telemetry over the MDK protocol.",
   "keywords": [
@@ -12,6 +12,6 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@tetherto/mdk-client": "^0.9.0"
+    "@tetherto/mdk-client": "^0.10.0"
   }
 }

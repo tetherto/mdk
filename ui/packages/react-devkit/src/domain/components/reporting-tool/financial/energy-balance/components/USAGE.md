@@ -1,4 +1,4 @@
-# Energy Balance Metric Components
+# Energy balance metric components
 
 Individual stat cards and charts used inside the Energy Balance section.
 
@@ -13,23 +13,48 @@ Downtime in the revenue mosaic uses core `AverageDowntimeChart` (see its own `US
 
 The cost and revenue tabs each render a row of `EnergyMetricCard`s driven by data, not by separate per-metric components (e.g. `name: 'Avg All-In Cost'`, `name: 'Curtailment Rate'`).
 
-## EnergyMetricCard props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `name` | Required | `string` | — | Metric label shown on the card |
-| `value` | Required | `number` | — | Metric value, formatted via `formatNumber` |
-| `unit` | Required | `string` | — | Unit suffix shown next to the value |
-| `fallback` | Optional | `string` | — | Text shown when `value` can't be formatted |
+### `EnergyBalancePowerChart` props
 
-## EnergyBalancePowerChart props
-
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `chartInput` | Required | `ThresholdLineChartInput` | — | Series and optional threshold line for power vs availability |
-| `periodType` | Required | `PeriodType` | — | Controls x-axis date formatting (`month` uses `MM-yy`) |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `chartInput` | Required | `ThresholdLineChartInput` | - | Series and optional threshold line for power vs availability |
+| `periodType` | Required | `"month" \| "week" \| "day"` | - | Controls x-axis date formatting (`month` uses `MM-yy`) |
+| `fillHeight` | Optional | `boolean` | `false` | Stretch the panel and chart to fill a mosaic cell (uses height `320` and `mdk-energy-balance__panel--fill`). Used on the revenue tab power column in `EnergyBalanceRevenueCharts` |
 | `height` | Optional | `number` | `280` | Chart height when `fillHeight` is false |
-| `fillHeight` | Optional | `boolean` | `false` | Stretch the panel and chart to fill a mosaic cell (uses height `320` and `mdk-energy-balance__panel--fill`). Used on the revenue tab power column in `EnergyBalanceRevenueCharts`. |
+
+### `EnergyCostChart` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `barLabelFormatter` | Required | `(v: number) => string` | - | - |
+| `btcUnit` | Required | `string \| null` | - | - |
+| `chartData` | Required | `BarChartDataResult` | - | - |
+| `displayMode` | Required | `"BTC" \| "USD"` | - | - |
+| `onDisplayModeChange` | Required | `(mode: DisplayMode) => void` | - | - |
+| `height` | Optional | `number` | - | - |
+
+### `EnergyMetricCard` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `name` | Required | `string` | - | Metric label shown on the card |
+| `unit` | Required | `string` | - | Unit suffix shown next to the value |
+| `value` | Required | `number` | - | Metric value, formatted via `formatNumber` |
+| `fallback` | Optional | `string` | - | Text shown when `value` can't be formatted |
+
+### `EnergyRevenueChart` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `barLabelFormatter` | Required | `(v: number) => string` | - | - |
+| `chartData` | Required | `BarChartDataResult` | - | - |
+| `displayMode` | Required | `"BTC" \| "USD"` | - | - |
+| `onDisplayModeChange` | Required | `(mode: DisplayMode) => void` | - | - |
+| `height` | Optional | `number` | - | - |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

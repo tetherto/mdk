@@ -1,6 +1,11 @@
 import type { MutableRefObject, ReactNode } from 'react'
 
-import type { ChartStatsFooterItem, IChartApi, LightWeightLineChartProps, MinMaxAvgValues } from '@primitives'
+import type {
+  ChartStatsFooterItem,
+  IChartApi,
+  LightWeightLineChartProps,
+  MinMaxAvgValues,
+} from '@primitives'
 
 export type LineChartCardDataset = {
   /** Label for the dataset (used in legend) */
@@ -71,23 +76,39 @@ export type LineChartCardProps = Partial<{
   timelineOptions: TimelineOption[]
   /** Controlled timeline value */
   timeline: string
-  /** Default timeline when uncontrolled */
+  /**
+   * Default timeline when uncontrolled
+   * @default first option
+   */
   defaultTimeline: string
   /** Callback when timeline changes */
   onTimelineChange: (timeline: string) => void
   /** Chart title */
   title: string
-  /** Show detail legends with current values */
+  /**
+   * Show detail legends with current values
+   * @default false
+   */
   detailLegends: boolean
-  /** Loading state */
+  /**
+   * Loading state
+   * @default false
+   */
   isLoading: boolean
-  /** Whether to reset zoom on timeline change (default: true) */
+  /**
+   * Whether to reset zoom on timeline change (default: true)
+   * @default true
+   */
   shouldResetZoom: boolean
   /** Pass-through props to the core LineChart */
   chartProps: Partial<LightWeightLineChartProps>
   /** Ref to the lightweight-charts IChartApi */
   chartRef: MutableRefObject<IChartApi | null>
   /* Chart container min height  */
+  /**
+   * Minimum chart height
+   * @default 350
+   */
   minHeight: number | string
   /** Custom class name */
   className: string

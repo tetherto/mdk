@@ -44,7 +44,7 @@ type HookCategory =
   | "external"
   | "auth"
   | "dashboard"
-  | "op-centre"
+  | "op-center"
   | "alerts"
   | "example";
 
@@ -144,7 +144,7 @@ const extractCategory = (jsDocs: JsDocLike[]): HookEntry["category"] => {
           || value === "ui"
           || value === "auth"
           || value === "dashboard"
-          || value === "op-centre"
+          || value === "op-center"
           || value === "alerts"
           || value === "example"
         ) {

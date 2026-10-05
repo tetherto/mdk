@@ -5,15 +5,18 @@ import './app-header.scss'
 export type AppHeaderProps = {
   /** Left-most slot — typically the app's brand lockup / logo. */
   logo?: ReactNode
-  /** Left-edge content — e.g. a sidebar collapse toggle button. */
+  /** Left-edge content — e.g. a sidebar collapse toggle or brand wordmark. */
   start?: ReactNode
-  /** Middle slot — typically the dashboard's stats strip. */
+  /** Middle slot — e.g. the dashboard stats strip or page title. */
   children?: ReactNode
-  /** Right-edge action cluster — e.g. alarms bell, profile menu. */
+  /** Right-edge action cluster — e.g. alarms bell, profile menu, or sign-out. */
   actions?: ReactNode
   /** Optional class hook for the outer `<header>` element. */
   className?: string
-  /** Render the header sticky to the top of its scroll container. Defaults to `true`. */
+  /**
+   * Render the header sticky to the top of its scroll container
+   * @default true
+   */
   sticky?: boolean
 }
 

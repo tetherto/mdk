@@ -6,11 +6,14 @@ import { getColumnConfig } from './columns/device-explorer.columns'
 import type { JSX } from 'react'
 
 export type DeviceExplorerTableProps = {
+  /** Rows */
   data: DeviceExplorerDeviceData[]
   deviceType: DeviceExplorerDeviceType
   selections: DataTableRowSelectionState
   onSelectionsChange: (selections: DataTableRowSelectionState) => void
+  /** Date formatter from the host's timezone setup */
   getFormattedDate: (date: Date) => string
+  /** Renderer for the per-row action cell */
   renderAction: (device: DeviceExplorerDeviceData) => React.ReactNode
   sorting: DataTableSortingState
   onSortingChange: (sorting: DataTableSortingState) => void

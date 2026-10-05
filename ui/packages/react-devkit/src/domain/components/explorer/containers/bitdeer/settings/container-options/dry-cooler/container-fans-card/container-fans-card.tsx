@@ -5,6 +5,7 @@ import type { PumpItem } from '../../pump-box/pump-box'
 import './container-fans-card.scss'
 
 type ContainerFansCardProps = {
+  /** Array of fan state objects. Renders an empty card when the array is empty; returns `null` when absent. */
   fansData?: PumpItem[]
 }
 

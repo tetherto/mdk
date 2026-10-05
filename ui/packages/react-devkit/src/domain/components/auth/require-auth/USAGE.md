@@ -7,13 +7,15 @@ Route guard that reads the session token from the headless `authStore` (via
 Also exports `consumeLastVisitedPath()` so the sign-in page can return the
 user to wherever they were redirected from.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop           | Status   | Type        | Default | Description                                             |
-| -------------- | -------- | ----------- | ------- | ------------------------------------------------------- |
-| `children`     | Required | `ReactNode` | —       | Rendered when a token is present                        |
-| `fallback`     | Required | `ReactNode` | —       | Rendered when no token is present                       |
-| `rememberPath` | Optional | `boolean`   | `true`  | Persists current location to sessionStorage on fallback |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Required | `React.ReactNode` | - | Rendered when a token is present |
+| `fallback` | Required | `React.ReactNode` | - | Rendered when no token is present — typically `<Navigate to="/signin" />` |
+| `rememberPath` | Optional | `boolean` | `true` | When true (default), the current location is persisted to sessionStorage before rendering the fallback so the sign-in flow can return there |
+<!-- END GENERATED: props -->
 
 ## Example
 

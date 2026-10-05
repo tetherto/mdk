@@ -14,7 +14,9 @@ Default children go to body. Forwards all native `<div>` attributes; pass
 </Card>
 ```
 
-## Props
+## Props detail
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 `CardProps`, `CardHeaderProps`, `CardBodyProps`, `CardFooterProps` are all
 `HTMLAttributes<HTMLDivElement>`.

@@ -1,4 +1,4 @@
-# MDK Satec Power Meter Example
+# MDK Satec power meter example
 
 A small, self-contained **Satec PM180** power-meter example you can clone and run with **no real
 hardware**. It starts a mock Satec meter, brings up a Kernel, registers the meter as a thing, and stays

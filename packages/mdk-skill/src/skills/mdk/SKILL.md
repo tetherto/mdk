@@ -15,7 +15,7 @@ license: Apache-2.0
 # Building on MDK
 
 MDK is a P2P mining device management platform layered as:
-**Consumers → Gateway → Kernel → Workers → Devices**.
+**Consumers → Gateway (or the standalone MCP server) → Kernel → Workers → Devices**.
 
 The Kernel ([`backend/core/kernel`](../../../../../backend/core/kernel/README.md)) discovers Workers over the Hyperswarm DHT,
 pulls telemetry, dispatches commands, and monitors health. Workers
@@ -55,7 +55,7 @@ Prompts like **"create a UI to show \<metric\> for a \<device\>"** are
 **not** UI-only. Follow this chain:
 
 | Step | Skill                            | What you do                           |
-| ---- | -------------------------------- | ------------------------------------- | 
+| ---- | -------------------------------- | ------------------------------------- |
 | 1    | *(discovery)* | Resolve each `mdk.yaml` → `spec.workers[].package` to its `mdk-contract.json` at the package root (or legacy `plugin/mdk-contract.json`); confirm the telemetry channel, unit, and brand/fingerprint exist |
 | 2    | `mdk-gateway-plugin` | If no Gateway route returns that shaped metric, `mdk create plugin <name>` (scaffolds + registers under `mdk.yaml` → `gateway.plugins`) then write the controller + `mdk-plugin.json` |
 | 3    | `mdk-deployment`                 | Restart Gateway/Worker as needed       |

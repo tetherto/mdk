@@ -19,7 +19,9 @@ type SelectedEditSocket = {
 }
 
 type MaintenanceDialogContentProps = {
+  /** The socket/slot being flagged for maintenance */
   selectedEditSocket: Partial<SelectedEditSocket>
+  /** Called when the user cancels */
   onCancel: VoidFunction
 }
 

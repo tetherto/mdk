@@ -34,6 +34,7 @@ export type LegendItem = {
 }
 
 export type ChartContainerProps = {
+  /** Chart heading (renders as `<h3>` unless `header` is provided) */
   title?: string
   /**
    * Optional node rendered immediately after the title text (e.g. an info
@@ -41,6 +42,7 @@ export type ChartContainerProps = {
    * omit it and the title renders exactly as before.
    */
   titleExtra?: ReactNode
+  /** Replaces the default `title` heading with a custom element */
   header?: ReactNode
   /**
    * Optional action rendered on the right side of the header row (e.g. an
@@ -48,18 +50,34 @@ export type ChartContainerProps = {
    * present. Purely additive - omit it and the header renders exactly as before.
    */
   headerAction?: ReactNode
+  /** Color-keyed legend items; each item can be toggled */
   legendData?: LegendItem[]
+  /** Large value/unit displayed alongside the legend */
   highlightedValue?: HighlightedValueProps
+  /** Radio-card time-range selector */
   rangeSelector?: RangeSelectorProps
+  /** Shows a centered `<Loader>` overlay */
   loading?: boolean
+  /** Hides the chart and shows `emptyMessage` */
   empty?: boolean
+  /**
+   * Message shown when `empty` is true
+   * @default 'No data available'
+   */
   emptyMessage?: string
+  /** Built-in footer showing Min / Avg / Max values */
   minMaxAvg?: MinMaxAvgValues
+  /** Time range label shown in the footer */
   timeRange?: string
+  /** Custom footer content rendered below the chart */
   footer?: ReactNode
+  /** Additional class for the footer area */
   footerClassName?: string
+  /** Additional class for the root element */
   className?: string
+  /** The chart element to render */
   children: ReactNode
+  /** Fired when a legend item is clicked */
   onToggleDataset?: (index: number) => void
 }
 
@@ -122,8 +140,7 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
 
     const isContentVisible = !empty && !loading
     const hasBuiltInFooter = (minMaxAvg || timeRange) && isContentVisible
-    const hasMinMaxAvgContent =
-      minMaxAvg && (minMaxAvg.min || minMaxAvg.max || minMaxAvg.avg)
+    const hasMinMaxAvgContent = minMaxAvg && (minMaxAvg.min || minMaxAvg.max || minMaxAvg.avg)
     const useCombinedPanel = hasLegendRow && hasMinMaxAvgContent && isContentVisible
     const hasFooter = (footer || hasBuiltInFooter) && isContentVisible
 
@@ -190,9 +207,7 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
             <Loader />
           </div>
         )}
-        {empty && !loading && (
-          <div className="mdk-chart-container__empty">{emptyMessage}</div>
-        )}
+        {empty && !loading && <div className="mdk-chart-container__empty">{emptyMessage}</div>}
         {isContentVisible && children}
       </div>
     )

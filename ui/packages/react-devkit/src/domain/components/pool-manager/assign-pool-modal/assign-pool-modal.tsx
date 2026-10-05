@@ -40,10 +40,15 @@ export type MinerRow = {
 }
 
 export type AssignPoolModalProps = {
+  /** Controls modal visibility */
   isOpen: boolean
+  /** Called when the modal is dismissed (× button or backdrop) */
   onClose: () => void
+  /** Called with the selected pool when the form is submitted */
   onSubmit: (values: { pool: PoolSummary }) => Promise<void>
+  /** Miners to display in the selection table */
   miners: Device[]
+  /** Available pool configurations to populate the pool selector */
   poolConfig: PoolConfigData[]
 }
 
@@ -102,8 +107,7 @@ export const AssignPoolModal = ({
     const shortCode = getMinerShortCode(code as string, tags || [])
     const deviceData = getTableDeviceData(minerData)
     const stats = deviceData.stats as
-      | { status?: string; hashrate_mhs?: { t_5m?: number } }
-      | undefined
+      { status?: string; hashrate_mhs?: { t_5m?: number } } | undefined
     return {
       id,
       code: shortCode,

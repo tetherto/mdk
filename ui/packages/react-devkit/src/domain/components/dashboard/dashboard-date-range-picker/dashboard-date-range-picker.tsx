@@ -14,9 +14,15 @@ export type DashboardDateRangePickerProps = {
   value: DashboardDateRange
   /** Fires with the next `{ start, end }` window when the user applies a range. */
   onChange: (next: DashboardDateRange) => void
-  /** Display format. Defaults to `dd/MM/yyyy`. */
+  /**
+   * Display format. Defaults to `dd/MM/yyyy`.
+   * @default 'dd/MM/yyyy'
+   */
   dateFormat?: string
-  /** Disable the trigger. */
+  /**
+   * Disable the trigger.
+   * @default false
+   */
   disabled?: boolean
   /** Optional class hook. */
   className?: string

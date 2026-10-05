@@ -32,6 +32,7 @@ const mockWorkerModule = vi.hoisted(() => ({
   WorkerRuntimeV2: mockWorkerRuntimeV2Ctor,
 }));
 const mockLocalDiscovery = vi.hoisted(() => ({ publishWorkerKey: vi.fn() }));
+const mockMcp = vi.hoisted(() => ({ createMcpServer: vi.fn() }));
 
 vi.mock('node:module', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:module')>();
@@ -43,6 +44,7 @@ vi.mock('node:module', async (importOriginal) => {
         if (id === '@tetherto/mdk-core') return mockCore;
         if (id === '@tetherto/mdk-core/lib/local-discovery') return mockLocalDiscovery;
         if (id === '@tetherto/mdk-worker') return mockWorkerModule;
+        if (id === '@tetherto/mdk-mcp') return mockMcp;
         return real(id);
       }) as NodeJS.Require;
       fake.resolve = real.resolve.bind(real);
@@ -195,6 +197,7 @@ function baseSpec(overrides: Partial<StackSpec['spec']> = {}): StackSpec {
     spec: {
       kernel: { port: 0 },
       gateway: { port: 21500, plugins: [] },
+      mcp: {},
       workers: [],
       ...overrides,
     },
@@ -290,6 +293,186 @@ describe('runGateway', () => {
     } finally {
       await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
     }
+  });
+});
+
+describe('assertMcpPortFree', () => {
+  it('resolves when the port is free', async () => {
+    await expect(runtime.assertMcpPortFree(21998)).resolves.toBeUndefined();
+  });
+
+  it('throws a clear message when the port is bound', async () => {
+    const server = createServer();
+    const port = await new Promise<number>((resolveListen) => {
+      server.listen(0, '127.0.0.1', () => resolveListen((server.address() as { port: number }).port));
+    });
+    try {
+      await expect(runtime.assertMcpPortFree(port)).rejects.toThrow(/already in use/);
+    } finally {
+      await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
+    }
+  });
+});
+
+describe('runMcp', () => {
+  it('throws when no kernel is given and no key file exists', async () => {
+    const dir = makeTmpDir();
+    await expect(runtime.runMcp(dir, baseSpec())).rejects.toThrow(/Kernel is not running/);
+  });
+
+  it('reads the kernel key from the key file when present', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const closeFn = vi.fn((cb?: () => void) => cb?.());
+    mockMcp.createMcpServer.mockResolvedValue({ close: closeFn });
+    const dir = makeTmpDir();
+    mkdirSync(runtime.mdkDir(dir), { recursive: true });
+    writeFileSync(runtime.kernelKeyFile(dir), 'deadbeef', 'utf8');
+
+    await runtime.runMcp(dir, baseSpec());
+
+    expect(mockMcp.createMcpServer).toHaveBeenCalledWith(
+      expect.stringContaining('mcp'),
+      21600,
+      { kernelKey: 'deadbeef' },
+      [],
+      [],
+    );
+  });
+
+  it('uses an in-process kernel\'s public key when a kernel handle is passed', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const closeFn = vi.fn((cb?: () => void) => cb?.());
+    mockMcp.createMcpServer.mockResolvedValue({ close: closeFn });
+    const dir = makeTmpDir();
+    const kernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
+
+    await runtime.runMcp(dir, baseSpec(), kernel);
+
+    expect(mockMcp.createMcpServer).toHaveBeenCalledWith(
+      expect.any(String),
+      21600,
+      { kernelKey: 'ab' },
+      [],
+      [],
+    );
+  });
+
+  it('forwards spec.spec.gateway.config as the base config layer, the same way runGateway does', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const closeFn = vi.fn((cb?: () => void) => cb?.());
+    mockMcp.createMcpServer.mockResolvedValue({ close: closeFn });
+    const dir = makeTmpDir();
+    mkdirSync(runtime.mdkDir(dir), { recursive: true });
+    writeFileSync(runtime.kernelKeyFile(dir), 'deadbeef', 'utf8');
+
+    await runtime.runMcp(
+      dir,
+      baseSpec({
+        gateway: { port: 21501, plugins: [], config: { auth: { superAdmin: 'root@example.com' } } },
+      }),
+    );
+
+    expect(mockMcp.createMcpServer).toHaveBeenCalledWith(
+      expect.any(String),
+      21501 + runtime.DEFAULT_MCP_PORT_OFFSET,
+      { auth: { superAdmin: 'root@example.com' }, kernelKey: 'deadbeef' },
+      [],
+      [],
+    );
+  });
+
+  it('builds gatewayPluginDirs from spec.spec.gateway.plugins, carrying per-plugin config', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const closeFn = vi.fn((cb?: () => void) => cb?.());
+    mockMcp.createMcpServer.mockResolvedValue({ close: closeFn });
+    const dir = makeTmpDir();
+    linkRealPackage(dir, 'yaml');
+    const kernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
+
+    await runtime.runMcp(
+      dir,
+      baseSpec({
+        gateway: {
+          port: 21500,
+          plugins: [{ package: 'yaml', config: { auth: { superAdmin: 'root@example.com' } } }],
+        },
+      }),
+      kernel,
+    );
+
+    const call = mockMcp.createMcpServer.mock.calls.at(-1) as [
+      string,
+      number,
+      Record<string, unknown>,
+      string[],
+      Array<{ dir: string; config?: Record<string, unknown> }>,
+    ];
+    expect(call[4][0].dir).toMatch(/yaml$/);
+    expect(call[4][0].config).toEqual({ auth: { superAdmin: 'root@example.com' } });
+  });
+
+  it('defaults the port to gateway.port + DEFAULT_MCP_PORT_OFFSET when spec.mcp.port is unset', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const closeFn = vi.fn((cb?: () => void) => cb?.());
+    mockMcp.createMcpServer.mockResolvedValue({ close: closeFn });
+    const dir = makeTmpDir();
+    const kernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
+
+    await runtime.runMcp(dir, baseSpec({ gateway: { port: 21503, plugins: [] } }), kernel);
+
+    expect(mockMcp.createMcpServer).toHaveBeenCalledWith(
+      expect.any(String),
+      21503 + runtime.DEFAULT_MCP_PORT_OFFSET,
+      expect.anything(),
+      [],
+      [],
+    );
+  });
+
+  it('uses spec.mcp.port when set', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const closeFn = vi.fn((cb?: () => void) => cb?.());
+    mockMcp.createMcpServer.mockResolvedValue({ close: closeFn });
+    const dir = makeTmpDir();
+    const kernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
+
+    await runtime.runMcp(dir, baseSpec({ gateway: { port: 21504, plugins: [] }, mcp: { port: 21999 } }), kernel);
+
+    expect(mockMcp.createMcpServer).toHaveBeenCalledWith(
+      expect.any(String),
+      21999,
+      expect.anything(),
+      [],
+      [],
+    );
+  });
+
+  it('rejects up front when the mcp port is already taken', async () => {
+    const server = createServer();
+    const port = await new Promise<number>((resolveListen) => {
+      server.listen(0, '127.0.0.1', () => resolveListen((server.address() as { port: number }).port));
+    });
+    try {
+      const kernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
+      await expect(
+        runtime.runMcp(makeTmpDir(), baseSpec({ mcp: { port } }), kernel),
+      ).rejects.toThrow(/already in use/);
+    } finally {
+      await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
+    }
+  });
+
+  it('returned stop() calls the server\'s close()', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const closeFn = vi.fn((cb?: () => void) => cb?.());
+    mockMcp.createMcpServer.mockResolvedValue({ close: closeFn });
+    const dir = makeTmpDir();
+    const kernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
+
+    const handle = await runtime.runMcp(dir, baseSpec(), kernel);
+    await handle.stop();
+
+    expect(closeFn).toHaveBeenCalled();
   });
 });
 

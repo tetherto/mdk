@@ -9,6 +9,7 @@ export type TextAreaProps = ComponentProps<'textarea'> & {
   label?: string
   /**
    * HTML id for the textarea. Required when using label for accessibility.
+   * @default auto-generated
    */
   id?: string
   /**

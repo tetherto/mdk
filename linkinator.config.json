@@ -2,7 +2,7 @@
   "recurse": true,
   "markdown": true,
   "checkFragments": true,
-  "verbosity": "warning",
+  "verbosity": "error",
   "concurrency": 50,
   "timeout": 30000,
   "retry": true,
@@ -18,6 +18,7 @@
     "(^|/)coverage/",
     "(^|/)dist/",
     "^https://console\\.cloud\\.google\\.com",
+    "^https://qvac\\.tether\\.io",
     "^https://github\\.com/tetherto/mdk-docs",
     "^https://github\\.com/tetherto/mdk-prv",
     "^https://github\\.com/tetherto/mdk/blob/main/",
@@ -31,6 +32,7 @@
     "https://github.com/tetherto/mdk/releases/tag/v0.7.0",
     "https://github.com/tetherto/mdk/releases/tag/v0.8.0",
     "https://github.com/tetherto/mdk/releases/tag/v0.9.0",
+    "https://github.com/tetherto/mdk/releases/tag/v0.10.0",
     "examples/full-site/plugins/site/?$",
     "backend/plugins/?$",
     "backend/core/kernel/lib/modules/?$",
@@ -42,6 +44,7 @@
     "backend/workers/mock/transports/?$",
     "docs/concepts/?$",
     "docs/guides/?$",
+    "docs/scripts/?$",
     "docs/tutorials/?$",
     "examples/backend/kernel/?$",
     "examples/backend/mdk-plugin-e2e/?$",
@@ -72,6 +75,7 @@
     "packages/cli/templates/worker/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
     "examples/backend/demo-worker-caller/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
     "^https://console\\.cloud\\.google\\.com": "requires authentication \u2014 401 responses are expected. Mirrors the same entry in mdk-docs excluded-url-prefixes.json; the two repos have separate link-check configs, so a URL allowlisted there is still checked here.",
+    "^https://qvac\\.tether\\.io": "false positive: live host (HTTP 200) but a Cloudflare/Next.js dynamic page whose cold-cache render can exceed the 30s timeout, so linkinator reports status 0 (timeout, not a dead link). Skipping avoids intermittent CI flakes.",
     "^https://github\\.com/tetherto/mdk-docs": "false positive: private repo \u2014 404s to the unauthenticated CI crawler (valid for humans with access)",
     "^https://github\\.com/tetherto/mdk-prv": "false positive: private repo \u2014 404s to the unauthenticated CI crawler (valid for humans with access)",
     "backend/core/gateway/tests/integration/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
@@ -86,6 +90,7 @@
     "docs/concepts/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
     "docs/guides/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
     "docs/reference/release-notes/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
+    "docs/scripts/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
     "docs/tutorials/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
     "examples/backend/kernel/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
     "examples/backend/mdk-plugin-e2e/?$": "false positive: linkinator cannot resolve a bare directory path with no README.md or index file",
@@ -120,5 +125,5 @@
     "403": "same as 401 \u2014 exists, but the crawler may not read it.",
     "429": "rate limiting is a property of the crawl, not of the link."
   },
-  "_see_also": "scripts/sfw-env.sh holds the outbound allowlist your shell's Socket Firewall (sfw) needs so these checks can actually reach the hosts above \u2014 a different concern from this skip list (this file says what to never check; that one says what to let through). See docs/reference/maintainers/linters.md for why they're kept as separate files. Directory-shaped `skip` entries (any entry whose `_skip_notes` value contains \"bare directory path\") are verified against the filesystem by scripts/check-directory-links.mjs, run as part of `npm run link-check`. Add a matching `_skip_notes` entry for every new directory skip \u2014 an entry without one makes that check throw and fail CI hard, by design."
+  "_see_also": "docs/scripts/sfw-env.sh holds the outbound allowlist your shell's Socket Firewall (sfw) needs so these checks can actually reach the hosts above \u2014 a different concern from this skip list (this file says what to never check; that one says what to let through). See docs/reference/maintainers/linters.md for why they're kept as separate files. Directory-shaped `skip` entries (any entry whose `_skip_notes` value contains \"bare directory path\") are verified against the filesystem by docs/scripts/check-directory-links.mjs, run as part of `npm run link-check`. Add a matching `_skip_notes` entry for every new directory skip \u2014 an entry without one makes that check throw and fail CI hard, by design."
 }

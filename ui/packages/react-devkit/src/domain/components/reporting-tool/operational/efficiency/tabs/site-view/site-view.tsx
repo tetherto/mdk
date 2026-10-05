@@ -1,18 +1,44 @@
 import { QuestionMarkCircledIcon } from '@radix-ui/react-icons'
 import type { DateRange } from '@primitives'
-import { Button, ChartContainer, DateRangePicker, LineChart, SimpleTooltip, UNITS } from '@primitives'
+import {
+  Button,
+  ChartContainer,
+  DateRangePicker,
+  LineChart,
+  SimpleTooltip,
+  UNITS,
+} from '@primitives'
 import type { MetricsEfficiencyLogEntry } from '../../../../../../types'
 import type { EfficiencyDateRange } from '../../efficiency.constants'
 import { useEfficiencySiteView } from './use-efficiency-site-view'
 import './site-view.scss'
 
 export type EfficiencySiteViewProps = {
+  /**
+   * Efficiency log entries
+   * @default []
+   */
   log?: MetricsEfficiencyLogEntry[]
+  /**
+   * Average efficiency value
+   * @default null
+   */
   avgEfficiency?: number | null
+  /**
+   * Nominal target efficiency
+   * @default null
+   */
   nominalValue?: number | null
+  /**
+   * Loading state
+   * @default false
+   */
   isLoading?: boolean
+  /** Selected date range */
   dateRange?: EfficiencyDateRange
+  /** Date range change handler */
   onDateRangeChange?: (range: EfficiencyDateRange) => void
+  /** Reset handler */
   onReset?: VoidFunction
 }
 

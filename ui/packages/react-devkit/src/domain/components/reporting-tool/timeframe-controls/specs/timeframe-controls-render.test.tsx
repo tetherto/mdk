@@ -72,18 +72,28 @@ describe('TimeframeControls (integration)', () => {
   })
 
   it('syncs month selection from props when timeframeType is month', () => {
-    const y = Math.min(...YEARS)
-    const monthIdx = 4
-    const [start, end] = rangeOfMonth(y, monthIdx)
-    render(
-      <TimeframeControls
-        dateRange={{ start: start.getTime(), end: end.getTime() }}
-        timeframeType={TIMEFRAME_TYPE.MONTH}
-      />,
-    )
+    // Pin the clock to a mid-month date. `monthsForYear` hides months after
+    // end-of-yesterday for the current year, so on a month boundary the
+    // visible-month clamp can override the month derived from the range. A
+    // fixed mid-month date keeps the assertion deterministic.
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-16T12:00:00Z'))
+    try {
+      const y = Math.min(...YEARS)
+      const monthIdx = 4
+      const [start, end] = rangeOfMonth(y, monthIdx)
+      render(
+        <TimeframeControls
+          dateRange={{ start: start.getTime(), end: end.getTime() }}
+          timeframeType={TIMEFRAME_TYPE.MONTH}
+        />,
+      )
 
-    const monthLabel = monthsForYear(y).find((m) => m.month === monthIdx)?.label ?? ''
-    expect(screen.getByRole('combobox', { name: 'Month' })).toHaveTextContent(monthLabel)
+      const monthLabel = monthsForYear(y).find((m) => m.month === monthIdx)?.label ?? ''
+      expect(screen.getByRole('combobox', { name: 'Month' })).toHaveTextContent(monthLabel)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('shows only one timeframe control filled: month mode leaves year and week as placeholders', () => {

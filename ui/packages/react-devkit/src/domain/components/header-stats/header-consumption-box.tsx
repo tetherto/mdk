@@ -10,11 +10,16 @@ const fmt = (value: number | undefined, fractionDigits = 3): string =>
     : '—'
 
 export type HeaderConsumptionBoxProps = {
+  /** Icon shown next to the stat */
   icon?: ReactNode
   /** Current site-level power consumption, in megawatts. */
   valueMw?: number
-  /** Unit label — defaults to `MW`. */
+  /**
+   * Unit label — defaults to `MW`.
+   * @default MW
+   */
   unit?: string
+  /** Additional class names */
   className?: string
 }
 

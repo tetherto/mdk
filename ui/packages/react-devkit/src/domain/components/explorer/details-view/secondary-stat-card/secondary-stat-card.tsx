@@ -3,9 +3,15 @@ import type { ReactElement } from 'react'
 import './secondary-stat-card.scss'
 
 type SecondaryStatCardProps = {
-  /** Stat name/label */
+  /**
+   * Stat name/label
+   * @default ''
+   */
   name?: string
-  /** Stat value */
+  /**
+   * Stat value
+   * @default ''
+   */
   value?: string | number
   /** Custom className */
   className?: string

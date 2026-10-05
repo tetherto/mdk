@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-plugins",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "MDK Gateway Plugins",
   "author": "Tether",
   "license": "Apache-2.0",
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@bitfinex/lib-js-util-base": "^2.1.0",
-    "@tetherto/mdk-client": "^0.9.0"
+    "@tetherto/mdk-client": "^0.10.0"
   },
   "overrides": {
     "brace-expansion": "5.0.9"

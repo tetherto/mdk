@@ -7,6 +7,7 @@ import { CONTAINER_STATUS } from '../../../utils/status-utils'
 import './micro-bt-widget-box.scss'
 
 export type MicroBTWidgetBoxProps = {
+  /** Live device object. Returns `null` when omitted. */
   data?: Device
 }
 

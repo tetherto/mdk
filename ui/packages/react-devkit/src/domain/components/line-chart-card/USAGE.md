@@ -1,4 +1,4 @@
-# LineChartCard
+# `LineChartCard`
 
 Composable line-chart card with title, timeline range selector, legend
 (basic or detailed), error boundary, and an optional min/max/avg footer.
@@ -6,27 +6,29 @@ Composable line-chart card with title, timeline range selector, legend
 Accepts either pre-shaped `data` or `rawData` + a `dataAdapter` callback so
 upstream domain components can keep their data wrangling local.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop               | Status   | Type                                  | Default      | Description                                                             |
-| ------------------ | -------- | ------------------------------------- | ------------ | ----------------------------------------------------------------------- |
-| `title`            | Optional | `string`                              | —            | Chart title                                                             |
-| `data`             | Optional | `LineChartCardData`                   | —            | Pre-shaped chart data                                                   |
-| `rawData`          | Optional | `unknown`                             | —            | Raw data; pair with `dataAdapter`                                       |
-| `dataAdapter`      | Optional | `(rawData) => LineChartCardData`      | —            | Transforms `rawData` into chart data                                    |
-| `timelineOptions`  | Optional | `TimelineOption[]`                    | —            | Range selector options                                                  |
-| `timeline`         | Optional | `string`                              | —            | Controlled timeline                                                     |
-| `defaultTimeline`  | Optional | `string`                              | first option | Default timeline for uncontrolled mode                                  |
-| `onTimelineChange` | Optional | `(value: string) => void`             | —            | Called when user selects a new timeline                                 |
-| `detailLegends`    | Optional | `boolean`                             | `false`      | Show detailed legend (current value + delta per series)                 |
-| `isLoading`        | Optional | `boolean`                             | `false`      | Show loading state                                                      |
-| `shouldResetZoom`  | Optional | `boolean`                             | `true`       | Reset zoom when timeline changes                                        |
-| `chartProps`       | Optional | `Partial<LightWeightLineChartProps>`  | —            | Pass-through props for the underlying `LineChart`                       |
-| `chartRef`         | Optional | `MutableRefObject<IChartApi \| null>` | —            | Ref to the lightweight-charts `IChartApi` instance                      |
-| `minHeight`        | Optional | `number \| string`                    | `350`        | Minimum chart height                                                    |
-| `headerAction`     | Optional | `ReactNode`                           | —            | Action rendered on the right of the card header (e.g. an expand toggle) |
-| `titleExtra`       | Optional | `ReactNode`                           | —            | Node rendered next to the title (e.g. an info tooltip)                  |
-| `className`        | Optional | `string`                              | —            | Additional class names                                                  |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `chartProps` | Optional | `Partial<LightWeightLineChartProps>` | - | Pass-through props to the core LineChart |
+| `chartRef` | Optional | `React.MutableRefObject<IChartApi \| null>` | - | Ref to the lightweight-charts IChartApi |
+| `className` | Optional | `string` | - | Custom class name |
+| `data` | Optional | `LineChartCardData` | - | Pre-adapted chart data (use this OR rawData+dataAdapter) |
+| `dataAdapter` | Optional | `(data: unknown) => LineChartCardData` | - | Adapter to transform rawData into LineChartCardData |
+| `defaultTimeline` | Optional | `string` | `first option` | Default timeline when uncontrolled |
+| `detailLegends` | Optional | `boolean` | `false` | Show detail legends with current values |
+| `headerAction` | Optional | `React.ReactNode` | - | Optional action rendered on the right of the card header (e.g. an expand toggle). Passed straight through to `ChartContainer`. Additive - omit it and the card header is unchanged |
+| `isLoading` | Optional | `boolean` | `false` | Loading state |
+| `minHeight` | Optional | `string \| number` | `350` | Minimum chart height |
+| `onTimelineChange` | Optional | `(timeline: string) => void` | - | Callback when timeline changes |
+| `rawData` | Optional | `unknown` | - | Raw data to be transformed by dataAdapter |
+| `shouldResetZoom` | Optional | `boolean` | `true` | Whether to reset zoom on timeline change (default: true) |
+| `timeline` | Optional | `string` | - | Controlled timeline value |
+| `timelineOptions` | Optional | `TimelineOption[]` | - | Timeline range selector options |
+| `title` | Optional | `string` | - | Chart title |
+| `titleExtra` | Optional | `React.ReactNode` | - | Optional node rendered next to the title (e.g. an info tooltip). Passed straight through to `ChartContainer`. Additive |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

@@ -7,11 +7,23 @@ import type { SettingsExportData } from '@tetherto/mdk-ui-foundation'
 import './import-export-settings.scss'
 
 export type ImportExportSettingsProps = {
+  /** Trigger configuration export */
   onExport: VoidFunction
+  /** Apply imported configuration */
   onImport: (data: SettingsExportData) => void
+  /** Custom file-parsing function */
   onParseFile?: (file: File) => Promise<SettingsExportData>
+  /**
+   * Show export loading state
+   * @default false
+   */
   isExporting?: boolean
+  /**
+   * Show import loading state
+   * @default false
+   */
   isImporting?: boolean
+  /** Additional CSS class */
   className?: string
 }
 

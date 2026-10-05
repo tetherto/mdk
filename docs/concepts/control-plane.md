@@ -1,7 +1,6 @@
 ---
 title: Control plane
 description: How Gateway, Kernel, and Workers communicate, and which layer owns each control-plane responsibility
-todo: "Gap — Gateway does not yet pass a persistent caller seed to the HRPC client; do not promise that its allowlist identity survives restarts"
 ---
 
 ## Overview
@@ -17,9 +16,9 @@ Use this page to understand which layer receives a request, which layer validate
 ## Responsibility boundaries
 
 **Gateway** owns the consumer-facing surface, including HTTP and plugins. It is also where authentication belongs, though it implements none:
-that logic lives in the plugin controllers you write. Browser UIs and agents should enter MDK through the Gateway (they do not talk to Kernel
-directly). Agents can also reach MDK over MCP — a standalone [`@tetherto/mdk-mcp`][mcp-readme] process, or one the Gateway
-auto-generates in-process from a plugin's routes.
+that logic lives in the plugin controllers you write. Browser UIs enter MDK through the Gateway (they do not talk to Kernel
+directly). Agents can also reach MDK over MCP — a standalone [`@tetherto/mdk-mcp`][mcp-readme] process that derives tools from
+a plugin's routes.
 
 **Kernel** owns coordination: Worker registry, telemetry routing, health checks, command dispatch, command state, and the
 write-action approval modules. Kernel trusts established callers; it does not validate user identity.
@@ -31,8 +30,8 @@ write calls for approval-gated actions, and execute final commands against devic
 
 The direction of each connection is intentional:
 
-- Consumers call the Gateway over HTTP or MCP
-- The Gateway dials Kernel over [Hyperswarm RPC (HRPC)][hrpc-glossary] through `@tetherto/mdk-client`
+- Dashboards and UIs call the Gateway over HTTP; agents call the standalone MCP server over MCP
+- The Gateway and the MCP server each dial Kernel over [Hyperswarm RPC (HRPC)][hrpc-glossary] through their own `@tetherto/mdk-client` — each a distinct Kernel caller, subject to [Kernel's allowlist][mcp-allowlist]
 - Kernel discovers Workers, then initiates every Worker RPC
 - Workers never initiate upstream calls to Kernel or the Gateway
 
@@ -151,8 +150,7 @@ sequenceDiagram
     AI-->>User: "wm002 was overheating and has been rebooted."
 ```
 
-The MCP server here is either a standalone [`@tetherto/mdk-mcp`][mcp-readme] process or the one the Gateway auto-generates
-in-process from a plugin's routes; the path below it is the same either way.
+The Gateway hosts no MCP itself: the MCP server here is a standalone [`@tetherto/mdk-mcp`][mcp-readme] process that derives its tools from a plugin's routes, and the path below the MCP server is the same as for a direct HTTP call.
 
 ### Human UI scenario
 
@@ -245,4 +243,7 @@ The write-action flow is reachable from two different layers depending on where 
 <!-- docs@tether.io: client-readme → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md -->
 
 [hrpc-glossary]: ../reference/glossary.md#hyperswarm-rpc
+
+[mcp-allowlist]: ../guides/security/index.md#step-2-admit-the-gateway-to-kernel
+<!-- docs@tether.io: mcp-allowlist → guides/security#step-2-admit-the-gateway-to-kernel -->
 <!-- docs@tether.io: hrpc-glossary → reference/glossary#hyperswarm-rpc -->

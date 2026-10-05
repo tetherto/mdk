@@ -1,9 +1,40 @@
-# HeaderActions
+# `HeaderActions`
 
 Top-bar buttons designed to live in the `actions` slot of `<AppHeader>`:
 `PendingActionsButton`, `AlarmsBellButton`, and `ProfileMenu`.
 
-## PendingActionsButton
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
+
+### `AlarmsBellButton` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Additional class names |
+| `counts` | Optional | `AlarmsBellButtonCounts` | `{}` | Severity-bucketed alarm counts rendered in the stacked badge |
+| `label` | Optional | `string` | `"Active alarms"` | Accessible label. Defaults to "Active alarms" |
+| `onClick` | Optional | `((event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void)` | - | Click handler — typically opens an alerts panel or routes to /alerts |
+| `onSeverityClick` | Optional | `((severity: AlarmSeverity, event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void)` | - | Click handler for an individual severity count. When provided, each badge row becomes its own button so an operator can jump straight to the alerts page filtered by that severity (e.g. `/alerts?severity=critical`). When omitted, the counts render as plain (non-interactive) text |
+
+### `PendingActionsButton` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Additional class names |
+| `onClick` | Optional | `((event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void)` | `toggles the actions sidebar` | Click handler override — defaults to toggling the actionsStore sidebar |
+
+### `ProfileMenu` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `items` | Required | `ProfileMenuItem[]` | - | Items rendered in the dropdown, top-to-bottom |
+| `className` | Optional | `string` | - | Additional class names |
+| `icon` | Optional | `React.ReactNode` | `<UserAvatarIcon />` | Override the trigger icon — defaults to the user-avatar icon |
+| `label` | Optional | `string` | `"Profile menu"` | Accessible label for the trigger button |
+| `user` | Optional | `React.ReactNode` | - | Optional user label rendered at the top of the dropdown (e.g. an email) |
+<!-- END GENERATED: props -->
+
+## `PendingActionsButton`
 
 A header tile showing the total count of pending actions (local drafts +
 submitted voting actions + others' requests, clamped to `99+`). Clicking it
@@ -31,7 +62,7 @@ to a dedicated review route instead):
 <PendingActionsButton onClick={() => navigate('/pool-manager?review=1')} />
 ```
 
-## AlarmsBellButton
+## `AlarmsBellButton`
 
 Renders a bell icon with a three-line severity-stacked count badge
 (critical / high / medium). Counts are caller-provided — pair with
@@ -52,7 +83,7 @@ const counts = (incidents.data ?? []).reduce(
 <AlarmsBellButton counts={counts} onClick={() => navigate('/alerts')} />
 ```
 
-## ProfileMenu
+## `ProfileMenu`
 
 A dropdown wrapping the core `DropdownMenu`. The trigger renders the
 user-avatar icon (override via `icon`). The `items` array drives the menu
@@ -75,35 +106,6 @@ import { ProfileMenu, authStore } from '@tetherto/mdk-react-devkit'
   ]}
 />
 ```
-
-## Props
-
-### `PendingActionsButton`
-
-| Prop        | Status   | Type     | Default | Description            |
-| ----------- | -------- | -------- | ------- | ---------------------- |
-| `onClick`   | Optional | `(event: MouseEvent<HTMLButtonElement>) => void` | toggles `actionsStore` sidebar | Click handler override |
-| `className` | Optional | `string` | —       | Additional class names |
-
-### `AlarmsBellButton`
-
-| Prop              | Status   | Type                                                                      | Default           | Description                       |
-| ----------------- | -------- | ------------------------------------------------------------------------- | ----------------- | --------------------------------- |
-| `counts`          | Optional | `{ critical?: number; high?: number; medium?: number }`                   | `{}`              | Severity-bucketed alarm counts rendered in the stacked badge |
-| `onClick`         | Optional | `(event: MouseEvent<HTMLButtonElement>) => void`                          | —                 | Click handler for the bell itself |
-| `onSeverityClick` | Optional | `(severity: AlarmSeverity, event: MouseEvent<HTMLButtonElement>) => void` | —                 | Makes each severity count its own button (severity-filtered deep-link); omitted renders plain text |
-| `label`           | Optional | `string`                                                                  | `"Active alarms"` | Accessible label                  |
-| `className`       | Optional | `string`                                                                  | —                 | Additional class names            |
-
-### `ProfileMenu`
-
-| Prop        | Status   | Type                | Default              | Description                                                    |
-| ----------- | -------- | ------------------- | -------------------- | -------------------------------------------------------------- |
-| `items`     | Required | `ProfileMenuItem[]` | —                    | Items rendered in the dropdown, top-to-bottom                  |
-| `user`      | Optional | `ReactNode`         | —                    | User label rendered at the top of the dropdown (e.g. an email) |
-| `icon`      | Optional | `ReactNode`         | `<UserAvatarIcon />` | Override the trigger icon                                      |
-| `label`     | Optional | `string`            | `"Profile menu"`     | Accessible label for the trigger button                        |
-| `className` | Optional | `string`            | —                    | Additional class names                                         |
 
 ## Notes
 

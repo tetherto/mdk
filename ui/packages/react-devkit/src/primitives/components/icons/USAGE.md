@@ -2,7 +2,21 @@
 
 A collection of domain-specific SVG icon components plus the `createIcon` factory for authoring new icons. All icons share a consistent `IconProps` interface and are built with `React.forwardRef`.
 
-## `IconProps`
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `children` | Optional | `undefined` | - | - |
+| `color` | Optional | `string` | `"currentColor"` | Only affects single-color icons (default: 'currentColor') |
+| `isOpen` | Optional | `boolean` | - | - |
+| `size` | Optional | `string \| number` | - | Sets both width and height |
+<!-- END GENERATED: props -->
+
+## `IconProps` Props detail
+
+
+> **Props are generated from this component's TypeScript types, the source of truth.** The following are supplementary (object-prop shapes, allowed values, or passthrough props), not the full prop list.
 
 | Prop     | Status   | Type               | Default          | Description                    |
 | -------- | -------- | ------------------ | ---------------- | ------------------------------ |
@@ -36,11 +50,11 @@ Use `createIcon` to define new SVG icons that automatically follow the `IconProp
 | Field | Type | Required | Description |
 | ----- | ---- | -------- | ----------- |
 | `displayName` | `string` | yes | Component display name |
-| `viewBox` | `string` | yes | SVG viewBox |
+| `viewBox` | `string` | yes | SVG `viewBox` |
 | `defaultWidth` | `number` | no | Default width (defaults to `24`) |
 | `defaultHeight` | `number` | no | Default height (defaults to `24`) |
 | `multiColor` | `boolean` | no | When `true`, disables single-color fill |
-| `path` | `ReactNode \| ((props: { color: string }) => ReactNode)` | yes | SVG path(s) |
+| `path` | `ReactNode \| ((props: { color: string }) => ReactNode)` | yes | SVG paths |
 
 ## Example
 

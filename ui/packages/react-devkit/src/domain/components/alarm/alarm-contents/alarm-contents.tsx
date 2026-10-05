@@ -5,7 +5,9 @@ import { AlarmRow } from '../alarm-row/alarm-row'
 import './alarm-contents.scss'
 
 type AlarmContentsProps = {
+  /** Alert entries to render. Falls back to `EmptyState` when empty or falsy. */
   alarmsData: TimelineItemData[] | unknown
+  /** Navigation callback forwarded to each `AlarmRow` for click-through routing */
   onNavigate: (path: string) => void
 }
 

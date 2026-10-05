@@ -65,7 +65,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, { description: string; path: string 
     description: 'Domain-specific dashboard components for mining operations',
     path: '/active-incidents-card',
   },
-  'Operations Centre': {
+  'Operations Center': {
     description: 'Mining explorer and container management tools',
     path: '/device-explorer',
   },

@@ -9,9 +9,15 @@ import { useHashrateSiteView } from './use-hashrate-site-view'
 import './site-view.scss'
 
 export type HashrateSiteViewProps = {
-  /** Hashrate log grouped by miner type. */
+  /**
+   * Hashrate log grouped by miner type.
+   * @default []
+   */
   log?: HashrateGroupedLog
-  /** Loading state - drives the chart spinner. */
+  /**
+   * Loading state - drives the chart spinner.
+   * @default false
+   */
   isLoading?: boolean
   /** Selected date range used by the host to drive the query. */
   dateRange?: HashrateDateRange
@@ -47,14 +53,8 @@ export const HashrateSiteView = ({
 
   const minerTypeOptions = useMemo(() => getMinerTypeOptionsFromLog(log), [log])
 
-  const {
-    chartRef,
-    legendData,
-    lineChartData,
-    isEmpty,
-    handleRangeSelect,
-    handleToggleDataset,
-  } = useHashrateSiteView({ log, selectedMinerTypes, onDateRangeChange })
+  const { chartRef, legendData, lineChartData, isEmpty, handleRangeSelect, handleToggleDataset } =
+    useHashrateSiteView({ log, selectedMinerTypes, onDateRangeChange })
 
   return (
     <div className="mdk-hashrate-site-view">

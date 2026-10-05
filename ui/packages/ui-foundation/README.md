@@ -20,7 +20,7 @@ etc.) which bind these primitives to the host framework.
   environment-aware base URL resolution
 - **`queryKeys`**: centralized key factories (arrays for structural TanStack equality matching):
   - Auth, devices, telemetry, tail-log, multi tail-log, list-things, history-log, ext-data
-  - Op Centre reads: `site`, `listRacks`, `pduLayout`, `globalData`, `thingConfig`,
+  - Op Center reads: `site`, `listRacks`, `pduLayout`, `globalData`, `thingConfig`,
     `globalConfig`, `featureConfig`, `userInfo`
   - Pool Manager reads: `poolConfigs`, `containerPoolStats`, `pools`, `poolBalanceHistory`,
     `miners`, `siteStatusLive`, `actions`, `liveActions`
@@ -60,13 +60,13 @@ action names, param positions, and cross-thing shapes never leak into the React 
 
 ### Query parameter builders
 
-- **Op Centre builders**: ([`utils/op-centre-queries.ts`](./src/presets/mining/dialect/op-centre-queries.ts)) compose `ListThingsParams` objects for the
+- **Op Center builders**: ([`utils/op-center-queries.ts`](./src/presets/mining/dialect/op-center-queries.ts)) compose `ListThingsParams` objects for the
   Explorer and Site Overview read paths:
   - `buildExplorerListThingsParams` (miner / cabinet / container tab variants)
   - `buildContainerDetailParams`, `buildCabinetDetailParams`
   - `buildContainerWidgetsListParams`, `buildContainerWidgetsRealtimeTailLogParams`
-  - Field projection constants: `OP_CENTRE_LIST_THINGS_FIELDS`,
-    `OP_CENTRE_CONTAINER_DETAIL_FIELDS`, and related sets
+  - Field projection constants: `OP_CENTER_LIST_THINGS_FIELDS`,
+    `OP_CENTER_CONTAINER_DETAIL_FIELDS`, and related sets
 - **Alert builders**: ([`utils/alert-queries.ts`](./src/presets/mining/dialect/alert-queries.ts)) builds alert-page list-things and history-log params
 - **Dashboard builders**: ([`utils/dashboard-queries.ts`](./src/presets/mining/dialect/dashboard-queries.ts)) builds tail-log and ext-data params for
   the operations dashboard
@@ -101,7 +101,7 @@ free of container-model knowledge:
 - Ext-data: `ExtDataParams`, `PoolMinerStats`, `MinerpoolExtDataEntry`,
   `MinerpoolStatsHistoryEntry`
 - Auth: `AuthTokenRequest`, `AuthTokenResponse`, `FeatureConfigResponse`
-- **Op Centre**: `SiteResponse`, `ListRacksParams`, `Rack`, `PduLayoutParams`,
+- **Op Center**: `SiteResponse`, `ListRacksParams`, `Rack`, `PduLayoutParams`,
   `PduLayoutResponse`, `PduLayoutItem`, `PduLayoutSocket`, `GlobalDataParams`,
   `ContainerSettingsEntry`, `ContainerThresholdLevels`, `ThingConfigParams`,
   `ThingCommentBody`

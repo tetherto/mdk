@@ -37,7 +37,7 @@ export type UseRackLayoutResult = {
  * your Worker/business logic. No reference implementation of `/auth/list-racks`
  * ships in this repo.
  *
- * @category op-centre
+ * @category op-center
  */
 export const useRackLayout = (
   params: UseRackLayoutParams,

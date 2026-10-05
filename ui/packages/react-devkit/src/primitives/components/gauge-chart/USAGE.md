@@ -1,25 +1,28 @@
-# GaugeChart
+# `GaugeChart`
 
 A gauge / speedometer chart drawn as pure inline SVG (no third-party runtime
 dependency). Accepts a `percent` value between 0 and 1 and displays it as a
 coloured arc.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop              | Status   | Type                          | Default                    | Description                                                                            |
-| ----------------- | -------- | ----------------------------- | -------------------------- | -------------------------------------------------------------------------------------- |
-| `percent`         | Required | `number`                      | —                          | Fill level between `0` (empty) and `1` (full); clamped                                 |
-| `colors`          | Optional | `string[]`                    | `[COLOR.GREEN, COLOR.RED]` | Arc segment colors in HEX format, from low to high                                     |
-| `arcWidth`        | Optional | `number`                      | `0.2`                      | Thickness of the arc relative to the chart radius (0–1)                                |
-| `nrOfLevels`      | Optional | `number`                      | `3`                        | Number of even arc segments (ignored when `arcsLength` is set)                         |
-| `arcsLength`      | Optional | `number[]`                    | —                          | Custom arc proportions (auto-normalised), e.g. `[0.7, 0.3]` for a progress-style gauge |
-| `needleColor`     | Optional | `string`                      | `COLOR.STEEL_GRAY`         | Needle + hub colour                                                                    |
-| `hideNeedle`      | Optional | `boolean`                     | `false`                    | Hide the needle + hub (e.g. progress-style gauge)                                      |
-| `formatTextValue` | Optional | `(percent: number) => string` | —                          | Format the centre label from the clamped fraction (0–1)                                |
-| `hideText`        | Optional | `boolean`                     | `false`                    | Hides the text in the center                                                           |
-| `id`              | Optional | `string`                      | `'mdk-gauge-chart'`        | Unique id used for the SVG's accessibility labels                                      |
-| `height`          | Optional | `number \| string`            | `200`                      | Container height in pixels or a CSS value                                              |
-| `className`       | Optional | `string`                      | —                          | Additional class for the root `div`                                                    |
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `percent` | Required | `number` | - | Value between 0 and 1 (e.g. 0.75 = 75%). Values outside the range are clamped |
+| `arcsLength` | Optional | `number[]` | - | Custom arc-segment proportions (auto-normalised), overriding `nrOfLevels`. e.g. `[0.7, 0.3]` for a progress-style gauge whose first arc is the fill |
+| `arcWidth` | Optional | `number` | `0.2` | Arc thickness as a fraction of the gauge radius (0–1) |
+| `className` | Optional | `string` | - | Additional class for the root `div` |
+| `colors` | Optional | `string[]` | `[COLOR.GREEN, COLOR.RED]` | Arc colours in HEX format |
+| `formatTextValue` | Optional | `((percent: number) => string)` | - | Format the center label from the clamped fraction (0–1) |
+| `height` | Optional | `string \| number` | `200` | Chart height in pixels or any CSS length (e.g. `'200px'` or `'50%'`) |
+| `hideNeedle` | Optional | `boolean` | `false` | Hide the needle + hub (e.g. for a progress-style gauge) |
+| `hideText` | Optional | `boolean` | `false` | Hide the percentage text rendered inside the gauge |
+| `id` | Optional | `string` | `"mdk-gauge-chart"` | Stable id used for the gauge's accessibility labels |
+| `maxWidth` | Optional | `number` | - | Maximum width in pixels |
+| `needleColor` | Optional | `string` | `COLOR.STEEL_GRAY` | Needle + hub colour |
+| `nrOfLevels` | Optional | `number` | `3` | Number of arc segments. Ignored when `arcsLength` is provided |
+<!-- END GENERATED: props -->
 
 ## Example
 

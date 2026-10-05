@@ -6,6 +6,7 @@ import {
   declaredMockPorts,
   runGateway,
   runKernel,
+  runMcp,
   runWorker,
   type GatewayHandle,
 } from '../lib/runtime.js';
@@ -13,8 +14,8 @@ import { findDashboardDir, runDashboard } from '../lib/dashboard.js';
 import { installShutdown, type Stoppable } from '../lib/shutdown.js';
 import { theme } from '../lib/theme.js';
 
-type RunTarget = 'all' | 'kernel' | 'gateway' | 'worker' | 'dashboard';
-const TARGETS: RunTarget[] = ['all', 'kernel', 'gateway', 'worker', 'dashboard'];
+type RunTarget = 'all' | 'kernel' | 'gateway' | 'mcp' | 'worker' | 'dashboard';
+const TARGETS: RunTarget[] = ['all', 'kernel', 'gateway', 'mcp', 'worker', 'dashboard'];
 
 interface RunOptions {
   dir: string;
@@ -106,6 +107,12 @@ async function runTarget(
         return [{ label: 'gateway', stop: () => stopGateway(gateway) }];
       }
 
+      case 'mcp': {
+        const mcp = await runMcp(dir, spec);
+        process.stderr.write(`\n${theme.ok('MCP server running.')} ${theme.muted('Press Ctrl+C to stop.')}\n`);
+        return [{ label: 'mcp', stop: () => mcp.stop() }];
+      }
+
       case 'worker': {
         if (!name) die('`mdk run worker` requires a worker <name> (see spec.workers in mdk.yaml).');
         const worker = spec.spec.workers.find((w) => w.name === name);
@@ -142,7 +149,7 @@ export function registerRun(program: Command): void {
   program
     .command('run [target] [name]')
     .description(
-      'Start the stack from mdk.yaml. target: all | kernel | gateway | worker <name> | dashboard',
+      'Start the stack from mdk.yaml. target: all | kernel | gateway | mcp | worker <name> | dashboard',
     )
     .option('-d, --dir <path>', 'Project directory containing mdk.yaml', '.')
     .option('--detach', 'Run in the background (not implemented yet)', false)

@@ -2,19 +2,23 @@
 
 `ContainerFansCard` renders a grid of fan status items for a container. `ContainerFanLegend` is the individual fan strip showing fan number and on/off icon.
 
-## ContainerFansCard Props
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
+## Props
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `fansData` | Optional | `{ enabled?: boolean; index: number }[]` | — | Array of fan state objects. Renders an empty card when the array is empty; returns `null` when absent. |
+### `ContainerFanLegend` props
 
-## ContainerFanLegend Props
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `className` | Optional | `string` | - | Custom className |
+| `enabled` | Optional | `boolean` | `false` | Running state; controls the icon and colour class |
+| `index` | Optional | `number \| null` | - | Fan index/number to display |
 
-| Prop | Status | Type | Default | Description |
-| --- | --- | --- | --- | --- |
-| `index` | Optional | `number \| null` | — | Fan number displayed as a label |
-| `enabled` | Optional | `boolean` | `false` | Running state; controls icon and colour class |
-| `className` | Optional | `string` | — | Additional CSS class |
+### `ContainerFansCard` props
+
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `fansData` | Optional | `PumpItem[]` | - | Array of fan state objects. Renders an empty card when the array is empty; returns `null` when absent |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

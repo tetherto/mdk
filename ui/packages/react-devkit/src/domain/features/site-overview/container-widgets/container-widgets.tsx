@@ -1,11 +1,11 @@
-import type { JSX } from "react"
+import type { JSX } from 'react'
 
-import { cn, EmptyState, Spinner } from "@primitives"
+import { cn, EmptyState, Spinner } from '@primitives'
 
-import { ContainerWidgetCard } from "../../../components/container/container-widget-card"
-import type { ContainerWidgetCardProps } from "../../../components/container/container-widget-card"
+import { ContainerWidgetCard } from '../../../components/container/container-widget-card'
+import type { ContainerWidgetCardProps } from '../../../components/container/container-widget-card'
 
-import "./container-widgets.scss"
+import './container-widgets.scss'
 
 /** One container's card data plus the stable id used for keys and click routing. */
 export type ContainerWidgetItem = ContainerWidgetCardProps & { id: string }
@@ -15,12 +15,16 @@ export type ContainerWidgetsProps = {
   containers: ContainerWidgetItem[]
   /** Section heading. */
   title?: string
-  /** Shows a spinner while the first load is in flight. */
+  /**
+   * Shows a spinner while the first load is in flight.
+   * @default false
+   */
   isLoading?: boolean
   /** Error message shown in place of the grid. */
   errorMessage?: string
   /** Invoked with the container id when a card is clicked. */
   onContainerClick?: (id: string) => void
+  /** Additional class for the root element */
   className?: string
 }
 
@@ -44,7 +48,7 @@ export const ContainerWidgets = ({
   className,
 }: ContainerWidgetsProps): JSX.Element => {
   return (
-    <div className={cn("mdk-container-widgets", className)}>
+    <div className={cn('mdk-container-widgets', className)}>
       {title && <div className="mdk-container-widgets__title">{title}</div>}
 
       {isLoading && <Spinner type="circle" />}
@@ -70,4 +74,4 @@ export const ContainerWidgets = ({
   )
 }
 
-ContainerWidgets.displayName = "ContainerWidgets"
+ContainerWidgets.displayName = 'ContainerWidgets'

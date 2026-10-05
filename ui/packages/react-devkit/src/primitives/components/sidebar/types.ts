@@ -12,23 +12,43 @@ export type SidebarMenuItemOptions = Partial<{
 export type SidebarMenuItem = SidebarMenuItemBase & SidebarMenuItemOptions
 
 export type SidebarOptions = Partial<{
+  /** Currently active item id */
   activeId: string
+  /** Controlled expanded state */
   expanded: boolean
+  /**
+   * Hide entirely without unmounting
+   * @default true
+   */
   visible: boolean
+  /**
+   * Show as fixed overlay with backdrop
+   * @default false
+   */
   overlay: boolean
+  /** Additional class names */
   className: string
+  /**
+   * Initial expanded state
+   * @default false
+   */
   defaultExpanded: boolean
+  /** Header content (e.g. logo, app name) */
   header: React.ReactNode
 }>
 
 export type SidebarCallbacks = Partial<{
+  /** Called when the backdrop or ESC closes */
   onClose: VoidFunction
+  /** Setter for the expanded state */
   onExpandedChange: (expanded: boolean) => void
+  /** Item-click handler */
   onItemClick: (item: SidebarMenuItem) => void
 }>
 
 export type SidebarProps = SidebarOptions &
   SidebarCallbacks & {
+    /** Menu items (supports nested `items`) */
     items: SidebarMenuItem[]
   }
 

@@ -1,15 +1,15 @@
-# GenericDataBox
+# `GenericDataBox`
 
-Reusable labelled stat box for container summary panels. Renders a vertical list of label-value-unit rows with optional highlight and colour/flash states driven by threshold rules.
+Reusable labelled stat box for container summary panels. Renders a vertical list of label-value-unit rows with optional highlight and color/flash states driven by threshold rules.
 
+<!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
 
-| Prop            | Status   | Type         | Default | Description |
-| --------------- | -------- | ------------ | ------- | ----------- |
-| `data`          | Optional | `DataItem[]` | `[]`    | Array of stat rows to display |
-| `fallbackValue` | Optional | `unknown`    | —       | Value rendered when a row's `value` is `undefined` |
-
-`DataItem` fields: `label`, `value`, `units?`, `unit?`, `isHighlighted?`, `color?`, `flash?`.
+| Prop | Status | Type / Options | Default | Description |
+|------|--------|----------------|---------|-------------|
+| `data` | Optional | `DataItem[]` | `[]` | Array of data items to display |
+| `fallbackValue` | Optional | `unknown` | - | Fallback value when value is undefined |
+<!-- END GENERATED: props -->
 
 ## Minimal example
 

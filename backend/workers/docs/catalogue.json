@@ -17,6 +17,22 @@
       "confirmed": true
     },
     {
+      "source": "external",
+      "family": "minerpool",
+      "brand": "SpiderPool",
+      "provider": "spiderpool",
+      "models": [
+        "SPIDERPOOL-BTC"
+      ],
+      "package": "spiderpool-mdk-worker",
+      "contract": "https://raw.githubusercontent.com/SpiderPool-New/spiderpool-mdk-worker/345f4a2b46ff59135eb4dad1803f0653c3d88911/mdk-contract.json",
+      "link": "https://github.com/SpiderPool-New/spiderpool-mdk-worker",
+      "usage": "https://github.com/SpiderPool-New/spiderpool-mdk-worker/blob/345f4a2b46ff59135eb4dad1803f0653c3d88911/mdk-contract.json",
+      "usageLabel": "mdk-contract.json",
+      "conformant": true,
+      "confirmed": true
+    },
+    {
       "source": "in-repo",
       "family": "container",
       "brand": "Antspace",

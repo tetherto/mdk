@@ -16,6 +16,12 @@ Built and maintained by the device manufacturer, fetched and schema-validated fr
 |-------|----------|--------|----------------|------|
 | Whatsminer | MicroBT | Not enumerated; see manufacturer documentation | [`whatsminer-mdk-worker`](https://github.com/whatsminer/whatsminer-mdk-worker) | [mdk-contract.json](https://github.com/whatsminer/whatsminer-mdk-worker/blob/a47fa82020454f9bfa9963ccaaa319b7948e8aa2/mdk-contract.json) |
 
+### Manufacturer-maintained mining pools
+
+| Brand | Provider | Models | Worker package | Docs |
+|-------|----------|--------|----------------|------|
+| SpiderPool | spiderpool | SPIDERPOOL-BTC | [`spiderpool-mdk-worker`](https://github.com/SpiderPool-New/spiderpool-mdk-worker) | [mdk-contract.json](https://github.com/SpiderPool-New/spiderpool-mdk-worker/blob/345f4a2b46ff59135eb4dad1803f0653c3d88911/mdk-contract.json) |
+
 ## MDK-maintained Workers
 
 Built and maintained in this repository, with a bundled mock and unit and integration tests.

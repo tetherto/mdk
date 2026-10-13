@@ -7,5 +7,14 @@
     "repoUrl": "https://github.com/whatsminer/whatsminer-mdk-worker",
     "ref": "a47fa82020454f9bfa9963ccaaa319b7948e8aa2",
     "contractPath": "mdk-contract.json"
+  },
+  {
+    "name": "spiderpool-mdk-worker",
+    "brand": "SpiderPool",
+    "provider": "spiderpool",
+    "family": "minerpool",
+    "repoUrl": "https://github.com/SpiderPool-New/spiderpool-mdk-worker",
+    "ref": "345f4a2b46ff59135eb4dad1803f0653c3d88911",
+    "contractPath": "mdk-contract.json"
   }
 ]

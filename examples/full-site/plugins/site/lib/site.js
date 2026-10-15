@@ -84,6 +84,11 @@ async function adaptContractMiners (mdkClient, worker) {
   }))
 }
 
+async function servesPoolStats (mdkClient, anchor) {
+  const tel = await mdkClient.pullTelemetry(anchor, { type: 'ext_data', key: 'stats' }).catch(() => null)
+  return !!(tel && tel.extData && Array.isArray(tel.extData.stats))
+}
+
 // List workers and classify each by deviceFamily (contract or workerId fallback).
 // One list pull per worker — with { status: true } each thing carries its latest
 // snapshot (thg.last.snap). The minerpool is a scheduler worker with no things.
@@ -104,6 +109,11 @@ async function loadSite (mdkClient, opts = {}) {
     const family = resolveFamily(w, cfg)
 
     if (family === 'minerpool') {
+      pools.push({ workerId: w.workerId, deviceId: anchor })
+      return
+    }
+
+    if (!family && await servesPoolStats(mdkClient, anchor)) {
       pools.push({ workerId: w.workerId, deviceId: anchor })
       return
     }

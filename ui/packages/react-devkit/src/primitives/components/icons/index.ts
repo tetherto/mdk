@@ -16,6 +16,7 @@ export { CoolingDropIcon } from './cooling-drop-icon'
 export { createIcon } from './create-icon'
 // Sidebar navigation icons
 export { DashboardNavIcon } from './dashboard-nav-icon'
+export { DatumOceanIcon } from './datum-ocean-icon'
 export { DecreaseIcon } from './decrease-icon'
 export { EfficiencyIcon } from './efficiency-icon'
 

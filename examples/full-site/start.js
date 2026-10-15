@@ -36,7 +36,7 @@ const MINER_COUNT = minerCountFromArgv(DEFAULT_MINER_COUNT)
 checkDeps({ ui: !NO_UI })
 
 const { startGateway, onShutdown, shutdown } = require('../../backend/core/mdk')
-const { startMocks } = require('./mocks')
+const { startMocks, EXTERNAL_OCEAN } = require('./mocks')
 
 function _closeMock (handle) {
   if (!handle) return
@@ -50,7 +50,8 @@ async function main () {
   console.log('\n  MDK full-site example — booting (data dir: %s)\n', ROOT)
 
   const mocks = startMocks({ minerCount: MINER_COUNT })
-  console.log('  Mock devices up: %d×3 miners + 2 containers + 3 powermeters + 2 sensors + 2 pools', MINER_COUNT)
+  console.log('  Mock devices up: %d×3 miners + 2 containers + 3 powermeters + 2 sensors + %s',
+    MINER_COUNT, EXTERNAL_OCEAN ? '1 pool (Ocean left to an external worker)' : '2 pools')
 
   const kernel = await bootKernel({ root: ROOT })
   const kernelKey = kernel.getPublicKey().toString('hex')

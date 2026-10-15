@@ -23,6 +23,8 @@ const oceanMock = require(path.join(WORKERS, 'minerpools', 'ocean', 'mock', 'ser
 const f2poolMock = require(path.join(WORKERS, 'minerpools', 'f2pool', 'mock', 'server'))
 const senecaMock = require(path.join(WORKERS, 'temperature', 'seneca', 'mock', 'server'))
 
+const EXTERNAL_OCEAN = process.env.MDK_EXTERNAL_OCEAN === '1'
+
 // Stable port plan — site.js seeds each device's opts.port to match.
 const PORTS = {
   MINER_BASE: 14100,
@@ -106,7 +108,9 @@ function startMocks ({ minerCount }) {
   handles.push(abbMock.createServer({ host: HOST, port: PORTS.POWERMETER, type: 'b23', powerW: perMeterPowerW }))
   handles.push(satecMock.createServer({ host: HOST, port: PORTS.SATEC_POWERMETER, type: 'pm180', powerW: perMeterPowerW }))
   handles.push(schneiderMock.createServer({ host: HOST, port: PORTS.SCHNEIDER_POWERMETER, type: 'pm5340', powerW: perMeterPowerW }))
-  handles.push(oceanMock.createServer({ host: HOST, port: PORTS.POOL, workerCount: siteMinerCount }))
+  if (!EXTERNAL_OCEAN) {
+    handles.push(oceanMock.createServer({ host: HOST, port: PORTS.POOL, workerCount: siteMinerCount }))
+  }
   handles.push(f2poolMock.createServer({ host: HOST, port: PORTS.F2POOL, usernames: 'sample-f2pool-account', workerCount: siteMinerCount }))
   // Sensor 0 sits on the antspace container (whatsminer+antminer), sensor 1 on
   // the bitdeer container (avalon only, see site.js) — matching SENSOR_CONTAINERS
@@ -116,9 +120,9 @@ function startMocks ({ minerCount }) {
   for (let i = 0; i < 2; i++) {
     handles.push(senecaMock.createServer({ host: HOST, port: PORTS.SENSOR_BASE + i, type: 'seneca', minerCount: sensorMinerCounts[i] }))
   }
-  debug('started antspace (%d), abb (%d), satec (%d), schneider (%d), ocean (%d), f2pool (%d), sensors (%d..%d)',
+  debug('started antspace (%d), abb (%d), satec (%d), schneider (%d), ocean (%s), f2pool (%d), sensors (%d..%d)',
     PORTS.ANTSPACE, PORTS.POWERMETER, PORTS.SATEC_POWERMETER, PORTS.SCHNEIDER_POWERMETER,
-    PORTS.POOL, PORTS.F2POOL, PORTS.SENSOR_BASE, PORTS.SENSOR_BASE + 1)
+    EXTERNAL_OCEAN ? 'external' : PORTS.POOL, PORTS.F2POOL, PORTS.SENSOR_BASE, PORTS.SENSOR_BASE + 1)
 
   return {
     close () {
@@ -128,4 +132,4 @@ function startMocks ({ minerCount }) {
   }
 }
 
-module.exports = { startMocks, PORTS, HOST }
+module.exports = { startMocks, PORTS, HOST, EXTERNAL_OCEAN }

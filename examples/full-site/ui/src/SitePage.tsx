@@ -22,6 +22,7 @@ import { ContainerDetailPage, ContainersListPage } from "./ContainersPage";
 import { ControlPage } from "./ControlPage";
 import { DashboardPage } from "./DashboardPage";
 import { MonitoringPage } from "./MonitoringPage";
+import { OceanPage } from "./OceanPage";
 import { PoolsPage } from "./PoolsPage";
 import type { Container, History, Overview } from "./types";
 import { get, powerModesForDevice } from "./utils";
@@ -309,7 +310,7 @@ export function SitePage(): JSX.Element {
       </AppHeader>
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-        <AppSidebar />
+        <AppSidebar showOcean={data.pools.some((p) => p.poolType === "ocean")} />
 
         <main style={{ flex: 1, padding: 24, display: "flex", flexDirection: "column", gap: 20, minWidth: 0, overflowY: "auto" }}>
           <Routes>
@@ -343,6 +344,7 @@ export function SitePage(): JSX.Element {
               element={<MonitoringPage base={base} powermeters={data.powermeters ?? []} sensors={data.sensors ?? []} />}
             />
             <Route path="/pools" element={<PoolsPage poolRows={poolRows} />} />
+            <Route path="/ocean" element={<OceanPage base={base} />} />
             <Route
               path="/control"
               element={

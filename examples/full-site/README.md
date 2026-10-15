@@ -15,12 +15,15 @@ Kernel ──HRPC──> Gateway (mdkClient + site plugin) ──> MDK UI
  ├── satec-powermeter-worker startSatecWorker      → 1 SATEC mock           (Modbus TCP)
  ├── schneider-powermeter-worker startSchneiderWorker → 1 Schneider mock (Modbus TCP)
  ├── seneca-sensor-worker startSenecaWorker       → 2 Seneca mocks         (Modbus TCP, 1 per container)
- ├── minerpool-worker   startOceanPoolWorker   → 1 Ocean mock           (REST)
+ ├── minerpool-worker   startOceanPoolWorker   → 1 Ocean mock           (REST; or an external Ocean worker, see below)
  └── f2pool-worker      startF2poolWorker      → 1 F2Pool mock          (REST)
 ```
 
 The site is **3N miners in 2 containers + 3 site powermeters (ABB + SATEC + Schneider) + 2 inlet temperature sensors (Seneca) + 2 mining pools
 (Ocean + F2Pool)** (default N=10 → 30 miners).
+
+> The Ocean slot can also be filled by an **external** [Ocean worker][ocean-worker] running in MDK mode
+> instead of the mock — see [Use an external Ocean worker](#use-an-external-ocean-worker).
 
 ## What makes this example "real"
 
@@ -62,9 +65,9 @@ examples/full-site/
 │   └── commands/             #   one handler per CLI command
 ├── mocks.js                 # starts the mock device servers the real Workers talk to
 ├── plugins/site/            # Gateway plugin: aggregates the site via mdkClient
-│   ├── mdk-plugin.json       #   routes: /site/overview, /site/history, command
+│   ├── mdk-plugin.json       #   routes: /site/overview, /site/history, /site/ocean, command
 │   ├── lib/site.js           #   loadSite() — classify Workers by deviceFamily
-│   └── controllers/          #   overview.js · history.js · command.js
+│   └── controllers/          #   overview.js · history.js · ocean.js · command.js
 ├── ui/                      # React + Vite UI (composes MDK devkit components only)
 ├── tests/unit/              # site-plugin.test.js · workers.test.js · cli.test.js
 └── tests/e2e/               # site-cli.test.js (scripted live run)
@@ -133,7 +136,7 @@ This brings up:
 Open the UI in a browser. First boot seeds 3N miners, 2 containers, 3 site
 powermeters, 2 inlet temperature sensors, and 2 mining pools, then registers
 them with the Kernel. The pools warm up after about 15 seconds because the Ocean
-mock client is rate-limited. Re-running `node start.js` resumes the same
+client is rate-limited. Re-running `node start.js` resumes the same
 site from `.mdk-data/` — no re-seeding. **Upgrading from an older single-container
 site requires `rm -rf .mdk-data` once** (new Worker IDs and container names).
 
@@ -151,12 +154,30 @@ Stop with `Ctrl+C` in the same terminal that you ran `node start.js`.
 | `--no-ui`              | —       | Skip the UI (backend only)           |
 | `MDK_HTTP_PORT`        | `3007`  | Gateway HTTP port                   |
 | `MDK_UI_PORT`          | `3040`  | UI dev-server port                   |
+| `MDK_EXTERNAL_OCEAN=1` | —       | Use an external Ocean worker         |
 | `DEBUG=mdk:example:*`  | —       | example boot/seed/resume logs        |
 
 ```bash
 node start.js --miners 3 --no-ui      # smoke test: small fleet, no UI
 node start.js --no-ui                 # backend only
 DEBUG=mdk:example:* node start.js     # verbose boot logs
+```
+
+### Use an external Ocean worker
+
+The Ocean slot can be filled by [miningos-wrk-minerpool-ocean][ocean-worker] hosted on the MDK `WorkerRuntime`
+(its `mdk.js` entry point), talking to the real Ocean API and, when `datum.apiUrl` is configured, a
+[DATUM gateway][datum-gateway]. That populates the DATUM half of the **Ocean & DATUM** page, which the bundled mock
+cannot.
+
+With `MDK_EXTERNAL_OCEAN=1` the example boots neither `minerpool-worker` nor the Ocean mock. The external worker registers itself with the Kernel; the site plugin recognises it as a pool by its `ext_data` answers, whatever its `workerId`:
+
+```bash
+# Terminal 1
+MDK_EXTERNAL_OCEAN=1 node start.js
+
+# Terminal 2
+node mdk.js --env production --rack rack-1 --keys-dir /path/to/mdk/examples/full-site/.mdk-data/.worker-keys
 ```
 
 ## Interactive CLI / process manager (`node cli.js`)
@@ -220,9 +241,9 @@ Either way the Kernel runs the normal identity → capability → Ready flow ove
 
 ## Plugin
 
-The site plugin at [`plugins/site/`](./plugins/site/) is a worked example of the Gateway plugin format: a three-route
-[`mdk-plugin.json`](./plugins/site/mdk-plugin.json) with controllers for live data, historical series, and a command
-endpoint. See the [plugin authoring guide][plugin-authoring-guide] for the full manifest and controller contract.
+The site plugin at [`plugins/site/`](./plugins/site/) is a worked example of the Gateway plugin format: a four-route
+[`mdk-plugin.json`](./plugins/site/mdk-plugin.json) with controllers for live data, historical series, pool/gateway
+detail, and a command endpoint. See the [plugin authoring guide][plugin-authoring-guide] for the full manifest and controller contract.
 
 ## API endpoints (served by the site plugin)
 
@@ -232,10 +253,12 @@ endpoint. See the [plugin authoring guide][plugin-authoring-guide] for the full 
 | `GET`  | `/site/history?metric=power`          | Site power series (powermeter tail-log)              |
 | `GET`  | `/site/history?metric=temperature`    | Inlet temperature series (Seneca sensor tail-log)    |
 | `GET`  | `/site/history?metric=hashrate`       | Pool hashrate series (pool stats-history)            |
+| `GET`  | `/site/ocean`                         | Ocean pool worker detail + the DATUM gateway it proxies |
 | `POST` | `/site/miners/{deviceId}/command`     | `{ "mode": "low" \| "normal" \| "high" }` → `setPowerMode` |
 
 ```bash
 curl http://localhost:3007/site/overview
+curl http://localhost:3007/site/ocean
 curl -X POST http://localhost:3007/site/miners/whatsminer-0/command \
   -H 'content-type: application/json' -d '{"mode":"high"}'
 ```
@@ -399,3 +422,5 @@ pkill -f "node.*backend/proc"
 
 [mcp-server-docs]: docs/mcp-server.md
 [plugin-authoring-guide]: ../../docs/guides/gateway/plugins.md
+[ocean-worker]: https://github.com/ocean-xyz/mdk-wrk-minerpool-ocean
+[datum-gateway]: https://github.com/OCEAN-xyz/datum_gateway

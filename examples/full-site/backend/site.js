@@ -11,7 +11,7 @@ const { spawn } = require('child_process')
 const debug = require('debug')('mdk:example:full-site:site')
 const { getKernel } = require('../../../backend/core/mdk')
 const { publishWorkerKey, keysDir } = require('../../../backend/core/mdk/lib/local-discovery')
-const { PORTS, HOST } = require('../mocks')
+const { PORTS, HOST, EXTERNAL_OCEAN } = require('../mocks')
 
 const { startWhatsminerWorker } = require('./whatsminer-adapter')
 const { startAntminerWorker } = require('../../../backend/workers/miners/antminer')
@@ -185,7 +185,7 @@ const WORKER_SPECS = [
   { name: 'seneca', workerId: 'seneca-sensor-worker', boot: startSenecaWorker, noModelOpt: true, pkg: 'temperature/seneca', seed: seedSenecaSensors },
   { name: 'minerpool', workerId: 'minerpool-worker', boot: startOceanPoolWorker, pkg: 'minerpools/ocean', pool: true, poolKey: 'ocean', poolConf: () => ({ apiUrl: `http://${HOST}:${PORTS.POOL}`, accounts: [POOL_ACCOUNT] }) },
   { name: 'f2pool', workerId: 'f2pool-worker', boot: startF2poolWorker, pkg: 'minerpools/f2pool', pool: true, poolKey: 'f2pool', poolConf: () => ({ apiUrl: `http://${HOST}:${PORTS.F2POOL}`, apiSecret: 'secret-key', accounts: [F2POOL_ACCOUNT] }) }
-]
+].filter((spec) => !(EXTERNAL_OCEAN && spec.name === 'minerpool'))
 
 function workerSpec (name) {
   return WORKER_SPECS.find((s) => s.name === name || s.workerId === name) || null

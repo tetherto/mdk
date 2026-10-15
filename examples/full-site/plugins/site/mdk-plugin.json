@@ -46,6 +46,24 @@
       "safety": "read-only"
     },
     {
+      "id": "site.ocean",
+      "handler": "./controllers/ocean.js",
+      "auth": false,
+      "http": {
+        "method": "GET",
+        "path": "/site/ocean",
+        "responses": {
+          "200": {
+            "description": "Ocean minerpool worker detail plus the DATUM gateway surface it proxies.",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      },
+      "description": "Detail view for every Ocean-type minerpool worker: per-account hashrate/earnings (ext_data 'stats'), the worker list ('workers'), component alerts ('alerts'), and the DATUM gateway data the same worker proxies — status ('datum-stats'), decentralized client stats ('datum-client-stats'), stratum server info ('stratum-info'), the current template ('stratum-job'), per-thread stats ('thread-stats'), the stratum client list ('stratum-list', admin-only on the gateway) and the coinbaser outputs ('coinbaser'). Every section is pulled independently and is null when the pool worker does not serve that key.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE"],
+      "safety": "read-only"
+    },
+    {
       "id": "site.miner-command",
       "handler": "./controllers/command.js",
       "auth": false,

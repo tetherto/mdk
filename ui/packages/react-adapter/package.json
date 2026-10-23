@@ -4,6 +4,7 @@
   "version": "0.12.0",
   "private": false,
   "description": "React framework adapter for @tetherto/mdk-ui-foundation. Binds Zustand vanilla stores and TanStack QueryClient to React-native hooks. No Redux.",
+  "license": "Apache-2.0",
   "sideEffects": false,
   "exports": {
     ".": {
@@ -25,9 +26,24 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "src"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/mdk.git",
+    "directory": "ui/packages/react-adapter"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/specs",
+    "!src/**/test-utils"
+  ],
   "scripts": {
     "build": "npm run build:ts && npm run build:hooks",
+    "prepublishOnly": "npm run build",
     "build:ts": "rimraf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json",
     "build:hooks": "tsx scripts/generate-hooks.mts",
     "clean": "rimraf dist node_modules .turbo",
@@ -48,7 +64,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.0",
-    "@tetherto/mdk-ui-foundation": "*",
+    "@tetherto/mdk-ui-foundation": "^0.12.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

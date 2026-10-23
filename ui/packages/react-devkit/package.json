@@ -4,6 +4,7 @@
   "version": "0.12.0",
   "private": false,
   "description": "MDK Devkit (React) — generic UI primitives (src/primitives) plus mining-domain components, hooks, and state bindings (src/domain)",
+  "license": "Apache-2.0",
   "sideEffects": [
     "*.css",
     "*.scss"
@@ -34,6 +35,14 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/mdk.git",
+    "directory": "ui/packages/react-devkit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "AGENT_READY.md",
     "dist",
@@ -44,6 +53,7 @@
   ],
   "scripts": {
     "build": "npm run build:ts && npm run check:styles && npm run build:scss && npm run build:registry",
+    "prepublishOnly": "npm run build",
     "build:registry": "tsx scripts/generate-registry.mts",
     "generate:usage-proptables": "node scripts/generate-usage-proptables.mjs",
     "build:scss": "vite build",
@@ -68,11 +78,9 @@
   },
   "peerDependencies": {
     "@hookform/resolvers": "^4.1.0",
-    "@testing-library/react": "^16.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.0",
-    "vitest": "^4.0.0",
     "zod": "^3.24.0"
   },
   "dependencies": {

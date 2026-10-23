@@ -4,17 +4,27 @@
   "version": "0.12.0",
   "private": false,
   "description": "Font assets for MDK",
+  "license": "Apache-2.0 AND OFL-1.1",
   "exports": {
     "./jetbrains-mono.css": "./dist/jetbrains-mono.css",
     "./fonts/*": "./dist/fonts/*"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/mdk.git",
+    "directory": "ui/packages/fonts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
-    "dist"
+    "dist",
+    "OFL.txt"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
+    "prepublishOnly": "npm run build",
     "clean": "rimraf dist node_modules .turbo",
     "dev": "sass --watch src/jetbrains-mono.scss:dist/jetbrains-mono.css"
-  },
-  "devDependencies": {}
+  }
 }

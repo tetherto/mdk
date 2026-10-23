@@ -4,6 +4,7 @@
   "version": "0.12.0",
   "private": false,
   "description": "Injectable operator Co-pilot chat UI for the MDK agent gateway plugin. Streams the six-event agent contract over SSE and renders it as a docked panel or a full-page route.",
+  "license": "Apache-2.0",
   "sideEffects": [
     "*.css",
     "*.scss"
@@ -34,12 +35,24 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/mdk.git",
+    "directory": "ui/packages/ui-agent"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/specs",
+    "!src/**/test-utils"
   ],
   "scripts": {
     "build": "npm run check:styles && npm run build:ts && npm run build:scss",
+    "prepublishOnly": "npm run build",
     "build:ts": "rimraf dist tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json",
     "build:scss": "vite build",
     "check:styles": "node scripts/check-style-forwards.mjs",
@@ -63,9 +76,9 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@tetherto/mdk-react-adapter": "*",
-    "@tetherto/mdk-react-devkit": "*",
-    "@tetherto/mdk-ui-foundation": "*",
+    "@tetherto/mdk-react-adapter": "^0.12.0",
+    "@tetherto/mdk-react-devkit": "^0.12.0",
+    "@tetherto/mdk-ui-foundation": "^0.12.0",
     "highlight.js": "^11.11.1",
     "lodash": "^4.18.1",
     "lowlight": "^3.3.0",

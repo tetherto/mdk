@@ -4,6 +4,7 @@
   "version": "0.12.0",
   "private": false,
   "description": "Framework-agnostic headless foundation for the MDK Devkit. Currently exposes Zustand vanilla stores and a TanStack QueryClient factory. No React.",
+  "license": "Apache-2.0",
   "sideEffects": false,
   "exports": {
     ".": {
@@ -38,12 +39,23 @@
     },
     "./stores.json": "./dist/stores.json"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/mdk.git",
+    "directory": "ui/packages/ui-foundation"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
-    "src"
+    "src",
+    "!src/**/*.test.*",
+    "!src/**/specs"
   ],
   "scripts": {
     "build": "npm run build:ts && npm run build:stores",
+    "prepublishOnly": "npm run build",
     "build:ts": "rimraf dist tsconfig.build.tsbuildinfo && tsc -p tsconfig.build.json",
     "build:stores": "tsx scripts/generate-stores.mts",
     "clean": "rimraf dist node_modules .turbo",

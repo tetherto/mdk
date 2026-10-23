@@ -1,0 +1,112 @@
+# Publishes the MDK packages to npm with trusted publishing (OIDC, no npm token).
+#
+# Same flow as the MiningOS repos: it runs when a release PR
+# (release/vX.Y.Z -> main) merges. The release PR comes from a fork, so instead
+# of the PR's `closed` event (read-only token, no OIDC for fork PRs) it runs on
+# the push to main that the merge creates, and only when that commit is the
+# release merge ("release: vX.Y.Z (#60)" or
+# "Merge pull request #59 from <fork>/release/vX.Y.Z").
+#
+# Versions are set by hand before the release (bump-mdk) and never bumped here:
+# the root package.json version is the release, and every package that's ready
+# for npm must be at it. If that version is already on npm, nothing happens.
+#
+#   build    package-build.yml: plan, then build + pack + check, tarballs
+#            uploaded as an artifact. Any failure stops the release here:
+#            nothing is tagged or published
+#   publish  waits for `mdk-publish` approval on the `release` environment,
+#            checks npm accepts this workflow for every package (preflight),
+#            tags the merged commit vX.Y.Z, then publishes the tarballs wave by
+#            wave and stops at the first failure. To retry, use "Re-run failed
+#            jobs" on the run: the tag is reused and versions already on npm
+#            are skipped
+#
+# npm side: each package has a trusted publisher on npmjs.com bound to
+# tetherto/mdk, this file (publish.yml) and the `release` environment. npm
+# publish has to stay in this file for the OIDC token to match that publisher.
+name: Publish to npm
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "lts/*"
+
+jobs:
+  build:
+    name: Build
+    # contains() is case-insensitive, so this matches "release: v0.12.0 (#60)"
+    # and "Merge pull request #59 from tekwani/release/v0.11.0".
+    if: >-
+      contains(github.event.head_commit.message, 'release: v') ||
+      contains(github.event.head_commit.message, 'release/v')
+    uses: ./.github/workflows/package-build.yml
+    with:
+      upload: true
+
+  publish:
+    name: Publish
+    needs: build
+    if: github.repository == 'tetherto/mdk' && needs.build.outputs.publish-count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: write # create the vX.Y.Z tag
+      id-token: write # npm trusted publishing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+          # npm: never use caching in release builds
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tarballs
+          path: tarballs
+
+      # All or nothing: confirm every tarball is there and npm accepts this
+      # workflow as trusted publisher for every package before tagging or
+      # publishing anything.
+      - name: Preflight
+        env:
+          PLAN: ${{ needs.build.outputs.plan }}
+        run: |
+          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
+          node .github/scripts/npm-publish.mjs preflight --plan "$RUNNER_TEMP/plan.json" --dir tarballs
+
+      # Like the MiningOS publish, the release tag is created here rather than by
+      # hand. A tag someone already made on this commit is reused.
+      - name: Tag release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ needs.build.outputs.version }}
+        run: |
+          if tagged=$(gh api "repos/$GITHUB_REPOSITORY/commits/refs/tags/$TAG" --jq .sha 2>/dev/null); then
+            if [ "$tagged" != "$GITHUB_SHA" ]; then
+              echo "::error::$TAG already points at $tagged, not this commit ($GITHUB_SHA)"
+              exit 1
+            fi
+            echo "$TAG already points at this commit"
+          else
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" >/dev/null
+            echo "Tagged $GITHUB_SHA as $TAG"
+          fi
+
+      # npm authenticates through OIDC when no token is configured, and attaches
+      # provenance automatically for public repos.
+      - name: Publish
+        run: node .github/scripts/npm-publish.mjs publish --plan "$RUNNER_TEMP/plan.json" --dir tarballs

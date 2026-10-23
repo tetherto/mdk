@@ -1,0 +1,68 @@
+name: Build packages
+description: >-
+  Builds MDK workspaces and, when pack-destination is set, packs them and checks
+  the tarballs. Shared by the ci.yml build jobs and package-build.yml (release-PR
+  pack check and npm publish). Dependencies must already be installed
+  (node-setup-cache / node-restore-cache).
+
+inputs:
+  working-directory:
+    description: "Where to build: '.', 'ui', or a single package dir"
+    required: false
+    default: "."
+  packages:
+    description: "Space-separated package names to build and pack. Empty builds everything in working-directory."
+    required: false
+    default: ""
+  pack-destination:
+    description: "When set, npm pack each package into this dir (relative to the repo root) and verify the tarballs"
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    # ui/ builds through turbo, whose ^build also builds what the selected
+    # packages depend on. Root workspaces build one by one; the cli and
+    # mdk-skill also rebuild in their own prepack when packed.
+    - name: Build
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        PACKAGES: ${{ inputs.packages }}
+        WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        if [ -z "$PACKAGES" ]; then
+          npm run build --if-present
+        elif [ "$WORKDIR" = "ui" ]; then
+          filters=()
+          for name in $PACKAGES; do filters+=("--filter=$name"); done
+          npx turbo build "${filters[@]}"
+        else
+          for name in $PACKAGES; do npm run build --workspace "$name" --if-present; done
+        fi
+
+    - name: Pack
+      if: inputs.pack-destination != ''
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        PACKAGES: ${{ inputs.packages }}
+        DEST: ${{ github.workspace }}/${{ inputs.pack-destination }}
+      run: |
+        set -euo pipefail
+        if [ -z "$PACKAGES" ]; then
+          echo "::error::pack-destination needs a packages list"
+          exit 1
+        fi
+        mkdir -p "$DEST"
+        for name in $PACKAGES; do npm pack --workspace "$name" --pack-destination "$DEST"; done
+
+    # Each tarball must carry the version its package.json has in this checkout.
+    - name: Verify tarballs
+      if: inputs.pack-destination != ''
+      shell: bash
+      env:
+        DEST: ${{ github.workspace }}/${{ inputs.pack-destination }}
+      run: node "$GITHUB_WORKSPACE/.github/scripts/npm-publish.mjs" verify "$DEST"/*.tgz

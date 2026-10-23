@@ -54,7 +54,7 @@ jobs:
       reason: ${{ steps.flags.outputs.reason }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -178,7 +178,7 @@ jobs:
       buildable_dirs: ${{ steps.list.outputs.buildable_dirs }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -222,7 +222,7 @@ jobs:
       buildable_dirs: ${{ steps.list.outputs.buildable_dirs }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -270,7 +270,7 @@ jobs:
       dirs: ${{ steps.list.outputs.dirs }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -304,7 +304,7 @@ jobs:
     outputs:
       cache-key: ${{ steps.setup-deps.outputs.cache-key }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -329,7 +329,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -368,12 +368,12 @@ jobs:
       lockfile-outcome: ${{ steps.lockfile.outcome }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -411,7 +411,7 @@ jobs:
       run:
         working-directory: ${{ env.UI_DIR }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -431,7 +431,7 @@ jobs:
       run:
         working-directory: ${{ env.UI_DIR }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -462,7 +462,7 @@ jobs:
       run:
         working-directory: ${{ env.UI_DIR }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -472,7 +472,7 @@ jobs:
           working-directory: ${{ env.UI_DIR }}
 
       - name: Cache Turbo
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.UI_DIR }}/.turbo
           key: turbo-ui-test-${{ runner.os }}-${{ hashFiles('ui/package-lock.json') }}-${{ github.sha }}-shard-${{ matrix.shard }}
@@ -481,7 +481,7 @@ jobs:
             turbo-ui-${{ runner.os }}-
 
       - name: Cache Vitest transforms
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           # All tested packages set `cacheDir: '.cache'` in vitest.config.js.
           path: |
@@ -521,7 +521,7 @@ jobs:
             --coverage.thresholds.statements=0
 
       - name: Upload blob report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-blob-report-${{ matrix.shard }}
           path: ${{ env.UI_DIR }}/packages/react-devkit/.vitest-reports/
@@ -539,7 +539,7 @@ jobs:
       run:
         working-directory: ${{ env.UI_DIR }}/packages/react-devkit
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -549,7 +549,7 @@ jobs:
           working-directory: ${{ env.UI_DIR }}
 
       - name: Download all blob reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: ${{ env.UI_DIR }}/packages/react-devkit/.vitest-reports
           pattern: ui-blob-report-*
@@ -566,11 +566,8 @@ jobs:
     timeout-minutes: 30
     needs: [detect-target, setup-ui]
     if: needs.detect-target.outputs.run_ui == 'true'
-    defaults:
-      run:
-        working-directory: ${{ env.UI_DIR }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -578,7 +575,9 @@ jobs:
           cache-key: ${{ needs.setup-ui.outputs.cache-key }}
           node-version: ${{ env.NODE_VERSION }}
           working-directory: ${{ env.UI_DIR }}
-      - run: npm run build --if-present
+      - uses: ./.github/actions/build-packages
+        with:
+          working-directory: ${{ env.UI_DIR }}
 
   setup-core:
     name: 📦 Setup Core (${{ matrix.dir }})
@@ -594,7 +593,7 @@ jobs:
       cache-key: ${{ steps.setup-deps.outputs.cache-key }}
       lockfile-outcome: ${{ steps.lockfile.outcome }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -640,7 +639,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -664,7 +663,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -688,7 +687,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -740,7 +739,7 @@ jobs:
       run:
         working-directory: backend/core/mdk
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -782,7 +781,7 @@ jobs:
           [ -f coverage/coverage-final.json ] || { echo "::error::no coverage-final.json for shard $SHARD"; exit 1; }
           cp coverage/coverage-final.json "coverage/mdk-cov-$SHARD.json"
       - name: Upload shard coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mdk-cov-${{ matrix.shard }}
           path: backend/core/mdk/coverage/mdk-cov-${{ matrix.shard }}.json
@@ -798,14 +797,14 @@ jobs:
       run:
         working-directory: backend/core/mdk
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Download shard coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: backend/core/mdk/coverage-parts
           pattern: mdk-cov-*
@@ -833,7 +832,7 @@ jobs:
           exit $EXIT
       - name: Upload coverage row
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: covrow-backend-core-mdk
           path: backend/core/mdk/coverage-row.tsv
@@ -850,11 +849,8 @@ jobs:
       fail-fast: false
       matrix:
         dir: ${{ fromJson(needs.list-core.outputs.buildable_dirs) }}
-    defaults:
-      run:
-        working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -862,7 +858,9 @@ jobs:
           cache-key: ${{ needs.setup-core.outputs.cache-key }}
           node-version: ${{ env.NODE_VERSION }}
           working-directory: ${{ matrix.dir }}
-      - run: npm run build
+      - uses: ./.github/actions/build-packages
+        with:
+          working-directory: ${{ matrix.dir }}
 
   setup-workers:
     name: 📦 Setup Worker (${{ matrix.dir }})
@@ -878,7 +876,7 @@ jobs:
       cache-key: ${{ steps.setup-deps.outputs.cache-key }}
       lockfile-outcome: ${{ steps.lockfile.outcome }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -925,7 +923,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -949,7 +947,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -973,7 +971,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -1014,11 +1012,8 @@ jobs:
       fail-fast: false
       matrix:
         dir: ${{ fromJson(needs.list-workers.outputs.buildable_dirs) }}
-    defaults:
-      run:
-        working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/node-restore-cache
@@ -1026,7 +1021,20 @@ jobs:
           cache-key: ${{ needs.setup-workers.outputs.cache-key }}
           node-version: ${{ env.NODE_VERSION }}
           working-directory: ${{ matrix.dir }}
-      - run: npm run build
+      - uses: ./.github/actions/build-packages
+        with:
+          working-directory: ${{ matrix.dir }}
+
+  # Rehearses the npm publish on release PRs (release/* -> main), where package
+  # code changes: builds, packs and checks every package that's ready for npm,
+  # without publishing anything. The publish workflow runs the same checks
+  # again after the merge and stops before publishing if any of them fail.
+  pack-check:
+    name: 📦 Pack Check
+    if: github.event_name == 'pull_request' && github.base_ref == 'main' && startsWith(github.head_ref, 'release/')
+    uses: ./.github/workflows/package-build.yml
+    with:
+      build-all: true
 
   security_checks:
     name: 🔐 Security Checks
@@ -1037,7 +1045,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
@@ -1061,7 +1069,7 @@ jobs:
       run:
         working-directory: ${{ env.UI_DIR }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
@@ -1115,7 +1123,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
@@ -1176,7 +1184,7 @@ jobs:
       run:
         working-directory: ${{ matrix.dir }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
@@ -1231,7 +1239,7 @@ jobs:
     needs: [detect-target, test-core, test-mdk, coverage-mdk, test-workers]
     steps:
       - name: Download coverage rows
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         continue-on-error: true
         with:
           path: rows
@@ -1303,6 +1311,7 @@ jobs:
       - setup-examples
       - test-examples
       - coverage-summary
+      - pack-check
     steps:
       - name: Write job summary
         shell: bash
@@ -1321,6 +1330,7 @@ jobs:
           WRK_SETUP: ${{ needs.setup-workers.result || 'skipped' }}
           EX_SETUP: ${{ needs.setup-examples.result || 'skipped' }}
           EX_TEST: ${{ needs.test-examples.result || 'skipped' }}
+          PACK: ${{ needs.pack-check.result || 'skipped' }}
         run: |
           ic() {
             case "$1" in
@@ -1343,6 +1353,7 @@ jobs:
             echo "| 🧱 Core | $(ic "${CORE_SETUP}") \`${CORE_SETUP}\` | $(ic "${SEC_CORE}") \`${SEC_CORE}\` |"
             echo "| ⚙️ Workers | $(ic "${WRK_SETUP}") \`${WRK_SETUP}\` | $(ic "${SEC_WRK}") \`${SEC_WRK}\` |"
             echo "| 📋 Examples | $(ic "${EX_SETUP}") \`${EX_SETUP}\` (test: $(ic "${EX_TEST}") \`${EX_TEST}\`) | — |"
+            echo "| 📦 Pack check | $(ic "${PACK}") \`${PACK}\` | — |"
             echo ""
             echo "### What ran"
             echo "- **Lockfile consistency** in setup jobs (root lock for workspace members, own lock for standalone packages)"

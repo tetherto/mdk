@@ -1,0 +1,119 @@
+# Plans, builds, packs and checks the MDK npm packages for the checked-out ref.
+#
+# Called by publish.yml (tarballs uploaded for its publish job) and by ci.yml on
+# release PRs, as a rehearsal where nothing is uploaded or published. There is
+# no id-token here, so install and build scripts never run with publish rights.
+#
+#   plan   .github/scripts/npm-publish.mjs takes every package that's ready for
+#          npm, checks they're all at the release version with internal pins
+#          to it, skips versions already on npm and orders the rest into
+#          dependency waves
+#   build  per install root with packages to build (repo root, ui/): fresh
+#          install, build, npm pack, check each tarball holds its entry points
+name: Package build
+
+on:
+  workflow_call:
+    inputs:
+      build-all:
+        description: "Build every ready package, not just versions missing from npm (CI pack check)"
+        required: false
+        default: false
+        type: boolean
+      upload:
+        description: "Upload the tarballs as an artifact"
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      version:
+        description: "Release version"
+        value: ${{ jobs.plan.outputs.version }}
+      plan:
+        description: "Publish plan (JSON)"
+        value: ${{ jobs.plan.outputs.plan }}
+      publish-count:
+        description: "Number of packages to publish"
+        value: ${{ jobs.plan.outputs.publish-count }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "lts/*"
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      plan: ${{ steps.plan.outputs.plan }}
+      build-count: ${{ steps.plan.outputs.build-count }}
+      backend-packages: ${{ steps.plan.outputs.backend-packages }}
+      ui-packages: ${{ steps.plan.outputs.ui-packages }}
+      publish-count: ${{ steps.plan.outputs.publish-count }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Plan
+        id: plan
+        env:
+          REF: ${{ github.ref_name }}
+          BUILD_ALL: ${{ inputs.build-all && '--build-all' || '' }}
+        run: node .github/scripts/npm-publish.mjs plan --ref "$REF" $BUILD_ALL
+
+  build:
+    name: Build
+    needs: plan
+    if: needs.plan.outputs.build-count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # node-setup-cache always runs a fresh `npm ci`, so release tarballs never
+      # build on top of a restored node_modules.
+      - name: Install backend
+        if: needs.plan.outputs.backend-packages != ''
+        uses: ./.github/actions/node-setup-cache
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          working-directory: .
+      - name: Build and pack backend
+        if: needs.plan.outputs.backend-packages != ''
+        uses: ./.github/actions/build-packages
+        with:
+          working-directory: .
+          packages: ${{ needs.plan.outputs.backend-packages }}
+          pack-destination: tarballs
+
+      - name: Install UI
+        if: needs.plan.outputs.ui-packages != ''
+        uses: ./.github/actions/node-setup-cache
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          working-directory: ui
+      - name: Build and pack UI
+        if: needs.plan.outputs.ui-packages != ''
+        uses: ./.github/actions/build-packages
+        with:
+          working-directory: ui
+          packages: ${{ needs.plan.outputs.ui-packages }}
+          pack-destination: tarballs
+
+      - if: inputs.upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tarballs
+          path: tarballs/*.tgz
+          if-no-files-found: error
+          retention-days: 7

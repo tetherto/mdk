@@ -90,7 +90,7 @@ runs:
 
     - name: Upload coverage row
       if: always() && steps.gate.outputs.slug != ''
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: covrow-${{ steps.gate.outputs.slug }}
         path: ${{ inputs.working-directory }}/coverage-row.tsv

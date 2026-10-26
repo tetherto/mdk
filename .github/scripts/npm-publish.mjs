@@ -312,7 +312,8 @@ function publish () {
       continue
     }
 
-    const tarball = path.join(flags.dir, pkg.tarball)
+    // Absolute, because npm reads a bare `dir/name.tgz` as a GitHub owner/repo spec.
+    const tarball = path.resolve(flags.dir, pkg.tarball)
     if (!fs.existsSync(tarball)) fail(`missing tarball ${tarball} for ${pkg.name}`)
 
     console.log(`::group::wave ${pkg.wave}: publish ${pkg.name}@${version}`)

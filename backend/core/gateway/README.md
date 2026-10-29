@@ -73,12 +73,12 @@ Edit the generated files to persist your changes across restarts.
 | `logging.config.json` | Log level, format |
 
 HTTP hardening is read from `startGateway()` options first, then from `common.json`, then from the defaults below. A
-custom `authVerifier` is a function, so only `startGateway()` (or a programmatic worker `ctx`) can pass one; the name of a
-built-in verifier (`"loopback"`) can also come from `common.json`.
+custom `authVerifier` is a function, so only `startGateway()` (or a programmatic worker `ctx`) can pass one. There are no
+built-in verifiers.
 
 | Option | Default | Effect |
 |--------|---------|--------|
-| `authVerifier` | none | `async (request, route) => identity \| false`, or `"loopback"`. Runs for every `auth: true` route; see [security model](#security-model) |
+| `authVerifier` | none | Without an authority only: `async (request, route) => identity \| false`. Runs for every `auth: true` route; see [security model](#security-model) |
 | `allowedHosts` | `[]` | Extra `Host` values served, as `name` (any port) or `name:port`. `localhost`, `127.0.0.1` and `[::1]` on the bound port, plus a specific bind address, are always allowed. `["*"]` turns the check off |
 | `trustProxy` | `false` | Fastify `trustProxy`. Set it only behind a proxy you control, or client IPs and `X-Forwarded-Host` can be spoofed |
 | `bodyLimit` | `1048576` | Largest request body in bytes; a larger one gets `413` |
@@ -122,31 +122,66 @@ it on the Gateway host:
 await startGateway({ kernelKey: '<kernel-listener-pubkey-hex>' })
 ```
 
-For testnets, pass `bootstrap` to set the DHT bootstrap nodes of the Gateway's client to app runtimes (`ctx.kernelBootstrap`).
+On a private DHT, pass `bootstrap` and `dhtHost` to `startGateway()` (`ctx.kernelBootstrap`, `ctx.kernelDhtHost`; the
+`--kernelBootstrap` and `--kernelDhtHost` flags when spawned as a service). Both apply to every DHT node the Gateway starts: its net
+facility, its Kernel client and its client to app runtimes. The [private DHT guide](../../../docs/guides/deployment/private-dht.md)
+covers the whole stack.
 
 Kernel's allowlist (`auth.whitelist`) is fail-closed: empty admits nobody, so [each app runtime's Kernel public key must be admitted
-before the connection is accepted](../kernel/README.md#caller-admission-and-roles). A runtime writes that key to its `kernelKeyFile`;
+before the connection is accepted](../kernel/README.md#caller-admission-and-authorization). A runtime writes that key to its `kernelKeyFile`;
 `mdk run` points it into the trusted-keys dir, where the Kernel admits it. It is derived from a seed persisted in the runtime's store,
 so it survives restarts. `startGateway({ kernel })` from `@tetherto/mdk-core` also admits the Gateway's own DHT key (`status.rpcClientKey`)
 on an in-process Kernel and publishes it to the trusted-keys dir for same-machine Kernels and Workers.
 
 ## Security model
 
+- **Every app route is checked against `spec.rbac`** when the Gateway has an authority: the in-process Kernel's issuer and
+  policy (`startGateway({ kernel })`, as `mdk run` boots it), or a Kernel in another process reached as the Gateway's own
+  service account (`startGateway({ kernelKey, gatewayCredential })`, as `mdk run gateway` boots it). The authority verifies
+  tokens against the issuer's public keys and follows the policy without a round trip per request. Out of process it polls the
+  policy and every subject's token version every 5 s, so a revoked token stops working within one poll, and a policy it has
+  not refreshed for 60 s (`maxStaleMs`) allows nothing until a poll succeeds.
+- **A bearer token on every app route**: a request without `Authorization: Bearer <access token>`, or with one that fails
+  verification (expired, forged, or bound to an HRPC caller), answers `401 ERR_AUTH_UNAUTHORIZED` with `WWW-Authenticate: Bearer`.
+  It runs as an `onRequest` hook, after the Host check and rate limit and before the body is read. A manifest's `auth` field no
+  longer matters: no route is open.
+- **A rule for the route**: each route is governed as the resource `<app>/<path>` (the app's name and the route's path template,
+  `ops-center/miners/:id`) and a verb, the route's `verb` or else one from its method (`GET` `get`, `POST` `create`, `PUT`/`PATCH`
+  `update`, `DELETE` `delete`). A route that declares `resourceName: { param | query | body: "<field>" }` is checked for that
+  instance. No matching rule answers `403 ERR_AUTH_FORBIDDEN: <sub> may not <verb> <resource> [<name>]`.
+- **Every decision is logged** as one `authz` line: `{ app, route, method, path, resource, verb, kind, sub, resourceName,
+  decision, reason, role, policyVersion }`, including `unauthenticated` refusals and `/auth/login` attempts.
+- **The identity, never the token, reaches app code**: the runtime receives `{ kind, sub, email, groups }` as `req._info`;
+  `authorization`, `proxy-authorization` and `cookie` headers are stripped. A signed-in user's access token travels beside the
+  request as its `actor`, which the runtime sends only to the Kernel through `req.mdk`, so the Kernel verifies the user and checks
+  their rules as well as the app's. A call the Kernel refuses reaches HTTP as `403`.
+- **Sign-in routes**: `POST /auth/login`, `POST /auth/token` (an AI agent's signed assertion), `POST /auth/refresh`,
+  `POST /auth/logout` and `GET /auth/me` proxy the Kernel's
+  token issuer. The refresh token is set as an httpOnly, `SameSite=Strict` cookie scoped to `/auth`, `Secure` everywhere but
+  plain-HTTP loopback (over plain HTTP on a network the browser keeps no refresh cookie: serve TLS, or set `trustProxy` behind one); a
+  client without cookies sends `"refreshIn": "body"` at login and the refresh token in the body after that.
+
+| Route               | Body                                        | Answer                                                                   |
+| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
+| `POST /auth/login`  | `{ username, password, refreshIn? }`        | `{ tokenType, accessToken, expiresIn }`, refresh cookie; `401`, `429`    |
+| `POST /auth/token`  | `{ assertion }`                             | A service account's tokens, both in the body; `401` for a bad assertion   |
+| `POST /auth/refresh` | `{}` with the cookie, or `{ refreshToken }` | New tokens; the refresh token rotates, and a reused one ends the session. Within seconds of its use, before its successor is used, a reuse gets that same successor (two tabs at once) |
+| `POST /auth/logout` | `{}` with the cookie, or `{ refreshToken }` | `{ revoked }`; the cookie is cleared                                     |
+| `GET /auth/me`      | Bearer token                                | `{ kind, sub, email?, groups? }`                                         |
+
+Without an authority (a Gateway started with neither a Kernel nor a credential), the older verifier path applies:
+
 - **Routes marked `"auth": true` fail closed**: before body parsing, validation, the cache or the forward to the app runtime, the Gateway
   calls the configured `authVerifier(request, route)`. `route` is `{ id, method, path, app, permissions }` from the manifest. A falsy return,
   or no verifier at all, answers `401 ERR_AUTH_UNAUTHORIZED`; a verifier may throw its own `4xx` `ERR_*` error (for example
   `403 ERR_AUTH_PERM_DENIED`), and any other throw is a `401`. A truthy return is the caller's identity: it is forwarded to the runtime and
-  reaches the controller as `req._info`. The Gateway ships no identity layer, so checking permissions against the identity stays with the
-  verifier or the controller ([auth and permissions](../../../docs/guides/gateway/apps.md#auth-and-permissions))
-- **Built-in `"loopback"` verifier** for single-machine stacks (`mdk run`, the examples): a caller whose TCP peer is
-  `127.0.0.0/8` or `::1` gets `{ user: { userId: 'local' } }`; anyone else gets `401`. It reads the socket, never
-  `X-Forwarded-For`, so do not use it behind a reverse proxy on the same host, where every proxied request is loopback.
-  A browser request also needs a loopback `Origin` (`localhost`, `127.0.0.1`, `[::1]` on any port) or, while the Host
-  allowlist is on, the Gateway's own origin, and must not carry `Sec-Fetch-Site: cross-site`, so a page on another site open
-  in the operator's browser cannot drive `auth: true` routes with a blind cross-site `POST`. With `allowedHosts: ["*"]` the
-  `Host` header is unchecked, so a same-origin `Origin` proves nothing (a DNS-rebound page is "same origin" with itself) and
-  only loopback Origins, or none, are accepted
+  reaches the controller as `req._info` ([auth and permissions](../../../docs/guides/gateway/apps.md#auth-and-permissions))
+- **There is no built-in verifier**: an `authVerifier` given by name (the removed `"loopback"`) is refused at boot with
+  `ERR_GATEWAY_AUTH_VERIFIER_INVALID`
 - **Routes without `"auth": true` are open**: any caller that passes the Host check reaches them, with `req._info` set to `{}`
+
+Whichever path applies:
+
 - **Host allowlist**: a request whose `Host` header is not in `allowedHosts` (loopback on the bound port by default) gets
   `403 ERR_GATEWAY_HOST_NOT_ALLOWED`, which blocks DNS-rebinding pages from reading a gateway on `localhost`. Add the names
   your clients use when you bind to a LAN address or put the Gateway behind a proxy
@@ -154,8 +189,8 @@ on an in-process Kernel and publishes it to the trusted-keys dir for same-machin
   configurable `bodyLimit`, and Helmet security headers are on by default. `trustProxy` is off. There is no `GET /echo` route
 - **Input validation**: path, query and header `parameters` and the `application/json` `requestBody` schema are validated before the request
   is forwarded
-- **Per-caller cache on `auth: true` routes**: a `cache` route behind auth adds a SHA-256 of the verified identity (`req._info`) to
-  its cache key, so two callers never share a cached response or an in-flight call. Open routes keep one shared entry per key
+- **Per-caller cache**: a `cache` route checked against `spec.rbac`, or behind `auth: true`, adds a SHA-256 of the verified identity
+  (`req._info`) to its cache key, so two callers never share a cached response or an in-flight call. Open routes keep one shared entry per key
 - **Cache refresh**: `?overwriteCache=true` bypasses a cached response only for a caller the `authVerifier` returned with `cache:overwrite`
   in its `perms` array
 - **App code runs outside the Gateway**: the Gateway reads only each app's route table; the controllers run in the app's own runtime
@@ -174,7 +209,8 @@ on an in-process Kernel and publishes it to the trusted-keys dir for same-machin
   for the key exchange pattern
 - Once connected, Kernel trusts all messages from an app runtime implicitly, apart from the device-family write permissions it requires in the
   `authPerms` array accompanying each write action
-- Human and AI callers reach the same routes on the same terms, since the Gateway distinguishes neither
+- Human and AI callers reach the same routes on the same terms: a user and a service account are checked against the same
+  `spec.rbac`, and the MCP server applies the same route-to-resource mapping to agents
 
 ## Known dependency advisory
 

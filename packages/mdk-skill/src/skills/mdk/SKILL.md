@@ -8,7 +8,7 @@ description: >
   Worker/plugin data, or deploying an MDK stack.
 metadata:
   suite: mdk-developer-skill
-  mdk_version: "0.5.0"
+  mdk_version: "{{MDK_VERSION}}"
 license: Apache-2.0
 ---
 
@@ -46,8 +46,8 @@ need more than one skill in order.
 | Integrate a new device (miner, power meter, sensor, container) | `mdk-worker-plugin` | [`references/protocol.md`](./references/protocol.md) |
 | Add / change a Gateway aggregation HTTP endpoint only | `mdk-gateway-plugin` | Worker `mdk-contract.json` |
 | Scaffold a new MDK App package ready to publish | `mdk-create-app` | [`mdk-create-app/SKILL.md`](../mdk-create-app/SKILL.md) |
-| Declare an app's `permissions` from the Kernel calls its code makes | `mdk-app-rbac` | [`mdk-app-rbac/references/kernel-access.md`](../mdk-app-rbac/references/kernel-access.md) |
-| Build a UI page/widget for an **existing** `/api/...` route | `mdk-ui-component` | [`mdk-ui-component/references/ui-registry.json`](../mdk-ui-component/references/ui-registry.json) |
+| Give an app the Kernel access its code needs (`permissions`, its role in `spec.rbac`), or fix an app's 403 | `mdk-app-rbac` | [`mdk-app-rbac/references/kernel-access.md`](../mdk-app-rbac/references/kernel-access.md) |
+| Build a UI page, panel or widget (an MDK App's `ui-src/` or a dashboard) for an **existing** route | `mdk-ui-component` | [`mdk-ui-component/SKILL.md`](../mdk-ui-component/SKILL.md) |
 | Deploy / run / register apps in `mdk.yaml` | `mdk-deployment` | project `mdk.yaml` |
 | Size a site from a description (Workers, host tier, envelope) | `mdk-site-sizing` | [`mdk-site-sizing/references/envelope.json`](../mdk-site-sizing/references/envelope.json) |
 | Security-audit packages before an npm publish | `mdk-publish-security` | [`mdk-publish-security/references/vuln-classes.md`](../mdk-publish-security/references/vuln-classes.md) |
@@ -62,7 +62,7 @@ Prompts like **"create a UI to show \<metric\> for a \<device\>"** are
 | 1    | *(discovery)* | Resolve each `mdk.yaml` → `spec.workers[].package` to its `mdk-contract.json` at the package root (or legacy `plugin/mdk-contract.json`); confirm the telemetry channel, unit, and brand/fingerprint exist |
 | 2    | `mdk-gateway-plugin` | If no Gateway route returns that shaped metric, `mdk create app <name>` (scaffolds + registers under `mdk.yaml` → `spec.apps`; manifest rules in `mdk-create-app`) then write the controller + `plugin/mdk-plugin.json` |
 | 3    | `mdk-deployment`                 | Restart with `mdk run` (or `mdk run app <name>`) as needed |
-| 4    | `mdk-ui-component` | Hook (`useQuery`) → presentational panel → thin page → `routes.ts`; props from [`ui-registry.json`](../mdk-ui-component/references/ui-registry.json) only |
+| 4    | `mdk-ui-component` | Data (`mdkFetch`) → hook (`toQueryView` view) → presentational component → thin page, registered in the app's `defineMdkApp` (or a dashboard's `routes.ts`); props from [`ui-registry.json`](../mdk-ui-component/references/ui-registry.json) only |
 | 5    | `mdk-deployment`                 | Verify with `curl` + running dashboard |
 
 Skip step 2–3 when the route already exists and returns the right JSON.
@@ -96,7 +96,7 @@ User: "show / UI / dashboard for <metric> on <device family>"
 | "Start Kernel + Worker + Gateway"                      | `mdk-deployment`                         |
 | "Size this site / how many Workers for N miners"       | `mdk-site-sizing`                        |
 | "Audit the packages before we publish"                 | `mdk-publish-security`                   |
-| "What permissions does this app need?"                 | `mdk-app-rbac`                           |
+| "What permissions does this app need?" / "the app gets 403 from the Kernel" | `mdk-app-rbac`      |
 
 ## Non-negotiable invariants
 

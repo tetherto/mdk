@@ -24,6 +24,7 @@ export type {
   MdkAppPanel,
   MdkAppPanelSlot,
   MdkAppRoute,
+  MdkAppSection,
   MdkAppUiModule,
 } from './types'
 export { MDK_APP_PANEL_SLOT } from './types'

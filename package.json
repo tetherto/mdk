@@ -1,8 +1,8 @@
 {
   "name": "@tetherto/mdk",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "private": true,
-  "description": "MDK umbrella repository - root orchestrator. Every publishable backend package (backend/core/*, backend/apps/*, backend/workers/**, backend/tests/*), the standalone packages/* tools, and examples/mvp-site are members of the root npm workspace below, so a single root install hoists and links them all. The UI toolkit (ui/) stays a separate Turborepo-driven workspace with its own lockfile; root scripts forward to it by prefix.",
+  "description": "MDK umbrella repository - root orchestrator. Every publishable backend package (backend/core/*, backend/workers/**, backend/tests/*), the standalone packages/* tools, and examples/mvp-site are members of the root npm workspace below, so a single root install hoists and links them all. The UI toolkit (ui/) stays a separate Turborepo-driven workspace with its own lockfile; root scripts forward to it by prefix.",
   "license": "Apache-2.0",
   "author": "Tether",
   "engines": {
@@ -10,7 +10,6 @@
   },
   "workspaces": [
     "backend/core/*",
-    "backend/apps/*",
     "backend/tests/*",
     "backend/workers/**",
     "examples/mvp-site",
@@ -23,11 +22,13 @@
   "overrides": {
     "crypto-js": "file:examples/mvp-site/lib/mdk-crypto-lib",
     "brace-expansion": "5.0.12",
+    "body-parser": "2.4.0",
     "hyperdht": "6.34.1",
     "serialport": "npm:noop@1.0.0",
     "@tootallnate/once": "3.0.1",
     "tar": ">=7.5.4",
     "fastify": "5.12.7",
+    "@fastify/static": "10.1.2",
     "@fastify/oauth2": "8.2.0",
     "@hono/node-server": "2.0.12",
     "fast-uri": "4.2.3",
@@ -64,7 +65,6 @@
     "generate:ui-registry": "node docs/scripts/sync-ui-registry.mjs",
     "generate:usage-proptables": "node docs/scripts/generate-usage-proptables.mjs",
     "generate:package-catalog": "node docs/scripts/generate-package-catalog.mjs",
-    "generate:plugin-reference": "node docs/scripts/generate-plugin-reference.js",
     "regenerate-docs": "node docs/scripts/regenerate-docs.mjs",
     "link-check": "node docs/scripts/link-check.mjs",
     "check:example-paths": "node docs/scripts/check-example-paths.mjs",

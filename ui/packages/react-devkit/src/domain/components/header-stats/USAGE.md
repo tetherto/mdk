@@ -25,7 +25,7 @@ passes the numbers in.
 |------|--------|----------------|---------|-------------|
 | `className` | Optional | `string` | - | Additional class names |
 | `icon` | Optional | `React.ReactNode` | - | Icon shown next to the stat |
-| `unit` | Optional | `string` | `W/TH/S` | Unit label — defaults to `W/TH/S` |
+| `unit` | Optional | `string` | `W/TH/s` | Unit label — defaults to `W/TH/s` |
 | `valueWthS` | Optional | `number` | - | Efficiency in watts per TH/s |
 
 ### `HeaderHashrateBox` props

@@ -20,9 +20,10 @@ The page decides what to serialize and handles the download.
 
 ```tsx
 import { ExportButton } from "@tetherto/mdk-react-devkit"
+import { downloadCsv, downloadJson } from "@tetherto/mdk-ui-foundation"
 
 <ExportButton
-  onExport={(format) => (format === "csv" ? downloadCsv(rows) : downloadJson(rows))}
+  onExport={(format) => (format === "csv" ? downloadCsv(rows, "miners.csv") : downloadJson(rows, "miners.json"))}
 />
 ```
 

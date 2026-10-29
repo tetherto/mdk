@@ -43,6 +43,7 @@ Build responses with `buildResponse(requestEnvelope, action, payload, sender)`
 | Client → Kernel → Worker | `command.request` → `command.result` | Execute a device command |
 | Client → Kernel | `command.status` → `command.status.response` | Query command lifecycle |
 | Client → Kernel | `command.cancel` → `command.cancel.response` | Cancel a pending command |
+| Client → Kernel | `command.log` | Read the write-command log (admin role) |
 | Kernel → Worker (scheduled) | `health.ping` → `health.pong` | Liveness |
 | Gateway → Kernel only | `worker.list`, `device.capabilities`, `worker.terminate` | Kernel queries (never forwarded to Workers) |
 | Gateway → Kernel | `action.push`, `action.push-batch`, `action.get`, `action.get-batch`, `action.query`, `action.vote`, `action.cancel-batch` | Write-action approval lifecycle |

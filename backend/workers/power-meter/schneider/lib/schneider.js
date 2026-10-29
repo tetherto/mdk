@@ -1,6 +1,6 @@
 'use strict'
 
-const { PowerMeter } = require('../../../../core/mdk')
+const { PowerMeter } = require('@tetherto/mdk-core')
 const { PROTOCOL } = require('@tetherto/svc-facs-modbus/lib/constants')
 
 class SchneiderPowerMeter extends PowerMeter {

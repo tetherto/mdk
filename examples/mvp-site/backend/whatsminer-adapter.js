@@ -23,6 +23,8 @@ const PKG_DIR = path.dirname(require.resolve('whatsminer-mdk-worker/package.json
  *   workerId     (required) one runtime process = one workerId
  *   storeDir     (required) persistent DHT/RPC identity directory
  *   kernelTopic  Kernel discovery topic (hex); omit to register by key
+ *   bootstrap    private HyperDHT bootstrap list (site.deploy.json `dht`)
+ *   dhtHost      interface the Worker's DHT node binds
  *   seedDevices  static device list from config/devices.json:
  *                [{ info: { serialNum }, opts: { address, port, password, conf } }]
  */
@@ -38,6 +40,8 @@ async function startWhatsminerWorker (opts) {
   const runtime = new WorkerRuntimeV2(PKG_DIR, {
     workerId: opts.workerId,
     kernelTopic: opts.kernelTopic || null,
+    bootstrap: opts.bootstrap || null,
+    dhtHost: opts.dhtHost || null,
     storeDir: opts.storeDir,
     allowedKeys: opts.allowedKeys || [],
     allowAll: opts.allowAll === true,

@@ -17,8 +17,28 @@ export type MdkAppRoute = {
   label?: string
   /** Routed but kept out of the sidebar — a deep link reached from another page. */
   hidden?: boolean
+  /**
+   * Sidebar section, e.g. `'Operations'`. Pages sharing a section are listed
+   * together under it, sections in the order their first page appears; pages
+   * without one sit directly in the app's group. Give the section an icon in
+   * the module's `sections`.
+   */
+  section?: string
   /** The page. Rendered inside the app's {@link MdkAppProvider} and an error boundary. */
   component: ComponentType
+}
+
+/**
+ * How the sidebar draws one route `section`. A section needs no entry here to
+ * work; an entry only adds what a label alone cannot.
+ *
+ * @category apps
+ */
+export type MdkAppSection = {
+  /** The `section` its routes name. */
+  label: string
+  /** Sidebar icon, rendered with no props. */
+  icon?: ComponentType
 }
 
 /**
@@ -71,6 +91,8 @@ export type MdkAppUiModule = {
   displayName: string
   routes: MdkAppRoute[]
   panels: MdkAppPanel[]
+  /** Icons for the routes' sections. Optional, as is any section's entry. */
+  sections?: MdkAppSection[]
 }
 
 /**

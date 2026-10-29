@@ -1,9 +1,9 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CLI, cliRunner, env, freePort, npm, projectDir, waitFor as waitUntil, type Running } from './helpers.js';
+import { CLI, agentAuth, cliRunner, env, freePort, grantE2eAccess, npm, projectDir, waitFor as waitUntil, type Running } from './helpers.js';
 
 // The backend and the UI scaffolded by the one CLI, then used together: a worker and an app (with
 // its starter UI built), the dashboard from the local UI shell template, `mdk run dashboard` serving
@@ -90,11 +90,12 @@ describe('backend and UI scaffolded by one CLI', () => {
       const worker = mdk('create', 'worker', 'rig', '--no-install');
       expect(worker.status, worker.stderr).toBe(0);
 
-      // With install: the app's starter UI gets its own `npm install` and is built into ui/. The
-      // project-level install may warn until the backend packages are on npm; the scaffold still
-      // succeeds and the link is made by hand below.
+      // With install: the project-level `npm install` links the worker and the app into node_modules
+      // (their MDK backend dependencies point at this checkout), and the app's starter UI gets its
+      // own `npm install` and is built into ui/.
       const app = run(['create', 'app', 'ops'], INSTALL_TIMEOUT);
       expect(app.status, app.stderr).toBe(0);
+      expect(app.stderr).not.toContain('warning:');
       expect(app.stdout).toContain('Built the starter UI');
       expect(existsSync(join(PROJECT, 'apps', 'ops', 'ui', 'index.js'))).toBe(true);
 
@@ -103,13 +104,7 @@ describe('backend and UI scaffolded by one CLI', () => {
       };
       expect(stack.spec.workers.map((w) => w.name)).toEqual(['rig']);
       expect(stack.spec.apps.map((a) => a.name)).toEqual(['ops']);
-
-      // What `npm install` does for the `file:` dependencies the scaffold wrote.
-      mkdirSync(join(PROJECT, 'node_modules'), { recursive: true });
-      for (const [name, dir] of [['rig', 'workers'], ['ops', 'apps']] as const) {
-        const link = join(PROJECT, 'node_modules', name);
-        if (!existsSync(link)) symlinkSync(join(PROJECT, dir, name), link);
-      }
+      for (const name of ['rig', 'ops']) expect(existsSync(join(PROJECT, 'node_modules', name))).toBe(true);
     },
     INSTALL_TIMEOUT,
   );
@@ -188,6 +183,7 @@ describe('backend and UI scaffolded by one CLI', () => {
 
   it('reaches the running stack through the dashboard\'s Gateway proxy', async () => {
     expect(dashboardUrl, 'the dashboard is running').not.toBe('');
+    grantE2eAccess(PROJECT, 'ops');
     const stack = start();
     await waitFor(
       () => stack.output().includes('Stack running.') || stack.proc.exitCode !== null,
@@ -195,10 +191,12 @@ describe('backend and UI scaffolded by one CLI', () => {
     );
     expect(stack.output()).toContain('Stack running.');
 
-    // Browser origin -> Vite proxy -> Gateway -> app runtime -> Kernel -> worker.
+    // Browser origin -> Vite proxy -> Gateway -> app runtime -> Kernel -> worker, as an agent
+    // spec.rbac lets read the app.
+    const headers = agentAuth(PROJECT);
     let body: { ok?: boolean; kernelConnected?: boolean; workerCount?: number } = {};
     await waitFor(async () => {
-      const res = await fetch(`${dashboardUrl}/apps/ops/api/ops/summary`).catch(() => null);
+      const res = await fetch(`${dashboardUrl}/apps/ops/api/ops/summary`, { headers }).catch(() => null);
       if (res?.status !== 200) return false;
       body = (await res.json()) as typeof body;
       return body.workerCount === 1;

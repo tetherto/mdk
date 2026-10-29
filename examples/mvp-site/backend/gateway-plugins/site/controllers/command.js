@@ -1,5 +1,7 @@
 'use strict'
 
+const { requestClient } = require('./utils')
+
 // Union of the demo's per-family modes: Whatsminer accepts low | normal |
 // high, SealMiner names its boost high_performance. Sleep would power the
 // miner down, so it is excluded from the demo action on every family.
@@ -10,13 +12,12 @@ const POWER_MODES = ['low', 'normal', 'high', 'high_performance']
 // against the worker's exported contract); the new mode shows up on the next
 // telemetry poll.
 //
-// `ctx` is a test-only seam: a real gateway route call always passes just
-// `req`, so this falls through to the plugin's own ambient client
-// (lib/client.js, lazily required so this file stays requirable outside a
-// plugin load — see @tetherto/mdk-gateway/plugin). Tests pass `{ mdkClient }`
-// directly instead of loading the plugin.
+// Sent as the signed-in user (req.mdk): the Kernel refuses it unless their
+// roles allow writing this device, and logs them as the sender.
+//
+// `ctx` is a test-only seam — see utils.js requestClient.
 module.exports = async (req, ctx) => {
-  const mdkClient = ctx === undefined ? require('../lib/client') : ctx.mdkClient
+  const mdkClient = requestClient(req, ctx)
   if (!mdkClient) throw new Error('ERR_MDK_CLIENT_UNAVAILABLE')
 
   const deviceId = req.params && req.params.deviceId

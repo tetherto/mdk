@@ -17,7 +17,7 @@ export function unwrapToolText (text) {
  * This is the agent's only window onto the fleet — the model never reaches hardware
  * directly, only through these tools.
  *
- * @param {string} url  e.g. http://127.0.0.1:3008/mcp
+ * @param {string} url  e.g. http://127.0.0.1:3101/mcp
  * @returns {Promise<{ url, listTools, callTool, close }>}
  */
 export async function connectMcp (url) {

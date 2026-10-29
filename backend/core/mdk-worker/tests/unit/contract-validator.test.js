@@ -8,6 +8,7 @@ const { validateContract } = require('../../lib/contract-validator')
 
 function contract (overrides = {}) {
   return {
+    contractVersion: '1',
     metadata: {
       provider: 'test',
       deviceFamily: 'miner',
@@ -17,7 +18,7 @@ function contract (overrides = {}) {
     },
     capabilities: {
       telemetry: [
-        { name: 'hashrate', type: 'number', handler: 'handlers/hashrate.js', description: 'TH/s' }
+        { name: 'hashrate', type: 'number', unit: 'TH/s', handler: 'handlers/hashrate.js', description: 'TH/s' }
       ],
       commands: [
         {
@@ -33,14 +34,21 @@ function contract (overrides = {}) {
   }
 }
 
-test('a conforming contract passes', (t) => {
-  const { ok, errors } = validateContract(contract())
+function legacy () {
+  const c = contract()
+  delete c.contractVersion
+  return c
+}
+
+test('a conforming v1 contract passes with no warnings', (t) => {
+  const { ok, errors, warnings } = validateContract(contract())
   t.ok(ok)
   t.alike(errors, [])
+  t.alike(warnings, [])
 })
 
 test('missing metadata and capabilities are required-property errors', (t) => {
-  const { ok, errors } = validateContract({})
+  const { ok, errors } = validateContract({ contractVersion: '1' })
   t.not(ok)
   t.ok(errors.some((e) => e.startsWith('ERR_CONTRACT_REQUIRED') && e.includes("'metadata'")))
   t.ok(errors.some((e) => e.startsWith('ERR_CONTRACT_REQUIRED') && e.includes("'capabilities'")))
@@ -52,6 +60,79 @@ test('a non-object contract reports a type error without throwing', (t) => {
     t.not(ok)
     t.ok(errors.some((e) => e.startsWith('ERR_CONTRACT_TYPE')))
   }
+})
+
+test('a legacy contract gets the v1 requirements as warnings, not errors', (t) => {
+  const c = legacy()
+  delete c.capabilities.telemetry[0].unit
+  delete c.capabilities.commands[0].params[0].max
+  const { ok, errors, warnings } = validateContract(c)
+  t.ok(ok)
+  t.alike(errors, [])
+  t.ok(warnings.some((w) => w.includes("'contractVersion'")))
+  t.ok(warnings.some((w) => w.includes("'unit'")))
+  t.ok(warnings.some((w) => w.includes("'max'")))
+})
+
+test('strict mode turns legacy warnings into errors', (t) => {
+  const c = legacy()
+  delete c.capabilities.telemetry[0].unit
+  const { ok, errors, warnings } = validateContract(c, { strict: true })
+  t.not(ok)
+  t.alike(warnings, [])
+  t.ok(errors.some((e) => e.includes("'contractVersion'")))
+  t.ok(errors.some((e) => e.includes("'unit'")))
+})
+
+test('a declared v1 contract is held to v1 as errors', (t) => {
+  const missingUnit = contract()
+  delete missingUnit.capabilities.telemetry[0].unit
+  t.ok(validateContract(missingUnit).errors.some((e) => e.startsWith('ERR_CONTRACT_REQUIRED') && e.includes("'unit'")))
+
+  const missingBounds = contract()
+  delete missingBounds.capabilities.commands[0].params[0].max
+  t.ok(validateContract(missingBounds).errors.some((e) => e.startsWith('ERR_CONTRACT_REQUIRED') && e.includes("'max'")))
+})
+
+test('a non-string unit stays a base error even on a legacy contract', (t) => {
+  const c = legacy()
+  c.capabilities.telemetry[0].unit = 5
+  const { ok, errors } = validateContract(c)
+  t.not(ok)
+  t.ok(errors.some((e) => e.startsWith('ERR_CONTRACT_TYPE') && e.includes('/unit')))
+})
+
+test('units outside the canonical vocabulary are strict-tier', (t) => {
+  const c = contract()
+  c.capabilities.telemetry[0].unit = 'THs'
+  const v1 = validateContract(c)
+  t.not(v1.ok)
+  t.ok(v1.errors.some((e) => e.startsWith('ERR_CONTRACT_ENUM') && e.includes('/unit')))
+
+  const old = legacy()
+  old.capabilities.telemetry[0].unit = 'THs'
+  const l = validateContract(old)
+  t.ok(l.ok)
+  t.ok(l.warnings.some((w) => w.startsWith('ERR_CONTRACT_ENUM') && w.includes('/unit')))
+})
+
+test('declaring any contractVersion opts into strict: unknown value errors alongside body problems', (t) => {
+  const c = contract({ contractVersion: '9' })
+  delete c.capabilities.telemetry[0].unit
+  const { ok, errors, warnings } = validateContract(c)
+  t.not(ok)
+  t.alike(warnings, [])
+  t.ok(errors.some((e) => e.startsWith('ERR_CONTRACT_ENUM') && e.includes('/contractVersion')))
+  t.ok(errors.some((e) => e.includes("'unit'")), 'body problems are not masked by the unknown version')
+})
+
+test('non-number telemetry and params need no unit or bounds under v1', (t) => {
+  const c = contract()
+  c.capabilities.telemetry.push({ name: 'status', type: 'string', handler: 'handlers/hashrate.js', description: 's' })
+  c.capabilities.commands[0].params.push({ name: 'mode', type: 'string' })
+  const { ok, errors, warnings } = validateContract(c)
+  t.ok(ok, errors.join('; '))
+  t.alike(warnings, [])
 })
 
 test('telemetry type outside the enum is rejected', (t) => {
@@ -76,20 +157,23 @@ test('duplicate names within a section are a semantic error', (t) => {
   t.ok(errors.some((e) => e.startsWith('ERR_CONTRACT_DUPLICATE_NAME') && e.includes("'hashrate'")))
 })
 
-test('number params must declare coherent min/max', (t) => {
-  const missing = contract()
-  delete missing.capabilities.commands[0].params[0].max
-  t.ok(validateContract(missing).errors.some((e) => e.startsWith('ERR_CONTRACT_PARAM_BOUNDS_MISSING')))
-
+test('incoherent bounds and defaults are base errors', (t) => {
   const inverted = contract()
   inverted.capabilities.commands[0].params[0].min = 4000
   t.ok(validateContract(inverted).errors.some((e) => e.startsWith('ERR_CONTRACT_PARAM_BOUNDS_INVALID')))
+
+  const badDefault = contract()
+  badDefault.capabilities.commands[0].params[0].default = 5000
+  t.ok(validateContract(badDefault).errors.some((e) => e.startsWith('ERR_CONTRACT_DEFAULT_RANGE')))
+
+  const goodDefault = contract()
+  goodDefault.capabilities.commands[0].params[0].default = 200
+  t.ok(validateContract(goodDefault).ok)
 })
 
 test('semantic: false keeps schema conformance only', (t) => {
   const c = contract()
   c.capabilities.telemetry.push({ ...c.capabilities.telemetry[0] })
-  delete c.capabilities.commands[0].params[0].max
   const { ok, errors } = validateContract(c, { semantic: false })
   t.ok(ok)
   t.alike(errors, [])

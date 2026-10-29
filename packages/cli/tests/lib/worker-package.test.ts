@@ -21,12 +21,31 @@ function worker(): string {
 afterEach(cleanupTmpDirs);
 
 describe('validateWorker', () => {
-  it('accepts the bundled worker template', () => {
+  it('accepts the bundled worker template with no warnings: the scaffold is v1-native', () => {
     const result = validateWorker(worker());
     expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
     expect(result.name).toBe('demo-miner');
     expect(result.telemetry).toBeGreaterThan(0);
     expect(result.commands).toBeGreaterThan(0);
+  });
+
+  it('reports v1 gaps on a legacy contract as warnings, and as errors under strict', () => {
+    const dir = worker();
+    const file = join(dir, 'mdk-contract.json');
+    const contract = JSON.parse(readFileSync(file, 'utf8'));
+    delete contract.contractVersion;
+    delete contract.capabilities.telemetry[0].unit;
+    writeFileSync(file, JSON.stringify(contract));
+
+    const legacy = validateWorker(dir);
+    expect(legacy.errors).toEqual([]);
+    expect(legacy.warnings.some((w) => w.includes("'contractVersion'"))).toBe(true);
+    expect(legacy.warnings.some((w) => w.includes("'unit'"))).toBe(true);
+
+    const strict = validateWorker(dir, { strict: true });
+    expect(strict.warnings).toEqual([]);
+    expect(strict.errors.some((e) => e.includes("'unit'"))).toBe(true);
   });
 
   it('reports a missing package.json and a missing contract together', () => {
@@ -69,7 +88,7 @@ describe('validateWorker', () => {
 
     const { errors } = validateWorker(dir);
     expect(errors.some((e) => e.includes('ERR_CONTRACT_UNEXPECTED') && e.includes("'transport'"))).toBe(true);
-    expect(errors.some((e) => e.includes('ERR_CONTRACT_PARAM_BOUNDS_MISSING'))).toBe(true);
+    expect(errors.some((e) => e.includes('ERR_CONTRACT_REQUIRED') && e.includes("'min'"))).toBe(true);
     expect(errors.some((e) => e.includes('ERR_CONTRACT_DUPLICATE_NAME'))).toBe(true);
   });
 

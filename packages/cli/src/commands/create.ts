@@ -8,6 +8,7 @@ import { NAME_RE } from '../lib/names.js';
 import { createWorker } from '../lib/worker-scaffold.js';
 import { deviceId, deviceSerial } from '../lib/spec.js';
 import { createApp } from '../lib/app-scaffold.js';
+import { grantLine } from '../lib/grant-report.js';
 import { DIRS } from '../lib/project.js';
 import { theme, tick, arrow } from '../lib/theme.js';
 
@@ -212,12 +213,17 @@ export function registerCreate(program: Command): void {
         const manualSnippet =
           `${theme.cmd(`    - name: ${result.appName}\n      package: ${result.packageName}\n      config: {}`)}\n`;
 
+        const grant = result.grant
+          ? 'error' in result.grant
+            ? `  ${theme.warn('note')}: not granted in ${theme.key('spec.rbac')} (${result.grant.error}); fix that, then run ${theme.cmd('mdk rbac init')}\n`
+            : grantLine(result.grant)
+          : '';
         switch (result.stackFile) {
           case 'added':
-            out += `  ${tick} Added to ${theme.value('mdk.yaml')} under ${theme.key('spec.apps')}\n`;
+            out += `  ${tick} Added to ${theme.value('mdk.yaml')} under ${theme.key('spec.apps')}\n${grant}`;
             break;
           case 'exists':
-            out += `  ${theme.muted(`spec.apps already lists "${result.packageName}" — left unchanged`)}\n`;
+            out += `  ${theme.muted(`spec.apps already lists "${result.packageName}" — left unchanged`)}\n${grant}`;
             break;
           case 'name-taken':
             out += `  ${theme.warn('!')} spec.apps already has an app named "${result.appName}" with another package; mdk.yaml was not changed\n`;
@@ -244,7 +250,7 @@ export function registerCreate(program: Command): void {
         out +=
           `\n${theme.label('Next steps')}\n` +
           `  ${theme.muted('1.')} Add routes in ${theme.value('plugin/mdk-plugin.json')} + ${theme.value('plugin/controllers/')}.\n` +
-          `  ${theme.muted('2.')} Set ${theme.key('id')} and ${theme.key('permissions')} in ${theme.value('mdk-app.yaml')}, then check it: ${theme.cmd(`mdk validate app ${result.appName}`)}\n` +
+          `  ${theme.muted('2.')} Set ${theme.key('id')} and ${theme.key('permissions')} in ${theme.value('mdk-app.yaml')} (${theme.cmd('mdk rbac init')} updates ${theme.key('spec.rbac')} after a change), then check it: ${theme.cmd(`mdk validate app ${result.appName}`)}\n` +
           `  ${theme.muted('3.')} Run it: ${theme.cmd('mdk run')} ${theme.muted(`(or \`mdk run app ${result.appName}\` + \`mdk run gateway\`)`)}, then ${theme.cmd('mdk run dashboard')} to see its UI\n` +
           `  ${theme.muted('4.')} Edit the UI in ${theme.value('ui-src/')}; rebuild with ${theme.cmd('npm run build:ui')} (or ${theme.cmd('npm run dev:ui')} to rebuild on save).\n`;
 

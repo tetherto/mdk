@@ -1,5 +1,5 @@
 /**
- * The four agent routes, as declared in `backend/apps/agent/mdk-plugin.json`.
+ * The four agent routes, as declared in the `mdk-app-agent` repo's `mdk-plugin.json`.
  *
  *   POST   /agent/sessions                              -> { sessionId }
  *   POST   /agent/sessions/:id/messages                 -> text/event-stream

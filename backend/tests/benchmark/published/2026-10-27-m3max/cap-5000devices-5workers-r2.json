@@ -1,0 +1,628 @@
+{
+  "profileId": "cap-5000devices-5workers-r2",
+  "sweep": "representative",
+  "mode": "multi-process",
+  "deviceCount": 5000,
+  "workerCount": 5,
+  "workersBreakdown": [
+    {
+      "workerId": "bench-worker-0",
+      "type": "mdk-worker-avalon",
+      "model": "a1346",
+      "deviceCount": 1000
+    },
+    {
+      "workerId": "bench-worker-1",
+      "type": "mdk-worker-avalon",
+      "model": "a1346",
+      "deviceCount": 1000
+    },
+    {
+      "workerId": "bench-worker-2",
+      "type": "mdk-worker-avalon",
+      "model": "a1346",
+      "deviceCount": 1000
+    },
+    {
+      "workerId": "bench-worker-3",
+      "type": "mdk-worker-avalon",
+      "model": "a1346",
+      "deviceCount": 1000
+    },
+    {
+      "workerId": "bench-worker-4",
+      "type": "mdk-worker-avalon",
+      "model": "a1346",
+      "deviceCount": 1000
+    }
+  ],
+  "storePaths": {
+    "kernelStore": ".mdk-data/cap-5000devices-5workers-r2/kernel-db",
+    "workerStores": [
+      {
+        "workerId": "bench-worker-0",
+        "type": "mdk-worker-avalon",
+        "model": "a1346",
+        "path": ".mdk-data/cap-5000devices-5workers-r2/workers/bench-worker-0/store",
+        "startSizeBytes": 44047946
+      },
+      {
+        "workerId": "bench-worker-1",
+        "type": "mdk-worker-avalon",
+        "model": "a1346",
+        "path": ".mdk-data/cap-5000devices-5workers-r2/workers/bench-worker-1/store",
+        "startSizeBytes": 31988826
+      },
+      {
+        "workerId": "bench-worker-2",
+        "type": "mdk-worker-avalon",
+        "model": "a1346",
+        "path": ".mdk-data/cap-5000devices-5workers-r2/workers/bench-worker-2/store",
+        "startSizeBytes": 32472677
+      },
+      {
+        "workerId": "bench-worker-3",
+        "type": "mdk-worker-avalon",
+        "model": "a1346",
+        "path": ".mdk-data/cap-5000devices-5workers-r2/workers/bench-worker-3/store",
+        "startSizeBytes": 26203181
+      },
+      {
+        "workerId": "bench-worker-4",
+        "type": "mdk-worker-avalon",
+        "model": "a1346",
+        "path": ".mdk-data/cap-5000devices-5workers-r2/workers/bench-worker-4/store",
+        "startSizeBytes": 24880719
+      }
+    ],
+    "gatewayStore": ".mdk-data/cap-5000devices-5workers-r2/gateway"
+  },
+  "configArtifact": {
+    "path": "config/benchmark.config.json",
+    "hash": "2f48ab70dc13"
+  },
+  "hardware": {
+    "referenceTier": "custom",
+    "cpuModel": "Apple M3 Max",
+    "cpuCoresPhysical": "14",
+    "cpuCoresLogical": "14",
+    "ramGiB": "36",
+    "diskType": "NVMe (Apple Fabric SSD)",
+    "diskSizeGiB": "926",
+    "os": "macOS 15.8.1 (24H32), darwin arm64",
+    "nodeVersion": "v24.19.0",
+    "mdkVersion": "0.12.1 @ 2d71e224",
+    "networkPath": "simulated-in-process",
+    "notes": "Developer workstation, loopback mocks (one mock TCP/HTTP listener per Worker). Not a reference tier; results are indicative."
+  },
+  "operatingParameters": {
+    "kernelTelemetryPullMs": 10000,
+    "kernelHealthPingMs": 5000,
+    "kernelStatePullMs": 20000,
+    "workerCollectSnapsItvMs": 10000,
+    "workerStoreSnapItvMs": 20000,
+    "workerConcurrency": 500,
+    "deviceRequestTimeoutMs": 10000,
+    "collectSnapTimeoutMs": 2000,
+    "alertRulesCount": 1
+  },
+  "runReproducibility": {
+    "n": 1000,
+    "nMinimumRecommended": 100,
+    "soakMs": 60000,
+    "soakMinimumMsForGrowthClaims": 86400000,
+    "resourceSampleIntervalMs": 250,
+    "readLoadConcurrency": 1000,
+    "readLoadDurationMs": 3000,
+    "actionLoadRatePerSec": 1000,
+    "actionLoadDurationMs": 3000,
+    "actionType": "setPowerMode",
+    "actionParams": {
+      "mode": "normal"
+    },
+    "runFailureDrills": true,
+    "workerRestartTimeoutMs": 30000,
+    "kernelRestartTimeoutMs": 30000,
+    "restartServingTimeoutMs": 60000,
+    "outageDetectTimeoutMs": 30000,
+    "outageRecoveryTimeoutMs": 30000,
+    "recoveryPollIntervalMs": 250
+  },
+  "timestamps": {
+    "startUtc": "2026-10-27T12:26:28.137Z",
+    "endUtc": "2026-10-27T12:34:48.981Z"
+  },
+  "resourceSummary": {
+    "mocks": {
+      "label": "mocks",
+      "mode": "external-ps",
+      "samples": 1997,
+      "avgCpuPct": 47.30595893840751,
+      "peakCpuPct": 91.5,
+      "avgRssMiB": 257.9123920255383,
+      "peakRssMiB": 287.9375,
+      "firstRssMiB": 287.921875,
+      "lastRssMiB": 266.09375,
+      "rssSlopeMiBPerHour": -156.826577471057,
+      "fdCountFirst": 29,
+      "fdCountLast": 56,
+      "fdSlopePerHour": 193.89316327120906
+    },
+    "kernel": {
+      "label": "kernel",
+      "mode": "external-ps",
+      "samples": 1997,
+      "avgCpuPct": 29.09569354031042,
+      "peakCpuPct": 137.5,
+      "avgRssMiB": 339.87733944667,
+      "peakRssMiB": 505.828125,
+      "firstRssMiB": 227.421875,
+      "lastRssMiB": 505.828125,
+      "rssSlopeMiBPerHour": 2000.140691604004,
+      "fdCountFirst": 34,
+      "fdCountLast": 35,
+      "fdSlopePerHour": 7.1808844854995995
+    },
+    "gateway": {
+      "label": "gateway",
+      "mode": "external-ps",
+      "samples": 1997,
+      "avgCpuPct": 5.013720580871324,
+      "peakCpuPct": 54.5,
+      "avgRssMiB": 226.21130132699048,
+      "peakRssMiB": 340.96875,
+      "firstRssMiB": 138.671875,
+      "lastRssMiB": 80.359375,
+      "rssSlopeMiBPerHour": -418.94675080526383,
+      "fdCountFirst": 47,
+      "fdCountLast": 51,
+      "fdSlopePerHour": 28.723709826700283
+    },
+    "worker-0": {
+      "label": "worker-0",
+      "mode": "external-ps",
+      "samples": 1997,
+      "avgCpuPct": 25.87986980470706,
+      "peakCpuPct": 106.5,
+      "avgRssMiB": 581.8914230721082,
+      "peakRssMiB": 723.328125,
+      "firstRssMiB": 548.375,
+      "lastRssMiB": 593.09375,
+      "rssSlopeMiBPerHour": 212.14853489749814,
+      "fdCountFirst": 34,
+      "fdCountLast": 42,
+      "fdSlopePerHour": 57.44753424411611
+    },
+    "worker-1": {
+      "label": "worker-1",
+      "mode": "external-ps",
+      "samples": 1997,
+      "avgCpuPct": 26.381271907861716,
+      "peakCpuPct": 118.7,
+      "avgRssMiB": 569.8893261767652,
+      "peakRssMiB": 661.390625,
+      "firstRssMiB": 474.625,
+      "lastRssMiB": 616.875,
+      "rssSlopeMiBPerHour": 372.6612546221551,
+      "fdCountFirst": 60,
+      "fdCountLast": 42,
+      "fdSlopePerHour": -129.257467710567
+    },
+    "worker-2": {
+      "label": "worker-2",
+      "mode": "external-ps",
+      "samples": 1997,
+      "avgCpuPct": 25.963895843765663,
+      "peakCpuPct": 112.5,
+      "avgRssMiB": 563.0161022784176,
+      "peakRssMiB": 675.96875,
+      "firstRssMiB": 457.21875,
+      "lastRssMiB": 572.25,
+      "rssSlopeMiBPerHour": -329.00948003073194,
+      "fdCountFirst": 34,
+      "fdCountLast": 42,
+      "fdSlopePerHour": 57.45246207738527
+    },
+    "worker-3": {
+      "label": "worker-3",
+      "mode": "external-ps",
+      "samples": 1997,
+      "avgCpuPct": 25.91522283425134,
+      "peakCpuPct": 119,
+      "avgRssMiB": 555.1887205808713,
+      "peakRssMiB": 685.609375,
+      "firstRssMiB": 410.0625,
+      "lastRssMiB": 685.609375,
+      "rssSlopeMiBPerHour": 913.941328911442,
+      "fdCountFirst": 34,
+      "fdCountLast": 44,
+      "fdSlopePerHour": 71.8168669891776
+    },
+    "worker-4": {
+      "label": "worker-4",
+      "mode": "external-ps",
+      "samples": 1997,
+      "avgCpuPct": 25.991236855282903,
+      "peakCpuPct": 117.1,
+      "avgRssMiB": 561.4141603029544,
+      "peakRssMiB": 706.328125,
+      "firstRssMiB": 468.765625,
+      "lastRssMiB": 700.09375,
+      "rssSlopeMiBPerHour": 1241.1993037574957,
+      "fdCountFirst": 34,
+      "fdCountLast": 42,
+      "fdSlopePerHour": 57.45406667065652
+    }
+  },
+  "rssSlopeMiBPerHour": -2000.140691604004,
+  "deviceBaseline": {
+    "label": "deviceBaseline",
+    "n": 20,
+    "errors": 0,
+    "p50Ms": 0.122041,
+    "p95Ms": 0.155958,
+    "p99Ms": 0.815125,
+    "maxMs": 0.815125
+  },
+  "cycleHeadroomByWorker": {
+    "bench-worker-0": {
+      "deviceCount": 1000,
+      "cycleMsSamples": [
+        1152.507125,
+        7365.168292,
+        1173.029875
+      ],
+      "avgCycleMs": 3230.2350973333337,
+      "maxCycleMs": 7365.168292,
+      "rejected": 0,
+      "timedOut": 0
+    },
+    "bench-worker-1": {
+      "deviceCount": 1000,
+      "cycleMsSamples": [
+        1228.495584,
+        8111.293875,
+        1174.413167
+      ],
+      "avgCycleMs": 3504.7342086666667,
+      "maxCycleMs": 8111.293875,
+      "rejected": 0,
+      "timedOut": 0
+    },
+    "bench-worker-2": {
+      "deviceCount": 1000,
+      "cycleMsSamples": [
+        1357.50725,
+        7046.509792,
+        1010.321292
+      ],
+      "avgCycleMs": 3138.112778,
+      "maxCycleMs": 7046.509792,
+      "rejected": 0,
+      "timedOut": 0
+    },
+    "bench-worker-3": {
+      "deviceCount": 1000,
+      "cycleMsSamples": [
+        1183.630584,
+        4968.326792,
+        1140.860125
+      ],
+      "avgCycleMs": 2430.939167,
+      "maxCycleMs": 4968.326792,
+      "rejected": 0,
+      "timedOut": 0
+    },
+    "bench-worker-4": {
+      "deviceCount": 1000,
+      "cycleMsSamples": [
+        956.987958,
+        813.741459,
+        855.683833
+      ],
+      "avgCycleMs": 875.4710833333334,
+      "maxCycleMs": 956.987958,
+      "rejected": 0,
+      "timedOut": 0
+    }
+  },
+  "cycleHeadroomWorst": {
+    "workerId": "bench-worker-1",
+    "deviceCount": 1000,
+    "cycleMsSamples": [
+      1228.495584,
+      8111.293875,
+      1174.413167
+    ],
+    "avgCycleMs": 3504.7342086666667,
+    "maxCycleMs": 8111.293875,
+    "rejected": 0,
+    "timedOut": 0
+  },
+  "headroomRatio": 0.35047342086666666,
+  "throughput": {
+    "completed": 3593,
+    "rejected": 0,
+    "timedOut": 0,
+    "peakQueueDepth": 1000,
+    "errorCodes": {},
+    "readsPerSec": 490.37805377371365
+  },
+  "actionLoad": {
+    "completed": 2505,
+    "rejected": 0,
+    "timedOut": 0,
+    "peakInFlight": 575,
+    "errorCodes": {},
+    "actionsPerSec": 732.0280537697253
+  },
+  "alerts": {
+    "rulesCount": 1,
+    "devicesWithAlerts": 5000,
+    "deviceCount": 5000,
+    "byName": {
+      "chips_temp_critical": 5000
+    },
+    "visibleViaKernel": {
+      "label": "alertVisibleViaKernel",
+      "n": 5000,
+      "errors": 0,
+      "p50Ms": 413,
+      "p95Ms": 640,
+      "p99Ms": 151694,
+      "maxMs": 154326
+    },
+    "visibleViaGateway": {
+      "label": "alertVisibleViaGateway",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 6553,
+      "p95Ms": 6914,
+      "p99Ms": 149618,
+      "maxMs": 149618
+    }
+  },
+  "latencies": {
+    "telemetrySingle": {
+      "label": "telemetrySingle",
+      "n": 15050,
+      "errors": 0,
+      "p50Ms": 464.084584,
+      "p95Ms": 4672.683125,
+      "p99Ms": 5371.360375,
+      "maxMs": 7235.842833
+    },
+    "readLoadSaturation": {
+      "label": "readLoadSaturation",
+      "n": 3593,
+      "errors": 0,
+      "p50Ms": 514.873834,
+      "p95Ms": 5089.790083,
+      "p99Ms": 5372.024833,
+      "maxMs": 5757.510791
+    },
+    "status": {
+      "label": "status",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 6.710625,
+      "p95Ms": 28.957542,
+      "p99Ms": 81.718458,
+      "maxMs": 81.718458
+    },
+    "actionSubmit": {
+      "label": "actionSubmit",
+      "n": 2505,
+      "errors": 0,
+      "p50Ms": 422.485459,
+      "p95Ms": 656.361041,
+      "p99Ms": 702.848917,
+      "maxMs": 710.637292
+    },
+    "gatewayRequest": {
+      "label": "gatewayRequest",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 6272.16475,
+      "p95Ms": 10721.761042,
+      "p99Ms": 13970.249791,
+      "maxMs": 13970.249791
+    },
+    "gatewayTelemetrySingle": {
+      "label": "gatewayTelemetrySingle",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 341.4935,
+      "p95Ms": 3205.832708,
+      "p99Ms": 5558.886792,
+      "maxMs": 5558.886792
+    },
+    "gatewayActionSubmit": {
+      "label": "gatewayActionSubmit",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 3.140916,
+      "p95Ms": 12.188125,
+      "p99Ms": 64.01775,
+      "maxMs": 64.01775
+    },
+    "alertVisibleViaKernel": {
+      "label": "alertVisibleViaKernel",
+      "n": 5000,
+      "errors": 0,
+      "p50Ms": 413,
+      "p95Ms": 640,
+      "p99Ms": 151694,
+      "maxMs": 154326
+    },
+    "alertVisibleViaGateway": {
+      "label": "alertVisibleViaGateway",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 6553,
+      "p95Ms": 6914,
+      "p99Ms": 149618,
+      "maxMs": 149618
+    }
+  },
+  "thresholds": {
+    "headroomGreenBelow": 0.7,
+    "headroomAmberBelow": 1,
+    "actionSubmitP99Ms": 2000,
+    "steadyCpuPctOfOneCore": 80,
+    "rejectPlusTimeoutMax": 0,
+    "rejectPlusTimeoutAmberPctOfAttempted": 0.01,
+    "rssSlopeFlatMiBPerHour": 18000
+  },
+  "failureBehaviour": {
+    "workerRestart": {
+      "workerId": "bench-worker-0",
+      "deviceCount": 1000,
+      "recovered": true,
+      "ms": 5475,
+      "servingRestored": true,
+      "servingMs": 6127
+    },
+    "kernelRestart": {
+      "recovered": true,
+      "ms": 6373,
+      "servingRestored": true,
+      "servingMs": 6701
+    },
+    "unreachableDevice": {
+      "scope": "all devices — mocks run one shared process per worker, so a single device can't be isolated",
+      "unreachableCount": 5000,
+      "timeoutBudgetMs": 10000,
+      "concurrency": 500,
+      "analyticalEffectMs": 100000,
+      "measured": {
+        "baselineMs": 228.333125,
+        "baselineFailed": false,
+        "detectedMs": 28,
+        "failedReadMs": 8.706333,
+        "firstFailureCode": "ERR_BENCH_SNAP_FAILED",
+        "allChannelsFailedMs": 4629,
+        "recovered": true,
+        "recoveredMs": 334
+      }
+    }
+  },
+  "zeroDeviceBaseline": {
+    "resourceSummary": {
+      "kernel": {
+        "label": "kernel",
+        "mode": "external-ps",
+        "samples": 240,
+        "avgCpuPct": 0.05916666666666661,
+        "peakCpuPct": 1,
+        "avgRssMiB": 90.0115234375,
+        "peakRssMiB": 145.9375,
+        "firstRssMiB": 145.859375,
+        "lastRssMiB": 81.21875,
+        "rssSlopeMiBPerHour": -3857.4785333023906,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      },
+      "gateway": {
+        "label": "gateway",
+        "mode": "external-ps",
+        "samples": 240,
+        "avgCpuPct": 0.1845833333333335,
+        "peakCpuPct": 18.3,
+        "avgRssMiB": 100.7322265625,
+        "peakRssMiB": 137.8125,
+        "firstRssMiB": 137.5625,
+        "lastRssMiB": 66.75,
+        "rssSlopeMiBPerHour": -4229.014598540146,
+        "fdCountFirst": 47,
+        "fdCountLast": 47,
+        "fdSlopePerHour": 0
+      },
+      "worker-0": {
+        "label": "worker-0",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.07991631799163183,
+        "peakCpuPct": 8.7,
+        "avgRssMiB": 98.84120031380753,
+        "peakRssMiB": 117.78125,
+        "firstRssMiB": 117.234375,
+        "lastRssMiB": 89.65625,
+        "rssSlopeMiBPerHour": -1651.3297960813013,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      },
+      "worker-1": {
+        "label": "worker-1",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.029288702928870283,
+        "peakCpuPct": 0.5,
+        "avgRssMiB": 86.10107217573221,
+        "peakRssMiB": 116.953125,
+        "firstRssMiB": 116.390625,
+        "lastRssMiB": 66.359375,
+        "rssSlopeMiBPerHour": -2997.8279322914063,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      },
+      "worker-2": {
+        "label": "worker-2",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.07740585774058581,
+        "peakCpuPct": 9.5,
+        "avgRssMiB": 94.81740324267783,
+        "peakRssMiB": 116.9375,
+        "firstRssMiB": 116.515625,
+        "lastRssMiB": 89.890625,
+        "rssSlopeMiBPerHour": -1595.2931777707504,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      },
+      "worker-3": {
+        "label": "worker-3",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.05271966527196652,
+        "peakCpuPct": 5.2,
+        "avgRssMiB": 102.11976987447699,
+        "peakRssMiB": 116.21875,
+        "firstRssMiB": 115.703125,
+        "lastRssMiB": 89.90625,
+        "rssSlopeMiBPerHour": -1546.6525106170375,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      },
+      "worker-4": {
+        "label": "worker-4",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.09372384937238498,
+        "peakCpuPct": 9.5,
+        "avgRssMiB": 88.11133629707113,
+        "peakRssMiB": 118.703125,
+        "firstRssMiB": 118.28125,
+        "lastRssMiB": 90.140625,
+        "rssSlopeMiBPerHour": -1688.2686731326867,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      }
+    }
+  },
+  "verdict": {
+    "telemetryFreshness": "green",
+    "actionSubmitP99": "green",
+    "steadyCpu": "green",
+    "rejectsPlusTimeouts": "green",
+    "rssSlope": "green",
+    "rssSlopeIndicative": true,
+    "overall": "green"
+  }
+}

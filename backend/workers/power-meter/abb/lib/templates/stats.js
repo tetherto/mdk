@@ -1,7 +1,7 @@
 'use strict'
 
-const { templates } = require('../../../../../core/mdk')
-const { groupBy } = require('../../../../../core/mdk').libStats
+const { templates } = require('@tetherto/mdk-core')
+const { groupBy } = require('@tetherto/mdk-core').libStats
 
 const { conf, specs: baseSpecs } = templates.stats
 

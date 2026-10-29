@@ -1,8 +1,7 @@
 {
   "name": "@tetherto/mdk-agent",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "MDK operator agent — headless loop over a local (QVAC) model, consuming MDK tools via MCP.",
-  "private": true,
   "type": "module",
   "engines": {
     "node": ">=24"
@@ -16,6 +15,21 @@
     "mdk-agent": "./bin/mdk-agent.js",
     "qvac-cache-reaper": "./bin/qvac-cache-reaper.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/mdk.git",
+    "directory": "backend/core/agent"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "index.js",
+    "bin/",
+    "src/",
+    "eval/battery.json",
+    "README.md"
+  ],
   "scripts": {
     "start": "node bin/mdk-agent.js",
     "lint": "standard",

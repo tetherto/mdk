@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-ui-agent",
   "type": "module",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "private": false,
   "description": "Injectable operator Co-pilot chat UI for the MDK agent app. Streams the six-event agent contract over SSE and renders it as a docked panel or a full-page route.",
   "license": "Apache-2.0",
@@ -76,9 +76,9 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@tetherto/mdk-react-adapter": "^0.12.2",
-    "@tetherto/mdk-react-devkit": "^0.12.2",
-    "@tetherto/mdk-ui-foundation": "^0.12.2",
+    "@tetherto/mdk-react-adapter": "^0.13.0",
+    "@tetherto/mdk-react-devkit": "^0.13.0",
+    "@tetherto/mdk-ui-foundation": "^0.13.0",
     "highlight.js": "^11.11.1",
     "lodash": "^4.18.1",
     "lowlight": "^3.3.0",
@@ -95,11 +95,11 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.12",
     "happy-dom": "^21.0.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sass": "^1.83.0",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.12"
   }
 }

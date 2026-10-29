@@ -200,3 +200,95 @@ test('startServices requires an explicit repoRoot and never searches for one', a
   await t.exception(startServices({ runtime: 'docker', image: 'mdk:latest', services }), /ERR_MDK_REPO_ROOT_REQUIRED/)
   await t.exception(startServices({ runtime: 'pm2', repoRoot: '', services }), /ERR_MDK_REPO_ROOT_REQUIRED/)
 })
+
+test('startServices pm2 dht profile - loopback bootstrap app and env on every process', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+
+  await startServices({
+    runtime: 'pm2',
+    repoRoot,
+    dht: {},
+    services: [
+      { kind: 'gateway', name: 'gw', port: 3000 },
+      { kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }
+    ]
+  })
+
+  const { apps } = require(path.join(siteDir, 'ecosystem.config.js'))
+  t.is(apps.length, 3)
+  t.is(apps[0].name, 'mdk-dht-bootstrap', 'bootstrap starts first')
+  t.is(apps[0].env.SERVICE, 'dht-bootstrap')
+  t.is(apps[0].env.MDK_DHT_HOST, '127.0.0.1')
+  t.is(apps[0].env.MDK_DHT_PORT, '49737')
+  for (const app of apps.slice(1)) {
+    t.is(app.env.MDK_DHT_BOOTSTRAP, '127.0.0.1:49737', `${app.name} joins the private bootstrap`)
+    t.is(app.env.MDK_DHT_HOST, '127.0.0.1', `${app.name} binds loopback`)
+  }
+})
+
+test('startServices pm2 dht profile - an existing LAN list and interface, no generated bootstrap', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+
+  await startServices({
+    runtime: 'pm2',
+    repoRoot,
+    dht: { bootstrap: ['10.0.0.5:49737'], host: '10.0.0.7' },
+    services: [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+  })
+
+  const { apps } = require(path.join(siteDir, 'ecosystem.config.js'))
+  t.is(apps.length, 1, 'no bootstrap app')
+  t.is(apps[0].env.MDK_DHT_BOOTSTRAP, '10.0.0.5:49737')
+  t.is(apps[0].env.MDK_DHT_HOST, '10.0.0.7')
+})
+
+test('startServices pm2 dht profile - a LAN list without a host binds every interface', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+
+  await startServices({
+    runtime: 'pm2',
+    repoRoot,
+    dht: { bootstrap: ['10.0.0.5:49737'] },
+    services: [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+  })
+
+  const { apps } = require(path.join(siteDir, 'ecosystem.config.js'))
+  t.is(apps[0].env.MDK_DHT_BOOTSTRAP, '10.0.0.5:49737')
+  t.absent('MDK_DHT_HOST' in apps[0].env, 'no loopback bind toward a LAN bootstrap')
+})
+
+test('startServices dht profile refuses public bootstrap nodes and bad hosts', async (t) => {
+  useTmpSiteDir(t)
+  const services = [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+  await t.exception(startServices({ runtime: 'pm2', repoRoot, services, dht: { bootstrap: ['node1.hyperdht.org:49737'] } }), /ERR_MDK_DHT_BOOTSTRAP_PUBLIC/)
+  await t.exception(startServices({ runtime: 'pm2', repoRoot, services, dht: { host: 'localhost' } }), /ERR_MDK_DHT_HOST_INVALID/)
+  await t.exception(startServices({ runtime: 'pm2', repoRoot, services, dht: { host: '127.0.0.1', bootstrap: ['10.0.0.5:49737'] } }), /ERR_MDK_DHT_HOST_UNREACHABLE/)
+  await t.exception(startServices({ runtime: 'docker', image: 'mdk:latest', repoRoot, services, dht: { internal: true, bootstrap: ['10.0.0.5:49737'] } }), /ERR_MDK_DHT_CONFIG_INVALID/)
+})
+
+test('startServices docker dht profile - private network, fixed addresses, bootstrap service', async (t) => {
+  useTmpSiteDir(t)
+
+  const { file } = await startServices({
+    runtime: 'docker',
+    repoRoot,
+    image: 'mdk:latest',
+    dht: { internal: true },
+    services: [
+      { kind: 'gateway', name: 'gw', port: 3000 },
+      { kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }
+    ]
+  })
+  const yaml = fs.readFileSync(file, 'utf8')
+
+  t.ok(yaml.includes('  dht-bootstrap:'), 'bootstrap service generated')
+  t.ok(yaml.includes('SERVICE: dht-bootstrap'))
+  t.ok(yaml.includes('MDK_DHT_HOST: 172.31.249.2'), 'bootstrap advertises its fixed address')
+  t.ok(yaml.includes('MDK_DHT_BOOTSTRAP: "172.31.249.2:49737"'), 'services join it')
+  t.ok(yaml.includes('MDK_DHT_HOST: 172.31.249.10'), 'gateway binds its own address')
+  t.ok(yaml.includes('MDK_DHT_HOST: 172.31.249.11'), 'worker binds its own address')
+  t.ok(yaml.includes('ipv4_address: 172.31.249.11'))
+  t.ok(/networks:\n {2}mdk-dht:\n {4}driver: bridge\n {4}internal: true\n {4}ipam:\n {6}config:\n {8}- subnet: 172\.31\.249\.0\/24/.test(yaml), 'internal network declared')
+  t.ok(/ {2}gw:[\s\S]*? {6}default: \{\}/.test(yaml), 'gateway also on the default network to publish its port')
+  t.absent(/hyperdht\.org/.test(yaml))
+})

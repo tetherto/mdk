@@ -6,7 +6,6 @@
     {
       "id": "site.overview",
       "handler": "./controllers/overview.js",
-      "auth": false,
       "http": {
         "method": "GET",
         "path": "/site/overview",
@@ -24,7 +23,6 @@
     {
       "id": "site.history",
       "handler": "./controllers/history.js",
-      "auth": false,
       "http": {
         "method": "GET",
         "path": "/site/history",
@@ -46,9 +44,45 @@
       "safety": "read-only"
     },
     {
+      "id": "site.access",
+      "handler": "./controllers/access.js",
+      "http": {
+        "method": "GET",
+        "path": "/site/access",
+        "responses": {
+          "200": {
+            "description": "What the signed-in user may do on this site.",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      },
+      "description": "The signed-in user's identity, the roles spec.rbac binds to them, which site routes they may call, and which miners they may send each command to. Advisory, for the UI: the Gateway and the Kernel enforce the same policy on every call.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_SIGN_IN_REQUIRED"],
+      "safety": "read-only"
+    },
+    {
+      "id": "site.activity",
+      "handler": "./controllers/activity.js",
+      "http": {
+        "method": "GET",
+        "path": "/site/activity",
+        "parameters": [
+          { "in": "query", "name": "limit", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 500 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Kernel's write-command log, newest first.",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      },
+      "description": "Every miner command attempted on this site, newest first, refused ones included: who sent it (the operator, via the site app), the roles they held, the command, the target device, and the outcome. Reads the Kernel's write-command log (command.log), so the caller needs commands: read.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_SIGN_IN_REQUIRED"],
+      "safety": "read-only"
+    },
+    {
       "id": "site.miner-command",
       "handler": "./controllers/command.js",
-      "auth": false,
       "http": {
         "method": "POST",
         "path": "/site/miners/{deviceId}/command",
@@ -82,7 +116,6 @@
     {
       "id": "site.miner-pools",
       "handler": "./controllers/pools.js",
-      "auth": false,
       "http": {
         "method": "POST",
         "path": "/site/miners/{deviceId}/pools",

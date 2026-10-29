@@ -1,7 +1,7 @@
 'use strict'
 
 const debug = require('debug')('mdk:worker:f2pool:boot')
-const WorkerRuntime = require('../../../../core/mdk-worker/lib/worker-runtime')
+const WorkerRuntime = require('@tetherto/mdk-worker/lib/worker-runtime')
 const F2MinerpoolManager = require('../lib/f2.minerpool.manager')
 const plugin = require('.')
 
@@ -18,7 +18,8 @@ const plugin = require('.')
  *   conf      pool conf, e.g. { f2pool: { accounts, apiUrl, apiSecret } }
  *   root      optional config root for the legacy config/f2pool.json overlay
  *   kernelTopic  Kernel discovery topic (hex); omit to register by key
- *   bootstrap DHT bootstrap override for hermetic tests
+ *   bootstrap DHT bootstrap list (a private network, or hermetic tests)
+ *   dhtHost   interface the DHT node binds (e.g. 127.0.0.1)
  *   handleSignals  let the pool stop its facilities on SIGINT/SIGTERM
  *                  (default false — bind your own handler to stop())
  */
@@ -41,6 +42,7 @@ async function startF2poolWorker (opts) {
     workerId: opts.workerId,
     kernelTopic: opts.kernelTopic || null,
     bootstrap: opts.bootstrap || null,
+    dhtHost: opts.dhtHost || null,
     allowedKeys: opts.allowedKeys || [],
     allowAll: opts.allowAll === true,
     store: pool.store_s1,

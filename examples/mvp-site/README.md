@@ -26,8 +26,11 @@ Antminer, and SealMiner workers, Ocean, EMCD, SpiderPool, and Foundry pool worke
   [`foundry-mdk-worker`](https://github.com/foundryservices/foundry-mdk-worker) plugins, each against its package's
   bundled API mock ([`backend/pool-adapter.js`](./backend/pool-adapter.js))
 - **SATEC powermeter worker** — mock power readings, scaled to the seeded miner count
-- **MDK React UI** — Dashboard, Containers, Miners, Monitoring, Pools, and Control pages, served
-  from the Gateway
+- **MDK React UI** — Dashboard, Containers, Miners, Monitoring, Pools, Control, and Activity pages, served
+  from the Gateway behind a sign-in page
+- **Users and permissions** — seven demo users, from a read-only viewer to a hosting client who sees only their own
+  miners, each checked by the Gateway on every route and by the Kernel on every device
+  (`rbac` in [`config/site.deploy.json`](./config/site.deploy.json.example))
 - **One MCP surface, two tool sources** — a standalone MCP process (`--role mcp`) serves both a hand-authored tool set
   ([`backend/mcp-plugins/site`](./backend/mcp-plugins/site/)), with agent-contract metadata and curated granularity, and the
   site app's own HTTP routes, read off the same route table the Gateway forwards and converted into tools whose calls go
@@ -64,26 +67,132 @@ pm2 list      # mocks, mocks-antminer, mocks-sealminer, mocks-ocean, mocks-satec
 pm2 logs
 ```
 
-Once `pm2 list` shows all apps `online`, open `http://localhost:3000/`.
+Once `pm2 list` shows all apps `online`, open `http://localhost:3000/` and sign in as any
+[demo user](#users-and-permissions). Every demo user's password is `mdk-site-demo`.
 
 Each `gateway.pluginDirs` entry in `config/site.deploy.json` runs as an app in its own PM2 role, `app-<basename>` (so
 `backend/gateway-plugins/site` is `app-site`). `start.js` derives these roles from `gateway.pluginDirs` and adds any that
 `pm2.roles` lacks ahead of `gateway`, so a deploy config written before apps existed needs no change. An `app-*` role with no
 matching plugin dir is skipped with a warning.
 
+### Private HyperDHT bootstrap
+
+Every role that talks HRPC (Kernel, Workers, `app-site`, Gateway, MCP) starts a HyperDHT node. By default these nodes join the
+public HyperDHT through the `*.hyperdht.org` bootstrap nodes, so the site needs outbound UDP. To keep the site off the public
+network and run with no internet access, add a `dht` section to `config/site.deploy.json`:
+
+```json
+"dht": { "host": "127.0.0.1", "port": 49737 }
+```
+
+| `dht` value                                   | What runs                                                                            |
+| --------------------------------------------- | ------------------------------------------------------------------------------------ |
+| No `dht` section (the default)                | Every role joins the public HyperDHT                                                 |
+| `{ "host", "port" }`                          | A `dht-bootstrap` role serves `host:port`; every role joins it and binds `host`      |
+| `{ "host", "bootstrap": ["10.0.0.5:49737"] }` | Every role joins the listed bootstrap and binds `host`; no `dht-bootstrap` role runs |
+| `{ "bootstrap": ["10.0.0.5:49737"] }`         | Every role joins the listed bootstrap and binds every interface                      |
+
+There is no need to edit `pm2.roles`: `npm start` adds the `dht-bootstrap` role to the front when the `dht` section needs it, and
+skips it with a warning when it does not. Start order does not matter: a role that starts first joins as soon as the bootstrap
+answers. After `npm start`, `lsof -nP -iUDP | grep node` lists every DHT socket bound to `host`, not `*`. The
+[local and air-gapped profile](../../docs/guides/deployment/private-dht.md) covers the same setup outside this example.
+
 ### Open the UI from another machine
 
-The gateway binds `0.0.0.0` but serves only the Host names it knows, and the agent
-chat routes (`auth: true`) admit callers on this machine only (`"authVerifier": "loopback"`).
+The gateway binds `0.0.0.0` but serves only the Host names it knows.
 To use the UI over the LAN, list the address you open it with in `config/site.deploy.json`:
 
 ```json
 "gateway": { "allowedHosts": ["10.0.0.4:3000"] }
 ```
 
-Remote operators can then load the dashboards. The agent chat still answers `401` to them until the
-gateway is given a real verifier (see the
-[gateway security model](../../backend/core/gateway/README.md#security-model)).
+Remote operators then sign in as any user listed under `rbac.users` in [`config/site.deploy.json`](./config/site.deploy.json.example).
+
+> [!WARNING]
+> Over plain HTTP on a network, the browser keeps no refresh cookie, so a session ends when its 10-minute access token
+> does, and passwords cross the network in the clear. Serve the Gateway behind TLS before you open it beyond a trusted
+> network; the [Gateway security model](../../backend/core/gateway/README.md#security-model) covers the cookie rules.
+
+### Users and permissions
+
+Every route needs a signed-in user. The Gateway signs users in through the Kernel's token issuer (`/auth/login`) and checks
+each request against the Kernel's `spec.rbac`. The site app then sends the user's token beside its own on every Kernel call,
+so the Kernel checks the user's device access as well as the app's, and its write-command log records who sent each command.
+
+The `rbac` block of [`config/site.deploy.json`](./config/site.deploy.json.example) sets up the site, as `spec.rbac` does in
+an `mdk.yaml`: its `users`, the `roles` that say what may be done, and the `bindings` that give roles to users, either by
+name (`User`) or through a group (`Group`). `npm run setup:config` copies it from the example, which ships these demo users,
+all with the password `mdk-site-demo`:
+
+| User              | Groups            | Roles                                          | What they can do                                                       |
+| ----------------- | ----------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
+| `admin`           | `site-admins`     | `site-admin`                                   | Every page and action, and the Activity log                            |
+| `operator`        | `operators`       | `site-viewer`, `power-control`, `pool-control` | Read everything; set power mode and pools on every miner               |
+| `tech-whatsminer` | `field-techs`     | `site-viewer`, `whatsminer-tech`               | Read everything; set power mode on Whatsminer miners only              |
+| `pool-manager`    | none              | `site-viewer`, `pool-control`                  | Read everything; set pools on every miner, but not power mode          |
+| `auditor`         | `auditors`        | `site-viewer`, `auditor`                       | Read everything and the Activity log; no actions                       |
+| `viewer`          | `viewers`         | `site-viewer`                                  | Read the dashboards; no actions                                        |
+| `tenant-antminer` | `hosting-clients` | `antminer-tenant`                              | See only the Antminer miners and set their power mode; no pools or meters |
+
+The roles show the setup options a site has:
+
+| Option                   | How the example does it                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Read-only access         | `site-viewer` allows `get` on the dashboard routes and `read` on devices                                 |
+| One action, not another  | `power-control` and `pool-control` each allow one route, `site/site/miners/*/command` or `.../pools`     |
+| Scope by brand or worker | `whatsminer-tech` writes only devices named `miner/whatsminer/*`; the Kernel refuses an Antminer command |
+| Tenant isolation         | `antminer-tenant` reads and writes only `miner/antminer/*`; other devices drop out of every page         |
+| Audit                    | `auditor` allows the `site/site/activity` route and `commands: read` on the Kernel's write-command log   |
+| Roles from groups        | Most bindings name a `Group`; `pool-manager` is bound by `User` name                                     |
+
+A rule names either a Gateway route or a Kernel resource. A route is `<app>/<path>`, here `site/site/overview`, with the
+verbs `get`, `list`, `create`, `update` and `delete`. Kernel resources are `devices` (`read`, `write`), `workers`, `commands`
+and `policy`, and a device is named `family/brand/worker/device`, so `resourceNames: ["miner/antminer/*"]` covers every
+Antminer. A user needs both: the route to reach the action, and device access for the Kernel to carry it out. The
+[RBAC reference](../../backend/core/rbac/README.md#vocabulary) lists every resource and verb.
+
+To set up your own site, edit `rbac` in `config/site.deploy.json` and restart the `kernel` role. Each user's password
+comes from that block, applied on the Kernel's next start:
+
+| `rbac` field            | Password the user gets                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `users[].password`      | That user's own password                                                                         |
+| `password`              | The shared password, for every user without their own; `mdk-site-demo` in the example            |
+| Neither                 | A random one generated when the user is created, readable in `.site-data/credentials/users.json` |
+
+Every password needs at least 12 characters, or the Kernel refuses to start (`ERR_IDENTITY_PASSWORD_WEAK`). Changing a
+configured password resets it on the next start and ends that user's sessions. The passwords last set are kept in
+`.site-data/credentials/users.json` (0600). Existing users take the configured groups, and a user removed from the file is
+deleted.
+
+> [!WARNING]
+> `mdk-site-demo` is public, and the Gateway listens on every interface (`0.0.0.0`). Anyone who can reach port `3000` can
+> sign in as `admin`. Keep the demo on a trusted network, or before opening it up, remove the `rbac.password` (users
+> then get random passwords) or set your own.
+
+> [!IMPORTANT]
+> `npm run setup:config` never overwrites a `config/site.deploy.json` you already have. If yours predates the `rbac` block,
+> the Kernel warns that no users are configured and nobody can sign in: copy the `rbac` block from
+> [`config/site.deploy.json.example`](./config/site.deploy.json.example), or delete your copy and rerun `npm run setup:config`.
+
+The UI asks `GET /site/access` what the signed-in user may do, and shows only those pages, actions and miners. That is
+advice for the UI: on the Control page, switch on **Include miners I may not control** and send a command to watch the
+Kernel refuse it, then find the refusal on the Activity page.
+
+The Kernel also grants each service account what its process needs. Each signs in with its own key, created on the Kernel's
+first start under `.site-data/credentials/` (0600):
+
+| Service account | Role          | What it may do                                                                                                                  |
+| --------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `app:site`      | `app-site`    | What [`mdk-app.yaml`](./backend/gateway-plugins/site/mdk-app.yaml) requests: list workers, read and write devices, read the command log and the policy |
+| `mvp-gateway`   | `gateway`     | Read the policy, to sign users in and check every route                                                                         |
+| `mvp-mcp-tools` | `mcp-tools`   | The MCP server's tool plugins: list workers and read devices (their write tool stays withheld)                                  |
+
+Workers admit only the Kernel's key, so every device call goes through the Kernel's checks and its write-command log.
+
+> [!NOTE]
+> The MCP server is not signed in to the Gateway: it forwards agents' tool calls to the site app as the app itself, so keep
+> its port on loopback.
 
 ## Stop the site
 
@@ -95,8 +204,10 @@ npm run stop:pm2
 
 Dashboard, Containers (list + per-container detail), Miners (every miner across
 all miner workers, with search and brand/status/container filters), Monitoring
-(powermeter + sensor charts), Pools, and Control — all served from `ui/dist` via the Gateway
-at port `3000`. The Pools page shows the Ocean, EMCD, SpiderPool, and Foundry pool stats; the Monitoring page
+(powermeter + sensor charts), Pools, Control, and Activity (every miner command, refused ones included, with who sent
+it) — all served from `ui/dist` via the Gateway at port `3000`. The sidebar shows Control only to users who may act on a
+miner, and Activity only to users who may read the command log; the profile menu shows the user's roles and signs out.
+The Pools page shows the Ocean, EMCD, SpiderPool, and Foundry pool stats; the Monitoring page
 charts the SATEC meter's power series.
 
 ## UI dev mode (hot reload)
@@ -106,7 +217,7 @@ npm run dev:ui
 ```
 
 Starts the Vite dev server (default `http://localhost:3040`, override with
-`MDK_UI_PORT`) proxying `/site/*` to the Gateway. Requires `npm start` to be
+`MDK_UI_PORT`) proxying `/site/*` and `/auth/*` to the Gateway. Requires `npm start` to be
 running separately so there's a Gateway to proxy to.
 
 Rebuild the static bundle the Gateway serves with:
@@ -255,7 +366,8 @@ Every process keeps its runtime state under one directory, `root` in `config/sit
 ```text
 .site-data
 ├── .kernel-key        # Kernel public key the Gateway, apps, and MCP dial
-├── .trusted-keys/     # caller keys the Kernel and Workers admit
+├── .trusted-keys/     # caller keys the Kernel admits; Workers admit only kernel.pub
+├── credentials/       # service-account keys (app:site, mvp-gateway, mvp-mcp-tools) and users.json (user passwords), 0600
 ├── .worker-keys/      # Worker RPC keys for local discovery
 ├── kernel-db/         # Kernel store
 ├── workers/<id>/      # one store per Worker
@@ -296,6 +408,17 @@ rm -rf .site-data
 
 The Kernel recreates `.site-data` with correct path metadata on next boot. All devices and history are re-seeded.
 
+### Every page answers `403` right after start
+
+**Symptom**: sign-in works, but every page fails with `ERR_AUTH_FORBIDDEN: <user> may not get site/site/...` for a few
+seconds after `npm start`.
+
+**Cause**: the Gateway fetches the Kernel's policy every 5 seconds, and its first fetch can run before its Kernel connection
+is up. Until a fetch succeeds it has no policy, and with none it refuses every route.
+
+**Fix**: wait a few seconds and reload. If it persists, check `pm2 logs gateway` for `policy refresh failed`, and that the
+user's role allows the route under `rbac` in [`config/site.deploy.json`](./config/site.deploy.json.example).
+
 ### Kernel never prints `MDK_READY`
 
 **Symptom**: `pm2 list` shows `kernel` as `online`, but `pm2 logs kernel` never prints `MDK_READY kernel key=…`, or the process
@@ -321,6 +444,7 @@ lsof -nP -iTCP:5067   # Foundry mock
 lsof -nP -iTCP:15020  # SATEC mock
 lsof -nP -iTCP:16080  # first Antminer mock
 lsof -nP -iTCP:17028  # first SealMiner mock
+lsof -nP -iUDP:49737  # private DHT bootstrap (dht.port), when dht is set
 ```
 
 Whatsminer mock ports start at `14031`, Antminer mock ports at `16080`, SealMiner mock ports at `17028`. If another example or a previous run left processes
@@ -330,6 +454,18 @@ running, stop them first or edit [`config/site.deploy.json`](./config/site.deplo
 
 ```bash
 npm run stop:pm2
+```
+
+### A role crash-loops with `ERR_UNKNOWN_ROLE`, or `npm start` warns `skipping pm2 role`
+
+**Cause**: `config/site.deploy.json` is yours, not tracked, so a config written on another branch can name a role this
+checkout does not have (for example `worker-sealminer`). `npm start` now skips such roles with a warning, but PM2 keeps any
+process it started earlier.
+
+**Fix**: remove the role from `pm2.roles` in `config/site.deploy.json`, and delete the old process from PM2:
+
+```bash
+pm2 delete worker-sealminer mocks-sealminer
 ```
 
 ### Stale PM2 processes after system crash

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-core",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "MDK bootstrap utilities and worker-infra services — kernel/gateway lifecycle plus injectable log/comment/alert/stats/settings/provisioning services for runtime-hosted workers",
   "main": "index.js",
   "keywords": [
@@ -21,22 +21,23 @@
     "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
-    "@tetherto/mdk-gateway": "^0.12.2",
-    "@tetherto/mdk-kernel": "^0.12.2",
     "@bitfinex/bfx-facs-http": "^1.1.3",
     "@bitfinex/lib-js-util-base": "^2.1.0",
     "@bitfinex/lib-js-util-promise": "^1.1.0",
     "@tetherto/hp-svc-facs-store": "^1.0.0",
+    "@tetherto/mdk-client": "^0.13.0",
+    "@tetherto/mdk-gateway": "^0.13.0",
+    "@tetherto/mdk-kernel": "^0.13.0",
     "@tetherto/svc-facs-action-approver": "^1.0.0",
     "async": "3.2.6",
     "cron-parser": "5.10.2",
     "debug": "4.4.1",
+    "hyperdht": "6.34.1",
     "mingo": "6.5.6",
     "uuid": "14.0.0"
   },
   "devDependencies": {
     "brittle": "3.18.0",
-    "hyperdht": "6.34.1",
     "standard": "17.1.0"
   },
   "repository": {
@@ -57,7 +58,11 @@
   ],
   "exports": {
     ".": "./index.js",
+    "./lib/dht-bootstrap": "./lib/dht-bootstrap.js",
     "./lib/local-discovery": "./lib/local-discovery.js",
+    "./lib/worker-infra": "./lib/worker-infra.js",
+    "./lib/services/pool-utils/time": "./lib/services/pool-utils/time.js",
+    "./lib/services/pool-utils/constants": "./lib/services/pool-utils/constants.js",
     "./package.json": "./package.json"
   }
 }

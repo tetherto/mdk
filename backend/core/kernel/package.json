@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-kernel",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "MDK Kernel - Orchestration Kernel",
   "main": "index.js",
   "keywords": [
@@ -25,6 +25,8 @@
     "@bitfinex/lib-js-util-base": "^2.1.0",
     "@hyperswarm/rpc": "^3.5.0",
     "@tetherto/hp-svc-facs-store": "^1.0.0",
+    "@tetherto/mdk-identity": "^0.13.0",
+    "@tetherto/mdk-rbac": "^0.13.0",
     "@tetherto/svc-facs-action-approver": "^1.0.0",
     "async": "^3.2.6",
     "debug": "^4.4.1",
@@ -54,7 +56,9 @@
     ".": "./index.js",
     "./protocol/actions": "./lib/protocol/actions.js",
     "./protocol/envelope": "./lib/protocol/envelope.js",
+    "./protocol/params": "./lib/protocol/params.js",
     "./protocol/schemas": "./lib/protocol/schemas.js",
+    "./testing": "./lib/testing.js",
     "./package.json": "./package.json"
   }
 }

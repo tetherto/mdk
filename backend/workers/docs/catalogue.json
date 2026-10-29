@@ -14,6 +14,7 @@
       "usage": "https://github.com/bitmain-official/antminer-mdk-worker/blob/4fd776b4a048a1bc8284ec2eceed82b4631f960c/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -28,6 +29,7 @@
       "usage": "https://github.com/LuxorLabs/luxos-mdk-worker/blob/ee667fab6c762fa00c227979ab25a0a0813bf275/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -44,6 +46,7 @@
       "usage": "https://github.com/block/proto-tether-mdk-worker/blob/d71749ed2c2941e5c1af43ca699f522238392a6f/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -62,6 +65,7 @@
       "usage": "https://github.com/sealminer/sealminer-mdk-worker/blob/63211a12245482cffb2d09f8cbeaa4c6411e51a3/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -76,6 +80,7 @@
       "usage": "https://github.com/whatsminer/whatsminer-mdk-worker/blob/a47fa82020454f9bfa9963ccaaa319b7948e8aa2/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -92,6 +97,7 @@
       "usage": "https://github.com/emcdio/emcd-mdk-worker/blob/3ad188e1fef8fa080ce5096d7421e9b3a7052515/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -108,6 +114,7 @@
       "usage": "https://github.com/foundryservices/foundry-mdk-worker/blob/310172ebe1cb4ef60cd14f39d9467f2c8e2bc534/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -124,6 +131,7 @@
       "usage": "https://github.com/LuxorLabs/luxor-mdk-worker/blob/41b005e05e223801bd90e4f66df05d26bdb34112/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -140,6 +148,7 @@
       "usage": "https://github.com/OCEAN-xyz/mdk-wrk-minerpool-ocean/blob/0e7e2def62bc923c6252dc946d4f602aae8bc0b0/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -156,6 +165,7 @@
       "usage": "https://github.com/SpiderPool-New/spiderpool-mdk-worker/blob/345f4a2b46ff59135eb4dad1803f0653c3d88911/mdk-contract.json",
       "usageLabel": "mdk-contract.json",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -173,6 +183,7 @@
       "usage": null,
       "usageLabel": "USAGE.md",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -192,6 +203,7 @@
       "usage": null,
       "usageLabel": "USAGE.md",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -208,6 +220,7 @@
       "usage": "backend/workers/miners/avalon/USAGE.md",
       "usageLabel": "USAGE.md",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -224,6 +237,7 @@
       "usage": null,
       "usageLabel": "USAGE.md",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -244,6 +258,7 @@
       "usage": null,
       "usageLabel": "USAGE.md",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -260,6 +275,7 @@
       "usage": null,
       "usageLabel": "USAGE.md",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -277,6 +293,7 @@
       "usage": null,
       "usageLabel": "USAGE.md",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     },
     {
@@ -293,6 +310,7 @@
       "usage": null,
       "usageLabel": "USAGE.md",
       "conformant": true,
+      "strictConformant": false,
       "confirmed": true
     }
   ],

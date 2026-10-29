@@ -6,6 +6,7 @@
 const path = require('path')
 const fs = require('fs')
 const { execFileSync } = require('child_process')
+const { SITE_ROLES } = require('./deploy/roles')
 const exampleDir = __dirname
 // Loaded on use: requiring this file (tests) must not need a config/site.deploy.json.
 const loadDeploy = () => require('./backend/site').deploy
@@ -15,12 +16,18 @@ const ecosystemPath = path.join(exampleDir, 'deploy', 'ecosystem.config.js')
 // Each gateway plugin dir runs as an app in its own `app-<basename>` role, so
 // those roles follow gateway.pluginDirs: one missing from pm2.roles (a config
 // written before apps existed) is added ahead of the gateway, and one naming
-// no plugin dir is dropped instead of crash-looping under PM2.
+// no plugin dir is dropped instead of crash-looping under PM2. So is any other
+// role run-process.js does not know (see deploy/roles.js).
 const withAppRoles = (roles, pluginDirs, warn = console.warn) => {
   const appRoles = pluginDirs.map((dir) => `app-${path.basename(dir)}`)
   const kept = roles.filter((role) => {
-    if (!role.startsWith('app-') || appRoles.includes(role)) return true
-    warn(`skipping pm2 role "${role}": no gateway.pluginDirs entry named ${role.slice(4)}`)
+    if (role.startsWith('app-')) {
+      if (appRoles.includes(role)) return true
+      warn(`skipping pm2 role "${role}": no gateway.pluginDirs entry named ${role.slice(4)}`)
+      return false
+    }
+    if (SITE_ROLES.includes(role)) return true
+    warn(`skipping pm2 role "${role}": this checkout has no such role (remove it from config/site.deploy.json pm2.roles)`)
     return false
   })
   const missing = appRoles.filter((role) => !kept.includes(role))
@@ -28,10 +35,26 @@ const withAppRoles = (roles, pluginDirs, warn = console.warn) => {
   return [...kept.slice(0, at), ...missing, ...kept.slice(at)]
 }
 
+// The dht-bootstrap role runs the private HyperDHT bootstrap whenever
+// site.deploy.json has a `dht` section without its own `bootstrap` list: it is
+// added first when pm2.roles lacks it, and dropped when there is nothing for it
+// to run (no `dht`, so the site stays on the public DHT, or an external list).
+const DHT_ROLE = 'dht-bootstrap'
+const withDhtRole = (roles, dht, warn = console.warn) => {
+  const wanted = Boolean(dht) && !dht.bootstrap
+  const listed = roles.includes(DHT_ROLE)
+  if (wanted && !listed) return [DHT_ROLE, ...roles]
+  if (!wanted && listed) {
+    warn(`skipping pm2 role "${DHT_ROLE}": site.deploy.json has ${dht ? 'its own dht.bootstrap list' : 'no dht section'}`)
+    return roles.filter((role) => role !== DHT_ROLE)
+  }
+  return roles
+}
+
 const buildApps = (deploy) => {
   const { script, roles, ...pm2Defaults } = deploy.pm2
   const env = { MDK_DISCOVERY: deploy.discovery }
-  return withAppRoles(roles, deploy.gateway.pluginDirs || []).map((role) => ({
+  return withAppRoles(withDhtRole(roles, deploy.dht), deploy.gateway.pluginDirs || []).map((role) => ({
     ...pm2Defaults,
     name: role,
     script: path.join(exampleDir, script),
@@ -61,4 +84,4 @@ const main = () => {
 
 if (require.main === module) main()
 
-module.exports = { withAppRoles }
+module.exports = { withAppRoles, withDhtRole }

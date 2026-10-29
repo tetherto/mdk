@@ -8,6 +8,7 @@
     { "id": "counter", "method": "GET", "path": "/counter", "cache": ["query.k"], "handler": "controllers/misc.js#counter" },
     { "id": "counter-auth", "method": "GET", "path": "/counter-auth", "auth": true, "cache": ["query.k"], "handler": "controllers/misc.js#counter" },
     { "id": "config", "method": "GET", "path": "/config", "handler": "controllers/misc.js#config" },
+    { "id": "kernel-client", "method": "GET", "path": "/kernel-client", "handler": "controllers/misc.js#kernelClient" },
     { "id": "slow", "method": "GET", "path": "/slow", "handler": "controllers/misc.js#slow" },
     { "id": "fail-safe", "method": "GET", "path": "/fail-safe", "handler": "controllers/misc.js#failSafe" },
     { "id": "fail-masked", "method": "GET", "path": "/fail-masked", "handler": "controllers/misc.js#failMasked" },

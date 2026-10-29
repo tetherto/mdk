@@ -27,7 +27,8 @@ const { WorkerRuntime } = require('@tetherto/mdk-worker')
  *   conf         pool conf, e.g. { emcd: { apiKey, apiSecret, accounts, apiUrl } }
  *   kernelTopic  Kernel discovery topic (hex); omit to register by key
  *   allowedKeys  public keys admitted to the worker's RPC
- *   bootstrap    DHT bootstrap override for hermetic tests
+ *   bootstrap    private HyperDHT bootstrap list (site.deploy.json `dht`), or a testnet's
+ *   dhtHost      interface the Worker's DHT node binds
  */
 async function startPoolPluginWorker (opts) {
   if (!opts || !opts.Pool || !opts.plugin) throw new Error('ERR_POOL_PLUGIN_REQUIRED')
@@ -57,6 +58,7 @@ async function startPoolPluginWorker (opts) {
       workerId: opts.workerId,
       kernelTopic: opts.kernelTopic || null,
       bootstrap: opts.bootstrap || null,
+      dhtHost: opts.dhtHost || null,
       allowedKeys: opts.allowedKeys || [],
       allowAll: opts.allowAll === true,
       store: pool.store_s1,

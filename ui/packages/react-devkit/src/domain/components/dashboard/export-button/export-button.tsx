@@ -51,6 +51,8 @@ const FORMAT_LABELS: Record<ExportFormat, string> = {
  *
  * @example
  * ```tsx
+ * import { downloadCsv, downloadJson } from '@tetherto/mdk-ui-foundation'
+ *
  * <ExportButton
  *   onExport={(fmt) => (fmt === 'csv' ? downloadCsv(rows) : downloadJson(rows))}
  * />

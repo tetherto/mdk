@@ -86,6 +86,8 @@ function publishWorker(spec: string, name = '@your-org/mdk-worker-rig', mock = t
 }
 
 const yamlOf = (dir: string) => parse(readFileSync(join(dir, 'mdk.yaml'), 'utf8'));
+// What install records on every app entry (the template apps request no Kernel access).
+const granted = (name: string) => ({ serviceAccount: `app:${name}`, permissionsDigest: expect.stringMatching(/^[0-9a-f]{16}$/) });
 
 afterEach(() => {
   cleanupTmpDirs();
@@ -104,7 +106,7 @@ describe('addPackage (app)', () => {
     expect(installPackagesMock).toHaveBeenCalledWith(dir, ['@your-org/mdk-app-ops-center'], true, ADD_ARGS);
 
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).dependencies['@your-org/mdk-app-ops-center']).toBeDefined();
-    expect(yamlOf(dir).spec.apps).toEqual([{ name: 'ops-center', package: '@your-org/mdk-app-ops-center', config: {} }]);
+    expect(yamlOf(dir).spec.apps).toEqual([{ name: 'ops-center', package: '@your-org/mdk-app-ops-center', config: {}, ...granted('ops-center') }]);
   });
 
   it('learns the package name of a GitHub install from package.json', () => {
@@ -115,11 +117,11 @@ describe('addPackage (app)', () => {
     expect(yamlOf(dir).spec.apps[0]).toMatchObject({ name: 'site-view', package: name });
   });
 
-  it('mounts the bundled agent at the root, where the UI calls it', () => {
+  it('mounts the agent at the root, where the UI calls it', () => {
     const dir = project();
     publishApp('@tetherto/mdk-app-agent', 'tetherto', 'mdk-app-agent');
     expect(addPackage({ kind: 'app', source: '@tetherto/mdk-app-agent', dir })).toMatchObject({ ok: true, instanceName: 'agent' });
-    expect(yamlOf(dir).spec.apps).toEqual([{ name: 'agent', package: '@tetherto/mdk-app-agent', config: {}, mount: '/' }]);
+    expect(yamlOf(dir).spec.apps).toEqual([{ name: 'agent', package: '@tetherto/mdk-app-agent', config: {}, mount: '/', ...granted('agent') }]);
   });
 
   it('adds the same package again under another --name as a second app', () => {
@@ -223,7 +225,7 @@ describe('addPackage (app)', () => {
     const result = addPackage({ kind: 'app', source: '@your-org/suite/apps/site', dir });
     expect(result).toMatchObject({ ok: true, packageName: '@your-org/suite', reference: '@your-org/suite/apps/site', instanceName: 'site' });
     expect(installPackagesMock).toHaveBeenCalledWith(dir, ['@your-org/suite'], true, ADD_ARGS);
-    expect(yamlOf(dir).spec.apps).toEqual([{ name: 'site', package: '@your-org/suite/apps/site', config: {} }]);
+    expect(yamlOf(dir).spec.apps).toEqual([{ name: 'site', package: '@your-org/suite/apps/site', config: {}, ...granted('site') }]);
 
     const missing = addPackage({ kind: 'app', source: '@your-org/suite/apps/nope', dir, install: false });
     expect(missing.message).toMatch(/has no "apps\/nope"/);
@@ -243,6 +245,132 @@ describe('addPackage (app)', () => {
   it('reports a package that cannot be resolved after install', () => {
     const dir = project();
     expect(addPackage({ kind: 'app', source: '@your-org/ghost', dir, install: false }).message).toMatch(/not installed/);
+  });
+});
+
+describe('addPackage (app) and spec.rbac', () => {
+  const TUNER = [{ resources: ['devices'], verbs: ['read', 'write'], resourceNames: ['miner/antminer/*'] }];
+  const NARROW = [{ resources: ['devices'], verbs: ['read', 'write'], resourceNames: ['miner/antminer/antminer-a/*'] }];
+
+  /** Publishes the app at `spec`, requesting `permissions` (republish to change them). */
+  function publishWith(spec: string, permissions: unknown[]): void {
+    if (!registry.has(spec)) publishApp(spec, 'your-org', 'tuner');
+    const file = join(registry.get(spec)!.dir, 'mdk-app.yaml');
+    writeFileSync(file, readFileSync(file, 'utf8').replace(/^permissions:.*$/m, `permissions: ${JSON.stringify(permissions)}`));
+  }
+
+  /** The operator narrows the role install wrote. */
+  function narrow(dir: string): void {
+    const file = join(dir, 'mdk.yaml');
+    writeFileSync(file, readFileSync(file, 'utf8').replace('miner/antminer/*', 'miner/antminer/antminer-a/*'));
+  }
+
+  it("grants the app's service account exactly what its mdk-app.yaml requests", () => {
+    const dir = project();
+    publishWith('@your-org/tuner', TUNER);
+    const result = addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    expect(result.grant).toEqual({ action: 'add', role: 'app-tuner', serviceAccount: 'app:tuner', written: true });
+    const { spec } = yamlOf(dir);
+    expect(spec.apps[0]).toMatchObject(granted('tuner'));
+    expect(spec.rbac.roles).toEqual([{ name: 'app-tuner', rules: TUNER }]);
+    expect(spec.rbac.bindings).toEqual([{ role: 'app-tuner', subjects: [{ kind: 'ServiceAccount', name: 'app:tuner' }] }]);
+  });
+
+  it("creates the app's credential in this instance, once, never in the package", () => {
+    const dir = project();
+    publishWith('@your-org/tuner', TUNER);
+    const first = addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    expect(first.credential).toEqual({ file: join(dir, '.mdk', 'credentials', 'apps', 'tuner.json'), created: true });
+    expect(JSON.parse(readFileSync(join(dir, '.mdk', 'credentials', 'apps', 'tuner.json'), 'utf8')).name).toBe('app:tuner');
+    expect(existsSync(join(dir, 'node_modules', '@your-org', 'tuner', '.mdk')), 'nothing written into the package').toBe(false);
+    expect(addPackage({ kind: 'app', source: '@your-org/tuner', dir }).credential).toMatchObject({ created: false });
+  });
+
+  it('still adds the app when its credential cannot be written', () => {
+    const dir = project();
+    publishWith('@your-org/tuner', TUNER);
+    writeFileSync(join(dir, '.mdk'), 'a file where the state dir goes');
+    const result = addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    expect(result.ok).toBe(true);
+    expect(result.credential).toMatchObject({ error: expect.any(String) });
+  });
+
+  it('keeps an operator-narrowed role on a re-add of the same request', () => {
+    const dir = project();
+    publishWith('@your-org/tuner', TUNER);
+    addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    narrow(dir);
+    const again = addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    expect(again).toMatchObject({ ok: true, grant: { action: 'keep' } });
+    expect(yamlOf(dir).spec.rbac.roles[0].rules).toEqual(NARROW);
+  });
+
+  it('refuses a changed request, leaving mdk.yaml and package.json as they were', () => {
+    const dir = project();
+    publishWith('@your-org/tuner', NARROW);
+    addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    const before = readFileSync(join(dir, 'mdk.yaml'), 'utf8');
+
+    publishWith('@your-org/tuner', TUNER);
+    const result = addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/now requests different Kernel access than role "app-tuner"/);
+    expect(result.message).toMatch(/--accept-permissions/);
+    expect(result.message).toMatch(/package\.json was restored/);
+    expect(readFileSync(join(dir, 'mdk.yaml'), 'utf8')).toBe(before);
+  });
+
+  it('replaces the role with --accept-permissions, or keeps it with --keep-permissions', () => {
+    const dir = project();
+    publishWith('@your-org/tuner', NARROW);
+    addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    publishWith('@your-org/tuner', TUNER);
+
+    const kept = addPackage({ kind: 'app', source: '@your-org/tuner', dir, keepPermissions: true });
+    expect(kept).toMatchObject({ ok: true, grant: { action: 'keep' } });
+    expect(yamlOf(dir).spec.rbac.roles[0].rules).toEqual(NARROW);
+
+    // The kept request is recorded: the same request again is no longer a conflict.
+    expect(addPackage({ kind: 'app', source: '@your-org/tuner', dir })).toMatchObject({ ok: true, grant: { action: 'keep' } });
+
+    publishWith('@your-org/tuner', [{ resources: ['devices'], verbs: ['read'] }]);
+    const accepted = addPackage({ kind: 'app', source: '@your-org/tuner', dir, acceptPermissions: true });
+    expect(accepted).toMatchObject({ ok: true, grant: { action: 'replace' } });
+    expect(yamlOf(dir).spec.rbac.roles[0].rules).toEqual([{ resources: ['devices'], verbs: ['read'] }]);
+  });
+
+  it('refuses an app whose name shadows a Kernel resource', () => {
+    const dir = project();
+    publishWith('@your-org/tuner', TUNER);
+    const result = addPackage({ kind: 'app', source: '@your-org/tuner', dir, name: 'devices' });
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/^ERR_RBAC_APP_NAME_RESERVED: "devices" is a Kernel resource name.* mdk\.yaml was not changed/);
+  });
+
+  it('refuses both flags at once', () => {
+    const dir = project();
+    publishWith('@your-org/tuner', TUNER);
+    const result = addPackage({ kind: 'app', source: '@your-org/tuner', dir, acceptPermissions: true, keepPermissions: true });
+    expect(result).toMatchObject({ ok: false });
+    expect(result.message).toMatch(/not both/);
+  });
+
+  it('refuses an app requesting what install cannot grant', () => {
+    const dir = project();
+    publishWith('@your-org/tuner', [{ resources: ['telemetry'], verbs: ['read'] }]);
+    const result = addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    expect(result.ok).toBe(false);
+    expect(result.errors?.join('\n')).toMatch(/an app can only request Kernel resources/);
+  });
+
+  it('refuses to write into an invalid spec.rbac', () => {
+    const dir = project();
+    writeFileSync(join(dir, 'mdk.yaml'), `${readFileSync(join(dir, 'mdk.yaml'), 'utf8')}  rbac:\n    enforcement: allow\n`);
+    publishWith('@your-org/tuner', TUNER);
+    const result = addPackage({ kind: 'app', source: '@your-org/tuner', dir });
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/spec\.rbac in mdk\.yaml is invalid; fix it before adding an app\. mdk\.yaml was not changed/);
+    expect(result.errors?.[0]).toMatch(/spec\.rbac\.enforcement/);
   });
 });
 

@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router";
 
-import { useMdkContext, useQuery } from "@tetherto/mdk-react-adapter";
+import { useMdkContext, useQuery, useQueryClient } from "@tetherto/mdk-react-adapter";
 import {
   AlarmsBellButton,
   getHashrateString,
@@ -16,17 +16,28 @@ import {
   ProfileMenu,
   type TIncidentRowProps,
 } from "@tetherto/mdk-react-devkit/domain";
-import { AppHeader, HASHRATE_LABEL_DIVISOR, MiningStatusIcon, Spinner, Typography } from "@tetherto/mdk-react-devkit/primitives";
+import {
+  AppHeader,
+  Button,
+  HASHRATE_LABEL_DIVISOR,
+  MiningStatusIcon,
+  SignOutIcon,
+  Spinner,
+  Typography,
+} from "@tetherto/mdk-react-devkit/primitives";
 
+import { ActivityPage } from "./ActivityPage";
 import { AppSidebar } from "./AppSidebar";
+import { auth, errorMessage, post } from "./auth";
 import { HS_PER_MHS, HS_PER_THS, NOMINAL_MHS_PER_MINER, W_PER_MW } from "./constants";
 import { ContainerDetailPage, ContainersListPage } from "./ContainersPage";
 import { ControlPage } from "./ControlPage";
 import { DashboardPage } from "./DashboardPage";
 import { MinersPage } from "./MinersPage";
 import { MonitoringPage } from "./MonitoringPage";
+import { permissionsFrom } from "./permissions";
 import { PoolsPage } from "./PoolsPage";
-import type { Container, History, Overview, PoolInput } from "./types";
+import type { Access, Container, History, Overview, PoolInput } from "./types";
 import { get, powerModesForMiner } from "./utils";
 
 function formatStamp(ts: number): string {
@@ -42,6 +53,21 @@ export function SitePage(): JSX.Element {
   const [selectedMode, setSelectedMode] = useState("normal");
   const [actionMsg, setActionMsg] = useState("");
   const [poolsMsg, setPoolsMsg] = useState("");
+  const queryClient = useQueryClient();
+
+  // What the signed-in user may do: which pages and actions to offer.
+  const access = useQuery({
+    queryKey: ["site-access"],
+    queryFn: () => get<Access>(base, "/site/access"),
+    refetchInterval: 30000,
+  });
+  const permissions = useMemo(() => permissionsFrom(access.data), [access.data]);
+
+  function signOut() {
+    // The next user must not see this one's cached data.
+    queryClient.clear();
+    auth.signOut();
+  }
 
   const overview = useQuery({
     queryKey: ["site-overview"],
@@ -106,11 +132,15 @@ export function SitePage(): JSX.Element {
     return sections.sort((a, b) => a.id.localeCompare(b.id));
   }, [data?.containers, minersByContainer]);
 
+  // Start on a miner the user may act on, when there is one. Waits for
+  // /site/access to settle (even if it fails), since the choice sticks.
   useEffect(() => {
-    if (data?.miners.length && !selectedMiner) {
-      setSelectedMiner(data.miners[0].deviceId);
+    if (data?.miners.length && !selectedMiner && access.isFetched) {
+      const ids = data.miners.map((m) => m.deviceId);
+      const own = ids.find((id) => permissions.powerModeMiners.has(id) || permissions.poolMiners.has(id));
+      setSelectedMiner(own ?? ids[0]);
     }
-  }, [data?.miners, selectedMiner]);
+  }, [data?.miners, selectedMiner, permissions, access.isFetched]);
 
   const modeOptions = useMemo(
     () => [...powerModesForMiner(data?.miners.find((m) => m.deviceId === selectedMiner))],
@@ -243,17 +273,11 @@ export function SitePage(): JSX.Element {
   async function applyAction() {
     setActionMsg("Dispatching…");
     try {
-      const res = await fetch(`${base}/site/miners/${selectedMiner}/command`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode: selectedMode }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body?.message || `HTTP ${res.status}`);
+      const body = await post<{ status: string }>(base, `/site/miners/${selectedMiner}/command`, { mode: selectedMode });
       setActionMsg(`${selectedMiner} → ${selectedMode} (${body.status})`);
       overview.refetch();
     } catch (err) {
-      setActionMsg(`Failed: ${(err as Error).message}`);
+      setActionMsg(`Failed: ${errorMessage(err)}`);
     }
   }
 
@@ -264,25 +288,32 @@ export function SitePage(): JSX.Element {
     }
     setPoolsMsg("Dispatching…");
     try {
-      const res = await fetch(`${base}/site/miners/${selectedMiner}/pools`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(pool ? { pools: [pool] } : {}),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body?.message || `HTTP ${res.status}`);
+      const body = await post<{ status: string; pools: string[] }>(
+        base,
+        `/site/miners/${selectedMiner}/pools`,
+        pool ? { pools: [pool] } : {},
+      );
       setPoolsMsg(`${selectedMiner} → ${body.pools.join(", ")} (${body.status})`);
       overview.refetch();
     } catch (err) {
-      setPoolsMsg(`Failed: ${(err as Error).message}`);
+      setPoolsMsg(`Failed: ${errorMessage(err)}`);
     }
   }
 
   if (!data) {
     return (
       <div style={{ display: "flex", gap: 12, alignItems: "center", padding: 32 }}>
-        <Spinner />
-        <Typography>Connecting to the site… (start the backend with <code>node start.js</code>)</Typography>
+        {overview.error ? (
+          <>
+            <Typography>Could not load the site: {errorMessage(overview.error)}</Typography>
+            <Button onClick={signOut}>Sign out</Button>
+          </>
+        ) : (
+          <>
+            <Spinner />
+            <Typography>Connecting to the site… (start the backend with <code>npm start</code>)</Typography>
+          </>
+        )}
       </div>
     );
   }
@@ -301,7 +332,18 @@ export function SitePage(): JSX.Element {
   const actions = (
     <>
       <AlarmsBellButton counts={alarmCounts} />
-      <ProfileMenu user="operator@example.com" items={[]} />
+      <ProfileMenu
+        user={
+          access.data ? (
+            <span data-testid="profile-user">
+              {access.data.user.sub}
+              <br />
+              <small style={{ opacity: 0.7 }}>{access.data.roles.join(", ") || "no roles"}</small>
+            </span>
+          ) : undefined
+        }
+        items={[{ label: "Sign out", onSelect: signOut, danger: true, icon: <SignOutIcon /> }]}
+      />
     </>
   );
 
@@ -326,7 +368,7 @@ export function SitePage(): JSX.Element {
       </AppHeader>
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-        <AppSidebar />
+        <AppSidebar pages={permissions.pages} />
 
         <main style={{ flex: 1, padding: 24, display: "flex", flexDirection: "column", gap: 20, minWidth: 0, overflowY: "auto" }}>
           <Routes>
@@ -367,18 +409,34 @@ export function SitePage(): JSX.Element {
             <Route
               path="/control"
               element={
-                <ControlPage
-                  miners={data.miners}
-                  selectedMiner={selectedMiner}
-                  setSelectedMiner={setSelectedMiner}
-                  selectedMode={selectedMode}
-                  setSelectedMode={setSelectedMode}
-                  modeOptions={modeOptions}
-                  applyAction={applyAction}
-                  actionMsg={actionMsg}
-                  applyPools={applyPools}
-                  poolsMsg={poolsMsg}
-                />
+                access.data && !permissions.pages.control ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <ControlPage
+                    miners={data.miners}
+                    access={access.data}
+                    permissions={permissions}
+                    selectedMiner={selectedMiner}
+                    setSelectedMiner={setSelectedMiner}
+                    selectedMode={selectedMode}
+                    setSelectedMode={setSelectedMode}
+                    modeOptions={modeOptions}
+                    applyAction={applyAction}
+                    actionMsg={actionMsg}
+                    applyPools={applyPools}
+                    poolsMsg={poolsMsg}
+                  />
+                )
+              }
+            />
+            <Route
+              path="/activity"
+              element={
+                access.data && !permissions.pages.activity ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <ActivityPage base={base} miners={data.miners} />
+                )
               }
             />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

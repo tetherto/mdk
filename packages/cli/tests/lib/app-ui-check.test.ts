@@ -12,7 +12,7 @@ const VALID_UI = [
   "import { useState } from 'react'",
   "import { defineMdkApp, useMdkApp } from '@tetherto/mdk-react-adapter'",
   'const Page = () => { const [n] = useState(0); return jsx("p", { children: useMdkApp().name + n }) }',
-  "export default defineMdkApp({ id: 'io.tether.demo', displayName: 'Demo', routes: [{ path: '', component: Page }], panels: [{ id: 'p', slot: 'home', component: Page }] })",
+  "export default defineMdkApp({ id: 'io.tether.demo', displayName: 'Demo', routes: [{ path: '', section: 'Ops', component: Page }], panels: [{ id: 'p', slot: 'home', component: Page }], sections: [{ label: 'Ops', icon: Page }] })",
 ].join('\n');
 
 const appWithUi = (source: string, file = 'index.js'): string => {
@@ -71,14 +71,17 @@ describe('checkAppUi', () => {
   it('rejects a missing default export and a malformed contract', () => {
     expect(check(appWithUi('export const x = 1\n')).errors).toEqual([expect.stringMatching(/must default-export the app UI object/)]);
     const { errors } = check(
-      appWithUi("export default { id: 'io.tether.demo', displayName: '', routes: [{ path: 1 }], panels: [{ id: 'a', slot: 'home' }, { id: 'a', slot: 'home', component: () => null }] }\n"),
+      appWithUi("export default { id: 'io.tether.demo', displayName: '', routes: [{ path: 1 }, { path: 'x', section: 2, component: () => null }], panels: [{ id: 'a', slot: 'home' }, { id: 'a', slot: 'home', component: () => null }], sections: [{ label: 'Ops' }, { label: 'Ops', icon: 'svg' }] }\n"),
     );
     expect(errors).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/non-empty `displayName`/),
         expect.stringMatching(/routes\[0\] needs a string `path`/),
+        expect.stringMatching(/routes\[1\] \("x"\) has a `section` that is not a non-empty string/),
         expect.stringMatching(/panel "a" needs a React `component`/),
         expect.stringMatching(/two panels with id "a"/),
+        expect.stringMatching(/two sections labelled "Ops"/),
+        expect.stringMatching(/section "Ops" has an `icon` that is not a React component/),
       ]),
     );
   });

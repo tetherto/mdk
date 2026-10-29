@@ -4,6 +4,7 @@ Use this page to route to the docs you need.
 
 ## Getting started options
 
+- [Quickstart: build your first app with a UI in 15 minutes](./tutorials/build-your-first-app.md)
 - [Connect your own hardware](guides/workers/build-a-worker.md)
 - [Quickstart: run a mining site end to end](./tutorials/run-a-site.md)
 - [Quickstart: build a dashboard](./tutorials/build-a-dashboard.md)
@@ -73,6 +74,7 @@ scripts, and Gateway extensions. Your starting point depends on which you're bui
 | --- | --- |
 | Get started: first runnable example | [`tutorials/run-a-site.md`](tutorials/run-a-site.md) |
 | Deployment: connect Workers to a Gateway, run a site | [`guides/deployment/`](guides/deployment/index.md), and the [deployment topology concept](concepts/deployment-topologies.md) |
+| HRPC over HyperDHT against a known-endpoint RPC: setup, failures, latency, diagnosability | [`concepts/transport-comparison.md`](concepts/transport-comparison.md) |
 | Site security blueprint (identity, allowlists, UI session) | [`guides/security/`](guides/security/index.md) |
 | Worker runtime contracts (telemetry, commands, health, errors) | `backend/workers/<family>/<provider>/mdk-contract.json` + `USAGE.md` + `examples/` |
 | Build a Worker and author its contract | [`guides/workers/build-a-worker.md`](guides/workers/build-a-worker.md) |
@@ -83,6 +85,7 @@ scripts, and Gateway extensions. Your starting point depends on which you're bui
 
 | Topic | Where |
 | --- | --- |
+| Build your first app with a UI, from a clean clone | [`tutorials/build-your-first-app.md`](tutorials/build-your-first-app.md) |
 | Build a dashboard end to end | [`tutorials/build-a-dashboard.md`](tutorials/build-a-dashboard.md) |
 | Scaffold a dashboard against a running stack | `mdk create dashboard` — [`../packages/cli/README.md`](../packages/cli/README.md) |
 | UI toolkit overview | [`../ui/README.md`](../ui/README.md) |

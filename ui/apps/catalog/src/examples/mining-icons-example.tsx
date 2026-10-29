@@ -20,6 +20,7 @@ import {
   ExplorerNavIcon,
   // Other
   ExportIcon,
+  ExternalLinkIcon,
   FanIcon,
   // Farm stats
   FarmAlertIcon,
@@ -55,6 +56,7 @@ import {
   PartlyCloudyIcon,
   // Shared
   PinIcon,
+  PlugIcon,
   PoolManagerNavIcon,
   PoolsIcon,
   PowerIcon,
@@ -213,6 +215,8 @@ const ICON_CATEGORIES: { title: string; icons: IconEntry[] }[] = [
     title: 'Other',
     icons: [
       { name: 'ExportIcon', component: ExportIcon },
+      { name: 'ExternalLinkIcon', component: ExternalLinkIcon },
+      { name: 'PlugIcon', component: PlugIcon },
       { name: 'MenuIcon', component: MenuIcon },
       { name: 'ProfitArrowIcon', component: ProfitArrowIcon },
       { name: 'FarmStarIcon', component: FarmStarIcon },

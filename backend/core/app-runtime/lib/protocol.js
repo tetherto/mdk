@@ -8,7 +8,10 @@
 //
 // Unary routes -- `app.invoke`
 //   A regular @hyperswarm/rpc request/response.
-//   request : { v:1, routeId, req:{ params, query, body, headers }, identity }
+//   request : { v:1, routeId, req:{ params, query, body, headers }, identity, actor }
+//             `actor` is the signed-in operator's access token (or null): the
+//             runtime sends it to the Kernel with the app's calls for that
+//             request, and never hands it to app code.
 //   response: { v:1, ok:true, result }
 //          or { v:1, ok:false, status, code, message }
 //   The responder never throws: every failure is an `ok:false` response, so a
@@ -53,7 +56,9 @@
 //
 // Errors: a message starting with `ERR_` is safe to return as-is; anything else
 // is masked with a generic status text. Status is `err.statusCode` when it is
-// an integer >= 400, else 400 for an `ERR_` error and 500 for anything else.
+// an integer >= 400, else 403 for the Kernel refusing the app (spec.rbac does
+// not grant its service account the call), 400 for any other `ERR_` error and
+// 500 for anything else.
 
 const http = require('http')
 
@@ -94,13 +99,14 @@ function decode (buf) {
   return JSON.parse(Buffer.from(buf).toString('utf8'))
 }
 
-function buildRequest (routeId, req, identity) {
+function buildRequest (routeId, req, identity, actor) {
   const r = req || {}
   return {
     v: PROTOCOL_VERSION,
     routeId,
     req: { params: r.params, query: r.query, body: r.body, headers: r.headers },
-    identity: identity === undefined ? null : identity
+    identity: identity === undefined ? null : identity,
+    actor: typeof actor === 'string' && actor ? actor : null
   }
 }
 
@@ -118,6 +124,7 @@ function isSafeError (err) {
 
 function _statusOf (err) {
   if (Number.isInteger(err && err.statusCode) && err.statusCode >= 400) return err.statusCode
+  if (isSafeError(err) && err.message.startsWith('ERR_KERNEL_ACTION_FORBIDDEN')) return 403
   return isSafeError(err) ? 400 : 500
 }
 
@@ -162,6 +169,9 @@ function checkRequest (msg) {
   }
   if (typeof msg.routeId !== 'string' || !msg.routeId) {
     return protocolError(400, ERR.BAD_REQUEST, 'routeId is required')
+  }
+  if (msg.actor !== undefined && msg.actor !== null && (typeof msg.actor !== 'string' || !msg.actor || msg.actor.length > 8192)) {
+    return protocolError(400, ERR.BAD_REQUEST, 'actor must be an access token')
   }
   return null
 }

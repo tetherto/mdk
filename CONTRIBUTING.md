@@ -224,7 +224,7 @@ box in the PR template to request input from the docs maintainer.
 - [ ] Generated pages affected by the change are regenerated, using the command named in that file's `DO NOT EDIT` header (a Worker contract, a plugin manifest, or devkit component source each rewrite a different file)
 
 > [!NOTE]
-> The [`docs-freshness`](.github/workflows/docs-freshness.yml) workflow enforces this on every PR as a required check: a stale
+> The `docs-freshness` workflow enforces this on every PR as a required check: a stale
 > generated page, a skipped generator, or a broken generator all fail the run. CI only detects the drift, it never regenerates
 > for you. Run `npm run regenerate-docs` and commit the result in the same PR.
 

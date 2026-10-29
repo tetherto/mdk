@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-gateway",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "MDK Gateway",
   "keywords": [
     "tether"
@@ -15,6 +15,7 @@
     "./workers/lib/plugin-loader": "./workers/lib/plugin-loader.js",
     "./workers/lib/plugin-adapter": "./workers/lib/plugin-adapter.js",
     "./workers/lib/plugin-gateway": "./workers/lib/plugin-gateway.js",
+    "./workers/lib/authority": "./workers/lib/authority.js",
     "./workers/http.node.wrk": "./workers/http.node.wrk.js",
     "./package.json": "./package.json"
   },
@@ -34,7 +35,9 @@
     "@bitfinex/bfx-svc-boot-js": "1.2.0",
     "@fastify/helmet": "13.1.1",
     "@fastify/rate-limit": "11.2.0",
-    "@tetherto/mdk-app-runtime": "^0.12.2",
+    "@tetherto/mdk-app-runtime": "^0.13.0",
+    "@tetherto/mdk-identity": "^0.13.0",
+    "@tetherto/mdk-rbac": "^0.13.0",
     "@tetherto/svc-facs-httpd": "^2.0.2",
     "@tetherto/tether-wrk-base": "^2.0.0",
     "async": "3.2.6",
@@ -44,7 +47,7 @@
     "pino-pretty": "13.1.2"
   },
   "devDependencies": {
-    "@tetherto/mdk-core": "^0.12.2",
+    "@tetherto/mdk-core": "^0.13.0",
     "@tetherto/tether-svc-test-helper": "^1.0.0",
     "brittle": "3.18.0",
     "http-server": "14.1.1",

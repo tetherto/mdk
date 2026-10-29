@@ -16,6 +16,7 @@ export {
   getApiBaseUrl,
   resolveApiBaseUrl,
 } from './client'
+export { describeRequestError, type DescribeRequestErrorOptions } from './describe-request-error'
 export { mdkFetch } from './mdk-fetch'
 export {
   DEFAULT_API_BASE_URL,

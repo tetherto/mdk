@@ -10,9 +10,9 @@ const mdkClient = require('../lib/client')
 // Contract: `async (req) => result`. The return value is sent as JSON
 // (HTTP 200). Throw `Error('ERR_...')` to return a 400.
 module.exports = async function summary (req) {
-  // createMdkClient fails per request (ERR_MDK_CLIENT_UNAVAILABLE) when the
-  // Gateway has no Kernel key / connection — report that instead of failing
-  // so the route stays callable during boot.
+  // The client fails per request (ERR_MDK_CLIENT_UNAVAILABLE) while the
+  // Kernel is unreachable: report that instead of failing so the route stays
+  // callable during boot.
   let workers
   try {
     const resp = await mdkClient.listWorkers()

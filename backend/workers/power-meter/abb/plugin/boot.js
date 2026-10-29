@@ -1,8 +1,8 @@
 'use strict'
 
 const debug = require('debug')('mdk:worker:abb:boot')
-const WorkerRuntime = require('../../../../core/mdk-worker/lib/worker-runtime')
-const { createWorkerInfra } = require('../../../../core/mdk/lib/worker-infra')
+const WorkerRuntime = require('@tetherto/mdk-worker/lib/worker-runtime')
+const { createWorkerInfra } = require('@tetherto/mdk-core/lib/worker-infra')
 const alertsLib = require('../lib/templates/alerts')
 const statsLib = require('../lib/templates/stats')
 const plugin = require('.')
@@ -26,7 +26,8 @@ const WRITE_ACTIONS = [
  *   model       (required) b23 | b24 | m1m20 | m4m20 | reu615
  *   storeDir    (required) persistent store directory
  *   kernelTopic    Kernel discovery topic (hex); omit to register by key
- *   bootstrap   DHT bootstrap override for hermetic tests
+ *   bootstrap   DHT bootstrap list (a private network, or hermetic tests)
+ *   dhtHost     interface the DHT node binds (e.g. 127.0.0.1)
  *   allowedKeys RPC caller keys the worker accepts (the Kernel's
  *               kernel.getClientPublicKey()); required unless allowAll
  *   allowAll    admit every RPC caller (development only)
@@ -62,6 +63,7 @@ async function startAbbWorker (opts) {
     workerId: opts.workerId,
     kernelTopic: opts.kernelTopic || null,
     bootstrap: opts.bootstrap || null,
+    dhtHost: opts.dhtHost || null,
     allowedKeys: opts.allowedKeys || [],
     allowAll: opts.allowAll === true,
     store,

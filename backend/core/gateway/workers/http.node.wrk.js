@@ -11,6 +11,7 @@ const debug = createLogger('store:aggr')
 const { createRuntimeClient, getOrCreateSeed, resolvePluginDir } = require('@tetherto/mdk-app-runtime')
 const { loadPlugin } = require('@tetherto/mdk-app-runtime/lib/plugin-loader')
 const { buildFastifyRoutes, errorResponse, resolveAppTimeout } = require('./lib/plugin-adapter')
+const { createAuthRoutes } = require('./lib/auth-routes')
 const { fastifyLoggerOptions, gatewayLogger } = require('./lib/logger')
 const { resolveSecurityOptions, buildHostAllowlist, createHostCheck } = require('./lib/security')
 const { resolveStoreDir } = require('./lib/utils')
@@ -29,6 +30,18 @@ function writeGatewayKeyFile (file, key) {
     try { fs.unlinkSync(tmp) } catch {}
     throw err
   }
+}
+
+// The gateway's DHT settings: ctx.kernelBootstrap / ctx.kernelDhtHost from
+// startGateway, or the same names as CLI flags (a comma-separated string) when
+// the gateway is spawned as a service.
+function resolveDhtOpts (ctx) {
+  let bootstrap = ctx.kernelBootstrap
+  if (typeof bootstrap === 'string') bootstrap = bootstrap.split(',').map(s => s.trim()).filter(Boolean)
+  const out = {}
+  if (Array.isArray(bootstrap)) out.bootstrap = bootstrap
+  if (ctx.kernelDhtHost) out.host = String(ctx.kernelDhtHost)
+  return out
 }
 
 class WrkServerHttp extends TetherWrkBase {
@@ -52,6 +65,21 @@ class WrkServerHttp extends TetherWrkBase {
 
     const storeFac = (this.conf.init?.facilities || []).find(([, mod, name]) => mod === '@tetherto/hp-svc-facs-store' && name === 's0')
     if (storeFac) storeFac[4] = { ...storeFac[4], storeDir: resolveStoreDir(storeFac[4].storeDir, this.ctx) }
+
+    // Every DHT node this gateway starts uses the same bootstrap list and bind
+    // interface: the net facility (the key a Kernel and Workers admit), the
+    // Kernel client and the app runtime client. Without this the net facility
+    // would join the public HyperDHT even on a private network.
+    this._dhtOpts = resolveDhtOpts(this.ctx)
+    if (this._dhtOpts.bootstrap) this.ctx.kernelBootstrap = this._dhtOpts.bootstrap
+    const netFac = (this.conf.init?.facilities || []).find(([, mod, name]) => mod === '@tetherto/hp-svc-facs-net' && name === 'r0')
+    if (netFac && Object.keys(this._dhtOpts).length) {
+      const base = netFac[4]
+      netFac[4] = () => {
+        const opts = typeof base === 'function' ? base.call(this) : { ...base }
+        return { ...opts, dhtOpts: { ...(opts.dhtOpts || {}), ...this._dhtOpts } }
+      }
+    }
 
     // Validated up front so a bad option fails the boot, not the first request.
     this._security = resolveSecurityOptions(this.conf, this.ctx)
@@ -117,20 +145,27 @@ class WrkServerHttp extends TetherWrkBase {
           httpd.addRoute(r)
         })
 
+        // spec.rbac at the Gateway: sign-in routes, and a token plus a rule on every app route.
+        const authority = this.ctx.authority || null
+        if (authority) {
+          await authority.start()
+          createAuthRoutes(authority).forEach(r => httpd.addRoute(r))
+        }
+
         if (this._apps.length || this.ctx.gatewayKeyFile) {
           // One stable key, across restarts, for every app runtime to allow-list.
           const seed = getOrCreateSeed(path.join(this.ctx.root, 'identity', 'seedRuntimeClient'))
-          this._runtimeClient = createRuntimeClient({ seed, bootstrap: this.ctx.kernelBootstrap })
+          this._runtimeClient = createRuntimeClient({ seed, bootstrap: this._dhtOpts.bootstrap, dhtHost: this._dhtOpts.host })
           await this._runtimeClient.connect()
         }
 
         for (const app of this._apps) {
-          buildFastifyRoutes(app, this._runtimeClient, this, { authVerifier: security.authVerifier }).forEach(r => {
+          buildFastifyRoutes(app, this._runtimeClient, this, { authority, authVerifier: security.authVerifier }).forEach(r => {
             httpd.addRoute(r)
           })
         }
 
-        if (!security.authVerifier) {
+        if (!authority && !security.authVerifier) {
           const closed = this._apps.flatMap(a => a.routes.filter(r => r.auth === true).map(r => r.id))
           if (closed.length) log.warn(`no authVerifier configured: ${closed.length} auth: true route(s) answer 401 (${closed.join(', ')})`)
         }
@@ -166,6 +201,7 @@ class WrkServerHttp extends TetherWrkBase {
         const client = this._runtimeClient
         this._runtimeClient = null
         if (client) await client.close()
+        if (this.ctx.authority) await this.ctx.authority.close()
       }
     ], cb)
   }
@@ -173,3 +209,4 @@ class WrkServerHttp extends TetherWrkBase {
 
 module.exports = WrkServerHttp
 module.exports.writeGatewayKeyFile = writeGatewayKeyFile
+module.exports.resolveDhtOpts = resolveDhtOpts

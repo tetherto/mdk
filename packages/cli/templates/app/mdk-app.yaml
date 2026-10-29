@@ -2,11 +2,13 @@
 id: com.example.__PLUGIN_APP__
 version: 0.1.0
 displayName: "__PLUGIN_NAME__"
-# The Kernel access the app uses, as rules the operator reads at install
-# (required; [] for none). The starter summary route lists workers; a route
-# that reads or commands devices adds, e.g.
+# The Kernel access the app's own service account needs (required; [] for none).
+# `mdk create app` and `mdk add app` grant exactly this as a role in mdk.yaml
+# spec.rbac; after changing it, run `mdk rbac init` and `mdk validate app`. The
+# starter summary route lists workers; a route that reads or commands devices adds, e.g.
 #   - resources: [devices]
 #     verbs: [read, write]
+#     resourceNames: ["miner/antminer/*"]
 permissions: [{ resources: [workers], verbs: [list] }]
 # Defaults for the app's settings, overridden by its `config` in mdk.yaml.
 config: {}

@@ -1,6 +1,6 @@
 'use strict'
 
-const { Container } = require('../../../../core/mdk')
+const { Container } = require('@tetherto/mdk-core')
 
 class Antspace extends Container {
   constructor ({ client, ...opts }) {

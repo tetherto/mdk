@@ -18,6 +18,7 @@ characteristics. It communicates with the others only through its declared inter
 - [`WorkerRegistry`][worker-registry]: holds two flat indexes, `deviceId` to its owning Worker and `workerId` to that Worker's record, and drives each Worker through its registration lifecycle
 - [`CommandDispatcher`][command-dispatcher]: validates an incoming command, resolves the target device or devices, and hands off to the Command State Machine
 - [`CommandStateMachine`][command-state-machine]: tracks every command's execution lifecycle in a write-ahead log
+- [`CommandLog`][command-log]: records every command request, accepted or refused, with its caller, target, params and outcome
 - [`TelemetryCollector`][telemetry-collector]: a proxy that routes telemetry queries to the Worker that owns the data, persisting none of it
 - [`Scheduler`][scheduler-module]: the system metronome that fires the recurring telemetry, health, and state jobs
 - [`HealthMonitor`][health-monitor]: pings every ready Worker process over HRPC on a cadence and marks dead ones unroutable; it never contacts a device
@@ -49,6 +50,9 @@ characteristics. It communicates with the others only through its declared inter
 
 [command-state-machine]: ../../../backend/core/kernel/README.md#commandstatemachine
 <!-- docs@tether.io: command-state-machine → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#commandstatemachine -->
+
+[command-log]: ../../../backend/core/kernel/README.md#write-command-log
+<!-- docs@tether.io: command-log → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#write-command-log -->
 
 [telemetry-collector]: ../../../backend/core/kernel/README.md#telemetrycollector
 <!-- docs@tether.io: telemetry-collector → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#telemetrycollector -->

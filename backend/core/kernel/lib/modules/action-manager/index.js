@@ -14,6 +14,16 @@ const { redactSecrets } = require('./redact')
 
 const isNil = (value) => value === null || value === undefined
 
+// The device ids in an action's targets (`{ workerId: { calls: [{ id }] } }`)
+// that `canWrite` refuses.
+function _deniedCalls (targets, canWrite) {
+  const denied = []
+  for (const workerId in targets || {}) {
+    for (const call of targets[workerId].calls || []) if (!canWrite(call.id)) denied.push(call.id)
+  }
+  return denied
+}
+
 /**
  * Action Manager
  *
@@ -40,15 +50,26 @@ class ActionManager {
     this._actionApprover.startInterval(this._actionIntvlMs)
   }
 
-  async pushAction (req) {
+  /**
+   * @param {object} req
+   * @param {{ canWrite?: (deviceId: string) => boolean }} [opts] - the caller's
+   *   device rule from spec.rbac: a push reaching any device it may not write is
+   *   refused whole. With it, the payload's self-asserted `authPerms` are ignored.
+   */
+  async pushAction (req, opts = {}) {
     const { query, action, params, voter, authPerms, batchActionUID } = req
 
     const { targets, requiredPerms } = await this._actionCaller.getWriteCalls(
       query,
       action,
       params,
-      authPerms
+      opts.canWrite ? null : authPerms
     )
+
+    if (opts.canWrite) {
+      const denied = _deniedCalls(targets, opts.canWrite)
+      if (denied.length) return { id: null, errors: [`ERR_KERNEL_ACTION_FORBIDDEN: may not write ${denied.join(', ')}`] }
+    }
 
     let reqVotes = 1
     let callCount = 0
@@ -79,7 +100,7 @@ class ActionManager {
     return { id: data.id, data, errors }
   }
 
-  async pushActionsBatch (req) {
+  async pushActionsBatch (req, opts) {
     const { batchActionsPayload, voter, authPerms, batchActionUID, suffix } = req
     const batchTs = Date.now()
     if (!Array.isArray(batchActionsPayload)) {
@@ -99,7 +120,7 @@ class ActionManager {
           ...(batchActionUID
             ? { batchActionUID: `${batchTs}-${batchActionUID}${suffix ? `-${suffix}` : ''}` }
             : {})
-        })
+        }, opts)
       }
     )
   }
@@ -138,12 +159,24 @@ class ActionManager {
     return await this._actionApprover.cancelActionsBatch({ ids, voter })
   }
 
-  async voteAction (req) {
+  /**
+   * @param {object} req
+   * @param {{ canWrite?: (deviceId: string) => boolean }} [opts] - the voter's
+   *   device rule from spec.rbac: a vote on an action that writes any device the
+   *   voter may not write is refused. With it, the payload's `authPerms` are
+   *   ignored; without it (in-process calls) they decide, as before.
+   */
+  async voteAction (req, opts = {}) {
     const { id, voter, approve, authPerms } = req
     const { data } = await this._actionApprover.getAction('voting', id)
-    const requiredBaseTypePerms = data.payload[2]
-    if (!requiredBaseTypePerms.every(baseType => hasWritePermission(authPerms, baseType))) {
-      throw new Error('ERR_ACTION_DENIED')
+    if (opts.canWrite) {
+      const denied = _deniedCalls(data.payload[1], opts.canWrite)
+      if (denied.length) throw new Error(`ERR_KERNEL_ACTION_FORBIDDEN: may not write ${denied.join(', ')}`)
+    } else {
+      const requiredBaseTypePerms = data.payload[2]
+      if (!requiredBaseTypePerms.every(baseType => hasWritePermission(authPerms, baseType))) {
+        throw new Error('ERR_ACTION_DENIED')
+      }
     }
 
     await this._actionApprover.voteAction({ id, voter, approve })

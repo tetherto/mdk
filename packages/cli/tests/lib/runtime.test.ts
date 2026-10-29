@@ -26,6 +26,7 @@ function linkRealPackage(projectDir: string, name: string): void {
 const mockCore = vi.hoisted(() => ({
   getKernel: vi.fn(),
   startGateway: vi.fn(),
+  startDhtBootstrap: vi.fn(),
 }));
 const mockWorkerRuntimeV2Ctor = vi.hoisted(() => vi.fn());
 const mockWorkerModule = vi.hoisted(() => ({
@@ -184,6 +185,54 @@ describe('declaredMockPorts', () => {
   });
 });
 
+describe('policyWarnings', () => {
+  const bind = (...names: string[]) => ({ roles: [{ name: 'r', rules: [{ resources: ['*'], verbs: ['*'] }] }], bindings: [{ role: 'r', subjects: names.map((name) => ({ kind: 'ServiceAccount' as const, name })) }] });
+  const app = { name: 'ops', package: 'p', config: {} };
+
+  it('policyRefusal names a policy nobody could administer', () => {
+    expect(runtime.policyRefusal(baseSpec())).toMatch(/binds nobody.*`mdk rbac init` would be refused.*Run `mdk rbac init` first, then `mdk run`/);
+    expect(runtime.policyRefusal(baseSpec({ rbac: { roles: [], bindings: [] } }))).toMatch(/binds nobody/);
+    expect(runtime.policyRefusal(baseSpec({ rbac: bind('someone') }))).toBeUndefined();
+    // Only an app bound (a fresh stack after `mdk create app`): the Kernel would boot, and refuse every `mdk rbac init`.
+    const appOnly = {
+      roles: [{ name: 'app-ops', rules: [{ resources: ['workers'], verbs: ['list'] }] }],
+      bindings: [{ role: 'app-ops', subjects: [{ kind: 'ServiceAccount' as const, name: 'app:ops' }] }],
+    };
+    expect(runtime.policyRefusal(baseSpec({ rbac: appOnly }))).toMatch(/binds no user, and lets nobody write the policy.*mdk rbac init/);
+    // An explicit `policy: write` without wildcards is enough; one scoped by resourceNames never matches policy.
+    const explicit = { ...appOnly, roles: [{ name: 'app-ops', rules: [{ resources: ['policy'], verbs: ['write'] }] }] };
+    expect(runtime.policyRefusal(baseSpec({ rbac: explicit }))).toBeUndefined();
+    const scoped = { ...appOnly, roles: [{ name: 'app-ops', rules: [{ resources: ['*'], verbs: ['*'], resourceNames: ['miner/*'] }] }] };
+    expect(runtime.policyRefusal(baseSpec({ rbac: scoped }))).toMatch(/lets nobody write the policy/);
+    // A hardened stack: a user bound, policy changes through mdk.yaml and a restart. It boots.
+    const userOnly = {
+      roles: [{ name: 'viewer', rules: [{ resources: ['devices'], verbs: ['read'] }] }],
+      bindings: [{ role: 'viewer', subjects: [{ kind: 'User' as const, name: 'ops@example.com' }] }],
+    };
+    expect(runtime.policyRefusal(baseSpec({ rbac: userOnly }))).toBeUndefined();
+    // A binding with no subjects grants nobody.
+    expect(runtime.policyRefusal(baseSpec({ rbac: { ...bind(), bindings: [{ role: 'r', subjects: [] }] } }))).toMatch(/binds nobody/);
+  });
+
+  it('warns about a policy that binds nobody, an unbound CLI and unbound apps', () => {
+    expect(runtime.policyWarnings(baseSpec())).toEqual([expect.stringMatching(/binds nobody.*mdk rbac init/)]);
+    expect(runtime.policyWarnings(baseSpec({ apps: [app], rbac: bind('someone') }))).toEqual([
+      expect.stringMatching(/does not bind mdk-cli/),
+      expect.stringMatching(/does not bind mdk-mcp.*mdk run mcp/),
+      expect.stringMatching(/does not bind mdk-gateway.*mdk run gateway/),
+      expect.stringMatching(/app ops has no binding/),
+    ]);
+    expect(runtime.policyWarnings(baseSpec({ apps: [app], rbac: bind('mdk-cli', 'mdk-gateway', 'mdk-mcp', 'app:ops') }))).toEqual([]);
+  });
+
+  it('runKernel prints them', async () => {
+    mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn() });
+    const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    await runtime.runKernel(makeTmpDir(), baseSpec());
+    expect(write.mock.calls.some((c) => /warning.*binds nobody/.test(String(c[0])))).toBe(true);
+  });
+});
+
 describe('runKernel', () => {
   it('boots the kernel with local discovery and logs its key', async () => {
     const fakeKernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
@@ -204,11 +253,111 @@ describe('runKernel', () => {
     expect(write.mock.calls.some((c) => String(c[0]).includes('ready ab'))).toBe(true);
   });
 
+  it("applies the stack's spec.rbac at boot (null without one); without a spec the stored policy stays", async () => {
+    mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn() });
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const spec = (rbac?: unknown) =>
+      ({ apiVersion: 'mdk/v1', kind: 'Stack', metadata: { name: 's' }, spec: { apps: [], ...(rbac ? { rbac } : {}) } }) as never;
+
+    await runtime.runKernel(makeTmpDir(), spec({ roles: [] }));
+    expect(mockCore.getKernel).toHaveBeenLastCalledWith(expect.objectContaining({ rbac: { roles: [] }, serviceAccounts: [{ name: 'mdk-cli', publicKey: expect.any(String) }, { name: 'mdk-gateway', publicKey: expect.any(String) }, { name: 'mdk-mcp', publicKey: expect.any(String) }] }));
+    await runtime.runKernel(makeTmpDir(), spec());
+    expect(mockCore.getKernel).toHaveBeenLastCalledWith(expect.objectContaining({ rbac: null }));
+    await runtime.runKernel(makeTmpDir());
+    expect(mockCore.getKernel.mock.lastCall?.[0]).not.toHaveProperty('rbac');
+    expect(mockCore.getKernel.mock.lastCall?.[0]).not.toHaveProperty('serviceAccounts');
+  });
+
+  it("registers the stack's apps as service accounts, creating their credentials", async () => {
+    mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn() });
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const dir = makeTmpDir();
+    const spec = { apiVersion: 'mdk/v1', kind: 'Stack', metadata: { name: 's' }, spec: { apps: [{ name: 'ops', package: 'p', config: {} }] } } as never;
+    await runtime.runKernel(dir, spec);
+    const passed = mockCore.getKernel.mock.lastCall?.[0].serviceAccounts;
+    expect(passed).toEqual([
+      { name: 'app:ops', publicKey: expect.stringMatching(/^[0-9a-f]{64}$/) },
+      { name: 'mdk-cli', publicKey: expect.stringMatching(/^[0-9a-f]{64}$/) },
+      { name: 'mdk-gateway', publicKey: expect.stringMatching(/^[0-9a-f]{64}$/) },
+      { name: 'mdk-mcp', publicKey: expect.stringMatching(/^[0-9a-f]{64}$/) },
+    ]);
+  });
+
   it('logs "(unknown)" when the kernel has no getPublicKey', async () => {
     mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn() });
     const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     await runtime.runKernel(makeTmpDir());
     expect(write.mock.calls.some((c) => String(c[0]).includes('(unknown)'))).toBe(true);
+  });
+});
+
+describe('private DHT (spec.network.dht)', () => {
+  const dhtSpec = (dht: Record<string, unknown>) => baseSpec({ network: { dht: { port: 49737, ...dht } } } as never);
+
+  it('projectDht: nothing on the public DHT; the generated bootstrap or the listed one otherwise', () => {
+    expect(runtime.projectDht(makeTmpDir(), baseSpec())).toEqual({});
+    expect(runtime.projectDht(makeTmpDir(), dhtSpec({}))).toEqual({ bootstrap: ['127.0.0.1:49737'], dhtHost: '127.0.0.1' });
+    expect(runtime.projectDht(makeTmpDir(), dhtSpec({ host: '10.0.0.7' }))).toEqual({ bootstrap: ['10.0.0.7:49737'], dhtHost: '10.0.0.7' });
+    expect(runtime.projectDht(makeTmpDir(), dhtSpec({ host: '10.0.0.7', bootstrap: ['10.0.0.5:49737'] }))).toEqual({
+      bootstrap: ['10.0.0.5:49737'],
+      dhtHost: '10.0.0.7',
+    });
+    // A listed bootstrap without a host: no loopback bind, so a LAN bootstrap stays reachable.
+    expect(runtime.projectDht(makeTmpDir(), dhtSpec({ bootstrap: ['10.0.0.5:49737'] }))).toEqual({ bootstrap: ['10.0.0.5:49737'] });
+    // No mdk.yaml: the public DHT.
+    expect(runtime.projectDht(makeTmpDir())).toEqual({});
+  });
+
+  it('projectDht fails closed on an mdk.yaml that does not load, instead of joining the public DHT', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'mdk.yaml'), 'spec: [unclosed\n');
+    expect(() => runtime.projectDht(dir)).toThrow(/not valid YAML/);
+    writeFileSync(join(dir, 'mdk.yaml'), 'spec:\n  network:\n    dht:\n      host: localhost\n');
+    expect(() => runtime.projectDht(dir)).toThrow(/dht\.host` must be an IP address/);
+    // Errors outside spec.network do not block it: the CLI must still reach the Kernel to fix them.
+    writeFileSync(join(dir, 'mdk.yaml'), 'kind: Nope\nspec:\n  network:\n    dht:\n      bootstrap: [10.0.0.5:49737]\n');
+    expect(runtime.projectDht(dir)).toEqual({ bootstrap: ['10.0.0.5:49737'] });
+  });
+
+  it('runKernel runs the bootstrap, hands the Kernel the list, and closes it after the Kernel stops', async () => {
+    const order: string[] = [];
+    const close = vi.fn(async () => { order.push('bootstrap'); });
+    mockCore.startDhtBootstrap.mockResolvedValue({ bootstrap: ['127.0.0.1:49737'], close });
+    const stop = vi.fn(async () => { order.push('kernel'); });
+    mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop });
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    const kernel = await runtime.runKernel(makeTmpDir(), dhtSpec({}));
+    expect(mockCore.startDhtBootstrap).toHaveBeenCalledWith({ host: '127.0.0.1', port: 49737 });
+    expect(mockCore.getKernel).toHaveBeenLastCalledWith(
+      expect.objectContaining({ hrpc: { bootstrap: ['127.0.0.1:49737'], dhtHost: '127.0.0.1' } }),
+    );
+    await kernel.stop();
+    expect(order).toEqual(['kernel', 'bootstrap']);
+  });
+
+  it('runKernel joins a listed bootstrap without starting one, and closes its own when the Kernel fails', async () => {
+    mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn() });
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    await runtime.runKernel(makeTmpDir(), dhtSpec({ bootstrap: ['10.0.0.5:49737'], host: '10.0.0.7' }));
+    expect(mockCore.startDhtBootstrap).not.toHaveBeenCalled();
+    expect(mockCore.getKernel).toHaveBeenLastCalledWith(
+      expect.objectContaining({ hrpc: { bootstrap: ['10.0.0.5:49737'], dhtHost: '10.0.0.7' } }),
+    );
+
+    const close = vi.fn(async () => {});
+    mockCore.startDhtBootstrap.mockResolvedValue({ bootstrap: ['127.0.0.1:49737'], close });
+    mockCore.getKernel.mockRejectedValueOnce(new Error('boom'));
+    await expect(runtime.runKernel(makeTmpDir(), dhtSpec({}))).rejects.toThrow('boom');
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('runKernel on the public DHT starts no bootstrap and passes no hrpc override', async () => {
+    mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn() });
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    await runtime.runKernel(makeTmpDir(), baseSpec());
+    expect(mockCore.startDhtBootstrap).not.toHaveBeenCalled();
+    expect(mockCore.getKernel.mock.lastCall?.[0]).not.toHaveProperty('hrpc');
   });
 });
 
@@ -254,31 +403,54 @@ describe('runGateway', () => {
       expect(out).toContain('listening on http://localhost:21500');
       expect(out).not.toMatch(/kernel (pending|connected)/);
       expect(mockCore.startGateway).toHaveBeenCalledWith(
-        expect.objectContaining({ port: 21500, kernel: expect.anything(), authVerifier: 'loopback' }),
+        expect.objectContaining({ port: 21500, kernel: expect.anything() }),
       );
+      const opts = mockCore.startGateway.mock.calls.at(-1)?.[0];
+      expect(opts.authVerifier).toBeUndefined();
+      expect(opts.gatewayCredential, 'in-process: the Kernel policy itself, no service account').toBeUndefined();
     } finally {
       process.chdir(cwdBefore);
     }
   });
 
-  it('leaves the verifier to gateway.config when mdk.yaml names one', async () => {
+  it('out of process, signs the Gateway in as mdk-gateway', async () => {
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    mockCore.startGateway.mockResolvedValue({ mdkClient: {}, stop: vi.fn() });
+    mockCore.startGateway.mockResolvedValue({ stop: vi.fn() });
     const dir = makeTmpDir();
+    mkdirSync(runtime.mdkDir(dir), { recursive: true });
+    writeFileSync(runtime.kernelKeyFile(dir), 'ab'.repeat(32));
     const cwdBefore = process.cwd();
     try {
-      await runtime.runGateway(
-        dir,
-        baseSpec({ gateway: { port: 21502, plugins: [], config: { authVerifier: 'loopback' } } }),
-        { _cleanup: [], stop: vi.fn() },
-      );
+      await runtime.runGateway(dir, baseSpec({ gateway: { port: 21503 } }));
       const opts = mockCore.startGateway.mock.calls.at(-1)?.[0];
-      expect(opts.authVerifier).toBeUndefined();
-      expect(opts.common).toEqual({ authVerifier: 'loopback' });
+      expect(opts.gatewayCredential).toEqual({ name: 'mdk-gateway', privateKey: expect.stringContaining('PRIVATE KEY') });
+      expect(opts.keyFile).toBe(runtime.kernelKeyFile(dir));
     } finally {
       process.chdir(cwdBefore);
     }
   });
+
+  it('out of process from a relative dir, signs in with the project\'s mdk-gateway key, read before the chdir', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    mockCore.startGateway.mockResolvedValue({ stop: vi.fn() });
+    const dir = makeTmpDir();
+    mkdirSync(runtime.mdkDir(dir), { recursive: true });
+    writeFileSync(runtime.kernelKeyFile(dir), 'ab'.repeat(32));
+    const cwdBefore = process.cwd();
+    try {
+      // What the Kernel registered at its start (`mdk run kernel`).
+      const { ensureAgentCredential, signingCredential } = await import('../../src/lib/credentials.js');
+      const registered = signingCredential(ensureAgentCredential(dir, 'mdk-gateway'));
+      process.chdir(dir);
+      await runtime.runGateway('.', baseSpec({ gateway: { port: 21504 } }));
+      const opts = mockCore.startGateway.mock.calls.at(-1)?.[0];
+      expect(opts.gatewayCredential, 'not a new key under the Gateway state root').toEqual(registered);
+      expect(existsSync(join(runtime.mdkDir(dir), 'gateway', '.mdk'))).toBe(false);
+    } finally {
+      process.chdir(cwdBefore);
+    }
+  });
+
 
   it('throws when no kernel is given and no key file exists (out-of-process)', async () => {
     const dir = makeTmpDir();
@@ -371,17 +543,6 @@ describe('assertMcpPortFree', () => {
 });
 
 describe('runMcp', () => {
-  it('refuses a token that still holds an unresolved ${VAR}', async () => {
-    const dir = makeTmpDir();
-    await expect(runtime.runMcp(dir, baseSpec({ mcp: { token: '${MDK_MCP_TOKEN}' } }))).rejects.toThrow(
-      /spec\.mcp\.token.*MDK_MCP_TOKEN is not set/,
-    );
-    await expect(runtime.runMcp(dir, baseSpec({ mcp: { token: 'prefix-${MDK_MCP_TOKEN}' } }))).rejects.toThrow(
-      /MDK_MCP_TOKEN is not set/,
-    );
-    expect(mockMcp.createMcpServer).not.toHaveBeenCalled();
-  });
-
   it('throws when no kernel is given and no key file exists', async () => {
     const dir = makeTmpDir();
     await expect(runtime.runMcp(dir, baseSpec())).rejects.toThrow(/Kernel is not running/);
@@ -403,7 +564,7 @@ describe('runMcp', () => {
       { kernelKey: 'deadbeef', kernelKeyPair: TEST_CALLER_KEYPAIR },
       [],
       [],
-      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir) },
+      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir), credential: { name: 'mdk-mcp', privateKey: expect.stringContaining('PRIVATE KEY') } },
     );
   });
 
@@ -429,7 +590,7 @@ describe('runMcp', () => {
       { kernelKey: 'ab', kernelKeyPair: TEST_CALLER_KEYPAIR },
       [],
       [],
-      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir) },
+      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir), kernel },
     );
   });
 
@@ -454,7 +615,7 @@ describe('runMcp', () => {
       { auth: { superAdmin: 'root@example.com' }, kernelKey: 'deadbeef', kernelKeyPair: TEST_CALLER_KEYPAIR },
       [],
       [],
-      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir) },
+      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir), credential: expect.objectContaining({ name: 'mdk-mcp' }) },
     );
   });
 
@@ -493,7 +654,7 @@ describe('runMcp', () => {
       expect.anything(),
       [],
       [],
-      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir) },
+      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir), kernel },
     );
   });
 
@@ -512,15 +673,15 @@ describe('runMcp', () => {
       expect.anything(),
       [],
       [],
-      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir) },
+      { allowWrite: false, handleSignals: false, keyFile: runtime.mcpKeyFile(dir), kernel },
     );
   });
 
-  it('passes --allow-write and spec.mcp security options, never handleSignals', async () => {
+  it('passes --allow-write and spec.mcp tool options, and the in-process Kernel for spec.rbac; never handleSignals', async () => {
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockMcp.createMcpServer.mockResolvedValue({ close: vi.fn((cb?: () => void) => cb?.()) });
     const kernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
-    const mcp = { allowTools: ['demo.summary'], token: 't0k', identity: { user: 'agent' } };
+    const mcp = { allowTools: ['demo.summary'] };
 
     const dir = makeTmpDir();
     await runtime.runMcp(dir, baseSpec({ gateway: { port: 21505, plugins: [] }, mcp }), kernel, {
@@ -530,8 +691,7 @@ describe('runMcp', () => {
     expect(mockMcp.createMcpServer.mock.calls.at(-1)?.[5]).toEqual({
       allowWrite: true,
       allowTools: ['demo.summary'],
-      token: 't0k',
-      identity: { user: 'agent' },
+      kernel,
       handleSignals: false,
       keyFile: runtime.mcpKeyFile(dir),
     });
@@ -765,7 +925,6 @@ describe('runWorker', () => {
     const kernel = {
       registerWorker: vi.fn().mockResolvedValue(undefined),
       getClientPublicKey: () => Buffer.from('ff'.repeat(32), 'hex'),
-      listAllowedKeys: vi.fn(() => ['aa'.repeat(32)]),
       _cleanup: [] as Array<() => unknown>,
     };
 
@@ -773,8 +932,7 @@ describe('runWorker', () => {
     expect(kernel.registerWorker).toHaveBeenCalledWith(Buffer.from('abcd', 'hex'));
     expect(kernel._cleanup).toHaveLength(1);
     const ctorOpts = mockWorkerRuntimeV2Ctor.mock.calls.at(-1)?.[1] as Record<string, unknown>;
-    expect(ctorOpts.allowedKeys).toEqual([Buffer.from('ff'.repeat(32), 'hex'), 'aa'.repeat(32)]);
-    expect(kernel.listAllowedKeys).toHaveBeenCalledWith('write');
+    expect(ctorOpts.allowedKeys, 'the Kernel client key only: callers it admits are not let past it').toEqual([Buffer.from('ff'.repeat(32), 'hex')]);
     expect(mockLocalDiscovery.trustKernel).toHaveBeenCalled();
     // The Kernel's own shutdown takes the worker down with it.
     await kernel._cleanup[0]!();
@@ -791,6 +949,10 @@ describe('runWorker', () => {
         getPublicKey: () => Buffer.from('ab', 'hex'),
       };
     });
+    mockLocalDiscovery.readTrustedKeys.mockReturnValueOnce([
+      { name: 'kernel', key: TEST_KERNEL_CLIENT_KEY },
+      { name: 'gateway', key: 'aa'.repeat(32) },
+    ]);
     const dir = makeTmpDir();
     writeContractWorkerFixture(dir, 'a', { mock: true });
     const worker: WorkerInstance = {
@@ -909,6 +1071,7 @@ describe('app runtimes', () => {
       allowedKeyFiles: [join(dir, '.mdk', 'gateway.key'), join(dir, '.mdk', 'mcp.key')],
       keyFile: join(state, 'runtime.key'),
       kernelKeyFile: join(runtime.trustedKeysDir(dir), 'app-demo.pub'),
+      credentialFile: join(dir, '.mdk', 'credentials', 'apps', 'demo.json'),
     });
     await handle.stop();
     expect(fake.stop).toHaveBeenCalled();

@@ -1,6 +1,6 @@
 'use strict'
 
-const { POWER_MODE } = require('../../../../../../core/mdk').constants
+const { POWER_MODE } = require('@tetherto/mdk-core').constants
 
 module.exports = async (ctx) => {
   const estats = await ctx.device.fetchDeviceData(ctx.device.getEStats)

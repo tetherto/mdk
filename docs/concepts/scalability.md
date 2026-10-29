@@ -125,6 +125,7 @@ not one shared or federated one.
 - Understand [architecture][architecture]: the round trip every command and telemetry pull takes
 - Read the [Gateway's connection model][gateway-readme]: how `startGateway()` resolves a single Kernel
 - Measure a deployment yourself with the [benchmark harness][benchmark-harness]
+- Compare against [measured devices-per-Worker limits and recommended operating envelopes][benchmark-results]
 
 ## Links
 
@@ -145,3 +146,6 @@ not one shared or federated one.
 
 [deployment-topologies-guide]: ../guides/deployment/index.md
 <!-- docs@tether.io: deployment-topologies-guide → guides/deployment -->
+
+[benchmark-results]: ../guides/deployment/benchmark-results.md
+<!-- docs@tether.io: benchmark-results → guides/deployment/benchmark-results -->

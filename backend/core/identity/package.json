@@ -1,0 +1,46 @@
+{
+  "name": "@tetherto/mdk-identity",
+  "version": "0.13.0",
+  "description": "MDK identity: the token issuer (users, service accounts, rotating refresh tokens) and JWT verification for the Gateway, MCP server and Kernel",
+  "main": "index.js",
+  "keywords": [
+    "tether",
+    "mdk",
+    "identity"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "npm run lint && npm run test:unit",
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js",
+    "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0",
+    "corestore": "^7.13.0",
+    "hyperbee": "^2.27.3",
+    "standard": "17.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/mdk.git",
+    "directory": "backend/core/identity"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "index.js",
+    "lib/",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  }
+}

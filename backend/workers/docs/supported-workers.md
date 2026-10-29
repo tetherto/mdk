@@ -14,21 +14,21 @@ Built and maintained by the partner, a device manufacturer or a mining pool, and
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
-| Antminer | Bitmain | Not enumerated; see manufacturer documentation | [`antminer-mdk-worker`](https://github.com/bitmain-official/antminer-mdk-worker) | [mdk-contract.json](https://github.com/bitmain-official/antminer-mdk-worker/blob/4fd776b4a048a1bc8284ec2eceed82b4631f960c/mdk-contract.json) |
-| LuxOS | Luxor | Not enumerated; see manufacturer documentation | [`luxos-mdk-worker`](https://github.com/LuxorLabs/luxos-mdk-worker) | [mdk-contract.json](https://github.com/LuxorLabs/luxos-mdk-worker/blob/ee667fab6c762fa00c227979ab25a0a0813bf275/mdk-contract.json) |
-| Proto | Proto | R2 | [`proto-tether-mdk-worker`](https://github.com/block/proto-tether-mdk-worker) | [mdk-contract.json](https://github.com/block/proto-tether-mdk-worker/blob/d71749ed2c2941e5c1af43ca699f522238392a6f/mdk-contract.json) |
-| SealMiner | Bitdeer | A2, A3, A4 | [`sealminer-mdk-worker`](https://github.com/sealminer/sealminer-mdk-worker) | [mdk-contract.json](https://github.com/sealminer/sealminer-mdk-worker/blob/63211a12245482cffb2d09f8cbeaa4c6411e51a3/mdk-contract.json) |
-| Whatsminer | MicroBT | Not enumerated; see manufacturer documentation | [`whatsminer-mdk-worker`](https://github.com/whatsminer/whatsminer-mdk-worker) | [mdk-contract.json](https://github.com/whatsminer/whatsminer-mdk-worker/blob/a47fa82020454f9bfa9963ccaaa319b7948e8aa2/mdk-contract.json) |
+| Antminer (v1 strictness gaps) | Bitmain | Not enumerated; see manufacturer documentation | [`antminer-mdk-worker`](https://github.com/bitmain-official/antminer-mdk-worker) | [mdk-contract.json](https://github.com/bitmain-official/antminer-mdk-worker/blob/4fd776b4a048a1bc8284ec2eceed82b4631f960c/mdk-contract.json) |
+| LuxOS (v1 strictness gaps) | Luxor | Not enumerated; see manufacturer documentation | [`luxos-mdk-worker`](https://github.com/LuxorLabs/luxos-mdk-worker) | [mdk-contract.json](https://github.com/LuxorLabs/luxos-mdk-worker/blob/ee667fab6c762fa00c227979ab25a0a0813bf275/mdk-contract.json) |
+| Proto (v1 strictness gaps) | Proto | R2 | [`proto-tether-mdk-worker`](https://github.com/block/proto-tether-mdk-worker) | [mdk-contract.json](https://github.com/block/proto-tether-mdk-worker/blob/d71749ed2c2941e5c1af43ca699f522238392a6f/mdk-contract.json) |
+| SealMiner (v1 strictness gaps) | Bitdeer | A2, A3, A4 | [`sealminer-mdk-worker`](https://github.com/sealminer/sealminer-mdk-worker) | [mdk-contract.json](https://github.com/sealminer/sealminer-mdk-worker/blob/63211a12245482cffb2d09f8cbeaa4c6411e51a3/mdk-contract.json) |
+| Whatsminer (v1 strictness gaps) | MicroBT | Not enumerated; see manufacturer documentation | [`whatsminer-mdk-worker`](https://github.com/whatsminer/whatsminer-mdk-worker) | [mdk-contract.json](https://github.com/whatsminer/whatsminer-mdk-worker/blob/a47fa82020454f9bfa9963ccaaa319b7948e8aa2/mdk-contract.json) |
 
 ### Partner-maintained mining pools
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
-| EMCD | EMCD | EMCD-BTC | [`emcd-mdk-worker`](https://github.com/emcdio/emcd-mdk-worker) | [mdk-contract.json](https://github.com/emcdio/emcd-mdk-worker/blob/3ad188e1fef8fa080ce5096d7421e9b3a7052515/mdk-contract.json) |
-| Foundry USA Pool | Foundry | FOUNDRY-BTC | [`foundry-mdk-worker`](https://github.com/foundryservices/foundry-mdk-worker) | [mdk-contract.json](https://github.com/foundryservices/foundry-mdk-worker/blob/310172ebe1cb4ef60cd14f39d9467f2c8e2bc534/mdk-contract.json) |
-| Luxor | Luxor | LUXOR-BTC | [`luxor-mdk-worker`](https://github.com/LuxorLabs/luxor-mdk-worker) | [mdk-contract.json](https://github.com/LuxorLabs/luxor-mdk-worker/blob/41b005e05e223801bd90e4f66df05d26bdb34112/mdk-contract.json) |
-| Ocean | Ocean | OCEAN-BTC | [`ocean-mdk-worker`](https://github.com/OCEAN-xyz/mdk-wrk-minerpool-ocean) | [mdk-contract.json](https://github.com/OCEAN-xyz/mdk-wrk-minerpool-ocean/blob/0e7e2def62bc923c6252dc946d4f602aae8bc0b0/mdk-contract.json) |
-| SpiderPool | SpiderPool | SPIDERPOOL-BTC | [`spiderpool-mdk-worker`](https://github.com/SpiderPool-New/spiderpool-mdk-worker) | [mdk-contract.json](https://github.com/SpiderPool-New/spiderpool-mdk-worker/blob/345f4a2b46ff59135eb4dad1803f0653c3d88911/mdk-contract.json) |
+| EMCD (v1 strictness gaps) | EMCD | EMCD-BTC | [`emcd-mdk-worker`](https://github.com/emcdio/emcd-mdk-worker) | [mdk-contract.json](https://github.com/emcdio/emcd-mdk-worker/blob/3ad188e1fef8fa080ce5096d7421e9b3a7052515/mdk-contract.json) |
+| Foundry USA Pool (v1 strictness gaps) | Foundry | FOUNDRY-BTC | [`foundry-mdk-worker`](https://github.com/foundryservices/foundry-mdk-worker) | [mdk-contract.json](https://github.com/foundryservices/foundry-mdk-worker/blob/310172ebe1cb4ef60cd14f39d9467f2c8e2bc534/mdk-contract.json) |
+| Luxor (v1 strictness gaps) | Luxor | LUXOR-BTC | [`luxor-mdk-worker`](https://github.com/LuxorLabs/luxor-mdk-worker) | [mdk-contract.json](https://github.com/LuxorLabs/luxor-mdk-worker/blob/41b005e05e223801bd90e4f66df05d26bdb34112/mdk-contract.json) |
+| Ocean (v1 strictness gaps) | Ocean | OCEAN-BTC | [`ocean-mdk-worker`](https://github.com/OCEAN-xyz/mdk-wrk-minerpool-ocean) | [mdk-contract.json](https://github.com/OCEAN-xyz/mdk-wrk-minerpool-ocean/blob/0e7e2def62bc923c6252dc946d4f602aae8bc0b0/mdk-contract.json) |
+| SpiderPool (v1 strictness gaps) | SpiderPool | SPIDERPOOL-BTC | [`spiderpool-mdk-worker`](https://github.com/SpiderPool-New/spiderpool-mdk-worker) | [mdk-contract.json](https://github.com/SpiderPool-New/spiderpool-mdk-worker/blob/345f4a2b46ff59135eb4dad1803f0653c3d88911/mdk-contract.json) |
 
 ## MDK-maintained Workers
 
@@ -38,34 +38,34 @@ Built and maintained in this repository, with a bundled mock and unit and integr
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
-| Avalon | Canaan | A1346 | [`backend/workers/miners/avalon`](../miners/avalon/README.md) | [USAGE.md](../miners/avalon/USAGE.md) |
+| Avalon (v1 strictness gaps) | Canaan | A1346 | [`backend/workers/miners/avalon`](../miners/avalon/README.md) | [USAGE.md](../miners/avalon/USAGE.md) |
 
 ### MDK-maintained containers
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
-| Antspace | Bitmain | HK3, IMM | [`backend/workers/containers/antspace`](../containers/antspace/README.md) | — |
-| Bitdeer | Bitdeer | D40-A1346, D40-M30, D40-M56, D40-S19XP | [`backend/workers/containers/bitdeer`](../containers/bitdeer/README.md) | — |
+| Antspace (v1 strictness gaps) | Bitmain | HK3, IMM | [`backend/workers/containers/antspace`](../containers/antspace/README.md) | — |
+| Bitdeer (v1 strictness gaps) | Bitdeer | D40-A1346, D40-M30, D40-M56, D40-S19XP | [`backend/workers/containers/bitdeer`](../containers/bitdeer/README.md) | — |
 
 ### MDK-maintained power meters
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
-| ABB | ABB | B23, B24, M1M20, M4M20, REU615 | [`backend/workers/power-meter/abb`](../power-meter/abb/README.md) | — |
-| SATEC | Satec | PM180 | [`backend/workers/power-meter/satec`](../power-meter/satec/README.md) | — |
-| Schneider Electric | Schneider | P3U30, PM5340 | [`backend/workers/power-meter/schneider`](../power-meter/schneider/README.md) | — |
+| ABB (v1 strictness gaps) | ABB | B23, B24, M1M20, M4M20, REU615 | [`backend/workers/power-meter/abb`](../power-meter/abb/README.md) | — |
+| SATEC (v1 strictness gaps) | Satec | PM180 | [`backend/workers/power-meter/satec`](../power-meter/satec/README.md) | — |
+| Schneider Electric (v1 strictness gaps) | Schneider | P3U30, PM5340 | [`backend/workers/power-meter/schneider`](../power-meter/schneider/README.md) | — |
 
 ### MDK-maintained sensors
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
-| Seneca | Seneca | Z-4RTD-2 | [`backend/workers/temperature/seneca`](../temperature/seneca/README.md) | — |
+| Seneca (v1 strictness gaps) | Seneca | Z-4RTD-2 | [`backend/workers/temperature/seneca`](../temperature/seneca/README.md) | — |
 
 ### MDK-maintained mining pools
 
 | Brand | Provider | Models | Worker package | Docs |
 |-------|----------|--------|----------------|------|
-| F2Pool | f2pool | F2POOL-BTC | [`backend/workers/minerpools/f2pool`](../minerpools/f2pool/README.md) | — |
+| F2Pool (v1 strictness gaps) | f2pool | F2POOL-BTC | [`backend/workers/minerpools/f2pool`](../minerpools/f2pool/README.md) | — |
 
 ## Contract conformance
 

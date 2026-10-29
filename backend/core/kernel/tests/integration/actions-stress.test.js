@@ -1,5 +1,7 @@
 'use strict'
 
+const { grantTestToken } = require('../../lib/testing')
+
 const test = require('brittle')
 const crypto = require('crypto')
 const fs = require('fs')
@@ -122,7 +124,8 @@ async function requestKernel (clientRpc, orkPublicKey, action, payload) {
     action,
     type: MESSAGE_TYPES.REQUEST,
     sender: 'test:stress:client',
-    payload: payload || {}
+    payload: payload || {},
+    auth: clientRpc.mdkToken
   })
   const resBuf = await clientRpc.request(orkPublicKey, 'mdk', serialize(envelope))
   return deserialize(resBuf)
@@ -214,6 +217,7 @@ async function setupStressFixture (t) {
   const orkPublicKey = kernel.getPublicKey()
   const clientRpc = new HyperswarmRPC({ bootstrap })
   kernel.allowKey(clientRpc.defaultKeyPair.publicKey)
+  clientRpc.mdkToken = await grantTestToken(kernel)
   t.teardown(async () => clientRpc.destroy())
 
   const allTargets = fleets.flatMap(({ workerId, fleet }) =>

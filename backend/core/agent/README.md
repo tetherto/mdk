@@ -9,8 +9,8 @@ The model routes and narrates; the tools compute. Nothing leaves the machine.
 > [!NOTE]
 > This page is reference: the model, the CLI flags, the capability budgets, and the session-store contract. For a
 > walkthrough that runs it end to end, see [Run the agent as a standalone CLI](../../../docs/guides/agent/run-standalone.md).
-> In production, this agent is deployed behind the Gateway by [`@tetherto/mdk-app-agent`](../../apps/agent/README.md),
-> which mounts it as a chat API instead; the [agent guide chooser](../../../docs/guides/agent/index.md) covers both paths.
+> Behind the Gateway, the [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) app serves this agent
+> as a chat API instead; the [agent guide chooser](../../../docs/guides/agent/index.md) covers both paths.
 
 ## Prerequisites
 
@@ -38,7 +38,7 @@ The model routes and narrates; the tools compute. Nothing leaves the machine.
 Serve a model, boot the demo fleet, and start the CLI:
 
 ```bash
-node bin/mdk-agent.js --model qwen3-4b --mcp-url http://127.0.0.1:3008/mcp
+node bin/mdk-agent.js --model qwen3-4b --mcp-url http://127.0.0.1:3101/mcp
 ```
 
 [Run the agent as a standalone CLI](../../../docs/guides/agent/run-standalone.md) walks through
@@ -73,7 +73,7 @@ contract and a model that is too small, and a frontier model separates the two.
 
 ```sh
 export OPENAI_API_KEY=sk-…
-node bin/mdk-agent.js --provider openai --model gpt-5.5 --mcp-url http://127.0.0.1:3008/mcp
+node bin/mdk-agent.js --provider openai --model gpt-5.5 --mcp-url http://127.0.0.1:3101/mcp
 
 # any other endpoint that speaks the same protocol
 export MDK_AGENT_API_KEY=…
@@ -125,7 +125,7 @@ contract and the approval gate on each. Expectations are read from the live flee
 so it works against any site.
 
 ```sh
-node bin/mdk-agent.js --model qwen3-4b --mcp-url http://127.0.0.1:3008/mcp \
+node bin/mdk-agent.js --model qwen3-4b --mcp-url http://127.0.0.1:3101/mcp \
   --eval --reps 2 --concurrency 6 --out eval-report.json
 ```
 

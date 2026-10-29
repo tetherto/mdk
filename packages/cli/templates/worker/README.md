@@ -69,24 +69,16 @@ the device.
 
 ## Builtin per-device health check
 
-`WorkerRuntimeV2` answers a `telemetry.pull` query of `type: 'health'` for any
-device automatically — no contract or handler changes needed. It works by
-registering `health` as a plain handler in the same table any contract-declared
-telemetry channel lives in, so it is dispatched with zero special-casing, the
-same way `status`/`hashrate_rt`/etc. would be. That means it behaves exactly
-like any other named channel:
+Every Worker answers a `telemetry.pull` query of `type: 'health'` for each
+device, with no contract or handler changes: what that device's last metrics
+poll (the Kernel's scheduled `telemetry.pull`) saw.
 
+- The response is `{ name: 'health', value: { reachable, lastSuccessAt, lastError, lastErrorAt } }`.
+  `reachable` is `true` when any channel answered the last poll, `false` when
+  none did or the device is offline, and `null` before the first poll, so a
+  dashboard can show "Worker up, device silent".
 - Requires a `deviceId` — a query with no `deviceId` returns
   `{ error: 'ERR_DEVICE_ID_REQUIRED: health' }`, same as any other named channel.
-- The response comes back in the standard named-channel shape,
-  `{ name: 'health', value: { status, id, opts, env, config, workerId } }` —
-  that device's own ambient config, useful for verifying that Gateway → Kernel
-  → Worker routing reaches the right device instance (e.g. a query addressed
-  to `dev-3` always comes back with `dev-3`'s own `opts`, never a sibling
-  device's).
-- It also shows up as a `health` key inside the default `type: 'metrics'`
-  aggregate for every device, since that aggregate iterates the very same
-  handler table.
 
 If your own contract declares a `health` telemetry channel, that one is used
 instead — the builtin never overrides a plugin-declared handler of the same

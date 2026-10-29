@@ -1,4 +1,4 @@
-import type { AuthProvider } from '@tetherto/mdk-ui-foundation'
+import type { AuthProvider, Fetcher } from '@tetherto/mdk-ui-foundation'
 import { createMdkQueryClient, gatewayRedirectAuth } from '@tetherto/mdk-ui-foundation'
 import type { QueryClient } from '@tanstack/react-query'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -35,6 +35,8 @@ export type MdkProviderProps = {
    * a Gateway running without an auth plugin.
    */
   auth?: AuthProvider
+  /** Transport override, such as `passwordAuth().fetcher`. Defaults to a bearer fetcher reading from `auth`. */
+  fetcher?: Fetcher
   /**
    * Fired after the session is cleared because the backend reported it ended.
    * Typically navigates to the host app's sign-in route. Forwarded to
@@ -43,7 +45,7 @@ export type MdkProviderProps = {
   onSessionExpired?: () => void
   /**
    * Pre-built TanStack QueryClient. Defaults to one produced by
-   * `createMdkQueryClient` from `apiBaseUrl` / `auth`. When supplied, those are
+   * `createMdkQueryClient` from `apiBaseUrl` / `auth` / `fetcher`. When supplied, those are
    * ignored for client construction — it already carries its own runtime — but
    * `auth` is still published on the context for the hooks that read it.
    */
@@ -69,6 +71,7 @@ export type MdkProviderProps = {
 export const MdkProvider: FC<MdkProviderProps> = ({
   apiBaseUrl,
   auth,
+  fetcher,
   onSessionExpired,
   queryClient,
   children,
@@ -81,13 +84,14 @@ export const MdkProvider: FC<MdkProviderProps> = ({
       ?? createMdkQueryClient({
         apiBaseUrl,
         auth: resolvedAuth,
+        fetcher,
         onSessionExpired,
       }),
     // `onSessionExpired` is deliberately not a dependency: a host passing an
     // inline arrow would otherwise rebuild the QueryClient every render and drop
     // the whole cache. The client reads it through the closure it was built
     // with, so a new identity is picked up the next time the client rebuilds.
-    [queryClient, apiBaseUrl, resolvedAuth],
+    [queryClient, apiBaseUrl, resolvedAuth, fetcher],
   )
 
   /* Adopt a session the environment is offering — an OAuth redirect token —

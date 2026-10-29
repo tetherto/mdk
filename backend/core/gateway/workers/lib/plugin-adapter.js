@@ -7,6 +7,7 @@ const { pipeToResponse } = require('@tetherto/mdk-app-runtime')
 const { cachedRoute } = require('./server/lib/cachedRoute')
 const { send200 } = require('./server/lib/send200')
 const { createAuthHook, canOverwriteCache } = require('./security')
+const { createRouteAuthz } = require('./authz')
 
 // Only ERR_* codes and Fastify's own 4xx errors (validation, content type,
 // body size) describe the request; any other message can carry internals, so
@@ -88,21 +89,28 @@ function _disconnectSignal (rep) {
 
 // One call to the app's runtime: `method` is 'invoke' (unary) or 'stream'. The
 // runtime takes `{ params, query, body, headers }` from `req`; the identity the
-// authVerifier set (none on an open route) travels beside it.
+// authVerifier set (none on an open route) travels beside it, and so does a
+// signed-in operator's token (`actor`, see authz.js), which the runtime hands
+// the Kernel and never to app code.
 async function _forward (client, app, route, method, req, timeoutMs, signal) {
   const key = await _runtimeKey(app)
-  return client[method](key, route.id, _appRequest(req), { identity: req._info || {}, timeoutMs, signal })
+  return client[method](key, route.id, _appRequest(req), { identity: req._info || {}, actor: req._actorToken || null, timeoutMs, signal })
 }
 
 // Mounts an app's route table (`app.routes`) under `app.mount` (default
 // `/apps/<name>`) and forwards every request to the app's runtime over HRPC.
 //
-// opts.authVerifier: async (request, route) => identity | false. Every
-// `auth: true` route gets a route-level preParsing hook that runs it: after the
-// Host check and rate limit (onRequest, so failed attempts are throttled too),
-// before body parsing, validation, the cache and the forward. With no
-// verifier those routes answer 401. Routes without `auth: true` stay open.
-// The verified identity reaches the app runtime as the call's `identity`.
+// opts.authority (see authority.js): every route of the app needs a bearer
+// token and a spec.rbac rule for its resource and verb (authz.js); `auth` on a
+// route no longer matters. The verified identity reaches the app runtime as
+// the call's `identity`, and a user's token as its `actor`.
+//
+// Without an authority, the older opts.authVerifier: async (request, route) =>
+// identity | false. Every `auth: true` route gets a route-level preParsing hook
+// that runs it: after the Host check and rate limit (onRequest, so failed
+// attempts are throttled too), before body parsing, validation, the cache and
+// the forward. With no verifier those routes answer 401. Routes without
+// `auth: true` stay open.
 function buildFastifyRoutes (app, client, ctx, opts = {}) {
   const mount = app.mount || `/apps/${app.name}`
   const timeoutMs = resolveAppTimeout(ctx.conf)
@@ -119,7 +127,11 @@ function buildFastifyRoutes (app, client, ctx, opts = {}) {
       fastifyRoute.schema = route.schema
     }
 
-    if (route.auth === true) {
+    if (opts.authority) {
+      const authz = createRouteAuthz(app, route, opts.authority)
+      fastifyRoute.onRequest = authz.onRequest
+      fastifyRoute.preHandler = authz.preHandler
+    } else if (route.auth === true) {
       fastifyRoute.preParsing = createAuthHook(opts.authVerifier || null, Object.freeze({
         id: route.id,
         method: route.method,
@@ -164,8 +176,8 @@ function buildFastifyRoutes (app, client, ctx, opts = {}) {
       let result
       if (cacheFields && Array.isArray(cacheFields)) {
         const keyParts = [app.name, route.id, ..._extractCacheKeyParts(cacheFields, req)]
-        // Per-caller on an `auth: true` route: the response may depend on who asked.
-        if (route.auth === true) keyParts.push(_identityCacheKey(req))
+        // Per caller on a checked route: the response may depend on who asked.
+        if (opts.authority || route.auth === true) keyParts.push(_identityCacheKey(req))
         result = await cachedRoute(
           ctx,
           keyParts,

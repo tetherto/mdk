@@ -1,5 +1,8 @@
 'use strict'
 
+const { grantTestToken, mintToken } = require('../../lib/testing')
+const { generateCredential } = require('@tetherto/mdk-identity')
+
 const test = require('brittle')
 const crypto = require('crypto')
 const fs = require('fs')
@@ -91,7 +94,8 @@ async function requestKernel (clientRpc, orkPublicKey, action, payload) {
     action,
     type: MESSAGE_TYPES.REQUEST,
     sender: 'test:client:actions',
-    payload: payload || {}
+    payload: payload || {},
+    auth: clientRpc.mdkToken
   })
   const resBuf = await clientRpc.request(orkPublicKey, 'mdk', serialize(envelope))
   return deserialize(resBuf)
@@ -164,6 +168,7 @@ async function setupActionsFixture (t, opts = {}) {
   const orkPublicKey = kernel.getPublicKey()
   const clientRpc = new HyperswarmRPC({ bootstrap })
   kernel.allowKey(clientRpc.defaultKeyPair.publicKey)
+  clientRpc.mdkToken = await grantTestToken(kernel)
   t.teardown(async () => {
     await clientRpc.destroy()
     await kernel.stop()
@@ -478,18 +483,36 @@ test('actions - pushAction rejects query with no matching devices', async (t) =>
   assertPushRejected(t, result, 'unknown device yields no write calls')
 })
 
-test('actions - pushAction rejects caller without write permission', async (t) => {
-  const { clientRpc, orkPublicKey } = await setupActionsFixture(t)
+/**
+ * A token for a service account spec.rbac lets push and vote on actions but
+ * only read devices, added beside the fixture's admin.
+ */
+async function voterWithoutDeviceWrite (kernel) {
+  const cred = generateCredential()
+  await kernel.identity.upsertServiceAccount({ name: 'test-voter', publicKey: cred.publicKey })
+  const { policy } = kernel.rbac.info()
+  await kernel.rbac.apply({
+    ...policy,
+    roles: [...policy.roles, { name: 'voter', rules: [{ resources: ['actions'], verbs: ['write', 'vote'] }, { resources: ['devices'], verbs: ['read'] }] }],
+    bindings: [...policy.bindings, { role: 'voter', subjects: [{ kind: 'ServiceAccount', name: 'test-voter' }] }]
+  }, { source: 'test' })
+  return mintToken(kernel.identity, { name: 'test-voter', privateKey: cred.privateKeyPem })
+}
+
+test('actions - pushAction rejects a caller spec.rbac does not let write the device, whatever authPerms it sends', async (t) => {
+  const { kernel, clientRpc, orkPublicKey } = await setupActionsFixture(t)
+  clientRpc.mdkToken = await voterWithoutDeviceWrite(kernel)
 
   const result = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_PUSH, {
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
     voter: 'operator@test',
-    authPerms: ['miner:r']
+    authPerms: ['miner:w']
   })
 
-  assertPushRejected(t, result, 'read-only permission cannot push actions')
+  t.is(result.id, null, 'no action stored')
+  t.ok(result.errors.some((e) => e.startsWith('ERR_KERNEL_ACTION_FORBIDDEN: may not write wm001')), `refused: ${result.errors}`)
 })
 
 test('actions - pushAction rejects invalid query payload', async (t) => {
@@ -581,8 +604,8 @@ test('actions - getActionsBatch ignores unknown ids', async (t) => {
   t.alike(result, [], 'unknown ids produce no entries')
 })
 
-test('actions - voteAction rejects missing permissions', async (t) => {
-  const { clientRpc, orkPublicKey } = await setupActionsFixture(t, { rebootReqVotes: 2 })
+test('actions - voteAction rejects a voter spec.rbac does not let write the target, whatever authPerms it sends', async (t) => {
+  const { kernel, clientRpc, orkPublicKey } = await setupActionsFixture(t, { rebootReqVotes: 2 })
 
   const pushRes = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_PUSH, {
     query: { id: 'wm001' },
@@ -591,15 +614,18 @@ test('actions - voteAction rejects missing permissions', async (t) => {
     voter: 'operator@test',
     authPerms: ['miner:w']
   })
+  t.ok(pushRes.id, 'the admin pushed it')
 
+  // actions: vote but no devices: write; the self-asserted miner:w used to be enough.
+  clientRpc.mdkToken = await voterWithoutDeviceWrite(kernel)
   const result = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id: pushRes.id,
     voter: 'approver@test',
     approve: true,
-    authPerms: ['container:w']
+    authPerms: ['miner:w']
   })
 
-  assertKernelError(t, result, 'ERR_ACTION_DENIED')
+  assertKernelError(t, result, 'ERR_KERNEL_ACTION_FORBIDDEN: may not write wm001')
 })
 
 test('actions - voteAction rejects duplicate voter', async (t) => {

@@ -11,7 +11,7 @@ const { ACTIONS } = require('@tetherto/mdk-kernel/protocol/actions')
 const { buildResponse, serialize, deserialize, validateFull: validateEnvelope } = require('@tetherto/mdk-kernel/protocol/envelope')
 const { loadPlugin } = require('./plugin-loader')
 const { telemetryBuiltin, commandBuiltin, mergeBuiltinCommands, builtinCommandParams } = require('./service-builtins')
-const { validateParams } = require('./param-validator')
+const { validateParams, normalizeParams } = require('@tetherto/mdk-kernel/protocol/params')
 
 // Errors that already carry a protocol code (ERR_*) are part of the wire
 // contract and go back as-is; anything else (a stack-less TypeError from a
@@ -29,6 +29,12 @@ const ERR_CODE = /^ERR_[A-Z0-9_]+/
  * The device list is fixed at construction. A device whose connect() fails
  * is held as `offline` (requests to it return ERR_DEVICE_UNAVAILABLE) so one
  * unreachable unit cannot take down its siblings.
+ *
+ * Every metrics poll (the Kernel's scheduled telemetry.pull) records whether
+ * the device answered any channel, and the `health` channel serves that per
+ * device ({ reachable, lastSuccessAt, lastError, lastErrorAt }) unless the
+ * plugin declares its own `health` channel. It is the device-level signal:
+ * the Kernel's READY state and HealthMonitor only say the Worker answers.
  *
  * `opts.services` (optional) injects worker-infra services (logs, comments,
  * settings, stats, provisioning, write-call approval). When present, the
@@ -59,15 +65,15 @@ class WorkerRuntime {
     this.services = opts.services || null
     this._publishedContract = mergeBuiltinCommands(this._plugin.publishedContract, this.services)
 
-    this._commandParamNames = new Map()
     this._commandParams = new Map()
     for (const entry of this._plugin.contract.capabilities.commands || []) {
-      this._commandParamNames.set(entry.name, (entry.params || []).map((p) => p.name))
       this._commandParams.set(entry.name, Array.isArray(entry.params) ? entry.params : [])
     }
     // Optional DHT bootstrap override. Defaults to hyperdht's public bootstrap;
-    // set only for a custom DHT network or hermetic tests (hyperdht/testnet).
+    // set for a private DHT network (local / air-gapped) or hermetic tests.
     this._bootstrap = opts.bootstrap || null
+    // Interface the DHT node binds (hyperdht `host`); default all interfaces.
+    this._dhtHost = opts.dhtHost || null
 
     // RPC caller allowlist (fail closed). Only these public keys — normally
     // the Kernel's client key, kernel.getClientPublicKey() — may connect;
@@ -84,7 +90,11 @@ class WorkerRuntime {
         device: null,
         ctx: null,
         status: 'offline',
-        error: null
+        error: null,
+        reachable: null,
+        lastSuccessAt: null,
+        lastError: null,
+        lastErrorAt: null
       })
     }
 
@@ -127,7 +137,11 @@ class WorkerRuntime {
     const seedDht = await this._getOrCreateSeed('seedDht')
     const seedRpc = await this._getOrCreateSeed('seedRpc')
 
-    this._dht = new DHT({ keyPair: DHT.keyPair(seedDht), ...(this._bootstrap ? { bootstrap: this._bootstrap } : {}) })
+    this._dht = new DHT({
+      keyPair: DHT.keyPair(seedDht),
+      ...(this._bootstrap ? { bootstrap: this._bootstrap } : {}),
+      ...(this._dhtHost ? { host: this._dhtHost } : {})
+    })
     this._rpc = new HyperswarmRPC({ dht: this._dht, seed: seedRpc })
     this._server = this._rpc.createServer({ firewall: (remotePublicKey) => !this._isAllowed(remotePublicKey) })
 
@@ -404,6 +418,8 @@ class WorkerRuntime {
         result = await this._collectMetrics(entry, params)
       } else if (this._plugin.handlers.telemetry.has(type)) {
         result = await this._pullChannel(entry, type, params)
+      } else if (type === 'health') {
+        result = { name: 'health', value: _health(entry) }
       } else {
         result = { error: `ERR_UNKNOWN_QUERY_TYPE: ${type}` }
       }
@@ -417,16 +433,25 @@ class WorkerRuntime {
   }
 
   async _collectMetrics (entry, params) {
-    if (entry.status !== 'online') return { error: `ERR_DEVICE_UNAVAILABLE: ${entry.deviceId}` }
+    if (entry.status !== 'online') {
+      const error = `ERR_DEVICE_UNAVAILABLE: ${entry.deviceId}`
+      _recordPoll(entry, false, error)
+      return { error }
+    }
 
     const metrics = {}
+    let answered = false
+    let error = null
     for (const [name, fn] of this._plugin.handlers.telemetry) {
       try {
         metrics[name] = await fn(entry.ctx, params)
+        answered = true
       } catch (err) {
         metrics[name] = { error: _publicError(err, 'ERR_TELEMETRY_FAILED') }
+        error = error || metrics[name].error
       }
     }
+    if (answered || error) _recordPoll(entry, answered, error)
     return { metrics }
   }
 
@@ -475,10 +500,11 @@ class WorkerRuntime {
     const handler = this._plugin.handlers.commands.get(command)
     if (!handler) return fail(`ERR_UNKNOWN_COMMAND: ${command}`)
 
-    // Declared params are checked here, not left to each handler: the worker
-    // is reachable on its own RPC key, so the Kernel's check is not enough.
-    const normalized = this._normalizeParams(command, params)
-    const invalid = validateParams(this._commandParams.get(command), normalized)
+    // Declared params are checked here as well as at the Kernel, not left to
+    // each handler: an operator may admit other keys on the Worker.
+    const declared = this._commandParams.get(command)
+    const normalized = normalizeParams(declared, params)
+    const invalid = validateParams(declared, normalized)
     if (invalid) return fail(invalid)
 
     try {
@@ -491,33 +517,6 @@ class WorkerRuntime {
     } catch (err) {
       return fail(_publicError(err, 'ERR_COMMAND_FAILED'))
     }
-  }
-
-  // The Kernel's action-approver dispatches write actions positionally —
-  // `{ value: x }` for one argument, `{ args: [...] }` for several (the
-  // legacy applyThings consumed Object.values). Map those onto the
-  // contract-declared param names so handlers only ever see named params.
-  // Params that already look named (or commands without declared params)
-  // pass through untouched.
-  _normalizeParams (command, params) {
-    const declared = this._commandParamNames.get(command)
-    if (!declared || !declared.length) return params || {}
-
-    let positional = null
-    if (Array.isArray(params)) {
-      positional = params
-    } else if (params && Array.isArray(params.args) && Object.keys(params).length === 1 && !declared.includes('args')) {
-      positional = params.args
-    } else if (params && Object.keys(params).length === 1 && 'value' in params && !declared.includes('value')) {
-      positional = [params.value]
-    }
-    if (!positional) return params || {}
-
-    const named = {}
-    declared.forEach((name, i) => {
-      if (positional[i] !== undefined) named[name] = positional[i]
-    })
-    return named
   }
 
   _handleHealthPing (envelope) {
@@ -577,6 +576,25 @@ function _normalizeKey (key) {
   const hex = Buffer.isBuffer(key) ? key.toString('hex') : (typeof key === 'string' ? key.trim().toLowerCase() : '')
   if (!/^[0-9a-f]{64}$/.test(hex)) throw new Error('ERR_WORKER_ALLOWED_KEY_INVALID: expected a 32-byte hex public key')
   return hex
+}
+
+function _recordPoll (entry, answered, error) {
+  const now = Date.now()
+  entry.reachable = answered
+  if (answered) entry.lastSuccessAt = now
+  if (error) {
+    entry.lastError = error
+    entry.lastErrorAt = now
+  }
+}
+
+function _health (entry) {
+  return {
+    reachable: entry.reachable,
+    lastSuccessAt: entry.lastSuccessAt,
+    lastError: entry.lastError,
+    lastErrorAt: entry.lastErrorAt
+  }
 }
 
 function _publicError (err, fallback) {

@@ -8,6 +8,9 @@
  * - registry: Worker Registry (workerId → worker mapping)
  * - capabilities: Worker capability schemas (mdk-contract.json per worker)
  * - commandWal: Write-Ahead Log for Command State Machine
+ * - rbac: the spec.rbac in force and its apply history (@tetherto/mdk-rbac PolicyStore)
+ * - identity: users, service accounts, signing keys and sessions (@tetherto/mdk-identity TokenIssuer)
+ * - commandLog: write-command log (every command.request attempt and outcome)
  *
  * Note: Telemetry storage is intentionally NOT here.
  * Workers own their own telemetry storage per HLD §4.3.1.
@@ -36,6 +39,9 @@ async function createStores (storeFactory) {
   const registry = db.sub('kernel-registry')
   const capabilities = db.sub('ork-capabilities')
   const commandWal = db.sub('kernel-command-wal')
+  const rbac = db.sub('kernel-rbac')
+  const identity = db.sub('kernel-identity')
+  const commandLog = db.sub('kernel-command-log')
 
   const actionApproverDb = storeFactory.getBee(
     { name: ACTION_APPROVER_DB }
@@ -47,6 +53,9 @@ async function createStores (storeFactory) {
     registry,
     capabilities,
     commandWal,
+    rbac,
+    identity,
+    commandLog,
     actionApprover: actionApproverDb,
 
     async close () {

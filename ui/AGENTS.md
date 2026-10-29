@@ -129,8 +129,8 @@ If `check:agent-ready` reports a NEW violation, the error message names the
 file, the rule, and the one-line fix. The full catalogue lives in
 [`packages/react-devkit/AGENT_READY.md`](packages/react-devkit/AGENT_READY.md).
 
-This runs as a blocking gate in root CI too — the **🤖 Agent-readiness
-contract (UI)** job in the repo's `.github/workflows/ci.yml` — so a new
-violation fails the pull request, not just the local run. A companion **🔒
-USAGE baseline monotonicity** job blocks any growth of
-`usage-proptable-baseline.json`.
+This runs as an advisory (non-blocking) check in root CI too — the **🤖
+Agent-readiness contract (UI)** job in the repo's `.github/workflows/ci.yml` —
+so a new violation is reported on the pull request but does not fail it. A
+companion **🔒 USAGE baseline monotonicity** job likewise reports, without
+blocking, any growth of `usage-proptable-baseline.json`.

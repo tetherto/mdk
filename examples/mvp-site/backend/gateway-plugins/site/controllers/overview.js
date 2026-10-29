@@ -1,6 +1,6 @@
 'use strict'
 
-const { loadSite, snapStats, snapConfig, pullPoolStats } = require('./utils')
+const { loadSite, snapStats, snapConfig, requestClient, pullPoolStats } = require('./utils')
 
 const containerId = (thg) => {
   return (thg.info && thg.info.container) || thg.id || thg.code
@@ -96,9 +96,10 @@ const mapPool = async (pool, mdkClient) => {
 // Live site snapshot — all containers with linked miners, site power from the
 // powermeter, sensors, and pools — all sourced via mdkClient over the RPC listener.
 //
-// `ctx` is a test-only seam — see command.js.
+// Read as the signed-in user, so they see only the devices their roles let them read.
+// `ctx` is a test-only seam — see utils.js requestClient.
 module.exports = async (req, ctx) => {
-  const mdkClient = ctx === undefined ? require('../lib/client') : ctx.mdkClient
+  const mdkClient = requestClient(req, ctx)
   const { byFamily, pools } = await loadSite(mdkClient, { status: true })
 
   const minerThings = byFamily.miner || []

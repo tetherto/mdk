@@ -8,18 +8,20 @@
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
-const { startGateway, onShutdown } = require('@tetherto/mdk-core')
+const { startGateway, startDhtBootstrap, onShutdown } = require('@tetherto/mdk-core')
 const { createAppRuntime } = require('@tetherto/mdk-app-runtime')
 const { createMcpServer } = require('@tetherto/mdk-mcp')
 const { trustedKeysDir, publishTrustedKey, callerKeyPair } = require('@tetherto/mdk-core/lib/local-discovery')
 const {
-  ROOT, GATEWAY_PORT, GATEWAY_HOST, GATEWAY_ALLOWED_HOSTS, GATEWAY_AUTH_VERIFIER, PLUGIN_DIRS, STATIC_ROOT_PATH, DISCOVERY,
+  ROOT, GATEWAY_PORT, GATEWAY_HOST, GATEWAY_ALLOWED_HOSTS, PLUGIN_DIRS, STATIC_ROOT_PATH, DISCOVERY, DHT, DHT_CONF,
   MCP_AGENT_TOOLS_PORT, MCP_PLUGIN_DIRS,
   loadSeedDevices, startMocks, startAntminerMocks, startSealminerMocks, startSatecMocks, startOceanMock, startEmcdMock,
   startSpiderpoolMock, startFoundryMock,
   bootKernel, bootWorker, bootAntminerWorker, bootSealminerWorker, bootOceanWorker, bootSatecWorker, bootEmcdWorker,
   bootSpiderpoolWorker, bootFoundryWorker
 } = require('../backend/site')
+const { SITE_ROLES } = require('./roles')
+const { credentialFile, signingCredential, MCP_TOOLS_ACCOUNT, GATEWAY_ACCOUNT } = require('../backend/access')
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(name)
@@ -31,6 +33,17 @@ const readKernelTopic = (root, mode) => {
   const topicFile = path.join(root, '.dht-topic')
   if (!fs.existsSync(topicFile)) throw new Error('ERR_KERNEL_TOPIC_MISSING: start the Kernel first')
   return fs.readFileSync(topicFile, 'utf8').trim()
+}
+
+// The site's private HyperDHT bootstrap (site.deploy.json `dht`): every other
+// role joins it at host:port and binds its DHT node to host, so nothing in the
+// site talks to the public *.hyperdht.org nodes. Start order does not matter: a
+// DHT node that starts first joins as soon as the bootstrap answers.
+const runDhtBootstrap = async () => {
+  if (!DHT_CONF || DHT_CONF.bootstrap) throw new Error('ERR_DHT_BOOTSTRAP_ROLE_UNUSED: site.deploy.json has no dht section, or lists its own dht.bootstrap')
+  const net = await startDhtBootstrap({ host: DHT_CONF.host, port: DHT_CONF.port })
+  onShutdown(() => net.close())
+  console.log('MDK_READY dht-bootstrap bootstrap=%s', net.bootstrap.join(','))
 }
 
 // Boots one Whatsminer mock server per seed miner in config/devices.json — the
@@ -258,6 +271,9 @@ const readKernelKey = async (root) => {
   return fs.readFileSync(file, 'utf8').trim()
 }
 
+// The site's DHT settings as a Kernel client's config.
+const kernelDht = () => (DHT.bootstrap ? { kernelBootstrap: DHT.bootstrap, ...(DHT.dhtHost ? { kernelDhtHost: DHT.dhtHost } : {}) } : {})
+
 const appKeyFile = (root, name) => path.join(root, 'apps', name, 'runtime.key')
 const gatewayKeyFile = (root) => path.join(root, 'gateway.key')
 const mcpKeyFile = (root) => path.join(root, 'mcp.key')
@@ -285,15 +301,20 @@ const runApp = async (name) => {
     storeDir: path.join(root, 'apps', name),
     keyFile: appKeyFile(root, name),
     allowedKeyFiles: [gatewayKeyFile(root), mcpKeyFile(root)],
-    // The Kernel is fail-closed: it admits the app's Kernel key from the trusted-keys dir.
-    kernelKeyFile: path.join(trustedKeysDir(root), `app-${name}.pub`)
+    // The Kernel is fail-closed: it admits the app's Kernel key from the trusted-keys dir,
+    // and checks every call against spec.rbac as app:<name>, signed in with this credential.
+    kernelKeyFile: path.join(trustedKeysDir(root), `app-${name}.pub`),
+    credentialFile: credentialFile(root, `app:${name}`),
+    // Private DHT: the runtime's server and its Kernel client both join it.
+    ...DHT,
+    ...kernelDht()
   })
   await runtime.start()
   onShutdown(() => runtime.stop())
   console.log('MDK_READY app name=%s kernel=%s', name, kernelKey.slice(0, 16))
 }
 
-// Boots the gateway (static UI + app routes forwarded to the app runtimes,
+// Boots the gateway (static UI, sign-in, and app routes forwarded to the app runtimes,
 // mounted at `/` because the UI calls root paths), connecting to the Kernel by
 // its .kernel-key public key (RPC-listener-only — no in-process Kernel handle).
 // HTTP only: the site plugin's routes also reach agents as MCP
@@ -316,9 +337,15 @@ const runGateway = async () => {
     port,
     httpd: { h0: { host: GATEWAY_HOST } },
     allowedHosts: GATEWAY_ALLOWED_HOSTS,
-    authVerifier: GATEWAY_AUTH_VERIFIER,
+    // Signed in as mvp-gateway, the Gateway follows the Kernel's spec.rbac: it
+    // serves /auth/login|refresh|logout|me, every app route needs a user's
+    // bearer token and a rule allowing it, and the user's token travels on to
+    // the Kernel, which checks their device access too (see backend/access.js).
+    gatewayCredential: signingCredential(root, GATEWAY_ACCOUNT),
     root: path.join(root, 'gateway'),
-    common: { staticRootPath: STATIC_ROOT_PATH }
+    common: { staticRootPath: STATIC_ROOT_PATH },
+    // Private DHT: the Gateway's net facility, Kernel client and app runtime client.
+    ...DHT
   })
 
   // An app runtime that is not up yet answers 503, so no depends_on/ordering
@@ -349,7 +376,9 @@ const runMcp = async () => {
   // every tool plugin's client dials with it (config.kernelKeyPair).
   const kernelKeyPair = callerKeyPair(path.join(root, 'mcp', 'identity'))
   publishTrustedKey(trustedKeysDir(root), 'mcp', kernelKeyPair.publicKey)
-  await createMcpServer(path.join(root, 'mcp'), port, { kernelKey, kernelKeyPair }, MCP_PLUGIN_DIRS, siteApps(root), {
+  // The tool plugins call the Kernel as mvp-mcp-tools (see backend/access.js).
+  const kernelCredential = MCP_PLUGIN_DIRS.length ? signingCredential(root, MCP_TOOLS_ACCOUNT) : undefined
+  await createMcpServer(path.join(root, 'mcp'), port, { kernelKey, kernelKeyPair, ...(kernelCredential ? { kernelCredential } : {}), ...kernelDht() }, MCP_PLUGIN_DIRS, siteApps(root), {
     handleSignals: true,
     keyFile: mcpKeyFile(root)
   })
@@ -358,6 +387,7 @@ const runMcp = async () => {
 }
 
 const ROLES = {
+  'dht-bootstrap': runDhtBootstrap,
   mocks: runMocks,
   'mocks-antminer': runAntminerMocks,
   'mocks-sealminer': runSealminerMocks,
@@ -378,6 +408,10 @@ const ROLES = {
   gateway: runGateway,
   mcp: runMcp
 }
+
+// deploy/roles.js is what start.js trusts: keep the two lists the same.
+const unlisted = Object.keys(ROLES).filter((r) => !SITE_ROLES.includes(r)).concat(SITE_ROLES.filter((r) => !ROLES[r]))
+if (unlisted.length) throw new Error(`ERR_ROLES_OUT_OF_SYNC: deploy/roles.js and run-process.js disagree on ${unlisted.join(', ')}`)
 
 const main = async () => {
   const role = arg('--role')

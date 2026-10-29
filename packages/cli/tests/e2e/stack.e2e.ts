@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'nod
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CLI, cliRunner, env, freePort, projectDir, waitFor as waitUntil } from './helpers.js';
+import { CLI, agentAuth, cliRunner, env, freePort, grantE2eAccess, projectDir, waitFor as waitUntil } from './helpers.js';
 
 // Scaffold a worker and an app with the CLI, run the whole stack, and check it from outside:
 // over the Gateway's HTTP port, with `mdk status`, and against the app runtime's allow-list.
@@ -47,6 +47,7 @@ beforeAll(async () => {
   mkdirSync(join(PROJECT, 'node_modules'), { recursive: true });
   symlinkSync(join(PROJECT, 'workers', 'rig'), join(PROJECT, 'node_modules', 'rig'));
   symlinkSync(join(PROJECT, 'apps', 'ops'), join(PROJECT, 'node_modules', 'ops'));
+  grantE2eAccess(PROJECT, 'ops');
 });
 
 afterAll(async () => {
@@ -71,10 +72,11 @@ describe('a scaffolded stack, run end to end', () => {
     for (const stream of [stack.stdout, stack.stderr]) stream?.on('data', (chunk) => (output += chunk));
     await waitFor(() => output.includes('Stack running.'), '`mdk run` to finish booting');
 
-    // Gateway -> HRPC -> app runtime -> Kernel -> worker.
+    // Gateway -> HRPC -> app runtime -> Kernel -> worker, as an agent spec.rbac lets read the app.
+    const headers = agentAuth(PROJECT);
     let body: { ok?: boolean; kernelConnected?: boolean; workerCount?: number; deviceCount?: number } = {};
     await waitFor(async () => {
-      const res = await fetch(`http://127.0.0.1:${gatewayPort}/apps/ops/api/ops/summary`).catch(() => null);
+      const res = await fetch(`http://127.0.0.1:${gatewayPort}/apps/ops/api/ops/summary`, { headers }).catch(() => null);
       if (res?.status !== 200) return false;
       body = (await res.json()) as typeof body;
       return body.workerCount === 1;

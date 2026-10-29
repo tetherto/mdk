@@ -1,14 +1,6 @@
 {
   "serve": {
     "models": {
-      "qwen3-600m": {
-        "model": "QWEN3_600M_INST_Q4",
-        "preload": false,
-        "config": {
-          "ctx_size": 8192,
-          "reasoning_budget": 0
-        }
-      },
       "qwen3-4b": {
         "model": "QWEN3_4B_INST_Q4_K_M",
         "preload": true,

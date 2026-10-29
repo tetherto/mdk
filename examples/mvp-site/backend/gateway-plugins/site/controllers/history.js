@@ -1,6 +1,6 @@
 'use strict'
 
-const { loadSite, pullPoolStatsHistory } = require('./utils')
+const { loadSite, requestClient, pullPoolStatsHistory } = require('./utils')
 
 const ONE_HOUR_MS = 60 * 60 * 1000
 
@@ -13,9 +13,10 @@ const ONE_HOUR_MS = 60 * 60 * 1000
 //   site-hashrate — miner tail-logs (snap.stats.hashrate_mhs), summed across
 //                   all miners; MH/s.
 //
-// `ctx` is a test-only seam — see command.js.
+// Read as the signed-in user, so they see only the devices their roles let them read.
+// `ctx` is a test-only seam — see utils.js requestClient.
 module.exports = async (req, ctx) => {
-  const mdkClient = ctx === undefined ? require('../lib/client') : ctx.mdkClient
+  const mdkClient = requestClient(req, ctx)
   const metric = (req.query && req.query.metric) || 'hashrate'
   if (metric !== 'hashrate' && metric !== 'power' && metric !== 'temperature' && metric !== 'site-hashrate') {
     throw new Error('ERR_UNKNOWN_METRIC')

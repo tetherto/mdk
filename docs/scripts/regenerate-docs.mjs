@@ -45,13 +45,6 @@ const TARGETS = [
     paths: ['backend/workers/docs/supported-workers.md', 'backend/workers/docs/catalogue.json']
   },
   {
-    key: 'plugins',
-    label: 'Supported apps page',
-    cwd: '.',
-    command: ['npm', ['run', 'generate:plugin-reference']],
-    paths: ['docs/reference/supported-apps.md']
-  },
-  {
     key: 'packages',
     label: 'Package reference page',
     cwd: '.',

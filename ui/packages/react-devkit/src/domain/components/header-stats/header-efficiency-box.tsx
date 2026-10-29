@@ -15,8 +15,8 @@ export type HeaderEfficiencyBoxProps = {
   /** Efficiency in watts per TH/s. */
   valueWthS?: number
   /**
-   * Unit label — defaults to `W/TH/S`.
-   * @default W/TH/S
+   * Unit label — defaults to `W/TH/s`.
+   * @default W/TH/s
    */
   unit?: string
   /** Additional class names */
@@ -35,7 +35,7 @@ export type HeaderEfficiencyBoxProps = {
 export const HeaderEfficiencyBox = ({
   icon,
   valueWthS,
-  unit = 'W/TH/S',
+  unit = 'W/TH/s',
   className,
 }: HeaderEfficiencyBoxProps): JSX.Element => (
   <div className={cn('mdk-header-stat-box', className)}>

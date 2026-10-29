@@ -8,6 +8,7 @@ import {
   getApiBaseUrl,
   resolveApiBaseUrl,
 } from './client'
+import { getFetcher } from './runtime'
 
 describe('resolveApiBaseUrl', () => {
   const NAMES = [API_BASE_URL_ENV.node, DEPRECATED_API_BASE_URL_ENV.node]
@@ -106,6 +107,12 @@ describe('createMdkQueryClient', () => {
       defaultOptions: { queries: { staleTime: 1234 } },
     })
     expect(client.getDefaultOptions().queries?.staleTime).toBe(1234)
+  })
+
+  it('uses a caller-supplied fetcher as the transport', () => {
+    const fetcher = vi.fn()
+    const client = createMdkQueryClient({ fetcher })
+    expect(getFetcher(client)).toBe(fetcher)
   })
 
   it('getApiBaseUrl returns the default for an externally-built QueryClient', async () => {

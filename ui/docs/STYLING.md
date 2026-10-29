@@ -59,6 +59,13 @@ If you also want to opt your own component styles into the cascade ordering
 }
 ```
 
+> [!IMPORTANT]
+> The browser ranks layers in the order a page first mentions them. If a stylesheet with `@layer app { … }` loads
+> before the devkit's CSS, as one imported by a component the router pulls in does, `app` ranks below `base` and
+> `mdk` and every devkit rule beats it. Declare the order before any other CSS: a stylesheet holding only
+> `@layer base, mdk, app;`, imported first in your entry file, as the shell template's
+> [`src/layers.css`](../../examples/mdk-ui-shell-template/src/layers.css) is.
+
 ## Design tokens
 
 All design tokens are declared as CSS custom properties under `:root` inside

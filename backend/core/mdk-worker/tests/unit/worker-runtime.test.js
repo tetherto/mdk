@@ -224,6 +224,13 @@ test('a device whose connect() fails stays offline without harming siblings', as
 
   const sibling = await runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: {} }, 'SIM-001'))
   t.alike(sibling.payload.metrics, { hashrate_rt: 100, power: 3000, power_limit: 3500 })
+
+  const health = async (deviceId) => (await runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: { type: 'health' } }, deviceId))).payload.value
+  const offline = await health('SIM-002')
+  t.is(offline.reachable, false)
+  t.is(offline.lastSuccessAt, null)
+  t.is(offline.lastError, 'ERR_DEVICE_UNAVAILABLE: SIM-002', 'not the raw connect() message')
+  t.is((await health('SIM-001')).reachable, true)
 })
 
 test('a throwing telemetry handler reports per-channel error, others still collected', async (t) => {
@@ -238,6 +245,11 @@ test('a throwing telemetry handler reports per-channel error, others still colle
 
   const channel = await runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: { type: 'hashrate_rt' } }, 'SIM-001'))
   t.is(channel.payload.error, 'ERR_READ_FAILED')
+
+  const health = await runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: { type: 'health' } }, 'SIM-001'))
+  t.is(health.payload.value.reachable, true, 'the device answered the other channels')
+  t.is(health.payload.value.lastError, 'ERR_READ_FAILED')
+  t.is(health.payload.value.lastErrorAt, health.payload.value.lastSuccessAt, 'both from the metrics poll; a channel pull is not a poll')
 })
 
 test('stop() disconnects every online device via the plugin', async (t) => {

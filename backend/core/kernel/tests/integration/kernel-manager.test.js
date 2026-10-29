@@ -162,10 +162,12 @@ test('kernel-manager - with HRPC config starts listener', async (t) => {
   t.not(clientKey.toString('hex'), pk.toString('hex'), 'client key differs from the listener key')
 
   const callerHex = 'cd'.repeat(32)
-  t.is(kernel.hrpcListener.getCallerRoles(callerHex), null, 'empty allowlist admits nobody')
-  t.is(kernel.allowKey(callerHex, ['read']), callerHex)
-  t.alike([...kernel.hrpcListener.getCallerRoles(callerHex)], ['read'])
+  t.absent(kernel.hrpcListener.isAllowed(callerHex), 'empty allowlist admits nobody')
+  t.is(kernel.allowKey(callerHex), callerHex)
+  t.ok(kernel.hrpcListener.isAllowed(callerHex))
+  t.alike(kernel.listAllowedKeys(), [callerHex])
   t.ok(kernel.revokeKey(callerHex))
+  t.absent(kernel.hrpcListener.isAllowed(callerHex))
   t.exception(() => kernel.allowKey('nothex'), /ERR_KERNEL_CALLER_KEY_INVALID/)
 
   await kernel.stop()
@@ -220,8 +222,8 @@ test('createKernel - auth.whitelist populates hrpc whitelist', (t) => {
   })
 
   t.is(kernel.conf.kernel.hrpc.whitelist[0], 'aabbcc', 'whitelist forwarded to hrpc config')
-  t.absent(kernel.conf.kernel.hrpc.allowAll, 'allowAll is off by default')
-  t.is(createKernel({ auth: { allowAll: true } }).conf.kernel.hrpc.allowAll, true, 'auth.allowAll forwarded')
+  t.absent('allowAll' in kernel.conf.kernel.hrpc, 'there is no allowAll')
+  t.exception(() => createKernel({ auth: { allowAll: true } }), /ERR_KERNEL_ALLOW_ALL_REMOVED/)
 })
 
 test('createKernel - cadences forwarded to conf', (t) => {

@@ -14,7 +14,7 @@ apps that connect MDK to hardware, pools, and agents. UI is the browser toolkit,
 Availability says how you get a package:
 
 - `workspace`: private to the monorepo, used from a clone
-- `publishable`: not marked private, so it can be published to a registry
+- `publishable`: not marked private. A release publishes it to npm once it also sets `publishConfig.access` to `public` and its `repository`
 
 ## Core
 
@@ -25,8 +25,10 @@ Availability says how you get a package:
 | [`@tetherto/mdk-client`][mdk-client] | MDK protocol client — HRPC (RPC listener) transport for Kernel | `publishable` |
 | [`@tetherto/mdk-core`][mdk-core] | MDK bootstrap utilities and worker-infra services — kernel/gateway lifecycle plus injectable log/comment/alert/stats/settings/provisioning services for runtime-hosted workers | `publishable` |
 | [`@tetherto/mdk-gateway`][mdk-gateway] | MDK Gateway | `publishable` |
+| [`@tetherto/mdk-identity`][mdk-identity] | MDK identity: the token issuer (users, service accounts, rotating refresh tokens) and JWT verification for the Gateway, MCP server and Kernel | `publishable` |
 | [`@tetherto/mdk-kernel`][mdk-kernel] | MDK Kernel - Orchestration Kernel | `publishable` |
 | [`@tetherto/mdk-mcp`][mdk-mcp] | MDK MCP Server | `publishable` |
+| [`@tetherto/mdk-rbac`][mdk-rbac] | MDK RBAC policy library — validates spec.rbac from mdk.yaml and evaluates callers at the Gateway, MCP server and Kernel | `publishable` |
 | [`@tetherto/mdk-worker`][mdk-worker] | MDK Worker Runtime — hosts a Worker Plugin's devices behind one HRPC channel to the Kernel | `publishable` |
 
 ## Extensions
@@ -68,7 +70,6 @@ Availability says how you get a package:
 
 | Package | Purpose | Availability |
 | --- | --- | --- |
-| [`@tetherto/mdk-app-agent`][mdk-app-agent] | MDK agent app: auth-gated chat sessions, SSE streams and approval round-trips behind the Gateway | `workspace` |
 | [`@tetherto/mdk-worker-mock`][mdk-worker-mock] | Generic mock framework for MDK device workers (BaseMock + transport adapters) | `workspace` |
 
 ## UI
@@ -115,11 +116,17 @@ Availability says how you get a package:
 [mdk-gateway]: ../../backend/core/gateway/README.md
 <!-- docs@tether.io: mdk-gateway → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md -->
 
+[mdk-identity]: ../../backend/core/identity/README.md
+<!-- docs@tether.io: mdk-identity → https://github.com/tetherto/mdk/blob/main/backend/core/identity/README.md -->
+
 [mdk-kernel]: ../../backend/core/kernel/README.md
 <!-- docs@tether.io: mdk-kernel → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md -->
 
 [mdk-mcp]: ../../backend/core/mcp/README.md
 <!-- docs@tether.io: mdk-mcp → https://github.com/tetherto/mdk/blob/main/backend/core/mcp/README.md -->
+
+[mdk-rbac]: ../../backend/core/rbac/README.md
+<!-- docs@tether.io: mdk-rbac → https://github.com/tetherto/mdk/blob/main/backend/core/rbac/README.md -->
 
 [mdk-worker]: ../../backend/core/mdk-worker/README.md
 <!-- docs@tether.io: mdk-worker → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md -->
@@ -147,9 +154,6 @@ Availability says how you get a package:
 
 [mdk-worker-f2pool]: ../../backend/workers/minerpools/f2pool/README.md
 <!-- docs@tether.io: mdk-worker-f2pool → https://github.com/tetherto/mdk/blob/main/backend/workers/minerpools/f2pool/README.md -->
-
-[mdk-app-agent]: ../../backend/apps/agent/README.md
-<!-- docs@tether.io: mdk-app-agent → https://github.com/tetherto/mdk/blob/main/backend/apps/agent/README.md -->
 
 [mdk-worker-mock]: ../../backend/workers/mock/README.md
 <!-- docs@tether.io: mdk-worker-mock → https://github.com/tetherto/mdk/blob/main/backend/workers/mock/README.md -->

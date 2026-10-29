@@ -15,9 +15,11 @@ This is one of [two ways to run the agent][agent-guides-index].
 
 - Node.js ≥ 24
 - npm 11 [(< 12)][npm-version]
-- GPU — see [the agent's prerequisites][agent-prereqs] for the exact backend requirements
+- GPU:
+  - **macOS:** Metal
+  - **Linux and Windows:** Requires **Vulkan 1.4+**. On macOS and Linux, a missing GPU backend falls back to CPU (slower but functional). On Windows, the native runtime requires Vulkan 1.4+ even for CPU inference and fails outright if missing or on an older version. Verify with `vulkaninfo --summary` before running.
 - Dependencies installed — see [the agent's prerequisites][agent-prereqs]: a single root `npm install`, not one run inside the package
-- Language model: this guide uses [QVAC](https://qvac.tether.io/) serving an OpenAI-compatible API
+- Language model: this guide uses [QVAC](https://qvac.tether.io/) serving an OpenAI-compatible API on port `11500`
 
 <Steps>
 
@@ -28,25 +30,14 @@ This is one of [two ways to run the agent][agent-guides-index].
 The agent needs a language model listening locally. Already have a QVAC server running elsewhere?
 Skip this step, then add `--base-url <its-url>` when you [start the agent](#start-the-agent-and-ask).
 
-#### 1.1 Note the agent package's path
+#### 1.1 Install the QVAC CLI
+
+QVAC installs into a separate directory to keep the repository's dependencies and lockfile clean:
 
 ```bash
-cd backend/core/agent    # From the repo root (dependencies come from the root npm install)
-pwd                      # Note this: the serve command below needs it after it cd's elsewhere
-```
-
-#### 1.2 Serve the model
-
-QVAC installs into a separate directory, so a fresh terminal, started from wherever you like:
-
-```bash
-mkdir -p ~/qvac-runtime && cd ~/qvac-runtime && npm init -y   # once
+mkdir -p ~/qvac-runtime && cd ~/qvac-runtime && npm init -y   # on macOS/Linux
+# On Windows (PowerShell): md ~/qvac-runtime; cd ~/qvac-runtime; npm init -y
 npm i @qvac/cli@^0.12.0                                       # ~6 GB of prebuilt engines
-./node_modules/.bin/qvac doctor                               # confirms this host can serve
-# --config pins the model: Qwen3-4B, 4-bit quantized, 16k context
-./node_modules/.bin/qvac serve openai \
-  --config <path-noted-in-1.1>/qvac-runtime/qvac.config.json \
-  --port 11500 --verbose --no-cancel-load-on-disconnect      # --verbose: load + GPU offload; wait until listening on 11500
 ```
 
 <details>
@@ -59,8 +50,47 @@ keeps the lockfile clean.
 
 </details>
 
+> [!TIP]
+> **Optional: Free ~2.5 to 3.4 GB of disk space**
+> `@qvac/cli` bundles native binaries for multiple operating systems and architectures. If disk space is tight, remove the platforms you do not need:
+>
+> - **macOS:**
+>   ```bash
+>   rm -rf node_modules/@qvac/*/prebuilds/{win32,linux,android,ios}*
+>   ```
+> - **Linux (x64):**
+>   ```bash
+>   rm -rf node_modules/@qvac/*/prebuilds/{win32,darwin,android,ios,linux-arm64}*
+>   ```
+> - **Windows (PowerShell):**
+>   ```powershell
+>   Remove-Item "node_modules/@qvac/*/prebuilds/*" -Exclude "win32*" -Recurse -Force
+>   ```
+> *(Note: This is disk relief rather than a permanent fix: running `npm install` again will restore them.)*
+
+#### 1.2 Copy the model configuration
+
+From the repository root, copy the pre-configured model definition ([`qvac.config.json`][qvac-config]) into your runtime directory:
+
+```bash
+cp backend/core/agent/qvac-runtime/qvac.config.json ~/qvac-runtime/
+```
+
+#### 1.3 Start the model server
+
+Confirm your host capabilities and start the server:
+
+```bash
+cd ~/qvac-runtime
+npx qvac doctor                                               # confirms GPU backend and host capabilities
+# --config pins the model: Qwen3-4B, 4-bit quantized, 16k context
+npx qvac serve openai \
+  --config qvac.config.json \
+  --port 11500 --verbose --no-cancel-load-on-disconnect       # --verbose: load + GPU offload; wait until listening on 11500
+```
+
 > [!IMPORTANT]
-> The port and flag above aren't arbitrary: `11500` avoids Ollama's default `11434` (whichever
+> The port and flag above are not arbitrary: `11500` avoids Ollama's default `11434` (whichever
 > starts second on a machine with both dies on `EADDRINUSE`), and `--no-cancel-load-on-disconnect`
 > stops a lazily loaded model's first request from failing with a `503` that isn't really about a
 > disconnect.
@@ -75,11 +105,11 @@ If this doesn't work first try, see [troubleshooting](#troubleshooting).
 
 If you already have an MCP tool server, skip this and point the agent at its URL in the [next step](#start-the-agent-and-ask).
 
-To try it end-to-end, boot the [MVP site example][mvp-site-example]. It brings up a simulated fleet (miners, a
+From the repository root, boot the [MVP site example][mvp-site-example]. It brings up a simulated fleet (miners, a
 powermeter, a pool) under PM2 and exposes the MDK tools over MCP on port `3101`:
 
 ```bash
-cd ../../../examples/mvp-site
+cd examples/mvp-site
 npm run setup         # first time only. NOT npm install: examples/mvp-site is a root workspace member,
                       # and this also builds the UI toolkit and installs its own nested ui/ app
 npm run setup:config  # first time only: writes config/devices.json and config/site.deploy.json
@@ -94,11 +124,11 @@ Leave it running.
 
 ### Start the agent and ask
 
-In a third terminal, start the CLI — pointing it at the model (per the previous step) and the MCP tool
-server:
+In a third terminal, navigate to `backend/core/agent` from the repository root and start the CLI, pointing it at the model (port `11500`) and the MCP tool server (port `3101`):
 
 ```bash
-node bin/mdk-agent.js --model qwen3-4b --mcp-url http://127.0.0.1:3101/mcp
+cd backend/core/agent
+node bin/mdk-agent.js --model qwen3-4b --base-url http://127.0.0.1:11500/v1 --mcp-url http://127.0.0.1:3101/mcp
 ```
 
 You may now query the site in plain language, for example:
@@ -123,8 +153,7 @@ REPL commands: `/about` (what this is) · `/tools` · `/info` · `/new` · `/exi
 
 ### `npx qvac` fails with a 404
 
-There is no `qvac` package on npm; the binary comes from `@qvac/cli`, installed in
-[Serve the model](#serve-the-model-with-qvac).
+When inside `~/qvac-runtime`, `npx qvac` resolves from the local `./node_modules/.bin/qvac` binary. If run outside that directory, `npx` searches the npm registry for a package named `qvac` (which does not exist; the package is `@qvac/cli`), failing with a 404. Run `cd ~/qvac-runtime` first.
 
 ### `qvac serve openai` dies with `EADDRINUSE`
 
@@ -135,7 +164,7 @@ command above does) if both run on this machine.
 
 `serve.load.cancelOnDisconnect` defaults to `true`, which cancels a lazily loaded model's first
 request. `--no-cancel-load-on-disconnect` fixes it. Models declared `preload: true` (like
-`qwen3-4b` in `qvac-runtime/qvac.config.json`) never hit this, but the flag costs nothing.
+`qwen3-4b` in `qvac.config.json`) never hit this, but the flag costs nothing.
 
 ### The first run looks stalled, or the server "never starts"
 
@@ -155,10 +184,9 @@ failed fetch. Three things help:
 
 ### Disk usage is larger than expected
 
-Budget ~6 GB for the CLI, 2.5 GB for the model, and a KV cache that grows. Of that 6 GB, ~5 GB is
-prebuilt binaries for platforms this host can't run (every modality engine is pulled whether used
-or not). Deleting the foreign `prebuilds/` directories takes the install to ~400 MB and is safe,
-verified by cold restart, but `npm i` restores them, so it's disk relief rather than a fix.
+Budget ~6 GB for the CLI, ~2.5 GB for the model weights, and a KV cache that grows over time.
+Of the CLI's ~6 GB, ~4.6 GB consists of native prebuilt binaries across multiple platforms and architectures.
+Deleting the foreign prebuilds reclaims ~2.5 to 3.4 GB safely — see [Free foreign prebuilds in Step 1.1](#11-install-the-qvac-cli) for the commands.
 
 ### The fleet has fewer devices than expected
 
@@ -191,3 +219,6 @@ seed) sticks around. Run `npm run stop:pm2`, then clear `examples/mvp-site/.site
 
 [mvp-site-example]: ../../../examples/mvp-site/README.md
 <!-- docs@tether.io: mvp-site-example → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/README.md -->
+
+[qvac-config]: ../../../backend/core/agent/qvac-runtime/qvac.config.json
+<!-- docs@tether.io: qvac-config → https://github.com/tetherto/mdk/blob/main/backend/core/agent/qvac-runtime/qvac.config.json -->

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker-schneider",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "private": true,
   "description": "PowerMeter Schneider",
   "keywords": [

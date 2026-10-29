@@ -3,6 +3,7 @@
 const { HRPCClient } = require('./lib/hrpc-client')
 const { build } = require('@tetherto/mdk-kernel/protocol/envelope')
 const { ACTIONS, MESSAGE_TYPES } = require('@tetherto/mdk-kernel/protocol/actions')
+const { ServiceAccountTokenSource } = require('@tetherto/mdk-identity')
 
 /**
  * createRawMdkClient
@@ -18,22 +19,56 @@ const { ACTIONS, MESSAGE_TYPES } = require('@tetherto/mdk-kernel/protocol/action
  * ms) that overrides the transport's default per-request timeout (30 s) for
  * that call.
  *
+ * The Kernel authorizes every request by an access token. With
+ * `opts.credential` (a service account's `{ name, privateKey }`) the client
+ * signs in itself, keeps a valid token, and sends it with every request but
+ * sign-in; `opts.tokenSource` (`{ getToken, reset }`) plugs in any other
+ * source, such as a user session. A request the Kernel refuses for its token
+ * is retried once with a fresh one.
+ *
  * @param {object} opts
- * @param {object} [opts.hrpc]     - HRPC transport opts ({ key, keyPair?, seed?, bootstrap?, timeout?, envelope?, dht?, rpc? })
+ * @param {object} [opts.hrpc]     - HRPC transport opts ({ key, keyPair?, seed?, bootstrap?, dhtHost?, timeout?, envelope?, dht?, rpc? })
  * @param {object} [opts.transport] - Pre-built transport ({ connect, close, request }); test seam
+ * @param {{ name: string, privateKey: string }} [opts.credential] - service-account credential
+ * @param {{ getToken: () => Promise<string>, reset: () => void }} [opts.tokenSource]
  * @returns {object} Client with connect/close and action methods
  */
 function createRawMdkClient (opts) {
   const transport = _createTransport(opts)
 
-  function request (action, payload, deviceId, callOpts) {
+  function send (action, payload, deviceId, callOpts, auth, actor) {
     return transport.request(build({
       action,
       type: MESSAGE_TYPES.REQUEST,
       sender: 'gateway',
       deviceId: deviceId || null,
-      payload: payload || {}
+      payload: payload || {},
+      ...(auth ? { auth } : {}),
+      ...(actor ? { actor } : {})
     }), _callOpts(callOpts))
+  }
+
+  const tokenSource = opts.tokenSource || (opts.credential
+    ? new ServiceAccountTokenSource({
+      name: opts.credential.name,
+      privateKey: opts.credential.privateKey,
+      ...(opts.credential.audience ? { audience: opts.credential.audience } : {}),
+      request: (action, payload) => send(action, payload, null, {})
+    })
+    : null)
+
+  // `actor`: the operator's access token, sent beside this client's own (see withActor).
+  async function request (action, payload, deviceId, callOpts, actor) {
+    if (action.startsWith('auth.')) return _raiseRefusal(await send(action, payload, deviceId, callOpts))
+    if (!tokenSource) return _raiseRefusal(await send(action, payload, deviceId, callOpts, null, actor))
+    let res = await send(action, payload, deviceId, callOpts, await tokenSource.getToken(), actor)
+    // Refused before the action ran (expired, rotated key), so a retry is safe.
+    // An invalid actor token is the operator's to renew: it is not retried.
+    if (res && typeof res.error === 'string' && res.error.startsWith('ERR_KERNEL_TOKEN_INVALID')) {
+      tokenSource.reset()
+      res = await send(action, payload, deviceId, callOpts, await tokenSource.getToken(), actor)
+    }
+    return _raiseRefusal(res)
   }
 
   // A client bound to a Worker that dials with this client's identity (and,
@@ -124,35 +159,6 @@ function createRawMdkClient (opts) {
       throw new Error('ERR_MDK_WAIT_DEVICE_TIMEOUT')
     },
 
-    listWorkers (callOpts) {
-      return request(ACTIONS.WORKER_LIST, {}, null, callOpts)
-    },
-
-    getCapabilities (deviceId, callOpts) {
-      return request(ACTIONS.DEVICE_CAPABILITIES, {}, deviceId, callOpts)
-    },
-
-    pullTelemetry (deviceId, query, callOpts) {
-      // query may be a string (the query type) or a full query object
-      // ({ type, key, tag, start, end, limit, ... }) forwarded to the worker.
-      const q = (query && typeof query === 'object')
-        ? { type: 'metrics', ...query }
-        : { type: query || 'metrics' }
-      return request(ACTIONS.TELEMETRY_PULL, { query: q }, deviceId, callOpts)
-    },
-
-    pullState (deviceId, callOpts) {
-      return request(ACTIONS.STATE_PULL, {}, deviceId, callOpts)
-    },
-
-    sendCommand (deviceId, command, params, callOpts) {
-      return request(ACTIONS.COMMAND_REQUEST, { command, params: params || {}, requesterId: 'gateway' }, deviceId, callOpts)
-    },
-
-    getCommandStatus (commandId, callOpts) {
-      return request(ACTIONS.COMMAND_STATUS, { commandId }, null, callOpts)
-    },
-
     // Resolve a worker's RPC public key (hex) from the Kernel registry, or null.
     async getWorkerKey (workerId) {
       const { workers } = await client.getStatus()
@@ -192,8 +198,138 @@ function createRawMdkClient (opts) {
       }
     },
 
+    /**
+     * The same Kernel actions, made for an operator: each request carries the
+     * operator's access token (`envelope.actor`) beside this client's own, and
+     * the Kernel allows it only when spec.rbac allows both. For an app runtime
+     * serving a Gateway request (see req.mdk); the token is not readable back.
+     */
+    withActor (actorToken) {
+      if (typeof actorToken !== 'string' || !actorToken) throw new Error('ERR_MDK_CLIENT_ACTOR_REQUIRED')
+      return Object.freeze(_kernelActions((action, payload, deviceId, callOpts) => request(action, payload, deviceId, callOpts, actorToken)))
+    },
+
+    ..._kernelActions(request)
+  }
+
+  return client
+}
+
+// The Kernel request wrappers, over `request(action, payload, deviceId, callOpts)`.
+function _kernelActions (request) {
+  return {
+    listWorkers (callOpts) {
+      return request(ACTIONS.WORKER_LIST, {}, null, callOpts)
+    },
+
+    getCapabilities (deviceId, callOpts) {
+      return request(ACTIONS.DEVICE_CAPABILITIES, {}, deviceId, callOpts)
+    },
+
+    pullTelemetry (deviceId, query, callOpts) {
+      // query may be a string (the query type) or a full query object
+      // ({ type, key, tag, start, end, limit, ... }) forwarded to the worker.
+      const q = (query && typeof query === 'object')
+        ? { type: 'metrics', ...query }
+        : { type: query || 'metrics' }
+      return request(ACTIONS.TELEMETRY_PULL, { query: q }, deviceId, callOpts)
+    },
+
+    pullState (deviceId, callOpts) {
+      return request(ACTIONS.STATE_PULL, {}, deviceId, callOpts)
+    },
+
+    sendCommand (deviceId, command, params, callOpts) {
+      return request(ACTIONS.COMMAND_REQUEST, { command, params: params || {} }, deviceId, callOpts)
+    },
+
+    getCommandStatus (commandId, callOpts) {
+      return request(ACTIONS.COMMAND_STATUS, { commandId }, null, callOpts)
+    },
+
+    // Write-command log, newest first; admin callers only.
+    getCommandLog ({ start, end, limit } = {}, callOpts) {
+      return request(ACTIONS.COMMAND_LOG, { start, end, limit }, null, callOpts)
+    },
+
     terminateWorker (workerId, callOpts) {
       return request(ACTIONS.WORKER_TERMINATE, { workerId }, null, callOpts)
+    },
+
+    /** The RBAC record in force: `{ record: { version, appliedAt, source, policy, ... } | null }`. Admin only. */
+    getRbac (callOpts) {
+      return request(ACTIONS.RBAC_GET, {}, null, callOpts)
+    },
+
+    /**
+     * Apply spec.rbac (null = deny-all). Resolves `{ changed, version, appliedAt, previous? }`,
+     * or `{ error, errors? }` when the Kernel refuses it (the policy in force is kept). Admin only.
+     */
+    applyRbac (rbac, callOpts) {
+      return request(ACTIONS.RBAC_APPLY, { rbac }, null, callOpts)
+    },
+
+    // Sign-in. Each resolves `{ tokenType, accessToken, expiresIn, refreshToken, refreshExpiresIn }`,
+    // or `{ error }` when the issuer refuses (ERR_IDENTITY_*).
+
+    /** Password sign-in for a user. */
+    login (username, password, callOpts) {
+      return request(ACTIONS.AUTH_LOGIN, { username, password }, null, callOpts)
+    },
+
+    /** Trade a refresh token for new tokens; the old one is used up. */
+    refreshToken (refreshToken, callOpts) {
+      return request(ACTIONS.AUTH_REFRESH, { refreshToken }, null, callOpts)
+    },
+
+    /**
+     * Service-account sign-in with an assertion (see createAssertion in
+     * @tetherto/mdk-identity). Tokens are bound to this client's key unless `bind: false`.
+     */
+    serviceAccountToken (assertion, { bind } = {}, callOpts) {
+      return request(ACTIONS.AUTH_TOKEN, { assertion, ...(bind === false ? { bind: false } : {}) }, null, callOpts)
+    },
+
+    /** End the session a refresh token belongs to: `{ revoked }`. */
+    logout (refreshToken, callOpts) {
+      return request(ACTIONS.AUTH_LOGOUT, { refreshToken }, null, callOpts)
+    },
+
+    /** The issuer's public keys, for verifying access tokens: `{ keys }`. */
+    getJwks (callOpts) {
+      return request(ACTIONS.AUTH_JWKS, {}, null, callOpts)
+    },
+
+    // Identity administration (admin only).
+
+    listUsers (callOpts) {
+      return request(ACTIONS.IDENTITY_USER_LIST, {}, null, callOpts)
+    },
+
+    /** Create or update a user: `{ name, email?, groups?, password?, disabled? }`. */
+    upsertUser (user, callOpts) {
+      return request(ACTIONS.IDENTITY_USER_UPSERT, user, null, callOpts)
+    },
+
+    deleteUser (name, callOpts) {
+      return request(ACTIONS.IDENTITY_USER_DELETE, { name }, null, callOpts)
+    },
+
+    listServiceAccounts (callOpts) {
+      return request(ACTIONS.IDENTITY_SA_LIST, {}, null, callOpts)
+    },
+
+    /** Register a service account's public key: `{ name, publicKey }`. */
+    upsertServiceAccount (serviceAccount, callOpts) {
+      return request(ACTIONS.IDENTITY_SA_UPSERT, serviceAccount, null, callOpts)
+    },
+
+    deleteServiceAccount (name, callOpts) {
+      return request(ACTIONS.IDENTITY_SA_DELETE, { name }, null, callOpts)
+    },
+
+    rotateSigningKey (callOpts) {
+      return request(ACTIONS.IDENTITY_KEYS_ROTATE, {}, null, callOpts)
     },
 
     pushAction ({ query, action, params, voter, authPerms, batchActionUID }, callOpts) {
@@ -224,8 +360,6 @@ function createRawMdkClient (opts) {
       return request(ACTIONS.ACTION_CANCEL_BATCH, { ids, voter }, null, callOpts)
     }
   }
-
-  return client
 }
 
 // A client bound directly to a worker by its RPC public key — same surface as
@@ -241,7 +375,7 @@ function createWorkerClient (rpcKey, hrpcOpts = {}) {
  * createMdkClient
  *
  * The client most consumers want: instantiate once from an ambient plugin
- * config ({ kernelKey, kernelKeyPair, kernelBootstrap }) and call action methods directly —
+ * config ({ kernelKey, kernelKeyPair, kernelBootstrap, kernelDhtHost }) and call action methods directly —
  * `mdkClient.listWorkers()` — like any connection-pooling DB client. The
  * first call connects (memoized); a failed connect resets the memo so the
  * next request retries. A host booted without a reachable Kernel keeps its
@@ -251,25 +385,33 @@ function createWorkerClient (rpcKey, hrpcOpts = {}) {
  * connect() is optional (explicit warm-up); close() tears the connection
  * down and lets a later call reconnect.
  *
- * @param {object} config - Ambient plugin config; reads kernelKey/kernelKeyPair/kernelBootstrap
+ * @param {object} config - Ambient plugin config; reads kernelKey/kernelKeyPair/kernelBootstrap/kernelDhtHost and
+ *                          kernelCredential (`{ name, privateKey }`, the service account to sign in as)
  * @param {object} [opts]
  * @param {string} [opts.errorCode]  - ERR_ code for missing key / failed connect / failed Kernel request
  * @param {number} [opts.timeout]    - Default per-request timeout in ms (30000); each call can override it
  * @param {object} [opts.transport]  - Pre-built transport; test seam
+ * @param {object} [opts.tokenSource] - Token source instead of `config.kernelCredential` (see createRawMdkClient)
  * @returns {object} Auto-connecting client with the raw client's surface
  */
 function createMdkClient (config = {}, opts = {}) {
   const errCode = opts.errorCode || 'ERR_MDK_CLIENT_UNAVAILABLE'
+  const auth = {
+    ...(config.kernelCredential ? { credential: config.kernelCredential } : {}),
+    ...(opts.tokenSource ? { tokenSource: opts.tokenSource } : {})
+  }
   const raw = opts.transport
-    ? createRawMdkClient({ transport: opts.transport })
+    ? createRawMdkClient({ transport: opts.transport, ...auth })
     : config.kernelKey
       ? createRawMdkClient({
         hrpc: {
           key: config.kernelKey,
           ...(config.kernelKeyPair ? { keyPair: config.kernelKeyPair } : {}),
           ...(config.kernelBootstrap ? { bootstrap: config.kernelBootstrap } : {}),
+          ...(config.kernelDhtHost ? { dhtHost: config.kernelDhtHost } : {}),
           ...(opts.timeout !== undefined ? { timeout: opts.timeout } : {})
-        }
+        },
+        ...auth
       })
       : null
 
@@ -295,19 +437,28 @@ function createMdkClient (config = {}, opts = {}) {
   // Every method access resolves against the connected raw client, so the
   // connection is established exactly once, on first use — `then` must stay
   // undefined or awaiting the client itself would treat it as a thenable.
-  return new Proxy({}, {
+  // withActor(token) is synchronous: a view whose calls connect the same way.
+  const methods = (resolve) => new Proxy({}, {
     get (_target, prop) {
       if (typeof prop !== 'string' || prop === 'then') return undefined
-      if (prop === 'connect') return (connectOpts) => ensure(connectOpts).then(() => undefined)
-      if (prop === 'close') {
-        return async () => {
-          if (!raw || !connecting) return
-          connecting = null
-          await raw.close()
+      if (resolve === ensure) {
+        if (prop === 'connect') return (connectOpts) => ensure(connectOpts).then(() => undefined)
+        if (prop === 'close') {
+          return async () => {
+            if (!raw || !connecting) return
+            connecting = null
+            await raw.close()
+          }
+        }
+        if (prop === 'withActor') {
+          return (actorToken) => {
+            if (typeof actorToken !== 'string' || !actorToken) throw new Error('ERR_MDK_CLIENT_ACTOR_REQUIRED')
+            return methods(() => ensure().then((client) => client.withActor(actorToken)))
+          }
         }
       }
       return async (...args) => {
-        const client = await ensure()
+        const client = await resolve()
         // Own methods only: inherited Object.prototype members (constructor,
         // toString, __proto__ ...) are not client actions.
         if (!Object.hasOwn(client, prop) || typeof client[prop] !== 'function') {
@@ -324,6 +475,7 @@ function createMdkClient (config = {}, opts = {}) {
       }
     }
   })
+  return methods(ensure)
 }
 
 function _createTransport (opts) {
@@ -331,6 +483,20 @@ function _createTransport (opts) {
   if (opts && opts.transport) return opts.transport
   if (opts && opts.hrpc) return new HRPCClient(opts.hrpc)
   throw new Error('ERR_MDK_CLIENT_TRANSPORT_REQUIRED')
+}
+
+// An authorization refusal is thrown, never returned: a caller reading
+// `res.workers || []` must not mistake "you may not" for "there are none".
+// Every other Kernel error stays a `{ error }` reply, as the protocol has it.
+const REFUSAL = /^ERR_KERNEL_(ACTION_FORBIDDEN|TOKEN_REQUIRED|TOKEN_INVALID|ACTOR_INVALID)\b/
+
+function _raiseRefusal (res) {
+  if (res && typeof res.error === 'string' && REFUSAL.test(res.error)) {
+    const err = new Error(res.error)
+    err.code = res.error.split(':')[0]
+    throw err
+  }
+  return res
 }
 
 // Only `timeout` is forwarded; an absent one leaves the transport default.

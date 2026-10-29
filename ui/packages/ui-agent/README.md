@@ -1,7 +1,7 @@
 # @tetherto/mdk-ui-agent
 
 The operator agent chat, as a drop-in for any MDK UI shell. Talks to the agent
-app ([`@tetherto/mdk-app-agent`](../../../backend/apps/agent/README.md)) through the Gateway over SSE and renders its six-event
+app ([`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent)) through the Gateway over SSE and renders its six-event
 contract as a conversation.
 
 ## Install
@@ -21,7 +21,7 @@ import '@tetherto/mdk-ui-agent/styles.css'
 That is the whole integration. The shell template ships with both lines already
 in place; delete them to remove it.
 
-The backend half is a stack concern: add [`@tetherto/mdk-app-agent`](../../../backend/apps/agent/README.md) to your
+The backend half is a stack concern: add [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) to your
 `mdk.yaml` under `spec.apps` with `mount: /`, and point it at an MCP server for the fleet tools:
 
 ```yaml
@@ -250,7 +250,7 @@ together yet.
 
 ### 3. A gateway carrying the agent app
 
-Mount [`@tetherto/mdk-app-agent`](../../../backend/apps/agent/README.md) at `/` behind its own Gateway, against the local model
+Mount [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) at `/` behind its own Gateway, against the local model
 and MCP server this walkthrough already served. [Mounting the app](../../../docs/guides/agent/gateway-deployment.md#mount-the-app)
 shows the complete `mdk.yaml` and `mdk run`.
 

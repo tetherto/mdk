@@ -1,12 +1,10 @@
-import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { detectEnvironment, NODE_MIN_MAJOR } from './detect.js';
 import { StackSpecError, loadStackSpec, STACK_FILE, type StackSpec } from './spec.js';
-import { kernelKeyFile, localDiscovery, mdkDir, resolvePackageDir, trustedKeysDir, type CallerKeyPair } from './runtime.js';
+import { cliKernelClient, type KernelStatus, type MdkClient } from './kernel-client.js';
+import { kernelKeyFile, resolvePackageDir } from './runtime.js';
 import { appChildPid, isAlive, lockHolder } from './run-lock.js';
-
-const require = createRequire(import.meta.url);
 
 /**
  * Read-only state collection for `mdk status`. Nothing here starts, stops or
@@ -25,33 +23,6 @@ const require = createRequire(import.meta.url);
  * restarts), so their presence proves only that a component once ran. The Kernel
  * is therefore probed over HRPC and the Gateway over HTTP.
  */
-
-// --- @tetherto/mdk-client (typeless CommonJS, lazily required) --------------
-
-interface RegisteredWorker {
-  workerId: string;
-  state?: string;
-  healthState?: string;
-  deviceIds?: string[];
-  deviceCount?: number;
-}
-interface KernelStatus {
-  workers: RegisteredWorker[];
-  totalDevices: number;
-}
-interface MdkClient {
-  connect(opts?: Record<string, unknown>): Promise<void>;
-  close(): Promise<void>;
-  getStatus(opts?: Record<string, unknown>): Promise<KernelStatus>;
-}
-interface MdkClientModule {
-  /** Reads the Kernel key from `config.kernelKey`; without one every call fails with ERR_MDK_CLIENT_UNAVAILABLE. */
-  createMdkClient(config: { kernelKey: string; kernelKeyPair?: CallerKeyPair }): MdkClient;
-}
-
-function mdkClientModule(): MdkClientModule {
-  return require('@tetherto/mdk-client') as MdkClientModule;
-}
 
 // --- report shape (the `-o json|yaml` contract) ----------------------------
 
@@ -187,10 +158,7 @@ async function probeKernel(
 
   let client: MdkClient;
   try {
-    const discovery = localDiscovery();
-    const kernelKeyPair = discovery.callerKeyPair(join(mdkDir(projectDir), 'cli', 'identity'));
-    discovery.publishTrustedKey(trustedKeysDir(projectDir), 'cli', kernelKeyPair.publicKey);
-    client = mdkClientModule().createMdkClient({ kernelKey: key, kernelKeyPair });
+    client = cliKernelClient(projectDir, key);
   } catch (error) {
     return {
       kernel: { state: 'down', keyFile, key, error: error instanceof Error ? error.message : String(error) },

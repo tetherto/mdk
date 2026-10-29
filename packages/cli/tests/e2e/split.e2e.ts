@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CLI, cliRunner, env, freePort, projectDir, waitFor as waitUntil, type Running } from './helpers.js';
+import { CLI, agentAuth, cliRunner, env, freePort, grantE2eAccess, projectDir, waitFor as waitUntil, type Running } from './helpers.js';
 
 // The same scaffolded stack as stack.e2e.ts, but every component in its own `mdk run <target>`
 // process, the way an operator splits them across terminals. Nothing is shared in memory, so the
@@ -29,11 +29,11 @@ async function start(ready: string, ...args: string[]): Promise<Running> {
   return handle;
 }
 
-/** One JSON-RPC call to the MCP server; it answers as a single SSE message. */
+/** One JSON-RPC call to the MCP server, as the e2e agent; it answers as a single SSE message. */
 async function mcpCall(port: number, id: number, method: string, params: object = {}): Promise<Record<string, any>> {
   const res = await fetch(`http://127.0.0.1:${port}/mcp`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream' },
+    headers: { ...headers, 'content-type': 'application/json', accept: 'application/json, text/event-stream' },
     body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
   });
   const text = await res.text();
@@ -43,6 +43,8 @@ async function mcpCall(port: number, id: number, method: string, params: object 
 
 let gatewayPort = 0;
 let mcpPort = 0;
+/** The e2e agent's `Authorization` header, once the Kernel is up to sign it in. */
+let headers: { authorization: string } = { authorization: '' };
 
 beforeAll(async () => {
   rmSync(PROJECT, { recursive: true, force: true });
@@ -69,6 +71,7 @@ beforeAll(async () => {
   mkdirSync(join(PROJECT, 'node_modules'), { recursive: true });
   symlinkSync(join(PROJECT, 'workers', 'rig'), join(PROJECT, 'node_modules', 'rig'));
   symlinkSync(join(PROJECT, 'apps', 'ops'), join(PROJECT, 'node_modules', 'ops'));
+  grantE2eAccess(PROJECT, 'ops');
 });
 
 afterAll(async () => {
@@ -88,10 +91,11 @@ describe('a stack run as one process per component', () => {
     await start('Worker running.', 'worker', 'rig');
     await start('App running.', 'app', 'ops');
     await start('Gateway running.', 'gateway');
+    headers = agentAuth(PROJECT);
 
     let body: { kernelConnected?: boolean; workerCount?: number } = {};
     await waitFor(async () => {
-      const res = await fetch(`http://127.0.0.1:${gatewayPort}/apps/ops/api/ops/summary`).catch(() => null);
+      const res = await fetch(`http://127.0.0.1:${gatewayPort}/apps/ops/api/ops/summary`, { headers }).catch(() => null);
       if (res?.status !== 200) return false;
       body = (await res.json()) as typeof body;
       return body.workerCount === 1;
@@ -110,7 +114,7 @@ describe('a stack run as one process per component', () => {
       expect(second.status).toBe(1);
       expect(second.stderr).toContain(`${label} is already running for this project`);
     }
-    const res = await fetch(`http://127.0.0.1:${gatewayPort}/apps/ops/api/ops/summary`);
+    const res = await fetch(`http://127.0.0.1:${gatewayPort}/apps/ops/api/ops/summary`, { headers });
     expect(res.status, 'the first app still answers').toBe(200);
   });
 

@@ -8,9 +8,17 @@ import { installDeps, installScaffold, npmBin, npmNeedsShell } from './npm.js';
 import { pkg as cliPkg } from './pkg.js';
 import { DIRS } from './project.js';
 import { NAME_RE, parseOrg } from './names.js';
-import { appendToStackList, copyTemplate, linkIntoProject, updateJson, type StackFileUpdate } from './scaffold.js';
+import {
+  appendToStackList,
+  copyTemplate,
+  linkCheckoutBackend,
+  linkIntoProject,
+  updateJson,
+  type StackFileUpdate,
+} from './scaffold.js';
 import { toAppName } from './spec.js';
 import { findCatalogApp } from './catalog.js';
+import { grantApp, type GrantSummary } from './rbac.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -187,6 +195,8 @@ export interface AppScaffoldResult {
   installDir?: string;
   /** How the `mdk.yaml` update went (so the caller can guide the user). */
   stackFile?: StackFileUpdate;
+  /** What listing the app did to its role in spec.rbac, when mdk.yaml lists it; `error` when that could not be written. */
+  grant?: GrantSummary | { error: string };
   /** True when the starter UI was built into `ui/`. */
   uiBuilt?: boolean;
   /** Why `ui/` still holds the placeholder (install or build failed, or was skipped). */
@@ -214,11 +224,26 @@ export function addAppToStackFile(parentDir: string, packageName: string, appNam
 }
 
 /**
+ * Writes the role and binding for the access the scaffolded manifest requests
+ * into `<parentDir>/mdk.yaml`, as `mdk add app` does, so the first `mdk run`
+ * finds the app granted. A role the operator edited (a re-scaffold with
+ * --force) is left alone and reported as a conflict.
+ */
+function grantScaffold(parentDir: string, appPath: string, appName: string): NonNullable<AppScaffoldResult['grant']> {
+  try {
+    const manifest = parseYaml(readFileSync(join(appPath, 'mdk-app.yaml'), 'utf8')) as { permissions?: unknown[] };
+    return grantApp(parentDir, appName, manifest.permissions ?? []);
+  } catch (error) {
+    return { error: (error instanceof Error ? error.message : String(error)).split('\n')[0] };
+  }
+}
+
+/**
  * Scaffolds a new app package (`mdk-app.yaml` + `plugin/` route table and
  * controllers) from the bundled template into `<parentDir>/apps/<name>` —
  * the linked layout `mdk run` resolves from node_modules. Substitutes the name
  * tokens, sets the package.json and manifest `name`, links the package, and
- * registers it under `spec.apps` in mdk.yaml.
+ * registers it under `spec.apps` in mdk.yaml, with its grant in `spec.rbac`.
  */
 export function createApp(opts: AppScaffoldOptions): AppScaffoldResult {
   const name = opts.name.trim();
@@ -257,6 +282,7 @@ export function createApp(opts: AppScaffoldOptions): AppScaffoldResult {
     const packageName = org.org ? `@${org.org}/${name}` : name;
     copyTemplate(src, appPath, { [NAME_TOKEN]: name, [APP_TOKEN]: appName, [PACKAGE_TOKEN]: packageName });
     updateJson(join(appPath, 'package.json'), { name: packageName, version: '0.1.0' });
+    linkCheckoutBackend(join(appPath, 'package.json'));
     updateJson(join(appPath, 'plugin', 'mdk-plugin.json'), { name: packageName });
     writeStarterUi(appPath, name);
 
@@ -264,6 +290,7 @@ export function createApp(opts: AppScaffoldOptions): AppScaffoldResult {
     const install = installScaffold(opts.parentDir, appPath, opts.install !== false);
     const stackFile =
       opts.updateStackFile === false ? undefined : addAppToStackFile(opts.parentDir, packageName, appName);
+    const grant = stackFile === 'added' || stackFile === 'exists' ? grantScaffold(opts.parentDir, appPath, appName) : undefined;
     const uiWarning = opts.install === false ? 'install skipped (--no-install)' : buildStarterUi(appPath);
 
     return {
@@ -274,6 +301,7 @@ export function createApp(opts: AppScaffoldOptions): AppScaffoldResult {
       installWarning: linkWarning ?? (install.ok ? undefined : install.message),
       installDir: install.dir,
       stackFile,
+      ...(grant ? { grant } : {}),
       uiBuilt: uiWarning === undefined,
       ...(uiWarning !== undefined ? { uiWarning } : {}),
     };

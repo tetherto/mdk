@@ -105,15 +105,36 @@ await runtime.start()
 | `allowedKeys` | `[]` | Hex/Buffer public keys allowed to call. `start()` throws `ERR_WORKER_ALLOWED_KEYS_REQUIRED` when empty |
 | `allowAll` | `false` | Admit every DHT peer that learns the Worker key. Development only; logs a warning at start |
 | `bootstrap` | HyperDHT public bootstrap | Bootstrap nodes for the Worker's HyperDHT node; pass the same list to every component on a private DHT network |
+| `dhtHost` | All interfaces | Interface the Worker's DHT node binds, such as `127.0.0.1` ([private DHT](../../../docs/guides/deployment/private-dht.md)) |
 
-Admit the Kernel's **client** key (`kernel.getClientPublicKey()`), not its listener key (`getPublicKey()`). Add a Gateway or other client
-key only when deliberately granting direct Worker access; every admitted key can issue supported commands, regardless of its Kernel role.
-`@tetherto/mdk-core` adds callers automatically for local stacks:
-`trustKernel(runtime, kernel)` adds write-capable Kernel callers in-process, and `trustKeysFromDir(runtime, dir)` adds every published
-key across processes. Omit those helpers when enforcing a Kernel-only Worker allowlist. The
-[site security blueprint](../../../docs/guides/security/index.md#step-3-isolate-workers-and-devices) explains who gets access and what that access allows.
+Admit the Kernel's **client** key (`kernel.getClientPublicKey()`), not its listener key (`getPublicKey()`), and no other,
+so every command reaches a device through the Kernel's checks and its
+[write-command log](../kernel/README.md#write-command-log). `@tetherto/mdk-core` and `mdk run` wire exactly that for local
+stacks: `trustKernel(runtime, kernel)` in-process, `trustKeysFromDir(runtime, dir)` (only `kernel.pub`) across processes (see
+the [mdk-core README](../mdk/README.md#trust-and-admission)). The [site security blueprint](../../../docs/guides/security/index.md#step-3-isolate-workers-and-devices) explains who gets access and what that access allows.
 Every in-repo Worker boot function forwards `allowedKeys` /
 `allowAll` to the runtime.
+
+## Device health channel
+
+`Kernel` `READY` and a `HEALTHY` Worker mean the Worker process answers; they say nothing about its devices. Every Worker
+answers `telemetry.pull` `{ query: { type: 'health' } }` for each device with what its last metrics poll (the Kernel's
+scheduled `telemetry.pull`) saw:
+
+| Field | Meaning |
+| --- | --- |
+| `reachable` | `true` when any telemetry channel answered on the last poll, `false` when none did or the device is offline, `null` before the first poll |
+| `lastSuccessAt` | Time (ms) of the last poll a channel answered, or `null` |
+| `lastError` | The last channel error code (`ERR_TELEMETRY_FAILED`, `ERR_DEVICE_UNAVAILABLE: <id>`, or the handler's `ERR_*`), kept after the device recovers |
+| `lastErrorAt` | Time (ms) of that error, or `null` |
+
+"Worker up, device silent" is `reachable: false` on a `READY`, `HEALTHY` Worker. A plugin that knows better (a device with its
+own status endpoint) may declare a `health` telemetry channel; it replaces the built-in one and should answer the same fields.
+
+```js
+const { value } = await mdkClient.pullTelemetry('wm-001', 'health')
+// { reachable: false, lastSuccessAt: 1792505336310, lastError: 'ERR_TELEMETRY_FAILED', lastErrorAt: 1792505336317 }
+```
 
 ## Request hardening
 
@@ -131,7 +152,7 @@ checked anything:
   is logged locally (`DEBUG=mdk:worker:runtime`) and replaced by `ERR_TELEMETRY_FAILED`, `ERR_COMMAND_FAILED` or
   `ERR_REQUEST_FAILED`, so driver messages carrying addresses or credentials never leave the process. Throw
   `ERR_*` errors from handlers for anything the caller should see.
-- **Built-in `health` telemetry** (`WorkerRuntimeV2`) returns only `{ status, id, workerId }`; `env`, device `opts`
+- **Built-in `health` telemetry** returns only the [device health](#device-health-channel) fields; `env`, device `opts`
   and `config` are never returned.
 - **Seed files** (`storeDir`): an existing seed that is not exactly 32 bytes fails start with
   `ERR_SEED_FILE_MALFORMED` instead of being replaced (which would rotate the Worker's identity). Symlinks

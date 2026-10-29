@@ -154,6 +154,18 @@ test('envelope - validate() rejects array payload', (t) => {
   t.is(validate(env).error, 'ERR_ENVELOPE_PAYLOAD_INVALID')
 })
 
+test('envelope - build() and validate() carry an actor token beside auth', (t) => {
+  const env = build({ action: ACTIONS.WORKER_LIST, type: MESSAGE_TYPES.REQUEST, sender: 'gateway', auth: 'app-token', actor: 'user-token' })
+  t.is(env.auth, 'app-token')
+  t.is(env.actor, 'user-token')
+  t.ok(validate(env).valid)
+  t.absent('actor' in build({ action: ACTIONS.WORKER_LIST, type: MESSAGE_TYPES.REQUEST, sender: 'gateway' }), 'absent unless given')
+
+  for (const actor of [42, '', 'x'.repeat(8193)]) {
+    t.is(validate({ ...env, actor }).error, 'ERR_ENVELOPE_ACTOR_INVALID', JSON.stringify(actor).slice(0, 12))
+  }
+})
+
 test('envelope - validateFull() checks envelope + payload', (t) => {
   const env = build({
     action: ACTIONS.COMMAND_REQUEST,

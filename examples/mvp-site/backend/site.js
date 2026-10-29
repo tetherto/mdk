@@ -10,11 +10,12 @@
 const path = require('path')
 const fs = require('fs')
 const debug = require('debug')('mdk:example:mvp-site')
-const { getKernel } = require('@tetherto/mdk-core')
+const { getKernel, parseBootstrap, parseDhtHost, resolveDhtHost } = require('@tetherto/mdk-core')
 const {
   publishWorkerKey, keysDir, trustedKeysDir, readTrustedKeys, waitForKernelKey, trustKernel, trustKeysFromDir
 } = require('@tetherto/mdk-core/lib/local-discovery')
 const { GIT_DEPS } = require('./constants')
+const { siteAccess, syncUsers } = require('./access')
 
 const missingGitDeps = GIT_DEPS.filter((name) => {
   try {
@@ -73,11 +74,22 @@ const GATEWAY_HOST = deploy.gateway.host
 // The gateway serves only these Host headers (loopback on its port is always in).
 // A LAN deploy lists the names/addresses the UI is opened with.
 const GATEWAY_ALLOWED_HOSTS = deploy.gateway.allowedHosts || []
-// Who may call `auth: true` routes (the agent plugin). 'loopback' admits callers on
-// this machine only; a LAN deploy needs a real verifier for remote operators.
-const GATEWAY_AUTH_VERIFIER = deploy.gateway.authVerifier || 'loopback'
 const MCP_AGENT_TOOLS_PORT = deploy.mcp.agentTools?.port
 const DISCOVERY = deploy.discovery
+// Private HyperDHT (the local / air-gapped profile): with a `dht` section every
+// process joins `dht.bootstrap`, else the bootstrap the dht-bootstrap role runs
+// at host:port, and binds its DHT node to `host` (loopback by default for the
+// generated bootstrap; every interface when joining a list without a `host`).
+// Without one, the public DHT.
+const DHT_CONF = deploy.dht ? _dhtConf(deploy.dht) : null
+const DHT = DHT_CONF
+  ? { bootstrap: DHT_CONF.bootstrap || [`${DHT_CONF.host}:${DHT_CONF.port}`], ...(DHT_CONF.host ? { dhtHost: DHT_CONF.host } : {}) }
+  : {}
+
+function _dhtConf (dht) {
+  const bootstrap = parseBootstrap(dht.bootstrap)
+  return { host: resolveDhtHost(parseDhtHost(dht.host), bootstrap), port: dht.port || 49737, bootstrap }
+}
 const WORKER_ID = deploy.worker.id
 const OCEAN_WORKER_ID = deploy.ocean.worker.id
 const SATEC_WORKER_ID = deploy.satec.worker.id
@@ -211,6 +223,12 @@ const startFoundryMock = () => startPoolPluginMock(foundryMock, deploy.foundry.m
 const bootKernel = async ({ root, topic, mode = DISCOVERY } = {}) => {
   // The example's processes exit on Ctrl-C/SIGTERM — opt in explicitly.
   const opts = { root, storeDir: path.join(root, 'kernel-db'), handleSignals: true }
+  // spec.rbac and the service accounts that sign in under it (see access.js).
+  const rbac = deploy.rbac || {}
+  const { policy, serviceAccounts } = siteAccess(root, { pluginDirs: PLUGIN_DIRS, mcpPluginDirs: MCP_PLUGIN_DIRS, rbac })
+  opts.rbac = policy
+  opts.serviceAccounts = serviceAccounts
+  if (DHT.bootstrap) opts.hrpc = { ...DHT }
   if (mode === 'local') {
     opts.discovery = { mode: 'local' }
   } else {
@@ -221,22 +239,29 @@ const bootKernel = async ({ root, topic, mode = DISCOVERY } = {}) => {
     // the topic (logs a warning). A real site lists them in workerKeys.
     opts.discovery = { mode: 'dht', allowAnyWorker: true }
   }
-  return getKernel(opts)
+  const kernel = await getKernel(opts)
+  // The site's users (rbac.users), with the shared demo password or a generated one.
+  const users = rbac.users || []
+  if (!users.length) {
+    console.warn('config/site.deploy.json lists no rbac.users: nobody can sign in to the UI. Copy the rbac block from config/site.deploy.json.example')
+  }
+  const { created, removed } = await syncUsers(root, kernel.identity, users, { password: rbac.password })
+  debug('users: %d, created %o, removed %o', users.length, created, removed)
+  return kernel
 }
 
-// Worker RPC is fail-closed: before booting, collect the keys the worker must
-// admit — in-process, the Kernel's client key plus the write-capable callers it
-// already admitted (the Gateway calls workers directly too); out of process,
-// what the Kernel and Gateway published to the trusted-keys dir (waiting for
-// the Kernel's kernel.pub so PM2 start order does not matter).
+// Worker RPC is fail-closed and admits the Kernel's client key only, so every
+// device call goes through the Kernel's spec.rbac check and write-command log:
+// in process from the Kernel, out of process its kernel.pub in the trusted-keys
+// dir (waiting for it, so PM2 start order does not matter).
 const workerTrust = async ({ kernel, root }) => {
-  if (kernel) return [kernel.getClientPublicKey(), ...kernel.listAllowedKeys('write')]
+  if (kernel) return [kernel.getClientPublicKey()]
   const dir = trustedKeysDir(root)
   await waitForKernelKey(dir, { timeoutMs: 60000 })
-  return readTrustedKeys(dir).map((k) => k.key)
+  return readTrustedKeys(dir).filter((k) => k.name === 'kernel').map((k) => k.key)
 }
 
-// ...and keep following later admissions (a Gateway that boots after the worker).
+// ...and follow the Kernel's key if it changes.
 const followTrust = (handle, { kernel, root }) => {
   const follower = kernel ? trustKernel(handle.runtime, kernel) : trustKeysFromDir(handle.runtime, trustedKeysDir(root))
   const stop = handle.stop.bind(handle)
@@ -276,6 +301,7 @@ const bootWorker = async ({ kernel, kernelTopic, root, mode = DISCOVERY, devices
     workerId: WORKER_ID,
     storeDir: workerStoreDir(root, WORKER_ID),
     kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null,
+    ...DHT,
     seedDevices: devices
   })
 
@@ -291,6 +317,7 @@ const bootAntminerWorker = async ({ kernel, kernelTopic, root, mode = DISCOVERY,
     workerId: ANTMINER_WORKER_ID,
     storeDir: workerStoreDir(root, ANTMINER_WORKER_ID),
     kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null,
+    ...DHT,
     type: deploy.antminer.worker.type,
     seedDevices: devices
   })
@@ -307,6 +334,7 @@ const bootSealminerWorker = async ({ kernel, kernelTopic, root, mode = DISCOVERY
     workerId: SEALMINER_WORKER_ID,
     storeDir: workerStoreDir(root, SEALMINER_WORKER_ID),
     kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null,
+    ...DHT,
     series: deploy.sealminer.worker.series,
     seedDevices: devices
   })
@@ -363,7 +391,8 @@ const bootOceanWorker = async ({ kernel, kernelTopic, root, mode = DISCOVERY }) 
     storeDir: workerStoreDir(root, OCEAN_WORKER_ID),
     pool: deploy.ocean.pool,
     env,
-    kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null
+    kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null,
+    ...DHT
   })
 
   await registerWorker(handle, OCEAN_WORKER_ID, { kernel, root, mode })
@@ -404,7 +433,8 @@ const bootPoolPluginWorker = async ({ kernel, kernelTopic, root, mode, pkg, work
     rack: section.worker.rack,
     storeDir: workerStoreDir(root, workerId),
     conf,
-    kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null
+    kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null,
+    ...DHT
   })
 
   await registerWorker(handle, workerId, { kernel, root, mode })
@@ -471,6 +501,7 @@ const bootSatecWorker = async ({ kernel, kernelTopic, root, mode = DISCOVERY, de
       thing: deploy.satec.worker.thing
     },
     kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null,
+    ...DHT,
     seedDevices: devices
   })
 
@@ -490,12 +521,13 @@ module.exports = {
   GATEWAY_PORT,
   GATEWAY_HOST,
   GATEWAY_ALLOWED_HOSTS,
-  GATEWAY_AUTH_VERIFIER,
   MCP_AGENT_TOOLS_PORT,
   PLUGIN_DIRS,
   MCP_PLUGIN_DIRS,
   STATIC_ROOT_PATH,
   DISCOVERY,
+  DHT,
+  DHT_CONF,
   WORKER_ID,
   OCEAN_WORKER_ID,
   SATEC_WORKER_ID,

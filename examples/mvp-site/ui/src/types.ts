@@ -73,3 +73,25 @@ export type Overview = {
 
 export type HistoryPoint = { ts: number; value: number };
 export type History = { metric: string; unit: string; deviceId?: string; log: HistoryPoint[] };
+
+// GET /site/access — what the signed-in user may do (the Gateway and Kernel enforce it).
+export type Access = {
+  user: { kind: string; sub: string; email?: string; groups: string[] };
+  roles: string[];
+  routes: Record<string, boolean>;
+  miners: { command: string[]; pools: string[] };
+};
+
+// GET /site/activity — one command attempt from the Kernel's write-command log.
+export type ActivityEntry = {
+  ts: number;
+  commandId: string | null;
+  user: string | null;
+  roles: string[];
+  via: string | null;
+  command: string | null;
+  deviceId: string | null;
+  params: Record<string, unknown>;
+  outcome: string | null;
+  error: string | null;
+};

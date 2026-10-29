@@ -100,8 +100,8 @@ function discoverWorkerKeys (kernel, dir, { rescanMs = 4000 } = {}) {
 //           workers with) and admits every other key as an HRPC caller.
 //   Gateway publishes gateway.pub (status.rpcClientKey); MCP/CLI clients
 //           publish their persistent caller key the same way.
-//   Worker  allows every key in the dir (the Kernel, and the Gateway, whose
-//           client also calls workers directly).
+//   Worker  allows only kernel.pub, so every command reaches its devices
+//           through the Kernel's checks and write-command log.
 //
 // Whoever can write the dir is trusted: it is created 0700, and files that are
 // group/world-writable or owned by another user are ignored.
@@ -235,10 +235,13 @@ function admitTrustedKeys (kernel, dir, opts) {
   }, opts)
 }
 
-// Worker side (separate process): allow every published key. Call before
-// runtime.start() — it throws when nothing is trusted yet.
+// Worker side (separate process): allow the Kernel's published client key.
+// Call before runtime.start() — it throws when nothing is trusted yet.
 function trustKeysFromDir (runtime, dir, opts) {
+  // The Kernel's client key only: every device call goes through the Kernel's
+  // spec.rbac check, so the other callers published here are not let past it.
   return watchTrustedKeys(dir, (key, name) => {
+    if (name !== KERNEL_KEY_NAME) return
     runtime.allowKey(key)
     debug('worker %s trusts %s', runtime.workerId, name)
   }, opts)
@@ -257,25 +260,14 @@ async function waitForKernelKey (dir, { timeoutMs = 30000, intervalMs = 250 } = 
   }
 }
 
-// Worker side (same process as the Kernel): allow the Kernel's client key and
-// every write-capable caller it admits, now and later. Call before start().
+// Worker side (same process as the Kernel): allow the Kernel's client key
+// only. Every device call goes through the Kernel, which checks it against
+// spec.rbac and logs every write command. Call before start().
 function trustKernel (runtime, kernel) {
   const client = kernel.getClientPublicKey()
   if (!client) throw new Error('ERR_KERNEL_CLIENT_KEY_UNAVAILABLE: start the Kernel (with HRPC) before its workers')
   runtime.allowKey(client)
-  for (const key of kernel.listAllowedKeys ? kernel.listAllowedKeys('write') : []) runtime.allowKey(key)
-  const onAllowed = ({ key, roles }) => {
-    if ((roles || []).some((r) => r === 'write' || r === 'admin')) runtime.allowKey(key)
-  }
-  const onRevoked = ({ key }) => { try { runtime.revokeKey(key) } catch {} }
-  kernel.on('caller-allowed', onAllowed)
-  kernel.on('caller-revoked', onRevoked)
-  return {
-    stop () {
-      kernel.removeListener('caller-allowed', onAllowed)
-      kernel.removeListener('caller-revoked', onRevoked)
-    }
-  }
+  return { stop () {} }
 }
 
 // A persistent caller identity (MCP server, CLI client): an ed25519 keypair

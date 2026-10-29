@@ -6,11 +6,18 @@
   "type": "object",
   "required": [
     "metadata",
-    "capabilities"
+    "capabilities",
+    "contractVersion"
   ],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
+    "contractVersion": {
+      "type": "string",
+      "enum": ["1"],
+      "x-mdk-strict": true,
+      "description": "Contract schema generation this contract is written against. Contracts without it are validated as legacy: v1 requirements are reported as warnings, not errors."
+    },
     "metadata": {
       "type": "object",
       "description": "Identity and family metadata defining what the worker represents.",
@@ -41,9 +48,20 @@
           "items": {
             "type": "object",
             "required": ["name", "type", "handler", "description"],
+            "if": { "properties": { "type": { "const": "number" } }, "required": ["type"] },
+            "then": { "required": ["unit"] },
             "properties": {
               "name": { "type": "string" },
-              "unit": { "type": "string" },
+              "unit": {
+                "type": "string",
+                "allOf": [
+                  {
+                    "x-mdk-strict": true,
+                    "enum": ["TH/s", "W", "kW", "J/TH", "°C", "%", "rpm", "V", "A", "Hz", "s", "count"]
+                  }
+                ],
+                "description": "Canonical unit vocabulary (closed strict-tier enum, extended by PR), required on numeric telemetry so agents can aggregate across vendors. The string type itself is a base requirement, as it was before v1."
+              },
               "type": { "type": "string", "enum": ["number", "string", "boolean", "object", "array"] },
               "handler": { "type": "string", "description": "CommonJS handler path relative to the Worker Plugin directory. Removed from the contract published to Kernel." },
               "description": { "type": "string", "description": "Human and AI readable metric description. Should include semantic boundaries (e.g., 'If 0, device is booting')." }
@@ -79,10 +97,13 @@
                 "items": {
                   "type": "object",
                   "required": ["name", "type"],
+                  "if": { "properties": { "type": { "const": "number" } }, "required": ["type"] },
+                  "then": { "required": ["min", "max"] },
                   "properties": {
                     "name": { "type": "string" },
                     "type": { "type": "string", "enum": ["number", "string", "boolean", "object"] },
                     "required": { "type": "boolean", "description": "Whether the command handler requires this parameter." },
+                    "default": { "description": "Value the handler assumes when the caller omits this parameter. For numbers it must sit within [min, max]." },
                     "enum": {
                       "type": "array",
                       "description": "Allowed values. WorkerRuntime rejects a command whose value is not listed (ERR_PARAM_ENUM) before the handler runs.",

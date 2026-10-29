@@ -7,6 +7,10 @@ import { registerAdd } from './commands/add.js';
 import { registerValidate } from './commands/validate.js';
 import { registerRun } from './commands/run.js';
 import { registerStatus } from './commands/inspect.js';
+import { registerRbac } from './commands/rbac.js';
+import { registerUser } from './commands/user.js';
+import { registerSa } from './commands/sa.js';
+import { registerSession } from './commands/session.js';
 import { registerSkill } from './commands/agent.js';
 import { registerVersion } from './commands/meta.js';
 
@@ -18,6 +22,12 @@ const HELP_GROUPS: Record<string, string> = {
   validate: 'Build:',
   run: 'Run:',
   status: 'Run:',
+  rbac: 'Auth:',
+  user: 'Auth:',
+  serviceaccount: 'Auth:',
+  login: 'Auth:',
+  logout: 'Auth:',
+  whoami: 'Auth:',
   skill: 'Other:',
   version: 'Other:',
 };
@@ -25,8 +35,8 @@ const HELP_GROUPS: Record<string, string> = {
 /**
  * Builds the full `mdk` command tree. Every command reads `mdk <verb> [noun]`.
  *
- * `onboard`, `create`, `add`, `validate`, `run`, `status`, `skill add` and
- * `version` are implemented.
+ * `onboard`, `create`, `add`, `validate`, `run`, `status`, `rbac`, `user`, `sa`,
+ * `login`, `logout`, `whoami`, `skill add` and `version` are implemented.
  */
 export function buildProgram(): Command {
   const program = configureHelp(new Command());
@@ -47,6 +57,10 @@ export function buildProgram(): Command {
   registerValidate(program);
   registerRun(program);
   registerStatus(program);
+  registerRbac(program);
+  registerUser(program);
+  registerSa(program);
+  registerSession(program);
   registerSkill(program);
   registerVersion(program);
 

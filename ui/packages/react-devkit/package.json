@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-react-devkit",
   "type": "module",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "private": false,
   "description": "MDK Devkit (React) — generic UI primitives (src/primitives) plus mining-domain components, hooks, and state bindings (src/domain)",
   "license": "Apache-2.0",
@@ -106,8 +106,8 @@
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.25",
-    "@tetherto/mdk-react-adapter": "^0.12.2",
-    "@tetherto/mdk-ui-foundation": "^0.12.2",
+    "@tetherto/mdk-react-adapter": "^0.13.0",
+    "@tetherto/mdk-ui-foundation": "^0.13.0",
     "chart.js": "^4.4.9",
     "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-datalabels": "^2.2.0",
@@ -128,8 +128,8 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.2",
-    "@vitest/ui": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.12",
+    "@vitest/ui": "^4.1.12",
     "happy-dom": "^21.0.4",
     "jsdom": "^28.0.0",
     "react": "^19.2.0",
@@ -137,7 +137,7 @@
     "react-hook-form": "^7.55.0",
     "ts-morph": "^24.0.0",
     "tsx": "^4.19.2",
-    "vitest": "^4.1.2",
+    "vitest": "^4.1.12",
     "zod": "^4.6.6"
   }
 }

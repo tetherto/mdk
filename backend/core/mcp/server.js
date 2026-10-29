@@ -12,6 +12,8 @@ const { loadAppTools } = require('./lib/from-gateway-plugin')
 const { missingPermissions } = require('./lib/from-http-plugin')
 const { createRuntimeClient, getOrCreateSeed } = require('@tetherto/mdk-app-runtime')
 const { resolveAppTimeout } = require('@tetherto/mdk-gateway/workers/lib/plugin-adapter')
+const { localAuthority, remoteAuthority } = require('@tetherto/mdk-gateway/workers/lib/authority')
+const { routeRequest } = require('@tetherto/mdk-rbac')
 
 const AGENT_META_KEY = 'x-mdk-agent'
 const DEFAULT_MAX_OUTPUT_LENGTH = 100000
@@ -50,15 +52,31 @@ function _errorResult (toolId, err) {
   return { content: [{ type: 'text', text: 'ERR_TOOL_FAILED' }], isError: true }
 }
 
-function _toolRegistrations (tools, maxOutputLength) {
-  return tools.map((tool) => [tool.id, {
+// Whether an agent's tool set includes `tool`. A route tool is listed when the
+// policy lets this identity call it; one scoped by an instance name (an
+// argument) when the identity may call it on some instance, and each call is
+// checked again. A tool that declares no access is not checked against
+// spec.rbac, so with an authority it is not offered at all (fail closed).
+function _visibleTo (tool, authority, identity) {
+  if (!tool.access) return false
+  const request = routeRequest(tool.access)
+  if (tool.access.nameFrom) return typeof authority.allowsSome === 'function' ? authority.allowsSome(identity, request) : true
+  return authority.evaluate(identity, request).allowed
+}
+
+// One request's tool set: the agent's own with an authority (see _visibleTo),
+// and every call carries the identity the token verified (and, for a user,
+// the token itself as `actor`, which the app runtime hands the Kernel).
+function _toolRegistrations (tools, maxOutputLength, { authority, identity, actor } = {}) {
+  const visible = authority ? tools.filter((tool) => _visibleTo(tool, authority, identity)) : tools
+  return visible.map((tool) => [tool.id, {
     description: tool.description,
     inputSchema: tool.schema,
     ...(tool.annotations ? { annotations: tool.annotations } : {}),
     ...(tool.agent ? { _meta: { [AGENT_META_KEY]: tool.agent } } : {})
   }, async (args) => {
     try {
-      return _frameOutput(tool.id, await tool._handler(args), maxOutputLength)
+      return _frameOutput(tool.id, await tool._handler(args, { identity, actor }), maxOutputLength)
     } catch (err) {
       return _errorResult(tool.id, err)
     }
@@ -70,9 +88,10 @@ function _isReadOnly (tool) {
 }
 
 // Server-side gate in front of the advisory MCP hints: a tool that may write
-// is exposed only with `allowWrite` or when named in `allowTools`, and a
-// Gateway `auth: true` route only when an `identity` is configured whose
-// `perms` cover the route's `permissions`. Withheld tools are never
+// is exposed only with `allowWrite` or when named in `allowTools`. Without an
+// authority, a Gateway `auth: true` route is exposed only when an `identity` is
+// configured whose `perms` cover the route's `permissions`; with one, spec.rbac
+// decides per agent instead (see _toolRegistrations). Withheld tools are never
 // registered, so the model can neither list nor call them.
 function _selectTools (tools, options) {
   const allowList = Array.isArray(options.allowTools) ? new Set(options.allowTools) : null
@@ -80,15 +99,27 @@ function _selectTools (tools, options) {
   const withheld = []
   for (const tool of tools) {
     let reason = null
-    const missing = tool.auth ? missingPermissions(tool.permissions, options.identity) : []
+    const legacyAuth = tool.auth && !options.authority
+    const missing = legacyAuth ? missingPermissions(tool.permissions, options.identity) : []
     if (allowList && !allowList.has(tool.id)) reason = 'not in allowTools'
-    else if (tool.auth && !options.identity) reason = 'auth route needs an identity'
+    else if (legacyAuth && !options.identity) reason = 'auth route needs an identity'
     else if (missing.length > 0) reason = `identity lacks permissions: ${missing.join(', ')}`
     else if (!_isReadOnly(tool) && !options.allowWrite && !allowList) reason = 'write tool needs allowWrite or allowTools'
     if (reason) withheld.push({ id: tool.id, reason })
     else exposed.push(tool)
   }
   return { exposed, withheld }
+}
+
+function _bearer (header) {
+  const m = /^Bearer\s+(\S+)\s*$/i.exec(header || '')
+  return m ? m[1] : null
+}
+
+// One JSON line per authorization decision, on stderr beside the server's
+// other output: the same `authz` record the Gateway logs.
+function _logDecision (entry) {
+  process.stderr.write(`${JSON.stringify({ time: Date.now(), authz: entry, msg: 'authz' })}\n`)
 }
 
 function _tokenMatches (header, token) {
@@ -132,12 +163,32 @@ async function startMcpHttpServer (port, tools, options = {}) {
       res.writeHead(404).end()
       return
     }
-    if (options.token && !_tokenMatches(req.headers.authorization, options.token)) {
+    let identity = null
+    let actor = null
+    if (options.authority) {
+      // An agent's access token, from its service account; the same issuer and policy as the Gateway.
+      const token = _bearer(req.headers.authorization)
+      try {
+        if (!token) throw Object.assign(new Error('no token'), { code: 'no-token' })
+        identity = await options.authority.verify(token)
+        if (identity.kind === 'user') actor = token
+      } catch (err) {
+        ;(options.onDecision || _logDecision)({ route: 'mcp', decision: 'unauthenticated', reason: err.code || 'bad-token' })
+        res.writeHead(401, { 'www-authenticate': token ? 'Bearer error="invalid_token"' : 'Bearer' }).end()
+        return
+      }
+    } else if (options.token && !_tokenMatches(req.headers.authorization, options.token)) {
       res.writeHead(401, { 'www-authenticate': 'Bearer' }).end()
       return
     }
     const server = new McpServer({ name: 'mdk-mcp', version: '1.0.0' })
-    for (const args of registrations) server.registerTool(...args)
+    const perRequest = options.authority
+      ? _toolRegistrations(tools || [], options.maxOutputLength || DEFAULT_MAX_OUTPUT_LENGTH, { authority: options.authority, identity, actor })
+      : registrations
+    for (const args of perRequest) server.registerTool(...args)
+    // An agent whose roles allow no tool gets an empty list, not "method not
+    // found": the SDK only answers tools/list once a tool is registered.
+    if (options.authority) server.setToolRequestHandlers()
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableDnsRebindingProtection: true,
@@ -196,11 +247,19 @@ function _assertUniqueToolIds (tools) {
  *   over HRPC to the runtime whose key `keyFile` holds. No app code runs here.
  * @param {object} [options] - Server-side security and lifecycle options. Kept apart
  *   from `config` so plugins never see them:
- *   - `token` {string}: require `Authorization: Bearer <token>` on /mcp.
+ *   - `authority` {object}: checks every agent against spec.rbac (see
+ *     @tetherto/mdk-gateway workers/lib/authority.js). Default: from `kernel` (an
+ *     in-process KernelManager), else from `credential` and `config.kernelKey`
+ *     (the server's own service account, which reads the policy). With one, /mcp
+ *     needs an agent's access token, each agent sees and calls only the tools
+ *     its roles allow, and its identity reaches the app runtime.
+ *   - `kernel` {object} / `credential` {{ name, privateKey }}: see `authority`.
+ *   - `onDecision` {Function}: receives each decision (default: a JSON line on stderr).
+ *   - Without an authority only: `token` {string}: require `Authorization: Bearer <token>` on /mcp.
  *   - `allowWrite` {boolean}: expose tools not declared read-only (default false).
  *   - `allowTools` {string[]}: expose only these tool ids, write tools included.
- *   - `identity` {object}: the identity sent with every app call (a controller's
- *     `req._info`); required for `auth: true` routes to be exposed.
+ *   - Without an authority only: `identity` {object}: the identity sent with every
+ *     app call (a controller's `req._info`); required for `auth: true` routes to be exposed.
  *   - `keyFile` {string}: where to write the public key the server calls app
  *     runtimes with; list it in each runtime's `allowedKeyFiles`.
  *   - `allowedHosts` / `allowedOrigins` {string[]}: extra Host values / Origins to admit.
@@ -213,10 +272,14 @@ const createMcpServer = async (root, port, config, pluginDirs, apps, options) =>
   if (!port) throw new Error('ERR_INVALID_MCP_PORT')
 
   // What a plugin sees as '@tetherto/mdk-mcp/plugin'. The plugin authors its
-  // own kernel client from config.kernelKey/kernelBootstrap; the server no
+  // own kernel client from config.kernelKey/kernelBootstrap/kernelDhtHost; the server no
   // longer owns one.
   const conf = Object.freeze({ ...(config || {}) })
-  const opts = options || {}
+  const opts = { ...(options || {}) }
+  opts.authority = _resolveAuthority(opts, conf)
+  if (opts.authority && (opts.token !== undefined || opts.identity !== undefined)) {
+    throw new Error('ERR_MCP_STATIC_IDENTITY_UNSUPPORTED: with spec.rbac, each agent signs in with its own service account; drop `token` and `identity`')
+  }
   const nativeTools = (pluginDirs || []).flatMap((dir) => loadPlugin(dir, Object.freeze({
     config: conf,
     logger: createLogger(`mdk:mcp:plugin:${path.basename(dir)}`)
@@ -224,11 +287,12 @@ const createMcpServer = async (root, port, config, pluginDirs, apps, options) =>
 
   // One stable key, across restarts, for every app runtime to allow-list.
   const client = apps?.length
-    ? createRuntimeClient({ seed: getOrCreateSeed(path.join(root, 'identity', 'seedRuntimeClient')), bootstrap: conf.kernelBootstrap })
+    ? createRuntimeClient({ seed: getOrCreateSeed(path.join(root, 'identity', 'seedRuntimeClient')), bootstrap: conf.kernelBootstrap, dhtHost: conf.kernelDhtHost })
     : null
   if (client && !opts.keyFile) console.warn('mdk-mcp: no keyFile set; app runtimes refuse calls unless they allow-list this server\'s key')
   const timeoutMs = resolveAppTimeout(conf)
-  const appTools = (apps || []).flatMap((app) => loadAppTools(app, client, { identity: opts.identity, timeoutMs })
+  const onDecision = opts.onDecision || _logDecision
+  const appTools = (apps || []).flatMap((app) => loadAppTools(app, client, { identity: opts.identity, authority: opts.authority, onDecision, timeoutMs })
     .map((tool) => ({ ...tool, _source: app.appDir })))
 
   const tools = [...nativeTools, ...appTools]
@@ -242,13 +306,16 @@ const createMcpServer = async (root, port, config, pluginDirs, apps, options) =>
   }
 
   if (client) await client.connect()
+  if (opts.authority) await opts.authority.start()
   let httpServer
   try {
-    httpServer = await startMcpHttpServer(port, exposed, opts)
+    httpServer = await startMcpHttpServer(port, exposed, { ...opts, onDecision })
   } catch (err) {
     if (client) await client.close()
+    if (opts.authority) await opts.authority.close()
     throw err
   }
+  if (opts.authority) httpServer.once('close', () => opts.authority.close())
   if (client) {
     httpServer.once('close', () => client.close())
     if (opts.keyFile) {
@@ -271,6 +338,26 @@ const createMcpServer = async (root, port, config, pluginDirs, apps, options) =>
   }
 
   return httpServer
+}
+
+// What checks agents against spec.rbac: given outright, an in-process Kernel's
+// own issuer and policy, or a Kernel in another process reached as this
+// server's service account. None: the older static token and identity.
+function _resolveAuthority (opts, conf) {
+  if (opts.authority) return opts.authority
+  if (opts.kernel && opts.kernel.identity && opts.kernel.rbac) return localAuthority(opts.kernel)
+  if (opts.credential && conf.kernelKey) {
+    const { createMdkClient } = require('@tetherto/mdk-client')
+    return remoteAuthority({
+      client: createMdkClient({
+        kernelKey: conf.kernelKey,
+        ...(conf.kernelKeyPair ? { kernelKeyPair: conf.kernelKeyPair } : {}),
+        ...(conf.kernelBootstrap ? { kernelBootstrap: conf.kernelBootstrap } : {}),
+        kernelCredential: opts.credential
+      })
+    })
+  }
+  return null
 }
 
 // Public surface: createMcpServer covers every CLI/example use; the rest stays

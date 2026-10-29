@@ -116,6 +116,28 @@ describe('mdk create app', () => {
     }
   });
 
+  it('reports the grant written into spec.rbac, and when it could not be', async () => {
+    const program = buildProgram();
+    const base = { ok: true, appPath: '/proj/apps/a', packageName: 'a', appName: 'a', stackFile: 'added' };
+    createAppMock.mockReturnValue({ ...base, grant: { action: 'add', role: 'app-a', serviceAccount: 'app:a', written: true } });
+    let stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await program.parseAsync(['node', 'mdk', 'create', 'app', 'a']);
+    expect(stdout.mock.calls.join('')).toMatch(/spec\.rbac role app-a grants app:a the Kernel access it requests/);
+    stdout.mockRestore();
+
+    createAppMock.mockReturnValue({ ...base, grant: { action: 'conflict', role: 'app-a', serviceAccount: 'app:a', written: false } });
+    stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await program.parseAsync(['node', 'mdk', 'create', 'app', 'a']);
+    expect(stdout.mock.calls.join('')).toMatch(/role app-a differs from what mdk-app\.yaml requests.*mdk rbac init/);
+    stdout.mockRestore();
+
+    createAppMock.mockReturnValue({ ...base, grant: { error: 'spec.rbac in mdk.yaml is invalid' } });
+    stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await program.parseAsync(['node', 'mdk', 'create', 'app', 'a']);
+    expect(stdout.mock.calls.join('')).toMatch(/not granted in spec\.rbac \(spec\.rbac in mdk\.yaml is invalid\); fix that, then run mdk rbac init/);
+    stdout.mockRestore();
+  });
+
   it('surfaces an install warning and a failure', async () => {
     const program = buildProgram();
     createAppMock.mockReturnValue({

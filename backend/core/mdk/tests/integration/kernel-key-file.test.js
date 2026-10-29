@@ -86,27 +86,25 @@ test('trust - getKernel is fail-closed and admits keys from its trusted-keys dir
   const { kernel } = await createKernel(t, { keyFile: false })
   const caller = 'ef'.repeat(32)
 
-  t.is(kernel.hrpcListener.getCallerRoles(caller), null, 'unknown caller rejected by default')
+  t.absent(kernel.hrpcListener.isAllowed(caller), 'unknown caller rejected by default')
   t.ok(kernel.trustedKeysDir, 'trusted-keys dir set')
   const published = readTrustedKeys(kernel.trustedKeysDir).find((k) => k.name === 'kernel')
   t.is(published.key, kernel.getClientPublicKey().toString('hex'), 'kernel.pub is the worker-dialing key')
 
   publishTrustedKey(kernel.trustedKeysDir, 'cli', caller)
-  let roles = null
-  for (let i = 0; i < 40 && !roles; i++) {
+  let admitted = false
+  for (let i = 0; i < 40 && !admitted; i++) {
     await new Promise((resolve) => setTimeout(resolve, 100))
-    roles = kernel.hrpcListener.getCallerRoles(caller)
+    admitted = kernel.hrpcListener.isAllowed(caller)
   }
-  t.ok(roles, 'published caller admitted')
+  t.ok(admitted, 'published caller admitted')
 })
 
-test('trust - hrpc.allowAll is passed through', async (t) => {
-  const { kernel } = await createKernel(t, { keyFile: false, trustedKeysDir: false, hrpc: { allowAll: true } })
-  t.ok(kernel.hrpcListener.getCallerRoles('ef'.repeat(32)))
-  t.is(kernel.trustedKeysDir, null)
+test('trust - hrpc.allowAll is refused', async (t) => {
+  await t.exception(createKernel(t, { keyFile: false, trustedKeysDir: false, hrpc: { allowAll: true } }), /ERR_KERNEL_ALLOW_ALL_REMOVED/)
 })
 
-test('trust - startGateway({ kernel }) admits the gateway client key and publishes it for workers', { timeout: 60000 }, async (t) => {
+test('trust - startGateway({ kernel }) admits the gateway client key and publishes it for other processes', { timeout: 60000 }, async (t) => {
   const { readTrustedKeys } = require('../../lib/local-discovery')
   const { root, kernel } = await createKernel(t, { keyFile: false })
   const hnd = await sdk.startGateway({ kernel, root: path.join(root, 'gateway'), port: 0, env: 'test', noAuth: true })
@@ -114,7 +112,7 @@ test('trust - startGateway({ kernel }) admits the gateway client key and publish
 
   const key = hnd.status.rpcClientKey
   t.is(key.length, 64)
-  t.ok(kernel.hrpcListener.getCallerRoles(key), 'gateway key admitted on the in-process kernel')
-  t.ok(kernel.listAllowedKeys('write').includes(key), 'and mirrored to in-process workers via trustKernel')
+  t.ok(kernel.hrpcListener.isAllowed(key), 'gateway key admitted on the in-process kernel')
+  t.ok(kernel.listAllowedKeys().includes(key))
   t.ok(readTrustedKeys(kernel.trustedKeysDir).some((k) => k.name === 'gateway' && k.key === key), 'published for other processes')
 })

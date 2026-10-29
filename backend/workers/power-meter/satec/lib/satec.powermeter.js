@@ -1,6 +1,6 @@
 'use strict'
 
-const { PowerMeter } = require('../../../../core/mdk')
+const { PowerMeter } = require('@tetherto/mdk-core')
 const { series } = require('async')
 const { FUNCTION_CODES, PROTOCOL } = require('@tetherto/svc-facs-modbus/lib/constants')
 const { promiseTimeout } = require('@bitfinex/lib-js-util-promise')

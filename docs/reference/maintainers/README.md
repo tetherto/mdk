@@ -18,14 +18,14 @@ The end-user-facing content ([`concepts/`](../../concepts/), [`tutorials/`](../.
 ## Docs-code parity
 
 > This is the product-change flow; a reader-reported gap in existing docs uses a
-> [`docs-needed` issue](../../../.github/ISSUE_TEMPLATE/docs-needed.yml).
+> `docs-needed` issue.
 
 The north star is that docs ship in the same release as their code. A `docs-required` and `docs-review-required` label can be added to signal
 to maintainers that action is needed. From v1 a [hard gate](#hard-gate-v1) is proposed on the release PR.
 
-The labels are added by hand, or by checking the box in the [PR template](../../../.github/pull_request_template.md). This
+The labels are added by hand, or by checking the box in the PR template. This
  allows an open source contributor to flag that docs need the same way an internal engineer does.
- Each checkbox adds its own label through the [labeler workflow](../../../.github/workflows/docs-required.yml):
+ Each checkbox adds its own label through the labeler workflow:
 
 - `docs-required`: the code change ships without its docs
 - `docs-review-required`: the docs are included in the PR; the engineer requests review from the docs maintainer
@@ -46,5 +46,5 @@ owns; a contributor's PR has no docs check to fail.
 
 Wiring: branch protection marks the workflow a required check on `main`. Branch protection is a repo setting and settings do not
 mirror, so DevOps would need to apply it in both repos. The workflow follows the conventions of the scheduled docs checks, pinned action
-commits and a concurrency group as in [`table-refs.yml`](../../../.github/workflows/table-refs.yml).
+commits and a concurrency group as in `table-refs.yml`.
 

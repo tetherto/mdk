@@ -82,6 +82,13 @@ describe('SingleStatCard', () => {
     expect(card).toHaveStyle({ '--stat-color': 'red' })
   })
 
+  it('leaves the color variable unset without a color, so the variant colour applies', () => {
+    const { container } = render(<SingleStatCard name="Test" value={123} variant="secondary" />)
+
+    const card = container.querySelector('.mdk-single-stat-card') as HTMLElement
+    expect(card.style.getPropertyValue('--stat-color')).toBe('')
+  })
+
   it('handles string values', () => {
     render(<SingleStatCard name="Status" value="Active" />)
 
@@ -124,5 +131,36 @@ describe('SingleStatCard', () => {
     const { container } = render(<SingleStatCard name="Hashrate" value={1} className="extra" />)
 
     expect(container.firstElementChild).toHaveClass('mdk-single-stat-card', 'extra')
+  })
+
+  it('renders a caption beside the name, a tag after the value and a detail line', () => {
+    render(
+      <SingleStatCard
+        name="Hash cost"
+        caption="per PH/s/day"
+        value="16.39"
+        tag="estimated"
+        detail="From 12 payouts"
+      />,
+    )
+    expect(screen.getByText('per PH/s/day')).toHaveClass('mdk-single-stat-card__caption')
+    expect(screen.getByText('estimated')).toHaveClass('mdk-single-stat-card__tag')
+    expect(screen.getByText('From 12 payouts')).toHaveClass('mdk-single-stat-card__detail')
+  })
+
+  it('treats a null or empty caption, tag or detail as not given', () => {
+    const { container } = render(
+      <SingleStatCard name="Hashrate" value="95" caption="" tag={null} detail={null} />,
+    )
+    expect(container.querySelector('.mdk-single-stat-card__tag')).toBeNull()
+    expect(container.querySelector('.mdk-single-stat-card__detail')).toBeNull()
+    expect(container.querySelector('.mdk-single-stat-card__caption')).toBeNull()
+  })
+
+  it('adds no caption, tag or detail markup unless given', () => {
+    const { container } = render(<SingleStatCard name="Hashrate" value="95" />)
+    expect(container.querySelector('.mdk-single-stat-card__value-row')).toBeNull()
+    expect(container.querySelector('.mdk-single-stat-card__detail')).toBeNull()
+    expect(container.querySelector('.mdk-single-stat-card__caption')).toBeNull()
   })
 })

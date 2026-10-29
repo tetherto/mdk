@@ -12,7 +12,9 @@ const runAppMock = vi.hoisted(() => vi.fn());
 const superviseAppMock = vi.hoisted(() => vi.fn());
 const assertGatewayPortFreeMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const declaredMockPortsMock = vi.hoisted(() => vi.fn(() => []));
-vi.mock('../../src/lib/runtime.js', () => ({
+vi.mock('../../src/lib/runtime.js', async (importOriginal) => ({
+  // The policy check is pure and runs before any boot: the real one.
+  policyRefusal: (await importOriginal<typeof import('../../src/lib/runtime.js')>()).policyRefusal,
   runKernel: runKernelMock,
   runGateway: runGatewayMock,
   runMcp: runMcpMock,
@@ -49,12 +51,20 @@ function writeSpec(dir: string, content: string): void {
   writeFileSync(join(dir, 'mdk.yaml'), content, 'utf8');
 }
 
+/** A policy that binds someone, which is all the Kernel needs to be worth booting. */
+const RBAC = [
+  '  rbac:',
+  '    roles: [{ name: admin, rules: [{ resources: ["*"], verbs: ["*"] }] }]',
+  '    bindings: [{ role: admin, subjects: [{ kind: ServiceAccount, name: mdk-cli }] }]',
+];
+
 const SPEC_WITH_WORKER = [
   'kind: Stack',
   'apiVersion: mdk/v1',
   'spec:',
   '  gateway:',
   '    port: 3847',
+  ...RBAC,
   '  workers:',
   '    - name: a',
   '      package: ./workers/a',
@@ -67,9 +77,8 @@ const SPEC_WITH_APP = [
   '      package: ./apps/demo',
 ].join('\n');
 
-const SPEC_BASE = ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847'].join(
-  '\n',
-);
+const SPEC_BASE = ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847', ...RBAC].join('\n');
+const SPEC_UNBOUND = ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847'].join('\n');
 
 afterEach(() => {
   cleanupTmpDirs();
@@ -119,7 +128,7 @@ describe('mdk run', () => {
     writeSpec(dir, SPEC_BASE);
     await program.parseAsync(['node', 'mdk', 'run', '--dir', dir]);
 
-    expect(runKernelMock).toHaveBeenCalledWith(dir);
+    expect(runKernelMock).toHaveBeenCalledWith(dir, expect.objectContaining({ kind: 'Stack' }));
     expect(runGatewayMock).toHaveBeenCalled();
   });
 
@@ -135,7 +144,7 @@ describe('mdk run', () => {
     writeSpec(dir, SPEC_WITH_WORKER);
     await program.parseAsync(['node', 'mdk', 'run', '--dir', dir]);
 
-    expect(runKernelMock).toHaveBeenCalledWith(dir);
+    expect(runKernelMock).toHaveBeenCalledWith(dir, expect.objectContaining({ kind: 'Stack' }));
     expect(runWorkerMock).toHaveBeenCalled();
     expect(runGatewayMock).toHaveBeenCalled();
     expect(installShutdownMock).toHaveBeenCalled();
@@ -156,7 +165,7 @@ describe('mdk run', () => {
     writeSpec(dir, SPEC_WITH_APP);
     await program.parseAsync(['node', 'mdk', 'run', '--dir', dir]);
 
-    expect(superviseAppMock).toHaveBeenCalledWith(dir, expect.objectContaining({ name: 'demo' }), kernel);
+    expect(superviseAppMock).toHaveBeenCalledWith(dir, expect.objectContaining({ name: 'demo' }), kernel, undefined, expect.objectContaining({ kind: 'Stack' }));
     const order = [runWorkerMock, superviseAppMock, runGatewayMock].map((m) => m.mock.invocationCallOrder[0]);
     expect(order).toEqual([...order].sort((a, b) => a - b));
     const components = installShutdownMock.mock.calls[0][0];
@@ -184,6 +193,30 @@ describe('mdk run', () => {
     await expect(gateway.stop()).resolves.toBeUndefined();
   });
 
+  it('refuses to boot a Kernel on a policy that binds nobody, naming the fix', async () => {
+    for (const args of [[], ['kernel']]) {
+      const program = buildProgram();
+      mockProcessExit();
+      const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      const dir = makeTmpDir();
+      writeSpec(dir, SPEC_UNBOUND);
+      await expect(program.parseAsync(['node', 'mdk', 'run', ...args, '--dir', dir])).rejects.toThrow(ProcessExitSignal);
+      expect(stderr.mock.calls.join('')).toMatch(/spec\.rbac binds nobody.*nobody able to administer it.*Run `mdk rbac init` first, then `mdk run`/);
+      expect(runKernelMock).not.toHaveBeenCalled();
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('boots a component that is not the Kernel whatever the policy says', async () => {
+    const program = buildProgram();
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    runGatewayMock.mockResolvedValue({ stop: (cb: () => void) => cb() });
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_UNBOUND);
+    await program.parseAsync(['node', 'mdk', 'run', 'gateway', '--dir', dir]);
+    expect(runGatewayMock).toHaveBeenCalled();
+  });
+
   it('runs target "kernel" standalone', async () => {
     const program = buildProgram();
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
@@ -191,7 +224,7 @@ describe('mdk run', () => {
     const dir = makeTmpDir();
     writeSpec(dir, SPEC_BASE);
     await program.parseAsync(['node', 'mdk', 'run', 'kernel', '--dir', dir]);
-    expect(runKernelMock).toHaveBeenCalledWith(dir);
+    expect(runKernelMock).toHaveBeenCalledWith(dir, expect.objectContaining({ kind: 'Stack' }));
     expect(runGatewayMock).not.toHaveBeenCalled();
   });
 
@@ -277,7 +310,7 @@ describe('mdk run', () => {
       return;
     }
     await run;
-    expect(runAppMock).toHaveBeenCalledWith(dir, expect.objectContaining({ name: 'demo' }));
+    expect(runAppMock).toHaveBeenCalledWith(dir, expect.objectContaining({ name: 'demo' }), expect.objectContaining({ kind: 'Stack' }));
     await installShutdownMock.mock.calls[0][0][0].stop();
     expect(app.stop).toHaveBeenCalled();
   });

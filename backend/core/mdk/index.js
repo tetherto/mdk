@@ -13,6 +13,7 @@ const { startServices } = require('./services')
 const {
   keysDir, discoverWorkerKeys, trustedKeysDir, publishTrustedKey, admitTrustedKeys, KERNEL_KEY_NAME
 } = require('./lib/local-discovery')
+const { startDhtBootstrap, dhtFromEnv, parseBootstrap, parseDhtHost, resolveDhtHost } = require('./lib/dht-bootstrap')
 
 const defaultRoot = path.join(os.homedir(), '.mdk')
 
@@ -121,13 +122,15 @@ function _writeConfigWithOverride (examplePath, destPath, overrides) {
  * @param {string|boolean} [opts.keyFile] - Path for the HRPC key file (default: DEFAULT_KEY_FILE); `false` to disable
  * @param {object|false} [opts.hrpc] - HRPC listener config, or `false` to disable it. Admission is
  *                                       fail-closed: only listed callers are admitted.
- * @param {Array<string|{key: string, roles: string[]}>} [opts.hrpc.whitelist] - Caller allowlist: a hex
- *                                       DHT public key (full access) or `{ key, roles }` with roles from
- *                                       'read' | 'write' | 'admin'. Default `[]` = nobody until admitted via
+ * @param {Array<string|{key: string}>} [opts.hrpc.whitelist] - Caller allowlist: the hex DHT public keys
+ *                                       that may connect. Default `[]` = nobody until admitted via
  *                                       kernel.allowKey(), startGateway({ kernel }) or the trusted-keys dir.
- * @param {boolean} [opts.hrpc.allowAll] - Admit every DHT peer that knows the Kernel key. Development
- *                                       only; logs a warning. Never the default.
- * @param {Array}  [opts.hrpc.bootstrap] - DHT bootstrap nodes (testnets)
+ *                                       A key only connects: what its caller may do is set by its access
+ *                                       token and spec.rbac.
+ * @param {Array}  [opts.hrpc.bootstrap] - DHT bootstrap nodes (`'host:port'` or `{ host, port }`); a private
+ *                                       list keeps the Kernel off the public HyperDHT (see startDhtBootstrap)
+ * @param {string} [opts.hrpc.dhtHost]   - Interface the Kernel's DHT node binds (default all interfaces):
+ *                                       `127.0.0.1` for a same-machine stack, a LAN address for an isolated LAN
  * @param {string|false} [opts.trustedKeysDir] - Same-machine key rendezvous (default <root>/.trusted-keys).
  *                                       The Kernel publishes kernel.pub (its worker-dialing key,
  *                                       kernel.getClientPublicKey()) there and admits every other
@@ -141,6 +144,13 @@ function _writeConfigWithOverride (examplePath, destPath, overrides) {
  *                                       kernel.allowWorkerKey()) register from the topic, unless
  *                                       `allowAnyWorker: true` (development only; logs a warning).
  *                                       kernel.registerWorker() skips the topic allowlist.
+ * @param {object|null} [opts.rbac]       - spec.rbac from mdk.yaml, validated and applied at boot (null: the
+ *                                       stack has no policy, which denies everything). Omit to keep the
+ *                                       last policy applied to this Kernel's store.
+ * @param {Array<{name: string, publicKey: string}>} [opts.serviceAccounts] - The exact set of service accounts
+ *                                       (apps as `app:<name>`, agents) to register at boot. Omit to keep
+ *                                       the registered ones.
+ * @param {object} [opts.identity]       - Token issuer settings (issuer, accessTtlSec, refreshTtlSec, ...).
  * @param {boolean} [opts.handleSignals] - Install SIGINT/SIGTERM handlers that drain kernel._cleanup,
  *                                       stop the Kernel and call process.exit(0). Default false
  *                                       (library use): stop it yourself with shutdown(kernel).
@@ -174,11 +184,18 @@ async function getKernel (opts = {}) {
   if (opts.healthPingMs) conf.kernel.healthPingMs = opts.healthPingMs
   if (opts.statePullMs) conf.kernel.statePullMs = opts.statePullMs
   if (opts.actionIntvlMs) conf.kernel.actionIntvlMs = opts.actionIntvlMs
+  if (opts.identity) conf.kernel.identity = opts.identity
   conf.kernel.discovery = mode === 'local'
     ? { mode: 'local', dir: localKeysDir }
     : { ...(opts.discovery || {}), topic: (opts.discovery && opts.discovery.topic) || topic }
 
-  const kernel = new KernelManager(conf, { storeDir, root, loadConf: () => {} })
+  const kernel = new KernelManager(conf, {
+    storeDir,
+    root,
+    loadConf: () => {},
+    ...(opts.rbac !== undefined ? { rbac: opts.rbac } : {}),
+    ...(opts.serviceAccounts !== undefined ? { serviceAccounts: opts.serviceAccounts } : {})
+  })
   await kernel.init()
   await kernel.start()
 
@@ -281,7 +298,10 @@ function _normalizeApps (apps = []) {
  *                                            without a Kernel connection. Default: resolved from opts.kernel,
  *                                            then the key file.
  * @param {string}  [opts.keyFile]       - Key file to resolve the Kernel key from (default: DEFAULT_KEY_FILE)
- * @param {Array}   [opts.bootstrap]     - DHT bootstrap nodes for the Client and the app runtime client (testnets)
+ * @param {Array}   [opts.bootstrap]     - DHT bootstrap nodes for every DHT node the gateway starts: its net
+ *                                         facility (Kernel/Worker client key), the Kernel client and the app
+ *                                         runtime client. A private list keeps it off the public HyperDHT
+ * @param {string}  [opts.dhtHost]       - Interface those DHT nodes bind (default all interfaces)
  * @param {Array}   [opts.apps]          - The apps this gateway mounts — all of them. Each runs in its own
  *                                         runtime process (@tetherto/mdk-app-runtime); the gateway reads only
  *                                         its route table and forwards every request over HRPC.
@@ -296,9 +316,17 @@ function _normalizeApps (apps = []) {
  * @param {object}  [opts.store]         - Overrides for store.config.json
  * @param {object}  [opts.logging]       - Overrides for logging.config.json
  * @param {Array}   [opts.additionalRoutes] - Extra Fastify routes to register
- * @param {Function} [opts.authVerifier] - `async (request, route) => identity | false`. Gates every
- *                                         app route whose manifest says `auth: true` (401 when absent
- *                                         or falsy); the identity becomes the controller's `req._info`.
+ * @param {object}  [opts.authority]     - What checks every app route against spec.rbac (see
+ *                                         @tetherto/mdk-gateway workers/lib/authority.js). Default: the
+ *                                         in-process opts.kernel's issuer and policy, else a Kernel reached
+ *                                         at opts.kernelKey as opts.gatewayCredential. With one, every app
+ *                                         route needs a bearer token and a rule, and /auth/login|refresh|
+ *                                         logout|me are served.
+ * @param {{name: string, privateKey: string}} [opts.gatewayCredential] - The Gateway's service account,
+ *                                         for a Kernel in another process: it reads the policy (`policy: read`).
+ * @param {Function} [opts.authVerifier] - Without an authority only: `async (request, route) => identity | false`.
+ *                                         Gates every app route whose manifest says `auth: true` (401 when
+ *                                         absent or falsy); the identity becomes the controller's `req._info`.
  *                                         Routes without `auth: true` stay open.
  * @param {string[]} [opts.allowedHosts] - Extra Host header values to serve (`name` or `name:port`);
  *                                         loopback on `port` is always allowed. `['*']` disables the check.
@@ -381,7 +409,14 @@ async function startGateway (opts = {}) {
   else if (ctx.env === 'test') ctx.tmpdir = root
   if (opts.kernel) ctx.kernel = opts.kernel
   if (kernelKey) ctx.kernelKey = kernelKey
+  // A Kernel in another process admits this Gateway by its net facility's DHT
+  // key (gateway.pub), so the authority's Kernel client dials with that key.
+  // It is read on first connect, once the facility is up.
+  let hnd = null
+  const authority = _resolveAuthority(opts, kernelKey, () => hnd && hnd.net_r0 && hnd.net_r0.dht && hnd.net_r0.dht.defaultKeyPair)
+  if (authority) ctx.authority = authority
   if (opts.bootstrap) ctx.kernelBootstrap = opts.bootstrap
+  if (opts.dhtHost) ctx.kernelDhtHost = opts.dhtHost
   if (apps.length) ctx.apps = apps
   if (opts.gatewayKeyFile) ctx.gatewayKeyFile = path.resolve(opts.gatewayKeyFile)
   if (opts.additionalRoutes) ctx.additionalRoutes = opts.additionalRoutes
@@ -393,7 +428,7 @@ async function startGateway (opts = {}) {
 
   // WrkServerHttp constructor calls this.init() + this.start() automatically.
   // bfx-wrk-base emits 'started' (via process.nextTick) when start() completes.
-  const hnd = new WrkServerHttp({}, ctx)
+  hnd = new WrkServerHttp({}, ctx)
   await new Promise((resolve) => hnd.once('started', resolve))
 
   _trustGatewayKey(hnd, opts)
@@ -409,10 +444,33 @@ async function startGateway (opts = {}) {
   return hnd
 }
 
-// The Kernel and workers are fail-closed, so the gateway's client key (the
-// one plugin clients and worker clients dial with) must be admitted: directly
-// on an in-process Kernel (which mirrors it onto in-process workers, see
-// trustKernel), and through the trusted-keys dir for other processes.
+// What enforces spec.rbac at this Gateway: given outright, the in-process
+// Kernel's own issuer and policy, or a Kernel in another process reached as
+// the Gateway's service account, dialing with `gatewayKeyPair()`. None: the
+// older authVerifier path.
+function _resolveAuthority (opts, kernelKey, gatewayKeyPair) {
+  const { localAuthority, remoteAuthority } = require('@tetherto/mdk-gateway/workers/lib/authority')
+  if (opts.authority) return opts.authority
+  if (opts.kernel && opts.kernel.identity && opts.kernel.rbac) return localAuthority(opts.kernel)
+  if (opts.gatewayCredential && kernelKey) {
+    const { createMdkClient } = require('@tetherto/mdk-client')
+    return remoteAuthority({
+      client: createMdkClient({
+        kernelKey,
+        kernelKeyPair: gatewayKeyPair,
+        kernelCredential: opts.gatewayCredential,
+        ...(opts.bootstrap ? { kernelBootstrap: opts.bootstrap } : {}),
+        ...(opts.dhtHost ? { kernelDhtHost: opts.dhtHost } : {})
+      })
+    })
+  }
+  return null
+}
+
+// The Kernel is fail-closed, so the gateway's client key (the one plugin
+// clients dial with) must be admitted: directly on an in-process Kernel, and
+// through the trusted-keys dir for a Kernel in another process. Workers admit
+// the Kernel only.
 function _trustGatewayKey (hnd, opts) {
   const key = hnd.status && hnd.status.rpcClientKey
   if (!key) return
@@ -491,6 +549,13 @@ module.exports = {
   DEFAULT_KEY_FILE,
   DEFAULT_TRUSTED_KEYS_DIR,
   startServices,
+
+  // Private HyperDHT network (local / air-gapped profile)
+  startDhtBootstrap,
+  dhtFromEnv,
+  parseBootstrap,
+  parseDhtHost,
+  resolveDhtHost,
 
   // Worker-side infra: injectable services, device layer, and templates
   LogsService: require('./lib/services/logs.service'),

@@ -41,6 +41,7 @@ class HRPCClient {
     this._seed = opts.seed || null
     this._keyPair = opts.keyPair || null
     this._bootstrap = opts.bootstrap || null
+    this._dhtHost = opts.dhtHost || null
     this._dht = opts.dht || null
     this._rpc = opts.rpc || null
     this._ownsTransport = !opts.rpc
@@ -52,7 +53,7 @@ class HRPCClient {
 
   // Transport opts for a client to another peer (a Worker) that should dial
   // with this client's identity: the live rpc when connected (one DHT node,
-  // one keypair), else the same keyPair/seed/bootstrap to build an equal one.
+  // one keypair), else the same keyPair/seed/bootstrap/dhtHost to build an equal one.
   childOpts () {
     const base = { timeout: this._timeout }
     if (this._connected && this._rpc) return { ...base, rpc: this._rpc, dht: this._dht }
@@ -60,7 +61,8 @@ class HRPCClient {
       ...base,
       ...(this._keyPair ? { keyPair: this._keyPair } : {}),
       ...(this._seed ? { seed: this._seed } : {}),
-      ...(this._bootstrap ? { bootstrap: this._bootstrap } : {})
+      ...(this._bootstrap ? { bootstrap: this._bootstrap } : {}),
+      ...(this._dhtHost ? { dhtHost: this._dhtHost } : {})
     }
   }
 
@@ -71,6 +73,7 @@ class HRPCClient {
       if (keyPair) dhtOpts.keyPair = keyPair
       else if (this._seed) dhtOpts.keyPair = DHT.keyPair(this._seed)
       if (this._bootstrap) dhtOpts.bootstrap = this._bootstrap
+      if (this._dhtHost) dhtOpts.host = this._dhtHost
       this._dht = new DHT(dhtOpts)
       this._rpc = new HyperswarmRPC({ dht: this._dht })
     }

@@ -32,6 +32,10 @@
         "kind": "type"
       },
       {
+        "name": "allowedGranularities",
+        "kind": "function"
+      },
+      {
         "name": "API_BASE_URL_ENV",
         "kind": "const"
       },
@@ -49,6 +53,10 @@
       },
       {
         "name": "appendIdToTags",
+        "kind": "function"
+      },
+      {
+        "name": "applySession",
         "kind": "function"
       },
       {
@@ -296,12 +304,32 @@
         "kind": "function"
       },
       {
+        "name": "CsvValue",
+        "kind": "type"
+      },
+      {
+        "name": "CUSTOM_PERIOD",
+        "kind": "const"
+      },
+      {
         "name": "DEFAULT_API_BASE_URL",
+        "kind": "const"
+      },
+      {
+        "name": "DEFAULT_GRANULARITY",
         "kind": "const"
       },
       {
         "name": "DEPRECATED_API_BASE_URL_ENV",
         "kind": "const"
+      },
+      {
+        "name": "describeRequestError",
+        "kind": "function"
+      },
+      {
+        "name": "DescribeRequestErrorOptions",
+        "kind": "type"
       },
       {
         "name": "DevicePayload",
@@ -330,6 +358,18 @@
       {
         "name": "DeviceTagPayload",
         "kind": "type"
+      },
+      {
+        "name": "downloadCsv",
+        "kind": "function"
+      },
+      {
+        "name": "downloadJson",
+        "kind": "function"
+      },
+      {
+        "name": "downloadText",
+        "kind": "function"
       },
       {
         "name": "exportSettingsToFile",
@@ -364,6 +404,10 @@
         "kind": "const"
       },
       {
+        "name": "GatewayIdentity",
+        "kind": "type"
+      },
+      {
         "name": "gatewayRedirectAuth",
         "kind": "function"
       },
@@ -390,6 +434,18 @@
       {
         "name": "getTags",
         "kind": "function"
+      },
+      {
+        "name": "GRANULARITIES",
+        "kind": "const"
+      },
+      {
+        "name": "Granularity",
+        "kind": "type"
+      },
+      {
+        "name": "GRANULARITY_LABELS",
+        "kind": "const"
       },
       {
         "name": "ImportResult",
@@ -616,6 +672,38 @@
         "kind": "function"
       },
       {
+        "name": "passwordAuth",
+        "kind": "function"
+      },
+      {
+        "name": "PasswordAuthOptions",
+        "kind": "type"
+      },
+      {
+        "name": "PasswordAuthProvider",
+        "kind": "type"
+      },
+      {
+        "name": "PasswordCredentials",
+        "kind": "type"
+      },
+      {
+        "name": "Period",
+        "kind": "type"
+      },
+      {
+        "name": "PERIOD_PRESETS",
+        "kind": "const"
+      },
+      {
+        "name": "PeriodPresetId",
+        "kind": "type"
+      },
+      {
+        "name": "periodRange",
+        "kind": "function"
+      },
+      {
         "name": "PermissionCheck",
         "kind": "type"
       },
@@ -640,6 +728,10 @@
         "kind": "type"
       },
       {
+        "name": "presetGranularity",
+        "kind": "function"
+      },
+      {
         "name": "Rack",
         "kind": "type"
       },
@@ -661,6 +753,10 @@
       },
       {
         "name": "RolesPermissionsData",
+        "kind": "type"
+      },
+      {
+        "name": "RollingPresetId",
         "kind": "type"
       },
       {
@@ -756,6 +852,10 @@
         "kind": "type"
       },
       {
+        "name": "toCsv",
+        "kind": "function"
+      },
+      {
         "name": "UnknownRecord",
         "kind": "type"
       },
@@ -794,6 +894,14 @@
       {
         "name": "WEBAPP_SHORT_NAME",
         "kind": "const"
+      },
+      {
+        "name": "zonedDayOf",
+        "kind": "function"
+      },
+      {
+        "name": "zonedDayStart",
+        "kind": "function"
       }
     ],
     "./store": [
@@ -934,6 +1042,14 @@
       {
         "name": "DEPRECATED_API_BASE_URL_ENV",
         "kind": "const"
+      },
+      {
+        "name": "describeRequestError",
+        "kind": "function"
+      },
+      {
+        "name": "DescribeRequestErrorOptions",
+        "kind": "type"
       },
       {
         "name": "Fetcher",

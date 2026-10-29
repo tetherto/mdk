@@ -13,11 +13,14 @@ const fs = require('fs')
 const debug = require('debug')('mdk:benchmark:site')
 const { getKernel, startGateway } = require('@tetherto/mdk-core')
 const { createAppRuntime } = require('@tetherto/mdk-app-runtime')
+const { createMdkClient } = require('@tetherto/mdk-client')
+const { remoteAuthority } = require('@tetherto/mdk-gateway/workers/lib/authority')
 const {
-  publishWorkerKey, keysDir, trustedKeysDir, readTrustedKeys, waitForKernelKey, trustKernel, trustKeysFromDir,
+  publishWorkerKey, keysDir, trustedKeysDir, waitForKernelKey, trustKernel, trustKeysFromDir,
   publishTrustedKey, callerKeyPair
 } = require('@tetherto/mdk-core/lib/local-discovery')
-const { WORKER_REGISTRY, ALERT_INDUCTION, ALLOW_DUPLICATE_IPS, MOCK_PORT_RANGE, HOST, DISCOVERY, ROOT, KERNEL_DEFAULTS, WORKER_CONF_DEFAULTS, MINER_DEVICE_TIMEOUT_MS, GATEWAY_PLUGIN_DIR } = require('./constants')
+const { generateCredential, gatewayTokenRequest, ServiceAccountTokenSource } = require('@tetherto/mdk-identity')
+const { WORKER_REGISTRY, ALERT_INDUCTION, ALLOW_DUPLICATE_IPS, MOCK_PORT_RANGE, HOST, DISCOVERY, ROOT, KERNEL_DEFAULTS, WORKER_CONF_DEFAULTS, MINER_DEVICE_TIMEOUT_MS, GATEWAY_PLUGIN_DIR, GATEWAY_DEFAULTS } = require('./constants')
 
 const benchmarkDir = path.join(__dirname, '..')
 const config = require(path.join(benchmarkDir, 'config', 'benchmark.config.json'))
@@ -165,11 +168,56 @@ function startMocks (specs) {
 
 // --- Kernel + worker boot ------------------------------------------------------
 
+// --- RBAC: service accounts + policy -----------------------------------------
+
+// Every HRPC caller needs an access token and every Gateway app route a bearer
+// token. This throwaway stack binds its three service accounts — the harness's
+// own client, the Gateway (reads the policy) and the fleet app's runtime — to
+// one full-access role: the benchmark measures the data path, not policy shape.
+const HARNESS_ACCOUNT = 'bench-harness'
+const GATEWAY_ACCOUNT = 'mdk-gateway'
+const FLEET_APP_ACCOUNT = 'app:fleet'
+const STACK_ACCOUNTS = [HARNESS_ACCOUNT, GATEWAY_ACCOUNT, FLEET_APP_ACCOUNT]
+
+function stackPolicy () {
+  return {
+    roles: [{ name: 'bench-admin', rules: [{ resources: ['*'], verbs: ['*'] }] }],
+    bindings: [{ role: 'bench-admin', subjects: STACK_ACCOUNTS.map((name) => ({ kind: 'ServiceAccount', name })) }]
+  }
+}
+
+// Generated once per root and read back by every process booted under it (the
+// Kernel registers the public keys; each caller signs in with its private key),
+// so a restarted Kernel or Gateway keeps the same accounts.
+function stackCredentials (root) {
+  const file = path.join(root, 'credentials.json')
+  if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'))
+  const creds = Object.fromEntries(STACK_ACCOUNTS.map((name) => [name, generateCredential()]))
+  fs.mkdirSync(root, { recursive: true })
+  fs.writeFileSync(file, JSON.stringify(creds), { mode: 0o600 })
+  return creds
+}
+
+// What a Kernel client signs in with: { name, privateKey }.
+function signingCredential (root, name) {
+  return { name, privateKey: stackCredentials(root)[name].privateKeyPem }
+}
+
+// Bearer tokens for the harness's own HTTP calls to Gateway app routes, signed
+// in at the Gateway's /auth/token and renewed before they expire.
+function gatewayTokenSource (root, baseUrl) {
+  const { name, privateKey } = signingCredential(root, HARNESS_ACCOUNT)
+  return new ServiceAccountTokenSource({ name, privateKey, request: gatewayTokenRequest(baseUrl) })
+}
+
 // `mode`: 'local' (register the worker by the RPC key it publishes to the
 // shared dir) or 'dht' (Hyperswarm topic; `topic` pins it).
 async function bootKernel ({ root, topic, mode = DISCOVERY } = {}) {
+  const creds = stackCredentials(root)
   const opts = {
     root,
+    rbac: stackPolicy(),
+    serviceAccounts: STACK_ACCOUNTS.map((name) => ({ name, publicKey: creds[name].publicKey })),
     storeDir: path.join(root, 'kernel-db'),
     telemetryPullMs: KERNEL_DEFAULTS.telemetryPullMs,
     healthPingMs: KERNEL_DEFAULTS.healthPingMs,
@@ -193,17 +241,14 @@ async function bootKernel ({ root, topic, mode = DISCOVERY } = {}) {
 // With an in-process kernel handle, register directly and chain cleanup onto
 // it; without one (split/multi-process mode), publish the RPC key to the
 // shared local-discovery dir and bind SIGINT/SIGTERM.
-// Worker RPC is fail-closed: the keys a worker admits at boot — in-process,
-// the Kernel's client key plus write-capable callers it admitted; otherwise
-// whatever the Kernel/Gateway/harness published to the trusted-keys dir.
+// Worker RPC is fail-closed and admits the Kernel's client key only:
+// in-process from the Kernel, otherwise its kernel.pub in the trusted-keys dir.
 async function workerTrust ({ kernel, root }) {
-  if (kernel) return [kernel.getClientPublicKey(), ...kernel.listAllowedKeys('write')]
-  const dir = trustedKeysDir(root)
-  await waitForKernelKey(dir, { timeoutMs: 60000 })
-  return readTrustedKeys(dir).map((k) => k.key)
+  if (kernel) return [kernel.getClientPublicKey()]
+  return [await waitForKernelKey(trustedKeysDir(root), { timeoutMs: 60000 })]
 }
 
-// Keep admitting callers that appear after boot (Gateway, harness client).
+// Keep following the Kernel's key after boot.
 function followTrust (handle, { kernel, root }) {
   const follower = kernel ? trustKernel(handle.runtime, kernel) : trustKeysFromDir(handle.runtime, trustedKeysDir(root))
   const stop = handle.stop.bind(handle)
@@ -218,7 +263,7 @@ function followTrust (handle, { kernel, root }) {
 function harnessClientConfig (root) {
   const kernelKeyPair = callerKeyPair(path.join(root, 'harness-identity'))
   publishTrustedKey(trustedKeysDir(root), 'harness', kernelKeyPair.publicKey)
-  return { kernelKeyPair }
+  return { kernelKeyPair, kernelCredential: signingCredential(root, HARNESS_ACCOUNT) }
 }
 
 async function registerWorker (handle, workerId, { kernel, root, mode }) {
@@ -290,14 +335,27 @@ async function bootWorker ({ workerId, type, model, kernel, kernelTopic, root, m
   return handle
 }
 
+// Enforces spec.rbac on every app route against the separately-running
+// Kernel, signed in as the Gateway's own account (it reads the policy). Built
+// here rather than via startGateway's gatewayCredential: that path dials with
+// a throwaway key the fail-closed Kernel never admits, so this client dials
+// with a persistent identity published to the trusted-keys dir, and waits for
+// the Kernel to admit it before the Gateway reads the policy at start.
+async function gatewayAuthority ({ root, kernelKey }) {
+  const kernelKeyPair = callerKeyPair(path.join(root, 'gateway-authority-identity'))
+  publishTrustedKey(trustedKeysDir(root), 'gateway-authority', kernelKeyPair.publicKey)
+  const client = createMdkClient({ kernelKey, kernelKeyPair, kernelCredential: signingCredential(root, GATEWAY_ACCOUNT) })
+  await client.connect({ warmup: true, warmupRetries: 10 })
+  return remoteAuthority({ client })
+}
+
 // Boots the one Gateway every profile run carries, mounting the harness's own
 // generic fleet-summary app (GATEWAY_PLUGIN_DIR) at the root — never a
 // site-specific app, so the harness stays device-family agnostic. The app runs
 // in an app runtime (started here, in the Gateway's process, so resource
 // sampling of the gateway role covers it) and the Gateway forwards to it over
 // HRPC; the runtime only accepts the Gateway's key (gatewayKeyFile).
-// authVerifier: 'loopback' since this is a throwaway benchmark instance, never a real
-// deployment. env: 'test' is required (not just tmpdir) — startGateway's
+// env: 'test' is required (not just tmpdir) — startGateway's
 // underlying corestore only honors an explicit tmpdir when env==='test';
 // otherwise every Gateway process, across every profile, shares one
 // CWD-relative corestore path and any two whose lifetimes overlap in time
@@ -317,6 +375,7 @@ async function bootGateway ({ root, port, kernelKey }) {
     storeDir: path.join(gatewayRoot, 'fleet-app'),
     keyFile: appKeyFile,
     allowedKeyFiles: [gatewayKeyFile],
+    credential: signingCredential(root, FLEET_APP_ACCOUNT),
     // The separately-running Kernel is fail-closed and admits keys published here.
     kernelKeyFile: path.join(trustedKeysDir(root), 'app-fleet.pub')
   })
@@ -326,15 +385,15 @@ async function bootGateway ({ root, port, kernelKey }) {
   const gateway = await startGateway({
     // publish the gateway client key for the separately-running Kernel/workers
     trustedKeysDir: trustedKeysDir(root),
-    // fleet-summary's routes are `auth: true`; the harness calls from this machine.
-    authVerifier: 'loopback',
     env: 'test',
     kernelKey,
     port,
     root: gatewayRoot,
     tmpdir: gatewayRoot,
     apps: [{ name: 'fleet', appDir: GATEWAY_PLUGIN_DIR, keyFile: appKeyFile, mount: '/' }],
-    gatewayKeyFile
+    gatewayKeyFile,
+    rateLimit: GATEWAY_DEFAULTS.rateLimit,
+    authority: await gatewayAuthority({ root, kernelKey })
   })
 
   // One handle: stopping the Gateway stops its app runtime too.
@@ -350,6 +409,8 @@ module.exports = {
   DISCOVERY,
   loadConfig,
   profileRoot,
+  validateWorkerSpec,
+  validateCeilingSpec,
   makeDevicePlan,
   saveDevicePlan,
   loadDevicePlan,
@@ -359,5 +420,9 @@ module.exports = {
   bootGateway,
   registerWorker,
   harnessClientConfig,
+  gatewayTokenSource,
+  stackPolicy,
+  stackCredentials,
+  signingCredential,
   workerStoreDir
 }

@@ -17,6 +17,8 @@ const VALID_TYPES = new Set(Object.values(MESSAGE_TYPES))
  * @param {string|null} [opts.deviceId] - Target device ID
  * @param {object} [opts.payload] - Message payload
  * @param {string} [opts.id] - Optional override for message ID
+ * @param {string} [opts.auth] - The caller's access token
+ * @param {string} [opts.actor] - The operator's access token, for a caller acting on their behalf
  * @returns {object} MDK Protocol envelope
  */
 function build (opts) {
@@ -33,7 +35,13 @@ function build (opts) {
     target: opts.target || null,
     deviceId: opts.deviceId || null,
     timestamp: Date.now(),
-    payload: opts.payload || {}
+    payload: opts.payload || {},
+    // The caller's access token (see @tetherto/mdk-identity). Top level, so no
+    // action's payload ever carries or forwards it.
+    ...(opts.auth ? { auth: opts.auth } : {}),
+    // The operator's access token, when the caller (an app) acts for the user
+    // its Gateway route authenticated. Authorized beside `auth`, never instead.
+    ...(opts.actor ? { actor: opts.actor } : {})
   }
 }
 
@@ -79,6 +87,14 @@ function validate (envelope) {
     if (typeof envelope.payload !== 'object' || Array.isArray(envelope.payload)) {
       return { valid: false, error: 'ERR_ENVELOPE_PAYLOAD_INVALID' }
     }
+  }
+
+  if (envelope.auth !== undefined && (typeof envelope.auth !== 'string' || envelope.auth.length > 8192)) {
+    return { valid: false, error: 'ERR_ENVELOPE_AUTH_INVALID' }
+  }
+
+  if (envelope.actor !== undefined && (typeof envelope.actor !== 'string' || !envelope.actor || envelope.actor.length > 8192)) {
+    return { valid: false, error: 'ERR_ENVELOPE_ACTOR_INVALID' }
   }
 
   return { valid: true }

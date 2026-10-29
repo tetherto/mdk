@@ -335,3 +335,46 @@ test('setLED - throws ERR_INVALID_ARG_TYPE for non-boolean', async (t) => {
   await t.exception(() => miner.setLED(1), /ERR_INVALID_ARG_TYPE/)
   await t.exception(() => miner.setLED(null), /ERR_INVALID_ARG_TYPE/)
 })
+
+function makeRecordingMiner () {
+  const sent = []
+  const miner = makeStubMiner({
+    socketer: {
+      readStrategy: 'on_end',
+      rpc: () => ({
+        request: async (cmd) => { sent.push(cmd); return 'STATUS=S,Code=119,Msg=ok|' },
+        stop: async () => {}
+      })
+    }
+  })
+  return { miner, sent }
+}
+
+test('setPools - rejects a separator in any field before sending a setpool', async (t) => {
+  for (const field of ['url', 'worker_name', 'worker_password']) {
+    const { miner, sent } = makeRecordingMiner()
+    const pool = { url: 'stratum+tcp://pool:3333', worker_name: 'w', worker_password: 'x' }
+    pool[field] += ',1,evil'
+    await t.exception(() => miner.setPools([pool], false), /ERR_COMMAND_ARG_INVALID/, `comma in ${field}`)
+    t.absent(sent.some((c) => c.includes('setpool')), `no setpool sent for bad ${field}`)
+  }
+  const { miner } = makeRecordingMiner()
+  const pool = { url: 'stratum+tcp://pool:3333|reboot', worker_name: 'w', worker_password: 'x' }
+  await t.exception(() => miner.setPools([pool], false), /ERR_COMMAND_ARG_INVALID/, 'pipe in url')
+  pool.url = 'stratum+tcp://pool:3333\nascset|0,reboot,0'
+  await t.exception(() => miner.setPools([pool], false), /ERR_COMMAND_ARG_INVALID/, 'newline in url')
+})
+
+test('setNetworkConfiguration / updateAdminPassword / setFanSpeed - reject injected params', async (t) => {
+  const { miner, sent } = makeRecordingMiner()
+  const network = { type: 'static', network: { ip: '10.0.0.2', mask: '255.255.255.0', gateway: '10.0.0.1', dns: ['1.1.1.1'] } }
+  await t.exception(() => miner.setNetworkConfiguration({ ...network, network: { ...network.network, ip: '10.0.0.2,1' } }), /ERR_COMMAND_ARG_INVALID/, 'ip')
+  await t.exception(() => miner.setNetworkConfiguration({ ...network, network: { ...network.network, dns: ['1.1.1.1|x'] } }), /ERR_COMMAND_ARG_INVALID/, 'dns')
+  await t.exception(() => miner.updateAdminPassword('new,pw'), /ERR_COMMAND_ARG_INVALID/, 'password')
+  await t.exception(() => miner.setFanSpeed('50,1'), /ERR_COMMAND_ARG_INVALID/, 'fan speed')
+  t.absent(sent.some((c) => c.startsWith('ascset|0,ip') || c.startsWith('ascset|0,password') || c.startsWith('ascset|0,fan')), 'nothing sent for bad params')
+
+  await miner.setNetworkConfiguration(network)
+  t.ok(sent.includes('ascset|0,ip,static,10.0.0.2,255.255.255.0,10.0.0.1'), 'valid static ip sent')
+  t.ok(sent.includes('ascset|0,dns,1.1.1.1'), 'valid dns sent')
+})

@@ -24,8 +24,8 @@ src/
 │   ├── mdk-worker-plugin/  # Worker plugin workflow + scripts/assets
 │   ├── mdk-gateway-plugin/ # App route table + controllers workflow (scaffold via `mdk create app`)
 │   ├── mdk-create-app/     # MDK App workflow (package layout, manifest, plugin, UI; `mdk create app`)
-│   ├── mdk-app-rbac/       # Derive an app's permissions from its code + scripts/derive-permissions.mjs
-│   ├── mdk-ui-component/   # Dashboard page workflow + ui-registry (generated)
+│   ├── mdk-app-rbac/       # Derive an app's permissions / spec.rbac role from its code + scripts/derive-permissions.mjs
+│   ├── mdk-ui-component/   # UI pages and panels for MDK Apps and dashboards + ui-registry (generated)
 │   ├── mdk-deployment/     # mdk.yaml / mdk run workflow
 │   ├── mdk-site-sizing/    # Size a site from a description + measured envelope
 │   └── mdk-publish-security/ # Pre-publish security audit: tarball scan + 18-class review
@@ -41,7 +41,7 @@ dist/skills/                # Assembled suite — build output, gitignored, neve
 `dist/registry.json`, written by [`docs/scripts/sync-ui-registry.mjs`](../../docs/scripts/sync-ui-registry.mjs). Regenerate it with
 `npm run generate:ui-registry` from the repo root, which rebuilds the devkit registry and rewrites this file. Hand-edits do not survive the next run,
 and a stale copy tells coding agents to use component props that no longer exist. The
-[`docs-freshness`](../../.github/workflows/docs-freshness.yml) workflow watches this file and its devkit source on PRs and
+`docs-freshness` workflow watches this file and its devkit source on PRs and
 fails the check when it drifts. The job summary shows what differs; fix it by running `npm run generate:ui-registry` (or
 `npm run regenerate-docs`) and committing the result.
 

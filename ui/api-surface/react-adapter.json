@@ -96,6 +96,10 @@
         "kind": "type"
       },
       {
+        "name": "MdkAppSection",
+        "kind": "type"
+      },
+      {
         "name": "MdkAppUiModule",
         "kind": "type"
       },
@@ -128,6 +132,10 @@
         "kind": "type"
       },
       {
+        "name": "PeriodState",
+        "kind": "type"
+      },
+      {
         "name": "PermissionRequest",
         "kind": "type"
       },
@@ -136,8 +144,20 @@
         "kind": "type"
       },
       {
+        "name": "QueryView",
+        "kind": "type"
+      },
+      {
+        "name": "SearchParamsState",
+        "kind": "type"
+      },
+      {
         "name": "TOKEN_POLLING_INTERVAL_MS",
         "kind": "const"
+      },
+      {
+        "name": "toQueryView",
+        "kind": "function"
       },
       {
         "name": "useAuth",
@@ -256,6 +276,14 @@
         "kind": "type"
       },
       {
+        "name": "usePeriod",
+        "kind": "hook"
+      },
+      {
+        "name": "UsePeriodDefaults",
+        "kind": "type"
+      },
+      {
         "name": "usePlatform",
         "kind": "hook"
       },
@@ -350,11 +378,19 @@
         "kind": "type"
       },
       {
+        "name": "PeriodState",
+        "kind": "type"
+      },
+      {
         "name": "PermissionRequest",
         "kind": "type"
       },
       {
         "name": "PlatformResult",
+        "kind": "type"
+      },
+      {
+        "name": "SearchParamsState",
         "kind": "type"
       },
       {
@@ -463,6 +499,14 @@
       },
       {
         "name": "UsePaginationReturn",
+        "kind": "type"
+      },
+      {
+        "name": "usePeriod",
+        "kind": "hook"
+      },
+      {
+        "name": "UsePeriodDefaults",
         "kind": "type"
       },
       {

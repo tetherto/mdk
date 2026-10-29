@@ -4,6 +4,10 @@ import './single-stat-card.scss'
 
 const LONG_VALUE_THRESHOLD = 6 // chars
 
+// Whether an optional slot (caption, tag, detail) has anything to show: null,
+// undefined, false and '' all leave it out.
+const hasContent = (node: ReactNode): boolean => node != null && node !== false && node !== ''
+
 export type SingleStatCardVariant = 'primary' | 'secondary' | 'tertiary' | 'highlighted' | 'compact'
 
 type SingleStatCardProps = {
@@ -25,7 +29,7 @@ type SingleStatCardProps = {
    */
   unit?: string
   /**
-   * Color for flash/border
+   * Color for the value on every variant, plus the border on `tertiary` and the flash animations
    * @default 'inherit'
    */
   color?: string
@@ -50,6 +54,12 @@ type SingleStatCardProps = {
    * @default false
    */
   row?: boolean
+  /** Short text beside the name, e.g. the unit basis ("per PH/s/day") */
+  caption?: string
+  /** Badge after the value, e.g. "estimated" or a change */
+  tag?: ReactNode
+  /** Line below the value, e.g. how the figure was reached */
+  detail?: ReactNode
   /** Additional class for the root element */
   className?: string
 }
@@ -65,6 +75,7 @@ type SingleStatCardProps = {
  * <SingleStatCard name="Hashrate" value="95.5" unit="TH/s" variant="secondary" />
  * <SingleStatCard name="Uptime" value="99.8 %" variant="compact" />
  * <SingleStatCard name="Alarm" value="Critical" color="red" flash />
+ * <SingleStatCard name="Hash cost" caption="per PH/s/day" value="16.39" unit="$" tag="estimated" detail="From 12 payouts" />
  * ```
  * @category widgets
  * @domain device-management
@@ -81,6 +92,9 @@ export const SingleStatCard = ({
   superflash = false,
   variant = 'primary',
   row = false,
+  caption,
+  tag,
+  detail,
   className,
 }: SingleStatCardProps): ReactNode => {
   const valueFormatted = unit && value !== null ? formatValueUnit(value, unit) : value
@@ -89,7 +103,10 @@ export const SingleStatCard = ({
 
   const textContent = (
     <>
-      <div className="mdk-single-stat-card__name">{name}</div>
+      <div className="mdk-single-stat-card__name">
+        {name}
+        {hasContent(caption) && <span className="mdk-single-stat-card__caption">{caption}</span>}
+      </div>
       {subtitle && <div className="mdk-single-stat-card__subtitle">{subtitle}</div>}
     </>
   )
@@ -105,14 +122,22 @@ export const SingleStatCard = ({
         isLongValue && 'mdk-single-stat-card--long-value',
         className,
       )}
-      style={{ '--stat-color': color } as React.CSSProperties}
+      style={color === 'inherit' ? undefined : ({ '--stat-color': color } as React.CSSProperties)}
     >
       {variant === 'primary' || variant === 'compact' ? (
         textContent
       ) : (
         <div className="mdk-single-stat-card__text">{textContent}</div>
       )}
-      <div className="mdk-single-stat-card__value">{valueFormatted}</div>
+      {!hasContent(tag) ? (
+        <div className="mdk-single-stat-card__value">{valueFormatted}</div>
+      ) : (
+        <div className="mdk-single-stat-card__value-row">
+          <div className="mdk-single-stat-card__value">{valueFormatted}</div>
+          <span className="mdk-single-stat-card__tag">{tag}</span>
+        </div>
+      )}
+      {hasContent(detail) && <div className="mdk-single-stat-card__detail">{detail}</div>}
     </div>
   )
 }

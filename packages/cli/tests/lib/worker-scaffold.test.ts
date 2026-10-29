@@ -1,7 +1,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
+
+const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..', '..');
 
 const installScaffoldMock = vi.hoisted(() =>
   vi.fn(() => ({ ok: true, dir: '/does/not/matter' })),
@@ -41,6 +43,8 @@ describe('createWorker', () => {
 
     const pkg = JSON.parse(readFileSync(join(result.workerPath!, 'package.json'), 'utf8'));
     expect(pkg.name).toBe('demo-miner');
+    // These tests run from the checkout, so the MDK backend dependency links to it.
+    expect(pkg.dependencies['@tetherto/mdk-worker']).toBe(`file:${join(REPO_ROOT, 'backend', 'core', 'mdk-worker')}`);
     expect(installScaffoldMock).toHaveBeenCalledWith(dir, result.workerPath, true);
   });
 

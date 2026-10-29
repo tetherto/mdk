@@ -23,15 +23,24 @@ async function slow (req) {
   return { waited: ms }
 }
 
-// Never returns the secret key: only what proves the identity is well formed.
+// The plain config, and what the runtime adds: a Kernel client, never keys.
 async function config () {
-  const { kernelKeyPair, ...rest } = gw.config
+  const { mdkClient, ...rest } = gw.config
   return {
     ...rest,
-    kernelPublicKey: kernelKeyPair.publicKey.toString('hex'),
-    kernelKeyPairKeys: Object.keys(kernelKeyPair),
-    kernelKeyPairFrozen: Object.isFrozen(kernelKeyPair),
-    kernelSecretMatchesPublic: Buffer.compare(kernelKeyPair.secretKey.subarray(32), kernelKeyPair.publicKey) === 0
+    hasMdkClient: typeof mdkClient.listWorkers === 'function',
+    configFrozen: Object.isFrozen(gw.config)
+  }
+}
+
+// What a controller sees of its request's Kernel client, and that the
+// operator's token is nowhere it can read.
+async function kernelClient (req) {
+  return {
+    keys: Object.keys(req).sort(),
+    asApp: req.mdk === gw.config.mdkClient,
+    canCommand: typeof req.mdk.sendCommand === 'function',
+    leaked: JSON.stringify(req).includes('operator-token')
   }
 }
 
@@ -51,4 +60,4 @@ async function failMasked503 () {
   throw err
 }
 
-module.exports = { whoami, counter, slow, config, failSafe, failMasked, failMasked503 }
+module.exports = { whoami, counter, slow, config, kernelClient, failSafe, failMasked, failMasked503 }

@@ -53,6 +53,10 @@ hot-add.
 
 Antspace uses a REST HTTP API. The Worker connects over HTTP and polls the container management system for thermal and cooling status.
 
+> [!WARNING]
+> The Antspace API is plain HTTP with no authentication, so anyone who reaches it can read status and send cooling commands.
+> Keep containers and the Worker on an isolated management network.
+
 ## Telemetry
 
 | Field                | Unit | Description                       |

@@ -5,6 +5,7 @@ const { setTimeout: sleep } = require('timers/promises')
 
 const test = require('brittle')
 const createTestnet = require('hyperdht/testnet')
+const { grantTestAdmin } = require('@tetherto/mdk-kernel/testing')
 const DHT = require('hyperdht')
 
 const sdk = require('../../..')
@@ -87,15 +88,18 @@ const createClient = async ({
   bootstrap,
   key
 }) => {
-  // The Kernel is fail-closed: the test client dials with a key it admitted.
+  // The Kernel is fail-closed twice: the test client dials with a key it
+  // admitted, and signs in as a service account the policy grants full access.
   const keyPair = DHT.keyPair()
   kernel.allowKey(keyPair.publicKey)
+  const credential = await grantTestAdmin(kernel)
   const mdkClient = createRawMdkClient({
     hrpc: {
       bootstrap,
       key,
       keyPair
-    }
+    },
+    credential
   })
 
   await mdkClient.connect()

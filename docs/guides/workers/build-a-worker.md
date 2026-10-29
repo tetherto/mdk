@@ -228,6 +228,7 @@ registration; they are deliberately not embedded in the plugin contract.
 
 ```json
 {
+  "contractVersion": "1",
   "metadata": {
     "provider": "vendor",
     "deviceFamily": "miner",
@@ -253,10 +254,10 @@ registration; they are deliberately not embedded in the plugin contract.
       },
       {
         "name": "temperature",
-        "unit": "C",
+        "unit": "°C",
         "type": "number",
         "handler": "src/telemetry/temperature.js",
-        "description": "Hash board temperature. Above 85C requires intervention."
+        "description": "Hash board temperature. Above 85°C requires intervention."
       }
     ],
     "commands": [
@@ -303,6 +304,9 @@ registration; they are deliberately not embedded in the plugin contract.
 
 A few fields worth calling out because they aren't just documentation:
 
+- `contractVersion: "1"` holds the contract to the v1 requirements as errors: every numeric telemetry entry declares a
+  `unit` from the schema's closed vocabulary (`TH/s`, `W`, `kW`, `J/TH`, `°C`, `%`, `rpm`, `V`, `A`, `Hz`, `s`,
+  `count`), and every `number` param declares `min` and `max`. Without the stamp the same gaps are warnings only.
 - `description` is read by AI agents as the semantic boundary for that field — put the actual constraint in it (e.g.
   _"Above 85C requires intervention"_), not just a label
 - `WorkerRuntimeV2` normalizes positional parameters, then checks each declared `params` entry's `required`, `type`,
@@ -524,15 +528,15 @@ handler arguments. Never include credentials or raw device responses in audit ev
 > change the runtime contract before relying on different behavior. Keep named-channel handlers defensive as callers
 > can invoke them directly with untrusted query fields.
 
-[`WorkerRuntimeV2`][worker-runtime-v2] also auto-registers a builtin `health` channel on every device, with no contract
-entry required: a plugin that doesn't declare its own `health` telemetry handler still answers
-`{ query: { type: "health" } }` with `{ status: "OK", id, workerId }` (never `env`, `opts` or `config`, which can hold
-secrets and device credentials). Declaring a `health` entry in
-[`capabilities.telemetry`][contract-schema] yourself overrides the builtin with your own handler.
+Every Worker also answers a `health` channel on every device, with no contract entry required: what the device's last
+metrics poll saw, as `{ reachable, lastSuccessAt, lastError, lastErrorAt }` (never `env`, `opts` or `config`, which can
+hold secrets and device credentials). `reachable: false` on a `READY` Worker is "Worker up, device silent". Declaring a
+`health` entry in [`capabilities.telemetry`][contract-schema] yourself overrides it with your own handler, which should
+answer the same fields.
 
 ```js
 await mdkClient.pullTelemetry(deviceId, 'health')
-// → { status: 'OK', id: 'wm-001', workerId: '...' }
+// → { name: 'health', value: { reachable: true, lastSuccessAt: 1792505336310, lastError: null, lastErrorAt: null } }
 ```
 
 </Step>

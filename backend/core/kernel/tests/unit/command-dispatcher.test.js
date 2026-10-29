@@ -19,6 +19,9 @@ function makeEnvelope (deviceId, command, params, opts = {}) {
   })
 }
 
+const DEVICE_CAPABILITIES = { commands: [{ name: 'reboot', params: [] }] }
+const WORKER_CAPABILITIES = { commands: ['registerThing', 'forgetThings', 'rackReboot'].map((name) => ({ name, params: [] })) }
+
 function createDispatcher (opts = {}) {
   const enqueuedCommands = []
   const stateEntries = opts.stateEntries || {}
@@ -37,10 +40,10 @@ function createDispatcher (opts = {}) {
       return true
     },
     getCapabilities (deviceId) {
-      return opts.capabilities || null
+      return 'capabilities' in opts ? opts.capabilities : DEVICE_CAPABILITIES
     },
     getWorkerCapabilities (workerId) {
-      return opts.workerCapabilities || null
+      return 'workerCapabilities' in opts ? opts.workerCapabilities : WORKER_CAPABILITIES
     }
   }
   const stateMachine = {
@@ -58,7 +61,7 @@ function createDispatcher (opts = {}) {
       return true
     }
   }
-  const dispatcher = new CommandDispatcher({ registry, stateMachine })
+  const dispatcher = new CommandDispatcher({ registry, stateMachine, commandLog: opts.commandLog })
   return { dispatcher, enqueuedCommands, cancelled }
 }
 
@@ -162,14 +165,33 @@ test('dispatcher - rejects param above max', async (t) => {
   t.ok(result.error.includes('above max'))
 })
 
-test('dispatcher - passes when no capabilities declared', async (t) => {
-  const { dispatcher, enqueuedCommands } = createDispatcher({
-    devices: { wm001: { workerId: 'w1', channel: {} } },
-    capabilities: null
-  })
-  const result = await dispatcher.dispatch(makeEnvelope('wm001', 'anything'))
-  t.is(result.status, 'QUEUED')
-  t.is(enqueuedCommands.length, 1)
+test('dispatcher - rejects every command when the target declares none', async (t) => {
+  for (const capabilities of [null, {}]) {
+    const { dispatcher, enqueuedCommands } = createDispatcher({
+      devices: { wm001: { workerId: 'w1', channel: {} } },
+      capabilities
+    })
+    const result = await dispatcher.dispatch(makeEnvelope('wm001', 'anything'))
+    t.is(result.error, 'ERR_COMMAND_NOT_IN_CAPABILITIES: anything')
+    t.is(enqueuedCommands.length, 0)
+  }
+})
+
+test('dispatcher - applies the Worker param rules before queueing', async (t) => {
+  const capabilities = { commands: [{ name: 'setPowerMode', params: [{ name: 'mode', type: 'string', required: true, enum: ['low', 'high'] }] }] }
+  const cases = [
+    [{ mode: 'turbo' }, 'ERR_PARAM_ENUM: mode'],
+    [{}, 'ERR_PARAM_REQUIRED: mode'],
+    [{ value: 'turbo' }, 'ERR_PARAM_ENUM: mode']
+  ]
+  for (const [params, error] of cases) {
+    const { dispatcher, enqueuedCommands } = createDispatcher({ devices: { wm001: { workerId: 'w1', channel: {} } }, capabilities })
+    const result = await dispatcher.dispatch(makeEnvelope('wm001', 'setPowerMode', params))
+    t.alike(result, { error, status: 'REJECTED' }, JSON.stringify(params))
+    t.is(enqueuedCommands.length, 0)
+  }
+  const { dispatcher } = createDispatcher({ devices: { wm001: { workerId: 'w1', channel: {} } }, capabilities })
+  t.is((await dispatcher.dispatch(makeEnvelope('wm001', 'setPowerMode', { value: 'low' }))).status, 'QUEUED', 'positional approval-path params pass')
 })
 
 test('dispatcher - passes valid params within range', async (t) => {
@@ -403,4 +425,53 @@ test('dispatcher - requesterId comes from the authenticated caller when given', 
   await dispatcher.dispatch(makeEnvelope('wm001', 'reboot'))
   t.is(enqueuedCommands[0].requesterId, 'cafe')
   t.is(enqueuedCommands[1].requesterId, 'test:client:1', 'in-process falls back to sender')
+})
+
+test('dispatcher - logs every attempt with caller, target, params and outcome', async (t) => {
+  const entries = []
+  const { dispatcher } = createDispatcher({
+    devices: { wm001: { workerId: 'w1', channel: {} } },
+    commandLog: { append: async (entry) => { entries.push(entry) } }
+  })
+  const accepted = await dispatcher.dispatch(makeEnvelope('wm001', 'reboot', { delay: 1 }), { requesterId: 'cafe', roles: ['write'] })
+  await dispatcher.dispatch(makeEnvelope('wm001', 'destroyAll'))
+  t.alike(entries[0], {
+    event: 'attempt',
+    commandId: accepted.commandId,
+    caller: { key: 'cafe', roles: ['write'] },
+    command: 'reboot',
+    scope: 'device',
+    deviceId: 'wm001',
+    workerId: null,
+    targets: null,
+    params: { delay: 1 },
+    outcome: 'QUEUED',
+    error: null
+  })
+  t.is(entries[1].outcome, 'REJECTED')
+  t.is(entries[1].error, 'ERR_COMMAND_NOT_IN_CAPABILITIES: destroyAll')
+  t.alike(entries[1].caller, { key: 'test:client:1', roles: null }, 'in-process callers are logged by sender')
+})
+
+test('dispatcher - an operator acting through an app is logged and queued via the app', async (t) => {
+  const entries = []
+  const { dispatcher, enqueuedCommands } = createDispatcher({
+    devices: { wm001: { workerId: 'w1', channel: {} } },
+    commandLog: { append: async (entry) => { entries.push(entry) } }
+  })
+  await dispatcher.dispatch(makeEnvelope('wm001', 'reboot'), { requesterId: 'alice', roles: ['tuner'], via: { requesterId: 'app:ops', roles: ['app-ops'] } })
+  t.alike(entries[0].caller, { key: 'alice', roles: ['tuner'] })
+  t.alike(entries[0].via, { key: 'app:ops', roles: ['app-ops'] })
+  t.is(enqueuedCommands[0].requesterId, 'alice')
+  t.is(enqueuedCommands[0].via, 'app:ops')
+})
+
+test('dispatcher - a failed log write does not fail the command', async (t) => {
+  const { dispatcher, enqueuedCommands } = createDispatcher({
+    devices: { wm001: { workerId: 'w1', channel: {} } },
+    commandLog: { append: async () => { throw new Error('disk full') } }
+  })
+  const result = await dispatcher.dispatch(makeEnvelope('wm001', 'reboot'))
+  t.is(result.status, 'QUEUED')
+  t.is(enqueuedCommands.length, 1)
 })

@@ -6,6 +6,7 @@ import type {
   LoadedAppUi,
   MdkAppPanel,
   MdkAppRoute,
+  MdkAppSection,
   MdkAppUiModule,
 } from './types'
 
@@ -51,6 +52,12 @@ const checkRoutes = (app: InstalledApp, routes: unknown): MdkAppRoute[] => {
     if (!isComponent(route.component)) {
       throw contractError(app, `routes[${i}] ("${route.path}") needs a React \`component\``)
     }
+    if (route.section !== undefined && (typeof route.section !== 'string' || !route.section)) {
+      throw contractError(
+        app,
+        `routes[${i}] ("${route.path}") has a \`section\` that is not a non-empty string`,
+      )
+    }
   })
   return routes as MdkAppRoute[]
 }
@@ -74,6 +81,28 @@ const checkPanels = (app: InstalledApp, panels: unknown): MdkAppPanel[] => {
   return panels as MdkAppPanel[]
 }
 
+const checkSections = (app: InstalledApp, sections: unknown): MdkAppSection[] => {
+  if (sections === undefined) return []
+  if (!Array.isArray(sections)) throw contractError(app, 'must export `sections` as an array')
+  const labels = new Set<string>()
+  sections.forEach((section: unknown, i) => {
+    if (!isRecord(section) || typeof section.label !== 'string' || !section.label) {
+      throw contractError(app, `sections[${i}] needs a string \`label\``)
+    }
+    if (labels.has(section.label)) {
+      throw contractError(app, `has two sections labelled "${section.label}"`)
+    }
+    labels.add(section.label)
+    if (section.icon !== undefined && !isComponent(section.icon)) {
+      throw contractError(
+        app,
+        `section "${section.label}" has an \`icon\` that is not a React component`,
+      )
+    }
+  })
+  return sections as MdkAppSection[]
+}
+
 /**
  * Checks a module an app's entry resolved to against {@link MdkAppUiModule}.
  * Throws an `Error` naming the app and the first thing wrong.
@@ -94,6 +123,7 @@ export const checkAppUiModule = (app: InstalledApp, mod: unknown): MdkAppUiModul
     displayName: ui.displayName,
     routes: checkRoutes(app, ui.routes),
     panels: checkPanels(app, ui.panels),
+    sections: checkSections(app, ui.sections),
   }
 }
 

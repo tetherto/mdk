@@ -8,6 +8,7 @@ export const UNITS = {
   ENERGY_WH: 'Wh',
   VOLTAGE_V: 'V',
   ENERGY_MW: 'MW',
+  POWER_MW: 'MW',
   FLOW_M3H: 'm3/h',
   ENERGY_MWH: 'MWh',
   ENERGY_GWH: 'GWh',
@@ -23,7 +24,7 @@ export const UNITS = {
   HUMIDITY_PERCENT: '%RH',
   APPARENT_POWER_KVA: 'kVA',
   EFFICIENCY_W_PER_TH: 'W/TH',
-  EFFICIENCY_W_PER_TH_S: 'W/TH/S',
+  EFFICIENCY_W_PER_TH_S: 'W/TH/s',
   FLOW_M3H_UNICODE: 'm³/h',
 } as const
 

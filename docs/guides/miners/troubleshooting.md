@@ -87,6 +87,8 @@ which relies on HyperDHT to establish encrypted peer connections. The machine th
 DHT bootstrap nodes even when Kernel and the Worker share a process or host.
 
 If outbound access or network-interface inspection is blocked, startup may stop responding or fail before printing `Kernel HRPC key:`.
+A machine with no outbound access runs the [local and air-gapped profile][private-dht] instead: a private bootstrap on `127.0.0.1`
+that every component joins.
 
 Check:
 
@@ -154,3 +156,6 @@ When asking for help on [Discord](https://discord.com/invite/tetherdev) or [GitH
 
 [worker-health]: ../../concepts/control-plane.md#worker-health-is-not-device-liveness
 <!-- docs@tether.io: worker-health → concepts/control-plane#worker-health-is-not-device-liveness -->
+
+[private-dht]: ../deployment/private-dht.md
+<!-- docs@tether.io: private-dht → guides/deployment/private-dht -->

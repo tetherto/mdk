@@ -11,8 +11,9 @@ export default defineConfig({
   server: {
     port: Number(process.env.MDK_UI_PORT) || 3040,
     proxy: {
-      // Forward the site plugin endpoints to the gateway during dev.
+      // Forward the site plugin endpoints and sign-in to the gateway during dev.
       "/site": `http://localhost:${apiPort}`,
+      "/auth": `http://localhost:${apiPort}`,
     },
   },
 });

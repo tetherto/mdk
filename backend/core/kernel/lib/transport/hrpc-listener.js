@@ -6,13 +6,14 @@ const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
 const { serialize, deserialize } = require('../protocol/envelope')
 const { routeEnvelope } = require('./envelope-router')
-const { parseAllowlist, normalizeKey, normalizeRoles, hasRole, FULL_ACCESS } = require('./caller-auth')
+const { parseAllowlist, normalizeKey } = require('./caller-auth')
 
 /**
  * Kernel HRPC listener. Admission is fail-closed: only public keys on the
  * allowlist (`whitelist`, or added at runtime with allowKey()) may connect,
- * and an empty allowlist admits nobody. `allowAll: true` is the one explicit
- * way to admit every DHT peer (development only; logged loudly).
+ * and an empty allowlist admits nobody. There is no way to admit every peer.
+ * Admission grants nothing else: every request is authorized by its access
+ * token against spec.rbac (the authorizer).
  */
 
 class HRPCListener {
@@ -21,10 +22,15 @@ class HRPCListener {
     this.telemetryCollector = opts.telemetryCollector
     this.registry = opts.registry
     this.actionManager = opts.actionManager
+    this.rbac = opts.rbac || null
+    this.identity = opts.identity || null
+    this.authorizer = opts.authorizer || null
+    if (opts.allowAll !== undefined) throw new Error('ERR_KERNEL_ALLOW_ALL_REMOVED: admit callers by key (whitelist, allowKey)')
     this._allowed = parseAllowlist(opts.whitelist)
-    this.allowAll = opts.allowAll === true
     this.store = opts.store || null
     this.bootstrap = opts.bootstrap || null
+    // Interface the DHT node binds (hyperdht `host`); default all interfaces.
+    this.dhtHost = opts.dhtHost || null
 
     this._rpc = null
     this._server = null
@@ -33,16 +39,18 @@ class HRPCListener {
   }
 
   async start () {
-    if (this.allowAll) {
-      console.warn('[mdk-kernel] WARNING: HRPC allowAll is enabled — every DHT peer that knows the Kernel key can command devices. Never use this outside local development.')
-    } else if (this._allowed.size === 0) {
+    if (this._allowed.size === 0) {
       debug('HRPC allowlist is empty: every caller is rejected until allowKey() admits one')
     }
 
     const seedDht = await this._getOrCreateSeed('seedDht')
     const seedRpc = await this._getOrCreateSeed('seedRpc')
 
-    this._dht = new DHT({ keyPair: DHT.keyPair(seedDht), bootstrap: this.bootstrap })
+    this._dht = new DHT({
+      keyPair: DHT.keyPair(seedDht),
+      bootstrap: this.bootstrap,
+      ...(this.dhtHost ? { host: this.dhtHost } : {})
+    })
     this._rpc = new HyperswarmRPC({ dht: this._dht, seed: seedRpc })
 
     const firewall = this._buildFirewall()
@@ -92,13 +100,12 @@ class HRPCListener {
   }
 
   /**
-   * Admit a caller at runtime.
+   * Admit a caller at runtime: it may connect; its token decides the rest.
    * @param {string|Buffer} key - caller public key
-   * @param {string[]} [roles] - default full access (['admin'])
    */
-  allowKey (key, roles) {
+  allowKey (key) {
     const hex = normalizeKey(key)
-    this._allowed.set(hex, normalizeRoles(roles))
+    this._allowed.add(hex)
     debug('caller allowed: %s...', hex.slice(0, 16))
     return hex
   }
@@ -110,22 +117,22 @@ class HRPCListener {
     return had
   }
 
-  listAllowedKeys (minRole = 'read') {
-    return [...this._allowed].filter(([, roles]) => hasRole(roles, minRole)).map(([hex]) => hex)
+  listAllowedKeys () {
+    return [...this._allowed]
   }
 
-  getCallerRoles (key) {
-    let hex
-    try { hex = normalizeKey(key) } catch { return null }
-    if (this._allowed.has(hex)) return this._allowed.get(hex)
-    return this.allowAll ? FULL_ACCESS : null
+  isAllowed (key) {
+    try {
+      return this._allowed.has(normalizeKey(key))
+    } catch {
+      return false
+    }
   }
 
   _callerFor (rpc) {
     const remote = rpc && rpc.stream && rpc.stream.remotePublicKey
-    if (!remote) return null
-    const roles = this.getCallerRoles(remote)
-    return roles ? { publicKey: remote.toString('hex'), roles } : null
+    if (!remote || !this.isAllowed(remote)) return null
+    return { publicKey: remote.toString('hex') }
   }
 
   async _getOrCreateSeed (name) {
@@ -154,7 +161,10 @@ class HRPCListener {
       dispatcher: this.dispatcher,
       telemetryCollector: this.telemetryCollector,
       registry: this.registry,
-      actionManager: this.actionManager
+      actionManager: this.actionManager,
+      rbac: this.rbac,
+      identity: this.identity,
+      authorizer: this.authorizer
     }, caller)
   }
 
@@ -162,7 +172,7 @@ class HRPCListener {
   // the allowlist is empty.
   _buildFirewall () {
     return (remotePublicKey) => {
-      if (this.getCallerRoles(remotePublicKey)) return false
+      if (this.isAllowed(remotePublicKey)) return false
       debug('blocked: %s...', remotePublicKey.toString('hex').slice(0, 16))
       return true
     }

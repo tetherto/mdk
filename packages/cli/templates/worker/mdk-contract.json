@@ -1,23 +1,70 @@
 {
+  "contractVersion": "1",
   "metadata": {
     "provider": "demo",
     "deviceFamily": "device",
     "brand": "DEMO",
-    "modelsSupported": ["DEMO_V1"],
+    "modelsSupported": [
+      "DEMO_V1"
+    ],
     "overview": "Template Worker Plugin — talks to a device's HTTP JSON API over src/client.js. Replace the client, mock, contract and handlers with your own device's protocol."
   },
   "capabilities": {
     "telemetry": [
-      { "name": "hashrate_rt", "unit": "TH/s", "type": "number", "handler": "src/telemetry/hashrate-rt.js", "description": "Real-time throughput from the device's summary endpoint." },
-      { "name": "power", "unit": "W", "type": "number", "handler": "src/telemetry/power.js", "description": "Current power draw." },
-      { "name": "temperature", "unit": "C", "type": "number", "handler": "src/telemetry/temperature.js", "description": "Device temperature." },
-      { "name": "power_mode", "type": "string", "handler": "src/telemetry/power-mode.js", "description": "Active power mode: eco, normal or high." }
+      {
+        "name": "hashrate_rt",
+        "unit": "TH/s",
+        "type": "number",
+        "handler": "src/telemetry/hashrate-rt.js",
+        "description": "Real-time throughput from the device's summary endpoint."
+      },
+      {
+        "name": "power",
+        "unit": "W",
+        "type": "number",
+        "handler": "src/telemetry/power.js",
+        "description": "Current power draw."
+      },
+      {
+        "name": "temperature",
+        "unit": "°C",
+        "type": "number",
+        "handler": "src/telemetry/temperature.js",
+        "description": "Device temperature."
+      },
+      {
+        "name": "power_mode",
+        "type": "string",
+        "handler": "src/telemetry/power-mode.js",
+        "description": "Active power mode: eco, normal or high."
+      }
     ],
     "commands": [
-      { "name": "reboot", "handler": "src/commands/reboot.js", "description": "Restarts the device controller.", "constraints": "Do not call more than once per 5 minutes.", "params": [] },
-      { "name": "setPowerMode", "handler": "src/commands/set-power-mode.js", "description": "Changes the power mode: eco, normal or high (low is accepted as an alias for eco).", "params": [{ "name": "mode", "type": "string" }] }
+      {
+        "name": "reboot",
+        "handler": "src/commands/reboot.js",
+        "description": "Restarts the device controller.",
+        "constraints": "Do not call more than once per 5 minutes.",
+        "params": []
+      },
+      {
+        "name": "setPowerMode",
+        "handler": "src/commands/set-power-mode.js",
+        "description": "Changes the power mode: eco, normal or high (low is accepted as an alias for eco).",
+        "params": [
+          {
+            "name": "mode",
+            "type": "string"
+          }
+        ]
+      }
     ],
-    "health": { "supportedStates": ["OK", "OFFLINE"] },
+    "health": {
+      "supportedStates": [
+        "OK",
+        "OFFLINE"
+      ]
+    },
     "errors": {
       "ERR_BAD_POWER_MODE": "The device rejected the requested power mode.",
       "ERR_DEVICE_CALL_FAILED": "The device's HTTP API call failed or returned an error."

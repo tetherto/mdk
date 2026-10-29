@@ -1,5 +1,6 @@
 import type { Command } from 'commander';
 import { addPackage, type AddPackageResult, type PackageKind } from '../lib/add-package.js';
+import { grantLine } from '../lib/grant-report.js';
 import { examples } from '../lib/help.js';
 import { theme, tick, arrow } from '../lib/theme.js';
 
@@ -7,6 +8,8 @@ interface AddOpts {
   dir: string;
   name?: string;
   install: boolean;
+  acceptPermissions?: boolean;
+  keepPermissions?: boolean;
 }
 
 function report(kind: PackageKind, result: AddPackageResult): void {
@@ -30,7 +33,16 @@ function report(kind: PackageKind, result: AddPackageResult): void {
     (result.installed
       ? `  ${theme.muted('package.json')} dependency ${theme.value(result.packageName!)}\n`
       : `  ${theme.muted('package.json')} not changed (--no-install)\n`) +
-    `  ${theme.muted('mdk.yaml')} ${stack}\n`;
+    `  ${theme.muted('mdk.yaml')} ${stack}\n` +
+    (result.grant ? grantLine(result.grant) : '') +
+    (result.credential
+      ? 'error' in result.credential
+        ? `  ${theme.warn('note')}: no credential yet (${result.credential.error}); \`mdk run\` creates it\n`
+        : `  ${theme.muted('credential')} ${theme.value(result.credential.file)} ${theme.muted(result.credential.created ? '(new, private to this instance)' : '(kept)')}\n`
+      : '');
+  if (result.grant?.written && result.grant.action !== 'none') {
+    out += `  ${theme.muted('policy')} a running Kernel picks it up on ${theme.cmd('mdk rbac apply')} or its next start\n`;
+  }
   if (result.needsDeviceOpts) {
     out += `  ${theme.warn('note')}: this worker has no mock; fill in ${theme.key('config.devices[].opts')} for your hardware.\n`;
   }
@@ -49,21 +61,40 @@ const EXAMPLES: Record<PackageKind, string[]> = {
 
 function register(add: Command, kind: PackageKind): void {
   const section = kind === 'app' ? 'spec.apps' : 'spec.workers';
-  add
+  const cmd = add
     .command(kind)
     .argument('<source>', SOURCE_HELP)
     .summary(`Install ${kind === 'app' ? 'an app' : 'a worker'} from npm or GitHub`)
     .description(
       `Install ${kind === 'app' ? 'an app' : 'a worker'} from npm or GitHub (npm records it in package.json), ` +
         `check it with the same rules as \`mdk validate ${kind}\`, then add it to mdk.yaml under ${section}. ` +
-        'Install scripts do not run, and the exact version is recorded. A refused package leaves mdk.yaml and package.json unchanged.',
+        'Install scripts do not run, and the exact version is recorded. A refused package leaves mdk.yaml and package.json unchanged.' +
+        (kind === 'app'
+          ? ' The app runs as service account app:<name>; install writes a role in spec.rbac granting it exactly the Kernel access its mdk-app.yaml requests.'
+          : ''),
     )
     .option('--dir <path>', 'Project directory (the one holding mdk.yaml)', '.')
     .option('--name <name>', `Name for the ${kind} in mdk.yaml (default: derived from the package name)`)
-    .option('--no-install', 'Skip `npm install`: the npm package must already be installed (not for GitHub sources)')
+    .option('--no-install', 'Skip `npm install`: the npm package must already be installed (not for GitHub sources)');
+  if (kind === 'app') {
+    cmd
+      .option('--accept-permissions', "If the app's requested Kernel access changed, replace its role in spec.rbac with the new request")
+      .option('--keep-permissions', "If the app's requested Kernel access changed, keep its role in spec.rbac as it is");
+  }
+  cmd
     .addHelpText('after', examples(...EXAMPLES[kind]))
     .action((source: string, opts: AddOpts) =>
-      report(kind, addPackage({ kind, source, dir: opts.dir, name: opts.name, install: opts.install })),
+      report(
+        kind,
+        addPackage({
+          kind,
+          source,
+          dir: opts.dir,
+          name: opts.name,
+          install: opts.install,
+          ...(kind === 'app' ? { acceptPermissions: opts.acceptPermissions, keepPermissions: opts.keepPermissions } : {}),
+        }),
+      ),
     );
 }
 

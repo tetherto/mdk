@@ -354,6 +354,8 @@ Reads below are driven at ${rr.readLoadConcurrency} concurrent readers for ${rr.
 | Queue depth (peak / steady) | ${t.peakQueueDepth} / \`_\` | count |
 | Rejected requests | ${t.rejected + a.rejected} | count |
 | Timed-out requests | ${t.timedOut + a.timedOut} | count |
+| Failure codes (reads) | ${formatErrorCodes(t.errorCodes)} | count per code |
+| Failure codes (actions) | ${formatErrorCodes(a.errorCodes)} | count per code |
 `
 }
 
@@ -458,7 +460,11 @@ Skipped for this run (RUN_REPRODUCIBILITY.runFailureDrills was off) — not the 
 | Scenario | Metric | Value | Notes |
 | --- | --- | --- | --- |
 | Worker restart | Time to healthy / owning devices again | \`_\` ms | |
+| Worker restart | Time to device reads served again | \`_\` ms | |
 | Kernel restart | Time to READY | \`_\` ms | |
+| Kernel restart | Time to device reads served again | \`_\` ms | |
+| Unreachable device | Time until a read fails | \`_\` ms | |
+| Unreachable device | Time until every channel fails | \`_\` ms | |
 | Unreachable device | Effect on cycle time | \`_\` | timeout × count |
 | Unreachable device | Timeout budget per device | \`_\` ms | from operating parameters |
 | 24 h soak | RSS slope (MiB / h) per process | \`_\` | leak detection |
@@ -467,21 +473,31 @@ Skipped for this run (RUN_REPRODUCIBILITY.runFailureDrills was off) — not the 
   }
 
   const ud = fb.unreachableDevice
-  const measuredEffectMs = ud.measured.duringFailed ? ud.measured.duringMs : null
+  const m = ud.measured
+  const ms = (v) => v == null ? '`_`' : `${fmt(v, 0)} ms`
   return `## Failure behaviour
 
-Worker restart and Kernel restart are real kill+respawn drills against the same on-disk store/root (both processes' identity persists across a restart). The unreachable-device drill kills the mocks process: every device behind a worker shares one mock server, so this can only make the **whole fleet** unreachable at once. A killed mocks process refuses the connection immediately (ECONNREFUSED), so the *measured* effect is immediate.
+Worker restart and Kernel restart are real kill+respawn drills against the same on-disk store/root (both processes' identity persists across a restart). Every restart time counts from the kill, and READY is reported separately from the first device read that succeeds again. The unreachable-device drill kills the mocks process: every device behind a worker shares one mock server, so this can only make the **whole fleet** unreachable at once. A killed mocks process refuses the connection immediately (ECONNREFUSED), so failed reads are fast. The drill then reads one device until a read fails (a failed live \`snap\` read counts) and until every channel fails (the other channels serve cached values until the miner's 5s device-data cache expires).
 
 | Scenario | Metric | Value | Notes |
 | --- | --- | --- | --- |
 | Worker restart | Time to healthy / owning devices again | ${fmt(fb.workerRestart.ms, 0)} ms | ${fb.workerRestart.workerId}, ${fb.workerRestart.deviceCount} devices, recovered=${fb.workerRestart.recovered} |
+| Worker restart | Time to device reads served again | ${ms(fb.workerRestart.servingMs)} | from the kill; restored=${fb.workerRestart.servingRestored} |
 | Kernel restart | Time to READY | ${fmt(fb.kernelRestart.ms, 0)} ms | recovered=${fb.kernelRestart.recovered} |
-| Unreachable device | Effect on cycle time (measured, fast-refusal) | ${measuredEffectMs == null ? '`_` (request still succeeded during the outage)' : `${fmt(measuredEffectMs, 1)} ms`} | baseline ${fmt(ud.measured.baselineMs, 1)} ms → during ${fmt(ud.measured.duringMs, 1)} ms → recovered ${fmt(ud.measured.recoveredMs, 1)} ms |
+| Kernel restart | Time to device reads served again | ${ms(fb.kernelRestart.servingMs)} | from the kill; restored=${fb.kernelRestart.servingRestored} |
+| Unreachable device | Time until a read fails (measured) | ${ms(m.detectedMs)} | from the kill; first failure ${m.firstFailureCode ? `\`${m.firstFailureCode}\`` : '`_`'}, failed read took ${fmt(m.failedReadMs, 1)} ms (fast refusal); baseline read ${fmt(m.baselineMs, 1)} ms${m.baselineFailed ? ' (failed)' : ''} |
+| Unreachable device | Time until every channel fails (measured) | ${ms(m.allChannelsFailedMs)} | from the kill; cached channels return the last values until then |
+| Unreachable device | Time to reads served again after the mocks return | ${ms(m.recoveredMs)} | recovered=${m.recovered} |
 | Unreachable device | Effect on cycle time (analytical, hung-device worst case) | ${fmt(ud.analyticalEffectMs, 0)} ms | timeout (${ud.timeoutBudgetMs} ms) × ⌈${ud.unreachableCount} devices / ${ud.concurrency} concurrency⌉ |
 | Unreachable device | Timeout budget per device | ${fmt(ud.timeoutBudgetMs, 0)} ms | \`thing.miner.timeout\` (\`MINER_DEVICE_TIMEOUT_MS\` in lib/constants.js) — the real per-device RPC timeout; not \`collectSnapTimeoutMs\`, which only bounds periodic snap collection |
 | 24 h soak | RSS slope (MiB / h) per process | ${perProcessSlopes(profile.resourceSummary, 'rssSlopeMiBPerHour', 'MiB/h')} | leak detection — **indicative**, soak below 24h |
 | 24 h soak | FD / socket slope (per hour) per process | ${perProcessSlopes(profile.resourceSummary, 'fdSlopePerHour', '/h')} | sampled via \`lsof -p <pid>\` at start/stop only (more expensive than \`ps\`) — **indicative**, soak below 24h |
 `
+}
+
+function formatErrorCodes (codes) {
+  const entries = Object.entries(codes || {})
+  return entries.length ? entries.sort((x, y) => y[1] - x[1]).map(([code, n]) => `\`${code}\` ${n}`).join(', ') : 'none'
 }
 
 function renderMarkdown (profile, verdict) {

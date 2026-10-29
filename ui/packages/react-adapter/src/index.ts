@@ -10,6 +10,7 @@
  *     `useSubtractedTime`, `useGetAvailableDevices`, `useAuthToken`, `useTokenPolling`.
  *   - Domain hooks  — `useCheckPerm`, `useHasPerms`, `useIsFeatureEditingEnabled`,
  *     `useTimezoneFormatter`.
+ *   - Report state  — `usePeriod` (a reporting period in the URL), `toQueryView`.
  *   - React utils   — `getControlSectionsTooltips`.
  *   - Installed apps — `useInstalledAppUis`, `MdkAppProvider` / `useMdkApp`,
  *     `defineMdkApp` and the app UI module contract a shell loads.

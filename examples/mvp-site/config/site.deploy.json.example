@@ -114,7 +114,6 @@
     "port": 3000,
     "host": "0.0.0.0",
     "allowedHosts": [],
-    "authVerifier": "loopback",
     "pluginDirs": ["backend/gateway-plugins/site"],
     "staticRootPath": "ui/dist"
   },
@@ -123,6 +122,98 @@
       "port": 3101,
       "pluginDirs": ["backend/mcp-plugins/site"]
     }
+  },
+  "rbac": {
+    "password": "mdk-site-demo",
+    "users": [
+      { "name": "admin", "email": "admin@example.com", "groups": ["site-admins"] },
+      { "name": "operator", "email": "operator@example.com", "groups": ["operators"] },
+      { "name": "tech-whatsminer", "email": "tech@example.com", "groups": ["field-techs"] },
+      { "name": "pool-manager", "email": "pools@example.com", "groups": [] },
+      { "name": "auditor", "email": "audit@example.com", "groups": ["auditors"] },
+      { "name": "viewer", "email": "viewer@example.com", "groups": ["viewers"] },
+      { "name": "tenant-antminer", "email": "tenant@example.com", "groups": ["hosting-clients"] }
+    ],
+    "roles": [
+      {
+        "name": "site-admin",
+        "rules": [
+          { "resources": ["site/*"], "verbs": ["*"] },
+          { "resources": ["workers"], "verbs": ["list", "read"] },
+          { "resources": ["devices"], "verbs": ["read", "write"] },
+          { "resources": ["commands"], "verbs": ["read"] }
+        ]
+      },
+      {
+        "name": "site-viewer",
+        "rules": [
+          { "resources": ["site/site/overview", "site/site/history", "site/site/access"], "verbs": ["get"] },
+          { "resources": ["workers"], "verbs": ["list"] },
+          { "resources": ["devices"], "verbs": ["read"] }
+        ]
+      },
+      {
+        "name": "power-control",
+        "rules": [
+          { "resources": ["site/site/miners/*/command"], "verbs": ["create"] },
+          { "resources": ["devices"], "verbs": ["write"], "resourceNames": ["miner/*"] }
+        ]
+      },
+      {
+        "name": "pool-control",
+        "rules": [
+          { "resources": ["site/site/miners/*/pools"], "verbs": ["create"] },
+          { "resources": ["devices"], "verbs": ["write"], "resourceNames": ["miner/*"] }
+        ]
+      },
+      {
+        "name": "whatsminer-tech",
+        "rules": [
+          { "resources": ["site/site/miners/*/command"], "verbs": ["create"] },
+          { "resources": ["devices"], "verbs": ["write"], "resourceNames": ["miner/whatsminer/*"] }
+        ]
+      },
+      {
+        "name": "auditor",
+        "rules": [
+          { "resources": ["site/site/activity"], "verbs": ["get"] },
+          { "resources": ["commands"], "verbs": ["read"] }
+        ]
+      },
+      {
+        "name": "antminer-tenant",
+        "rules": [
+          { "resources": ["site/site/overview", "site/site/history", "site/site/access"], "verbs": ["get"] },
+          { "resources": ["site/site/miners/*/command"], "verbs": ["create"] },
+          { "resources": ["workers"], "verbs": ["list"] },
+          { "resources": ["devices"], "verbs": ["read", "write"], "resourceNames": ["miner/antminer/*"] }
+        ]
+      }
+    ],
+    "bindings": [
+      { "role": "site-admin", "subjects": [{ "kind": "Group", "name": "site-admins" }] },
+      {
+        "role": "site-viewer",
+        "subjects": [
+          { "kind": "Group", "name": "operators" },
+          { "kind": "Group", "name": "field-techs" },
+          { "kind": "Group", "name": "auditors" },
+          { "kind": "Group", "name": "viewers" },
+          { "kind": "User", "name": "pool-manager" }
+        ]
+      },
+      { "role": "power-control", "subjects": [{ "kind": "Group", "name": "operators" }] },
+      {
+        "role": "pool-control",
+        "subjects": [
+          { "kind": "Group", "name": "operators" },
+          { "kind": "User", "name": "pool-manager" }
+        ]
+      },
+      { "role": "whatsminer-tech", "subjects": [{ "kind": "Group", "name": "field-techs" }] },
+      { "role": "auditor", "subjects": [{ "kind": "Group", "name": "auditors" }] },
+      { "role": "antminer-tenant", "subjects": [{ "kind": "Group", "name": "hosting-clients" }] }
+    ]
   },
   "pm2": {
     "script": "deploy/run-process.js",

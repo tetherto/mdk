@@ -1,6 +1,6 @@
 'use strict'
 
-const { templates, utils } = require('../../../../../core/mdk')
+const { templates, utils } = require('@tetherto/mdk-core')
 
 const { isValidSnap, isOffline } = utils
 const baseSpecs = templates.alerts.specs

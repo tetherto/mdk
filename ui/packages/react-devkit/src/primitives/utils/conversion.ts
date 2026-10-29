@@ -24,12 +24,12 @@ export const convertEnergy = (energyDataItem: number, multiplier = 1): number =>
 export const toMW = (watts: number): number => watts / W_TO_MW
 
 /**
- * Convert watts to megawatt-hours (assuming 24h period)
+ * Energy in MWh of an average power in watts held for one day (24h)
  */
 export const toMWh = (watts: number): number => toMW(watts) * HOURS_IN_DAY
 
 /**
- * Convert raw hashrate to PH/s
+ * Convert hashrate in MH/s to PH/s
  */
 export const toPHS = (hashrate: number): number => hashrate / HASHRATE_PER_PHS
 
@@ -70,24 +70,25 @@ export const convertMpaToBar = (value: unknown): number => {
  * Curtailment represents the difference between nominal available power and actual used energy.
  *
  * Formulas:
+ * - `usedEnergyInMWh = averagePowerW / 1e6 * hoursInPeriod`
  * - `powerConsumptionInMWh = powerConsumptionMW * hoursInPeriod`
  * - `curtailmentMWh = nominalAvailablePowerMWh - usedEnergyInMWh`
  * - `curtailmentRate = curtailmentMWh / powerConsumptionInMWh`
  *
  * If curtailment rate is negative (used energy exceeds nominal available), it is clamped to 0.
  *
- * @param usedEnergy - The actual used energy in Wh
+ * @param averagePowerW - The site's average power over the period, in W
  * @param nominalAvailablePowerMWh - The nominal available power in MWh for the period
  * @param powerConsumptionMW - The power consumption in MW
  * @param hoursInPeriod - The number of hours in the period
  */
 export const calculateCurtailment = (
-  usedEnergy: number,
+  averagePowerW: number,
   nominalAvailablePowerMWh: number,
   powerConsumptionMW: number,
   hoursInPeriod: number,
 ): CurtailmentResult => {
-  const usedEnergyInMWh = toMWh(usedEnergy)
+  const usedEnergyInMWh = toMW(averagePowerW) * hoursInPeriod
   const powerConsumptionInMWh = powerConsumptionMW * hoursInPeriod
   const curtailmentMWh = nominalAvailablePowerMWh - usedEnergyInMWh
   let curtailmentRate = curtailmentMWh / powerConsumptionInMWh

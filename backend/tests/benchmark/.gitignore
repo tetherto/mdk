@@ -3,3 +3,4 @@ results/
 node_modules/
 !config/*.json.example
 config/*.json
+coverage/

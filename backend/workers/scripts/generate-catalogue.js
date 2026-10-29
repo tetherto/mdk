@@ -131,12 +131,16 @@ function toDocsLink (value) {
 
 // Same calling convention ajv.compile() had — validate(contract) returns a boolean and
 // leaves the problems on validate.errors — so buildEntries/fetchExternalEntries read it
-// unchanged. errors is a fresh array per call (ERR_CONTRACT_* strings, already rendered).
-function compileValidator () {
+// unchanged. errors/warnings are fresh arrays per call (ERR_CONTRACT_* strings, already
+// rendered). warnings carry a legacy contract's v1 strictness gaps (grace period: the
+// entry renders with a visible flag but stays listed); strict folds them into errors,
+// the enforcement flip planned for the v0.13 RC.
+function compileValidator (strict = false) {
   const { validateContract } = require(path.join(REPO_ROOT, 'backend', 'core', 'mdk-worker', 'lib', 'contract-validator.js'))
   const validate = (contract) => {
-    const { ok, errors } = validateContract(contract, { semantic: false })
+    const { ok, errors, warnings } = validateContract(contract, { semantic: false, strict })
     validate.errors = errors
+    validate.warnings = warnings
     return ok
   }
   return validate
@@ -187,6 +191,7 @@ function buildEntries (validate, root = WORKERS_ROOT) {
           usage: null,
           usageLabel: 'USAGE.md',
           conformant: false,
+          strictConformant: false,
           confirmed: false
         })
       }
@@ -210,6 +215,7 @@ function buildEntries (validate, root = WORKERS_ROOT) {
         usage: fs.existsSync(usagePath) ? rel(usagePath) : null,
         usageLabel: 'USAGE.md',
         conformant: ok,
+        strictConformant: ok && validate.warnings.length === 0,
         confirmed: true
       })
     }
@@ -266,6 +272,7 @@ function unconfirmedEntry (manifestEntry) {
     usage: bestEffortDocsUrl,
     usageLabel: manifestEntry.contractPath ? `${manifestEntry.contractPath} (unverified)` : undefined,
     conformant: false,
+    strictConformant: false,
     confirmed: false
   }
 }
@@ -394,6 +401,7 @@ async function fetchExternalEntries (validate, manifestPath = EXTERNAL_MANIFEST_
       usage: blobUrl(manifestEntry.repoUrl, manifestEntry.ref, manifestEntry.contractPath),
       usageLabel: manifestEntry.contractPath,
       conformant: ok,
+      strictConformant: ok && validate.warnings.length === 0,
       confirmed: true
     })
 
@@ -457,6 +465,9 @@ function renderTable (rows, headingLevel, headingText) {
     let flag = ''
     if (e.confirmed === false) flag = ' (not confirmed this run, see [Contract conformance](#contract-conformance))'
     else if (!e.conformant) flag = ' (non-conformant, see [Contract conformance](#contract-conformance))'
+    // Grace period for v1 strictness: the entry stays listed with a visible flag until
+    // the enforcement flip, when strict mode folds these into non-conformant above.
+    else if (e.strictConformant === false) flag = ' (v1 strictness gaps)'
     out += `| ${e.brand}${flag} | ${displayProvider(e.provider)} | ${models} | ${pkg} | ${docs} |\n`
   }
   return out + '\n'
@@ -528,7 +539,7 @@ function writeMarkdown (entries, gaps) {
 }
 
 async function main () {
-  const validate = compileValidator()
+  const validate = compileValidator(process.argv.includes('--strict'))
   const inRepo = buildEntries(validate)
   const external = await fetchExternalEntries(validate)
 

@@ -56,6 +56,8 @@ const MAX_STREAM_BUFFER_BYTES = 16 * 1024 * 1024
  * one key pair for every runtime it calls, so they all allow-list the same
  * `publicKey`: derived from `seed` (hex or Buffer; random without one), or the
  * injected `rpc`'s own. An injected `rpc` / `dht` is left alone by close().
+ * `bootstrap` and `dhtHost` (the interface its DHT node binds) set where that
+ * node joins; pass the same private list every other component uses.
  * `runtimeKey` is a runtime's RPC public key (hex or Buffer).
  *
  * Unary calls share one connection per runtime, held open while any call on it
@@ -79,8 +81,17 @@ function createRuntimeClient (opts = {}) {
     if (!rpc) throw new Error('ERR_APP_RUNTIME_CLIENT_NOT_CONNECTED')
   }
 
+  // Built only to bind an interface (hyperdht `host`); destroyed on close().
+  let ownDht = null
+
   async function connect () {
-    if (!rpc) rpc = opts.rpc || new HyperswarmRPC({ keyPair, dht: opts.dht, bootstrap: opts.bootstrap, poolLinger: poolLingerMs })
+    if (rpc) return
+    if (opts.rpc) { rpc = opts.rpc; return }
+    let dht = opts.dht
+    if (!dht && opts.dhtHost) {
+      dht = ownDht = new DHT({ keyPair, host: opts.dhtHost, ...(opts.bootstrap ? { bootstrap: opts.bootstrap } : {}) })
+    }
+    rpc = new HyperswarmRPC({ keyPair, dht, bootstrap: opts.bootstrap, poolLinger: poolLingerMs })
   }
 
   function acquire (key) {
@@ -117,14 +128,17 @@ function createRuntimeClient (opts = {}) {
     }
     pool.clear()
     const r = rpc
+    const d = ownDht
     rpc = null
+    ownDht = null
     if (r && !opts.rpc) await r.destroy()
+    if (d) await d.destroy()
   }
 
   // `signal` aborts a call whose caller has gone: while the connection is still
   // opening and carries only this call, it is dropped, so the request never
   // reaches the runtime.
-  async function invoke (runtimeKey, routeId, req, { identity, timeoutMs, signal } = {}) {
+  async function invoke (runtimeKey, routeId, req, { identity, actor, timeoutMs, signal } = {}) {
     assertConnected()
     if (signal && signal.aborted) throw _aborted(routeId)
     let resBuf
@@ -135,7 +149,7 @@ function createRuntimeClient (opts = {}) {
     if (signal) signal.addEventListener('abort', onAbort, { once: true })
     try {
       const options = timeoutMs > 0 ? { timeout: timeoutMs } : undefined
-      resBuf = await ref.conn.request(METHODS.INVOKE, protocol.encode(protocol.buildRequest(routeId, req, identity)), options)
+      resBuf = await ref.conn.request(METHODS.INVOKE, protocol.encode(protocol.buildRequest(routeId, req, identity, actor)), options)
     } catch (cause) {
       debug('transport failure for %s: %s', routeId, cause && cause.message)
       if (signal && signal.aborted) throw _aborted(routeId)
@@ -162,7 +176,7 @@ function createRuntimeClient (opts = {}) {
   // the body is bounded only by the stream's own lifetime. `signal` closes the
   // channel while the head is still pending; after it, the caller destroys the
   // returned stream. Unread body bytes are capped at maxStreamBufferBytes.
-  async function stream (runtimeKey, routeId, req, { identity, timeoutMs, signal } = {}) {
+  async function stream (runtimeKey, routeId, req, { identity, actor, timeoutMs, signal } = {}) {
     assertConnected()
     if (signal && signal.aborted) throw _aborted(routeId)
 
@@ -273,7 +287,7 @@ function createRuntimeClient (opts = {}) {
       if (!channel) return fail(_unavailable(routeId))
 
       channel.open()
-      channel.messages[MSG.REQUEST].send(protocol.encode(protocol.buildRequest(routeId, req, identity)))
+      channel.messages[MSG.REQUEST].send(protocol.encode(protocol.buildRequest(routeId, req, identity, actor)))
     })
   }
 

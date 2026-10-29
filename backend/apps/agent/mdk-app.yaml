@@ -1,5 +1,0 @@
-id: io.tether.agent
-version: 0.12.2
-displayName: Operator Agent
-description: "Auth-gated chat API over the MDK operator agent: sessions, SSE message streams and approval round-trips for write tools."
-permissions: []

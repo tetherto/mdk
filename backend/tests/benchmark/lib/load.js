@@ -41,6 +41,52 @@ async function mapWithConcurrency (items, limit, fn) {
   return { results, peakInFlight }
 }
 
+// A Worker answers an offline or failing device with a normal response that
+// carries the failure in its payload (`{ error: 'ERR_DEVICE_UNAVAILABLE: …' }`,
+// a `FAILED` command result, or per-channel `{ error }` metrics) rather than
+// rejecting the call. Every timed call goes through one of these so a fast
+// error reply counts as an error, never as a successful round trip.
+//
+// `snap` is checked on its own: it is the one channel that always reads the
+// device live, and it reports a failed read as `{ success: false }` rather
+// than `{ error }`. The other channels read through the miner's 5s
+// fetchDeviceData cache (backend/core/mdk/lib/things/miner.js), so for up to
+// 5s after a device stops answering they still return its last values.
+function assertTelemetry (res) {
+  if (res && res.error) throw new Error(String(res.error))
+  const metrics = res && res.metrics
+  if (!metrics || typeof metrics !== 'object') throw new Error('ERR_BENCH_TELEMETRY_EMPTY')
+  const channels = Object.values(metrics)
+  if (channels.length && channels.every((v) => v && v.error)) throw new Error(String(channels[0].error))
+  const snap = metrics.snap
+  if (snap && snap.success === false) {
+    const detail = (snap.stats && snap.stats.errors && snap.stats.errors[0] && snap.stats.errors[0].msg) || (snap.stats && snap.stats.status)
+    throw new Error(`ERR_BENCH_SNAP_FAILED: ${detail}`)
+  }
+  return res
+}
+
+function assertCommand (res) {
+  const result = res && res.result && res.result.status ? res.result : res
+  if (result && result.error) throw new Error(String(result.error))
+  if (result && result.status === 'FAILED') throw new Error('ERR_BENCH_COMMAND_FAILED')
+  return res
+}
+
+// First ERR_* code in an error's message (or a short prefix of a code-less
+// message), tallied per load phase so a report says why calls failed, not
+// only how many did.
+function errorCode (err) {
+  const msg = err && err.message ? err.message : String(err)
+  const m = msg.match(/ERR_[A-Z0-9_]+/)
+  return m ? m[0] : msg.slice(0, 60)
+}
+
+function tally (counts, err) {
+  const code = errorCode(err)
+  counts[code] = (counts[code] || 0) + 1
+}
+
 function classifyError (err) {
   return /timeout/i.test(err && err.message ? err.message : String(err)) ? 'timedOut' : 'rejected'
 }
@@ -59,7 +105,7 @@ async function measureCycleHeadroom ({ client, workerDeviceMap, concurrency, rou
       await mapWithConcurrency(deviceIds, concurrency, async (id) => {
         const t0 = process.hrtime.bigint()
         try {
-          await client.pullTelemetry(id, 'metrics')
+          assertTelemetry(await client.pullTelemetry(id, 'metrics'))
           recorder.record(Number(process.hrtime.bigint() - t0) / 1e6)
         } catch (err) {
           recorder.recordError()
@@ -90,6 +136,7 @@ async function runReadLoad ({ client, deviceIds, durationMs, concurrency, record
   let timedOut = 0
   let peakInFlight = 0
   let inFlight = 0
+  const errorCodes = {}
 
   async function worker () {
     while (Date.now() < end) {
@@ -98,11 +145,12 @@ async function runReadLoad ({ client, deviceIds, durationMs, concurrency, record
       peakInFlight = Math.max(peakInFlight, inFlight)
       const t0 = process.hrtime.bigint()
       try {
-        await client.pullTelemetry(id, 'metrics')
+        assertTelemetry(await client.pullTelemetry(id, 'metrics'))
         recorder.record(Number(process.hrtime.bigint() - t0) / 1e6)
         completed++
       } catch (err) {
         recorder.recordError()
+        tally(errorCodes, err)
         if (classifyError(err) === 'timedOut') timedOut++
         else rejected++
       } finally {
@@ -121,6 +169,7 @@ async function runReadLoad ({ client, deviceIds, durationMs, concurrency, record
     rejected,
     timedOut,
     peakQueueDepth: peakInFlight,
+    errorCodes,
     readsPerSec: wallMs > 0 ? completed / (wallMs / 1000) : 0
   }
 }
@@ -141,6 +190,7 @@ async function runActionLoad ({ client, deviceIds, durationMs, ratePerSec, recor
   let inFlight = 0
   let peakInFlight = 0
   const pending = new Set()
+  const errorCodes = {}
 
   function submit () {
     const id = deviceIds[Math.floor(Math.random() * deviceIds.length)]
@@ -148,12 +198,14 @@ async function runActionLoad ({ client, deviceIds, durationMs, ratePerSec, recor
     inFlight++
     peakInFlight = Math.max(peakInFlight, inFlight)
     const p = client.sendCommand(id, actionType, actionParams || {})
-      .then(() => {
+      .then((res) => {
+        assertCommand(res)
         recorder.record(Number(process.hrtime.bigint() - t0) / 1e6)
         completed++
       })
       .catch((err) => {
         recorder.recordError()
+        tally(errorCodes, err)
         if (classifyError(err) === 'timedOut') timedOut++
         else rejected++
       })
@@ -179,6 +231,7 @@ async function runActionLoad ({ client, deviceIds, durationMs, ratePerSec, recor
     rejected,
     timedOut,
     peakInFlight,
+    errorCodes,
     actionsPerSec: wallMs > 0 ? completed / (wallMs / 1000) : 0
   }
 }
@@ -260,7 +313,8 @@ function pollAlerts ({ client, workerDeviceMap, intervalMs = 1000 }) {
       if (!deviceIds.length) continue
       let res
       try {
-        res = await client.pullTelemetry(deviceIds[0], { type: 'list', status: true })
+        // `list` pages at 100 devices by default; ask for the Worker's whole set.
+        res = await client.pullTelemetry(deviceIds[0], { type: 'list', status: true, limit: deviceIds.length })
       } catch {
         continue
       }
@@ -311,6 +365,9 @@ function pollAlertsViaGateway ({ fetchDeviceAlerts, allDeviceIds, intervalMs = 1
 }
 
 module.exports = {
+  assertTelemetry,
+  assertCommand,
+  errorCode,
   mapWithConcurrency,
   measureCycleHeadroom,
   runReadLoad,

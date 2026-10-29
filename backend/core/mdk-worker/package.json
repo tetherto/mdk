@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "MDK Worker Runtime — hosts a Worker Plugin's devices behind one HRPC channel to the Kernel",
   "main": "index.js",
   "keywords": [
@@ -23,7 +23,7 @@
     "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
-    "@tetherto/mdk-kernel": "^0.12.2",
+    "@tetherto/mdk-kernel": "^0.13.0",
     "@hyperswarm/rpc": "3.5.0",
     "debug": "4.4.1",
     "hyperdht": "6.34.1",

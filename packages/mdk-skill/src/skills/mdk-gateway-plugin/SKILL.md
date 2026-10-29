@@ -109,9 +109,11 @@ Full field notes: [`references/plugin-authoring.md`](./references/plugin-authori
 
 ### 4. Implement the controller
 
-Build the client once per app, in a `lib/client.js` every controller requires — the
-scaffold's `plugin/lib/client.js` is this exact pattern
-(`createMdkClient(config)` over `require('@tetherto/mdk-gateway/plugin')`).
+Take the client once per app, in a `lib/client.js` every controller requires. The
+scaffold's `plugin/lib/client.js` is this exact pattern: `config.mdkClient` from
+`require('@tetherto/mdk-gateway/plugin')`, the app runtime's Kernel client, signed in as the app's
+service account. Never build a Kernel client from keys: the config carries none, and the Kernel
+refuses calls without the app's token.
 
 ```js
 'use strict'
@@ -189,4 +191,4 @@ Only then build UI against it.
 - [`references/plugin-authoring.md`](./references/plugin-authoring.md): `mdk-plugin.json` fields + a fully populated route example
 - [`references/controller-patterns.md`](./references/controller-patterns.md): list / filter / `pullTelemetry` patterns
 - [`../mdk/references/protocol.md`](../mdk/references/protocol.md): envelope / action set
-- Shipped monorepo examples (when present): `backend/apps/demo/` (read-only fan-out), `backend/apps/agent/` (auth + stream routes)
+- Shipped app repositories: [`mdk-app-demo`](https://github.com/tetherto/mdk-app-demo) (read-only fan-out), [`mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) (auth + stream routes)

@@ -27,17 +27,18 @@ function runProfileProcess ({ id, workers }) {
 }
 
 // `profiles` is an array or iterable (e.g. a generator, for an unbounded
-// single-family sweep) of { id, workers, sweep? }.
-function runSweep (sweepId, profiles, { stopOnFirstRed = false } = {}) {
+// single-family sweep) of { id, workers, sweep? }. `resultsDir`/`runProfile`
+// are injectable so tests can drive the loop without real profile runs.
+function runSweep (sweepId, profiles, { stopOnFirstRed = false, resultsDir = RESULTS_DIR, runProfile = runProfileProcess } = {}) {
   const entries = []
 
   for (const p of profiles) {
-    const ok = runProfileProcess(p)
+    const ok = runProfile(p)
     if (!ok) {
       console.error(`profile ${p.id} did not complete — stopping sweep`)
       break
     }
-    const jsonPath = path.join(RESULTS_DIR, `${p.id}.json`)
+    const jsonPath = path.join(resultsDir, `${p.id}.json`)
     if (!fs.existsSync(jsonPath)) {
       console.error(`no result written for ${p.id} — stopping sweep`)
       break

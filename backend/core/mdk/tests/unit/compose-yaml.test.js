@@ -136,3 +136,20 @@ test('buildComposeYaml renders multiple services in insertion order', (t) => {
 
   t.ok(yaml.indexOf('  a:') < yaml.indexOf('  b:'))
 })
+
+test('buildComposeYaml renders service networks and top-level networks', (t) => {
+  const yaml = buildComposeYaml({
+    version: '3.8',
+    services: {
+      web: {
+        image: 'node:24',
+        environment: {},
+        networks: { priv: { ipv4_address: '10.1.0.5' }, default: null }
+      }
+    },
+    networks: { priv: { driver: 'bridge', internal: true, ipam: { config: [{ subnet: '10.1.0.0/24' }] } } }
+  })
+
+  t.ok(yaml.includes('    networks:\n      priv:\n        ipv4_address: 10.1.0.5\n      default: {}'))
+  t.ok(yaml.includes('networks:\n  priv:\n    driver: bridge\n    internal: true\n    ipam:\n      config:\n        - subnet: 10.1.0.0/24'))
+})

@@ -4,8 +4,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { validateApp } from '../../src/lib/app-package.js';
 import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
 
-const REPO_APPS = join(import.meta.dirname, '..', '..', '..', '..', 'backend', 'apps');
-
 const MANIFEST = `id: io.tether.demo
 version: 0.2.0
 displayName: Demo
@@ -53,7 +51,7 @@ describe('validateApp', () => {
     const base = 'id: io.tether.demo\nversion: 0.2.0\ndisplayName: Demo\n';
     expect(validateApp(appPackage({ 'mdk-app.yaml': `${base}permissions: []\n` })).errors).toEqual([]);
     expect(validateApp(appPackage({ 'mdk-app.yaml': base })).errors).toEqual([
-      'mdk-app.yaml: "permissions" is required: the Kernel access the app uses, as a list of rules ([] for none)',
+      'mdk-app.yaml: "permissions" is required: the Kernel access the app needs, as a list of rules ([] for none)',
     ]);
   });
 
@@ -70,7 +68,7 @@ describe('validateApp', () => {
     expect(validateApp(dir).errors).toEqual([`${dir}: not a directory`]);
   });
 
-  it('accepts the route table at the package root, as the bundled apps ship it', () => {
+  it('accepts the route table at the package root, as mdk-app-agent and mdk-app-demo ship it', () => {
     const dir = appPackage({ 'plugin/mdk-plugin.json': '', 'plugin/controllers/status.js': '' });
     rmSync(join(dir, 'plugin'), { recursive: true });
     writeFileSync(join(dir, 'mdk-plugin.json'), JSON.stringify(ROUTE_TABLE));
@@ -127,7 +125,7 @@ describe('validateApp', () => {
       'mdk-app.yaml: unknown key "summary" (allowed: id, version, displayName, description, permissions, config, main)',
       'mdk-app.yaml: "id" must be reverse-DNS, e.g. io.tether.demo',
       'mdk-app.yaml: "version" 0.3.0 does not match package.json version 0.2.0',
-      'mdk-app.yaml: "permissions" is required: the Kernel access the app uses, as a list of rules ([] for none)',
+      'mdk-app.yaml: "permissions" is required: the Kernel access the app needs, as a list of rules ([] for none)',
       'mdk-app.yaml: "config" must be a mapping',
     ]);
   });
@@ -164,6 +162,18 @@ describe('validateApp', () => {
     ]);
   });
 
+  it('holds well-formed permissions to what install can grant: Kernel resources and their verbs', () => {
+    const manifest =
+      'id: io.tether.demo\nversion: 0.2.0\ndisplayName: Demo\npermissions:\n' +
+      '  - resources: [workers]\n    verbs: [list]\n  - resources: [telemetry]\n    verbs: [read]\n' +
+      '  - resources: [devices]\n    verbs: [list]\n';
+    expect(validateApp(appPackage({ 'mdk-app.yaml': manifest })).errors).toEqual([
+      'mdk-app.yaml: permissions[1].resources[0]: an app can only request Kernel resources (devices, workers, commands, actions, policy, identities), got "telemetry"',
+      "mdk-app.yaml: permissions[1].verbs[0]: verb \"read\" applies to none of this rule's resources (telemetry)",
+      "mdk-app.yaml: permissions[2].verbs[0]: verb \"list\" applies to none of this rule's resources (devices)",
+    ]);
+  });
+
   it('applies the Gateway route-table rules', () => {
     const { version: _, ...table } = ROUTE_TABLE;
     expect(validateApp(appPackage({ 'plugin/mdk-plugin.json': JSON.stringify(table) })).errors).toEqual([
@@ -178,17 +188,20 @@ describe('validateApp', () => {
     ]);
   });
 
-  it('accepts both apps this repo ships', () => {
-    for (const app of ['agent', 'demo']) {
-      expect(validateApp(join(REPO_APPS, app)).errors).toEqual([]);
-    }
-  });
-
   it('checks a built UI when the package ships ui/ (see app-ui-check.test.ts for each rule)', () => {
     expect(validateApp(appPackage({ 'ui/anything.txt': 'x' })).errors).toEqual(['ui/index.js: not found']);
     const withUi = validateApp(appPackage({ 'ui/index.js': 'import dayjs from "dayjs"\nexport default {}\n' }));
     expect(withUi.ui).toBe(true);
     expect(withUi.errors).toEqual([expect.stringMatching(/imports "dayjs", which the dashboard does not provide/)]);
+  });
+
+  it('warns about install scripts, which mdk add never runs', () => {
+    const pkg = { name: '@tetherto/mdk-app-demo', version: '0.2.0', scripts: { postinstall: 'node setup.js', build: 'tsc' } };
+    const result = validateApp(appPackage({ 'package.json': JSON.stringify(pkg) }));
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([
+      'package.json: scripts.postinstall does not run when the app is installed (mdk add passes --ignore-scripts)',
+    ]);
   });
 
   it('reports no UI for a package without ui/', () => {

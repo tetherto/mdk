@@ -1,0 +1,4 @@
+/* The cascade layer order, declared before any other CSS: the browser ranks
+ * layers by first mention, and `App.scss` (`@layer app`) loads with the router,
+ * ahead of the devkit's styles. Imported first in main.tsx; keep it that way. */
+@layer base, mdk, app;

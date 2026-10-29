@@ -41,15 +41,17 @@ Either:
 
 Run [`mdk onboard`][mdk-onboard] and select [`mdk-app-agent`][agent-plugin-readme] from its app catalog.
 `mdk onboard`'s wizard supports creating a compliant `mdk.yaml` from scratch, interactively.
-Its entry carries a real `repoPath` ([`backend/apps/agent`][agent-plugin-readme]), not a stub, so selecting it installs
-a working app rather than a placeholder, and the wizard writes its `spec.apps` entry with `mount: /`.
+It installs `@tetherto/mdk-app-agent` by package name and writes its `spec.apps` entry with `mount: /`.
+
+> [!NOTE]
+> Until `@tetherto/mdk-app-agent` is on npm, install it from [its repository][agent-plugin-readme] with
+> `mdk add app github:tetherto/mdk-app-agent`, which writes the same `spec.apps` entry, `mount: /` included.
 
 #### 1.1 B. Add it to an existing `mdk.yaml`
 
 Already have one from a previous onboarding run? Add the app under `spec.apps` by hand, with `mount: /` and the model
-provider, the MCP url, and the approval timeout under `agent`. Once published, that directory is
-`node_modules/@tetherto/mdk-app-agent`; in this monorepo checkout it is
-[`backend/apps/agent`][agent-plugin-readme]. For example, a standalone gateway carrying just this app, reaching across
+provider, the MCP url, and the approval timeout under `agent`. The app resolves from
+`node_modules/@tetherto/mdk-app-agent`. For example, a standalone gateway carrying just this app, reaching across
 to the [MVP site example][mvp-site-example]'s MCP tool server:
 
 ```yaml
@@ -170,20 +172,20 @@ or letting the approval window expire, resolves to false, and the write never ru
 [ai-agents-mcp]: ../../../backend/core/mcp/README.md#ai-agents-and-the-mcp-server
 <!-- docs@tether.io: ai-agents-mcp → https://github.com/tetherto/mdk/blob/main/backend/core/mcp/README.md#ai-agents-and-the-mcp-server -->
 
-[agent-plugin-readme]: ../../../backend/apps/agent/README.md
-<!-- docs@tether.io: agent-plugin-readme → https://github.com/tetherto/mdk/blob/main/backend/apps/agent/README.md -->
+[agent-plugin-readme]: https://github.com/tetherto/mdk-app-agent
+<!-- docs@tether.io: agent-plugin-readme → https://github.com/tetherto/mdk-app-agent -->
 
 [mdk-onboard]: ../cli/install.md#command-groups
 <!-- docs@tether.io: mdk-onboard → guides/cli/install#command-groups -->
 
-[agent-plugin-config]: ../../../backend/apps/agent/README.md#configuration
-<!-- docs@tether.io: agent-plugin-config → https://github.com/tetherto/mdk/blob/main/backend/apps/agent/README.md#configuration -->
+[agent-plugin-config]: https://github.com/tetherto/mdk-app-agent#configuration
+<!-- docs@tether.io: agent-plugin-config → https://github.com/tetherto/mdk-app-agent#configuration -->
 
-[agent-plugin-troubleshooting]: ../../../backend/apps/agent/README.md#troubleshooting
-<!-- docs@tether.io: agent-plugin-troubleshooting → https://github.com/tetherto/mdk/blob/main/backend/apps/agent/README.md#troubleshooting -->
+[agent-plugin-troubleshooting]: https://github.com/tetherto/mdk-app-agent#troubleshooting
+<!-- docs@tether.io: agent-plugin-troubleshooting → https://github.com/tetherto/mdk-app-agent#troubleshooting -->
 
-[agent-plugin-errors]: ../../../backend/apps/agent/README.md#errors
-<!-- docs@tether.io: agent-plugin-errors → https://github.com/tetherto/mdk/blob/main/backend/apps/agent/README.md#errors -->
+[agent-plugin-errors]: https://github.com/tetherto/mdk-app-agent#errors
+<!-- docs@tether.io: agent-plugin-errors → https://github.com/tetherto/mdk-app-agent#errors -->
 
 [agent-core-readme]: ../../../backend/core/agent/README.md
 <!-- docs@tether.io: agent-core-readme → https://github.com/tetherto/mdk/blob/main/backend/core/agent/README.md -->

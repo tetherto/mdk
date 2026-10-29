@@ -27,7 +27,7 @@ describe('uNITS', () => {
 
   it('defines efficiency units', () => {
     expect(UNITS.EFFICIENCY_W_PER_TH).toBe('W/TH')
-    expect(UNITS.EFFICIENCY_W_PER_TH_S).toBe('W/TH/S')
+    expect(UNITS.EFFICIENCY_W_PER_TH_S).toBe('W/TH/s')
   })
 
   it('defines environmental units', () => {

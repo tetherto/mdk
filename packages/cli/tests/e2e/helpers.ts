@@ -1,7 +1,9 @@
 import { spawnSync, type ChildProcess, type SpawnSyncReturns } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseDocument } from 'yaml';
 
 // Shared by the end-to-end suites: how to run the CLI, pick ports and wait for a stack.
 
@@ -76,4 +78,36 @@ export async function waitFor(
     await new Promise((resolveWait) => setTimeout(resolveWait, 250));
   }
   throw new Error(`Timed out waiting for ${what}.\n${diagnostics()}`);
+}
+
+/** The service account the suites call the Gateway and the MCP server as. */
+export const E2E_AGENT = 'e2e-agent';
+
+/**
+ * The stack is fail-closed: with nobody bound in spec.rbac, the Kernel refuses every call and the
+ * Gateway every request without a token. `mdk rbac init` binds the CLI (so `mdk status` can ask the
+ * Kernel), the Gateway, the MCP server and each app's grant; then the suites' own agent gets a
+ * service account bound to read the app's routes, and nothing else. Run it once the apps are in
+ * mdk.yaml and before `mdk run`, which registers the agent's key and applies the policy.
+ */
+export function grantE2eAccess(projectDir: string, app: string): void {
+  const run = cliRunner(projectDir);
+  for (const args of [['rbac', 'init'], ['sa', 'add', E2E_AGENT]]) {
+    const result = run(args);
+    if (result.status !== 0) throw new Error(`mdk ${args.join(' ')} failed:\n${result.stdout}${result.stderr}`);
+  }
+  const file = join(projectDir, 'mdk.yaml');
+  const doc = parseDocument(readFileSync(file, 'utf8'));
+  const role = `${app}-reader`;
+  doc.addIn(['spec', 'rbac', 'roles'], doc.createNode({ name: role, rules: [{ resources: [`${app}/*`], verbs: ['get', 'list'] }] }));
+  doc.addIn(['spec', 'rbac', 'bindings'], doc.createNode({ role, subjects: [{ kind: 'ServiceAccount', name: E2E_AGENT }] }));
+  writeFileSync(file, doc.toString(), 'utf8');
+}
+
+/** `Authorization` headers for {@link E2E_AGENT}, signed in against the running Kernel. */
+export function agentAuth(projectDir: string): { authorization: string } {
+  const result = cliRunner(projectDir)(['sa', 'token', E2E_AGENT]);
+  const token = result.stdout.trim();
+  if (result.status !== 0 || !token) throw new Error(`mdk sa token ${E2E_AGENT} failed:\n${result.stdout}${result.stderr}`);
+  return { authorization: `Bearer ${token}` };
 }

@@ -141,6 +141,9 @@ To add a second OAuth provider (e.g. Microsoft):
 | Transform a chart response inline in the page's JSX    | Put the transform in the query's `select`; if reusable, in [`ui-foundation/utils`](../../ui/packages/ui-foundation/src/utils/index.ts). |
 | Import Ant Design / MUI / Bootstrap                    | Use `@tetherto/mdk-react-devkit` primitives + foundation.    |
 | Add a route directly to [`router.tsx`](./src/router.tsx)                   | Append a one-line entry to [`routes.ts`](./src/routes.ts).                      |
+| Show a raw `HTTP 404` / `error.message` as a page's error | Return `toQueryView(query, url)` from the hook (`@tetherto/mdk-react-adapter`): one line saying why. |
+| Hold a report's date range in `useState`               | Keep it in the URL with `usePeriod(useSearchParams(), …)` and render `PeriodControl`. |
+| Wrap your styles in `@layer app` from a file that loads before [`src/layers.css`](./src/layers.css) | Keep `layers.css` the first import in [`main.tsx`](./src/main.tsx). |
 
 The one route in [`router.tsx`](./src/router.tsx) that is not from `routes.ts` is the catch-all `app/:appName/*` for
 installed apps (below). It is a single route for every app, not a pattern to copy for your own pages.
@@ -155,7 +158,8 @@ never imports an app. `mdk run dashboard` hands the apps to
 | Piece | Where |
 | --- | --- |
 | All apps' pages, under `/app/<name>/…` | The catch-all route in [`router.tsx`](./src/router.tsx) → [`src/apps/InstalledAppPage.tsx`](./src/apps/InstalledAppPage.tsx) |
-| Sidebar entries for app pages | `appPageSidebarItems` in [`src/apps/paths.ts`](./src/apps/paths.ts), used by [`App.tsx`](./src/App.tsx) |
+| Sidebar entries for app pages (one group per app, a nested group per route `section` with the icon from the app's `sections`; a lone app's sections go top-level) | `appPageSidebarItems` in [`src/apps/paths.ts`](./src/apps/paths.ts), used by [`App.tsx`](./src/App.tsx) |
+| The highlighted sidebar entry (the page's path, whatever its own query; an entry keyed by a query, like `/pools?view=sites`, while the URL has those params) | `sidebarActiveId` in [`src/sidebar-active-id.ts`](./src/sidebar-active-id.ts), used by [`App.tsx`](./src/App.tsx) |
 | Panels on a shell page | `<AppPanels slot={MDK_APP_PANEL_SLOT.HOME} />` ([`src/apps/AppPanels.tsx`](./src/apps/AppPanels.tsx)), fed by `useInstalledAppPanels` |
 | React and the MDK packages shared with apps | The import map from [`vite/mdk-shared-modules.ts`](./vite/mdk-shared-modules.ts) |
 

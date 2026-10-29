@@ -41,6 +41,31 @@ function buildComposeYaml (compose) {
       lines.push('    volumes:')
       for (const vol of svc.volumes) lines.push(`      - ${vol}`)
     }
+    if (svc.networks) {
+      lines.push('    networks:')
+      for (const [net, attach] of Object.entries(svc.networks)) {
+        if (attach && attach.ipv4_address) {
+          lines.push(`      ${net}:`)
+          lines.push(`        ipv4_address: ${yamlScalar(attach.ipv4_address)}`)
+        } else {
+          lines.push(`      ${net}: {}`)
+        }
+      }
+    }
+  }
+
+  if (compose.networks) {
+    lines.push('networks:')
+    for (const [name, net] of Object.entries(compose.networks)) {
+      lines.push(`  ${name}:`)
+      if (net.driver) lines.push(`    driver: ${yamlScalar(net.driver)}`)
+      if (net.internal) lines.push('    internal: true')
+      if (net.ipam && net.ipam.config) {
+        lines.push('    ipam:')
+        lines.push('      config:')
+        for (const c of net.ipam.config) lines.push(`        - subnet: ${yamlScalar(c.subnet)}`)
+      }
+    }
   }
 
   if (compose.volumes) {

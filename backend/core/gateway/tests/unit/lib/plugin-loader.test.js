@@ -626,6 +626,11 @@ test('buildFastifyRoutes - forwards with the verified identity and a timeout (60
   t.alike(calls.map(({ opts: { identity, timeoutMs } }) => ({ identity, timeoutMs })), [{ identity: {}, timeoutMs: 60000 }, { identity: { user: 'op' }, timeoutMs: 1234 }])
   t.ok(calls.every((c) => c.opts.signal instanceof AbortSignal), 'every uncached call carries an abort signal')
   t.alike(calls[0].req, { params: { a: 1 }, query: {}, body: null, headers: {} }, 'the runtime gets params, query, body and headers')
+
+  t.is(calls[0].opts.actor, null, 'no operator token without a signed-in user')
+  await buildFastifyRoutes(app, client, { conf: {} })[0].handler({ ...req, _info: { kind: 'user', sub: 'op' }, _actorToken: 'op-token' }, rep)
+  t.is(calls[2].opts.actor, 'op-token', 'a signed-in operator\'s token goes beside the identity')
+  t.absent(JSON.stringify(calls[2].req).includes('op-token'), 'never inside the request app code reads')
 })
 
 test('buildFastifyRoutes - credentials stay at the Gateway; a client that leaves aborts its call', async (t) => {

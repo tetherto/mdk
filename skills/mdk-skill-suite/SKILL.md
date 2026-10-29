@@ -2,10 +2,11 @@
 name: mdk-skill-suite
 description: >
   The MDK product skill suite (mdk, mdk-worker-plugin, mdk-gateway-plugin,
-  mdk-ui-component, mdk-deployment, mdk-site-sizing) is not installed in this
-  checkout. Use this whenever a task mentions MDK, a worker, a Worker Plugin, a
-  Gateway plugin, a UI component for worker/plugin data, deploying an MDK stack,
-  or sizing a site from a description.
+  mdk-create-app, mdk-ui-component, mdk-deployment, mdk-site-sizing) is not
+  installed in this checkout. Use this whenever a task mentions MDK, a worker,
+  a Worker Plugin, a Gateway plugin, scaffolding or creating an MDK App, a UI
+  component for worker/plugin data, deploying an MDK stack, or sizing a site
+  from a description.
 ---
 
 # MDK skill suite 

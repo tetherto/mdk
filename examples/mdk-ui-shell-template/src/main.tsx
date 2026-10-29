@@ -1,11 +1,13 @@
+// First: fixes the cascade layer order before any stylesheet mentions a layer.
+import './layers.css'
 import { MdkProvider } from '@tetherto/mdk-react-adapter'
-import { authStore, gatewayRedirectAuth } from '@tetherto/mdk-ui-foundation'
+import { authStore } from '@tetherto/mdk-ui-foundation'
 import React from 'react'
 
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router'
-import { API_BASE_URL, APP_NAME, AUTH_BYPASS, OAUTH_BASE_URL } from './constants/env'
-import { permissionsFromToken } from './constants/permissions'
+import { auth, passwordSession } from './auth'
+import { API_BASE_URL, APP_NAME, AUTH_BYPASS } from './constants/env'
 import { router } from './router'
 import './fonts.css'
 
@@ -16,23 +18,7 @@ import './index.scss'
 
 document.title = APP_NAME
 
-// --- Session ------------------------------------------------------------
-// One object describes the whole auth flow: the Google redirect, capturing the
-// `?authToken=` the Gateway redirects back with (and scrubbing it out of the
-// address bar), and refreshing the token before it expires. `MdkProvider` runs
-// the capture on mount, so there is nothing to do here but declare it.
-//
-// Swap this for `noAuth()` — or your own `AuthProvider` — to point the shell at
-// a backend with a different session model.
-//
-// `getPermissions` is where your permission policy plugs in. MDK ships none, so
-// without it every write affordance (vote, submit, cancel, comment) stays
-// disabled. See ./constants/permissions.ts — that mapping is an example to
-// replace, not a recommendation.
-const auth = gatewayRedirectAuth({
-  oauthBaseUrl: OAUTH_BASE_URL,
-  getPermissions: permissionsFromToken,
-})
+// --- Session: see ./auth.ts ------------------------------------------
 
 // Dev-only auth bypass: when there's no OAuth redirect to capture, seed a stub
 // token so token-reading components render and the router's guard (see
@@ -44,10 +30,16 @@ if (AUTH_BYPASS && authStore.getState().token == null) {
   authStore.getState().setToken('dev-auth-bypass')
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <MdkProvider apiBaseUrl={API_BASE_URL} auth={auth}>
-      <RouterProvider router={router} />
-    </MdkProvider>
-  </React.StrictMode>,
-)
+const render = () =>
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <MdkProvider apiBaseUrl={API_BASE_URL} auth={auth} fetcher={passwordSession?.fetcher}>
+        <RouterProvider router={router} />
+      </MdkProvider>
+    </React.StrictMode>,
+  )
+
+// A password session survives a reload through its refresh cookie: restore it
+// before the router's guard looks for a token, or every reload lands on /signin.
+if (passwordSession && !AUTH_BYPASS) void passwordSession.restore().finally(render)
+else render()

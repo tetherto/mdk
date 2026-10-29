@@ -11,8 +11,6 @@ const {
   isHostAllowed,
   createHostCheck,
   createAuthHook,
-  loopbackVerifier,
-  createLoopbackVerifier,
   DEFAULT_BODY_LIMIT
 } = require('../../../workers/lib/security')
 const { loadPlugin } = require('../../../workers/lib/plugin-loader')
@@ -56,72 +54,13 @@ test('resolveSecurityOptions - CLI strings and invalid values', (t) => {
   t.exception(() => resolveSecurityOptions({ allowedHosts: { a: 1 } }, {}), /ERR_GATEWAY_ALLOWED_HOSTS_INVALID/)
 })
 
-test('resolveSecurityOptions - built-in loopback verifier by name, from ctx or common.json', async (t) => {
-  t.is(typeof resolveSecurityOptions({}, { authVerifier: 'loopback' }).authVerifier, 'function')
-  t.is(typeof resolveSecurityOptions({ authVerifier: 'loopback' }, {}).authVerifier, 'function')
-  t.is(resolveSecurityOptions({}, { authVerifier: 'loopback', allowedHosts: ['*'] }).authVerifier, loopbackVerifier, 'strict variant with the Host check off')
-  t.is(resolveSecurityOptions({}, { authVerifier: 'loopback' }).hostCheckActive, true)
-  t.is(resolveSecurityOptions({}, { allowedHosts: '*' }).hostCheckActive, false)
-
-  const req = (remoteAddress) => ({ socket: { remoteAddress }, headers: { 'x-forwarded-for': '127.0.0.1' } })
-  t.alike(await loopbackVerifier(req('127.0.0.1')), { user: { userId: 'local' } })
-  t.alike(await loopbackVerifier(req('::1')), { user: { userId: 'local' } })
-  t.alike(await loopbackVerifier(req('::ffff:127.0.0.1')), { user: { userId: 'local' } })
-  t.is(await loopbackVerifier(req('10.0.0.4')), false, 'LAN peer is refused even with a loopback X-Forwarded-For')
-  t.is(await loopbackVerifier(req(undefined)), false)
+test('resolveSecurityOptions - there are no built-in verifiers; a name is refused', (t) => {
+  t.exception(() => resolveSecurityOptions({}, { authVerifier: 'loopback' }), /ERR_GATEWAY_AUTH_VERIFIER_INVALID: there are no built-in verifiers \("loopback" was removed\)/)
+  t.exception(() => resolveSecurityOptions({ authVerifier: 'loopback' }, {}), /ERR_GATEWAY_AUTH_VERIFIER_INVALID/)
+  t.exception(() => resolveSecurityOptions({}, { authVerifier: 42 }), /authVerifier must be a function/)
+  const fn = async () => false
+  t.is(resolveSecurityOptions({}, { authVerifier: fn }).authVerifier, fn)
 })
-
-test('loopbackVerifier - refuses a cross-site browser request from a loopback socket', async (t) => {
-  const loopbackVerifier = createLoopbackVerifier({ hostCheckActive: true })
-  const req = (headers) => ({ socket: { remoteAddress: '127.0.0.1' }, host: 'localhost:3000', headers: { host: 'localhost:3000', ...headers } })
-  const LOCAL = { user: { userId: 'local' } }
-
-  t.alike(await loopbackVerifier(req({})), LOCAL, 'no Origin (curl, Node, CLI)')
-  t.alike(await loopbackVerifier(req({ origin: 'http://localhost:3000', 'sec-fetch-site': 'same-origin' })), LOCAL, 'UI served by the gateway')
-  t.alike(await loopbackVerifier(req({ origin: 'http://localhost:5173', 'sec-fetch-site': 'same-site' })), LOCAL, 'Vite dev proxy on another loopback port')
-  t.alike(await loopbackVerifier(req({ origin: 'http://127.0.0.1:5173' })), LOCAL)
-  t.alike(await loopbackVerifier(req({ origin: 'http://[::1]:5173' })), LOCAL)
-  t.alike(await loopbackVerifier({ socket: { remoteAddress: '127.0.0.1' }, host: 'mdk.local:3000', headers: { origin: 'http://mdk.local:3000' } }), LOCAL, 'same origin under an allowed host')
-
-  t.is(await loopbackVerifier(req({ origin: 'https://attacker.example' })), false, 'foreign Origin')
-  t.is(await loopbackVerifier(req({ origin: 'https://attacker.example', 'sec-fetch-site': 'cross-site' })), false)
-  t.is(await loopbackVerifier(req({ 'sec-fetch-site': 'cross-site' })), false, 'cross-site even without Origin')
-  t.is(await loopbackVerifier(req({ origin: 'null' })), false, 'opaque origin')
-  t.is(await loopbackVerifier(req({ origin: 'http://localhost.attacker.example:3000' })), false, 'look-alike host')
-})
-
-test('loopbackVerifier - with the Host check off, only loopback Origins pass (DNS rebinding)', async (t) => {
-  const LOCAL = { user: { userId: 'local' } }
-  const rebound = { socket: { remoteAddress: '127.0.0.1' }, host: 'attacker.example:3000', headers: { host: 'attacker.example:3000', origin: 'http://attacker.example:3000', 'sec-fetch-site': 'same-origin' } }
-  const sameOrigin = { socket: { remoteAddress: '127.0.0.1' }, host: 'mdk.local:3000', headers: { origin: 'http://mdk.local:3000' } }
-
-  for (const verifier of [loopbackVerifier, createLoopbackVerifier(), resolveSecurityOptions({}, { authVerifier: 'loopback', allowedHosts: ['*'] }).authVerifier, resolveSecurityOptions({ authVerifier: 'loopback', allowedHosts: 'a.local,*' }, {}).authVerifier]) {
-    t.is(await verifier(rebound), false, 'a DNS-rebound same-origin request is refused')
-    t.is(await verifier(sameOrigin), false, 'non-loopback same origin is not trusted without the Host check')
-    t.alike(await verifier({ socket: { remoteAddress: '127.0.0.1' }, headers: {} }), LOCAL, 'no Origin still passes')
-    t.alike(await verifier({ socket: { remoteAddress: '127.0.0.1' }, host: 'attacker.example:3000', headers: { origin: 'http://localhost:5173' } }), LOCAL, 'loopback Origin still passes')
-  }
-
-  const checked = resolveSecurityOptions({}, { authVerifier: 'loopback', allowedHosts: ['mdk.local'] }).authVerifier
-  t.alike(await checked(sameOrigin), LOCAL, 'same origin is trusted while the Host allowlist is on')
-  const viaFn = resolveSecurityOptions({}, { authVerifier: loopbackVerifier }).authVerifier
-  t.alike(await viaFn(sameOrigin), LOCAL, 'the exported function is upgraded the same way')
-})
-
-test('gateway http - loopback verifier with allowedHosts "*" refuses a rebound same-origin request', async (t) => {
-  const app = await buildServer([{ id: 'c', method: 'GET', path: '/c', handler: './controllers/c.js', auth: true }], {
-    authVerifier: 'loopback',
-    allowedHosts: ['*']
-  })
-  t.teardown(() => app.close())
-
-  const rebound = await app.inject({ url: '/c', remoteAddress: '127.0.0.1', headers: { host: 'attacker.example:3000', origin: 'http://attacker.example:3000' } })
-  t.is(rebound.statusCode, 401)
-  const local = await app.inject({ url: '/c', remoteAddress: '127.0.0.1', headers: { host: 'localhost:3000', origin: 'http://localhost:3000' } })
-  t.is(local.statusCode, 200)
-})
-
-// ==================== Host allowlist ====================
 
 test('buildHostAllowlist - loopback on the bound port by default', (t) => {
   const list = buildHostAllowlist([], { port: '3000' })

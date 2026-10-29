@@ -1,6 +1,6 @@
 'use strict'
 
-const { templates } = require('../../../../../core/mdk')
+const { templates } = require('@tetherto/mdk-core')
 
 const { conf, specs } = templates.stats
 

@@ -33,6 +33,7 @@ const ACTIONS = {
   COMMAND_STATUS_RESPONSE: 'command.status.response',
   COMMAND_CANCEL: 'command.cancel',
   COMMAND_CANCEL_RESPONSE: 'command.cancel.response',
+  COMMAND_LOG: 'command.log',
 
   // Health probing (Kernel → Worker, scheduled)
   HEALTH_PING: 'health.ping',
@@ -51,6 +52,26 @@ const ACTIONS = {
   ACTION_QUERY: 'action.query',
   ACTION_VOTE: 'action.vote',
   ACTION_CANCEL_BATCH: 'action.cancel-batch',
+
+  // RBAC policy (CLI → Kernel): the spec.rbac in force, and applying a new one
+  RBAC_GET: 'rbac.get',
+  RBAC_APPLY: 'rbac.apply',
+
+  // Sign-in (Gateway / CLI / app runtime → Kernel): the token issuer
+  AUTH_LOGIN: 'auth.login',
+  AUTH_REFRESH: 'auth.refresh',
+  AUTH_TOKEN: 'auth.token',
+  AUTH_LOGOUT: 'auth.logout',
+  AUTH_JWKS: 'auth.jwks',
+
+  // Identity administration (CLI → Kernel): users, service accounts, signing keys
+  IDENTITY_USER_LIST: 'identity.user.list',
+  IDENTITY_USER_UPSERT: 'identity.user.upsert',
+  IDENTITY_USER_DELETE: 'identity.user.delete',
+  IDENTITY_SA_LIST: 'identity.sa.list',
+  IDENTITY_SA_UPSERT: 'identity.sa.upsert',
+  IDENTITY_SA_DELETE: 'identity.sa.delete',
+  IDENTITY_KEYS_ROTATE: 'identity.keys.rotate',
 
   // Write-call resolution (Kernel → Worker)
   WRITE_CALLS_REQUEST: 'write.calls.request',

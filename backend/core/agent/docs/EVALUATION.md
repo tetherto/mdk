@@ -112,7 +112,7 @@ While iterating, restrict the run to the case or tag you're working on, and keep
 node bin/mdk-agent.js \
   --model qwen3-4b --capability small \
   --base-url http://127.0.0.1:11500/v1 \
-  --mcp-url http://127.0.0.1:3008/mcp \
+  --mcp-url http://127.0.0.1:3101/mcp \
   --eval --only decline- --reps 1
 ```
 
@@ -124,7 +124,7 @@ every case at `--reps 3`, is the maintainer run before a release, not the next s
 node bin/mdk-agent.js \
   --model qwen3-4b --capability small \
   --base-url http://127.0.0.1:11500/v1 \
-  --mcp-url http://127.0.0.1:3008/mcp \
+  --mcp-url http://127.0.0.1:3101/mcp \
   --eval --reps 3 --concurrency 4
 ```
 

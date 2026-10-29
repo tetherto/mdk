@@ -6,11 +6,12 @@ const path = require('path')
 const { createWorker } = require('@tetherto/tether-svc-test-helper').worker
 const os = require('os')
 const { setTimeout: sleep } = require('timers/promises')
+const { ECHO_APP } = require('../fixtures/helpers')
 
-// A gateway mounts only the apps it is handed. The demo app is declared here
-// (mounted at the root) so there is a real route to exercise; with no runtime
-// publishing a key it answers 503. Anything not declared must not be served.
-const DECLARED_APPS = [{ name: 'demo', appDir: path.resolve(__dirname, '..', '..', '..', '..', 'apps', 'demo'), keyFile: 'tests/integration/run/demo.key', mount: '/' }]
+// A gateway mounts only the apps it is handed. The echo app is declared here
+// so there is a real route to exercise; with no runtime publishing a key it
+// answers 503. Anything not declared must not be served.
+const DECLARED_APPS = [{ name: 'echo', appDir: ECHO_APP, keyFile: 'tests/integration/run/echo.key' }]
 
 // An app with one `auth: true` route, to check the gateway closes it when no
 // authVerifier is configured (before it would forward to a runtime).
@@ -85,9 +86,9 @@ test('Api', { timeout: 90000 }, async (main) => {
   await sleep(2000)
 
   await main.test('Api: worker boots and serves HTTP', async (t) => {
-    const { status, body } = await getJson(`${gatewayBaseUrl}/api/demo/summary`)
+    const { status, body } = await getJson(`${gatewayBaseUrl}/apps/echo/whoami`)
     t.is(status, 503, 'route mounted from the route table, without any auth token')
-    t.is(body.message, 'ERR_APP_RUNTIME_UNAVAILABLE: demo', 'no runtime has published a key')
+    t.is(body.message, 'ERR_APP_RUNTIME_UNAVAILABLE: echo', 'no runtime has published a key')
   })
 
   await main.test('Api: undeclared app routes respond 404', async (n) => {
@@ -117,12 +118,12 @@ test('Api', { timeout: 90000 }, async (main) => {
     const echo = await fetch(`${gatewayBaseUrl}/echo?value=x`)
     t.is(echo.status, 404, 'no default /echo route')
 
-    const res = await fetch(`${gatewayBaseUrl}/api/demo/summary`)
+    const res = await fetch(`${gatewayBaseUrl}/apps/echo/whoami`)
     t.is(res.headers.get('x-content-type-options'), 'nosniff', 'security headers are set')
     t.ok(res.headers.get('x-ratelimit-limit'), 'rate limit is on')
 
     const rebound = await new Promise((resolve, reject) => {
-      require('http').get({ host: '127.0.0.1', port: gatewayPort, path: '/api/demo/summary', headers: { host: 'evil.example:' + gatewayPort } }, resolve).on('error', reject)
+      require('http').get({ host: '127.0.0.1', port: gatewayPort, path: '/apps/echo/whoami', headers: { host: 'evil.example:' + gatewayPort } }, resolve).on('error', reject)
     })
     t.is(rebound.statusCode, 403, 'a foreign Host header is refused')
     rebound.resume()

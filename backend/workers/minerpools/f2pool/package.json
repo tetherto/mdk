@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker-f2pool",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "private": true,
   "description": "F2Pool miner pool lib",
   "keywords": [
@@ -23,10 +23,10 @@
     "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
-    "@bitfinex/lib-js-util-base": "^2.1.0",
     "@tetherto/hp-svc-facs-store": "^1.0.0"
   },
   "devDependencies": {
+    "@bitfinex/lib-js-util-base": "^2.1.0",
     "brittle": "3.16.3",
     "date-fns": "3.6.0",
     "fastify": "5.12.5",

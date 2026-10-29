@@ -1,13 +1,12 @@
 import type { LineChartCardData } from "@tetherto/mdk-react-devkit/domain";
 
+import { auth } from "./auth";
 import { MINER_POWER_MODES, type MinerFamily } from "./constants";
 import type { History, Miner } from "./types";
 
-export function get<T>(base: string, path: string) {
-  return fetch(`${base}${path}`).then((r) => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json() as Promise<T>;
-  });
+// Sends the signed-in user's token; on a 401 it renews it once and retries.
+export function get<T>(base: string, path: string): Promise<T> {
+  return auth.fetcher<T>(`${base}${path}`);
 }
 
 // deviceIds are UUIDs — the worker-assigned type (miner-wm/-am/-av…) is the

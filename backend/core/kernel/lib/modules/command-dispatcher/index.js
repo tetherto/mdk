@@ -3,6 +3,7 @@
 const debug = require('debug')('mdk:kernel:dispatcher')
 const { validate: validateEnvelope } = require('../../protocol/envelope')
 const { COMMAND_SCOPES } = require('../../protocol/actions')
+const { validateParams, normalizeParams } = require('../../protocol/params')
 
 const DEFAULT_VERIFY_WITHIN_MS = 60000
 
@@ -10,8 +11,10 @@ const DEFAULT_VERIFY_WITHIN_MS = 60000
  * Command Dispatcher
  *
  * Validates incoming commands against the MDK schema, checks deviceId
- * exists in the Worker Registry, validates the command against the worker's
- * declared capabilities, and hands off to the Command State Machine.
+ * exists in the Worker Registry, validates the command and its params against
+ * the worker's declared capabilities (a command the target does not declare is
+ * rejected), and hands off to the Command State Machine. Every attempt,
+ * accepted or rejected, goes to the write-command log when one is set.
  *
  * State machine:
  *   Validating → RoutingAction → Enqueued | Rejected
@@ -20,6 +23,7 @@ class CommandDispatcher {
   constructor (opts) {
     this.registry = opts.registry
     this.stateMachine = opts.stateMachine
+    this.commandLog = opts.commandLog || null
   }
 
   /**
@@ -27,8 +31,46 @@ class CommandDispatcher {
    * @param {object} [opts]
    * @param {string} [opts.requesterId] - authenticated caller identity (the
    *   transport public key); falls back to envelope.sender for in-process calls
+   * @param {string[]} [opts.roles] - the roles spec.rbac binds to the caller, for the log
+   * @param {{ requesterId: string, roles: string[] }} [opts.via] - the app that acted for
+   *   the requester (an operator), when it did
    */
   async dispatch (envelope, opts) {
+    const result = await this._admit(envelope, opts)
+    await this.recordAttempt(envelope, opts, result)
+    return result
+  }
+
+  // A failed log write never fails the command: it may already be on its way
+  // to the device, and a caller that saw an error could send it again.
+  async recordAttempt (envelope, opts, result) {
+    if (!this.commandLog) return
+    const payload = (envelope && envelope.payload) || {}
+    try {
+      await this.commandLog.append({
+        event: 'attempt',
+        commandId: result.commandId || null,
+        caller: { key: (opts && opts.requesterId) || (envelope && envelope.sender) || null, roles: (opts && opts.roles) || null },
+        ...(opts && opts.via ? { via: { key: opts.via.requesterId, roles: opts.via.roles || null } } : {}),
+        command: payload.command || null,
+        scope: payload.scope || COMMAND_SCOPES.DEVICE,
+        deviceId: (envelope && envelope.deviceId) || null,
+        workerId: payload.workerId || null,
+        targets: Array.isArray(payload.targets) ? payload.targets : null,
+        params: payload.params || {},
+        outcome: result.status || 'REJECTED',
+        error: result.error || null
+      })
+    } catch (err) {
+      debug('command log append failed: %s', err.message)
+    }
+  }
+
+  async getLog (query) {
+    return { entries: this.commandLog ? await this.commandLog.query(query) : [] }
+  }
+
+  async _admit (envelope, opts) {
     const validation = validateEnvelope(envelope)
     if (!validation.valid) {
       return { error: validation.error, status: 'REJECTED' }
@@ -45,10 +87,8 @@ class CommandDispatcher {
       return { error: 'ERR_WORKER_NOT_ROUTABLE', status: 'REJECTED' }
     }
 
-    if (target.capabilities) {
-      const check = this._validateCommand(command, params, target.capabilities)
-      if (!check.valid) return { error: check.error, status: 'REJECTED' }
-    }
+    const check = this._validateCommand(command, params, target.capabilities)
+    if (!check.valid) return { error: check.error, status: 'REJECTED' }
 
     const commandId = await this.stateMachine.enqueue({
       scope: target.scope,
@@ -58,6 +98,7 @@ class CommandDispatcher {
       command,
       params: params || {},
       requesterId: (opts && opts.requesterId) || envelope.sender,
+      ...(opts && opts.via ? { via: opts.via.requesterId } : {}),
       verify: target.deviceId ? _verifySpec(_commandDef(command, target.capabilities), params || {}) : null
     })
 
@@ -121,36 +162,10 @@ class CommandDispatcher {
   }
 
   _validateCommand (command, params, capabilities) {
-    if (!capabilities.commands) return { valid: true }
-
     const cmdDef = _commandDef(command, capabilities)
-    if (!cmdDef) {
-      return { valid: false, error: `ERR_COMMAND_NOT_IN_CAPABILITIES: ${command}` }
-    }
-
-    if (cmdDef.params && Array.isArray(cmdDef.params) && params) {
-      for (const paramDef of cmdDef.params) {
-        const value = params[paramDef.name]
-        if (value === undefined) continue
-
-        if (paramDef.type === 'number' && typeof value !== 'number') {
-          return { valid: false, error: `ERR_PARAM_TYPE: ${paramDef.name} must be number` }
-        }
-        if (paramDef.type === 'string' && typeof value !== 'string') {
-          return { valid: false, error: `ERR_PARAM_TYPE: ${paramDef.name} must be string` }
-        }
-        if (paramDef.type === 'number') {
-          if (paramDef.min !== undefined && value < paramDef.min) {
-            return { valid: false, error: `ERR_PARAM_RANGE: ${paramDef.name} below min ${paramDef.min}` }
-          }
-          if (paramDef.max !== undefined && value > paramDef.max) {
-            return { valid: false, error: `ERR_PARAM_RANGE: ${paramDef.name} above max ${paramDef.max}` }
-          }
-        }
-      }
-    }
-
-    return { valid: true }
+    if (!cmdDef) return { valid: false, error: `ERR_COMMAND_NOT_IN_CAPABILITIES: ${command}` }
+    const invalid = validateParams(cmdDef.params, normalizeParams(cmdDef.params, params))
+    return invalid ? { valid: false, error: invalid } : { valid: true }
   }
 }
 
@@ -162,15 +177,12 @@ function _commandDef (command, capabilities) {
     : (Object.hasOwn(commands, command) ? commands[command] : undefined)
 }
 
-// The expected value is the request's own param, read the way WorkerRuntime
+// The expected value is the request's own param, read the way the Worker
 // names positional params ({ value } / { args }) from the approval path.
 function _verifySpec (cmdDef, params) {
   const verify = cmdDef && cmdDef.verify
   if (!verify) return null
-  const index = (cmdDef.params || []).findIndex(p => p.name === verify.param)
-  let expected = Object.hasOwn(params, verify.param) ? params[verify.param] : undefined
-  if (expected === undefined && Array.isArray(params.args)) expected = params.args[index]
-  if (expected === undefined && index === 0) expected = params.value
+  const expected = normalizeParams(cmdDef.params, params)[verify.param]
   if (expected === undefined) return null
   return { telemetry: verify.telemetry, expected, withinMs: verify.withinMs || DEFAULT_VERIFY_WITHIN_MS }
 }

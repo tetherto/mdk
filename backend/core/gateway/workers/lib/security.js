@@ -41,81 +41,20 @@ function _trustProxy (value) {
   return value
 }
 
-// Built-in verifier for single-machine stacks (`mdk run`, the examples): a caller
-// whose TCP peer is loopback is the local operator, the identity the agent plugin
-// already falls back to. It reads the socket, never X-Forwarded-For, so it must not
-// be used behind a reverse proxy on the same host (every proxied request would be
-// loopback). Remote callers get 401 and need a real verifier.
-//
-// A loopback socket is not enough on its own: any page open in the operator's
-// browser can fire a no-cors POST at http://localhost:<port>/..., and the Host
-// check passes. So a browser request must also come from a loopback origin (the
-// UI on localhost, or a Vite dev server on another port, which forwards the
-// browser's Origin through its proxy) or, while the Host allowlist is on, from
-// this gateway's own origin. Clients that send neither Origin nor
-// Sec-Fetch-Site (curl, Node, the CLI) are unaffected.
-//
-// The same-origin case trusts request.host, which only the Host allowlist
-// vouches for: with allowedHosts "*" a DNS-rebound page (Origin and Host both
-// http://attacker.example:<port>) would otherwise look same-origin. So with the
-// Host check off only loopback Origins are accepted.
-const LOCAL_IDENTITY = Object.freeze({ user: Object.freeze({ userId: 'local' }) })
-const LOOPBACK_HOSTNAMES = new Set(LOOPBACK_HOSTS)
-
-function _isLoopbackAddress (addr) {
-  if (!addr) return false
-  const a = addr.startsWith('::ffff:') ? addr.slice(7) : addr
-  return a === '::1' || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(a)
-}
-
-function _isLocalBrowserCaller (request, trustSameOrigin) {
-  const headers = request.headers || {}
-  if (headers['sec-fetch-site'] === 'cross-site') return false
-
-  const origin = headers.origin
-  if (origin === undefined) return true
-  let url
-  try {
-    url = new URL(origin) // 'null' (sandboxed iframe, file://) throws and is refused
-  } catch {
-    return false
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return false
-  if (LOOPBACK_HOSTNAMES.has(url.hostname)) return true
-  if (!trustSameOrigin) return false
-  // Same origin as the request; request.host has already passed the Host allowlist.
-  const host = request.host ?? headers.host
-  return typeof host === 'string' && url.host === host.toLowerCase()
-}
-
-// hostCheckActive: whether the Host allowlist runs before the verifier. Only
-// then is a non-loopback same-origin Origin accepted.
-function createLoopbackVerifier ({ hostCheckActive = false } = {}) {
-  const trustSameOrigin = hostCheckActive === true
-  return async function loopbackVerifier (request) {
-    if (!_isLoopbackAddress(request.socket?.remoteAddress)) return false
-    return _isLocalBrowserCaller(request, trustSameOrigin) ? { ...LOCAL_IDENTITY } : false
-  }
-}
-
-// The strict variant (loopback Origins only), safe whatever the Host check.
-// resolveSecurityOptions swaps in the same-origin-aware one when the allowlist is on.
-const loopbackVerifier = createLoopbackVerifier()
-const loopbackVerifierHostChecked = createLoopbackVerifier({ hostCheckActive: true })
-
-const BUILTIN_VERIFIERS = { loopback: loopbackVerifier }
+// There is no built-in verifier: the loopback one that made every local caller
+// the operator ('local') was a bypass of spec.rbac. A Gateway with an authority
+// (see authority.js) checks every route against spec.rbac; one without may take
+// an integrator's own verifier function for `auth: true` routes.
 
 function resolveSecurityOptions (conf = {}, ctx = {}) {
-  // A function from ctx, or the name of a built-in ('loopback') from ctx or common.json.
-  let authVerifier = ctx.authVerifier ?? conf.authVerifier
+  // A function from ctx. A name (the removed 'loopback') is refused, loudly, so a
+  // config that relied on it does not quietly lose its auth.
+  const authVerifier = ctx.authVerifier ?? conf.authVerifier
   if (typeof authVerifier === 'string') {
-    if (!Object.hasOwn(BUILTIN_VERIFIERS, authVerifier)) {
-      throw new Error(`ERR_GATEWAY_AUTH_VERIFIER_INVALID: unknown built-in verifier "${authVerifier}" (known: ${Object.keys(BUILTIN_VERIFIERS).join(', ')})`)
-    }
-    authVerifier = BUILTIN_VERIFIERS[authVerifier]
+    throw new Error(`ERR_GATEWAY_AUTH_VERIFIER_INVALID: there are no built-in verifiers ("${authVerifier}" was removed); spec.rbac governs every route of a Gateway started with a Kernel or a gatewayCredential`)
   }
   if (authVerifier != null && typeof authVerifier !== 'function') {
-    throw new Error('ERR_GATEWAY_AUTH_VERIFIER_INVALID: authVerifier must be a function or the name of a built-in verifier')
+    throw new Error('ERR_GATEWAY_AUTH_VERIFIER_INVALID: authVerifier must be a function')
   }
 
   // worker.js CLI flags (--allowed-hosts a,b --body-limit 2097152
@@ -128,7 +67,6 @@ function resolveSecurityOptions (conf = {}, ctx = {}) {
 
   // buildHostAllowlist turns the Host check off for '*'.
   const hostCheckActive = !(allowedHosts || []).includes('*')
-  if (authVerifier === loopbackVerifier && hostCheckActive) authVerifier = loopbackVerifierHostChecked
 
   let bodyLimit = _pick('bodyLimit', conf, ctx) ?? DEFAULT_BODY_LIMIT
   if (typeof bodyLimit === 'string' && /^\d+$/.test(bodyLimit)) bodyLimit = Number(bodyLimit)
@@ -241,8 +179,6 @@ module.exports = {
   DEFAULT_RATE_LIMIT,
   DEFAULT_HELMET,
   OVERWRITE_CACHE_PERM,
-  loopbackVerifier,
-  createLoopbackVerifier,
   resolveSecurityOptions,
   buildHostAllowlist,
   isHostAllowed,

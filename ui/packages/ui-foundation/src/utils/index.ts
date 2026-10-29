@@ -9,6 +9,8 @@
 
 export * from './auth-utils'
 export * from './device-tags'
+export * from './download-utils'
+export * from './period-utils'
 export * from './settings-utils'
 export * from './token-utils'
 export * from './url-utils'

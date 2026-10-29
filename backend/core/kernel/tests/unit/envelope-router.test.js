@@ -4,6 +4,7 @@ const test = require('brittle')
 const { ACTIONS, MESSAGE_TYPES } = require('../../lib/protocol/actions')
 const { build } = require('../../lib/protocol/envelope')
 const { routeEnvelope } = require('../../lib/transport/envelope-router')
+const { fakeAuthorizer } = require('../helpers/fake-authorizer')
 
 function createDeps (actionManagerOverrides = {}) {
   const calls = { push: [], vote: [], query: [], cancel: [] }
@@ -33,10 +34,15 @@ function createDeps (actionManagerOverrides = {}) {
     ...actionManagerOverrides
   }
 
+  calls.logged = []
   return {
     calls,
     deps: {
-      dispatcher: { dispatch: async () => ({ status: 'QUEUED' }) },
+      dispatcher: {
+        dispatch: async () => ({ status: 'QUEUED' }),
+        recordAttempt: async (envelope, requester, result) => { calls.logged.push({ envelope, requester, result }) },
+        getLog: async (query) => ({ entries: [{ query }] })
+      },
       telemetryCollector: { pull: async () => ({}), pullState: async () => ({}) },
       registry: {
         listWorkers: () => [{ workerId: 'w-1' }],
@@ -169,51 +175,126 @@ test('envelope router - rejects oversized arrays', async (t) => {
   t.ok(/ERR_PAYLOAD_IDS_TOO_MANY/.test(res.error))
 })
 
-test('envelope router - read-only caller cannot command, vote or terminate', async (t) => {
+test('envelope router - a caller is authorized per request; a denial never reaches the module', async (t) => {
   const { calls, deps } = createDeps()
-  const caller = { publicKey: CALLER_KEY, roles: ['read'] }
+  deps.authorizer = fakeAuthorizer({ allow: (a) => a === ACTIONS.WORKER_LIST })
+  const caller = { publicKey: CALLER_KEY }
 
   const list = await routeEnvelope(build({ action: ACTIONS.WORKER_LIST, type: MESSAGE_TYPES.REQUEST, sender: 'x' }), deps, caller)
-  t.is(list.workers.length, 1, 'read allowed')
+  t.is(list.workers.length, 1, 'allowed')
 
   const cmd = await routeEnvelope(build({
     action: ACTIONS.COMMAND_REQUEST, type: MESSAGE_TYPES.REQUEST, sender: 'x', deviceId: 'd', payload: { command: 'reboot' }
   }), deps, caller)
   t.ok(/ERR_KERNEL_ACTION_FORBIDDEN/.test(cmd.error))
+  t.is(calls.logged.length, 1, 'the refused command is logged')
+  t.alike(calls.logged[0].requester, { requesterId: 'app:test', roles: ['test'] })
+  t.is(calls.logged[0].result.error, cmd.error)
 
   const vote = await routeEnvelope(build({
     action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'v', approve: true, authPerms: [] }
   }), deps, caller)
   t.ok(/ERR_KERNEL_ACTION_FORBIDDEN/.test(vote.error))
   t.is(calls.vote.length, 0)
-
-  const term = await routeEnvelope(build({
-    action: ACTIONS.WORKER_TERMINATE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { workerId: 'w-1' }
-  }), deps, { publicKey: CALLER_KEY, roles: ['write'] })
-  t.ok(/requires role admin/.test(term.error), 'terminate needs admin')
+  t.alike(deps.authorizer.calls.map((c) => c.caller), [CALLER_KEY, CALLER_KEY, CALLER_KEY], 'each request checked')
 })
 
-test('envelope router - non-admin caller votes and requests as its transport key', async (t) => {
+test('envelope router - a caller with no authorizer is refused', async (t) => {
+  const { deps } = createDeps()
+  const res = await routeEnvelope(build({ action: ACTIONS.WORKER_LIST, type: MESSAGE_TYPES.REQUEST, sender: 'x' }), deps, { publicKey: CALLER_KEY })
+  t.is(res.error, 'ERR_KERNEL_NO_AUTHORIZER')
+})
+
+test('envelope router - a caller votes and requests as its token identity', async (t) => {
   const { calls, deps } = createDeps()
   let dispatchOpts = null
   deps.dispatcher.dispatch = async (_env, opts) => { dispatchOpts = opts; return { status: 'QUEUED' } }
-  const caller = { publicKey: CALLER_KEY, roles: ['write'] }
+  deps.authorizer = fakeAuthorizer({ sub: 'app:ops-center', roles: ['operator'] })
+  const caller = { publicKey: CALLER_KEY }
 
   await routeEnvelope(build({
     action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'someone-else', approve: true, authPerms: [] }
   }), deps, caller)
-  t.is(calls.vote[0].voter, CALLER_KEY, 'self-asserted voter replaced')
+  t.is(calls.vote[0].voter, 'app:ops-center', 'self-asserted voter replaced')
 
   await routeEnvelope(build({
     action: ACTIONS.COMMAND_REQUEST, type: MESSAGE_TYPES.REQUEST, sender: 'spoofed', deviceId: 'd', payload: { command: 'reboot' }
   }), deps, caller)
-  t.is(dispatchOpts.requesterId, CALLER_KEY, 'requester is the transport key, not envelope.sender')
+  t.is(dispatchOpts.requesterId, 'app:ops-center', 'requester is the token subject, not envelope.sender')
+  t.alike(dispatchOpts.roles, ['operator'], 'and its spec.rbac roles go to the write-command log')
 })
 
-test('envelope router - admin caller keeps the delegated payload voter', async (t) => {
+test('envelope router - an app acting for an operator requests and votes as the operator, via the app', async (t) => {
   const { calls, deps } = createDeps()
+  let dispatchOpts = null
+  deps.dispatcher.dispatch = async (_env, opts) => { dispatchOpts = opts; return { status: 'QUEUED' } }
+  const writes = []
+  deps.authorizer = fakeAuthorizer({ sub: 'app:ops-center', roles: ['app-ops-center'], delegate: true, canWrite: (deviceId, actor) => { writes.push([deviceId, actor && actor.sub]); return true } })
+  const caller = { publicKey: CALLER_KEY }
+  const req = (action, payload, deviceId) => build({ action, type: MESSAGE_TYPES.REQUEST, sender: 'x', deviceId, payload, auth: 'app-token', actor: 'alice' })
+
+  await routeEnvelope(req(ACTIONS.COMMAND_REQUEST, { command: 'reboot' }, 'd'), deps, caller)
+  t.alike(dispatchOpts, { requesterId: 'alice', roles: ['operator'], via: { requesterId: 'app:ops-center', roles: ['app-ops-center'] } })
+
+  await routeEnvelope(req(ACTIONS.ACTION_VOTE, { id: 1, voter: 'someone-else', approve: true, authPerms: [] }), deps, caller)
+  t.is(calls.vote[0].voter, 'alice', 'the operator votes, even for an app that may delegate')
+
+  deps.actionManager.pushAction = async (payload, opts) => { calls.push.push(payload); opts.canWrite('d-1'); return { id: 1 } }
+  await routeEnvelope(req(ACTIONS.ACTION_PUSH, { query: { id: 'd-1' }, action: 'reboot', params: [], voter: 'v', authPerms: [] }), deps, caller)
+  t.is(calls.push[0].voter, 'alice')
+  t.alike(writes, [['d-1', 'alice']], 'device writes are checked for the operator too')
+})
+
+test('envelope router - a refused command is logged as the operator, via the app', async (t) => {
+  const { calls, deps } = createDeps()
+  deps.authorizer = fakeAuthorizer({ allow: () => false })
+  await routeEnvelope(build({
+    action: ACTIONS.COMMAND_REQUEST, type: MESSAGE_TYPES.REQUEST, sender: 'x', deviceId: 'd', payload: { command: 'reboot' }, auth: 't', actor: 'bob'
+  }), deps, { publicKey: CALLER_KEY })
+  t.alike(calls.logged[0].requester, { requesterId: 'bob', roles: ['operator'], via: { requesterId: 'app:test', roles: ['test'] } })
+})
+
+test('envelope router - command.log needs commands: read', async (t) => {
+  const { deps } = createDeps()
+  const req = build({ action: ACTIONS.COMMAND_LOG, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { limit: 5 } })
+  deps.authorizer = fakeAuthorizer({ allow: (a) => a !== ACTIONS.COMMAND_LOG })
+  t.ok(/ERR_KERNEL_ACTION_FORBIDDEN/.test((await routeEnvelope(req, deps, { publicKey: CALLER_KEY })).error))
+  deps.authorizer = fakeAuthorizer()
+  t.alike(await routeEnvelope(req, deps, { publicKey: CALLER_KEY }), { entries: [{ query: { limit: 5 } }] })
+  const bad = build({ action: ACTIONS.COMMAND_LOG, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { limit: 0 } })
+  t.ok(/ERR_PAYLOAD_LIMIT_INVALID/.test((await routeEnvelope(bad, deps)).error))
+})
+
+test('envelope router - a caller granted actions: delegate keeps the payload voter', async (t) => {
+  const { calls, deps } = createDeps()
+  deps.authorizer = fakeAuthorizer({ delegate: true })
   await routeEnvelope(build({
     action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'gateway', payload: { id: 1, voter: 'user@example.com', approve: true, authPerms: [] }
-  }), deps, { publicKey: CALLER_KEY, roles: ['admin'] })
+  }), deps, { publicKey: CALLER_KEY })
   t.is(calls.vote[0].voter, 'user@example.com')
+})
+
+test('envelope router - action pushes carry the caller device rule', async (t) => {
+  const { deps } = createDeps()
+  let seen = null
+  deps.actionManager.pushAction = async (payload, opts) => { seen = opts; return { id: 1 } }
+  deps.authorizer = fakeAuthorizer({ canWrite: (d) => d === 'ok' })
+  await routeEnvelope(build({
+    action: ACTIONS.ACTION_PUSH, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { query: { id: 'dev-1' }, action: 'reboot', params: [], voter: 'v', authPerms: [] }
+  }), deps, { publicKey: CALLER_KEY })
+  t.ok(seen, 'pushAction got the options')
+  t.ok(seen.canWrite('ok'))
+  t.absent(seen.canWrite('other'))
+})
+
+test('envelope router - votes carry the caller device rule', async (t) => {
+  const { deps } = createDeps()
+  let seen = null
+  deps.actionManager.voteAction = async (payload, opts) => { seen = opts; return 1 }
+  deps.authorizer = fakeAuthorizer({ canWrite: (d) => d === 'ok' })
+  await routeEnvelope(build({
+    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'v', approve: true, authPerms: ['miner:w'] }
+  }), deps, { publicKey: CALLER_KEY })
+  t.ok(seen && seen.canWrite('ok'), 'voteAction got the voter device rule')
+  t.absent(seen.canWrite('other'))
 })

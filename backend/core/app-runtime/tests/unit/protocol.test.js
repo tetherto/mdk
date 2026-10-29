@@ -18,6 +18,16 @@ test('buildRequest tolerates a missing request and identity', (t) => {
   t.alike(full.req, { params: { a: 1 }, query: { q: 2 }, body: 'b', headers: { h: 'v' } })
   t.alike(full.identity, { sub: 'u' })
   t.is(p.buildRequest('r.id', {}, undefined).identity, null)
+  t.is(bare.actor, null)
+  t.is(p.buildRequest('r.id', {}, null, 'tok').actor, 'tok')
+  t.is(p.buildRequest('r.id', {}, null, '').actor, null)
+})
+
+test('checkRequest accepts an access token as the actor, nothing else', (t) => {
+  const ok = p.buildRequest('r.id', {}, null, 'tok')
+  t.is(p.checkRequest(ok), null)
+  t.is(p.checkRequest({ ...ok, actor: null }), null)
+  for (const actor of [5, '', 'x'.repeat(8193), {}]) t.is(p.checkRequest({ ...ok, actor }).code, p.ERR.BAD_REQUEST)
 })
 
 test('okResponse / errorResponse shapes', (t) => {
@@ -68,4 +78,10 @@ test('checkRequest accepts a valid envelope and names each defect', (t) => {
   t.is(p.checkRequest({ v: 999, routeId: 'a' }).code, p.ERR.PROTOCOL_VERSION)
   t.is(p.checkRequest({ v: p.PROTOCOL_VERSION }).code, p.ERR.BAD_REQUEST)
   t.is(p.checkRequest({ v: p.PROTOCOL_VERSION, routeId: '' }).code, p.ERR.BAD_REQUEST)
+})
+
+test('a Kernel refusal of the app is a 403', (t) => {
+  const err = new Error('ERR_KERNEL_ACTION_FORBIDDEN: app:demo may not list workers')
+  t.alike(p.toErrorResponse(err), p.errorResponse(403, 'ERR_KERNEL_ACTION_FORBIDDEN', 'ERR_KERNEL_ACTION_FORBIDDEN: app:demo may not list workers'))
+  t.is(p.toErrorResponse(Object.assign(new Error('ERR_KERNEL_ACTION_FORBIDDEN: x'), { statusCode: 451 })).status, 451, 'an explicit status still wins')
 })

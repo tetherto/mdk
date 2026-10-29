@@ -6,7 +6,7 @@ module.exports = {
   loadPlugin: require('./lib/plugin-loader').loadPlugin,
   loadContract: require('./lib/contract-loader').loadContract,
   validateContract: require('./lib/contract-validator').validateContract,
-  validateParams: require('./lib/param-validator').validateParams,
+  validateParams: require('@tetherto/mdk-kernel/protocol/params').validateParams,
   createInstance: require('./lib/instance-loader').createInstance,
   createModuleContext: require('./lib/module-context').createModuleContext
 }

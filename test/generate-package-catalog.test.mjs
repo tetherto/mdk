@@ -39,16 +39,15 @@ test('an integration takes its section, name, purpose, and models from its contr
   }])
 })
 
-test('unlistable packages are reported, and samples and demos are skipped', () => {
+test('unlistable packages are reported, and samples are skipped', () => {
   const root = fixture({
     'backend/core/a/package.json': { name: '@t/a', private: true },
     'backend/core/b/package.json': { name: '@t/a', description: 'same name' },
     'backend/workers/miners/c/package.json': { name: '@t/c', description: 'c' },
     'backend/workers/miners/c/mdk-contract.json': '{ not json',
-    'backend/workers/samples/s/package.json': { name: '@t/s' },
-    'backend/apps/demo/package.json': { name: '@t/demo' }
+    'backend/workers/samples/s/package.json': { name: '@t/s' }
   })
-  const manifests = ['backend/core/a', 'backend/core/b', 'backend/workers/miners/c', 'backend/workers/samples/s', 'backend/apps/demo']
+  const manifests = ['backend/core/a', 'backend/core/b', 'backend/workers/miners/c', 'backend/workers/samples/s']
     .map((dir) => `${dir}/package.json`)
 
   const { entries, errors } = buildCatalog(root, manifests)

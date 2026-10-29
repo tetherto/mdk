@@ -155,12 +155,11 @@ Generated docs are a **checked projection of the facts that ship**, not a second
 | Canonical source | Generated projection |
 |---|---|
 | Worker contracts | Supported Workers catalogue |
-| Plugin manifests | Supported-plugins page and route references |
 | Package metadata | Package reference |
 | UI types and JSDoc | Component registry |
 | Component registry | Skill component reference, `## Props` sections in devkit `USAGE.md` files, docs-site props tables |
 
-Change a fact once at its source (a prop type, option, default, or JSDoc description; a Worker contract; a plugin manifest) and every projection follows on the next regeneration. Forget, and CI names the exact drift before it merges. The `check:usage-proptables` gate stops new hand-authored props tables from becoming competing sources of truth: existing debt is baselined, removals are allowed, additions or swaps fail.
+Change a fact once at its source (a prop type, option, default, or JSDoc description; a Worker contract) and every projection follows on the next regeneration. Forget, and CI names the exact drift before it merges. The `check:usage-proptables` gate stops new hand-authored props tables from becoming competing sources of truth: existing debt is baselined, removals are allowed, additions or swaps fail.
 
 [`docs/scripts/regenerate-docs.mjs`](../../scripts/regenerate-docs.mjs) runs every generator; its `TARGETS` list is the authoritative inventory. It orchestrates only, calling each generator where it lives, so engineering keeps ownership of the generation logic. Exit codes: `0` every checked projection is current, `3` committed generated files are stale, `1` generation itself broke. Keep them blocking wherever stale generated content could merge.
 
@@ -181,7 +180,6 @@ When one thing has changed, run that generator on its own. Each has its own comm
 | Generated target | Command | Run from |
 |---|---|---|
 | Supported Workers | `npm run generate:catalogue` | repo root |
-| App route tables | `npm run generate:plugin-reference` | repo root |
 | Package reference | `npm run generate:package-catalog` | repo root |
 | Component reference in the skill | `npm run generate:ui-registry` | repo root |
 | Props sections in devkit `USAGE.md` files | `npm run generate:usage-proptables` | repo root |
@@ -243,7 +241,7 @@ Reported gaps land in:
 - `catalogue.json`'s `conformanceGaps` array, each entry tagged `source: "external"` or `source: "in-repo"`
 - a "Contract conformance" section at the bottom of the generated Markdown, naming exactly what to check: network connectivity, or the `repoUrl`/`ref`/`contractPath` fields in `external-workers.json`
 
-The generator runs only from a pull request that touches a file in this repo, so a partner-side change never triggers it. The nightly `External contract check` workflow ([`.github/workflows/external-contract-check.yml`](../../../.github/workflows/external-contract-check.yml)) closes that gap: it re-fetches every pinned contract via `npm run check:external-contracts` ([`docs/scripts/check-external-contracts.mjs`](../../scripts/check-external-contracts.mjs)) and opens or refreshes an `external-contract`-labelled issue on breakage (unreachable, private, GC'd SHA, schema violation). A reachable-but-stale pin, behind the partner's latest change, is a tracked follow-up, not a failure.
+The generator runs only from a pull request that touches a file in this repo, so a partner-side change never triggers it. The nightly `External contract check` workflow (`.github/workflows/external-contract-check.yml`) closes that gap: it re-fetches every pinned contract via `npm run check:external-contracts` ([`docs/scripts/check-external-contracts.mjs`](../../scripts/check-external-contracts.mjs)) and opens or refreshes an `external-contract`-labelled issue on breakage (unreachable, private, GC'd SHA, schema violation). A reachable-but-stale pin, behind the partner's latest change, is a tracked follow-up, not a failure.
 The same nightly also checks that each `repoUrl` itself still resolves, since the generator reads only the raw contract file. Whether
 the registry covers every Worker `examples/mvp-site` pins, at the same commit, is checked on every pull request by
 `test/external-workers-registry.test.mjs`.
@@ -258,23 +256,11 @@ This pipeline is temporary: supported Workers are moving to separately published
 - Fetched bytes are not content-hashed: integrity rests on GitHub serving the pinned SHA.
 - Only `ref` is shape-checked. `name`, `repoUrl`, `brand` and the other fields fall back silently, so a malformed entry yields a label like `undefined (undefined)` rather than a clear error.
 
-### Supported plugins page
-
-Generates the route tables for the apps MDK ships from their route tables.
-
-**Source:** `backend/apps/*/mdk-plugin.json`
-
-**Output:** [`docs/reference/supported-apps.md`](../supported-apps.md), within the `BEGIN GENERATED` and `END GENERATED`
-markers. The prose around the markers is hand-maintained and the generator leaves it untouched.
-
-**Generator:** [`docs/scripts/generate-plugin-reference.js`](../../scripts/generate-plugin-reference.js), runnable on its own with `npm run generate:plugin-reference` from
-the repo root
-
 ### Package reference
 
 Lists every package in the monorepo on one page, so a reader can see what exists without walking each workspace.
 
-**Source:** each `package.json` under `backend/core`, `backend/apps`, `backend/workers`, `ui/packages`, and `packages`, plus each integration's `mdk-contract.json`
+**Source:** each `package.json` under `backend/core`, `backend/workers`, `ui/packages`, and `packages`, plus each integration's `mdk-contract.json`
 
 **Output:** [`docs/reference/packages.md`](../packages.md)
 
@@ -282,14 +268,14 @@ Lists every package in the monorepo on one page, so a reader can see what exists
 
 Every column is inferred, so no `package.json` carries metadata for this page:
 
-- Group: where the package lives. `backend/core` is Core, `backend/apps` and `backend/workers` are Extensions, `ui/packages` is UI, and `packages` is Tools
+- Group: where the package lives. `backend/core` is Core, `backend/workers` is Extensions, `ui/packages` is UI, and `packages` is Tools
 - Integration: any package with an `mdk-contract.json` at its root or under `plugin/`. Its section, name, and models come from the contract's `deviceFamily`, `brand`, and
   `modelsSupported`, and its purpose is the first sentence of `overview`
 - Purpose for every other package: its `package.json` `description`
 - Availability: `workspace` when the package is `"private": true`, otherwise `publishable`
 - Link: the package's `README.md`, or its `package.json` when there is no README
 
-Samples and demos (`backend/workers/samples/` and `backend/apps/demo/`) are skipped by a list in the generator. Add to that list when a new sample or demo should stay off
+Samples and demos (`backend/workers/samples/`) are skipped by a list in the generator. Add to that list when a new sample or demo should stay off
 the page.
 
 The generator writes nothing and exits non-zero when a listed package has no description, shares its name with another, or has a contract that cannot be parsed. Schema conformance is not checked here; the [Supported Workers catalogue](#supported-workers-catalogue) already validates every contract.
@@ -310,12 +296,12 @@ Regenerate through `npm run regenerate-docs` or `npm run generate:ui-registry` f
 
 ### Freshness in CI
 
-[`.github/workflows/docs-freshness.yml`](../../../.github/workflows/docs-freshness.yml) runs `regenerate-docs --check` on every pull request. The job is a required status check, and a required check that never reports leaves the pull request unmergeable, so the workflow has no path filter: a change that touches neither the sources nor the generated pages still gets a quick, passing run. It installs the UI workspace and treats a skipped target as a failure, since there a skip means the install broke rather than that someone is working light. It **blocks** the pull request whenever any generated page is stale — a stale page ships facts the sources no longer support — and lists every stale path in the job summary. When a source change requires regenerated output, run `npm run regenerate-docs` from the repo root and commit the deterministic result in the same pull request. A generator that crashes, or any target skipped in CI, also blocks, because then the run did not verify every page.
+`.github/workflows/docs-freshness.yml` runs `regenerate-docs --check` on every pull request. The job is a required status check, and a required check that never reports leaves the pull request unmergeable, so the workflow has no path filter: a change that touches neither the sources nor the generated pages still gets a quick, passing run. It installs the UI workspace and treats a skipped target as a failure, since there a skip means the install broke rather than that someone is working light. It **blocks** the pull request whenever any generated page is stale — a stale page ships facts the sources no longer support — and lists every stale path in the job summary. When a source change requires regenerated output, run `npm run regenerate-docs` from the repo root and commit the deterministic result in the same pull request. A generator that crashes, or any target skipped in CI, also blocks, because then the run did not verify every page.
 
 ## Next steps
 
 - [`ui/AGENTS.md`](../../../ui/AGENTS.md): agent/consumer guide for UI manifests (CLI commands, what they contain)
 - [`ui/packages/react-devkit/AGENT_READY.md`](../../../ui/packages/react-devkit/AGENT_READY.md): export contract every public component must satisfy
 - [`agent-ready-sdk.md`](agent-ready-sdk.md): backend/Workers contract (mdk-contract.json, USAGE.md, examples)
-- [`ia.md`](ia.md): information architecture and QA gates (check:port-signals, check:facets-fresh, check:integrations-fresh, check:plugin-reference-fresh)
+- [`ia.md`](ia.md): information architecture and QA gates (check:port-signals, check:facets-fresh, check:integrations-fresh)
 - [`linters.md`](linters.md): link verification and example-path checking gates already wired in CI

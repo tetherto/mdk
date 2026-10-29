@@ -5,13 +5,13 @@
  *
  * Restricts Kernel access to one Gateway via the HRPC firewall allowlist. Only
  * callers whose DHT public key is on the allowlist can connect; everyone else
- * is refused at the network layer. An empty allowlist admits nobody, and a
- * listed key gets only the roles its entry names.
+ * is refused at the network layer. An empty allowlist admits nobody, and
+ * admission grants nothing: what an admitted caller may do comes from its
+ * access token and spec.rbac.
  *
  * The Gateway is started with the Kernel's public key (kernelKey), not the
  * live Kernel handle: startGateway({ kernel }) would admit the Gateway key
- * with full access by itself. Here admission happens in one place, the
- * allowlist below.
+ * by itself. Here admission happens in one place, the allowlist below.
  *
  * The Gateway dials the Kernel with one persistent key — its seed lives in the
  * Gateway store — and publishes it as `status.rpcClientKey` in its status file,
@@ -19,13 +19,14 @@
  *
  *   1st run: no key published yet → the allowlist is empty; the Gateway
  *            publishes its key and its Kernel requests are refused
- *   2nd run: that key is on the allowlist with the `read` role → the same
- *            Gateway can read but not write, and every other caller is refused
+ *   2nd run: that key is on the allowlist → the same Gateway connects, but
+ *            with no access token its calls fail the policy check, and every
+ *            other caller is refused at the firewall
  *
  * trustedKeysDir is off on both sides so the allowlist is the only admission:
- * the same-machine key rendezvous would otherwise publish and admit the key
- * with full access. keyFile is off so this script never overwrites the
- * Kernel key file of a site running on this machine.
+ * the same-machine key rendezvous would otherwise publish and admit the key.
+ * keyFile is off so this script never overwrites the Kernel key file of a
+ * site running on this machine.
  *
  * Each run checks the allowlist itself: it calls the Kernel as the Gateway
  * (worker.list is a read, command.request a write) and as an unrelated key.
@@ -48,21 +49,23 @@ const HTTP_PORT = 3210
 const ROOT = path.join(os.tmpdir(), 'mdk-example-auth-whitelist')
 const GATEWAY_ROOT = path.join(ROOT, 'gateway')
 const STATUS_FILE = path.join(GATEWAY_ROOT, 'status', `wrk-node-http-${HTTP_PORT}.json`)
-const GATEWAY_ROLES = ['read']
 const CALL_TIMEOUT_MS = 15000
 
 function publishedGatewayKey () {
   try { return JSON.parse(fs.readFileSync(STATUS_FILE, 'utf8')).rpcClientKey } catch { return null }
 }
 
-// A refused connection throws; an admitted caller without the role gets an
-// { error } reply from the Kernel.
+// A refused connection drops the channel; an admitted caller the policy does
+// not allow gets an ERR_KERNEL_* reply from the Kernel.
 async function check (label, call) {
   try {
     const res = await call()
-    console.log(res && res.error ? `  ${label}: refused by role (${res.error})` : `  ${label}: allowed`)
+    console.log(res && res.error ? `  ${label}: refused by policy (${res.error})` : `  ${label}: allowed`)
   } catch (err) {
-    console.log(`  ${label}: refused at the firewall (${err.code || err.message})`)
+    const reason = err.code || err.message
+    console.log(/^ERR_KERNEL_/.test(reason)
+      ? `  ${label}: admitted, refused by policy (${reason.split(':')[0]})`
+      : `  ${label}: refused at the firewall (${reason})`)
   }
 }
 
@@ -72,7 +75,7 @@ async function main () {
     root: ROOT,
     keyFile: false,
     trustedKeysDir: false,
-    hrpc: { whitelist: gatewayKey ? [{ key: gatewayKey, roles: GATEWAY_ROLES }] : [] }
+    hrpc: { whitelist: gatewayKey ? [gatewayKey] : [] }
   })
 
   let gateway = null
@@ -91,11 +94,11 @@ async function main () {
     trustedKeysDir: false
   })
 
-  const allowed = kernel.listAllowedKeys('read')
+  const allowed = kernel.listAllowedKeys()
   console.log(`\n  Kernel key:  ${kernel.getPublicKey().toString('hex')}`)
   console.log(`  Gateway key: ${gateway.status.rpcClientKey}  (status.rpcClientKey)`)
   console.log(allowed.length
-    ? `  Allowlist:   ${allowed.join(', ')} — roles: ${GATEWAY_ROLES.join(', ')}`
+    ? `  Allowlist:   ${allowed.join(', ')}`
     : '  Allowlist:   [] — admits nobody; restart this script to allowlist the Gateway key above')
 
   // The Gateway's Kernel identity: the keypair status.rpcClientKey is read

@@ -21,6 +21,14 @@ export const APP_NAME = 'MDK UI Shell'
  */
 export const AUTH_BYPASS: boolean = import.meta.env.VITE_AUTH_BYPASS === 'true'
 
+/**
+ * How users sign in. `password` (an MDK stack's Gateway: `POST /auth/login`
+ * through the Kernel's token issuer) or `oauth` (the mining Gateway's Google
+ * redirect, the default). `mdk create dashboard` sets `password`.
+ */
+export const AUTH_MODE: 'password' | 'oauth' =
+  import.meta.env.VITE_AUTH_MODE === 'password' ? 'password' : 'oauth'
+
 const required = (key: string, value: string | undefined): string => {
   if (value === undefined || value.trim().length === 0) {
     console.warn(`[mdk-ui-shell] missing required env var: ${key}`)
@@ -46,7 +54,7 @@ export const API_BASE_URL: string
  * OAuth backend base URL. Required and must be absolute (the sign-in flow
  * is a full-page navigation, which proxies don't intercept).
  */
-export const OAUTH_BASE_URL: string = required(
-  'VITE_OAUTH_BASE_URL',
-  import.meta.env.VITE_OAUTH_BASE_URL,
-)
+export const OAUTH_BASE_URL: string =
+  AUTH_MODE === 'oauth'
+    ? required('VITE_OAUTH_BASE_URL', import.meta.env.VITE_OAUTH_BASE_URL)
+    : (import.meta.env.VITE_OAUTH_BASE_URL ?? '')

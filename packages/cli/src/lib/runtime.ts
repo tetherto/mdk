@@ -3,12 +3,30 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { once, type EventEmitter } from 'node:events';
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { isLocalPackagePath, unresolvedEnvRef, type AppInstance, type StackSpec, type WorkerInstance } from './spec.js';
+import {
+  DEFAULT_DHT_HOST,
+  isLocalPackagePath,
+  loadStackDht,
+  loadStackSpec,
+  unresolvedEnvRef,
+  type AppInstance,
+  type StackSpec,
+  type WorkerInstance,
+} from './spec.js';
 import { DEFAULT_HOST, findFreePort, isPortFree } from './ports.js';
 import { APP_MANIFEST } from './app-package.js';
 import { WORKER_CONTRACT } from './worker-package.js';
 import { theme, tick, arrow } from './theme.js';
 import { appChildFile, appChildPid } from './run-lock.js';
+import {
+  CLI_ACCOUNT,
+  GATEWAY_ACCOUNT,
+  MCP_ACCOUNT,
+  ensureAgentCredential,
+  ensureAppCredential,
+  signingCredential,
+  stackServiceAccounts,
+} from './credentials.js';
 
 const require = createRequire(import.meta.url);
 
@@ -23,10 +41,10 @@ export interface KernelHandle {
   getPublicKey?: () => Buffer | string;
   /** The key the Kernel dials workers with — what a worker must allow. */
   getClientPublicKey?: () => Buffer | null;
-  /** Admit an HRPC caller (the Kernel is fail-closed). */
-  allowKey?: (key: Buffer | string, roles?: string[]) => string;
-  /** Hex keys admitted with at least `minRole`. */
-  listAllowedKeys?: (minRole?: string) => string[];
+  /** Admit an HRPC caller to connect (the Kernel is fail-closed); spec.rbac decides what it may do. */
+  allowKey?: (key: Buffer | string) => string;
+  /** Hex keys admitted to connect. */
+  listAllowedKeys?: () => string[];
   _cleanup: Array<() => unknown>;
   stop: () => Promise<void>;
   [key: string]: unknown;
@@ -42,6 +60,10 @@ interface GetKernelOpts {
   root?: string;
   keyFile?: string | false;
   discovery?: { mode: 'local' | 'dht'; dir?: string; topic?: string };
+  /** spec.rbac to apply at boot; `null` applies deny-all, omitted keeps the stored policy. */
+  rbac?: unknown;
+  /** The exact set of service accounts to register at boot (apps and agents with a credential here). */
+  serviceAccounts?: Array<{ name: string; publicKey: string }>;
   [key: string]: unknown;
 }
 
@@ -60,9 +82,16 @@ interface StartGatewayOpts {
   [key: string]: unknown;
 }
 
+/** A running private HyperDHT bootstrap (`startDhtBootstrap`). */
+interface DhtBootstrapHandle {
+  bootstrap: string[];
+  close: () => Promise<void>;
+}
+
 interface MdkCore {
   getKernel(opts?: GetKernelOpts): Promise<KernelHandle>;
   startGateway(opts?: StartGatewayOpts): Promise<GatewayHandle>;
+  startDhtBootstrap(opts: { host: string; port: number }): Promise<DhtBootstrapHandle>;
   [key: string]: unknown;
 }
 
@@ -162,6 +191,11 @@ function mdkMcp(): MdkMcp {
 
 /** `createAppRuntime` options; a supervised child gets them JSON-encoded in `MDK_APP_RUNTIME_OPTIONS`. */
 export interface AppRuntimeOptions {
+  /** Private DHT (spec.network.dht): the runtime's own DHT node, and its Kernel client's. */
+  bootstrap?: string[];
+  dhtHost?: string;
+  kernelBootstrap?: string[];
+  kernelDhtHost?: string;
   name: string;
   appDir: string;
   config: Record<string, unknown>;
@@ -170,6 +204,8 @@ export interface AppRuntimeOptions {
   allowedKeyFiles: string[];
   keyFile: string;
   kernelKeyFile: string;
+  /** The app's service-account credential (`.mdk/credentials/apps/<name>.json`); the runtime signs in with it. */
+  credentialFile: string;
 }
 
 interface MdkAppRuntime {
@@ -220,6 +256,26 @@ export function mcpKeyFile(projectDir: string): string {
 /** Where an app runtime publishes its public key, for the Gateway to find it. */
 export function appKeyFile(projectDir: string, name: string): string {
   return componentDir(projectDir, 'apps', name, 'runtime.key');
+}
+
+/** Where every DHT node of a stack joins and binds; empty on the public HyperDHT. */
+export interface StackDht {
+  bootstrap?: string[];
+  dhtHost?: string;
+}
+
+/**
+ * The stack's private-DHT settings (`spec.network.dht`), from `spec` or else
+ * the project's mdk.yaml (throwing when that does not load; see loadStackDht). Without an explicit `bootstrap` list, every component
+ * joins the bootstrap the Kernel's process runs at `host:port` and binds `host`
+ * (loopback by default); joining a list without a `host`, every interface.
+ */
+export function projectDht(projectDir: string, spec?: StackSpec): StackDht {
+  const dht = spec ? spec.spec.network?.dht : loadStackDht(projectDir);
+  if (!dht) return {};
+  if (dht.bootstrap) return { bootstrap: dht.bootstrap, ...(dht.host ? { dhtHost: dht.host } : {}) };
+  const host = dht.host ?? DEFAULT_DHT_HOST;
+  return { bootstrap: [`${host}:${dht.port}`], dhtHost: host };
 }
 
 /**
@@ -314,19 +370,120 @@ export function resolveProjectPackageDir(projectDir: string, pkgName: string): s
   return dir;
 }
 
-/** Boots the Kernel (local discovery, project-local state), logging its key. */
-export async function runKernel(projectDir: string): Promise<KernelHandle> {
+/**
+ * Why the Kernel must not boot on this policy: nobody could administer it. No
+ * user or group is bound, and no bound subject may write the policy, so a
+ * running Kernel could not be handed another one and `mdk rbac init` would be
+ * refused. That is a fresh stack (nothing bound) or one after `mdk create app`
+ * (only the app's account bound). A stack that binds a user and keeps
+ * `policy: write` out of every role is a choice: it boots, and policy changes
+ * go through mdk.yaml and a restart. Undefined when someone can administer.
+ */
+export function policyRefusal(spec: StackSpec): string | undefined {
+  const rbac = spec.spec.rbac;
+  const bindings = rbac?.bindings ?? [];
+  if (bindings.some((b) => b.subjects.some((s) => s.kind === 'User' || s.kind === 'Group'))) return undefined;
+  // Rules scoped by resourceNames never match `policy`, which has no instance.
+  const writesPolicy = (role: string): boolean =>
+    (rbac?.roles ?? []).some(
+      (r) =>
+        r.name === role &&
+        r.rules.some(
+          (rule) =>
+            !rule.resourceNames?.length &&
+            (rule.resources.includes('policy') || rule.resources.includes('*')) &&
+            (rule.verbs.includes('write') || rule.verbs.includes('*')),
+        ),
+    );
+  if (bindings.some((b) => b.subjects.length > 0 && writesPolicy(b.role))) return undefined;
+  const who = bindings.some((b) => b.subjects.length > 0) ? 'binds no user, and lets nobody write the policy' : 'binds nobody';
+  return (
+    `spec.rbac ${who}, so the Kernel would boot with nobody able to administer it: \`mdk rbac init\` would be refused. ` +
+    'Run `mdk rbac init` first, then `mdk run`.'
+  );
+}
+
+/**
+ * What will be refused once the Kernel enforces spec.rbac, said at boot rather
+ * than discovered one 403 at a time: a policy that binds nobody, a CLI account
+ * with no binding, an app with no binding for its service account.
+ */
+export function policyWarnings(spec: StackSpec): string[] {
+  const bindings = spec.spec.rbac?.bindings ?? [];
+  const bound = (kind: string, name: string): boolean =>
+    bindings.some((b) => b.subjects.some((s) => s.kind === kind && s.name === name));
+  if (!bindings.length) {
+    return ['spec.rbac binds nobody, so the Kernel refuses every call. Run `mdk rbac init` to bind the CLI and the apps.'];
+  }
+  const out: string[] = [];
+  if (!bound('ServiceAccount', CLI_ACCOUNT)) out.push(`spec.rbac does not bind ${CLI_ACCOUNT}: \`mdk status\`, \`mdk user\` and \`mdk rbac apply\` are refused.`);
+  if (!bound('ServiceAccount', MCP_ACCOUNT)) out.push(`spec.rbac does not bind ${MCP_ACCOUNT}: the MCP server (\`mdk run mcp\`) cannot read the policy, so it refuses every agent.`);
+  if (!bound('ServiceAccount', GATEWAY_ACCOUNT)) out.push(`spec.rbac does not bind ${GATEWAY_ACCOUNT}: a Gateway started on its own (\`mdk run gateway\`) cannot read the policy, so it refuses every route.`);
+  for (const app of spec.spec.apps) {
+    if (!bound('ServiceAccount', `app:${app.name}`)) out.push(`app ${app.name} has no binding in spec.rbac: the Kernel refuses its calls. Run \`mdk rbac init\`.`);
+  }
+  return out;
+}
+
+/**
+ * Boots the Kernel (local discovery, project-local state), logging its key. With
+ * the stack's `spec`, its `spec.rbac` is the policy the Kernel applies at boot (a
+ * stack without one applies the empty, deny-all policy), and its apps and this
+ * instance's agents are the service accounts it registers; without it, the
+ * Kernel keeps the policy and accounts last applied to its store.
+ */
+export async function runKernel(projectDir: string, spec?: StackSpec): Promise<KernelHandle> {
   const core = mdkCore();
   const root = componentDir(projectDir, 'kernel');
   mkdirSync(root, { recursive: true });
 
+  // Private DHT without a listed bootstrap: this process runs it, for the
+  // whole stack, and stops it after the Kernel.
+  const dhtSpec = spec ? spec.spec.network?.dht : loadStackDht(projectDir);
+  const dht = projectDht(projectDir, spec);
+  let dhtBootstrap: DhtBootstrapHandle | undefined;
+  if (dhtSpec && !dhtSpec.bootstrap) {
+    const host = dhtSpec.host ?? DEFAULT_DHT_HOST;
+    try {
+      dhtBootstrap = await core.startDhtBootstrap({ host, port: dhtSpec.port });
+    } catch (error) {
+      throw new Error(
+        `Could not start the private DHT bootstrap on ${host}:${dhtSpec.port}: ` +
+          `${error instanceof Error ? error.message : String(error)}\n` +
+          'Another stack may be using that port — change `spec.network.dht.port` in mdk.yaml.',
+      );
+    }
+    process.stderr.write(`${tick} ${theme.label('dht')} private bootstrap ${theme.value(dhtBootstrap.bootstrap.join(','))}\n`);
+  }
+
   process.stderr.write(`${theme.muted('Starting kernel')} ${arrow} ${theme.value(root)}\n`);
-  const kernel = await core.getKernel({
-    root,
-    keyFile: kernelKeyFile(projectDir),
-    discovery: { mode: 'local', dir: workerKeysDir(projectDir) },
-    trustedKeysDir: trustedKeysDir(projectDir),
-  });
+  let kernel: KernelHandle;
+  try {
+    kernel = await core.getKernel({
+      root,
+      keyFile: kernelKeyFile(projectDir),
+      discovery: { mode: 'local', dir: workerKeysDir(projectDir) },
+      trustedKeysDir: trustedKeysDir(projectDir),
+      ...(dht.bootstrap ? { hrpc: dht } : {}),
+      ...(spec ? { rbac: spec.spec.rbac ?? null, serviceAccounts: stackServiceAccounts(projectDir, spec) } : {}),
+    });
+  } catch (error) {
+    await dhtBootstrap?.close();
+    throw error;
+  }
+  if (dhtBootstrap) {
+    const bootstrapNet = dhtBootstrap;
+    const stopKernel = kernel.stop.bind(kernel);
+    kernel.stop = async () => {
+      try {
+        await stopKernel();
+      } finally {
+        await bootstrapNet.close();
+      }
+    };
+  }
+
+  if (spec) for (const warning of policyWarnings(spec)) process.stderr.write(`${theme.warn('warning')}: ${warning}\n`);
 
   const key = typeof kernel.getPublicKey === 'function' ? kernel.getPublicKey() : undefined;
   const keyHex = key ? key.toString('hex') : '(unknown)';
@@ -392,6 +549,10 @@ export async function runGateway(
   const ownKeyFile = gatewayKeyFile(projectDir);
   const trustDir = trustedKeysDir(projectDir);
   const apps = forwardedApps(projectDir, spec.spec.apps);
+  // spec.rbac is enforced on every app route: by the in-process Kernel's issuer
+  // and policy, or by a Kernel in another process, reached as the Gateway's
+  // own service account (it reads the policy).
+  const gatewayCredential = kernel ? undefined : signingCredential(ensureAgentCredential(projectDir, GATEWAY_ACCOUNT));
 
   // Out-of-process gateway: the Kernel must already be running so its HRPC key
   // is on disk. Fail early with an actionable message instead of silently
@@ -424,9 +585,8 @@ export async function runGateway(
     // Admits the gateway's client key on the Kernel and on workers in other processes.
     trustedKeysDir: trustDir,
     ...(Object.keys(spec.spec.gateway.config ?? {}).length ? { common: spec.spec.gateway.config } : {}),
-    // `auth: true` routes (the agent chat) admit callers on this machine unless
-    // mdk.yaml names another built-in verifier in gateway.config.authVerifier.
-    ...(spec.spec.gateway.config?.authVerifier === undefined ? { authVerifier: 'loopback' } : {}),
+    ...(gatewayCredential ? { gatewayCredential } : {}),
+    ...projectDht(projectDir, spec),
   });
 
   process.stderr.write(
@@ -453,6 +613,14 @@ function resolveKernelKey(projectDir: string, kernel?: KernelHandle): string | u
   );
 }
 
+/** A stack's DHT settings as a Kernel client's config (`kernelBootstrap`, `kernelDhtHost`). */
+function kernelDhtConfig(dht: StackDht): { kernelBootstrap?: string[]; kernelDhtHost?: string } {
+  return {
+    ...(dht.bootstrap ? { kernelBootstrap: dht.bootstrap } : {}),
+    ...(dht.dhtHost ? { kernelDhtHost: dht.dhtHost } : {}),
+  };
+}
+
 /** Handle returned by `runMcp`. */
 export interface McpHandle {
   stop: () => Promise<void>;
@@ -474,17 +642,6 @@ export async function runMcp(
   kernel?: KernelHandle,
   flags: { allowWrite?: boolean } = {},
 ): Promise<McpHandle> {
-  // An unset variable leaves the literal `${NAME}` as the token: /mcp would look
-  // protected while accepting a bearer anyone can read in mdk.yaml.
-  const token = spec.spec.mcp.token;
-  const unresolved = token ? unresolvedEnvRef(token) : undefined;
-  if (unresolved) {
-    throw new Error(
-      `\`spec.mcp.token\` uses \${${unresolved}}, but ${unresolved} is not set in the environment or the project .env.\n` +
-        `Set ${unresolved}, or remove \`spec.mcp.token\` to run /mcp without a bearer token.`,
-    );
-  }
-
   const mcp = mdkMcp();
 
   const root = componentDir(projectDir, 'mcp');
@@ -510,7 +667,7 @@ export async function runMcp(
   const server = await mcp.createMcpServer(
     root,
     port,
-    { ...(spec.spec.gateway.config ?? {}), kernelKey, kernelKeyPair },
+    { ...(spec.spec.gateway.config ?? {}), kernelKey, kernelKeyPair, ...kernelDhtConfig(projectDht(projectDir, spec)) },
     // `pluginDirs` (native, author-written `mcp-plugin.json` tools) is not yet
     // reachable from `mdk.yaml` — there is no `spec.mcp.plugins` list. App
     // route tools (via `apps` below) are deliberately the only
@@ -523,8 +680,9 @@ export async function runMcp(
       // Write tools are opt-in: `--allow-write` or `spec.mcp.allowWrite`.
       allowWrite: flags.allowWrite === true || spec.spec.mcp.allowWrite === true,
       ...(spec.spec.mcp.allowTools ? { allowTools: spec.spec.mcp.allowTools } : {}),
-      ...(spec.spec.mcp.token ? { token: spec.spec.mcp.token } : {}),
-      ...(spec.spec.mcp.identity ? { identity: spec.spec.mcp.identity } : {}),
+      // Every agent is checked against spec.rbac: through the in-process Kernel's
+      // own policy, or as the MCP server's service account, which reads it.
+      ...(kernel ? { kernel } : { credential: signingCredential(ensureAgentCredential(projectDir, MCP_ACCOUNT)) }),
       // The CLI owns SIGINT/SIGTERM (installShutdown) and stops via close().
       handleSignals: false,
       // Every app runtime allow-lists this key (resolveAppOptions).
@@ -706,7 +864,7 @@ export async function runWorker(
   projectDir: string,
   worker: WorkerInstance,
   kernel?: KernelHandle,
-  opts: { reservedPorts?: Iterable<number> } = {},
+  opts: { reservedPorts?: Iterable<number>; spec?: StackSpec } = {},
 ): Promise<WorkerHandle> {
   const dir = resolveWorkerContractDir(projectDir, worker.package);
 
@@ -773,24 +931,24 @@ export async function runWorker(
   // dbPath is threaded through for the sample plugin's SQLite persistence.
   const devices = seeds.map((d, i) => ({ deviceId: d.id, config: { ...deviceOpts[i], dbPath } }));
 
-  // Worker RPC is fail-closed: allow the Kernel's client key and the callers
-  // it admitted (in process), or what the Kernel and Gateway published to the
-  // trusted-keys dir (separate process), and keep following later admissions.
+  // Worker RPC is fail-closed and admits the Kernel's client key only (in
+  // process, or kernel.pub in the trusted-keys dir), so every device call goes
+  // through the Kernel's spec.rbac check and write-command log.
   const discovery = localDiscovery();
   const trustDir = trustedKeysDir(projectDir);
   let allowedKeys: Array<Buffer | string>;
   if (kernel) {
     const client = typeof kernel.getClientPublicKey === 'function' ? kernel.getClientPublicKey() : null;
     if (!client) throw new Error('Kernel has no client key (is HRPC enabled?) — cannot admit it on the worker.');
-    allowedKeys = [client, ...(kernel.listAllowedKeys?.('write') ?? [])];
+    allowedKeys = [client];
   } else {
-    const trusted = discovery.readTrustedKeys(trustDir);
-    if (!trusted.some((k) => k.name === 'kernel')) {
+    const trusted = discovery.readTrustedKeys(trustDir).filter((k) => k.name === 'kernel');
+    if (!trusted.length) {
       throw new Error(
         'Kernel is not running (no kernel key in the trusted-keys dir).\nStart it first: `mdk run kernel`.',
       );
     }
-    allowedKeys = trusted.map((k) => k.key);
+    allowedKeys = trusted.filter((k) => k.name === 'kernel').map((k) => k.key);
   }
 
   const { WorkerRuntimeV2 } = mdkWorker();
@@ -800,6 +958,7 @@ export async function runWorker(
     env: worker.env ?? {},
     storeDir: identityDir,
     allowedKeys,
+    ...projectDht(projectDir, opts.spec),
   });
   const trust = kernel ? discovery.trustKernel(runtime, kernel) : discovery.trustKeysFromDir(runtime, trustDir);
   try {
@@ -868,7 +1027,9 @@ export function resolveAppOptions(
   projectDir: string,
   app: AppInstance,
   kernel?: KernelHandle,
+  spec?: StackSpec,
 ): AppRuntimeOptions {
+  const dht = projectDht(projectDir, spec);
   return {
     name: app.name,
     appDir: resolveAppPackageDir(projectDir, app.package),
@@ -880,12 +1041,19 @@ export function resolveAppOptions(
     keyFile: appKeyFile(projectDir, app.name),
     // The Kernel is fail-closed and admits every `<name>.pub` in the trusted-keys dir.
     kernelKeyFile: join(trustedKeysDir(projectDir), `app-${app.name}.pub`),
+    credentialFile: ensureAppCredential(projectDir, app.name).file,
+    ...dht,
+    ...kernelDhtConfig(dht),
   };
 }
 
 /** Boots one app runtime in this process (`mdk run app <name>`); the Kernel must already be running. */
-export async function runApp(projectDir: string, app: AppInstance): Promise<{ stop: () => Promise<void> }> {
-  const options = resolveAppOptions(projectDir, app);
+export async function runApp(
+  projectDir: string,
+  app: AppInstance,
+  spec?: StackSpec,
+): Promise<{ stop: () => Promise<void> }> {
+  const options = resolveAppOptions(projectDir, app, undefined, spec);
   mkdirSync(options.storeDir, { recursive: true });
 
   process.stderr.write(`${theme.muted('Starting app')} ${arrow} ${theme.value(app.name)}\n`);
@@ -915,8 +1083,9 @@ export async function superviseApp(
   app: AppInstance,
   kernel?: KernelHandle,
   entry = require.resolve('@tetherto/mdk-app-runtime/bin/run-app.js'),
+  spec?: StackSpec,
 ): Promise<{ stop: () => Promise<void> }> {
-  const options = resolveAppOptions(projectDir, app, kernel);
+  const options = resolveAppOptions(projectDir, app, kernel, spec);
   mkdirSync(options.storeDir, { recursive: true });
   // Resolved now: a restart runs after the CLI has chdir'd into the Gateway's state root.
   const cwd = resolve(projectDir);

@@ -22,15 +22,21 @@ const { spawn } = require('child_process')
 const { createMdkClient } = require('@tetherto/mdk-client')
 const {
   config, loadConfig, profileRoot, makeDevicePlan, saveDevicePlan, loadDevicePlan,
-  startMocks, bootKernel, bootWorker, bootGateway, workerStoreDir, harnessClientConfig
+  startMocks, bootKernel, bootWorker, bootGateway, workerStoreDir, harnessClientConfig, gatewayTokenSource
 } = require('../lib/site')
 const { DEFAULT_WORKER_TYPE, DEFAULT_MODEL, ALERT_INDUCTION, WORKER_CONF_DEFAULTS, WORKER_LOG_CACHE_WARMUP_MS, MINER_DEVICE_TIMEOUT_MS, DEFAULT_THING_RTD_CONCURRENCY, KERNEL_DEFAULTS, GATEWAY_DEFAULTS, RUN_REPRODUCIBILITY, THRESHOLDS } = require('../lib/constants')
 const { ResourceSampler, dirSizeBytes } = require('../lib/metrics')
 const { LatencyRecorder } = require('../lib/latency')
-const { measureCycleHeadroom, runReadLoad, runActionLoad, measureDeviceBaseline, pollAlerts, pollAlertsViaGateway } = require('../lib/load')
+const { assertTelemetry, assertCommand, errorCode, mapWithConcurrency, measureCycleHeadroom, runReadLoad, runActionLoad, measureDeviceBaseline, pollAlerts, pollAlertsViaGateway } = require('../lib/load')
 const { writeReport } = require('../lib/report')
 
 const RESULTS_DIR = path.join(__dirname, '..', 'results')
+
+// Gateway app routes are RBAC-gated: every harness HTTP call carries a bearer
+// token from `gatewayAuth` (see gatewayTokenSource in lib/site.js).
+async function authHeaders (gatewayAuth) {
+  return gatewayAuth ? { authorization: `Bearer ${await gatewayAuth.getToken()}` } : {}
+}
 
 function arg (name, fallback) {
   const i = process.argv.indexOf(name)
@@ -179,14 +185,15 @@ async function stopChild (proc) {
 // renderFailureBehaviour in lib/report.js) — no drill needed for those two.
 async function runFailureDrills ({ client, devicePlan, allDeviceIds, commonArgs, procs }) {
   const rr = RUN_REPRODUCIBILITY
-  const workerRestart = await drillWorkerRestart({ client, devicePlan, commonArgs, procs, timeoutMs: rr.workerRestartTimeoutMs })
-  const kernelRestart = await drillKernelRestart({ client, commonArgs, procs, timeoutMs: rr.kernelRestartTimeoutMs })
+  const workerRestart = await drillWorkerRestart({ client, devicePlan, commonArgs, procs, timeoutMs: rr.workerRestartTimeoutMs, servingTimeoutMs: rr.restartServingTimeoutMs })
+  const kernelRestart = await drillKernelRestart({ client, commonArgs, procs, timeoutMs: rr.kernelRestartTimeoutMs, sampleDeviceId: allDeviceIds[0], servingTimeoutMs: rr.restartServingTimeoutMs })
   const unreachableDevice = await drillDeviceOutage({
     client,
     allDeviceIds,
     commonArgs,
     procs,
-    outageMs: rr.deviceOutageMs,
+    detectTimeoutMs: rr.outageDetectTimeoutMs,
+    recoveryTimeoutMs: rr.outageRecoveryTimeoutMs,
     timeoutBudgetMs: MINER_DEVICE_TIMEOUT_MS,
     concurrency: DEFAULT_THING_RTD_CONCURRENCY
   })
@@ -199,13 +206,28 @@ function replaceChild (procs, oldProc, newProc) {
   else procs.children.push(newProc)
 }
 
+// Polls `check` every recoveryPollIntervalMs until it returns true or the
+// absolute `deadline` (a Date.now() value) passes.
+async function pollUntil (check, deadline) {
+  while (Date.now() < deadline) {
+    if (await check()) return true
+    await new Promise((resolve) => setTimeout(resolve, RUN_REPRODUCIBILITY.recoveryPollIntervalMs))
+  }
+  return false
+}
+
+function readServed (client, deviceId) {
+  return client.pullTelemetry(deviceId, 'metrics').then(assertTelemetry).then(() => true).catch(() => false)
+}
+
 // Kills worker-0, respawns it against the same root/device-plan, and polls
 // until the Kernel's registry shows it READY again with its full device
-// count restored. Confirmed empirically to recover in a few seconds — a
-// Worker's identity (like the Kernel's) is derived from its own on-disk
-// store, so it persists across restarts, and the Kernel/local-discovery
-// re-registers a worker that republishes the same key.
-async function drillWorkerRestart ({ client, devicePlan, commonArgs, procs, timeoutMs }) {
+// count restored, then until one of its devices answers a real read (READY
+// is not the same as serving). A Worker's identity (like the Kernel's) is
+// derived from its own on-disk store, so it persists across restarts, and
+// the Kernel/local-discovery re-registers a worker that republishes the
+// same key. Both times and both deadlines count from the kill.
+async function drillWorkerRestart ({ client, devicePlan, commonArgs, procs, timeoutMs, servingTimeoutMs }) {
   const idx = 0
   const workerId = devicePlan.workers[idx].workerId
   const expectedDeviceCount = devicePlan.workers[idx].devices.length
@@ -217,23 +239,26 @@ async function drillWorkerRestart ({ client, devicePlan, commonArgs, procs, time
   procs.workerProcs[idx] = newProc
   replaceChild(procs, oldProc, newProc)
 
-  const deadline = Date.now() + timeoutMs
-  let recovered = false
-  while (Date.now() < deadline) {
-    recovered = await client.getStatus({ retries: 1 }).then((s) => {
-      const w = s.workers.find((w) => w.workerId === workerId)
-      return !!(w && w.state === 'READY' && (w.deviceIds || []).length === expectedDeviceCount)
-    }).catch(() => false)
-    if (recovered) break
-    await new Promise((resolve) => setTimeout(resolve, RUN_REPRODUCIBILITY.recoveryPollIntervalMs))
-  }
-  return { workerId, deviceCount: expectedDeviceCount, recovered, ms: Date.now() - t0 }
+  let sampleDeviceId = null
+  const recovered = await pollUntil(() => client.getStatus({ retries: 1 }).then((s) => {
+    const w = s.workers.find((w) => w.workerId === workerId)
+    const ok = !!(w && w.state === 'READY' && (w.deviceIds || []).length === expectedDeviceCount)
+    if (ok) sampleDeviceId = w.deviceIds[0]
+    return ok
+  }).catch(() => false), t0 + timeoutMs)
+  const ms = Date.now() - t0
+
+  const servingRestored = recovered && await pollUntil(() => readServed(client, sampleDeviceId), t0 + servingTimeoutMs)
+  return { workerId, deviceCount: expectedDeviceCount, recovered, ms, servingRestored, servingMs: servingRestored ? Date.now() - t0 : null }
 }
 
 // Kills the Kernel, respawns it against the same root (same on-disk
 // identity, confirmed empirically), and polls the already-connected client
-// until it answers again.
-async function drillKernelRestart ({ client, commonArgs, procs, timeoutMs }) {
+// until it answers again. Then keeps polling a real device read: a Kernel
+// that answers getStatus has not necessarily rediscovered its Workers yet,
+// so "READY" and "serving device reads again" are reported separately. Both
+// times and both deadlines count from the kill.
+async function drillKernelRestart ({ client, commonArgs, procs, timeoutMs, sampleDeviceId, servingTimeoutMs }) {
   const oldProc = procs.kernelProc
   const t0 = Date.now()
   await stopChild(oldProc)
@@ -241,54 +266,73 @@ async function drillKernelRestart ({ client, commonArgs, procs, timeoutMs }) {
   procs.kernelProc = newProc
   replaceChild(procs, oldProc, newProc)
 
-  const deadline = Date.now() + timeoutMs
-  let recovered = false
-  while (Date.now() < deadline) {
-    recovered = await client.getStatus({ retries: 1 }).then(() => true).catch(() => false)
-    if (recovered) break
-    await new Promise((resolve) => setTimeout(resolve, RUN_REPRODUCIBILITY.recoveryPollIntervalMs))
-  }
-  return { recovered, ms: Date.now() - t0 }
+  const recovered = await pollUntil(() => client.getStatus({ retries: 1 }).then(() => true).catch(() => false), t0 + timeoutMs)
+  const ms = Date.now() - t0
+
+  const servingRestored = recovered && await pollUntil(() => readServed(client, sampleDeviceId), t0 + servingTimeoutMs)
+  return { recovered, ms, servingRestored, servingMs: servingRestored ? Date.now() - t0 : null }
 }
 
 // mocks runs every device behind one shared process (one server per
 // worker — see startMocks in lib/site.js), so this can only make the whole
 // fleet unreachable at once, never a single device in isolation — scoped
 // and labeled that way rather than mislabeled "one device". A killed mocks
-// process refuses the connection immediately (ECONNREFUSED, confirmed
-// empirically to fail in well under the configured timeout), so the
-// measured effect here is fast, not timeout-bound. analyticalEffectMs is
-// the complementary worst-case number for a genuinely hung (not refused)
-// device, computed from the Worker's own configured timeout/concurrency —
+// process refuses the connection immediately (ECONNREFUSED), so a failed
+// read is fast, not timeout-bound. analyticalEffectMs is the complementary
+// worst-case number for a genuinely hung (not refused) device, computed
+// from the Worker's own configured timeout/concurrency —
 // timeout × ceil(unreachableCount / concurrency).
-async function drillDeviceOutage ({ client, allDeviceIds, commonArgs, procs, outageMs, timeoutBudgetMs, concurrency }) {
+//
+// After the kill it reads one device repeatedly and records two times from
+// the kill: until a read first fails (assertTelemetry, so a failed live
+// `snap` counts) and until every channel fails (the cached channels keep
+// returning the last values until the miner's fetchDeviceData cache
+// expires). Then it restarts the mocks and records how long reads take to
+// succeed again.
+async function drillDeviceOutage ({ client, allDeviceIds, commonArgs, procs, detectTimeoutMs, recoveryTimeoutMs, timeoutBudgetMs, concurrency }) {
   const sampleDeviceId = allDeviceIds[0]
-  const isErrorMetrics = (res) => {
-    const m = res && res.metrics
-    return !m || Object.values(m).some((v) => v && v.error)
-  }
-  const timeCall = async () => {
+  const timedRead = async () => {
     const t0 = process.hrtime.bigint()
+    let res = null
+    let error = null
     try {
-      const res = await client.pullTelemetry(sampleDeviceId, 'metrics')
-      return { ms: Number(process.hrtime.bigint() - t0) / 1e6, failed: isErrorMetrics(res) }
-    } catch {
-      return { ms: Number(process.hrtime.bigint() - t0) / 1e6, failed: true }
+      res = await client.pullTelemetry(sampleDeviceId, 'metrics')
+      assertTelemetry(res)
+    } catch (err) {
+      error = err
     }
+    return { ms: Number(process.hrtime.bigint() - t0) / 1e6, res, error }
   }
+  const everyChannelFailed = (res) => !res || !!res.error ||
+    (!!res.metrics && Object.values(res.metrics).every((v) => v && (v.error || v.success === false)))
 
-  const baseline = await timeCall()
+  const baseline = await timedRead()
 
   const oldProc = procs.mocksProc
+  const tKill = Date.now()
   await stopChild(oldProc)
-  const during = await timeCall()
-  await new Promise((resolve) => setTimeout(resolve, outageMs))
+
+  let firstFailure = null
+  let detectedMs = null
+  let allChannelsFailedMs = null
+  await pollUntil(async () => {
+    const read = await timedRead()
+    if (read.error && !firstFailure) {
+      firstFailure = read
+      detectedMs = Date.now() - tKill
+    }
+    if (read.error && everyChannelFailed(read.res)) {
+      allChannelsFailedMs = Date.now() - tKill
+      return true
+    }
+    return false
+  }, tKill + detectTimeoutMs)
 
   const newProc = await spawnRole('mocks', commonArgs)
   procs.mocksProc = newProc
   replaceChild(procs, oldProc, newProc)
-
-  const recovery = await timeCall()
+  const tBack = Date.now()
+  const recovered = await pollUntil(async () => !(await timedRead()).error, tBack + recoveryTimeoutMs)
 
   const unreachableCount = allDeviceIds.length
   const analyticalEffectMs = Math.ceil(unreachableCount / concurrency) * timeoutBudgetMs
@@ -301,12 +345,39 @@ async function drillDeviceOutage ({ client, allDeviceIds, commonArgs, procs, out
     analyticalEffectMs,
     measured: {
       baselineMs: baseline.ms,
-      baselineFailed: baseline.failed,
-      duringMs: during.ms,
-      duringFailed: during.failed,
-      recoveredMs: recovery.ms,
-      recovered: !recovery.failed
+      baselineFailed: !!baseline.error,
+      detectedMs,
+      failedReadMs: firstFailure ? firstFailure.ms : null,
+      firstFailureCode: firstFailure ? errorCode(firstFailure.error) : null,
+      allChannelsFailedMs,
+      recovered,
+      recoveredMs: recovered ? Date.now() - tBack : null
     }
+  }
+}
+
+// Up to `n` ids spread evenly across `ids` (every Worker's devices, not just
+// the first Worker's), in their original order.
+function sampleEvenly (ids, n) {
+  if (ids.length <= n) return ids
+  return Array.from({ length: n }, (_, i) => ids[Math.floor(i * ids.length / n)])
+}
+
+// Every device must answer a real metrics pull before anything is measured.
+// A device whose connect() failed at Worker boot is held offline and answers
+// every request with a fast ERR_DEVICE_UNAVAILABLE payload, so without this a
+// misconfigured fleet would benchmark that error path and still report green.
+async function assertDevicesReachable ({ client, allDeviceIds }) {
+  const failures = []
+  await mapWithConcurrency(allDeviceIds, DEFAULT_THING_RTD_CONCURRENCY, async (id) => {
+    try {
+      assertTelemetry(await client.pullTelemetry(id, 'metrics'))
+    } catch (err) {
+      failures.push(`${id}: ${err.message}`)
+    }
+  })
+  if (failures.length) {
+    throw new Error(`ERR_BENCH_DEVICES_UNREACHABLE: ${failures.length}/${allDeviceIds.length} devices failed a metrics pull before measurement (first: ${failures[0]})`)
   }
 }
 
@@ -320,7 +391,7 @@ async function drillDeviceOutage ({ client, allDeviceIds, commonArgs, procs, out
 // shipped workers whitelist writes at a single required vote, so submit and
 // execute collapse into one step — see README), alert generation latency
 // in isolation, Gateway/fan-out/history alert delivery.
-async function runChecklist ({ client, devicePlan, workerDeviceMap, allDeviceIds, alertPoll, alertGatewayPoll, resourceSamplers, gatewayPort, root, profileId, sweep, deviceCount, workerCount, mode, startedUtc, storeSizesAtStartBytes }) {
+async function runChecklist ({ client, devicePlan, workerDeviceMap, allDeviceIds, alertPoll, alertGatewayPoll, resourceSamplers, gatewayPort, gatewayAuth, root, profileId, sweep, deviceCount, workerCount, mode, startedUtc, storeSizesAtStartBytes }) {
   const rr = RUN_REPRODUCIBILITY
 
   const deviceBaselineRecorder = new LatencyRecorder('deviceBaseline')
@@ -347,14 +418,14 @@ async function runChecklist ({ client, devicePlan, workerDeviceMap, allDeviceIds
   // minutes without adding proportionally useful percentile resolution).
   for (let i = 0; i < Math.min(rr.n, 50); i++) {
     const id = allDeviceIds[i % allDeviceIds.length]
-    await telemetrySingleRecorder.time(() => client.pullTelemetry(id, 'metrics'))
+    await telemetrySingleRecorder.time(async () => assertTelemetry(await client.pullTelemetry(id, 'metrics')))
   }
   for (let i = 0; i < Math.min(rr.n, 50); i++) {
     await statusRecorder.time(() => client.getStatus())
   }
   for (let i = 0; i < Math.min(rr.n, 50); i++) {
     await gatewayRequestRecorder.time(async () => {
-      const res = await fetch(`http://127.0.0.1:${gatewayPort}${GATEWAY_DEFAULTS.requestPath}`)
+      const res = await fetch(`http://127.0.0.1:${gatewayPort}${GATEWAY_DEFAULTS.requestPath}`, { headers: await authHeaders(gatewayAuth) })
       if (!res.ok) throw new Error(`ERR_GATEWAY_REQUEST_FAILED: status ${res.status}`)
       return res.json()
     })
@@ -366,9 +437,9 @@ async function runChecklist ({ client, devicePlan, workerDeviceMap, allDeviceIds
   for (let i = 0; i < Math.min(rr.n, 50); i++) {
     const id = allDeviceIds[i % allDeviceIds.length]
     await gatewayTelemetrySingleRecorder.time(async () => {
-      const res = await fetch(`http://127.0.0.1:${gatewayPort}${GATEWAY_DEFAULTS.deviceTelemetryPath(id)}`)
+      const res = await fetch(`http://127.0.0.1:${gatewayPort}${GATEWAY_DEFAULTS.deviceTelemetryPath(id)}`, { headers: await authHeaders(gatewayAuth) })
       if (!res.ok) throw new Error(`ERR_GATEWAY_DEVICE_TELEMETRY_FAILED: status ${res.status}`)
-      return res.json()
+      return assertTelemetry(await res.json())
     })
   }
   // Same operation as actionSubmitRecorder below (client.sendCommand), but
@@ -381,11 +452,11 @@ async function runChecklist ({ client, devicePlan, workerDeviceMap, allDeviceIds
     await gatewayActionSubmitRecorder.time(async () => {
       const res = await fetch(`http://127.0.0.1:${gatewayPort}${GATEWAY_DEFAULTS.deviceActionPath(id)}`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...(await authHeaders(gatewayAuth)) },
         body: JSON.stringify({ action: rr.actionType, params: rr.actionParams })
       })
       if (!res.ok) throw new Error(`ERR_GATEWAY_DEVICE_ACTION_FAILED: status ${res.status}`)
-      return res.json()
+      return assertCommand(await res.json())
     })
   }
 
@@ -473,7 +544,10 @@ async function runChecklist ({ client, devicePlan, workerDeviceMap, allDeviceIds
       workerCollectSnapsItvMs: WORKER_CONF_DEFAULTS.collectSnapsItvMs,
       workerStoreSnapItvMs: WORKER_CONF_DEFAULTS.storeSnapItvMs,
       workerConcurrency: DEFAULT_THING_RTD_CONCURRENCY,
-      deviceRequestTimeoutMs: WORKER_CONF_DEFAULTS.collectSnapTimeoutMs,
+      // thing.miner.timeout, the per-device RPC timeout; collectSnapTimeoutMs
+      // only bounds the Worker's periodic snap collection.
+      deviceRequestTimeoutMs: MINER_DEVICE_TIMEOUT_MS,
+      collectSnapTimeoutMs: WORKER_CONF_DEFAULTS.collectSnapTimeoutMs,
       alertRulesCount: alerts.rulesCount
     },
     runReproducibility: rr,
@@ -545,11 +619,14 @@ async function runMainProfile ({ profileId, sweep, workers, root, usedPorts }) {
     await client.connect({ warmup: true, warmupRetries: 10 })
     await client.waitForWorkers({ count: workerCount, timeoutMs: 30000 })
 
+    const gatewayAuth = gatewayTokenSource(root, `http://127.0.0.1:${devicePlan.gatewayPort}`)
+
     const status = await client.getStatus()
     const workerDeviceMap = {}
     for (const w of status.workers) workerDeviceMap[w.workerId] = w.deviceIds
     const allDeviceIds = status.workers.flatMap((w) => w.deviceIds)
     if (!allDeviceIds.length) throw new Error('ERR_NO_DEVICES_REGISTERED')
+    await assertDevicesReachable({ client, allDeviceIds })
 
     resourceSamplers = {
       mocks: new ResourceSampler({ pid: mocksProc.pid, intervalMs: RUN_REPRODUCIBILITY.resourceSampleIntervalMs, label: 'mocks' }).start(),
@@ -566,9 +643,9 @@ async function runMainProfile ({ profileId, sweep, workers, root, usedPorts }) {
     // touching the Worker's own (never-overridden) snap cadence.
     alertPoll = pollAlerts({ client, workerDeviceMap })
     alertGatewayPoll = pollAlertsViaGateway({
-      allDeviceIds,
+      allDeviceIds: sampleEvenly(allDeviceIds, GATEWAY_DEFAULTS.alertSampleSize),
       fetchDeviceAlerts: async (deviceId) => {
-        const res = await fetch(`http://127.0.0.1:${devicePlan.gatewayPort}${GATEWAY_DEFAULTS.deviceAlertsPath(deviceId)}`)
+        const res = await fetch(`http://127.0.0.1:${devicePlan.gatewayPort}${GATEWAY_DEFAULTS.deviceAlertsPath(deviceId)}`, { headers: await authHeaders(gatewayAuth) })
         if (!res.ok) throw new Error(`ERR_GATEWAY_DEVICE_ALERTS_FAILED: status ${res.status}`)
         const body = await res.json()
         return body.alerts
@@ -596,6 +673,7 @@ async function runMainProfile ({ profileId, sweep, workers, root, usedPorts }) {
       alertGatewayPoll,
       resourceSamplers,
       gatewayPort: devicePlan.gatewayPort,
+      gatewayAuth,
       root,
       profileId,
       sweep,

@@ -5,35 +5,25 @@ docs@tether_slug: guides/security
 ---
 
 > [!WARNING]
-> Backend keys identify processes, not the people using them. Supply a Gateway `authVerifier` backed by your identity system for
-> `"auth": true` routes; other routes do not require it. Kernel checks caller keys and roles. Workers check caller keys without roles,
-> and a Kernel role does not follow a key onto a direct Worker connection. Automatic startup can grant access to both. Review those permissions as well as user authentication, TLS, and network policy.
-> Treat [`mvp-site`](../../../examples/mvp-site/README.md) and per-family snippets as boot demos, not a production template.
-
-## TL;DR
-
-| Decision         | Suggested production choice    | Demo-only choice                              |
-| ---------------- | ------------------------------ | --------------------------------------------- |
-| Topology         | Microservices over DHT, three networks (operator / backend / devices) | Single process on loopback |
-| Kernel admission | `auth.whitelist` with persistent Gateway and MCP keys, narrowed by role | `allowAll: true` |
-| Worker access    | Explicit `allowedKeys`; Kernel client key only if all requests must pass through Kernel; review automatic additions | Same host does not replace the allowlist |
-| User identity    | Your SSO or JWTs, checked in the Gateway `authVerifier` | No verifier, `noAuth()` |
-| Writes           | Approval-gated for fleet changes; Gateway sets `authPerms` | Direct `sendCommand` with no token |
-| UI               | HTTPS, `bearerTokenAuth` or working `gatewayRedirectAuth`, route guards | Vite proxy, `noAuth()`, HashRouter |
-| MCP / agent      | Loopback, human approval, real `userId` | Disabled, or loopback with `local` operator |
-| Secrets          | Secret manager | Example `admin` passwords                    |
+> MDK enforces user identity and an access policy at every entry point, and it fails closed: a stack whose `spec.rbac` binds nobody
+> refuses every call. That policy, TLS, network isolation and secrets are still part of the site you build. Treat
+> [`mvp-site`](../../../examples/mvp-site/README.md) and per-family snippets as boot demos, not a production template.
 
 ## Overview
 
 Walk the steps to understand how to secure an enterprise site you assemble from MDK: UI, Gateway, Kernel, and Workers on separate hosts or
 containers. MDK leaves these controls to you on purpose. The SDK coordinates devices; your site owns who may talk to it.
 
-This page presents what to do, the options MDK gives you, and a suggested default, you will learn about:
+Every caller signs in to the Kernel's [token issuer][identity] and gets a short-lived access token. One policy, `spec.rbac` in
+`mdk.yaml`, decides what that identity may do, and the Gateway (users), the MCP server (AI agents) and the Kernel (apps and every
+other caller) evaluate it with the same [RBAC library][rbac]. Your site owns the policy's content and the network it runs on.
+
+This page presents what to do, the options MDK gives you, and a suggested default. It covers:
 
 - [Network layout](#step-1-choose-a-network-layout)
 - [Kernel admission](#step-2-admit-the-gateway-to-kernel)
 - [Worker access](#step-3-isolate-workers-and-devices)
-- [Gateway identity](#step-4-put-identity-in-the-gateway)
+- [Policy and Gateway identity](#step-4-write-the-policy-and-put-identity-in-the-gateway)
 - [Write authorization](#step-5-authorize-writes)
 - [UI sessions](#step-6-wire-the-ui-session)
 - [MCP and agents](#step-7-optional-mcp-and-the-operator-agent)
@@ -43,23 +33,23 @@ This page presents what to do, the options MDK gives you, and a suggested defaul
 > The companion pages, [security boundaries][security-boundaries] (what each layer trusts) and the [control plane][control-plane]
 > (how a request travels) cover related concepts.
 
-## Constraints the SDK does not lift
+## What MDK enforces and what you own
 
-Build around these. They are inherent to MDK, not optional extras.
+Build around these. They are current `0.y.z` behavior.
 
 | Layer   | What MDK does                                                                          | What you own       |
 | ------- | -------------------------------------------------------------------------------------- | ------------------ |
-| UI      | Token attachment if you pass an `AuthProvider`; no route guard is applied for you (`RequireAuth` in the devkit is opt-in) | Session, HTTPS, `apiBaseUrl`, hiding write controls |
-| Gateway | HTTP router for apps; runs no app code. `"auth": true` routes answer `401` without an `authVerifier`; Host allowlist (loopback), rate limit, Helmet headers, body limit on by default. | `authVerifier` backed by your identity layer, `allowedHosts` |
-| App runtime | Runs one app's controllers in its own process. Accepts HRPC callers in `allowedKeys` / `allowedKeyFiles`; no admitted keys means no access. Uses a separate Kernel caller key, granted full access by automatic directory admission. Manifest `permissions` are not enforced. | Explicit incoming callers, Kernel roles for the app's own key, and reviewing the app before installing it |
-| Kernel  | Encrypted HRPC. Fail-closed caller allowlist (`auth.whitelist`; empty admits nobody) with `read` / `write` / `admin` roles. Requester and non-admin voter are the transport key. `authPerms` only on approval-gated writes, taken from the caller. | Allowlist entries and roles, mapping verified users to `authPerms` / `voter` on the Gateway |
-| Workers | Noise transport and key-addressed HRPC. Fail-closed `allowedKeys`; every admitted key can send supported requests, including commands. No caller roles or human actor in handler context. | Choose direct callers explicitly, review automatic admission, isolate devices, validate payloads, and audit upstream |
-| MCP / agent | `POST /mcp` on `127.0.0.1`, no user auth by default (optional bearer `token`). Agent app binds to `local` without an identity layer. | Bind policy, human approval for writes, real `userId` |
+| Policy  | `spec.rbac` in `mdk.yaml` is the only place policy is written. Default deny, no superadmin (`admin` is an ordinary role holding wildcards), an invalid policy refused at load | The roles and bindings, reviewed like code |
+| UI      | `passwordAuth()` signs in through the Gateway, keeps the access token in memory and the refresh token in an httpOnly cookie | HTTPS, a real `apiBaseUrl`, hiding write controls the user cannot use |
+| Gateway | Serves `/auth/*` from the Kernel's token issuer. Checks a bearer token and a `spec.rbac` rule on every app route; no route is open. Host allowlist (loopback), rate limit, Helmet headers, body limit on by default | TLS in front, `allowedHosts`, `trustProxy` behind a proxy you control |
+| App runtime | Runs one app's controllers in its own process and admits only the Gateway's and MCP server's keys. Calls Kernel as service account `app:<name>`, holding only the grant its `mdk-app.yaml` `permissions` requested, and acting for the signed-in user through `req.mdk` so Kernel checks the user too | Reviewing an app's code and requested grant before installing it, narrowing the grant |
+| Kernel  | Admits a key to connect (allowlist or trusted-keys dir), which grants nothing. Checks the access token on every request but sign-in against `spec.rbac`, per action and per device. Records every `command.request` attempt | Admitting the right keys, the policy, guarding the Kernel store |
+| Workers | Noise transport and key-addressed HRPC. Admit only the Kernel's client key, so every device call passes the Kernel's checks and write-command log | Network isolation, device secrets, payload checks |
+| MCP / agent | `POST /mcp` on `127.0.0.1`. Each agent signs in as its own service account and lists only the tools its rules allow | Agent accounts and their bindings, human approval for writes |
 | Devices / pools | Vendor protocol APIs and authentication | Device-network isolation |
 
-For operator-facing access, use the Gateway or the standalone MCP server. Keep backend private keys and the Node.js client SDK out of
-the browser. Backend scripts can call Kernel or a Worker directly through the [client API][direct-worker-client]; the callee's allowlist
-determines whether the call is admitted.
+Consumers enter through the Gateway; AI agents enter through the standalone MCP server. The browser never holds a Kernel key. Direct Kernel or Worker
+reachability is a backend-network concern, not a product feature.
 
 ## Blueprint
 
@@ -69,29 +59,29 @@ determines whether the call is admitted.
 
 ### Step 1: Choose a network layout
 
-Pick a [deployment topology][deployment-topologies] before you write auth code. Isolation is the first control; identity sits on top of it.
+Pick a [deployment topology][deployment-topologies] before you write policy. Isolation is the first control; identity and policy sit on top of it.
 
 #### Options
 
 | Option                 | When to pick it                        | Trade-off                                                |
 | ---------------------- | -------------------------------------- | -------------------------------------------------------- |
 | Single process         | Local demos, tests, smallest footprint | One heap. A compromise of the process is the whole site. |
-| Local (one OS process per service, shared directory) | One machine, production-like restarts, or a step toward microservices | Stronger isolation than a single heap. Kernel and Workers still share the host. No discovery topic; HRPC still runs over HyperDHT. Shared directories participate in admission. |
+| Local (one OS process per service, shared directory) | One machine, production-like restarts, or a step toward microservices | Stronger isolation than a single heap. Kernel and Workers still share the host, and the trusted-keys dir is the admission boundary. No DHT. |
 | Microservices over DHT | Enterprise sites: separate hosts or containers, resource limits per service, Workers away from Kernel | Peers that know the discovery topic can find Kernel and Workers. Key distribution and a Kernel allowlist are mandatory. |
 
 Suggested default: [microservices][deployment-topologies] (one process or container per service, discovery over DHT), with three
 networks you define:
 
 - Operator: UI origin and Gateway HTTP, behind TLS and a reverse proxy you control
-- Backend: Kernel and Workers on separate hosts, no inbound path from browsers or agents
+- Backend: Kernel, app runtimes, MCP server and Workers, no inbound path from browsers or agents
 - Devices: miner, container, meter, and pool APIs, reachable only from the Workers that own them
 
 Pass the Kernel public key to a remote Gateway as `kernelKey`. Treat the DHT discovery topic as deployment configuration, not a
 credential: generate a site-specific topic, distribute it out of band, and do not reuse example or well-known values. Pair this
-shape with explicit [Kernel caller admission](#step-2-admit-the-gateway-to-kernel) and pinned Worker keys for topic discovery.
-Knowing a topic or a listener key does not grant access: unlisted callers are rejected unless `allowAll` is enabled.
+shape with a [Kernel allowlist](#step-2-admit-the-gateway-to-kernel) that names every caller key.
 
-Do not pass [`@tetherto/mdk-client`](../../../backend/core/client/README.md) or Kernel keys into the browser. HTTP to the Gateway is the only operator path.
+Do not pass [`@tetherto/mdk-client`](../../../backend/core/client/README.md) or Kernel keys into the browser. HTTP to the
+Gateway is the only operator path.
 
 </Step>
 
@@ -99,76 +89,45 @@ Do not pass [`@tetherto/mdk-client`](../../../backend/core/client/README.md) or 
 
 ### Step 2: Admit the Gateway to Kernel
 
-[`auth.whitelist`][kernel-auth-api] defaults to `[]`, which admits **nobody** before startup helpers add keys.
-Kernel then checks each admitted caller's role on every request; the [Kernel role reference][kernel-roles] lists the actions each of
-`read`, `write` and `admin` permits. A plain key or `kernel.allowKey(key)` without roles grants `admin`.
+[Admission][kernel-admission] decides which keys may connect to Kernel. It is fail-closed (an empty allowlist admits nobody) and it
+grants nothing: what an admitted caller may do comes from its access token and `spec.rbac`. There are no allowlist roles. An entry
+written as `{ key, roles }` is refused at start with `ERR_KERNEL_CALLER_ROLES_UNSUPPORTED`, and `allowAll` on the Kernel with
+`ERR_KERNEL_ALLOW_ALL_REMOVED`.
 
 #### Options
 
 | Option          | When to pick it        | Trade-off                                                                                        |
 | --------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
-| `allowAll: true` | Throwaway local experiments only | Anyone with the Kernel public key can read telemetry and dispatch commands, skipping the Gateway. Logs a warning. |
-| Allowlist the Gateway DHT public key | Every real site | The Gateway store holds that key's seed: guard it like a credential |
-| Allowlist Gateway plus extra backend clients | A second `mdk-client` service you trust (batch jobs, a second Gateway, the standalone MCP server) | A plain key is a full (`admin`) Kernel principal; use `{ key, roles: ['read'] }` or `['write']` to narrow it. Review it like a production credential. |
+| In process (`startGateway({ kernel })`) | Single process, or `mdk run` | The Gateway key is admitted for you. Nothing to distribute |
+| [Trusted-keys dir][trust-and-admission] | Separate processes on one machine | The Kernel admits every `<name>.pub` in the dir. Anyone who can write the dir is admitted, so keep it `0700` and owned by the service user |
+| Allowlist each key (`hrpc.whitelist`, `kernel.allowKey()`) | Every multi-host site | You distribute the Gateway, MCP server and app runtime keys yourself, and update the list when a key rotates |
 
-Suggested default: admit only the persistent backend caller keys the site needs, with explicit roles. Disable automatic directory
-admission when enforcing that list. Gateway clients, app runtimes, and MCP clients may each use separate keys.
-
-Start a programmatic host with explicit admission and directory-based admission disabled:
+Suggested default across hosts: one persistent key per caller, each hex public key on the Kernel's allowlist:
 
 ```js
 const kernel = await getKernel({
-  trustedKeysDir: false,
-  hrpc: {
-    whitelist: [{ key: '<caller-public-key-hex>', roles: ['read'] }]
-  }
+  hrpc: { whitelist: ['<gateway-key-hex>', '<mcp-key-hex>', '<app-runtime-key-hex>'] }
 })
 ```
 
-Choose roles per backend caller, widen a caller to `write` only when it needs to change devices. Gateway clients use the persistent
-`status.rpcClientKey` from the Gateway handle or status file. An app runtime uses its own Kernel caller key, so admitting a Gateway key
-does not grant an app runtime access. Treat each store containing identity seeds as a private key: copying it can allow impersonation.
+The Gateway derives its caller key from a seed persisted in its store, so the key survives restarts: read it from
+`status.rpcClientKey` in the Gateway status file. The standalone MCP server (`mdk run mcp`) and each app runtime have their own
+persistent keys too; `mdk run` publishes them to the trusted-keys dir (`mcp.pub`, `app-<name>.pub`). Treat each of those stores with
+the same care as a TLS key, since a copy of it presents that caller's transport identity.
 
-#### Automatic admission during startup
+Admission alone gets a caller nowhere. A Gateway or MCP server in its own process also signs in as its service account
+(`mdk-gateway`, `mdk-mcp`) to read the policy it enforces, which needs `policy: read`; `mdk rbac init` binds both to a `gateway`
+role holding exactly that. Each app runtime signs in as `app:<name>`. A service account's token is bound to the transport key that
+signed in, so a copied token is refused from any other key.
 
-Inspect the [startup admission helpers][trust-and-admission] before relying on a restricted allowlist. The trusted-keys directory stores
-public keys, but publishing a key there is an authorization action for the processes watching it.
+Kernel admits Workers from the DHT topic the same way: only RPC keys on `discovery.workerKeys` (or added with
+`kernel.allowWorkerKey()`) register, and an empty list admits nobody. `discovery.allowAnyWorker: true` admits every peer that knows
+the topic; it is for throwaway local experiments only and logs a warning. Without it, a peer with the topic could register as a
+Worker and receive the commands, including credentials, for its device family.
 
-| Startup path | Kernel caller grants | Worker caller grants |
-| ------------ | -------------------- | -------------------- |
-| `getKernel()` with directory admission enabled | Admits every valid published caller key except its own client key with `admin`; this can replace an explicit narrower role | This function does not configure Worker allowlists |
-| `startGateway({ kernel })` | Calls `kernel.allowKey(gatewayKey)` with full access, even if directory publishing is disabled | An attached `trustKernel()` helper mirrors write-capable grants |
-| CLI Worker with a live Kernel, or a host using `trustKernel(runtime, kernel)` | Worker trust does not alter Kernel roles | Admits Kernel's client key and Kernel callers holding `write` or `admin`, now and on later grants |
-| CLI Worker in a separate process using `trustKeysFromDir()` | CLI Kernel startup uses the directory admission described here | Admits every valid published key without roles, including a key restricted to `read` on Kernel |
-| Supervised Worker through `worker.js` | Does not start Kernel | Combines `MDK_WORKER_ALLOWED_KEYS` with default trusted-directory keys and follows later directory additions |
-
-`getKernel()` uses `<root>/.trusted-keys` by default. The CLI supplies its project-local directory; supervised Workers use
-`DEFAULT_TRUSTED_KEYS_DIR` (`~/.mdk/.trusted-keys`). Grant directory write access only to processes you trust to grant backend access.
-Filesystem protections restrict who can publish a key; they do not assign that key a narrower role.
-
-For explicit Kernel roles, use `trustedKeysDir: false` on `getKernel()`. To avoid the additional in-process grant, start the Gateway
-with `kernelKey` rather than the live `kernel` handle, disable its directory publishing with `trustedKeysDir: false`, and admit its
-caller key explicitly. Passing `trustedKeysDir: false` only to `startGateway({ kernel })` does not prevent its full-access grant.
-Manage MCP and app runtime keys explicitly as well.
-
-The standalone MCP server (`mdk run mcp`) is a separate Kernel caller with its own persistent key. `mdk run` publishes it to
-the trusted-keys dir; on a multi-host site add it to `auth.whitelist` alongside the Gateway, or its tools can't reach Kernel.
-
-Each app runtime is a Kernel caller too, with its own persistent key: `mdk run` publishes it as `app-<name>.pub` in the
-trusted-keys dir, next to `kernel.pub`, `gateway.pub`, `mcp.pub` and `cli.pub`. The directory watcher admits valid caller keys with
-full access, excluding Kernel's own client key. An app's `permissions` in `mdk-app.yaml` are not enforced by Kernel yet, so review an app
-before you add it to a stack.
-
-#### Worker discovery admission
-
-The list of Workers a Kernel may discover is separate from the list of clients allowed to call Kernel.
-For DHT-topic discovery, only Worker RPC keys on `discovery.workerKeys` (or added with
-`kernel.allowWorkerKey()`) register, and an empty list admits nobody. `discovery.allowAnyWorker: true` admits every
-peer that knows the topic; like `allowAll`, it is for throwaway local experiments only and logs a warning. With it, a
-peer with the topic could register as a Worker and receive the commands, including credentials, for its device family.
-
-Local shared-directory discovery and explicit `kernel.registerWorker()` skip that topic allowlist. Control who can publish Worker
-keys or call registration; adding `discovery.workerKeys` **does not** restrict those paths.
+Workers are fail-closed too. Give each Worker the Kernel's client key (`kernel.getClientPublicKey()`, not the listener key) as its
+only `allowedKeys` entry, so every command goes through Kernel's checks and [write-command log][write-command-log]. Do not add the
+Gateway's key: an app reaches devices through Kernel, never by dialing a Worker.
 
 On separate hosts, pass Kernel's public key to the Gateway as `kernelKey`. Do not rely on the well-known key file
 (`~/.mdk/.kernel-key`) across machines. Where that file still exists on the Kernel host, it holds the public key, written
@@ -180,104 +139,106 @@ world-readable (`0644`) inside a directory you own; it is not deleted on shutdow
 
 ### Step 3: Isolate Workers and devices
 
-[`WorkerRuntime`][worker-runtime] rejects unlisted caller keys at connection time and checks the key again on every request.
-With `allowAll` disabled, it refuses to start with an empty `allowedKeys` list. This is a key-based firewall, not a list of allowed
-server addresses. An admitted key can send any request the Worker supports, including `command.request`; the list has no read-only role.
-
-Choose which request paths the site allows:
-
-| Path | Checks that apply | Consequence |
-| ---- | ----------------- | ----------- |
-| Client to Kernel to Worker | Kernel caller key and action role, [Kernel command handling][kernel-command-dispatcher], then the Worker's allowlist for Kernel's client key | Kernel mediates the request; approval runs only for the approval-gated action path |
-| Client directly to Worker | Worker's caller allowlist, request validation, and Worker handlers | Kernel roles, command lifecycle records, and its approval flow do not run |
-
-The [direct Worker client][direct-worker-client], `sendWorkerCommand()` and `pullWorkerTelemetry()` use the second path. Resolving a
-Worker's public key through Kernel does not make the following Worker call Kernel-mediated. The caller still needs a key admitted by
-that Worker. This is separately granted access, not a way around the Worker's firewall.
-
-For example, a monitoring script admitted to Kernel as `read` cannot send a command through Kernel. If its key is also on a Worker's
-allowlist, the same script can send supported commands directly to that Worker. To keep it read-only, restrict both paths.
-
-For a site that requires all device requests to pass through Kernel, set each Worker's `allowedKeys` to only
-`kernel.getClientPublicKey()`, not Kernel's listener key from `getPublicKey()`. Do not add the Gateway, MCP, app runtime, or script key
-to that list. If the site deliberately needs direct provisioning or Worker queries, admit the required caller explicitly and treat it
-as able to issue supported commands too.
-
-> [!IMPORTANT]
-> An initial `allowedKeys` list is not an exclusive policy when a trust helper adds more keys afterward. The CLI installs
-> `trustKernel()` / `trustKeysFromDir()` automatically, and `worker.js` adds trusted-directory keys even when
-> `MDK_WORKER_ALLOWED_KEYS` is set (additive, not an override). Kernel-only access needs a programmatic host with explicit
-> Worker boot options and neither helper.
-
-Keep the Worker firewall enabled and isolate the network as an additional control. [Security boundaries][security-boundaries] explain
-the distinction between endpoint identity, key admission, and user authentication.
+[`WorkerRuntime`][worker-runtime] answers only the keys in its `allowedKeys`, and `mdk run` and the `@tetherto/mdk-core` helpers
+admit the Kernel's client key and no other. A Worker therefore takes device calls only through Kernel, where `spec.rbac` and the
+write-command log apply. The device network is still yours to isolate: a Worker's key protects the Worker, not the miner behind it.
+[Security boundaries][security-boundaries] give the trust-boundary rationale behind the controls below.
 
 #### Options
 
 | Option                                               | When to pick it | Trade-off                                                                   |
 | ---------------------------------------------------- | --------------- | --------------------------------------------------------------------------- |
-| Workers only on the Kernel network, keys unpublished | Every site      | Operational discipline: no Worker port or DHT topic on the operator network |
+| Workers only on the backend network, `allowedKeys` holding the Kernel client key | Every site | Operational discipline: no Worker port or DHT topic on the operator network |
 | One Worker process per trust zone | Different device families or vendors must not share credentials | More processes to supervise                    |
 | Device APIs on a third network (CGMiner `4028`, miner HTTP, container APIs) | Real hardware | Required when the vendor protocol has weak or no auth ([Avalon][run-avalon] / CGMiner have none; [Antminer][run-antminer] uses digest auth; [Whatsminer][run-whatsminer] uses a device password) |
+| `allowAll` on `WorkerRuntime` (`MDK_WORKER_ALLOW_ALL=1`) | Throwaway local experiments only | Any peer that learns the Worker key reaches devices with no policy check and no log entry. `mdk run` never sets it |
 
 Suggested default: persist each Worker's `storeDir` so its key is stable, treat that key as a machine identity, and register the Worker
 with Kernel only after the device network is isolated. On DHT, keep Worker public keys and the discovery topic off the operator network
 and out of git. Inject device passwords and pool API keys from a secret manager or protected environment. Never put secrets in
 `mdk-contract.json`, git, or a committed seed file.
 
-Validate command payloads again in the handler (types, ranges, allowed targets). Kernel checks the command name against the contract;
-it does not know your hardware's unsafe parameter combinations. Redact credentials and vendor responses in handler errors and logs.
-For CGMiner-style devices, network isolation is the control: changing the Worker `password` field does not add a wire handshake the
-protocol lacks.
+Validate command payloads again in the handler (types, ranges, allowed targets). Kernel checks the command name and params against
+the contract; it does not know your hardware's unsafe parameter combinations. Redact credentials and vendor responses in handler errors
+and logs. For CGMiner-style devices, network isolation is the control: changing the Worker `password` field does not add a wire
+handshake the protocol lacks.
 
 </Step>
 
 <Step>
 
-### Step 4: Put identity in the Gateway
+### Step 4: Write the policy and put identity in the Gateway
 
-The Gateway is the only supported user-auth seam. Pass `startGateway()` an `authVerifier(request, route)` backed by your identity layer:
-routes a manifest marks `"auth": true` answer `401` unless it returns an identity, which controllers read as `req._info`. Routes without
-`"auth": true` are served to any caller. Paths under `/auth/metrics/*` are historical names, not a login gate.
+`spec.rbac` in `mdk.yaml` is the only place policy is written. The Kernel applies it at every start and on `mdk rbac apply`; a
+policy that fails validation is refused and the one in force stays. A rule names resources, verbs and, optionally, `resourceNames`;
+a binding ties a role to `User`, `Group` or `ServiceAccount` subjects. The [RBAC vocabulary][rbac-vocabulary] lists every resource,
+including `devices` (named `family/brand/worker/device`), `actions`, `commands`, `policy`, `identities` and app routes
+(`<app>/<path>` with `get`, `list`, `create`, `update`, `delete`).
+
+A package never decides who may call it. An app only requests its own Kernel access in `mdk-app.yaml` (`permissions`, required);
+`mdk add app`, `mdk create app`, `mdk onboard` and `mdk rbac init` write that request as role `app-<name>` bound to service account
+`app:<name>`, and the role is yours to narrow from then on. `mdk validate app <name>` fails when the grant is missing, differs from
+the request or binds nobody. Who may call the app's routes is set by your own roles.
+
+The Gateway is the user identity seam. It serves `POST /auth/login`, `POST /auth/token`, `POST /auth/refresh`, `POST /auth/logout`
+and `GET /auth/me` from the Kernel's token issuer, and on every app route it checks a bearer access token and a `spec.rbac` rule for
+the route's resource and verb (`401 ERR_AUTH_UNAUTHORIZED`, `403 ERR_AUTH_FORBIDDEN`) before body validation, the cache or the app.
+A route that declares `resourceName` (from a param, query or body field) is checked for that instance. The app receives the verified
+identity, `{ kind, sub, email?, groups? }`, as `req._info`, never the token. The [Gateway apps guide][plugins-auth] covers the route
+fields.
 
 #### Options
 
 | Option                                  | When to pick it | Trade-off                             |
 | --------------------------------------- | --------------- | ------------------------------------- |
-| Your SSO (OIDC / SAML / existing IdP), validated in the `authVerifier` | Production sites with an identity provider | You write the verifier and mark routes `"auth": true`: this is the supported path |
-| Gateway-issued JWT after an OAuth redirect you implement (`/oauth/...` → `?authToken=`, plus `POST /auth/token` and `/auth/userinfo`) | Browser UI using `gatewayRedirectAuth({ oauthBaseUrl })` | You still write those routes |
-| Bearer tokens only (`Authorization: Bearer`), no browser redirect | Service accounts, scripts, or a UI that already has a token | Pair with `bearerTokenAuth()` in the UI |
-| No identity (`noAuth()`, no `authVerifier`) | Laptop demos bound to loopback | `"auth": true` routes stay closed; every other route is open to anyone who can reach the port |
+| [`mdk rbac init`][cli-access-policy] | Every stack, and after `mdk add app` | Binds `mdk-cli` to `admin`, `mdk-gateway` and `mdk-mcp` to `gateway` (`policy: read`), and writes each app's grant. A role you edited is left alone |
+| [`mdk user add <name> --admin`][cli-users] | The first operator | Writes the `admin` role if missing and binds the user. Keep the number of admins small; `admin` holds every wildcard |
+| Narrow roles bound to `Group` subjects (`mdk user add --group`) | Teams with different duties (read-only staff, one rack's technicians) | More roles to review. `resourceNames` such as `rack-3-*` keep a technician to one rack |
+| A custom `authVerifier` with no authority | A Gateway started with neither a Kernel nor a credential | Not checked against `spec.rbac`, and refused in `mdk.yaml` (`spec.gateway.config.authVerifier`). Outside the supported path once a stack has a policy |
 
-Suggested default: one `authVerifier` for the whole Gateway, and `"auth": true` on every route that reads or changes the fleet. Map
-verified roles onto Kernel `authPerms` (`miner:w`, `container:w`, and any others you define). Never accept `authPerms` or `voter` from
-the HTTP client. Return `false` for a missing or bad token (`401`) and throw a `403` `ERR_*` error for a missing permission.
+Suggested default: run `mdk rbac init` before the first `mdk run` (a `spec.rbac` under which nobody may write the policy makes
+`mdk run` refuse to boot the Kernel, which could not be handed a policy afterwards), create the first operator with `mdk user add <name> --admin`, then give
+everyone else a narrow role bound by group. Read the effective policy with `mdk rbac show` after every change, and keep `mdk.yaml`
+in review like code.
+Single sign-on federation is not built in: users and passwords live in the Kernel's identity store.
 
-```js
-// The verifier does the check; the Gateway apps guide owns the full example.
-authVerifier: async (request, route) => {
-  const identity = await verify(request.headers.authorization)
-  if (!identity) return false
-  if (!(route.permissions || []).every(p => identity.perms.includes(p))) {
-    throw Object.assign(new Error('ERR_AUTH_PERM_DENIED'), { statusCode: 403 })
-  }
-  return identity
-}
+```yaml
+spec:
+  rbac:
+    enforcement: deny
+    roles:
+      - name: viewer
+        rules:
+          - resources: ["*"]
+            verbs: [get, list]
+      - name: rack3-tech
+        rules:
+          - resources: [ops-center/miners/command]
+            verbs: [create]
+            resourceNames: ["rack-3-*"]
+    bindings:
+      - role: viewer
+        subjects: [{ kind: Group, name: ops-team }]
+      - role: rack3-tech
+        subjects: [{ kind: User, name: tech@example.com }]
 ```
 
 > [!NOTE]
 > The Gateway sanitizes error bodies: only `ERR_*` codes and Fastify's own 4xx errors reach the client verbatim; the
 > [Gateway security model][gateway-security] details the shape and what gets logged instead.
 
-The [Gateway apps guide][plugins-auth] owns this pattern. Also:
+Also, on the Gateway:
 
-- Bind HTTP to the proxy network, not a public interface without that proxy
+- Terminate TLS in front of it. The refresh cookie is `Secure` everywhere but plain-HTTP loopback, so over plain HTTP on a network
+  the browser keeps no refresh cookie and every reload signs the user out
+- Set `trustProxy` only behind a TLS proxy whose hop count you trust: it makes the Gateway see `https`, and without a trusted proxy
+  client IPs (and so rate limits) can be spoofed
 - List the names clients use in `allowedHosts`; only loopback on the bound port passes the Host check by default
+- Tune `rateLimit` (default 300 requests per minute per IP). It is counted before the auth check, so failed sign-ins are throttled too
+- Ship the Gateway's `authz` decision lines (subject, route, resource, verb, decision, policy version) to your log store
 - Tune `rateLimit` for writes. `?overwriteCache=true` is honored only for an identity
   whose `perms` holds `cache:overwrite`
 - `trustProxy` is off by default. Turn it on only behind a proxy whose hop count you trust, or client IPs (and so rate limits) can be spoofed
-- Log actor, route, target, command, outcome, and a correlation id for every write. Redact secrets. Worker handlers cannot see
-  actor identity, so this audit stays in the Gateway
 
 </Step>
 
@@ -285,25 +246,28 @@ The [Gateway apps guide][plugins-auth] owns this pattern. Also:
 
 ### Step 5: Authorize writes
 
-Kernel distinguishes a command sent to Kernel (`command.request`) from an approval-gated action (`action.push` and votes).
-Both require a Kernel caller role of `write` or `admin`. A command sent directly to a Worker is a third path with only the Worker
-checks described in Step 3. Choose the path per action and enforce that choice at every entry point you admit.
-
-Kernel's role check authorizes the backend process, not the person behind an HTTP request. For commands sent to Kernel, the Gateway
-or app controller must authorize that person. Approval-gated writes also check `authPerms`, but the admitted caller supplies that array;
-derive it from verified identity. Non-admin callers vote as their transport key; an `admin` caller may forward a user's `voter` identity.
-Grant that delegation only to a process trusted to authenticate those users.
+Kernel checks every write against `spec.rbac`, whichever path it takes. A `command.request` needs `devices: write` on its target
+device, and a command scoped to a worker or rack needs it on every device that worker owns. Every attempt, refused ones included, is
+recorded in the [write-command log][write-command-log] with the caller's subject and the roles `spec.rbac` binds to it; reading it
+with `command.log` needs `commands: read`. When an app acts for a signed-in user (`req.mdk`), Kernel verifies the user's own token,
+requires both the app's and the user's rules to allow the write, and records the user as the caller via the app.
 
 #### Options
 
 | Option                                | When to pick it | Trade-off                               |
 | ------------------------------------- | --------------- | --------------------------------------- |
-| Command to Kernel (`command.request`) after a controller permission check | Low-impact, operator-in-front actions (LED, a single-device reboot you already authorized) | Requires a write-capable backend key; no approval vote or human-identity check runs in Kernel |
-| Approval-gated write ([`action.push`][kernel-action-manager], then votes) | Fleet-changing actions: power mode, pool assignment, container PDU, bulk reboot | Slower. Still requires the Gateway to set `authPerms` and `voter` from the verified token. The [write-actions guide][write-actions] covers the HTTP side. |
-| Agent-proposed write with a human approval pause | Operator agent (`approvalTimeoutMs` on [`@tetherto/mdk-app-agent`](../../../backend/apps/agent/README.md)) | The model cannot execute a write until someone approves. Without identity, every request is the same `local` operator. |
+| Direct command ([`command.request`][kernel-command-dispatcher]) | Low-impact, operator-in-front actions (LED, a single-device reboot) | Fast. One identity's `devices: write` rule is the only gate |
+| Approval-gated write ([`action.push`][kernel-action-manager], then votes) | Fleet-changing actions: power mode, pool assignment, container PDU, bulk reboot | Slower. A push needs `actions: write` and `devices: write` on every device it resolves to. A vote is checked against the stored action's target devices with the voter's own `devices: write` rule. The [write-actions guide][write-actions] covers the HTTP side |
+| Agent-proposed write with a human approval pause | Operator agent (`approvalTimeoutMs` on [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent)) | The model cannot execute a write until someone approves |
 
-Suggested default: approval-gated writes for anything that changes hash, power, or network membership; direct commands only behind a
-controller that already checked a token. Do not expose a raw `sendCommand` route to the UI without that check.
+For a caller with a token, the voter and requester are the operator it acts for (`req.mdk`), else the caller's own identity, and
+the payload's self-asserted `authPerms` are ignored on both push and vote; they apply only to in-process calls. Naming another voter
+without the operator's token needs `actions: delegate`. Prefer `req.mdk`, which needs no `delegate` grant, and grant `delegate`
+only to an app whose code you trust to name the right user.
+
+Suggested default: approval-gated writes for anything that changes hash, power, or network membership, with the people who vote bound
+to a role holding `actions: vote` and `devices: write` on the affected devices. Direct commands only where a single operator's
+`devices: write` rule is enough. Keep `commands: read` with the people who audit.
 
 </Step>
 
@@ -311,28 +275,30 @@ controller that already checked a token. Do not expose a raw `sendCommand` route
 
 ### Step 6: Wire the UI session
 
-[`<MdkProvider auth={...}>`][mdk-provider-auth] is how the browser attaches a credential. The toolkit does not guard routes or deny writes on its own.
+[`passwordAuth()`][ui-sessions] from `@tetherto/mdk-ui-foundation` signs a user in through the Gateway's `/auth/login`. The access
+token stays in memory; the refresh token stays in an httpOnly, `SameSite=Strict` cookie scoped to `/auth`, out of reach of page
+scripts. The provider renews the token on a timer and on a `401`, and tabs refresh one at a time under a Web Locks lock. Refresh
+tokens rotate on every use, and a used one presented again revokes the whole session (theft detection). The one exception is two
+clients refreshing at once: within about 10 seconds of its use, while its successor is still unused, a used token gets that same
+successor, so both hold one refresh token and the next reuse of it, by whoever is behind, revokes the session.
 
 #### Options
 
 | Option                                  | When to pick it | Trade-off                             |
 | --------------------------------------- | --------------- | ------------------------------------- |
-| `noAuth()` | Local dev against a Gateway without an auth plugin, demos | No token. A finished-looking dashboard still sends unauthenticated calls. |
-| `bearerTokenAuth()` | You already issue JWTs from the Gateway identity plugin | Session ends on `401`. You own login UI. |
-| `gatewayRedirectAuth({ oauthBaseUrl })` | OAuth redirect, `?authToken=` capture, refresh against `POST /auth/token` | Needs *your* token routes. Default `MdkProvider` auth without `oauthBaseUrl` cannot sign in. |
-| Custom `AuthProvider` | A session model the three presets do not cover | You implement `getToken`, refresh, and sign-out |
+| `passwordAuth({ baseUrl })` | Every dashboard on an MDK stack | Needs TLS on a network, or the browser keeps no refresh cookie. You own the sign-in page |
+| `bearerTokenAuth()` | A client that already holds an access token (a script, a kiosk handed a token) | No refresh; the session ends on `401` |
+| `noAuth()` | Fixture-backed demos | No token. Every app route on a real stack answers `401` |
+| Custom `AuthProvider` | A session model the presets do not cover | You implement `getToken`, refresh, and sign-out |
 
 Suggested default for a production dashboard:
 
-- `<MdkProvider apiBaseUrl={httpsOrigin} auth={bearerTokenAuth()}>` or `gatewayRedirectAuth({ oauthBaseUrl })` after those routes exist
-- HTTPS, a real `apiBaseUrl`, no Vite dev proxy
-- One fetch client so pages cannot skip `Authorization`
-- Route guards on any view that can mutate the fleet (the shell template uses `<RequireAuth>`; copy that idea, not `noAuth()`)
-- Hide write controls unless the token carries the matching permission. Hiding is not authorization; the Gateway still denies
-- Scrub `?authToken=` from the URL after capture. Tokens in query strings leak through access logs and Referer
+- `passwordAuth({ baseUrl: httpsOrigin })` passed to `<MdkProvider>`, with `restore()` before the first render
+- HTTPS end to end, a real `apiBaseUrl`, no Vite dev proxy
+- One fetch client (the provider's `fetcher`) so pages cannot skip `Authorization`
+- Route guards on any view that can mutate the fleet (the shell template uses `<RequireAuth>`)
+- Hide write controls the user's roles do not allow. Hiding is not authorization; the Gateway and Kernel still deny
 - Static bundle behind the same proxy that terminates TLS. Do not run `vite dev` as the production UI
-
-The mvp-site example UI has no sign-in, no session, and a hardcoded profile. Do not copy that into a reachable host.
 
 </Step>
 
@@ -340,21 +306,24 @@ The mvp-site example UI has no sign-in, no session, and a hardcoded profile. Do 
 
 ### Step 7: (Optional) MCP and the operator agent
 
-MCP is optional. When you enable it, it has the same authority as the process that hosts it. The standalone [`@tetherto/mdk-mcp`](../../../backend/core/mcp/README.md)
-process binds `127.0.0.1` and answers `POST /mcp` with no user auth by default; an optional bearer `token` gates every call. The
-Gateway hosts no MCP itself.
+MCP is optional. The standalone [`@tetherto/mdk-mcp`][mcp-agents] process binds `127.0.0.1` and answers `POST /mcp`. With an authority
+(an in-process Kernel, or `mdk run mcp` signing in as `mdk-mcp`), every request needs an agent's own access token, each agent's
+`tools/list` is filtered by its rules, and each call is checked as the Gateway checks the same route. A tool scoped by an instance name
+is listed when some instance is allowed and checked per call; a tool with no declared access is not offered. The static
+`spec.mcp.token` and `spec.mcp.identity` are refused.
 
 #### Options
 
 | Option           | When to pick it             | Trade-off                                         |
 | ---------------- | --------------------------- | ------------------------------------------------- |
 | No MCP, no agent | Dashboards and scripts only | Smallest surface                                  |
-| MCP on loopback, operator agent on the Gateway | In-process chat for people who already passed Gateway identity | Keep `approvalTimeoutMs` on. Pass a real `userId` into `createSession` / `resumeSession`. A session id in a URL must not read another operator's chat |
-| MCP or agent published past localhost | An agent runtime on another host | MCP does not identify individual users; its optional bearer token grants shared access. Put mutual TLS or your SSO proxy in front, and authorize inside the reused HTTP handlers (an app's routes served as MCP tools run the same handlers under one server-wide `identity`, with no per-user check; `auth: true` tools stay hidden unless that identity is configured) |
+| One service account per agent on loopback | Any agent | `mdk sa add <agent>`, a binding in `spec.rbac`, then `mdk sa token <agent>` (or `ServiceAccountTokenSource`) for its bearer token. The agent reaches apps as itself |
+| Operator agent app on the Gateway | In-process chat for people who already signed in | Keep `approvalTimeoutMs` on. Chat sessions bind to the signed-in user's `sub`, so one operator cannot read another's |
+| MCP published past localhost | An agent runtime on another host | Put TLS in front and add the name to `allowedHosts`. The token check still applies; the transport is yours |
 
-Suggested default: leave MCP on `127.0.0.1`. Do not publish it with compose `ports:`, an SSH tunnel, or a reverse proxy unless that
-front door is authenticated. Treat the model provider (`qvac` or an OpenAI-compatible URL) as sensitive infrastructure: prompts can
-include site topology and, if you are careless, secrets.
+Suggested default: leave MCP on `127.0.0.1`, give each agent its own service account with a read-only role, and grant write tools only
+with `allowWrite` or `allowTools` plus a rule that allows them. Treat the model provider (`qvac` or an OpenAI-compatible URL) as
+sensitive infrastructure: prompts can include site topology and, if you are careless, secrets.
 
 </Step>
 
@@ -375,42 +344,72 @@ include site topology and, if you are careless, secrets.
 | Option                                    | When to pick it | Trade-off                           |
 | ----------------------------------------- | --------------- | ----------------------------------- |
 | `SIGINT` / supervisor stop so WAL and cleanup run | Always | A `SIGKILL` can leave `.mdk-data` / `storeDir` unusable. The next boot may look healthy with zero Workers. |
-| Health check HTTP only (an HTTP route the Gateway serves) | Insufficient | The Gateway keeps serving HTTP while the Kernel is unreachable; Kernel-backed routes fail with `ERR_MDK_CLIENT_UNAVAILABLE` until it is back. |
+| Health check on the Gateway HTTP port only | Insufficient | The Gateway keeps serving HTTP while the Kernel is unreachable; Kernel-backed calls fail with `ERR_MDK_CLIENT_UNAVAILABLE` until it is back. |
 
 Suggested default:
 
-- Mode `0700` (or equivalent) on the Kernel db directory and Worker `storeDir`, and `0600` on seed and key files. Encrypt at rest if the host requires it.
+- Mode `0700` (or equivalent) on the Kernel db directory, `.mdk/`, the trusted-keys dir and Worker `storeDir`, and `0600` on seed,
+  key and credential files. The Kernel store holds users, password hashes and the token signing key; `.mdk/credentials/` holds every
+  app's and agent's private key. Encrypt at rest if the host requires it
 - Back up those directories as operational data, with the same access control as the live files
-- Rotate keys when access changes, and update every callee that admits them, including direct Worker grants
+- When staff leave, `mdk user disable` or `mdk user remove` them: their access tokens stop at the Kernel at once, and their bindings stay
+  until you remove them from `spec.rbac`
+- Rotate service-account keys with `mdk sa rotate`, and Kernel, Gateway and Worker transport keys when a host is rebuilt, updating the
+  allowlist in the same change
 - Practice recovery from a wiped data directory before an incident
-- Watch Gateway-to-Kernel errors, not only the HTTP port
+- Watch Gateway-to-Kernel errors and the Gateway's policy version, not only the HTTP port
 - Run Node.js >=24. Pin lockfiles. Prefer non-root containers with a read-only root filesystem
 - Stay on the latest `main` or latest tag you have reviewed. `0.y.z` is initial development; older tags may not receive security
   fixes. Report product issues through the [security policy][security-policy], not public GitHub issues
 
 #### Revoke access on every admitted path
 
-Trusted-directory watchers add keys; deleting a `.pub` file does not revoke its grants in running processes. Use `kernel.revokeKey(key)`
-and each affected `runtime.revokeKey(key)`, and remove the publication and startup configuration that would grant it again.
-With `allowAll` enabled, removing an allowlist entry does not deny that caller; disable `allowAll` as well.
-
-`trustKernel()` mirrors explicit Kernel revocations to attached Workers, but changing a Kernel role from `write` to `read` does not
-remove an existing Worker grant. A directory watcher does not mirror Kernel role changes or revocations. Check the live Kernel roles
-and Worker allowlists, not just files on disk, and verify that denied calls fail after revocation and after restart.
+Trusted-directory watchers add keys; deleting a `.pub` file does not revoke an admission in running processes. Use `kernel.revokeKey(key)`
+and each affected `runtime.revokeKey(key)`, and remove the publication and startup configuration that would admit it again. Check the
+live Kernel and Worker allowlists, not just files on disk, and verify that refused calls fail after revocation and after restart.
 
 </Step>
 
 </Steps>
 
+## Trust boundaries and known limits
+
+These hold by design. Plan the site around them.
+
+| Boundary or limit | What happens | What to do |
+| ----------------- | ------------ | ---------- |
+| App routes are a confused-deputy boundary | The Gateway checks the user against the route's rule and forwards their token. A controller calling Kernel through `req.mdk` acts for that user: Kernel checks both `app:<name>` and the user. A controller calling through `config.mdkClient` acts as the app alone, and Kernel does not re-check the user | Use `req.mdk` for work done for a request, keep each app's grant narrow (`resourceNames`), and review app controller code like any privileged service |
+| Policy at a remote Gateway | A Gateway or MCP server in its own process polls the policy every 5 seconds. A failed poll keeps the last good policy, so a Kernel blip does not lock the site, but for 60 seconds at most (`maxStaleMs`): past that it allows nothing until a poll succeeds. Kernel switches at once | Watch for failing polls; run the Gateway in the Kernel's process where an instant switch matters |
+| Revoked access tokens at the edge | A password change, disable, delete, group or email change, or new service-account key refuses the subject's tokens at once wherever the issuer verifies: every Kernel request, and an in-process Gateway or MCP server. A Gateway or MCP server in another process polls every subject's token version with the policy, so there a revoked token keeps working until the next poll (up to 5 seconds); Kernel refuses it at once | Treat the edge window as one poll interval. Kernel-backed calls stop immediately |
+| Login lockout is in memory | Failed sign-ins lock a user name (5 failures, doubling from 30 seconds up to 15 minutes), counted in the Kernel's memory; a Kernel restart clears it | Rate-limit `/auth/login` at the proxy too, and alert on repeated failures in the `authz` log |
+| Service-account assertions | An assertion lives at most 60 seconds and is single use, remembered in the store across restarts | Keep agent and app private keys on the host that owns them |
+
+## Decision cheat sheet
+
+| Decision         | Suggested production choice    | Demo-only choice                              |
+| ---------------- | ------------------------------ | --------------------------------------------- |
+| Topology         | Microservices over DHT, three networks (operator / backend / devices) | Single process on loopback |
+| Kernel admission | Allowlist of persistent Gateway, MCP and app runtime keys; trusted-keys dir on one machine | In process through `mdk run` |
+| Worker access    | Backend network only, `allowedKeys` holding only the Kernel client key | `allowAll` on a throwaway local Worker |
+| Policy           | `spec.rbac` from `mdk rbac init`, narrow roles bound by group, reviewed like code | One `admin` binding |
+| User identity    | `mdk user add --admin` for the first operator, Gateway `/auth/*`, TLS | Plain HTTP on loopback |
+| Writes           | Approval-gated for fleet changes; voters hold `devices: write` on the targets | Direct `command.request` as an admin |
+| UI               | HTTPS, `passwordAuth()`, route guards | Vite proxy, `noAuth()` on fixtures |
+| MCP / agent      | Loopback, one service account per agent, read-only role, human approval | Disabled |
+| Secrets          | Secret manager into the process, `.mdk/` and stores `0700` | Example `admin` passwords |
+
 ## Next steps
 
-- Read the [security boundaries][security-boundaries]: what each layer trusts, and what it does not
-- Follow the [control plane][control-plane]: read path, direct command, and approval-gated write
-- Add identity in [app controllers][plugins-auth]: the only supported user-auth seam
-- Restrict Kernel callers with the [HRPC allowlist][kernel-auth-api]: transport admission for the Gateway
-- Compare [deployment topologies][deployment-topologies]: this blueprint assumes microservices; local and single-process are smaller footprints
-- Apply the blueprint as values with the [hosted-site reference configuration][hosted-site]: two profiles and one settings table
-- Report product vulnerabilities through the [security policy][security-policy]: private advisory, not a public issue
+- [Security boundaries][security-boundaries]: what each layer trusts, and what it does not
+- [Control plane][control-plane]: read path, direct command, and approval-gated write
+- [RBAC policy model][rbac]: rule shape, subjects, and the full vocabulary
+- [Token issuer][identity]: access and refresh tokens, sessions, and when tokens stop working
+- [Access policy commands][cli-access-policy]: `mdk rbac init`, `apply` and `show`
+- [Users and service accounts][cli-users]: `mdk user`, `mdk sa`, and `mdk login`
+- [Route rules in app controllers][plugins-auth]: `verb`, `resourceName`, and `req._info`
+- [Deployment topologies][deployment-topologies]: this blueprint assumes microservices; local and single-process are smaller footprints
+- [Hosted-site reference configuration][hosted-site]: two profiles and one settings table
+- [Security policy][security-policy]: report product vulnerabilities through a private advisory, not a public issue
 
 ## Links
 
@@ -429,16 +428,14 @@ and Worker allowlists, not just files on disk, and verify that denied calls fail
 [plugins-auth]: ../gateway/apps.md#auth-and-permissions
 <!-- docs@tether.io: plugins-auth → guides/gateway/apps#auth-and-permissions -->
 
-
 [write-actions]: ../gateway/write-actions.md
 <!-- docs@tether.io: write-actions → guides/gateway/write-actions -->
-
 
 [security-policy]: ../../../SECURITY.md
 <!-- docs@tether.io: security-policy → https://github.com/tetherto/mdk/blob/main/SECURITY.md -->
 
-[worker-runtime]: ../../../backend/core/mdk-worker/README.md
-<!-- docs@tether.io: worker-runtime → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md -->
+[worker-runtime]: ../../../backend/core/mdk-worker/README.md#caller-allowlist
+<!-- docs@tether.io: worker-runtime → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#caller-allowlist -->
 
 [kernel-command-dispatcher]: ../../../backend/core/kernel/README.md#commanddispatcher
 <!-- docs@tether.io: kernel-command-dispatcher → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#commanddispatcher -->
@@ -446,20 +443,35 @@ and Worker allowlists, not just files on disk, and verify that denied calls fail
 [kernel-action-manager]: ../../../backend/core/kernel/README.md#actionmanager
 <!-- docs@tether.io: kernel-action-manager → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#actionmanager -->
 
-[kernel-auth-api]: ../../../backend/core/kernel/README.md#caller-admission-and-roles
-<!-- docs@tether.io: kernel-auth-api → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#caller-admission-and-roles -->
+[kernel-admission]: ../../../backend/core/kernel/README.md#caller-admission-and-authorization
+<!-- docs@tether.io: kernel-admission → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#caller-admission-and-authorization -->
 
-[kernel-roles]: ../../../backend/core/kernel/README.md#caller-admission-and-roles
-<!-- docs@tether.io: kernel-roles → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#caller-admission-and-roles -->
+[write-command-log]: ../../../backend/core/kernel/README.md#write-command-log
+<!-- docs@tether.io: write-command-log → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#write-command-log -->
 
 [trust-and-admission]: ../../../backend/core/mdk/README.md#trust-and-admission
 <!-- docs@tether.io: trust-and-admission → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md#trust-and-admission -->
 
-[direct-worker-client]: ../../../backend/core/client/README.md#createworkerclientrpckey-hrpcopts--client
-<!-- docs@tether.io: direct-worker-client → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md#createworkerclientrpckey-hrpcopts--client -->
+[rbac]: ../../../backend/core/rbac/README.md
+<!-- docs@tether.io: rbac → https://github.com/tetherto/mdk/blob/main/backend/core/rbac/README.md -->
 
-[mdk-provider-auth]: ../../../ui/packages/react-adapter/README.md#authentication
-<!-- docs@tether.io: mdk-provider-auth → https://github.com/tetherto/mdk/blob/main/ui/packages/react-adapter/README.md#authentication -->
+[rbac-vocabulary]: ../../../backend/core/rbac/README.md#vocabulary
+<!-- docs@tether.io: rbac-vocabulary → https://github.com/tetherto/mdk/blob/main/backend/core/rbac/README.md#vocabulary -->
+
+[identity]: ../../../backend/core/identity/README.md
+<!-- docs@tether.io: identity → https://github.com/tetherto/mdk/blob/main/backend/core/identity/README.md -->
+
+[cli-access-policy]: ../../../packages/cli/README.md#access-policy
+<!-- docs@tether.io: cli-access-policy → https://github.com/tetherto/mdk/blob/main/packages/cli/README.md#access-policy -->
+
+[cli-users]: ../../../packages/cli/README.md#users-and-service-accounts
+<!-- docs@tether.io: cli-users → https://github.com/tetherto/mdk/blob/main/packages/cli/README.md#users-and-service-accounts -->
+
+[mcp-agents]: ../../../backend/core/mcp/README.md#ai-agents-and-the-mcp-server
+<!-- docs@tether.io: mcp-agents → https://github.com/tetherto/mdk/blob/main/backend/core/mcp/README.md#ai-agents-and-the-mcp-server -->
+
+[ui-sessions]: ../../../ui/packages/ui-foundation/README.md#sessions
+<!-- docs@tether.io: ui-sessions → https://github.com/tetherto/mdk/blob/main/ui/packages/ui-foundation/README.md#sessions -->
 
 [gateway-security]: ../../../backend/core/gateway/README.md#security-model
 <!-- docs@tether.io: gateway-security → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#security-model -->

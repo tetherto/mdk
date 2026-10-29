@@ -33,20 +33,12 @@ describe('resolveCatalogPackage', () => {
     expect(resolved.packageName).toBe(entry.value);
   });
 
-  it('resolves the bundled agent app from this checkout', () => {
-    const entry = findCatalogApp('@tetherto/mdk-app-agent');
-    expect(entry).toBeDefined();
-    const resolved = resolveCatalogPackage(entry!);
-    expect(resolved.bundled).toBe(true);
-    expect(resolved.checkoutDir).toMatch(/backend[/\\]apps[/\\]agent$/);
-  });
-
-  it('resolves the bundled demo app from this checkout', () => {
-    const entry = findCatalogApp('@tetherto/mdk-app-demo');
-    expect(entry).toBeDefined();
-    const resolved = resolveCatalogPackage(entry!);
-    expect(resolved.bundled).toBe(true);
-    expect(resolved.checkoutDir).toMatch(/backend[/\\]apps[/\\]demo$/);
+  it('resolves the shipped apps from the registry', () => {
+    for (const pkg of ['@tetherto/mdk-app-agent', '@tetherto/mdk-app-demo']) {
+      const entry = findCatalogApp(pkg);
+      expect(entry).toBeDefined();
+      expect(resolveCatalogPackage(entry!)).toEqual({ packageName: pkg, bundled: false });
+    }
   });
 
   it('findCatalogApp returns undefined for an unknown package', () => {

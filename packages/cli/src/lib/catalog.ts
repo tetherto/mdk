@@ -61,25 +61,22 @@ export interface CatalogWorker extends CatalogEntry {
 export const WORKER_CATALOG: CatalogWorker[] = [];
 
 /**
- * Apps offered by `mdk onboard`. Every entry today has a `repoPath`
- * and is real/runnable from the MDK checkout — the field stays optional for a
- * future entry that isn't (selecting one without a `repoPath` would still
- * write a valid spec entry, but its install would 404).
+ * Apps offered by `mdk onboard`. Each lives in its own repo and installs from
+ * the registry by package name; `mdk add app github:<owner>/<repo>` installs
+ * one from GitHub and still picks up its `mount` here.
  */
 export const APP_CATALOG: CatalogApp[] = [
   {
     value: '@tetherto/mdk-app-agent',
     label: 'mdk-app-agent',
-    hint: 'auth-gated operator agent chat (sessions, SSE, approvals) — bundled',
-    repoPath: join('backend', 'apps', 'agent'),
+    hint: 'auth-gated operator agent chat (sessions, SSE, approvals)',
     // The UI's agent transport (ui/packages/ui-agent) calls /agent/... at the Gateway root.
     mount: '/',
   },
   {
     value: '@tetherto/mdk-app-demo',
     label: 'mdk-app-demo',
-    hint: 'fleet summary + history across your hashrate_rt miners — bundled',
-    repoPath: join('backend', 'apps', 'demo'),
+    hint: 'fleet summary + history across your hashrate_rt miners',
   },
 ];
 

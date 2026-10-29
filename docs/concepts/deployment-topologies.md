@@ -33,9 +33,11 @@ and being allowed to call it. Choosing a deployment shape changes how Kernel lea
 every hop uses [HRPC][hrpc-glossary] over HyperDHT.
 
 A bootstrap node is an initial contact that helps a HyperDHT node join the network. HyperDHT uses public bootstrap nodes by default;
-programmatic callers can supply private bootstrap addresses instead. Learning a Worker's key locally does not remove this transport
-dependency, so even a same-process deployment needs reachable bootstrap nodes. Bootstrap nodes help with connectivity; they do not grant
-permission to call a Worker.
+every component also accepts a private bootstrap list and a `dhtHost` bind interface, through its options, the `MDK_DHT_BOOTSTRAP`
+and `MDK_DHT_HOST` service variables, or `spec.network.dht` in `mdk.yaml`. Learning a Worker's key locally does not remove this
+transport dependency, so even a same-process deployment needs reachable bootstrap nodes. Bootstrap nodes help with connectivity; they
+do not grant permission to call a Worker. The [local and air-gapped profile][private-dht] runs a private bootstrap and keeps every
+process off the public network.
 
 Every shape needs UDP access to its configured bootstrap nodes, public or private. The [network checks][network-checks] cover the
 symptoms when that access is blocked.
@@ -46,8 +48,8 @@ symptoms when that access is blocked.
 | Local          | A shared directory on one machine, `<root>/.worker-keys`      | HRPC over HyperDHT            | Outbound UDP to the bootstrap nodes, public or private |
 | Microservices  | A HyperDHT topic the Kernel and every Worker join             | HRPC over HyperDHT            | Outbound UDP to the bootstrap nodes, public or private, and peer reachability between hosts |
 
-There is no host and port transport to fall back to. The only transport choices are which bootstrap list the DHT node uses and which
-discovery mode supplies the keys. `mdk run` always uses local or in-process discovery; a stack that needs the DHT topic runs
+There is no host and port transport to fall back to. The only transport choices are which bootstrap list the DHT node uses, which
+interface it binds, and which discovery mode supplies the keys. `mdk run` always uses local or in-process discovery; a stack that needs the DHT topic runs
 [`worker.js`][worker-entry] or its own process script under a supervisor.
 
 ## The three shapes
@@ -135,8 +137,9 @@ A hosted or managed site usually has fixed hosts, a controlled network and a cha
 Pin keys in every case: `kernelKey` on the Gateway, `discovery.workerKeys` on Kernel, and `allowedKeys` on every Worker. Where Kernel
 and its Workers share a host, pick local or single-process discovery and run no topic at all. Where they span hosts, the topic is
 still how Kernel finds Workers, and the pinned `discovery.workerKeys` list is what admits them. Neither choice removes the DHT: the
-transport still starts a HyperDHT node and needs outbound UDP to its bootstrap nodes. A site that blocks that traffic runs a private
-bootstrap, which programmatic callers pass to each component through the `bootstrap` option.
+transport still starts a HyperDHT node and needs outbound UDP to its bootstrap nodes. A site that blocks that traffic runs the
+[local and air-gapped profile][private-dht], with a private bootstrap every component joins. What the DHT costs a managed site is
+[measured against a known-endpoint RPC][transport-comparison] for setup, failures, latency and diagnosability.
 
 ## Where [`worker.js`][worker-entry] fits
 
@@ -157,6 +160,8 @@ Topology is orthogonal to scale. [Logical scaling][scaling] is about *how many* 
 - Run [same-machine services with shared-directory discovery][worker-discovery-local]
 - Run [a multi-Worker site as supervised services, from one machine up to a cross-host deployment][multi-how-to]
 - Register [one miner before packaging a whole site][miner-how-to]
+- Keep a stack off the public HyperDHT with [private bootstrap nodes][private-dht]
+- Weigh [HRPC over HyperDHT against a known-endpoint RPC][transport-comparison] for a managed site
 
 ## Links
 
@@ -187,6 +192,9 @@ Topology is orthogonal to scale. [Logical scaling][scaling] is about *how many* 
 [multi-how-to]: ../guides/deployment/run-all-workers-site.md
 <!-- docs@tether.io: multi-how-to → guides/deployment/run-all-workers-site -->
 
+[private-dht]: ../guides/deployment/private-dht.md
+<!-- docs@tether.io: private-dht → guides/deployment/private-dht -->
+
 [miner-how-to]: ../guides/miners/index.md
 <!-- docs@tether.io: miner-how-to → guides/miners -->
 
@@ -204,3 +212,6 @@ Topology is orthogonal to scale. [Logical scaling][scaling] is about *how many* 
 
 [security-blueprint]: ../guides/security/index.md
 <!-- docs@tether.io: security-blueprint → guides/security -->
+
+[transport-comparison]: transport-comparison.md
+<!-- docs@tether.io: transport-comparison → concepts/transport-comparison -->

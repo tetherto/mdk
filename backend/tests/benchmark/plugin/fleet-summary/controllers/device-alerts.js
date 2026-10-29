@@ -15,7 +15,9 @@ module.exports = async function deviceAlerts (req, services) {
   if (!mdkClient) throw new Error('ERR_MDK_CLIENT_UNAVAILABLE')
 
   const deviceId = req.params.id
-  const res = await mdkClient.pullTelemetry(deviceId, { type: 'list', status: true })
+  // Filter to this device: `list` pages at 100 devices by default, so an
+  // unfiltered query never returns a device past the first page.
+  const res = await mdkClient.pullTelemetry(deviceId, { type: 'list', status: true, query: { id: deviceId }, limit: 1 })
   const thing = (res?.things || []).find((t) => t.id === deviceId)
   return { deviceId, alerts: thing?.last?.alerts || [] }
 }

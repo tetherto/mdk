@@ -1,5 +1,3 @@
-@layer base, mdk, app;
-
 @layer base {
   /* Load-bearing border-box reset: the devkit components (data tables, cards,
    * header tiles) are authored assuming padding/borders are included in the

@@ -37,6 +37,7 @@ describe('checkAppUiModule', () => {
       displayName: 'sentinel',
       routes: [],
       panels: [],
+      sections: [],
     })
   })
 
@@ -50,6 +51,18 @@ describe('checkAppUiModule', () => {
     )
     expect(ui.routes).toHaveLength(1)
     expect(ui.panels).toHaveLength(1)
+  })
+
+  it("keeps a route's sidebar section and the section's icon", () => {
+    const ui = checkAppUiModule(
+      sentinel,
+      moduleFor(sentinel, {
+        routes: [{ path: 'drift', section: 'Operations', component: Page }],
+        sections: [{ label: 'Operations', icon: Page }],
+      }),
+    )
+    expect(ui.routes[0]?.section).toBe('Operations')
+    expect(ui.sections).toEqual([{ label: 'Operations', icon: Page }])
   })
 
   it.each([
@@ -70,6 +83,27 @@ describe('checkAppUiModule', () => {
       'a route without a component',
       moduleFor(sentinel, { routes: [{ path: 'x', component: 'div' }] }),
       /routes\[0\] \("x"\) needs a React `component`/,
+    ],
+    [
+      'a route with an empty section',
+      moduleFor(sentinel, { routes: [{ path: 'x', section: '', component: Page }] }),
+      /routes\[0\] \("x"\) has a `section` that is not a non-empty string/,
+    ],
+    ['sections not a list', moduleFor(sentinel, { sections: {} }), /`sections` as an array/],
+    [
+      'a section without a label',
+      moduleFor(sentinel, { sections: [{ icon: Page }] }),
+      /sections\[0\] needs a string `label`/,
+    ],
+    [
+      'two sections with one label',
+      moduleFor(sentinel, { sections: [{ label: 'Ops' }, { label: 'Ops' }] }),
+      /two sections labelled "Ops"/,
+    ],
+    [
+      'a section icon that is not a component',
+      moduleFor(sentinel, { sections: [{ label: 'Ops', icon: 'svg' }] }),
+      /section "Ops" has an `icon` that is not a React component/,
     ],
     ['panels not a list', moduleFor(sentinel, { panels: null }), /`panels` as an array/],
     [

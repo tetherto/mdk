@@ -6,6 +6,8 @@ import { addAppToStackFile } from './app-scaffold.js';
 import { installDeps, installPackages } from './npm.js';
 import { parseSource } from './package-source.js';
 import { ensureProjectManifest, readStackName } from './project.js';
+import { ensureAppCredential } from './credentials.js';
+import { conflictMessage, planAppGrant, writeAppGrant, type GrantSummary } from './rbac.js';
 import { resolveProjectPackageDir } from './runtime.js';
 import { shortName, toAppName } from './spec.js';
 import type { StackFileUpdate } from './scaffold.js';
@@ -24,6 +26,10 @@ export interface AddPackageOptions {
   name?: string;
   /** Run `npm install` (default: true). A GitHub source needs it to learn the package name. */
   install?: boolean;
+  /** An app whose requested Kernel access changed: replace its role in spec.rbac with the new request. */
+  acceptPermissions?: boolean;
+  /** An app whose requested Kernel access changed: keep its role in spec.rbac as it is. */
+  keepPermissions?: boolean;
 }
 
 export interface AddPackageResult {
@@ -40,6 +46,10 @@ export interface AddPackageResult {
   stackFile?: StackFileUpdate;
   /** A worker without a bundled mock needs its `devices[].opts` filled in. */
   needsDeviceOpts?: boolean;
+  /** An app: what install did to its role in spec.rbac (see GrantAction), and its service account. */
+  grant?: GrantSummary;
+  /** An app: its service-account credential in this instance (`.mdk/credentials`), never in the package. */
+  credential?: { file: string; created: boolean } | { error: string };
 }
 
 const fail = (message: string, extra: Partial<AddPackageResult> = {}): AddPackageResult => ({
@@ -161,7 +171,8 @@ export function addPackage(opts: AddPackageOptions): AddPackageResult {
     return refuse(error instanceof Error ? error.message : String(error), { packageName });
   }
 
-  const errors = opts.kind === 'app' ? validateApp(packageDir).errors : validateWorker(packageDir).errors;
+  const app = opts.kind === 'app' ? validateApp(packageDir) : undefined;
+  const errors = app ? app.errors : validateWorker(packageDir).errors;
   if (errors.length) {
     return refuse(`${reference} is not a valid ${opts.kind}; mdk.yaml was not changed.`, {
       errors,
@@ -171,11 +182,34 @@ export function addPackage(opts: AddPackageOptions): AddPackageResult {
   }
 
   const instanceName = toAppName(opts.name?.trim() || shortName(source.subpath ?? packageName));
-  if (opts.kind === 'app') {
+  if (app) {
     // A re-add without --name updates the app already running this package;
     // another --name is a second app.
     const listed = opts.name ? undefined : listedAppName(opts.dir, reference);
-    const stackFile = addAppToStackFile(opts.dir, reference, listed ?? instanceName);
+    const appName = listed ?? instanceName;
+
+    // Decided before mdk.yaml is touched, so a refused grant changes nothing.
+    if (opts.acceptPermissions && opts.keepPermissions) {
+      return refuse('Pass --accept-permissions or --keep-permissions, not both.', { packageName, reference, instanceName: appName });
+    }
+    const permissions = app.manifest.permissions ?? [];
+    let plan;
+    try {
+      plan = planAppGrant(opts.dir, appName, permissions, { accept: opts.acceptPermissions, keep: opts.keepPermissions });
+    } catch (error) {
+      const text = error instanceof Error ? error.message : String(error);
+      return refuse(`${text.split('\n')[0]} mdk.yaml was not changed.`, {
+        errors: (error as { errors?: string[] }).errors ?? [],
+        packageName,
+        reference,
+        instanceName: appName,
+      });
+    }
+    if (plan.action === 'conflict') {
+      return refuse(conflictMessage(plan, reference), { packageName, reference, instanceName: appName });
+    }
+
+    const stackFile = addAppToStackFile(opts.dir, reference, appName);
     if (stackFile === 'name-taken') {
       return refuse(
         `spec.apps already has an app named "${instanceName}" with another package; mdk.yaml was not changed. ` +
@@ -183,7 +217,25 @@ export function addPackage(opts: AddPackageOptions): AddPackageResult {
         { packageName, reference, instanceName, stackFile },
       );
     }
-    return { ok: true, packageName, reference, instanceName: listed ?? instanceName, stackFile, installed: install };
+    const written = stackFile === 'added' || stackFile === 'exists' ? writeAppGrant(opts.dir, plan) : false;
+    let credential: AddPackageResult['credential'];
+    try {
+      const c = ensureAppCredential(opts.dir, appName);
+      credential = { file: c.file, created: c.created };
+    } catch (error) {
+      // `mdk run` creates it at boot; the add itself stands.
+      credential = { error: error instanceof Error ? error.message : String(error) };
+    }
+    return {
+      ok: true,
+      packageName,
+      reference,
+      instanceName: appName,
+      stackFile,
+      installed: install,
+      grant: { action: plan.action, role: plan.roleName, serviceAccount: plan.serviceAccount, written },
+      credential,
+    };
   }
 
   const mock = existsSync(join(packageDir, 'mock', 'server.js'));

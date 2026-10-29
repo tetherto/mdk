@@ -42,12 +42,9 @@ const WORKER_REGISTRY = Object.fromEntries(
 // a deliberate choice, unlike the cadence/timeout knobs that rule protects.
 const ALERT_INDUCTION = {
   // chips_temp_critical reads snap.stats.temperature_c.chips[].avg, sourced
-  // from data.estats.avg_chip_temperature in avalon.miner.js — the avalon
-  // mock never populates `estats` at all, so `chips` comes back `[]` and
-  // this alert can never trip against the current mock regardless of
-  // threshold. Left configured anyway (harmless, and correct if the mock
-  // ever grows estats support) — expect rulesCount: 1 but devicesWithAlerts
-  // staying 0 for this family until then.
+  // from data.estats.avg_chip_temperature in avalon.miner.js. With the
+  // threshold forced below any reading it trips on every online device's
+  // first completed snap (expect devicesWithAlerts === deviceCount).
   'mdk-worker-avalon': {
     devicePrefix: 'av',
     alerts: {
@@ -134,7 +131,17 @@ const GATEWAY_DEFAULTS = {
   requestPath: '/api/fleet/summary',
   deviceTelemetryPath: (deviceId) => `/api/fleet/device/${deviceId}/telemetry`,
   deviceActionPath: (deviceId) => `/api/fleet/device/${deviceId}/action`,
-  deviceAlertsPath: (deviceId) => `/api/fleet/device/${deviceId}/alerts`
+  deviceAlertsPath: (deviceId) => `/api/fleet/device/${deviceId}/alerts`,
+  // The Gateway's default rate limit (300 requests/min per client IP, see
+  // backend/core/gateway/workers/lib/security.js) caps one client, not the
+  // Gateway. This harness is a single loopback client driving deliberate
+  // load, so the limiter would measure itself rather than the Gateway; it is
+  // switched off here and the report says so.
+  rateLimit: false,
+  // Devices whose alerts are polled through the Gateway (spread evenly across
+  // the fleet). Per-device HTTP polling of a whole large fleet once a second
+  // would itself be the dominant Gateway load during the checklist.
+  alertSampleSize: 50
 }
 
 // Run-reproducibility knobs: sample counts, soak duration, resource-sampling
@@ -158,9 +165,18 @@ const RUN_REPRODUCIBILITY = {
   // checklist finishes. Off by default in fast paths (the smoke test
   // overrides this false) since each drill adds real wall-clock time.
   runFailureDrills: true,
-  workerRestartTimeoutMs: 5000,
-  kernelRestartTimeoutMs: 5000,
-  deviceOutageMs: 2000,
+  // Every drill deadline counts from the kill. A 5,000-device Worker has
+  // taken about 13s to come back READY on a developer workstation.
+  workerRestartTimeoutMs: 30000,
+  kernelRestartTimeoutMs: 30000,
+  // How long after a Worker or Kernel kill the drill keeps waiting for a
+  // real device read to succeed again (READY is not the same as serving).
+  restartServingTimeoutMs: 60000,
+  // How long after the mocks are killed the outage drill keeps reading until
+  // every channel fails (the cached channels need about 5s), and how long
+  // after they restart it waits for a read to succeed again.
+  outageDetectTimeoutMs: 30000,
+  outageRecoveryTimeoutMs: 30000,
   recoveryPollIntervalMs: 250
 }
 

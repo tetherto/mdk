@@ -19,7 +19,7 @@ talking to Kernel: device commands, status queries, telemetry pulls, and, throug
 [`sendWorkerCommand`](#sendworkercommandworkerid-deviceid-command-params-opts--promiseobject) /
 [`pullWorkerTelemetry`](#pullworkertelemetryworkerid-query-opts--promiseobject) for provisioning operations
 (`registerThing`, `forgetThings`) or Worker-scoped historical queries (logs, stats) that aggregate across a Worker's own
-store.
+store. Those two reach a Worker directly, so they need the caller's key on the Worker's allowlist, which the defaults leave out.
 
 > [!CAUTION]
 > Those provisioning commands and Worker-infra query types belong to the deprecated
@@ -51,10 +51,10 @@ is optional (only needed for an up-front warmup) — methods connect lazily on f
 const { createMdkClient } = require('@tetherto/mdk-client')
 
 // kernelKey: from kernel.getPublicKey() in-process, or the key file Kernel
-// publishes on start (`@tetherto/mdk-core`'s DEFAULT_KEY_FILE). Inside a Gateway
-// plugin, pass the config from require('@tetherto/mdk-gateway/plugin')
-// directly — kernelKey/kernelBootstrap are already folded in.
-const client = createMdkClient({ kernelKey })
+// publishes on start (`@tetherto/mdk-core`'s DEFAULT_KEY_FILE). kernelCredential:
+// the service account to sign in as. Inside an app, use config.mdkClient from
+// require('@tetherto/mdk-gateway/plugin') instead: the app runtime builds it.
+const client = createMdkClient({ kernelKey, kernelCredential: { name: 'operator-agent', privateKey } })
 
 // Aggregated, retry-wrapped status (recommended for tooling/operators)
 const { workers, totalDevices } = await client.getStatus()
@@ -84,12 +84,28 @@ recovery is always driven by the next caller-initiated request.
 
 | Argument | Status | Type | Default | Description |
 |--------|--------|------|---------|-------------|
-| `config.kernelKey` | Required unless `opts.transport` is set | `string \| Buffer` | None | The Kernel listener's public key. Inside an app, pass the whole `config` from `require('@tetherto/mdk-gateway/plugin')`, which already folds it in. |
-| `config.kernelKeyPair` | Optional | `{ publicKey, secretKey } \| () => keyPair` | None | DHT keypair the client dials with, so the [Kernel allowlist](../kernel/README.md#transports) can name it. Inside an app it is folded in (the Gateway's persistent `status.rpcClientKey`); without it the caller key is random per process |
-| `config.kernelBootstrap` | Optional | `object` | None | HRPC bootstrap override, folded in the same way |
-| `opts.errorCode` | Optional | `string` | `'ERR_MDK_CLIENT_UNAVAILABLE'` | Overrides the rejection code every request-issuing method throws when there's no connection. Not validated against the [documented error codes](#errors): any string is accepted, since an app commonly passes its own code instead. |
+| `config.kernelKey` | Required unless `opts.transport` is set | `string \| Buffer` | None | The Kernel listener's public key |
+| `config.kernelKeyPair` | Optional | `{ publicKey, secretKey } \| () => keyPair` | None | DHT keypair the client dials with, so the [Kernel allowlist](../kernel/README.md#transports) can name it; without it the caller key is random per process |
+| `config.kernelBootstrap` | Optional | `array` | None | HyperDHT bootstrap list for the client's DHT node (a [private DHT](../../../docs/guides/deployment/private-dht.md)) |
+| `config.kernelDhtHost` | Optional | `string` | All interfaces | Interface the client's DHT node binds |
+| `config.kernelCredential` | Optional | `{ name, privateKey }` | None | The service account to sign in as (an app's `app:<name>`, or an agent). The client signs in on first use, sends the access token with every request, and renews it before it expires |
+| `opts.tokenSource` | Optional | `{ getToken, reset }` | None | Any other source of access tokens, such as a user session, instead of `kernelCredential` |
+| `opts.errorCode` | Optional | `string` | `'ERR_MDK_CLIENT_UNAVAILABLE'` | Overrides the rejection code every request-issuing method throws when there's no connection. Not validated against the [documented error codes](#errors): any string is accepted, since a Gateway plugin commonly passes its own code instead. |
 | `opts.timeout` | Optional | `number` (ms) | `30000` | Default per-request timeout. Every method also takes a trailing `{ timeout }` to override it for one call (see [Request timeouts](#request-timeouts)) |
 | `opts.transport` | Required unless `config.kernelKey` is set | `object` | None | Pre-built transport (`{ connect, close, request }`). Test seam — satisfies the `kernelKey` requirement instead. |
+
+The Kernel authorizes every request by its access token, against `spec.rbac`. A request it refuses for authorization
+throws, with the code as `err.code`: `ERR_KERNEL_TOKEN_REQUIRED` (no credential or token source),
+`ERR_KERNEL_TOKEN_INVALID` (retried once with a fresh token first), `ERR_KERNEL_ACTOR_INVALID` (the operator's token, not
+retried) or `ERR_KERNEL_ACTION_FORBIDDEN` (no rule allows it). A refusal never comes back as a reply, so `res.workers || []`
+cannot mistake "may not" for "there are none".
+
+`client.withActor(accessToken)` returns the same Kernel actions acting for an operator: each request carries the operator's
+access token in `envelope.actor` beside the client's own, and the Kernel allows it only when `spec.rbac` allows both. It is
+synchronous on both client forms, shares the connection, and has no `connect`, `close` or way to read the token back. An app
+runtime hands it to controllers as `req.mdk` (see [`@tetherto/mdk-app-runtime`](../app-runtime/README.md)), so app code
+rarely calls it directly.
+Every other Kernel error is still a `{ error }` reply.
 
 A host booted without a reachable Kernel keeps its routes up and fails per request with `opts.errorCode`, rather than
 failing to boot. A request that fails without an `ERR_*` code is rejected as `opts.errorCode` (default
@@ -105,7 +121,7 @@ ambient-config, auto-connecting form.
 
 | Option | Status | Type | Default | Description |
 |--------|--------|------|---------|-------------|
-| `opts.hrpc` | Required unless `opts.transport` is set | `object` | None | HRPC transport opts: `{ key, keyPair?, seed?, bootstrap?, timeout?, envelope?, dht?, rpc? }`. `key` is the Kernel listener **or** a Worker's RPC public key (hex string or Buffer). `keyPair` (a DHT keypair or a function returning one) pins the identity the client dials with, so the Kernel allowlist can name it. `timeout` is the default per-request timeout in ms (`30000`). `envelope: true` validates every reply as an MDK response envelope (set by `createWorkerClient`) |
+| `opts.hrpc` | Required unless `opts.transport` is set | `object` | None | HRPC transport opts: `{ key, keyPair?, seed?, bootstrap?, dhtHost?, timeout?, envelope?, dht?, rpc? }`. `dhtHost` is the interface the client's DHT node binds. `key` is the Kernel listener **or** a Worker's RPC public key (hex string or Buffer). `keyPair` (a DHT keypair or a function returning one) pins the identity the client dials with, so the Kernel allowlist can name it. `timeout` is the default per-request timeout in ms (`30000`). `envelope: true` validates every reply as an MDK response envelope (set by `createWorkerClient`) |
 | `opts.transport` | Required unless `opts.hrpc` is set | `object` | None | Pre-built transport (`{ connect, close, request }`). Test seam — satisfies the `hrpc` requirement instead. |
 
 Throws one of the [documented error codes](#errors): `ERR_MDK_CLIENT_TRANSPORT_REQUIRED` or `ERR_MDK_CLIENT_HRPC_KEY_REQUIRED`.
@@ -118,15 +134,17 @@ request. Requires the Worker's RPC public key — resolve it with
 same as that factory.
 
 Same client surface as `createMdkClient`; scoped to ops the Worker adapter handles directly (`registerThing`,
-`forgetThings`, …) rather than Kernel contract commands. `hrpcOpts` forwards `keyPair`/`seed`/`bootstrap`/`timeout`/`dht`/`rpc`
+`forgetThings`, …) rather than Kernel contract commands. `hrpcOpts` forwards `keyPair`/`seed`/`bootstrap`/`dhtHost`/`timeout`/`dht`/`rpc`
 to the transport. Worker replies are checked with the protocol's `validate()`: anything that is not a well-formed
 response envelope rejects with `ERR_MDK_RESPONSE_INVALID`, and a bare `{ error: 'ERR_*' }` reply (for example
 `ERR_WORKER_CALLER_NOT_ALLOWED`) rejects with that code.
 
 > [!IMPORTANT]
-> Workers admit only allowlisted caller keys. Called on its own, `createWorkerClient` dials with the identity in
-> `hrpcOpts` (`keyPair`/`seed`), or a random one if none is given, which no Worker allowlist will name. Pass the same
-> `keyPair` the Worker admits.
+> Workers admit only allowlisted caller keys, and `mdk run` and the `@tetherto/mdk-core` helpers admit the Kernel's key
+> alone. A caller reaches a Worker directly only after the operator adds its key to that Worker's `allowedKeys` (or
+> `MDK_WORKER_ALLOWED_KEYS`). Called on its own, `createWorkerClient` dials with the identity in `hrpcOpts`
+> (`keyPair`/`seed`), or a random one if none is given, which no Worker allowlist will name. Pass the same `keyPair` the
+> Worker admits.
 
 > [!NOTE]
 > [`sendWorkerCommand`](#sendworkercommandworkerid-deviceid-command-params-opts--promiseobject) and
@@ -258,7 +276,7 @@ await client.sendCommand('wm-001', 'setupPools', {
 | --- | --- | --- |
 | `commandId` | `string` | Correlation ID generated by Kernel. Pass it to `getCommandStatus`. |
 | `status` | `string` | `'QUEUED'` when Kernel accepted the command, `'REJECTED'` when it did not |
-| `error` | `string` | Why the command was rejected (present when `status` is `'REJECTED'`) |
+| `error` | `string` | Why the command was rejected (present when `status` is `'REJECTED'`): an undeclared command (`ERR_COMMAND_NOT_IN_CAPABILITIES`) or params that break the contract's rules (`ERR_PARAM_*`) |
 
 ```js
 const res = await client.sendCommand('wm-001', 'setPowerMode', { mode: 'low' })
@@ -287,6 +305,17 @@ const res = await client.getCommandStatus(commandId)
 // res.verification — { state: 'VERIFIED', telemetry: 'power_mode', expected: 'low', observed: 'low', at: 1792158359941 }
 ```
 
+#### `getCommandLog({ start?, end?, limit? })` → `Promise<{ entries }>`
+
+Read the Kernel's [write-command log](../kernel/README.md#write-command-log), newest first: every `command.request` attempt with
+its caller, target, redacted params and outcome, and each accepted command's terminal state. `start`/`end` bound the entry time
+in ms (inclusive); `limit` is 1 to 1000 (default 100). Needs the `admin` role (`ERR_KERNEL_ACTION_FORBIDDEN` otherwise).
+
+```js
+const { entries } = await client.getCommandLog({ limit: 20 })
+// [{ ts, event: 'attempt', commandId, caller: { key, roles }, command, scope, deviceId, workerId, targets, params, outcome, error }, ...]
+```
+
 #### `getWorkerKey(workerId)` → `Promise<string | null>`
 
 Resolve a Worker's RPC public key (hex) from the Kernel registry (the Kernel learned it via discovery), or `null` if the Worker isn't
@@ -297,7 +326,7 @@ registered. Pair with `createWorkerClient`/`sendWorkerCommand` for Worker-direct
 Send a Worker-direct command (e.g. `registerThing`) by `workerId` in one call: resolve the Worker's key via the Kernel, open a
 short-lived Worker client, send, and close it. Returns the command response. Throws `ERR_MDK_WORKER_KEY_UNKNOWN` if the Worker
 isn't in the registry. The Worker client inherits this client's identity: it reuses the parent's DHT node once the
-parent is connected (otherwise its `kernelKeyPair`/`seed`/`bootstrap`) and its default timeout, so a Worker whose
+parent is connected (otherwise its `kernelKeyPair`/`seed`/`bootstrap`/`dhtHost`) and its default timeout, so a Worker whose
 allowlist names the `kernelKeyPair` public key admits it. `opts.hrpc` overrides the transport opts (passing
 `keyPair`/`seed`/`rpc`/`dht` replaces the inherited identity); `opts.timeout` sets this call's timeout.
 
@@ -323,6 +352,43 @@ const history = await client.pullWorkerTelemetry('miner-worker', { type: 'logs',
 #### `terminateWorker(workerId)` → `Promise<object>`
 
 Signal Kernel to evict a Worker from the registry. The Worker process itself continues running; it re-registers the next time it connects.
+
+#### `getRbac()` → `Promise<{ record }>`
+
+Read the [RBAC](../rbac/README.md) record the Kernel enforces: `{ version, appliedAt, source, previous, policy }`, or `null` when no
+policy was ever applied. Needs an `admin` caller.
+
+#### `applyRbac(rbac)` → `Promise<object>`
+
+Apply `spec.rbac` (`null` for no policy, which denies everything). Resolves `{ changed, version, appliedAt, previous? }`, or
+`{ error, errors }` listing every problem when the Kernel refuses the policy and keeps the one in force. Needs an `admin` caller.
+
+### Sign-in methods
+
+These call the Kernel's [token issuer](../identity/README.md). Each sign-in resolves
+`{ tokenType, accessToken, expiresIn, refreshToken, refreshExpiresIn }`, or `{ error }` with an `ERR_IDENTITY_*` code.
+
+| Method                                    | Sends          | Does                                                                                   |
+| ----------------------------------------- | -------------- | -------------------------------------------------------------------------------------- |
+| `login(username, password)`               | `auth.login`   | Password sign-in for a user                                                            |
+| `refreshToken(refreshToken)`              | `auth.refresh` | Trades a refresh token for new tokens; the old one is used up                          |
+| `serviceAccountToken(assertion, { bind })` | `auth.token`  | Service-account sign-in; tokens bind to this client's key unless `bind: false`         |
+| `logout(refreshToken)`                    | `auth.logout`  | Ends the session: `{ revoked }`                                                        |
+| `getJwks()`                               | `auth.jwks`    | The issuer's public keys for verifying access tokens: `{ keys }`                       |
+
+### Identity administration methods
+
+Each needs an `admin` caller.
+
+| Method                                     | Sends                  | Resolves                                  |
+| ------------------------------------------ | ---------------------- | ----------------------------------------- |
+| `listUsers()`                              | `identity.user.list`   | `{ users }`, without password hashes      |
+| `upsertUser({ name, email, groups, password, disabled })` | `identity.user.upsert` | `{ created, user }`        |
+| `deleteUser(name)`                         | `identity.user.delete` | `{ deleted }`                             |
+| `listServiceAccounts()`                    | `identity.sa.list`     | `{ serviceAccounts }`                     |
+| `upsertServiceAccount({ name, publicKey })` | `identity.sa.upsert`  | `{ created, changed, serviceAccount }`    |
+| `deleteServiceAccount(name)`               | `identity.sa.delete`   | `{ deleted }`                             |
+| `rotateSigningKey()`                       | `identity.keys.rotate` | `{ kid }`                                 |
 
 ### Write-action methods
 
@@ -368,6 +434,7 @@ Cancel one or more staged actions by ids. `opts`: `{ ids, voter }`.
 | `ERR_MDK_CLIENT_UNAVAILABLE` | `createMdkClient`'s `config.kernelKey` is missing, connecting failed, or a request could not reach the Kernel | Supply `config.kernelKey` (or `opts.transport`), or check Kernel connectivity |
 | `ERR_MDK_CLIENT_TRANSPORT_REQUIRED` | `createRawMdkClient` called with neither `opts.hrpc` nor `opts.transport` | Pass one of them |
 | `ERR_MDK_CLIENT_HRPC_KEY_REQUIRED` | `createRawMdkClient({ hrpc: {...} })` called without `hrpc.key` | Pass the Kernel's or a Worker's public key as `hrpc.key` |
+| `ERR_MDK_CLIENT_ACTOR_REQUIRED` | `withActor()` is called without an access token string | Pass the operator's access token |
 | `ERR_MDK_CLIENT_NO_SUCH_METHOD` | A `createMdkClient` call names a property that isn't an own method of the raw client (inherited members such as `constructor` or `toString` included) | Check the method name |
 | `ERR_HRPC_NOT_CONNECTED` | A `createRawMdkClient`/`createWorkerClient` client's request-issuing method (not e.g. `close()`) is called before `connect()` has run, or after `close()` | Call `connect()` first |
 | `ERR_MDK_REQUEST_TIMEOUT` | A request got no reply within its timeout (default `30000` ms, `opts.timeout` / `hrpc.timeout`, or a per-call `{ timeout }`) | Check the peer's reachability, or raise the timeout for slow calls |
@@ -416,7 +483,7 @@ the device state back. These command records are separate from the transport: HR
 ## Use in an app
 
 Every app builds its own client from its own context, once per app, in a `lib/client.js` every
-controller in the app requires, as the shipped [`demo` app](../../apps/demo/lib/client.js) does:
+controller in the app requires, as the shipped [`demo` app](https://github.com/tetherto/mdk-app-demo/blob/main/lib/client.js) does:
 
 ```js
 // lib/client.js

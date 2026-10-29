@@ -23,6 +23,7 @@ const LIMITS = Object.freeze({
   queries: 50,
   authPerms: 256,
   params: 256,
+  logEntries: 1000,
   // Worker write.calls.response: calls per Worker, and the most approvals a
   // Worker may demand (a huge reqVotes would block an action forever).
   writeCalls: 10000,
@@ -298,6 +299,21 @@ function validateActionVote (payload) {
   return tooLong(payload.authPerms, LIMITS.authPerms, 'AUTH_PERMS') || { valid: true }
 }
 
+function validateCommandLog (payload) {
+  if (payload === undefined || payload === null) return { valid: true }
+  if (typeof payload !== 'object') return { valid: false, error: 'ERR_PAYLOAD_NOT_OBJECT' }
+  for (const name of ['start', 'end']) {
+    const value = payload[name]
+    if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+      return { valid: false, error: `ERR_PAYLOAD_${name.toUpperCase()}_INVALID` }
+    }
+  }
+  if (payload.limit !== undefined && (!Number.isInteger(payload.limit) || payload.limit < 1 || payload.limit > LIMITS.logEntries)) {
+    return { valid: false, error: `ERR_PAYLOAD_LIMIT_INVALID: integer 1-${LIMITS.logEntries}` }
+  }
+  return { valid: true }
+}
+
 function validateActionCancelBatch (payload) {
   if (!payload || typeof payload !== 'object') {
     return { valid: false, error: 'ERR_PAYLOAD_NOT_OBJECT' }
@@ -351,6 +367,40 @@ function validateWriteCallsResponse (payload) {
   return { valid: true }
 }
 
+// spec.rbac itself is validated by @tetherto/mdk-rbac when it is applied; this
+// only checks the envelope carries one (null applies the empty, deny-all policy).
+function validateRbacApply (payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload) || !Object.hasOwn(payload, 'rbac')) {
+    return { valid: false, error: 'ERR_PAYLOAD_RBAC_REQUIRED' }
+  }
+  const { rbac } = payload
+  if (rbac !== null && (typeof rbac !== 'object' || Array.isArray(rbac))) {
+    return { valid: false, error: 'ERR_PAYLOAD_RBAC_INVALID: rbac must be a mapping or null' }
+  }
+  return { valid: true }
+}
+
+// Sign-in and identity payloads: shape only, the issuer checks the rest. A
+// missing string field is reported by name; values are never echoed back.
+function _strings (...fields) {
+  return (payload) => {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return { valid: false, error: 'ERR_PAYLOAD_INVALID: expected an object' }
+    for (const f of fields) {
+      if (typeof payload[f] !== 'string' || payload[f].length === 0 || payload[f].length > 8192) {
+        return { valid: false, error: `ERR_PAYLOAD_FIELD_REQUIRED: ${f}` }
+      }
+    }
+    return { valid: true }
+  }
+}
+
+function validateAuthToken (payload) {
+  const base = _strings('assertion')(payload)
+  if (!base.valid) return base
+  if (payload.bind !== undefined && typeof payload.bind !== 'boolean') return { valid: false, error: 'ERR_PAYLOAD_INVALID: bind must be a boolean' }
+  return { valid: true }
+}
+
 /**
  * Map of action → payload validator
  * Actions not listed here have no payload constraints (empty payload OK)
@@ -366,6 +416,7 @@ const PAYLOAD_VALIDATORS = {
   'command.status.response': validateCommandStatusResponse,
   'command.cancel': validateCommandCancel,
   'command.cancel.response': validateCommandCancelResponse,
+  'command.log': validateCommandLog,
   'health.pong': validateHealthPong,
   'state.response': validateStateResponse,
   'action.push': validateActionPush,
@@ -375,6 +426,15 @@ const PAYLOAD_VALIDATORS = {
   'action.query': validateActionQuery,
   'action.vote': validateActionVote,
   'action.cancel-batch': validateActionCancelBatch,
+  'rbac.apply': validateRbacApply,
+  'auth.login': _strings('username', 'password'),
+  'auth.refresh': _strings('refreshToken'),
+  'auth.token': validateAuthToken,
+  'auth.logout': _strings('refreshToken'),
+  'identity.user.upsert': _strings('name'),
+  'identity.user.delete': _strings('name'),
+  'identity.sa.upsert': _strings('name', 'publicKey'),
+  'identity.sa.delete': _strings('name'),
   'write.calls.request': validateWriteCallsRequest,
   'write.calls.response': validateWriteCallsResponse
 }
@@ -404,6 +464,7 @@ module.exports = {
   validateCommandStatusResponse,
   validateCommandCancel,
   validateCommandCancelResponse,
+  validateCommandLog,
   validateHealthPong,
   validateStateResponse,
   validateActionPush,

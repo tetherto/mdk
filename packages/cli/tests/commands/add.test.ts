@@ -110,4 +110,52 @@ describe('mdk add', () => {
     expect(stderr.mock.calls.join('')).toMatch(/not valid[\s\S]*mdk-app\.yaml: not found/);
     expect(process.exitCode).toBe(1);
   });
+
+  it('passes the permission flags through for an app only', async () => {
+    addPackageMock.mockReturnValue({ ok: true, packageName: 'a', reference: 'a', instanceName: 'a', stackFile: 'exists' });
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await run('app', 'a', '--accept-permissions');
+    expect(addPackageMock).toHaveBeenLastCalledWith(expect.objectContaining({ acceptPermissions: true, keepPermissions: undefined }));
+    await run('app', 'a', '--keep-permissions');
+    expect(addPackageMock).toHaveBeenLastCalledWith(expect.objectContaining({ keepPermissions: true }));
+    await expect(run('worker', 'w', '--accept-permissions')).rejects.toThrow(/unknown option/);
+  });
+
+  it("reports the app's credential, new, kept or missing", async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const base = { ok: true, packageName: 'a', reference: 'a', instanceName: 'tuner', stackFile: 'added' };
+    addPackageMock.mockReturnValue({ ...base, credential: { file: '/p/.mdk/credentials/apps/tuner.json', created: true } });
+    await run('app', 'a');
+    expect(stdout.mock.calls.join('')).toMatch(/credential \/p\/\.mdk\/credentials\/apps\/tuner\.json \(new, private to this instance\)/);
+    stdout.mockClear();
+    addPackageMock.mockReturnValue({ ...base, credential: { file: '/f', created: false } });
+    await run('app', 'a');
+    expect(stdout.mock.calls.join('')).toMatch(/credential \/f \(kept\)/);
+    stdout.mockClear();
+    addPackageMock.mockReturnValue({ ...base, credential: { error: 'EACCES' } });
+    await run('app', 'a');
+    expect(stdout.mock.calls.join('')).toMatch(/no credential yet \(EACCES\); `mdk run` creates it/);
+  });
+
+  it("reports what install did to the app's role in spec.rbac", async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const base = { ok: true, packageName: 'a', reference: 'a', instanceName: 'tuner', stackFile: 'added' };
+    const cases: Array<[string, boolean, RegExp, boolean]> = [
+      ['add', true, /spec\.rbac role app-tuner grants app:tuner the Kernel access it requests/, true],
+      ['replace', true, /replaced with what the app now requests/, true],
+      ['remove', true, /removed: the app no longer requests Kernel access/, true],
+      ['keep', true, /spec\.rbac role app-tuner left as it is/, true],
+      ['record', true, /runs as app:tuner\n/, true],
+      ['none', true, /runs as app:tuner \(no Kernel access requested\)/, false],
+      ['add', false, /could not record app:tuner in mdk\.yaml/, false],
+    ];
+    for (const [action, written, line, apply] of cases) {
+      stdout.mockClear();
+      addPackageMock.mockReturnValue({ ...base, grant: { action, role: 'app-tuner', serviceAccount: 'app:tuner', written } });
+      await run('app', 'a');
+      const out = stdout.mock.calls.join('');
+      expect(out, action).toMatch(line);
+      expect(out.includes('mdk rbac apply'), `${action} mentions apply`).toBe(apply);
+    }
+  });
 });

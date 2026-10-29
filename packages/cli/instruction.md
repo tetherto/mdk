@@ -1,16 +1,28 @@
 # Agent instructions — `@tetherto/mdk-cli`
 
 Guidance for AI coding agents working on this package. Read this **before**
-making changes. The goal of this package is to grow from a scaffold into the
-real `mdk` developer CLI, one command at a time, without churning the wiring.
+making changes. The CLI grows one command at a time, without churning the
+wiring.
 
 ## What this package is
 
-The `mdk` command-line tool. Today it is a **scaffold**:
+The `mdk` command-line tool. Every command registered in
+[`program.ts`](./src/program.ts) is implemented; there are no stub commands.
 
-- **`mdk onboard` is fully implemented**: a guided, colorful wizard that detects
-  the environment, asks setup questions (pre-filled defaults), writes `mdk.yaml`,
-  and prints the commands to run the stack.
+- **`onboard`**: a guided wizard that detects the environment, asks setup
+  questions (pre-filled defaults), writes `mdk.yaml`, and prints the run commands.
+- **`create`** (`worker`, `app`, `dashboard`), **`add`** (`app`, `worker`) and
+  **`validate`** (`app`, `worker`): scaffold, install and check packages.
+- **`run`** (`all`, `kernel`, `gateway`, `mcp`, `worker`, `app`, `dashboard`) and
+  **`status`**: boot the stack from `mdk.yaml` and report its health.
+- **`rbac`**, **`user`**, **`sa`**, **`login`**, **`logout`**, **`whoami`**:
+  access policy, users, service accounts and the CLI's own session.
+- **`skill add`** and **`version`**.
+
+The earlier planned commands `get`, `describe`, `logs`, `discover`, `manifest` and
+`mcp register` are not part of the CLI and are not registered, so they do not
+appear in `--help`. Do not re-add a placeholder that only prints "not implemented":
+register a command once it works.
 
 ## Project layout
 
@@ -18,26 +30,56 @@ The `mdk` command-line tool. Today it is a **scaffold**:
 src/
   index.ts            # entry point (shebang); parses argv, maps errors -> exit 1
   program.ts          # builds the Commander tree; registers every command group
-  commands/           # one file per command group (A–G in the HLD)
-    onboard.ts        # Group A — implemented reference for style & UX
-    create.ts         # Group B — create worker | app | dashboard
-    run.ts            # Group C — run
-    inspect.ts        # Group C — status
-    agent.ts          # Group F — skill add
-    meta.ts           # Group G — version
-  lib/
+  commands/           # one file per command group
+    onboard.ts        # onboard — reference for style & UX
+    create.ts         # create worker | app | dashboard
+    add.ts            # add app | worker (npm or GitHub)
+    validate.ts       # validate app | worker
+    run.ts            # run [target] [name]
+    inspect.ts        # status
+    rbac.ts           # rbac init | apply | show
+    user.ts, sa.ts    # user and service-account management
+    session.ts        # login | logout | whoami
+    agent.ts          # skill add
+    meta.ts           # version
+  lib/                # every file in src/lib, grouped by purpose
+    # project and spec
     pkg.ts            # reads package.json (name, version)
     detect.ts         # environment detection used by onboard
     spec.ts           # builds + loads the mdk.yaml stack spec
     project.ts        # the emitted layout: root manifest, .gitignore, README
-    runtime.ts        # boots kernel/gateway/workers; owns the .mdk state paths
-    status.ts         # read-only status: env + spec + probes kernel/gateway/workers
+    names.ts          # name and --org validation for workers, apps, dashboards, stacks
+    env-file.ts       # the project's gitignored .env (secret setup answers)
+    checkout.ts       # finds the MDK monorepo checkout the CLI runs from, if any
+    catalog.ts        # the packages onboard offers, and where each resolves from
+    plugin-setup.ts   # an app's mdk-plugin.json setup questions
+    # scaffolding
+    scaffold.ts       # shared scaffold helpers (backend package deps, mdk.yaml writes)
     worker-scaffold.ts# create worker: template copy + mdk.yaml registration
     app-scaffold.ts   # create app: template copy + mdk.yaml registration
     dashboard.ts      # create dashboard: UI shell template -> apps/dashboard
+    dashboard-apps.ts # the installed-apps handoff from `mdk run dashboard` to the dashboard
     fetch-template.ts # degit wrapper for fetching a GitHub subtree
+    # add and validate
+    add-package.ts    # add: install, validate, then register in mdk.yaml
+    package-source.ts # `add` sources: npm package or GitHub repo
+    app-package.ts, worker-package.ts  # the rules behind `validate`
+    app-ui-check.ts, app-ui-runner.ts  # contract check of an app's built ui/
+    worker-smoke.ts   # smoke-runs a worker against its contract
+    # run and status
+    runtime.ts        # boots kernel/gateway/workers; owns the .mdk state paths
+    status.ts         # read-only status: env + spec + probes kernel/gateway/workers
+    kernel-client.ts  # lazy @tetherto/mdk-client wrapper for talking to the Kernel
+    ports.ts          # free-port probing for local components
+    run-lock.ts       # one running copy per component and project
+    shutdown.ts       # Ctrl+C handling: stops components in reverse boot order
+    # access and sign-in
+    rbac.ts, rbac-init.ts, rbac-kernel.ts, identity-kernel.ts  # access policy
+    session.ts, session-kernel.ts, credentials.ts              # sign-in
+    # misc
     npm.ts            # `npm install` helpers (workspace-aware)
     skill.ts          # installs the @tetherto/mdk-skill suite
+    help.ts           # help grouping and example formatting
     theme.ts          # colors, badge, banner, aligned kv/cmd blocks
 ```
 
@@ -81,7 +123,7 @@ and add tests for anything you implement.
 ## CLI behavior rules (agent- and pipe-friendly)
 
 - **stdout is for machine-facing data; stderr is for humans.** Data that a user
-  might pipe (`get`, `describe`, `manifest`, ...) goes to stdout; status notices,
+  might pipe (`version`, `status -o json`, `user list`, ...) goes to stdout; status notices,
   prompts, and errors go to stderr.
 - **Respect `-o, --output <table|json|yaml>`** for any command that emits data.
   Default is `table`; `json`/`yaml` output must be clean and parseable.
@@ -119,7 +161,7 @@ and add tests for anything you implement.
 - **MDK architecture** (Kernel, Gateway, Worker) lives in the backend core
   packages ([`../../backend/core/kernel`](../../backend/core/kernel/README.md), [`../../backend/core/gateway`](../../backend/core/gateway/README.md),
   [`../../backend/core/mdk`](../../backend/core/mdk/README.md)) and [`../../backend/core/docs`](../../backend/core/docs/README.md). Commands like `run`,
-  `status`, and `discover` integrate against these.
+  `status`, `rbac` and `user` integrate against these.
 - **Liveness is always probed, never read from files.** `.mdk/kernel.key` and
   `.mdk/keys/*.key` intentionally survive shutdown (the keys are stable across
   restarts), so their presence proves only that a component once ran. [`status.ts`](./src/lib/status.ts)
@@ -127,7 +169,7 @@ and add tests for anything you implement.
 
 ## Definition of done for a command
 
-1. Command wiring matches the HLD.
+1. Command is registered in [`program.ts`](./src/program.ts) with a `HELP_GROUPS` heading, and only once it works: no placeholder commands in `--help`.
 2. Output obeys the stdout/stderr split and `--output` format.
 3. Sensible exit codes; interactivity guarded; color via [`theme.ts`](./src/lib/theme.ts).
 4. `npm run build` passes with no new type/lint errors.

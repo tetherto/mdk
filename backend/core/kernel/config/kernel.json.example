@@ -1,7 +1,6 @@
 {
   "hrpc": {
-    "whitelist": [],
-    "allowAll": false
+    "whitelist": []
   },
   "ipc": {
     "path": ""
@@ -17,5 +16,6 @@
   "healthFailureThreshold": 3,
   "commandTimeoutMs": 30000,
   "commandResultTtlMs": 86400000,
+  "commandLogTtlMs": 2592000000,
   "commandVerifyIntervalMs": 5000
 }

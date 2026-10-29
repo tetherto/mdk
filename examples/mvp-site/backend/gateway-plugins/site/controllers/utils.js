@@ -3,6 +3,22 @@
 // Shared helpers for the site plugin controllers. Every Kernel access goes through
 // the plugin's own mdkClient (lib/client.js) — controllers never reach further down.
 
+// The Kernel client for one request. For a signed-in user the app runtime
+// hands the controller req.mdk, which carries the user's token beside the
+// app's: the Kernel allows each call only when both the app's and the user's
+// roles allow it, and logs the user as the one who sent a command. Without one
+// (an MCP agent's call) it is the app's own client.
+//
+// `ctx` is a test-only seam: a real route call always passes just `req`.
+// Tests pass `{ mdkClient }` directly instead of loading the plugin.
+const requestClient = (req, ctx) => {
+  if (ctx !== undefined) return ctx.mdkClient
+  return (req && req.mdk) || require('../lib/client')
+}
+
+// The Kernel refused this caller (or the user it acts for) the call.
+const isForbidden = (err) => !!err && String(err.code || err.message).startsWith('ERR_KERNEL_ACTION_FORBIDDEN')
+
 // Fallback when a config pull fails or omits deviceFamily — keyed by stable workerId.
 const WORKER_FAMILY = {
   'whatsminer-worker': 'miner',
@@ -81,7 +97,15 @@ const loadSite = async (mdkClient, opts = {}) => {
     if (w.state === 'TERMINATED' || w.healthState === 'DEAD') return
 
     const anchor = telemetryAnchor(w)
-    const cfg = await mdkClient.pullTelemetry(anchor, { type: 'config' })
+    let cfg
+    try {
+      cfg = await mdkClient.pullTelemetry(anchor, { type: 'config' })
+    } catch (err) {
+      // A user whose roles cover only some devices (a hosting client) sees
+      // only those: a worker they may not read is left out, not an error.
+      if (isForbidden(err)) return
+      throw err
+    }
     const family = resolveFamily(w, cfg)
 
     if (family === 'minerpool') {
@@ -165,4 +189,4 @@ const snapConfig = (thg) => {
   return (thg && thg.last && thg.last.snap && thg.last.snap.config) || {}
 }
 
-module.exports = { loadSite, snapStats, snapConfig, pullPoolStats, pullPoolStatsHistory, WORKER_FAMILY, resolveFamily }
+module.exports = { loadSite, snapStats, snapConfig, requestClient, pullPoolStats, pullPoolStatsHistory, WORKER_FAMILY, resolveFamily }

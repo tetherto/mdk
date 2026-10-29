@@ -19,7 +19,7 @@ no app code: a tool call is forwarded to the app's [runtime](../app-runtime/READ
 An AI agent reaches fleet data through this server, not through the [Gateway](../gateway/README.md)'s HTTP surface — a
 standalone process started by `createMcpServer` below. MDK's own operator agent, [`@tetherto/mdk-agent`](../agent/README.md),
 is one such client and uses the same path any third-party agent would. (Separately,
-[`@tetherto/mdk-app-agent`](../../apps/agent/README.md) mounts a chat API on the Gateway so a human operator can talk
+[`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) mounts a chat API on the Gateway so a human operator can talk
 to that agent — a different surface from the MCP endpoint described here.)
 
 Agents sit in the same security envelope as every other consumer of this server: whatever checks front it apply equally to a
@@ -29,13 +29,22 @@ human caller and an agent. The server's built-in protections are:
 - **DNS-rebinding guard.** A request whose `Host` is not `127.0.0.1:<port>`, `localhost:<port>` or `[::1]:<port>` (plus
   `options.allowedHosts`) gets a `403`, and so does any request carrying an `Origin` header not in `options.allowedOrigins`.
   Browsers always send `Origin`; MCP clients don't. The SDK transport's `enableDnsRebindingProtection` repeats the Host check.
-- **Optional bearer token.** With `options.token`, every `/mcp` request needs `Authorization: Bearer <token>`, or it gets a `401`.
+- **Each agent signs in as itself.** With an authority (an in-process Kernel, or the server's own service account for a
+  Kernel elsewhere, as `mdk run mcp` starts it), every `/mcp` request needs an agent's access token, or it gets a `401`. The
+  agent lists only the tools `spec.rbac` lets it call, each call is checked as the Gateway checks the same route, every
+  decision is logged as an `authz` line on stderr, and the agent's identity, `{ kind: 'serviceaccount', sub }`, is what the
+  app runtime receives as `req._info`.
 - **Write gating.** Only read-only tools are exposed by default (see [Tool exposure](#tool-exposure)).
 - **Untrusted output.** Tool output is framed as untrusted data and capped (see [Tool output and errors](#tool-output-and-errors)).
 
+An agent gets its token with its own key: `mdk sa add <agent>` creates the credential, and the agent signs in at the
+Gateway's `POST /auth/token` (`ServiceAccountTokenSource` with `gatewayTokenRequest` from
+[`@tetherto/mdk-identity`](../identity/README.md) keeps one fresh). `mdk sa token <agent>` prints one for a client configured
+by hand. Bind the agent to a role in `spec.rbac`, as `{ kind: ServiceAccount, name: <agent> }`.
+
 > [!WARNING]
-> Neither Kernel nor this server authenticates users. Without `options.token`, any local process that can reach the port can
-> call every exposed tool. Exposing the port beyond localhost means putting your own authentication in front of it.
+> Without an authority the server falls back to an optional shared `options.token` and one static `options.identity` for
+> every caller. Use that only for a server no Kernel stands behind.
 
 This server gets its tools from two independent sources, merged into one tool set:
 
@@ -57,7 +66,7 @@ const { createMcpServer } = require('@tetherto/mdk-mcp')
 
 const server = await createMcpServer(root, port, { kernelKey, kernelBootstrap }, pluginDirs, apps, {
   keyFile: './run/mcp.key',
-  token: process.env.MDK_MCP_TOKEN,
+  credential: { name: 'mdk-mcp', privateKey },   // reads the policy it enforces (policy: read)
   allowTools: ['get_device', 'act_device']
 })
 // later
@@ -70,17 +79,21 @@ It resolves to the `http.Server`. Call `close()` on it to stop.
 | -------- | -------- | -------- | ---------------------------------------------------------------------------------- |
 | `root`   | Required | `string` | Working directory for this server instance; with `apps`, it keeps the seed of the key app runtimes see under `identity/`. Throws `ERR_INVALID_MCP_ROOT` if falsy |
 | `port`   | Required | `number` | Port to listen on (`127.0.0.1` only). Throws `ERR_INVALID_MCP_PORT` if falsy       |
-| `config` | Optional | `object` | `{ kernelKey, kernelBootstrap }` (or any other config a tool needs). Frozen and handed to every native plugin directory as the `config` in its context — the server builds no Kernel client of its own; each tool plugin builds its own [`@tetherto/mdk-client`](../client/README.md) from it. `kernelBootstrap` is also the DHT app runtimes are reached on, and `appTimeoutMs` (default `60000`) bounds each app call, as in the Gateway |
+| `config` | Optional | `object` | `{ kernelKey, kernelBootstrap, kernelDhtHost }` (or any other config a tool needs). Frozen and handed to every native plugin directory as the `config` in its context — the server builds no Kernel client of its own; each tool plugin builds its own [`@tetherto/mdk-client`](../client/README.md) from it. `kernelBootstrap` and `kernelDhtHost` also set the DHT app runtimes are reached on, and `appTimeoutMs` (default `60000`) bounds each app call, as in the Gateway |
 | `pluginDirs` | Optional | `string[]` | Directories to load [native `mcp-plugin.json` tools](#plugin-format) from. Empty/omitted starts a server with no tools from this source |
 | `apps` | Optional | `{ name: string, appDir: string, keyFile: string }[]` | The apps whose routes become tools, in the shape the Gateway's `apps` takes: each app's route table (`mdk-plugin.json` under `appDir`) is converted into MCP tools via [`lib/from-gateway-plugin.js`](./lib/from-gateway-plugin.js), and every call is forwarded to the runtime whose key `keyFile` holds (re-read on each call). No app code is loaded here. A call to an app whose runtime is not up returns `ERR_APP_RUNTIME_UNAVAILABLE` |
 | `options` | Optional | `object` | Server-side security and lifecycle options, kept apart from `config` so plugins never see them. See the table below |
 
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
-| `token` | `string` | none | Require `Authorization: Bearer <token>` on `/mcp`. An empty string throws `ERR_INVALID_MCP_TOKEN` |
+| `authority` | `object` | from `kernel` or `credential` | What checks every agent against `spec.rbac` (`@tetherto/mdk-gateway/workers/lib/authority`) |
+| `kernel` | `KernelManager` | none | An in-process Kernel: its issuer and policy are the authority |
+| `credential` | `{ name, privateKey }` | none | This server's service account, for a Kernel at `config.kernelKey` in another process; it needs `policy: read` |
+| `onDecision` | `function` | JSON line on stderr | Receives each authorization decision |
+| `token` | `string` | none | Without an authority only: require `Authorization: Bearer <token>` on `/mcp`. An empty string throws `ERR_INVALID_MCP_TOKEN`; with an authority it throws `ERR_MCP_STATIC_IDENTITY_UNSUPPORTED` |
 | `allowWrite` | `boolean` | `false` | Expose every tool, including ones not declared read-only |
 | `allowTools` | `string[]` | none | Expose only these tool ids. Listing a write tool authorises it |
-| `identity` | `object` | none | The identity sent with every app call, which a controller reads as `req._info`, e.g. `{ user: { userId: 'mcp-agent' }, perms: ['read'] }`. App `auth: true` routes are exposed only when it is set and its `perms` hold every entry of the route's `permissions` |
+| `identity` | `object` | none | Without an authority only: the identity sent with every app call, which a controller reads as `req._info`. App `auth: true` routes are exposed only when it is set and its `perms` hold every entry of the route's `permissions`. With an authority it throws `ERR_MCP_STATIC_IDENTITY_UNSUPPORTED` |
 | `keyFile` | `string` | none | Where to write the public key the server calls app runtimes with (persistent, from the seed under `root`). List it in each runtime's `allowedKeyFiles` beside the Gateway's |
 | `allowedHosts` | `string[]` | `[]` | Extra `Host` header values to admit, on top of the loopback names on `port` (for a local reverse proxy) |
 | `allowedOrigins` | `string[]` | `[]` | `Origin` header values to admit. Any other `Origin` is refused |
@@ -103,7 +116,7 @@ exposed is never registered: the model can neither list nor call it. One `consol
 | Tool | Read-only when | Exposed when |
 | ---- | -------------- | ------------ |
 | Native (`mcp-plugin.json`) | `annotations.readOnlyHint` is `true`. A tool without it gets `readOnlyHint: false` | Read-only, or `allowWrite`, or listed in `allowTools` |
-| App route | `safety` is `"read-only"`. `"write"` or unstated maps to `readOnlyHint: false` | Same, and for an `auth: true` route also `identity`, whose `perms` must hold every entry of the route's `permissions` |
+| App route | `safety` is `"read-only"`. `"write"` or unstated maps to `readOnlyHint: false` | Same, and with an authority, a rule letting the agent call it (`<app>/<path>` and its verb; a route with a `resourceName` is listed and checked per call). Without one, an `auth: true` route also needs `identity`, whose `perms` must hold every entry of the route's `permissions` |
 | App route with `stream: true` | n/a | Never: it needs a raw HTTP response an MCP call doesn't have |
 
 When `allowTools` is set, only the listed tools are exposed. Without `identity`, app routes get an empty `_info`, as on the
@@ -185,6 +198,9 @@ problem; the [error codes](#errors) name each.
 | `ERR_INVALID_MCP_PORT` | `createMcpServer` is called with no port (`port` falsy)              | Pass a valid port as `port` |
 | `ERR_INVALID_MCP_APP` | An `apps` entry is not `{ name, appDir, keyFile }`, e.g. a 0.10 `gatewayPluginDirs` path | Pass each app as `{ name, appDir, keyFile }` |
 | `ERR_INVALID_MCP_TOKEN` | `options.token` is set but is not a non-empty string | Pass a non-empty token, or omit it |
+| `ERR_AUTH_FORBIDDEN` | With an authority, a tool call no `spec.rbac` rule allows the agent, e.g. an instance outside its `resourceNames` (tool result, not a throw) | Bind the agent to a role that allows the route |
+| `ERR_MCP_APP_NAME_REQUIRED` | Route tools are generated with an authority but no app name | Pass each app as `{ name, appDir, keyFile }` |
+| `ERR_MCP_STATIC_IDENTITY_UNSUPPORTED` | `options.token` or `options.identity` is set together with an authority | Drop them: each agent signs in with its own service account |
 | `ERR_MCP_AUTH_REQUIRED` | A Gateway `auth: true` route ran with no `identity` configured (tool result, not a throw) | Pass `options.identity` |
 | `ERR_MCP_PERM_DENIED` | A Gateway `auth: true` route ran with an `identity` whose `perms` lack one of the route's `permissions` (tool result, not a throw) | Add the permission to `identity.perms`, or leave the tool unexposed |
 | `ERR_TOOL_FAILED` | A tool threw an error whose message doesn't start with `ERR_` (tool result; the original is logged) | Check the server log |

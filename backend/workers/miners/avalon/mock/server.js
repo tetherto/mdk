@@ -10,6 +10,7 @@ class AvalonMock extends MinerMock {
   static defaultPort = 4028
   static extraCliOptions = {
     serial: { type: 'string', default: '0000000000000000' },
+    password: { type: 'string', default: 'root' },
     minerpoolMockPort: { type: 'number', default: 8000 },
     minerpoolMockHost: { type: 'string', default: '127.0.0.1' }
   }

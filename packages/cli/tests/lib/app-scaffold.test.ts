@@ -1,9 +1,11 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { validateApp } from '../../src/lib/app-package.js';
 import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
+
+const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..', '..');
 
 const installScaffoldMock = vi.hoisted(() =>
   vi.fn(() => ({ ok: true, dir: '/does/not/matter' })),
@@ -71,8 +73,8 @@ describe('createApp', () => {
     expect(existsSync(clientPath)).toBe(true);
     const clientSrc = readFileSync(clientPath, 'utf8');
     expect(clientSrc).toContain("require('@tetherto/mdk-gateway/plugin')");
-    expect(clientSrc).toContain("require('@tetherto/mdk-client')");
-    expect(clientSrc).toContain('createMdkClient(config)');
+    expect(clientSrc).toContain('module.exports = config.mdkClient');
+    expect(clientSrc).not.toContain('createMdkClient', 'the runtime owns the client; the app never dials with raw keys');
     expect(clientSrc).not.toMatch(/services\.mdkClient|mdkClient\s*=\s*services/);
 
     const summarySrc = readFileSync(join(pluginPath, 'controllers', 'summary.js'), 'utf8');
@@ -82,7 +84,8 @@ describe('createApp', () => {
     expect(summarySrc).not.toMatch(/\{\s*mdkClient\s*\}\s*=\s*services/);
 
     const pkg = JSON.parse(readFileSync(join(appPath, 'package.json'), 'utf8'));
-    expect(pkg.dependencies['@tetherto/mdk-client']).toBeDefined();
+    // These tests run from the checkout, so the MDK backend dependency links to it.
+    expect(pkg.dependencies['@tetherto/mdk-client']).toBe(`file:${join(REPO_ROOT, 'backend', 'core', 'client')}`);
 
     const readme = readFileSync(join(appPath, 'README.md'), 'utf8');
     expect(readme).toContain('@tetherto/mdk-gateway/plugin');
@@ -165,8 +168,36 @@ describe('createApp', () => {
     );
     const result = createApp({ name: 'summary2', parentDir: dir });
     expect(result.stackFile).toBe('added');
-    const content = readFileSync(join(dir, 'mdk.yaml'), 'utf8');
-    expect(parse(content).spec.apps).toEqual([{ name: 'summary2', package: 'summary2', config: {} }]);
+    const { spec } = parse(readFileSync(join(dir, 'mdk.yaml'), 'utf8'));
+    expect(spec.apps).toEqual([
+      { name: 'summary2', package: 'summary2', config: {}, serviceAccount: 'app:summary2', permissionsDigest: expect.stringMatching(/^[0-9a-f]{16}$/) },
+    ]);
+  });
+
+  it('grants the app what its manifest requests in spec.rbac, as `mdk add app` would', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'mdk.yaml'), ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847', ''].join('\n'), 'utf8');
+    const result = createApp({ name: 'summary2', parentDir: dir });
+    expect(result.grant).toEqual({ action: 'add', role: 'app-summary2', serviceAccount: 'app:summary2', written: true });
+    const { spec } = parse(readFileSync(join(dir, 'mdk.yaml'), 'utf8'));
+    expect(spec.rbac).toEqual({
+      enforcement: 'deny',
+      roles: [{ name: 'app-summary2', rules: [{ resources: ['workers'], verbs: ['list'] }] }],
+      bindings: [{ role: 'app-summary2', subjects: [{ kind: 'ServiceAccount', name: 'app:summary2' }] }],
+    });
+
+    // A role the operator changed since is left alone and reported.
+    writeFileSync(join(dir, 'mdk.yaml'), readFileSync(join(dir, 'mdk.yaml'), 'utf8').replace('- list', '- delete').replace(/ +permissionsDigest: .*\n/, ''), 'utf8');
+    const again = createApp({ name: 'summary2', parentDir: dir, force: true });
+    expect(again.stackFile).toBe('exists');
+    expect(again.grant).toMatchObject({ action: 'conflict', written: false });
+    expect(parse(readFileSync(join(dir, 'mdk.yaml'), 'utf8')).spec.rbac.roles[0].rules[0].verbs).toEqual(['delete']);
+
+    // No mdk.yaml, nothing to grant; a policy nothing should be written into is reported, not thrown.
+    expect(createApp({ name: 'summary2', parentDir: makeTmpDir() }).grant).toBeUndefined();
+    const broken = makeTmpDir();
+    writeFileSync(join(broken, 'mdk.yaml'), ['kind: Stack', 'spec:', '  rbac:', '    enforcement: allow', ''].join('\n'), 'utf8');
+    expect(createApp({ name: 'summary2', parentDir: broken }).grant).toEqual({ error: 'spec.rbac in mdk.yaml is invalid; fix it before adding an app.' });
   });
 
   it('reports "exists" when the app package is already listed', () => {

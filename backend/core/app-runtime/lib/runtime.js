@@ -9,6 +9,7 @@ const util = require('util')
 const createDebug = require('debug')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
+const { createMdkClient } = require('@tetherto/mdk-client')
 const { loadPlugin } = require('./plugin-loader')
 const { loadAppManifest, resolvePluginDir } = require('./manifest')
 const protocol = require('./protocol')
@@ -310,15 +311,21 @@ function _toBuffer (chunk, encoding) {
   return Buffer.from(String(chunk))
 }
 
-function _pluginReq (req, identity) {
+// `mdk`: the Kernel client for this request. With a signed-in operator it
+// sends their token beside the app's (see withActor in @tetherto/mdk-client),
+// so the Kernel authorizes, and records, the operator via the app. The token
+// itself is never on `req`.
+function _pluginReq (req, identity, mdk) {
   const r = req && typeof req === 'object' ? req : {}
-  return {
+  const out = {
     params: r.params || {},
     query: r.query || {},
     body: r.body,
     headers: r.headers || {},
     _info: identity || {}
   }
+  Object.defineProperty(out, 'mdk', { value: mdk, enumerable: false })
+  return out
 }
 
 /**
@@ -329,10 +336,53 @@ function _pluginReq (req, identity) {
  * Gateway's plugin loader; the network side only comes up in start(). onReady callbacks run once, after the first
  * successful start(); a stop()/start() cycle does not re-run them.
  *
- * The ambient `config` carries `kernelKey`, `kernelBootstrap` and
- * `kernelKeyPair` (the app's own Kernel identity, derived from a persisted
- * seed), which is what `createMdkClient(config)` reads.
+ * The ambient `config` carries `mdkClient`: one Kernel client the runtime owns,
+ * dialing with the app's own transport key (from a persisted seed) and signing
+ * in as the app's service account, `app:<name>`, from the credential in
+ * `opts.credentialFile` (or `opts.credential`). Plugins never see a Kernel key
+ * or the credential, and cannot build a client pointed anywhere else: the
+ * Kernel decides what the app may do from spec.rbac.
+ *
+ * Each request's `req.mdk` is the client for work done for that request. When
+ * the Gateway forwarded a signed-in operator's token, it is
+ * `mdkClient.withActor(token)`: the Kernel then allows a call only when
+ * spec.rbac allows both the app and the operator, and records the operator as
+ * the requester (and voter) via the app. Otherwise it is `mdkClient` itself,
+ * which also serves background work done as the app alone.
  */
+// Kernel wiring belongs to the runtime; these never reach a plugin from config.
+const KERNEL_FIELDS = ['kernelKey', 'kernelKeyPair', 'kernelBootstrap', 'kernelDhtHost', 'kernelCredential', 'mdkClient']
+
+function _withoutKernelFields (conf) {
+  if (!conf || typeof conf !== 'object') return {}
+  const out = { ...conf }
+  for (const k of KERNEL_FIELDS) delete out[k]
+  return out
+}
+
+/**
+ * The app's service-account credential: `opts.credential` ({ name, privateKey })
+ * or the JSON `opts.credentialFile` the CLI writes ({ name, privateKeyPem }).
+ * It must be this app's own account, `app:<name>`.
+ */
+function _readCredential (opts, appName) {
+  let cred = opts.credential || null
+  if (!cred && opts.credentialFile) {
+    let body
+    try {
+      body = JSON.parse(fs.readFileSync(opts.credentialFile, 'utf8'))
+    } catch (err) {
+      throw new Error(`ERR_APP_RUNTIME_CREDENTIAL_UNREADABLE: ${opts.credentialFile}: ${err.message}`)
+    }
+    cred = { name: body.name, privateKey: body.privateKeyPem }
+  }
+  if (!cred) return null
+  if (cred.name !== `app:${appName}` || typeof cred.privateKey !== 'string') {
+    throw new Error(`ERR_APP_RUNTIME_CREDENTIAL_MISMATCH: expected the credential of app:${appName}, got ${JSON.stringify(cred.name)}`)
+  }
+  return Object.freeze({ name: cred.name, privateKey: cred.privateKey })
+}
+
 function createAppRuntime (opts) {
   opts = opts || {}
   const { name, appDir } = opts
@@ -348,22 +398,31 @@ function createAppRuntime (opts) {
   const kernelKeyPair = _kernelKeyPair(_storeSeed(storeDir, 'seedKernelClient'))
 
   const kernelKey = Buffer.isBuffer(opts.kernelKey) ? opts.kernelKey.toString('hex') : opts.kernelKey
+  const credential = _readCredential(opts, name)
+  if (kernelKey && !credential) logger.warn(`no service-account credential for app:${name}: the Kernel refuses its calls`)
+  const mdkClient = createMdkClient(kernelKey
+    ? {
+        kernelKey,
+        kernelKeyPair,
+        ...(opts.kernelBootstrap ? { kernelBootstrap: opts.kernelBootstrap } : {}),
+        ...(opts.kernelDhtHost ? { kernelDhtHost: opts.kernelDhtHost } : {}),
+        ...(credential ? { kernelCredential: credential } : {})
+      }
+    : {})
 
   // The app's own writable directory, so relative paths never land in the
   // project root or collide with another app's.
   const dataDir = storeDir ? path.resolve(storeDir, 'data') : null
   if (dataDir) fs.mkdirSync(dataDir, { recursive: true, mode: 0o700 })
 
-  // Operator config wins over the manifest's defaults. Which Kernel to dial, the
-  // identity to dial it with and the data dir are the runtime's own: neither
-  // layer of config can point the app elsewhere.
+  // Operator config wins over the manifest's defaults. The Kernel client and the
+  // data dir are the runtime's own: neither layer of config can replace them, or
+  // slip in Kernel keys for a client of the app's own making.
   const config = Object.freeze({
-    ...manifest.config,
-    ...opts.config,
-    kernelKey: kernelKey || null,
-    kernelBootstrap: opts.kernelBootstrap || null,
+    ..._withoutKernelFields(manifest.config),
+    ..._withoutKernelFields(opts.config),
     dataDir,
-    kernelKeyPair
+    mdkClient
   })
 
   const readyFns = []
@@ -406,9 +465,16 @@ function createAppRuntime (opts) {
   })
 
   let rpc = null
+  let dht = null
   let server = null
   let starting = null
   let stopping = null
+
+  // The Kernel client for one request: as the operator via the app when the
+  // Gateway sent their token, else as the app.
+  function requestClient (actor) {
+    return actor ? mdkClient.withActor(actor) : mdkClient
+  }
 
   // Decodes a request envelope and finds its route; throws a protocol error otherwise.
   function parseRequest (buf, wantStream) {
@@ -439,7 +505,7 @@ function createAppRuntime (opts) {
     try {
       const { msg, route } = parseRequest(buf, false)
       routeId = route.id
-      const result = await route._handler(_pluginReq(msg.req, msg.identity))
+      const result = await route._handler(_pluginReq(msg.req, msg.identity, requestClient(msg.actor)))
       return protocol.encode(protocol.okResponse(result))
     } catch (err) {
       logFailure(routeId, err)
@@ -468,7 +534,7 @@ function createAppRuntime (opts) {
 
       raw = new StreamResponse(channel)
       try {
-        await route._handler(_pluginReq(msg.req, msg.identity), raw)
+        await route._handler(_pluginReq(msg.req, msg.identity, requestClient(msg.actor)), raw)
       } catch (err) {
         // A stream handler owns the response, so a failure is reported in-band
         // while headers are still unsent. Afterwards the channel closes without
@@ -503,7 +569,14 @@ function createAppRuntime (opts) {
       await main(config, context)
       mainDone = true
     }
-    rpc = new HyperswarmRPC({ seed: seedRpc, bootstrap: opts.bootstrap || undefined })
+    // Own DHT node only to bind an interface (hyperdht `host`); the keypair
+    // matches what HyperswarmRPC would derive, so the server key is unchanged.
+    if (opts.dhtHost) {
+      dht = new DHT({ keyPair: DHT.keyPair(seedRpc), host: opts.dhtHost, ...(opts.bootstrap ? { bootstrap: opts.bootstrap } : {}) })
+      rpc = new HyperswarmRPC({ seed: seedRpc, dht })
+    } else {
+      rpc = new HyperswarmRPC({ seed: seedRpc, bootstrap: opts.bootstrap || undefined })
+    }
     server = rpc.createServer({ firewall })
     server.respond(METHODS.INVOKE, onInvoke)
     server.on('connection', (conn) => {
@@ -551,17 +624,20 @@ function createAppRuntime (opts) {
   async function _teardown () {
     const s = server
     const r = rpc
+    const d = dht
     server = null
     rpc = null
+    dht = null
     if (s) await s.close().catch(() => {})
     if (r) await r.destroy().catch(() => {})
+    if (d) await d.destroy().catch(() => {})
   }
 
   async function stop () {
     if (starting) await starting.catch(() => {})
     if (!stopping) {
       const publicKey = server && server.publicKey
-      stopping = _teardown().finally(() => { stopping = null })
+      stopping = Promise.all([_teardown(), mdkClient.close().catch(() => {})]).finally(() => { stopping = null })
       // The Gateway reads a missing key file as "not started" (503) instead of
       // dialling a runtime that is gone.
       if (publicKey && opts.keyFile) _removeKeyFile(opts.keyFile, publicKey)

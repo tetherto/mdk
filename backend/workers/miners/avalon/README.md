@@ -51,6 +51,13 @@ restart-required caveat.
 
 Avalon uses the native CGMiner TCP API on port 4028 (unauthenticated) and supports fan control, clock tuning, and pool reconfiguration through the same API.
 
+> [!WARNING]
+> The CGMiner API is plain TCP. Pool credentials and the miner admin password cross the network unencrypted, so keep
+> miners and the Worker on an isolated management network.
+
+The Worker rejects any command parameter (pool URL, pool worker name, password, IP, DNS, fan speed) that contains `,`, `|` or
+a control character, before it sends anything to the miner.
+
 ## Telemetry
 
 | Field | Unit | Description |
@@ -89,6 +96,12 @@ Avalon uses the native CGMiner TCP API on port 4028 (unauthenticated) and suppor
 **States:** `OK`, `DEGRADED`, `OFFLINE`
 
 **Alerts:** `alert.overheat`, `alert.fan_failure`, `alert.hashrate_low`
+
+## Errors
+
+| Code                      | Fires when                                                                                     | Fix                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `ERR_COMMAND_ARG_INVALID` | A pool, password, network or fan-speed parameter contains `,`, `\|` or a control character | Remove the character; the CGMiner API cannot carry it |
 
 ## Testing
 

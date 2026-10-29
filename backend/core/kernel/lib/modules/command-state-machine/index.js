@@ -107,6 +107,7 @@ class CommandStateMachine extends EventEmitter {
       command: opts.command,
       params: opts.params || {},
       requesterId: opts.requesterId,
+      ...(opts.via ? { via: opts.via } : {}),
       verify: opts.verify || null,
       createdAt: Date.now(),
       updatedAt: Date.now()

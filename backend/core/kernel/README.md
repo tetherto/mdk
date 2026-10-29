@@ -76,8 +76,8 @@ Factory that returns a configured, unstarted `KernelManager`. Caller controls th
 | `opts.root`                     | Optional | `string`   | `os.tmpdir()/mdk`     | Config root directory                                |
 | `opts.listeners.hrpc`           | Optional | `object\|false` | Enabled          | HRPC listener config; `false` to disable             |
 | `opts.listeners.hrpc.bootstrap` | Optional | `array`    | Public DHT            | HyperDHT bootstrap nodes; pass the same list to every component on a private DHT network |
-| `opts.auth.whitelist`           | Optional | `Array<string\|{key, roles}>` | `[]` (admits nobody) | HRPC caller allowlist — see [Caller admission and roles](#caller-admission-and-roles) |
-| `opts.auth.allowAll`            | Optional | `boolean`  | `false`               | Admit every DHT peer. Development only; logs a warning |
+| `opts.listeners.hrpc.dhtHost`   | Optional | `string`   | All interfaces        | Interface the Kernel's DHT node binds: `127.0.0.1` on one machine, a LAN address on an isolated LAN ([private DHT](../../../docs/guides/deployment/private-dht.md)) |
+| `opts.auth.whitelist`           | Optional | `Array<string\|{key}>` | `[]` (admits nobody) | The HRPC caller keys that may connect — see [Caller admission and authorization](#caller-admission-and-authorization) |
 | `opts.discovery.workerKeys`     | Optional | `string[]` | `[]` (admits nobody)  | Worker RPC keys accepted from the discovery topic — see [Kernel → Worker](#kernel--worker) |
 | `opts.discovery.allowAnyWorker` | Optional | `boolean`  | `false`               | Admit every Worker that announces on the topic. Development only; logs a warning |
 | `opts.discovery.topic`          | Optional | `string`   | None; no DHT listener without one | 32-byte hex DHT topic Workers join       |
@@ -101,9 +101,9 @@ await kernel.stop()    // Graceful shutdown
 
 kernel.getPublicKey()        // Buffer — HRPC listener key (callers connect to it)
 kernel.getClientPublicKey()  // Buffer — the key Kernel dials Workers with; Workers must allow it
-kernel.allowKey(hex, roles?) // admit an HRPC caller at runtime (default full access)
+kernel.allowKey(hex)         // admit an HRPC caller to connect; spec.rbac decides what it may do
 kernel.revokeKey(hex)        // remove it; open connections stop being served
-kernel.listAllowedKeys(minRole?) // hex keys admitted with at least that role
+kernel.listAllowedKeys()     // hex keys admitted
 kernel.allowWorkerKey(hex)   // admit a Worker RPC key on the discovery topic at runtime
 kernel.registerWorker(hex)   // register a Worker by its RPC key directly (skips the topic)
 ```
@@ -115,8 +115,8 @@ Each running Kernel needs its own Hyperbee store directory. Two Kernel instances
 **Events:**
 - `'started'` — emitted after `start()` completes
 - `'stopped'` — emitted after `stop()` completes
-- `'caller-allowed'` `{ key, roles }` / `'caller-revoked'` `{ key }` — after `allowKey()` / `revokeKey()`; in-process hosts
-  use them to mirror write-capable callers (a Gateway also calls Workers directly) onto Worker allowlists
+- `'caller-allowed'` `{ key }` / `'caller-revoked'` `{ key }` — after `allowKey()` / `revokeKey()`. Workers allow only the
+  Kernel's client key: a caller the Kernel admits is never let past it to a Worker
 
 **Module access:**
 
@@ -162,8 +162,22 @@ declared in the transition table but never assigned at runtime — `terminate()`
 ### `CommandDispatcher`
 
 Validates incoming command envelopes, resolves the owning Worker from the registry — by `deviceId` for device scope, by `workerId` for
-worker and rack scope — checks that the command exists in the Worker's declared capabilities, then enqueues via the state machine.
+worker and rack scope — checks that the command exists in the Worker's declared capabilities and that its params pass the contract's
+`params` rules, then enqueues via the state machine. A target that declares no commands accepts none
+(`ERR_COMMAND_NOT_IN_CAPABILITIES`), and params are checked with the same rules the Worker applies (`ERR_PARAM_REQUIRED`,
+`ERR_PARAM_TYPE`, `ERR_PARAM_ENUM`, `ERR_PARAM_RANGE`), so a refused write is `REJECTED` before it is queued.
 See [Command control](#command-control) for how scopes and targets are handled.
+
+### Write-command log
+
+Every `command.request` is recorded in the Kernel store, accepted or not: an `attempt` entry with the caller (its token's
+subject, else its transport key, and the roles `spec.rbac` binds to it; `requesterId` for in-process callers), the app it came
+`via` when an app acted for an operator (`caller` is then the operator, and `via` the app's subject and roles), the command,
+its target (`scope`, `deviceId`, `workerId`, `targets`), its params with secret-looking fields replaced by `[REDACTED]`, the
+outcome (`QUEUED` or `REJECTED`) and the error. A request `spec.rbac` refuses (`ERR_KERNEL_ACTION_FORBIDDEN`) is recorded too.
+Each accepted command adds a `settled` entry with its terminal state. Entries are kept for `kernel.commandLogTtlMs` (default 30
+days) and read newest first with the `command.log` action, which needs `commands: read`
+(`mdkClient.getCommandLog({ start, end, limit })`, `limit` up to 1000, default 100).
 
 ### `CommandStateMachine`
 
@@ -224,7 +238,7 @@ Ping-based checker for the Worker process, not for the devices behind it. Sends 
 two misses mark the Worker `SICK`, `healthFailureThreshold` misses (default 3) mark it `DEAD`, and one reply restores `HEALTHY`. The
 only effect of `SICK` and `DEAD` is routing: `isRoutable()` returns false, so command dispatch is refused, while the registry state
 stays `READY` and telemetry pulls continue. A `READY` and `HEALTHY` Worker says nothing about whether its devices are reachable; that
-is reported per device in the telemetry channel.
+is reported per device in its [`health` telemetry channel](../mdk-worker/README.md#device-health-channel).
 
 **State machine per Worker:**
 ```text
@@ -284,49 +298,70 @@ How the caller obtains that key depends on where it runs:
   regenerated. Override the path with `opts.keyFile`, or pass `keyFile: false` to disable publishing
 - **Remote or multi-host**: share the key from `kernel.getPublicKey()` with the caller out-of-band
 
-### Caller admission and roles
+### Caller admission and authorization
 
-Admission is **fail-closed**. Only public keys on the allowlist may connect; an **empty allowlist admits nobody**. The
-firewall rejects unknown keys at connect time, and every request is re-checked, so `revokeKey()` takes effect on
-connections that are already open (`ERR_KERNEL_CALLER_NOT_ALLOWED`).
+Two checks, both fail-closed, run on every request.
+
+**Admission** decides who may connect. Only public keys on the allowlist may connect; an **empty allowlist admits
+nobody**. The firewall rejects unknown keys at connect time, and every request is re-checked, so `revokeKey()` takes
+effect on connections that are already open (`ERR_KERNEL_CALLER_NOT_ALLOWED`).
 
 ```js
-createKernel({
-  auth: {
-    whitelist: [
-      '<gateway-pubkey-hex>',                                // plain key: full access
-      { key: '<dashboard-pubkey-hex>', roles: ['read'] },     // read-only
-      { key: '<operator-cli-pubkey-hex>', roles: ['write'] }
-    ]
-  }
-})
+createKernel({ auth: { whitelist: ['<gateway-pubkey-hex>', '<app-runtime-pubkey-hex>'] } })
 kernel.allowKey('<mcp-pubkey-hex>')   // at runtime, after init()
 ```
 
-| Role    | Actions                                                                                              |
-| ------- | ---------------------------------------------------------------------------------------------------- |
-| `read`  | `worker.list`, `device.capabilities`, `telemetry.pull`, `state.pull`, `command.status`, `action.get`, `action.get-batch`, `action.query` |
-| `write` | everything in `read`, plus `command.request`, `command.cancel`, `action.push`, `action.push-batch`, `action.vote`, `action.cancel-batch` |
-| `admin` | everything, plus `worker.terminate`. A plain-string entry is `admin` (the pre-roles behavior)          |
+**Authorization** decides what an admitted caller may do. Every request but sign-in (`auth.*`) carries an access token in
+`envelope.auth`, issued by this Kernel's [token issuer](../identity/README.md). A service account's token is bound to the
+transport key that signed in, so it is refused from any other key. `KernelAuthorizer` verifies the token, then evaluates
+its identity against the `spec.rbac` in force as the action's resource and verb (the `KERNEL_ACTIONS` table in
+[`@tetherto/mdk-rbac`](../rbac/README.md#vocabulary)), once per instance the request touches:
 
-A caller without the role gets `ERR_KERNEL_ACTION_FORBIDDEN`. Identity comes from the transport, not the payload:
-`command.request` records the caller's public key as `requesterId` (not `envelope.sender`), and a non-`admin` caller
-votes, pushes and cancels as its own public key whatever `voter` it sends. An `admin` caller is treated as a trusted
-delegate (a Gateway that authenticated its own users), so its payload `voter` is kept.
+| Request                                       | Checked as                                                                 |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| A device action (`telemetry.pull`, `state.pull`, `device.capabilities`, `command.request`) | `devices` on `family/brand/worker/device` |
+| `command.request` scoped to a worker or rack  | `devices: write` on every device the worker owns                           |
+| `command.status`, `command.cancel`            | `devices` on the command's target                                          |
+| `worker.terminate`                            | `workers: delete` on `family/brand/worker`                                 |
+| `action.push`, `action.push-batch`            | `actions: write`, then `devices: write` on every device the push resolves to; one refused device refuses the push |
+| `command.log`                                 | `commands: read`                                                           |
+| Any other action                              | Its resource and verb, with no instance                                    |
 
-`auth.allowAll: true` (or `hrpc.allowAll` in `kernel.json`) admits every DHT peer with full access. It exists for local
-experiments only and logs a warning at start.
+The family is the Worker contract's `metadata.deviceFamily` and the brand its `metadata.brand` as a slug (`Antminer`
+becomes `antminer`). A device that is unknown, or whose Worker is not ready, has no name, so a rule scoped by
+`resourceNames` never matches it. The token's identity also replaces self-asserted identity: `command.request` records
+its subject as `requesterId`, and a caller votes, pushes and cancels as its subject unless a rule grants it
+`actions: delegate` (an app voting for the user it authenticated). Each decision is emitted as `authz-decision`
+(`{ action, kind, sub, actorSub?, actorRoles?, allowed, reason, resource, resourceName?, policyVersion }`).
+
+**Operators via an app.** An app serving a Gateway request sends the signed-in operator's access token in `envelope.actor`,
+beside its own in `envelope.auth`. The Kernel verifies it like any token: it must be a current user token from this issuer,
+bound to no transport key. A service account's token, a bound one, or one revoked since (a password change, a disabled user)
+is refused. The operator is then evaluated exactly as the caller is, for every instance, and the request runs only when
+`spec.rbac` allows both. The operator becomes the `requesterId`, the voter on pushes, votes and cancels (`payload.voter` is
+ignored), and the `by` of an `rbac.apply`; the app is recorded `via`. An `actor` without `auth` is refused, so an operator's
+token never stands in for the app's.
+
+A request with no token gets `ERR_KERNEL_TOKEN_REQUIRED`, a bad or foreign token `ERR_KERNEL_TOKEN_INVALID`, a bad operator
+token `ERR_KERNEL_ACTOR_INVALID`, and one no rule allows `ERR_KERNEL_ACTION_FORBIDDEN: <sub> may not <verb> <resource> [<name>]`
+(`<operator> (via <sub>) may not ...` when the operator is the one refused). In-process calls (no transport caller) are not
+checked.
+
+Admission grants nothing beyond the connection: there are no allowlist roles, no full-access entries and no way to admit
+every peer. An allowlist entry with `roles`, and `auth.allowAll` / `hrpc.allowAll`, are refused at start
+(`ERR_KERNEL_CALLER_ROLES_UNSUPPORTED`, `ERR_KERNEL_ALLOW_ALL_REMOVED`).
 
 The Gateway dials with `status.rpcClientKey` (in its status file), derived from a seed persisted in the Gateway store, so
 one allowlist entry survives Gateway restarts. `@tetherto/mdk-core` wires the common cases for you:
-`startGateway({ kernel })` admits the Gateway key with full (`admin`) access on an in-process Kernel, and `getKernel()` admits keys that same-machine
+`startGateway({ kernel })` admits the Gateway key on an in-process Kernel, and `getKernel()` admits keys that same-machine
 processes publish to its trusted-keys dir (see the [mdk-core README](../mdk/README.md#trust-and-admission)).
 
 ### Kernel → Worker
 
 Workers are fail-closed too: a Worker only answers the keys on its own allowlist. Kernel dials Workers with
 `kernel.getClientPublicKey()` (its DHT keypair, not the listener key), so hand that key to every Worker
-(`WorkerRuntime` `allowedKeys`).
+(`WorkerRuntime` `allowedKeys`). `mdk run` and the `@tetherto/mdk-core` helpers admit that key and no other, so every
+command reaches a device through the Kernel's checks and its write-command log.
 
 Topic discovery is fail-closed as well. Anyone who knows the topic can announce on it, so the Kernel registers only Worker RPC
 keys on `discovery.workerKeys` (or added at runtime with `kernel.allowWorkerKey()`); an empty list admits nobody.
@@ -346,7 +381,8 @@ Every request runs `validateFull` (envelope plus per-action payload schema) befo
 > [!NOTE]
 > The [`auth-whitelist` example](../../../examples/mvp-site/backend/auth-whitelist.example.js) shows the two-run key exchange with
 > explicit admission. It starts the Gateway with `kernelKey` rather than the live Kernel, so the first run refuses the published
-> Gateway key and the second admits it with the `read` role. Each run calls Kernel to show the outcome.
+> Gateway key and the second admits it. Each run calls Kernel to show that admission alone grants nothing: the admitted Gateway is still
+> refused until it presents an access token that `spec.rbac` allows.
 > [Step 2 of the security blueprint](../../../docs/guides/security/index.md#step-2-admit-the-gateway-to-kernel) covers admitting the Gateway in
 > production.
 
@@ -388,6 +424,7 @@ All messages use the envelope format:
 | `COMMAND_STATUS_RESPONSE` | `command.status.response`  | Kernel → Gateway            |
 | `COMMAND_CANCEL`          | `command.cancel`           | Gateway → Kernel            |
 | `COMMAND_CANCEL_RESPONSE` | `command.cancel.response`  | Kernel → Gateway            |
+| `COMMAND_LOG`             | `command.log`              | Gateway → Kernel            |
 | `ACTION_PUSH`             | `action.push`              | Gateway → Kernel            |
 | `ACTION_PUSH_BATCH`       | `action.push-batch`        | Gateway → Kernel            |
 | `ACTION_GET`              | `action.get`               | Gateway → Kernel            |
@@ -395,6 +432,20 @@ All messages use the envelope format:
 | `ACTION_QUERY`            | `action.query`             | Gateway → Kernel            |
 | `ACTION_VOTE`             | `action.vote`              | Gateway → Kernel            |
 | `ACTION_CANCEL_BATCH`     | `action.cancel-batch`      | Gateway → Kernel            |
+| `RBAC_GET`                | `rbac.get`                 | CLI → Kernel                |
+| `RBAC_APPLY`              | `rbac.apply`               | CLI → Kernel                |
+| `AUTH_LOGIN`              | `auth.login`               | Gateway / CLI → Kernel      |
+| `AUTH_REFRESH`            | `auth.refresh`             | Gateway / CLI / app → Kernel |
+| `AUTH_TOKEN`              | `auth.token`               | App runtime / agent → Kernel |
+| `AUTH_LOGOUT`             | `auth.logout`              | Gateway / CLI → Kernel      |
+| `AUTH_JWKS`               | `auth.jwks`                | Gateway / MCP → Kernel      |
+| `IDENTITY_USER_LIST`      | `identity.user.list`       | CLI → Kernel                |
+| `IDENTITY_USER_UPSERT`    | `identity.user.upsert`     | CLI → Kernel                |
+| `IDENTITY_USER_DELETE`    | `identity.user.delete`     | CLI → Kernel                |
+| `IDENTITY_SA_LIST`        | `identity.sa.list`         | CLI → Kernel                |
+| `IDENTITY_SA_UPSERT`      | `identity.sa.upsert`       | CLI → Kernel                |
+| `IDENTITY_SA_DELETE`      | `identity.sa.delete`       | CLI → Kernel                |
+| `IDENTITY_KEYS_ROTATE`    | `identity.keys.rotate`     | CLI → Kernel                |
 | `WRITE_CALLS_REQUEST`     | `write.calls.request`      | Kernel → Worker             |
 | `WRITE_CALLS_RESPONSE`    | `write.calls.response`     | Worker → Kernel             |
 
@@ -427,6 +478,19 @@ All state is persisted in Hyperbee (append-only B-tree over Hypercore):
 | `kernel-registry`    | Worker identities and state     |
 | `ork-capabilities`   | Device → contract mappings      |
 | `kernel-command-wal` | Command WAL for crash recovery  |
+| `kernel-rbac`        | The `spec.rbac` in force and every applied version |
+| `kernel-identity`    | Users, service accounts, signing keys and sessions |
+
+`kernel-rbac` holds the [RBAC](../rbac/README.md) policy. `createKernel({ rbac })` (and `getKernel`) takes `spec.rbac` from
+`mdk.yaml`: `init()` refuses an invalid one with `ERR_RBAC_POLICY_INVALID`, and `start()` applies it; `null` applies the empty
+policy, which denies everything. Without the option the Kernel reloads the last applied policy. `rbac.apply` switches a running
+Kernel to a new policy, and a refused one leaves the policy in force untouched.
+
+`kernel-identity` holds the [token issuer](../identity/README.md). `createKernel({ serviceAccounts })` (and `getKernel`) takes the
+stack's service accounts as `{ name, publicKey }`, and `start()` makes the registered set exactly that list; without the option the
+registered accounts are kept. `createKernel({ identity })` sets the issuer name and token lifetimes. `auth.token` binds a service
+account's tokens to the HRPC caller that signed in, unless the payload sends `bind: false`; `auth.refresh` of a bound session only
+works from that caller. `kernel.verifyToken(token, { cnf })` verifies an access token the Kernel issued.
 
 ## Testing
 
@@ -461,14 +525,27 @@ Tests use real Corestore + `tmpdir` — no mocks for storage.
 | `ERR_DEVICE_ID_REQUIRED` | A device-scoped command omits `deviceId` on the envelope                    | Set `deviceId` on the envelope |
 | `ERR_DEVICE_NOT_FOUND`   | No registered Worker owns the given `deviceId`                              | Target a `deviceId` registered by a ready Worker |
 | `ERR_KERNEL_ACTION_CALLS_EMPTY` | An action push resolves to no executable write calls, either for a specific Worker or across all Workers | Confirm the query matches ready Workers and the caller holds the required write permissions |
+| `ERR_KERNEL_ACTION_FORBIDDEN` | The request's token is valid but no rule in `spec.rbac` grants its identity the action's resource and verb, for each instance the request touches (named in the message) | Bind the identity to a role that allows it in `mdk.yaml`, then `mdk rbac apply` |
+| `ERR_KERNEL_ALLOW_ALL_REMOVED` | `auth.allowAll` or `hrpc.allowAll` is set                                  | Admit callers by key: `auth.whitelist`, `kernel.allowKey()` or the trusted-keys dir |
+| `ERR_KERNEL_CALLER_ROLES_UNSUPPORTED` | An allowlist entry carries `roles`                              | List the key alone; bind its token's identity to roles in `spec.rbac` |
+| `ERR_KERNEL_NO_AUTHORIZER` | An HRPC caller reaches a router built without an authorizer          | Route requests through a `KernelManager`, which wires its authorizer |
 | `ERR_KERNEL_NO_DISCOVERY` | `registerWorker` runs on a Kernel started without discovery configured     | Pass `discovery.topic` (DHT mode) or `discovery: { mode: 'local' }` before registering Workers |
+| `ERR_KERNEL_NO_IDENTITY` | An `auth.*` or `identity.*` action reaches a listener built without a token issuer | Route identity actions through a `KernelManager`, which wires its issuer |
+| `ERR_KERNEL_NO_RBAC`     | `rbac.get` or `rbac.apply` reaches a listener built without a policy store  | Route RBAC actions through a `KernelManager`, which wires its store |
 | `ERR_KERNEL_NOT_INITIALIZED` | `start()` is called before the Kernel is initialized                    | Call `init()` before `start()` |
 | `ERR_KERNEL_NOT_STARTED` | `registerWorker` is called before the Kernel is started                     | Start the Kernel before registering Workers |
+| `ERR_KERNEL_SERVICE_ACCOUNTS_INVALID` | `ctx.serviceAccounts` is not a list                               | Pass `[{ name, publicKey }]`, or omit it |
 | `ERR_KERNEL_SHUTDOWN`    | A command is executing or dispatched when the Kernel drains for shutdown    | After the Kernel restarts, read the device state back and resubmit only if the command did not take effect |
+| `ERR_KERNEL_ACTOR_INVALID` | `envelope.actor` fails verification: malformed, expired, revoked, not a user's token, or bound to a transport key (the `ERR_IDENTITY_TOKEN_*` code follows) | The operator signs in again; send only a user's access token as the actor |
+| `ERR_KERNEL_TOKEN_INVALID` | `envelope.auth` fails verification: malformed, expired, signed by an unknown key, or bound to another transport key (the `ERR_IDENTITY_TOKEN_*` code follows) | Sign in again; use a token only from the caller it was issued to |
+| `ERR_KERNEL_TOKEN_REQUIRED` | A request other than sign-in (`auth.*`) carries no `envelope.auth` | Sign in, and send the access token with every request (`kernelCredential` on the client) |
 | `ERR_PARAM_RANGE`        | A numeric command parameter falls below its declared `min` or above its `max` | Pass a value within the parameter's declared range |
 | `ERR_PARAM_TYPE`         | A command parameter's value does not match its declared type                | Pass the parameter as its declared type |
 | `ERR_PARAMS_INVALID`     | A write-call request's `params` is not an array                             | Pass `params` as an array |
-| `ERR_PAYLOAD_INVALID`    | `pushActionsBatch` receives a `batchActionsPayload` that is not an array    | Pass `batchActionsPayload` as an array |
+| `ERR_PAYLOAD_FIELD_REQUIRED` | An `auth.*` or `identity.*` payload omits a required string field (named in the message) | Send the field |
+| `ERR_PAYLOAD_INVALID`    | `pushActionsBatch` receives a `batchActionsPayload` that is not an array, an `auth.*` or `identity.*` payload is not an object, or `auth.token`'s `bind` is not a boolean | Send the payload in the documented shape |
+| `ERR_PAYLOAD_RBAC_INVALID` | A `rbac.apply` payload's `rbac` is neither a mapping nor `null`           | Send `spec.rbac` as a mapping, or `null` for no policy |
+| `ERR_PAYLOAD_RBAC_REQUIRED` | A `rbac.apply` payload carries no `rbac` field                           | Send `{ rbac }` |
 | `ERR_QUERIES_INVALID`    | `queryActions` receives a `queries` value that is not an array              | Pass `queries` as an array |
 | `ERR_QUERIES_TYPE_INVALID` | A query entry omits a string `type`                                       | Give every query entry a string `type` |
 | `ERR_QUERY_INVALID`      | A write-call `query` is not a plain object or is not a valid mingo query    | Pass a valid mingo query object |
@@ -492,7 +569,7 @@ kernel/
 ├── index.js                  # Exports: KernelManager, createKernel
 ├── setup-config.sh           # Copies config/*.example to real config files
 ├── config/
-│   └── kernel.json.example   # Config template: HRPC allowlist (empty = nobody), allowAll, discovery topic/workerKeys/allowAnyWorker, cadences
+│   └── kernel.json.example   # Config template: HRPC allowlist (empty = nobody), discovery topic/workerKeys/allowAnyWorker, cadences
 ├── lib/
 │   ├── kernel.manager.js        # KernelManager (EventEmitter) — lifecycle orchestration
 │   ├── protocol/

@@ -461,6 +461,15 @@ export type BuildBarChartOptionsInput = {
   legendPosition?: 'top' | 'bottom' | 'left' | 'right'
   legendAlign?: 'start' | 'center' | 'end'
   showLegend?: boolean
+  /** Unit of the value axis, written once as its title rather than on every tick */
+  yUnit?: string
+  /** Unit of the right axis (with `yRightTicksFormatter`), written as its title */
+  yRightUnit?: string
+  /**
+   * Minimum gap in px between category labels; Chart.js skips labels to keep it.
+   * Raise it for long ranges, where labels otherwise pack edge to edge
+   */
+  categoryTicksPadding?: number
   /**
    * Custom HTML tooltip configuration. When provided, replaces the default Chart.js tooltip.
    *  Only used when calling `buildBarChartOptions` directly — the `BarChart` component
@@ -482,10 +491,21 @@ export const buildBarChartOptions = ({
   legendPosition = 'top',
   legendAlign = 'end',
   showLegend = true,
+  yUnit,
+  yRightUnit,
+  categoryTicksPadding,
   tooltip: tooltipConfig,
 }: BuildBarChartOptionsInput = {}): Record<string, unknown> => {
   const axisTicks = { color: CHART_COLORS.axisTicks }
   const gridColor = CHART_COLORS.gridLine
+  const axisTitle = (unit: string | undefined) =>
+    unit ? { title: { display: true, text: unit, color: CHART_COLORS.axisTicks } } : {}
+  // Level labels, as in `defaultChartOptions`: crowded ones are skipped, not slanted
+  const levelTicks = { ...axisTicks, maxRotation: 0 }
+  const categoryTicks =
+    categoryTicksPadding === undefined
+      ? levelTicks
+      : { ...levelTicks, autoSkipPadding: categoryTicksPadding }
 
   const scales: Record<string, Record<string, unknown>> = isHorizontal
     ? {
@@ -494,8 +514,9 @@ export const buildBarChartOptions = ({
           stacked: isStacked,
           ticks: { callback: (v: number) => yTicksFormatter(v), ...axisTicks },
           grid: { color: gridColor, offset: false },
+          ...axisTitle(yUnit),
         },
-        y: { stacked: isStacked, ticks: axisTicks },
+        y: { stacked: isStacked, ticks: categoryTicks },
       }
     : {
         y: {
@@ -503,10 +524,11 @@ export const buildBarChartOptions = ({
           stacked: isStacked,
           ticks: { callback: (v: number) => yTicksFormatter(v), ...axisTicks },
           grid: { color: gridColor },
+          ...axisTitle(yUnit),
         },
         x: {
           stacked: isStacked,
-          ticks: axisTicks,
+          ticks: categoryTicks,
         },
       }
 
@@ -516,6 +538,7 @@ export const buildBarChartOptions = ({
       beginAtZero: true,
       grid: { drawOnChartArea: false },
       ticks: { callback: (v: number) => yRightTicksFormatter(v), ...axisTicks },
+      ...axisTitle(yRightUnit),
     }
   }
 

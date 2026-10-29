@@ -63,7 +63,7 @@ export const DEFAULT_STALL_TIMEOUT_MS = 120_000
  */
 export const DEFAULT_ENDPOINTS = Object.freeze({
   model: 'http://127.0.0.1:11500/v1',
-  mcp: 'http://127.0.0.1:3008/mcp'
+  mcp: 'http://127.0.0.1:3101/mcp'
 })
 
 /**

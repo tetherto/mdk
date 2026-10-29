@@ -13,6 +13,7 @@ import { AUTH_BYPASS } from "./constants/env";
 import { getNavIcon } from "./constants/navigation";
 import { ROUTE_PATHS } from "./constants/routes";
 import { ROUTES } from "./routes";
+import { sidebarActiveId } from "./sidebar-active-id";
 
 import "./App.scss";
 
@@ -70,7 +71,7 @@ export const App = () => {
       <div className="mdk-ui-shell-content">
         <Sidebar
           items={sidebarItems}
-          activeId={location.pathname + location.search}
+          activeId={sidebarActiveId(sidebarItems, location.pathname, location.search)}
           onItemClick={(item) => {
             void navigate(item.id);
           }}

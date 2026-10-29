@@ -187,15 +187,15 @@ permissions:
 
 #### 3.3 Write the controller
 
-`examples/minimal-dashboard/apps/dashboard/lib/client.js` builds the app's client once:
+`examples/minimal-dashboard/apps/dashboard/lib/client.js` takes the app's Kernel client from the app runtime, which signs
+it in as the app's service account:
 
 ```js
 'use strict'
 
 const { config } = require('@tetherto/mdk-gateway/plugin')
-const { createMdkClient } = require('@tetherto/mdk-client')
 
-module.exports = createMdkClient(config)
+module.exports = config.mdkClient
 ```
 
 `examples/minimal-dashboard/apps/dashboard/controllers/overview.js`:

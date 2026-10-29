@@ -27,7 +27,7 @@ Every guide assumes:
 - npm 11 [(< 12)][npm-version]
 - Dependencies installed (`npm run setup` from the repo root)
 - Commands are run from the repo root
-- Outbound UDP access to the HyperDHT bootstrap nodes
+- Outbound UDP access to the HyperDHT bootstrap nodes, or a [private bootstrap][private-dht] on an air-gapped machine
 
 For the mock/development path:
 
@@ -83,3 +83,6 @@ For the deployment path:
 
 [get-started]: ../../tutorials/run-a-site.md
 <!-- docs@tether.io: get-started → tutorials/run-a-site -->
+
+[private-dht]: ../deployment/private-dht.md
+<!-- docs@tether.io: private-dht → guides/deployment/private-dht -->

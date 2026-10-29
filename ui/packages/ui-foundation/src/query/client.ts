@@ -2,7 +2,7 @@ import { MutationCache, QueryCache, QueryClient } from '@tanstack/query-core'
 
 import { type AuthProvider, bearerTokenAuth, isSessionExpiredError } from '../auth/provider'
 import { createBearerFetcher } from './mdk-fetch'
-import { DEFAULT_API_BASE_URL } from './runtime'
+import { DEFAULT_API_BASE_URL, type Fetcher } from './runtime'
 
 const readViteEnv = (key: string): string | undefined => {
   try {
@@ -133,6 +133,11 @@ export type CreateMdkQueryClientOptions = {
    */
   auth?: AuthProvider
   /**
+   * Transport override. Defaults to a bearer fetcher reading `auth.getToken`.
+   * `passwordAuth()` supplies one that renews the token once on a 401.
+   */
+  fetcher?: Fetcher
+  /**
    * Fired after the session is cleared because the backend reported it ended
    * (by default, HTTP 401 on any query or mutation; `auth.isSessionEnded`
    * decides). The host app can use this to navigate to its sign-in page.
@@ -168,7 +173,7 @@ export const createMdkQueryClient = (options: CreateMdkQueryClientOptions = {}):
   /* Built per client rather than reusing the `mdkFetch` singleton, which is
    * hardwired to the `authStore` singleton — two clients with different
    * providers would otherwise send the same token. */
-  const fetcher = createBearerFetcher({ getToken: auth.getToken })
+  const fetcher = options.fetcher ?? createBearerFetcher({ getToken: auth.getToken })
 
   const runtimeMeta = { apiBaseUrl: baseUrl, fetcher }
 

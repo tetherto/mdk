@@ -80,4 +80,20 @@ describe('createDashboard (standalone / GitHub template)', () => {
     expect(result.message).toMatch(/Could not fetch the UI shell/);
     expect(result.detail).toBe('network down');
   });
+
+  it('suggests --ref main when the release ref cannot be fetched', async () => {
+    fetchTemplateMock.mockRejectedValueOnce(new Error('could not find commit hash'));
+    const result = await createDashboard({ name: 'demo-dashboard', parentDir: makeTmpDir() });
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/If v\d+\.\d+\.\d+\S* is not published yet, retry with --ref main\./);
+  });
+
+  it('does not suggest --ref main when the user passed their own ref', async () => {
+    for (const ref of ['main', 'v0.0.1', 'abc1234']) {
+      fetchTemplateMock.mockRejectedValueOnce(new Error('network down'));
+      const result = await createDashboard({ name: 'demo-dashboard', parentDir: makeTmpDir(), ref });
+      expect(result.ok).toBe(false);
+      expect(result.message).not.toContain('--ref main');
+    }
+  });
 });

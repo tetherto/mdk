@@ -62,9 +62,11 @@ across single-process, local, and distributed deployments.
 HRPC uses encrypted Noise connections with public-key identities. Kernel's HRPC public key identifies and addresses the
 Kernel listener. Each caller has a separate public key that the listener receives during connection setup.
 
-Kernel compares the caller's key with the allowlist and is fail-closed: an empty allowlist admits nobody, and each
-admitted key carries a role (`read`, `write` or `admin`) that gates which actions it may send. This transport-level check works the same way whether the processes share a host or
-when they communicate across a network.
+Kernel compares the caller's key with the allowlist and is fail-closed: an empty allowlist admits nobody. Admission only
+lets a key connect; it grants nothing. What a caller may do is decided per request: every request but sign-in carries an
+access token from the Kernel's token issuer, and Kernel checks it against `spec.rbac` in `mdk.yaml` as the action's resource
+and verb, once per device the request touches ([caller admission and authorization][kernel-admission]). Both checks work the
+same way whether the processes share a host or communicate across a network.
 
 The Gateway dials with one persistent key, derived from a seed kept in its store and published as `status.rpcClientKey` in its
 status file (`<root>/status/wrk-node-http-<port>.json`). That is the [value to allowlist][mcp-allowlist], and it survives restarts.
@@ -116,20 +118,22 @@ flowchart TB
   actionCaller --> commandRequest
 ```
 
-The Gateway may expose an HTTP actions surface through an app. Any access control on that surface is written into the controllers, since the app
-runtime enforces none. Kernel owns [`ActionManager`][action-manager], [`ActionCaller`][action-caller], and target permission checks at the
-protocol layer. Those Kernel checks use the target Worker's device family, such as `miner:w` or `container:w`, read from the `authPerms`
-array the caller sends, before resolving or approving writes. Workers answer
+The Gateway may expose an HTTP actions surface through plugins. The Gateway checks the user's token against the route's
+`spec.rbac` rule; the app then calls Kernel as its own service account (`app:<name>`), so Kernel checks the app's grant, not
+the user. Kernel owns [`ActionManager`][action-manager], [`ActionCaller`][action-caller], and the target checks at the protocol layer: a push needs
+`actions: write` and `devices: write` on every device it resolves to, and a vote needs `actions: vote` and `devices: write`
+on every device of the stored action. For a caller with a token, the `authPerms` a payload carries are ignored; they only
+apply to in-process calls. Workers answer
 `write.calls.request` while Kernel resolves candidate writes, then execute the final `command.request` after the configured vote
 thresholds are met.
 
-The two stages fail differently, which matters when you are handling errors in a controller. A vote whose `authPerms` lack a
-required family write perm throws `ERR_ACTION_DENIED`. A push does not: `ActionCaller` skips every Worker the caller has no
-write perm for, so an unpermitted push resolves no callable targets and comes back as `ERR_KERNEL_ACTION_CALLS_EMPTY` —
-indistinguishable, from the error alone, from a query that simply matched no Workers.
+A refused push or vote comes back as `ERR_KERNEL_ACTION_FORBIDDEN: may not write <device ids>`, naming the devices the
+caller's rules do not cover; a push that matched no Workers is `ERR_KERNEL_ACTION_CALLS_EMPTY`. The voter is the caller's own
+identity unless a rule grants `actions: delegate` (an app voting for the user it authenticated).
 
-Direct command dispatch carries no permission check at all. Kernel validates the envelope, resolves the owning Worker, and
-checks the command against that Worker's declared capabilities; nothing on that path reads `authPerms`.
+Direct command dispatch is checked the same way: `command.request` needs `devices: write` on the target device, or on every
+device of the Worker for a Worker-scoped command, before Kernel checks the command against the Worker's declared
+capabilities. Every attempt, refused ones included, goes to the write-command log.
 
 > [!NOTE]
 > For implementation steps, use the [write-actions how-to][write-actions-how-to]. For React hook names and exports, use the [React adapter README][react-adapter-readme].
@@ -222,10 +226,9 @@ The write-action flow is reachable from two different layers depending on where 
 | Backend / Node.js | [`@tetherto/mdk-client`][client-readme] | Methods: `pushAction`, `pushActionsBatch`, `voteAction`, `cancelActionsBatch`, `getAction`, `getActionsBatch`, `queryActions` — send MDK Protocol envelopes directly to Kernel |
 
 > [!IMPORTANT]
-> The React hooks go through the Gateway, so whatever validation your app controllers perform applies to them. The `mdk-client` methods connect
-> directly to Kernel and bypass that layer entirely. Neither path gets user-level control for free: the Gateway ships no authentication, and Kernel
-> admits backend processes according to its HRPC transport policy: only allowlisted caller keys (an empty allowlist admits nobody), each limited
-> to its role.
+> The React hooks go through the Gateway, which checks the signed-in user against each route's `spec.rbac` rule. The `mdk-client` methods
+> connect directly to Kernel and skip the Gateway, but not the policy: Kernel admits only allowlisted caller keys (an empty allowlist admits
+> nobody) and checks every request's token against `spec.rbac`, so a backend client may do exactly what its service account is bound to.
 
 ## Next steps
 
@@ -286,6 +289,9 @@ The write-action flow is reachable from two different layers depending on where 
 <!-- docs@tether.io: client-readme → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md -->
 
 [hrpc-glossary]: ../reference/glossary.md#hyperswarm-rpc
+
+[kernel-admission]: ../../backend/core/kernel/README.md#caller-admission-and-authorization
+<!-- docs@tether.io: kernel-admission → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#caller-admission-and-authorization -->
 
 [mcp-allowlist]: ../guides/security/index.md#step-2-admit-the-gateway-to-kernel
 <!-- docs@tether.io: mcp-allowlist → guides/security#step-2-admit-the-gateway-to-kernel -->

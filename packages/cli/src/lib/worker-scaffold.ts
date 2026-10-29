@@ -4,7 +4,14 @@ import { dirname, join, resolve } from 'node:path';
 import type { Document, YAMLMap } from 'yaml';
 import { installScaffold } from './npm.js';
 import { DIRS } from './project.js';
-import { appendToStackList, copyTemplate, linkIntoProject, updateJson, type StackFileUpdate } from './scaffold.js';
+import {
+  appendToStackList,
+  copyTemplate,
+  linkCheckoutBackend,
+  linkIntoProject,
+  updateJson,
+  type StackFileUpdate,
+} from './scaffold.js';
 import { deviceId, deviceSerial, MOCK_PORT_BASE } from './spec.js';
 import { NAME_RE, parseOrg } from './names.js';
 
@@ -159,6 +166,7 @@ export function createWorker(opts: WorkerScaffoldOptions): WorkerScaffoldResult 
 
     const packageName = org.org ? `@${org.org}/${name}` : name;
     updateJson(join(workerPath, 'package.json'), { name: packageName });
+    linkCheckoutBackend(join(workerPath, 'package.json'));
 
     const linkWarning = linkIntoProject(opts.parentDir, packageName, workerPath);
     const install = installScaffold(opts.parentDir, workerPath, opts.install !== false);

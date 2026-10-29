@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-mcp",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "MDK MCP Server",
   "main": "server.js",
   "keywords": [
@@ -21,9 +21,11 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
-    "@tetherto/mdk-app-runtime": "^0.12.2",
-    "@tetherto/mdk-gateway": "^0.12.2",
-    "@tetherto/mdk-worker": "^0.12.2",
+    "@tetherto/mdk-app-runtime": "^0.13.0",
+    "@tetherto/mdk-client": "^0.13.0",
+    "@tetherto/mdk-rbac": "^0.13.0",
+    "@tetherto/mdk-gateway": "^0.13.0",
+    "@tetherto/mdk-worker": "^0.13.0",
     "async": "3.2.6",
     "debug": "4.4.1",
     "zod": "^4.0.0",

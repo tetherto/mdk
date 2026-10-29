@@ -62,6 +62,7 @@
     .mdk-single-stat-card__value {
       font-size: 14px;
       font-weight: 500;
+      color: var(--stat-color, rgb(var(--mdk-color-soft-gray)));
     }
   }
 
@@ -126,7 +127,7 @@
 
   &__value {
     font-size: 10px;
-    color: var(--mdk-color-white);
+    color: var(--stat-color, var(--mdk-color-white));
 
     .mdk-single-stat-card--secondary &,
     .mdk-single-stat-card--tertiary & {
@@ -155,6 +156,28 @@
         font-size: 12px;
       }
     }
+  }
+
+  &__caption {
+    margin-left: 6px;
+    color: var(--mdk-color-text-tertiary, #6c6c66);
+  }
+
+  &__value-row {
+    @include flex_align;
+
+    gap: 8px;
+  }
+
+  &__tag {
+    padding: 2px 6px;
+    font-size: 10px;
+    color: var(--mdk-color-primary);
+    background: var(--color-primary-transparent-20);
+  }
+
+  &__detail {
+    color: var(--mdk-color-text-tertiary, #6c6c66);
   }
 }
 

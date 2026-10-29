@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "private": true,
   "description": "Stand-in for the @tetherto/mdk monorepo peer dependency of emcd-mdk-worker, spiderpool-mdk-worker and foundry-mdk-worker. Maps the monorepo paths they require onto this workspace's packages.",
   "engines": {

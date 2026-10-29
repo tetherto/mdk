@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -204,6 +204,72 @@ describe('mdk onboard', () => {
     } finally {
       workerCatalog.push(...saved);
     }
+  });
+
+  it('grants an installed app its Kernel access in spec.rbac, and skips one that is not installed', async () => {
+    const dir = makeTmpDir();
+    const appDir = makeTmpDir();
+    mkdirSync(join(appDir, 'plugin', 'controllers'), { recursive: true });
+    writeFileSync(join(appDir, 'package.json'), JSON.stringify({ name: 'pkg-gateway-a', version: '0.1.0' }));
+    writeFileSync(join(appDir, 'mdk-app.yaml'), 'id: com.example.a\nversion: 0.1.0\ndisplayName: A\npermissions: [{ resources: [workers], verbs: [list] }]\n');
+    writeFileSync(join(appDir, 'plugin', 'mdk-plugin.json'), JSON.stringify({ name: 'a', version: '0.1.0', routes: [{ id: 'a.s', handler: './controllers/s.js', http: { method: 'GET', path: '/s' } }] }));
+    writeFileSync(join(appDir, 'plugin', 'controllers', 's.js'), 'module.exports = async () => ({})\n');
+    resolveProjectPackageDirMock.mockImplementation((_dir: string, pkg: string) => {
+      if (pkg === 'pkg-gateway-a') return appDir;
+      throw new Error('not installed');
+    });
+
+    clack.text.mockResolvedValueOnce(dir).mockResolvedValueOnce('granted');
+    clack.confirm.mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    clack.multiselect.mockResolvedValueOnce([]).mockResolvedValueOnce(['pkg-gateway-a', 'pkg-gateway-missing']);
+
+    await buildProgram().parseAsync(['node', 'mdk', 'onboard']);
+
+    const { spec } = parseYaml(readFileSync(join(dir, 'mdk.yaml'), 'utf8')) as {
+      spec: { apps: Array<{ name: string; serviceAccount?: string }>; rbac: { roles: Array<{ name: string }>; bindings: Array<{ role: string }> } };
+    };
+    const [granted, missing] = spec.apps;
+    expect(granted.serviceAccount).toBe(`app:${granted.name}`);
+    expect(missing.serviceAccount).toBeUndefined();
+    expect(spec.rbac.roles.map((r) => r.name)).toEqual(['admin', 'gateway', `app-${granted.name}`]);
+    expect(spec.rbac.bindings.map((b) => b.role)).toEqual(['admin', 'gateway', `app-${granted.name}`]);
+  });
+
+  it('warns instead of crashing on an app whose name is a Kernel resource', async () => {
+    const dir = makeTmpDir();
+    const appDir = makeTmpDir();
+    mkdirSync(join(appDir, 'plugin', 'controllers'), { recursive: true });
+    writeFileSync(join(appDir, 'package.json'), JSON.stringify({ name: 'actions', version: '0.1.0' }));
+    writeFileSync(join(appDir, 'mdk-app.yaml'), 'id: com.example.a\nversion: 0.1.0\ndisplayName: A\npermissions: [{ resources: [workers], verbs: [list] }]\n');
+    writeFileSync(join(appDir, 'plugin', 'mdk-plugin.json'), JSON.stringify({ name: 'a', version: '0.1.0', routes: [{ id: 'a.s', handler: './controllers/s.js', http: { method: 'GET', path: '/s' } }] }));
+    writeFileSync(join(appDir, 'plugin', 'controllers', 's.js'), 'module.exports = async () => ({})\n');
+    resolveProjectPackageDirMock.mockReturnValue(appDir);
+
+    clack.text.mockResolvedValueOnce(dir).mockResolvedValueOnce('reserved');
+    clack.confirm.mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    clack.multiselect.mockResolvedValueOnce([]).mockResolvedValueOnce(['actions']);
+
+    await buildProgram().parseAsync(['node', 'mdk', 'onboard']);
+
+    expect(clack.log.warn).toHaveBeenCalledWith(expect.stringMatching(/not granted in spec\.rbac \(ERR_RBAC_APP_NAME_RESERVED/));
+    expect(existsSync(join(dir, 'mdk.yaml'))).toBe(true);
+  });
+
+  it('warns instead of granting an installed app whose manifest is not valid', async () => {
+    const dir = makeTmpDir();
+    const appDir = makeTmpDir();
+    writeFileSync(join(appDir, 'package.json'), JSON.stringify({ name: 'pkg-gateway-a', version: '0.1.0' }));
+    writeFileSync(join(appDir, 'mdk-app.yaml'), 'id: com.example.a\nversion: 0.1.0\ndisplayName: A\n');
+    resolveProjectPackageDirMock.mockReturnValue(appDir);
+
+    clack.text.mockResolvedValueOnce(dir).mockResolvedValueOnce('ungranted');
+    clack.confirm.mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    clack.multiselect.mockResolvedValueOnce([]).mockResolvedValueOnce(['pkg-gateway-a']);
+
+    await buildProgram().parseAsync(['node', 'mdk', 'onboard']);
+
+    expect(clack.log.warn).toHaveBeenCalledWith(expect.stringMatching(/not granted in spec\.rbac \(.*"permissions" is required.*\); fix it, then run `mdk rbac init`/));
+    expect(readFileSync(join(dir, 'mdk.yaml'), 'utf8')).not.toContain('app-');
   });
 
   it('walks the full path: a bundled + an unavailable worker, an app, dashboard and skill', async () => {
@@ -565,8 +631,9 @@ describe('mdk onboard', () => {
       expect(addFileDependencyMock).toHaveBeenCalledWith(join(dir), '@tetherto/mdk-plugin-auth', pluginDir);
       expect(installDepsMock).toHaveBeenCalled();
       expect(installPackagesMock).not.toHaveBeenCalled();
-      // Asked before the spec write, so the post-install pass skips it.
-      expect(resolveProjectPackageDirMock).not.toHaveBeenCalled();
+      // Asked before the spec write, so the post-install pass skips it; the one
+      // resolve is the grant pass, which finds it not installed and moves on.
+      expect(resolveProjectPackageDirMock).toHaveBeenCalledTimes(1);
 
       // The answers belong to the plugin's own entry, not the gateway config.
       const spec = parseYaml(readFileSync(join(dir, 'mdk.yaml'), 'utf8')) as {

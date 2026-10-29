@@ -1,6 +1,6 @@
 'use strict'
 
-const { Sensor } = require('../../../../core/mdk')
+const { Sensor } = require('@tetherto/mdk-core')
 const { FUNCTION_CODES, PROTOCOL } = require('@tetherto/svc-facs-modbus/lib/constants')
 const { promiseTimeout } = require('@bitfinex/lib-js-util-promise')
 

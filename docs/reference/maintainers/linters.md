@@ -3,7 +3,7 @@
 Maintainer-facing inventory of the lint tooling that guards this monorepo's documentation. These layers:
 
 - 🚧 Project-specific IA gates 🚧 — **proposed** gates defined in [`ia.md`](ia.md#qa-gates) to enforce the contract between code, the docs catalogue, and the port pipeline. `ia.md` owns the roster and each gate's status. Most are still proposed: engineering decides per-gate, and maintainers absorb the upkeep manually until one lands. The live exception is `check:agent-ready`, a blocking root-CI gate (the UI agent-readiness contract, paired with a set-monotonic `usage-proptable-baseline.json` guard — see [`single-source-of-truth.md`](single-source-of-truth.md#pr-workflow)). Generated-page freshness is its own layer (next bullet).
-- **Generated-page freshness** — [`npm run regenerate-docs -- --check`](single-source-of-truth.md#checking-without-changing-anything) reports when a page written by a script no longer matches its sources. The [`docs-freshness`](../../../.github/workflows/docs-freshness.yml) workflow runs it on pull requests and **blocks** when any generated page is stale, listing every stale path in the job summary.
+- **Generated-page freshness** — [`npm run regenerate-docs -- --check`](single-source-of-truth.md#checking-without-changing-anything) reports when a page written by a script no longer matches its sources. The `docs-freshness` workflow runs it on pull requests and **blocks** when any generated page is stale, listing every stale path in the job summary.
 - **General docs hygiene** — the rest of this file. Link verification, anchor validation, spelling. These guard the docs themselves, not the IA contract.
 - **Nightly table-reference check** — [`npm run check:table-refs`](#nightly-table-reference-check) confirms every `ERR_*` code or option/flag/param/key name cited in a canonical error-code or option/config table still exists in its package's source. Existence-only: it does not re-verify a table's claimed condition or default against actual guard/fallback logic.
 
@@ -36,6 +36,27 @@ scoped, one-off prefix while diagnosing which host is blocked, never persisted:
 SFW_UNKNOWN_HOST_ACTION=warn npm run link-check   # scoped to this one command
 ```
 
+**A run that ends without the closing `link-check:` line was cut short.** Its absence is a failed run, not a clean
+one. Do not take the command off the firewall to get a sweep through; the wrapper already keeps a full sweep within
+what `sfw` tolerates, in batches.
+
+<details>
+<summary>Why a full sweep runs as several linkinator processes under the firewall</summary>
+
+linkinator fetches every page from its own local server, and under `sfw` those requests travel through the firewall
+proxy like any other. Socket Firewall cannot sustain a full sweep's worth of them in one linkinator process: once
+that process has made a couple of hundred fetches, the firewall ends the command with exit `0`, printing only
+`Socket Firewall encountered an unexpected error` per failed request and nothing from the checker. The trigger is
+how many fetches one process makes, not any link on the pages, and no `bypass` entry changes it.
+
+So the wrapper packs a full sweep into linkinator processes sized by an estimate of the fetches each will make, the
+pages plus the unique links they carry, kept under `FETCH_BUDGET` in
+[`link-check.mjs`](../../scripts/link-check.mjs). Every batch is anchored at `README.md` and the reports merge
+before counting. Every request still goes through the firewall; nothing is taken off it. A scoped run
+(`npm run link-check -- <files>`) is usually a single batch. CI runners have no `sfw` and run the same batches.
+
+</details>
+
 **Why this isn't folded into [`linkinator.config.json`](../../../linkinator.config.json).** `skip` (below) stops linkinator checking a URL; [`sfw-env.sh`](../../scripts/sfw-env.sh) does the opposite, letting the request through so the check can run. A host that needs `bypass` is one we still want checked, so merging the lists would invite "allowlisting" by moving a host to `skip` and silently dropping it from verification. They stay separate, cross-referenced in comments on both sides.
 
 This runs [`docs/scripts/link-check.mjs`](../../scripts/link-check.mjs) — a thin wrapper, same shape as `check:example-paths`
@@ -62,6 +83,7 @@ Hand maintained skip list:
 | `node_modules` | Excludes installed-dependency Markdown from local runs. No-op in CI (the runner installs nothing), but a maintainer's checkout has `node_modules`, and without this the local `**/*.md` glob would scan thousands of vendored files. |
 | `^https://github\.com/tetherto/mdk/blob/main/` | **Temporary.** These links point at the public mirror and already use the *predicted* post-reorg paths; they `404` until the same reorg lands on the public repo. Remove this entry once that ships so the links are validated again. |
 | `backend/workers/miners/[^/]+/examples/?$` | Bare example directories (no `index`/`README` to serve) — see the bare-directory false-positive note below. `$`-anchored so it matches only the directory itself, never deeper files. Fully qualified from repo root (not just `workers/miners/...`) — see [`check:directory-links`](#stale-directory-skip-entries--checkdirectory-links) below for why. |
+| `^https?://(localhost\|127\.0\.0\.1)(:(3000\|...))?(/\|$)` | The example URLs for a stack the crawler is not running. Port-scoped to the ports the docs use, so linkinator's own file server on a random high port is still crawled. Never widen it to a bare `localhost` match; see [What a run reports](#what-a-run-reports-and-the-hollow-sweep-guard). |
 
 The rest of the current list (directory-shaped entries, temporary upstream-mirror exceptions, auth-walled hosts) live directly in [`linkinator.config.json`](../../../linkinator.config.json) with a paired `_skip_notes` explanation — that file is the source of truth for the full, current list; this table is illustrative, not exhaustive.
 
@@ -105,6 +127,49 @@ $ npx linkinator@7.6.1 --markdown --check-fragments docs/concepts/architecture.m
 
 [`docs/scripts/check-md-anchors.mjs`](../../scripts/check-md-anchors.mjs) closes that gap without a crawler: it reads every tracked `.md` file, collects each target's GitHub-style heading slugs (plus explicit `<a name>`/`id` anchors), and resolves every relative `*.md#anchor` and in-page `#anchor` link against them. No server, no fetch, no visit cache — so no ordering to be wrong about. Fenced code blocks are excluded on both sides, so an anchor shown as an example is not treated as a link. It runs as part of `npm run link-check` as a third, independent subprocess alongside linkinator and `check:directory-links`; all three must pass for the command to succeed.
 
+### Repo name
+
+Markdown here is promoted to the public `mdk` repo, so [`docs/scripts/link-check.mjs`](../../scripts/link-check.mjs) also fails on any tracked `.md` line naming this repo, code blocks included. Write sample paths as `/path/to/mdk/...` and say "this repo" in prose.
+
+### What a run reports, and the hollow-sweep guard
+
+Every run opens with a line naming how many files it crawls in how many batches, names each batch as it starts, and
+ends with one closing line, all on stderr, in both modes and on both CI jobs. linkinator itself prints nothing while
+it crawls in JSON mode, so those lines are the only progress, and a run cut short still shows how far it got. In
+GitHub Actions the closing line is also on the job's summary page. The run fails on any broken link, on a count of
+`0`, or on a crawl root reported `SKIPPED`.
+
+```text
+link-check: 604 links checked (131 external, 70 skipped), 0 broken
+```
+
+<details>
+<summary>How the count is produced, what a hollow sweep is, and the localhost skip rule</summary>
+
+The wrapper runs linkinator with `--format json --verbosity info` and reads the full report itself, so the count is
+always known whatever `verbosity` the config sets for a direct `npx linkinator` run. A full sweep runs as several
+batches (see the firewall note above); the count is of the merged report, one row per link and page. Broken rows
+print above the closing line as `[status] url (in parent)`.
+
+A crawl root is a file the sweep starts from. A skipped root fails the run as hollow, whatever skipped it: a
+path-shaped entry such as `(^|/)dist/` skips any tracked root it happens to match, which is the right outcome for a
+page the sweep was meant to check. The case the guard exists for is a `skip` entry that matches linkinator's own
+file server, which serves the repo at `http://localhost:<random port>/`. A bare `^https?://(localhost|127\.0\.0\.1)`
+entry does exactly that: every root is skipped, the report is empty, linkinator exits `0`, and the gate goes green
+having checked nothing. The same entry is refused before the crawl starts:
+the wrapper matches every `skip` entry against `http://localhost:1/README.md`, and `test/link-check-scope.test.mjs`
+runs that check over the committed config. That probe only sees host-wide patterns; one shaped like `localhost:\d{5}`
+gets past it, and the post-crawl check on skipped roots is what catches it.
+
+Example URLs for a stack the crawler is not running (`http://localhost:3000/...`) are skipped with a port-scoped
+entry instead, listed in the table above. When a doc introduces a new example port, add it to that entry's port
+list; do not widen the host match.
+
+A page with no links still counts as one checked link, its own fetch, so a scoped PR run on a link-free page never
+reports `0`. A `0` always means the crawl did not run.
+
+</details>
+
 ### CI wiring
 
 [`.github/workflows/link-check.yml`](../../../.github/workflows/link-check.yml) runs in nightly and PR modes, both off the same [`linkinator.config.json`](../../../linkinator.config.json).
@@ -112,15 +177,15 @@ $ npx linkinator@7.6.1 --markdown --check-fragments docs/concepts/architecture.m
 **Nightly full sweep** (`linkinator` job — `schedule` + `workflow_dispatch`):
 
 - Cron `0 2 * * *` (02:00 UTC) plus `workflow_dispatch` for manual triggering. Gated with `if: github.event_name != 'pull_request'` so it never runs the full sweep on a PR.
-- Runs `npm run link-check` (the same script maintainers use locally), which invokes the exact-pinned `linkinator@7.6.1` (see [above](#nightly-and-pr-diff-link-verification--linkinator)) against `**/*.md` using the root config; no project dependencies are installed in the runner. Report format is set with `LINK_CHECK_FORMAT=json`, an environment variable — **not** a CLI flag: `docs/scripts/link-check.mjs` reads its positional arguments as the diff-scoped file list, so `-- --format json` never reaches linkinator. Any argument that is not a tracked `.md` file is ignored with a warning on stderr and never narrows the sweep (a unit test in `test/link-check-scope.test.mjs` guards that), so a stray flag can no longer collapse the crawl to `README.md` alone.
+- Runs `npm run link-check` (the same script maintainers use locally), which invokes the exact-pinned `linkinator@7.6.1` (see [above](#nightly-and-pr-diff-link-verification--linkinator)) against `**/*.md` using the root config; no project dependencies are installed in the runner. The `{ passed, links }` report on stdout is switched on with `LINK_CHECK_FORMAT=json`, an environment variable and the only value the wrapper accepts — **not** a CLI flag: `docs/scripts/link-check.mjs` reads its positional arguments as the diff-scoped file list, so `-- --format json` never reaches linkinator. Any argument that is not a tracked `.md` file is ignored with a warning on stderr and never narrows the sweep (a unit test in `test/link-check-scope.test.mjs` guards that), so a stray flag can no longer collapse the crawl to `README.md` alone.
 - On failure, opens a tracking issue labelled `link-check` via the pre-installed `gh` CLI. If an open `link-check` issue already exists, the run **comments on it** instead of opening a duplicate — daily failures collapse into one thread, not a daily new issue.
 - Surfaces the failure in the Actions run history (`exit 1`) after the issue is composed, so the repo's main page shows red.
 
 **PR diff gate** (`link-check-diff` job — `pull_request`, gated with `if: github.event_name == 'pull_request'`):
 
 - Triggered only when a PR touches `**/*.md`, [`linkinator.config.json`](../../../linkinator.config.json), or the workflow itself (path filter on the `pull_request` trigger).
-- Checks out with `fetch-depth: 0`, then computes the added/modified `.md` files in the diff (`git diff --diff-filter=ACMR …`, which drops deleted files) and passes that explicit list straight to `npm run link-check -- <files...>` — [`docs/scripts/link-check.mjs`](../../scripts/link-check.mjs) accepts an optional file-list argument for exactly this: when given, it scopes the linkinator crawl to just those files (plus [`README.md`](../../../README.md), always included as a server-root anchor — see the comment in the script for why); with no argument at all (the nightly job, and a plain local run) it crawls every tracked `.md` file. **`check:directory-links` and `check:md-anchors` always run in full either way** — it isn't a per-file crawl, just a handful of `git ls-files` lookups against [`linkinator.config.json`](../../../linkinator.config.json)'s skip list, so there's no meaningful "diff-scoped" version of it and no cost to running it every time.
-- A broken link (in the scoped crawl), a stale directory-skip entry or a broken anchor (both always checked in full) fails the check — no issue is opened; that's the nightly's job.
+- Checks out with `fetch-depth: 0`, then computes the added/modified `.md` files in the diff (`git diff --diff-filter=ACMR …`, which drops deleted files) and passes that explicit list straight to `npm run link-check -- <files...>` — [`docs/scripts/link-check.mjs`](../../scripts/link-check.mjs) accepts an optional file-list argument for exactly this: when given, it scopes the linkinator crawl to just those files (plus [`README.md`](../../../README.md), always included as a server-root anchor — see the comment in the script for why); with no argument at all (the nightly job, and a plain local run) it crawls every tracked `.md` file. **`check:directory-links`, `check:md-anchors` and the repo-name scan always run in full either way** — it isn't a per-file crawl, just a handful of `git ls-files` lookups against [`linkinator.config.json`](../../../linkinator.config.json)'s skip list, so there's no meaningful "diff-scoped" version of it and no cost to running it every time.
+- A broken link (in the scoped crawl), a stale directory-skip entry, a broken anchor or a repo-name mention (all three always checked in full) fails the check — no issue is opened; that's the nightly's job.
 - If the PR changes the config, anything under [`docs/scripts/`](../../scripts/), or the workflow itself, it falls back to a **full** `npm run link-check` sweep (no file-list argument), since a weakened skip rule or a change to how any check works can expose breakage outside the diff. Matching the whole folder rather than naming each checker script individually means a new shared helper (like the `lib/` module below) is covered automatically, not by remembering to add it to an enumerated list — the same lesson [`check:directory-links`](#stale-directory-skip-entries--checkdirectory-links) exists to enforce for `skip` entries applies here to this path filter too.
 - **Known gap:** the linkinator half of the diff gate only validates links *originating from* changed files. A PR that removes an external URL's last inbound reference, or weakens a skip rule, can still expose breakage this job won't see — the nightly full sweep is the backstop for that. Inbound `#anchor` breakage from a heading rename is *not* in this gap: `check:md-anchors` runs in full on every PR and catches it there. Treat the PR gate as a fast first line, not a replacement for the nightly.
 
@@ -145,7 +210,7 @@ This wraps [`docs/scripts/check-example-paths.mjs`](../../scripts/check-example-
 - `_skip_notes` — mandatory sibling object, one entry per `skipFiles`/`skipPaths` pattern, explaining why. The checker refuses to run if any skip entry lacks a note. An unexplained skip is a silent false negative waiting to happen — the same lesson the linkinator skip list already enforces by convention; here it's enforced by the script itself.
 - Placeholders are dropped automatically, not via the skip list: any candidate token immediately followed by `<`, `>`, `*`, `{`, `}`, or `…` (for example `examples/run-<scenario>.js` or `` examples/run-*.js ``) is treated as unresolved template text, not a real path.
 
-**CI wiring** — [`.github/workflows/example-paths.yml`](../../../.github/workflows/example-paths.yml). Nightly only, deliberately unlike [`link-check.yml`](../../../.github/workflows/link-check.yml)'s nightly-plus-PR split: the `example-paths` job (`schedule` + `workflow_dispatch`) runs `npm run check:example-paths`, and on failure opens or (if one is already open) comments on a tracking issue labelled `example-paths`, then exits non-zero so the run shows red. There is no PR gate — this check is not wired into the PR path.
+**CI wiring** — `.github/workflows/example-paths.yml`. Nightly only, deliberately unlike [`link-check.yml`](../../../.github/workflows/link-check.yml)'s nightly-plus-PR split: the `example-paths` job (`schedule` + `workflow_dispatch`) runs `npm run check:example-paths`, and on failure opens or (if one is already open) comments on a tracking issue labelled `example-paths`, then exits non-zero so the run shows red. There is no PR gate — this check is not wired into the PR path.
 
 ## Nightly table-reference check
 
@@ -180,13 +245,13 @@ This wraps [`docs/scripts/check-table-refs.mjs`](../../scripts/check-table-refs.
 
 Ships with an **empty skip list**. Every table's identifiers in the current repo were spot-checked and resolve; add a targeted entry only if a real, unfixable false positive turns up on an actual nightly run.
 
-**CI wiring** — [`.github/workflows/table-refs.yml`](../../../.github/workflows/table-refs.yml). Nightly only, same structure as `example-paths.yml`: the `table-refs` job (`schedule` + `workflow_dispatch`) runs `npm run check:table-refs`, and on failure opens or (if one is already open) comments on a tracking issue labelled `table-refs`, then exits non-zero so the run shows red. No PR gate — a PR-diff fast mode mirroring `link-check.yml`'s diff job is an explicitly deferred follow-on.
+**CI wiring** — `.github/workflows/table-refs.yml`. Nightly only, same structure as `example-paths.yml`: the `table-refs` job (`schedule` + `workflow_dispatch`) runs `npm run check:table-refs`, and on failure opens or (if one is already open) comments on a tracking issue labelled `table-refs`, and emits a warning annotation; the run stays green (non-blocking). No PR gate — a PR-diff fast mode mirroring `link-check.yml`'s diff job is an explicitly deferred follow-on.
 
 ## Prose — Vale
 
-Vale checks prose against the Tether house style: US English spelling with the shared project word list, product and proper-noun casing, and sentence-case headings. The rules live in [`tetherto/docs-template`](https://github.com/tetherto/docs-template/tree/vale) on its `vale` branch and are never copied here. The root [`.vale.ini`](../../../.vale.ini) only selects which of them apply to this repo and at what level: the alert floor is `error`, the Google, proselint and write-good packages are not loaded, and the casing and heading rules are raised from warning to error. Everything the central style reports at warning or suggestion stays silent in this repo. The file sets no `TokenIgnores` or `BlockIgnores`: Vale's Markdown parser already skips fenced code, inline code and link targets; regex ignores on top would make it lint inside them instead. Expect two things: a domain like `tether.io` in prose or link text trips the casing rule until the shared vocabulary accepts it, and an annotation on a long wrapped paragraph can land a line off from the word it names (a Vale limitation, not a config error).
+Vale checks prose against the Tether house style: US English spelling with the shared project word list, product and proper-noun casing, and sentence-case headings. The rules live in [`tetherto/docs-template`](https://github.com/tetherto/docs-template/tree/vale) on its `vale` branch and are never copied here. The root `.vale.ini` only selects which of them apply to this repo and at what level: the alert floor is `error`, the Google, proselint and write-good packages are not loaded, and the casing and heading rules are raised from warning to error. Everything the central style reports at warning or suggestion stays silent in this repo. The file sets no `TokenIgnores` or `BlockIgnores`: Vale's Markdown parser already skips fenced code, inline code and link targets; regex ignores on top would make it lint inside them instead. Expect two things: a domain like `tether.io` in prose or link text trips the casing rule until the shared vocabulary accepts it, and an annotation on a long wrapped paragraph can land a line off from the word it names (a Vale limitation, not a config error).
 
-**CI wiring** — [`.github/workflows/vale-docs.yml`](../../../.github/workflows/vale-docs.yml) calls the shared workflow in docs-template with `config_path: .vale.ini`. The shared workflow checks docs-template out beside this repo at `.tether-vale-source`, which is where the `.vale.ini` StylesPath points, and runs Vale on the changed Markdown files. Findings appear as inline annotations on the PR diff from the one `✍️ Vale prose lint (advisory)` job, and the job summary lists every finding. The job is advisory (`fail_on_error: false`): an error annotates, the job stays green, and the check must stay out of the required status checks. A missing word that is a genuine term goes into the shared vocabulary in docs-template, not into a local exception.
+**CI wiring** — `.github/workflows/vale-docs.yml` calls the shared workflow in docs-template with `config_path: .vale.ini`. The shared workflow checks docs-template out beside this repo at `.tether-vale-source`, which is where the `.vale.ini` StylesPath points, and runs Vale on the changed Markdown files. Findings appear as inline annotations on the PR diff from the one `✍️ Vale prose lint (advisory)` job, and the job summary lists every finding. The job is advisory (`fail_on_error: false`): an error annotates, the job stays green, and the check must stay out of the required status checks. A missing word that is a genuine term goes into the shared vocabulary in docs-template, not into a local exception.
 
 Locally, with the same checkout in place:
 

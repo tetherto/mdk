@@ -1,6 +1,6 @@
 # MDK
 
-[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.12.2)
+[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.13.0)
 [![CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/ci.yml?branch=main&label=CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql)
 [![Documentation](https://img.shields.io/badge/docs-mdk.tether.io-2ea44f?style=flat-square)](https://docs.mdk.tether.io)
@@ -11,16 +11,24 @@
 
 MDK is under active development and is **not yet considered stable**.
 
-Current release [v0.12.2](https://github.com/tetherto/mdk/releases/tag/v0.12.2).
+Current release [v0.13.0](https://github.com/tetherto/mdk/releases/tag/v0.13.0).
 
-> v0.12.0 will be a 2 stage release. First to release the code and support the public release
-> of npm packages, followed by a patch release of the documentation updates and any hotfixes.
+> v0.13.0 will be released in stages. First release is the code followed by patches to release
+> the documentation and any hotfixes.
 
 ## Table of contents
 
 - [Overview](#overview)
-- [Get Started](#get-started)
-  - [Run the demo site](#run-the-demo-site)
+- [Quickstart](#quickstart)
+  - [1. Set up](#1-set-up)
+  - [2. Run the full site on mocks](#2-run-the-full-site-on-mocks)
+  - [3. Open the UI](#3-open-the-ui)
+  - [4. Connect an agent over MCP](#4-connect-an-agent-over-mcp)
+  - [5. Create a Worker](#5-create-a-worker)
+  - [6. Create a dashboard](#6-create-a-dashboard)
+  - [Next steps](#next-steps)
+  - [Find your lane](#find-your-lane)
+  - [Agents](#agents)
 - [Build and develop](#build-and-develop)
 - [Documentation](#documentation)
 - [Support](#support)
@@ -35,10 +43,10 @@ Current release [v0.12.2](https://github.com/tetherto/mdk/releases/tag/v0.12.2).
 [This repository](https://github.com/tetherto/mdk) is the monorepo for the Mining Development Kit [MDK](https://mdk.tether.io/). MDK is a Node.js SDK
 for operating bitcoin mining hardware, providing a modular and extensible foundation for:
 
-- Monitoring mining infrastructure  
-- Controlling devices and containers  
-- Collecting telemetry and operational data  
-- Building custom mining applications and integrations  
+- Monitoring mining infrastructure
+- Controlling devices and containers
+- Collecting telemetry and operational data
+- Building custom mining applications and integrations
 
 The monorepo is organized into three development domains:
 
@@ -50,46 +58,160 @@ You drive MDK via the [Gateway](backend/core/gateway/README.md). The Gateway is 
 and MDK can be extended. It's your Node.js server that connects to the Kernel to receive data from, and send
 instructions to, Workers.
 
-## Get started
+## Quickstart
+
+This quickstart runs entirely from a `git clone`: it needs no MDK package from the npm registry. It takes you from a clean machine to the full demo
+site on mock hardware, its UI, an AI agent talking to the site over MCP, and then your own Worker and dashboard.
+
+**Requirements:** Node.js >=24, npm 11 [(< 12)](docs/reference/environment.md#why-npm-stays-below-12), git, and PM2 (`npm install -g pm2`) for the
+demo site. Steps 1 to 4 use ports `3000` and `3101`; steps 5 and 6 use `3847`, `3848` and `3030`.
 
 > [!NOTE]
-> [Try the demo](./docs/tutorials/run-a-site.md): run the full MDK stack: multiple configured Workers across a range of device families,
-> their mock device servers, a Gateway HTTP API, and a React dashboard, all with one command
+> If Kernel, Gateway, Worker or app are unfamiliar terms, the [architecture overview](docs/concepts/architecture.md) defines them. You don't need it
+> to finish the quickstart.
 
-### Run the demo site
-
-The fastest way to see MDK working end to end. This boots the
-[MVP site example](examples/mvp-site/README.md): a Kernel, a Gateway HTTP API, Whatsminer and Antminer Workers, an Ocean
-pool Worker, a SATEC power meter Worker, their mock device servers, an MCP server, and a React dashboard, each as its own
-PM2-supervised process.
-
-**Requirements:** Node.js >=24, npm 11 [(< 12)](docs/reference/environment.md#why-npm-stays-below-12), and PM2
-(`npm install -g pm2`).
+### 1. Set up
 
 ```bash
-git clone git@github.com:tetherto/mdk.git
-cd mdk/examples/mvp-site
+git clone https://github.com/tetherto/mdk.git
+cd mdk
 
-npm run setup          # one time: installs backend/core, backend/workers, this example and its UI
-npm run setup:config   # one time: writes config/devices.json and config/site.deploy.json from the examples
-npm start              # starts every component under PM2, then exits
+(cd examples/mvp-site && npm run setup)   # installs every domain, builds the UI packages, writes the demo config
+npm run build -w @tetherto/mdk-cli        # build the `mdk` CLI
+npm rebuild @tetherto/mdk-cli             # link the `mdk` command now that it is built
+export PATH="$PWD/node_modules/.bin:$PATH"
+mdk --version
 ```
 
-Check the processes, then open the dashboard at `http://localhost:3000/` once every app shows `online`:
+The first run takes a few minutes. The `export` puts `mdk` on your `PATH` for this terminal only; run the same line from the `mdk` directory in any
+other terminal you open, or add it to your shell profile with the absolute path.
+
+### 2. Run the full site on mocks
 
 ```bash
-pm2 list   # mocks, kernel, worker, worker-antminer, worker-ocean, worker-satec, worker-emcd, worker-spiderpool, gateway, mcp, ...
-pm2 logs
+cd examples/mvp-site
+npm start      # starts every component under PM2, then exits
+pm2 list       # wait until every app shows `online`
 ```
 
-Stop with `npm run stop:pm2`. State persists under `examples/mvp-site/.site-data/`, so the next `npm start` resumes the
-same site without re-seeding — delete that directory to start clean.
+This boots a Kernel, a Gateway HTTP API, Whatsminer, Antminer and SealMiner Workers, Ocean, EMCD, SpiderPool and Foundry pool Workers,
+a SATEC power meter Worker, their mock device servers, an MCP server and a React dashboard. Every device is a mock server speaking the real
+wire protocol, and all telemetry values are synthetic. Check the site through its API:
 
-> [!NOTE]
-> Every device is a **mock server speaking the real wire protocol**, not a simulated manager. The Workers run their genuine
-> `connect()` and telemetry paths; only the endpoints are localhost instead of hardware. All telemetry values are synthetic.
+```bash
+curl -s http://localhost:3000/site/overview | jq '{miners: (.miners|length), pools: (.pools|length), powermeters: (.powermeters|length)}'
+```
 
-Full walkthrough: [Run a mining site end to end](docs/tutorials/run-a-site.md).
+Expected output:
+
+```text
+{
+  "miners": 10,
+  "pools": 4,
+  "powermeters": 1
+}
+```
+
+The pool Workers take 15 to 20 seconds to settle, so retry the command if it reports fewer than four pools.
+
+### 3. Open the UI
+
+Open `http://localhost:3000/` in a browser. The Dashboard, Containers, Monitoring, Pools and Control pages show live hashrate, power and per-device
+status for the mock fleet. [UI pages](examples/mvp-site/README.md#ui-pages) describes what each one shows.
+
+### 4. Connect an agent over MCP
+
+The site serves its data as tools on `http://127.0.0.1:3101/mcp`. For an agent that reads a project-level `.mcp.json`, such as Claude Code, copy the
+example entry and start the agent from the example directory:
+
+```bash
+cp .mcp.json.example .mcp.json
+claude
+```
+
+For any other MCP client, add `http://127.0.0.1:3101/mcp` as an HTTP server. Then ask `How is the site doing right now?`. The agent calls
+`summarize_site` and reports 8 Workers and 15 devices, all online. The MCP server withholds write tools by default, so an agent can read the fleet
+but cannot change it.
+
+Stop the site before the next step:
+
+```bash
+npm run stop:pm2
+cd ../..
+```
+
+### 5. Create a Worker
+
+A project of your own lives outside the checkout and is described by an `mdk.yaml` stack spec. From any other directory:
+
+```bash
+mkdir ~/my-site && cd ~/my-site
+cat > mdk.yaml <<'YAML'
+apiVersion: mdk/v1
+kind: Stack
+metadata:
+  name: my-site
+spec:
+  kernel: { port: 3848 }
+  gateway: { port: 3847 }
+  workers: []
+  apps: []
+YAML
+
+mdk create worker rig   # scaffolds workers/rig with a mock device and adds it to mdk.yaml
+mdk rbac init           # binds the CLI and the Gateway to the access policy; mdk run refuses to boot a Kernel nobody could hand a policy to
+mdk run                 # boots the Kernel, the rig Worker on its mock device and the Gateway
+```
+
+Expected output ends with:
+
+```text
+✔ gateway listening on http://localhost:3847
+
+Stack running. Press Ctrl+C to stop.
+```
+
+In a second terminal, from `~/my-site`, with `mdk` on your `PATH`, check the stack:
+
+```bash
+mdk status
+```
+
+Expected output ends with:
+
+```text
+  WORKER  REGISTERED  STATE  HEALTH   DEVICES
+  rig     yes         READY  HEALTHY  1
+
+✔ Health: healthy
+```
+
+`mdk create worker` links the Worker to the MDK packages in your checkout, so keep the checkout where it is. To point the Worker at real hardware,
+edit `workers/rig/mdk-contract.json` and its `src/` handlers.
+
+### 6. Create a dashboard
+
+In the second terminal, from `~/my-site`:
+
+```bash
+mdk create dashboard                    # copies the MDK dashboard into apps/dashboard and installs it
+mdk user add admin --admin              # prompts for a password; the Kernel from step 5 must still be running
+mdk run dashboard                       # starts the dashboard dev server
+```
+
+Open `http://localhost:3030/` and sign in as `admin` with that password. The dashboard talks to the Gateway on `:3847` and shows the `rig` Worker's
+device. Press Ctrl+C in both terminals to stop everything. To reset the project's state, delete `~/my-site/.mdk/`.
+
+### Next steps
+
+- [Run a mining site end to end](docs/tutorials/run-a-site.md): go deeper on the demo site, including live pool accounts and the agent prompts
+- [Build your first app with a UI](docs/tutorials/build-your-first-app.md): add an app with its own route and React page to a project
+- [Wire a dashboard by hand](docs/tutorials/build-a-dashboard.md): learn what `mdk create dashboard` scaffolds by assembling each piece yourself
+- [Build a Worker](docs/guides/workers/build-a-worker.md): connect your own hardware by authoring a `mdk-contract.json`
+- [Use the `mdk` CLI](packages/cli/README.md): every command, the access policy, users and service accounts
+- [Choose a deployment shape](docs/guides/deployment/index.md): run a site as supervised services or another topology
+- [Work with agents](docs/guides/agent/index.md): manage a site with a conversational operator agent
+- [Browse all documentation](docs/README.md): tutorials, guides and reference
 
 ### Find your lane
 
@@ -97,15 +219,15 @@ MDK ships a backend SDK and an optional dashboarding layer. Find your lane:
 
 - **I'm a hardware provider**: where do I start? Build a Worker and author its [`mdk-contract.json`](docs/guides/workers/build-a-worker.md)
 - **I'm a site operator**: how do I connect my Workers to a Gateway? Run an MDK site as a
-[supervised services](docs/guides/deployment/run-all-workers-site.md), or [choose another deployment shape](docs/guides/deployment/index.md)
+  [supervised services](docs/guides/deployment/run-all-workers-site.md), or [choose another deployment shape](docs/guides/deployment/index.md)
 - **I'm a site operator** how do I manage my site with a conversational agent?: start from the [operator agent guides](docs/guides/agent/index.md)
 - **I'm an app developer building a React UI**: start from the [UI toolkit](ui/README.md#getting-started), or add MDK to an existing app
 - **I'm an app developer building backend services or apps**: run the backend stack locally or start with
-the [Gateway API surfaces](docs/guides/gateway/index.md)
+  the [Gateway API surfaces](docs/guides/gateway/index.md)
 - **I'm an app developer building a dashboard end to end**: follow [build a dashboard](docs/tutorials/build-a-dashboard.md), or scaffold one against
-a running stack with [`mdk create dashboard`](packages/cli/README.md) (`@tetherto/mdk-cli`)
+  a running stack with [`mdk create dashboard`](packages/cli/README.md) (`@tetherto/mdk-cli`)
 - **I'm building with AI**: how does my agent work with MDK? Teach it MDK with [`mdk skill add`](docs/guides/ui/agent-skills.md), then read
-the [agent entry points](docs/README.md#agent)
+  the [agent entry points](docs/README.md#agent)
 
 ### Agents
 
@@ -119,16 +241,16 @@ If you are an LLM being pointed at this repo, read these first:
 
 ## Build and develop
 
-The repo root is a real npm workspace: every `backend/core/*`, `backend/apps/*`, `backend/workers/**` and `backend/tests/*`
+The repo root is a real npm workspace: every `backend/core/*`, `backend/workers/**` and `backend/tests/*`
 package, the standalone `packages/*` tools, and `examples/mvp-site` are workspace members, so a single
 `npm install` (or `npm ci`) at the root installs and links them all together. `ui/` stays a separate, nested npm workspace
 with its own `apps/*` + `packages/*` members and its own lockfile; the root itself has no Turbo configuration.
 
-| Domain    | Location                                  | Tooling                                                 |
-| --------- | ----------------------------------------- | ------------------------------------------------------- |
-| UI        | [`ui/`](ui/README.md)                     | npm workspace (`apps/*` + `packages/*`) driven by Turbo |
-| Core      | [`backend/core/`](backend/core/README.md) | root npm workspace member, installed via a plain `npm install`/`npm ci` at the repo root |
-| Workers   | [`backend/workers/`](backend/workers/README.md) | root npm workspace member, installed via a plain `npm install`/`npm ci` at the repo root |
+| Domain  | Location                                        | Tooling                                                                                  |
+| ------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| UI      | [`ui/`](ui/README.md)                           | npm workspace (`apps/*` + `packages/*`) driven by Turbo                                  |
+| Core    | [`backend/core/`](backend/core/README.md)       | root npm workspace member, installed via a plain `npm install`/`npm ci` at the repo root |
+| Workers | [`backend/workers/`](backend/workers/README.md) | root npm workspace member, installed via a plain `npm install`/`npm ci` at the repo root |
 
 Run any task once from the repo root and it fans out to all three domains:
 

@@ -36,6 +36,8 @@ import {
   readSetupQuestions,
 } from '../lib/plugin-setup.js';
 import { writeProjectEnv } from '../lib/env-file.js';
+import { validateApp } from '../lib/app-package.js';
+import { grantApp } from '../lib/rbac.js';
 import { resolveProjectPackageDir } from '../lib/runtime.js';
 import { createDashboard, dashboardNameFromStack } from '../lib/dashboard.js';
 import {
@@ -402,6 +404,30 @@ async function runOnboard(): Promise<void> {
             : 'Install manually: npm install',
         ),
       );
+    }
+  }
+
+  // The spec above binds the CLI and the Gateway; each app gets its own grant
+  // from its mdk-app.yaml, as `mdk add app` writes it, so the first `mdk run`
+  // finds it granted. An app that is not installed is granted by `mdk rbac init`.
+  for (const app of spec.spec.apps) {
+    let permissions: unknown[];
+    try {
+      const { manifest, errors } = validateApp(resolveProjectPackageDir(targetDir, app.package));
+      if (errors.length) {
+        log.warn(`${shortLabel(app.package)} is not granted in spec.rbac (${errors[0]}); fix it, then run \`mdk rbac init\`.`);
+        continue;
+      }
+      permissions = manifest.permissions ?? [];
+    } catch {
+      continue;
+    }
+    // The spec was just written, so the role is new: what can still refuse is the
+    // app itself, a name that is a Kernel resource or permissions the policy cannot grant.
+    try {
+      grantApp(targetDir, app.name, permissions);
+    } catch (error) {
+      log.warn(`${shortLabel(app.package)} is not granted in spec.rbac (${(error instanceof Error ? error.message : String(error)).split('\n')[0]}); fix it, then run \`mdk rbac init\`.`);
     }
   }
 

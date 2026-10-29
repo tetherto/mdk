@@ -3,6 +3,11 @@ import { describe, expect, it } from 'vitest'
 import {
   convertKwToW,
   FALLBACK,
+  formatBitcoin,
+  HASHRATE_TH_S_SCALES,
+  pickUnitScale,
+  POWER_W_SCALES,
+  scaleToUnit,
   formatChartDate,
   formatCountTo99Plus,
   formatCurrency,
@@ -253,5 +258,50 @@ describe('convertKwToW', () => {
   })
   it('returns NaN if string value was passed', () => {
     expect(convertKwToW('abc')).toBe(Number.NaN)
+  })
+})
+
+describe('pickUnitScale / scaleToUnit', () => {
+  it('moves up a unit at each 1,000', () => {
+    expect(pickUnitScale(HASHRATE_TH_S_SCALES, 999).unit).toBe('TH/s')
+    expect(pickUnitScale(HASHRATE_TH_S_SCALES, 1_000).unit).toBe('PH/s')
+    expect(pickUnitScale(HASHRATE_TH_S_SCALES, 2_500_000).unit).toBe('EH/s')
+    expect(pickUnitScale(POWER_W_SCALES, 12_000).unit).toBe('kW')
+  })
+
+  it('stays at the largest unit past it, and the smallest below one', () => {
+    expect(pickUnitScale(HASHRATE_TH_S_SCALES, 5e9).unit).toBe('EH/s')
+    expect(pickUnitScale(POWER_W_SCALES, 0.4).unit).toBe('W')
+    expect(pickUnitScale(POWER_W_SCALES, 0).unit).toBe('W')
+  })
+
+  it('scales by magnitude, so negative values pick the same unit', () => {
+    expect(pickUnitScale(POWER_W_SCALES, -3_000_000).unit).toBe('MW')
+  })
+
+  it('gives the value in the picked unit', () => {
+    expect(scaleToUnit(1_250_000, POWER_W_SCALES)).toEqual({ value: 1.25, unit: 'MW' })
+    expect(scaleToUnit(110, HASHRATE_TH_S_SCALES)).toEqual({ value: 110, unit: 'TH/s' })
+  })
+
+  it('refuses an empty list of units', () => {
+    expect(() => pickUnitScale([], 1)).toThrow(/at least one unit/)
+  })
+})
+
+describe('formatBitcoin', () => {
+  it('writes BTC with up to 8 decimals', () => {
+    expect(formatBitcoin(0.0123)).toBe('0.0123 BTC')
+    expect(formatBitcoin(0.123456789)).toBe('0.12345679 BTC')
+  })
+
+  it('writes whole sats', () => {
+    expect(formatBitcoin(0.0123, 'sats')).toBe('1,230,000 sats')
+    expect(formatBitcoin(0.000000014, 'sats')).toBe('1 sats')
+  })
+
+  it('falls back for a missing amount', () => {
+    expect(formatBitcoin(null)).toBe('-')
+    expect(formatBitcoin(undefined, 'sats', '–')).toBe('–')
   })
 })

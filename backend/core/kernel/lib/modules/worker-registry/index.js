@@ -2,6 +2,7 @@
 
 const debug = require('debug')('mdk:kernel:registry')
 const { REGISTRY_STATES } = require('./states')
+const { brandSlug } = require('@tetherto/mdk-rbac')
 
 /**
  * Worker Registry
@@ -99,6 +100,7 @@ class WorkerRegistry {
     worker.state = REGISTRY_STATES.READY
     worker.capabilities = contract.capabilities || {}
     worker.deviceFamily = contract.metadata?.deviceFamily || null
+    worker.brand = contract.metadata?.brand || null
 
     await this.capabilityStore.put(workerId, Buffer.from(JSON.stringify(contract)))
 
@@ -183,6 +185,24 @@ class WorkerRegistry {
 
   resolveWorkerForDevice (deviceId) {
     return this._deviceIndex.get(deviceId) || null
+  }
+
+  /**
+   * The RBAC name parts of a worker: `{ family, brand, worker }`, from its
+   * contract's metadata (deviceFamily, brand as a slug) and its workerId. Null
+   * until the worker is ready, so rules naming instances never match before then.
+   */
+  nameParts (workerId) {
+    const worker = this._workerIndex.get(workerId)
+    if (!worker || !worker.deviceFamily) return null
+    const brand = brandSlug(worker.brand)
+    return brand ? { family: worker.deviceFamily, brand, worker: workerId } : null
+  }
+
+  /** The device ids a worker registered, or []. */
+  devicesOf (workerId) {
+    const worker = this._workerIndex.get(workerId)
+    return worker ? [...worker.deviceIds] : []
   }
 
   resolveWorker (workerId) {

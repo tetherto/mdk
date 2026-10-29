@@ -20,8 +20,8 @@
 // Usage: node scenarios/benchmark.js
 
 const { config } = require('../lib/site')
-const { runSweep, RESULTS_DIR } = require('../lib/sweep-runner')
-const { writeComparisonMatrix } = require('../lib/report')
+const { runSweep: defaultRunSweep, RESULTS_DIR } = require('../lib/sweep-runner')
+const { writeComparisonMatrix: defaultWriteComparisonMatrix } = require('../lib/report')
 
 function deviceRange ({ startDeviceCount, stepDeviceCount, maxDeviceCount }) {
   const range = []
@@ -72,23 +72,34 @@ function * combinationSteps (specs) {
   }
 }
 
-const specs = config.workers
-const totalCombos = specs.length === 1
-  ? (specs[0].ceiling.maxDeviceCount === 0 ? Infinity : deviceRange(specs[0].ceiling).length)
-  : specs.reduce((product, { ceiling }) => product * deviceRange(ceiling).length, 1)
-
-console.log(`\n=== sweeping ${specs.length} worker famil${specs.length === 1 ? 'y' : 'ies'} simultaneously — ${totalCombos === Infinity ? 'uncapped, until a step goes red' : `${totalCombos} combination(s)`} ===`)
-
-const entries = runSweep('benchmark', combinationSteps(specs), { stopOnFirstRed: true })
-
-const breakingPoint = entries.find((e) => e.verdict.overall === 'red')
-if (breakingPoint) {
-  console.log(`\nbreaking point: ${breakingPoint.profile.profileId} — first limit hit: telemetry freshness (headroom >= 1.0) or another red criterion, see ${breakingPoint.profile.profileId}.md`)
-} else if (totalCombos === Infinity) {
-  console.log('\nsweep stopped before any step went red (a profile run failed to complete) — see logs above')
-} else {
-  console.log('\nno breaking point found across the full combination sweep — raise ceiling.maxDeviceCount/stepDeviceCount in config.workers to keep pushing')
+function totalCombinations (specs) {
+  if (specs.length === 1) return specs[0].ceiling.maxDeviceCount === 0 ? Infinity : deviceRange(specs[0].ceiling).length
+  return specs.reduce((product, { ceiling }) => product * deviceRange(ceiling).length, 1)
 }
 
-const matrixPath = writeComparisonMatrix(entries, { resultsDir: RESULTS_DIR, sweepId: 'benchmark' })
-console.log(`\ncomparison matrix: ${matrixPath}`)
+// `runSweep`/`writeComparisonMatrix` are injectable so tests can drive the
+// sweep logic without booting real profile processes.
+function main ({ specs = config.workers, runSweep = defaultRunSweep, writeComparisonMatrix = defaultWriteComparisonMatrix, resultsDir = RESULTS_DIR } = {}) {
+  const totalCombos = totalCombinations(specs)
+
+  console.log(`\n=== sweeping ${specs.length} worker famil${specs.length === 1 ? 'y' : 'ies'} simultaneously — ${totalCombos === Infinity ? 'uncapped, until a step goes red' : `${totalCombos} combination(s)`} ===`)
+
+  const entries = runSweep('benchmark', combinationSteps(specs), { stopOnFirstRed: true })
+
+  const breakingPoint = entries.find((e) => e.verdict.overall === 'red')
+  if (breakingPoint) {
+    console.log(`\nbreaking point: ${breakingPoint.profile.profileId} — first limit hit: telemetry freshness (headroom >= 1.0) or another red criterion, see ${breakingPoint.profile.profileId}.md`)
+  } else if (totalCombos === Infinity) {
+    console.log('\nsweep stopped before any step went red (a profile run failed to complete) — see logs above')
+  } else {
+    console.log('\nno breaking point found across the full combination sweep — raise ceiling.maxDeviceCount/stepDeviceCount in config.workers to keep pushing')
+  }
+
+  const matrixPath = writeComparisonMatrix(entries, { resultsDir, sweepId: 'benchmark' })
+  console.log(`\ncomparison matrix: ${matrixPath}`)
+  return { entries, breakingPoint, matrixPath }
+}
+
+if (require.main === module) main()
+
+module.exports = { deviceRange, uncappedRange, cartesian, profileId, combinationSteps, totalCombinations, main }

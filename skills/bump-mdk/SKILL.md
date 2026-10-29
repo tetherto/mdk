@@ -63,34 +63,30 @@ links it. The drift is often NOT in a lock's own `version` field — it's in the
 embedded `file:`-dependency entries.
 
 - **`ui/`** — a single npm workspace (Turborepo) with **one** root
-  `ui/package-lock.json`. Members: `packages/{ui-foundation,react-adapter,react-devkit,ui-agent,cli,fonts}`
-  and `apps/*`. Dep flow: `react-devkit → react-adapter → ui-foundation`.
-  - ⚠️ **`packages/react-devkit/package.json` pins internal deps with ranges**
-    (`@tetherto/mdk-react-adapter: ^X`, `@tetherto/mdk-ui-foundation: ^X`). When
-    you bump those packages, bump these `^` ranges too, or `npm install` fails
-    with `404 … @tetherto/mdk-* @^X not found` (it falls through to the registry
-    because nothing local satisfies the range). `cli` similarly pins
-    `@tetherto/mdk-react-devkit: ^X`.
+  `ui/package-lock.json`. Members: `packages/{ui-foundation,react-adapter,react-devkit,ui-agent}`
+  and `apps/*`. Dep flow: `ui-agent → react-devkit → react-adapter → ui-foundation`.
+  - ⚠️ **The three dependent UI packages pin their siblings with `^X` ranges**:
+    `react-adapter` → `ui-foundation`; `react-devkit` → `react-adapter`, `ui-foundation`;
+    `ui-agent` → `react-adapter`, `react-devkit`, `ui-foundation`. When you bump those
+    packages, bump these `^` ranges too, or `npm install` fails with
+    `404 … @tetherto/mdk-* @^X not found` (it falls through to the registry because
+    nothing local satisfies the range).
+  - The four packages are published to npm, so they are `private: false`. Keep them that
+    way: the npm publish step skips private packages without an error.
   - Regenerate the whole workspace with **one** command: `cd ui && npm install --package-lock-only …`.
-- **`backend/core/*`** — `agent, app-runtime, client, gateway, mdk, kernel, mcp,
-  mdk-worker` are all root npm workspace members, sharing the single root
+- **`backend/core/*`**: `agent, app-runtime, client, gateway, identity, kernel, mcp, mdk,
+  mdk-worker, rbac` are all root npm workspace members, sharing the single root
   `package-lock.json`. Regenerate the **root** lock (`npm install
   --package-lock-only …` at the repo root) when any of these change, not a
   per-package one.
-  They pin each other with `^X` ranges (`gateway` → `app-runtime`, `mdk-worker`;
-  `app-runtime` → `gateway`; `mdk`, `mcp` → `gateway`; `client`, `mdk-worker` → `kernel`).
-  Bump those ranges with the versions, or npm stops resolving the workspace
-  member and falls through to the registry.
-- **`backend/apps/*`** — the apps MDK ships (`agent`, `demo`), also root workspace
-  members sharing the root lock, and **on the release line**: a release bump
-  moves their `package.json` version with everything else. Each also carries a
-  `version` in its `mdk-app.yaml` that must equal its `package.json` version
-  (`mdk validate app` and `mdk add app` reject a mismatch), so bump
-  `backend/apps/*/mdk-app.yaml` in the same change. Their `@tetherto/*` deps are
-  linked, never fetched, so pin them at `*` (or a `file:` path): a version range
-  there resolves against nothing and rots unnoticed — the agent app sat at
-  `^0.0.0` across several releases with nothing to catch it.
-- **Other `mdk-app.yaml` files on the release line** — no `package.json` beside
+  They pin each other with `^X` ranges (for example `gateway` → `app-runtime`, `identity`,
+  `rbac`). Bump those ranges with the versions, or npm stops resolving the workspace
+  member and falls through to the registry. The pin check below lists every one.
+- **`packages/cli`** and **`packages/mdk-skill`**: root workspace members too. `cli` pins
+  most of the backend packages with `^X`, and the scaffold templates under
+  `packages/cli/templates/` pin `^X` as well. A scaffolded project installs those from
+  the registry, so a stale template pin installs an old release.
+- **`mdk-app.yaml` files on the release line** — no `package.json` beside
   them, so no validator catches drift; bump their `version` by hand:
   `examples/mvp-site/backend/gateway-plugins/site/mdk-app.yaml` and
   `backend/tests/benchmark/plugin/fleet-summary/mdk-app.yaml`. Leave
@@ -110,8 +106,8 @@ embedded `file:`-dependency entries.
 As of the 0.6.0 cycle versioning is **uniform across the release line**: every
 tracked package sits at the same version, `mdk-worker` no longer lags, and
 `mdk-ui-shell-template` has moved off its scaffold default onto the shared
-version — treat it as a normal package in future bumps. `backend/apps/*` are on
-the release line too, together with the `mdk-app.yaml` versions listed in the topology.
+version — treat it as a normal package in future bumps. The `mdk-app.yaml` versions listed
+in the topology are on the release line too.
 
 Still **never blanket-set versions by find-and-replace.** Confirm the current spread
 first by *parsing* each manifest, not grepping it (a bare `grep -m1 '"version"'` can
@@ -124,6 +120,40 @@ done | sort | grep -v '^<target>'   # lists everything not already at the target
 git ls-files '*mdk-app.yaml' | xargs grep -H '^version:'   # app manifests (YAML, top-level key only)
 ```
 
+Then the **pin check**. The npm publish step accepts an internal pin only when it is
+exactly `^<release>`: at release `0.12.2`, a leftover `^0.12.1` stops the publish even
+though npm itself would resolve it, and `*` is rejected too. `*` is fine only in
+`private: true` packages. Before the bump this lists every pin; after it, it should print
+nothing. If it prints nothing *before* the bump, the check is broken, not clean.
+
+```bash
+T=<target>
+git ls-files '*package.json' | grep -v '/node_modules/' | while IFS= read -r f; do
+  node -e '
+    const [f, t] = process.argv.slice(1)
+    const o = JSON.parse(require("fs").readFileSync(f, "utf8"))
+    for (const k of ["dependencies", "peerDependencies", "optionalDependencies"])
+      for (const [d, s] of Object.entries(o[k] || {})) {
+        if (!d.startsWith("@tetherto/mdk-") || s === `^${t}` || s.startsWith("file:")) continue
+        if (s === "*" && o.private === true) continue
+        console.log(`${f}\t${k}\t${d}@${s}`)
+      }' "$f" "$T"
+done
+```
+
+And the **private-flag check**: a package that is on npm but `private: true` here is
+skipped by the publish step without an error, so the release ships without it. Want no
+output.
+
+```bash
+git ls-files '*package.json' | grep -v '/node_modules/' | while IFS= read -r f; do
+  read -r n p < <(node -e 'const o=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log(o.name??"-",o.private===true)' "$f")
+  [ "$p" = true ] && [ "${n#@tetherto/}" != "$n" ] || continue
+  code=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/${n/\//%2F}")
+  [ "$code" = 200 ] && echo "PRIVATE BUT ON NPM: $n ($f)"
+done
+```
+
 ## Procedure
 
 1. **Confirm target + scope.** Which packages move to which version. If fixing a
@@ -131,12 +161,11 @@ git ls-files '*mdk-app.yaml' | xargs grep -H '^version:'   # app manifests (YAML
    the `-/+ "version"` diff telling you which value is intended.
 
 2. **Edit `package.json` version fields** for the in-scope packages (use `Edit`
-   on the exact `"version": "…"` line). If bumping a ui package that others pin
-   by range, also bump those `^` ranges (react-devkit, cli — see topology), and
-   likewise the core packages' `^` pins on each other. For every app on the
-   release line, set `version:` in its `mdk-app.yaml` to the same value, then
-   confirm with `mdk validate app backend/apps/<name>` (or
-   `node packages/cli/dist/index.js validate app …` from a built CLI).
+   on the exact `"version": "…"` line). Move every `@tetherto/mdk-*` dependency
+   pinned at `^<old>` to `^<new>` in the same pass: the UI siblings, the core packages'
+   pins on each other, `cli` and its templates. For every app on the
+   release line, set `version:` in its `mdk-app.yaml` to the same value.
+   Then run the pin check from the topology section; it should print nothing.
 
 3. **Regenerate locks** where things changed. Fast path — regenerate the ui
    workspace once and every backend/examples package dir:
@@ -165,6 +194,17 @@ git ls-files '*mdk-app.yaml' | xargs grep -H '^version:'   # app manifests (YAML
    populating an empty `"packages": {}`). Anything else (new deps, removed deps,
    integrity churn) means something beyond a version bump moved — investigate.
 
+   Then dry-run the npm publish plan. The script (`.github/scripts/npm-publish.mjs`) lives
+   in the public repo; copy it if your checkout lacks it. It reads the working tree it runs
+   in (`--ref` is only a label) and the registry, and fails with `plan failed` on any
+   version or pin mismatch:
+
+   ```bash
+   node path/to/npm-publish.mjs plan --ref <branch>   # from the repo root
+   ```
+   Every package you expect to ship should appear in a wave. One that is missing is
+   `private: true`.
+
 6. **Commit & push only with explicit permission.** Stage `package.json` +
    `package-lock.json` together so the tree is always self-consistent.
 
@@ -173,8 +213,9 @@ git ls-files '*mdk-app.yaml' | xargs grep -H '^version:'   # app manifests (YAML
 - A merge that takes one branch's `package.json` but another's `package-lock.json`
   yields `pkg=0.3.0 / lock=0.4.0`. Decide the intended value (ask / read the
   release), fix `package.json` to it, then regen.
-- Bumping a ui package but forgetting react-devkit's `^` pins → `npm install`
-  404s. Always bump the range pins in lockstep.
+- Bumping a ui package but forgetting the `^` pins in react-adapter, react-devkit or
+  ui-agent → `npm install` 404s, and the publish step rejects the release. Always bump
+  the range pins in lockstep, then run the pin check.
 - Bumping an app's `package.json` but not its `mdk-app.yaml` → `mdk validate app`
   and `mdk add app` fail, while `mdk run` still boots it. The lockfile gate does not
   notice either, so check every `mdk-app.yaml` on the release line by hand.

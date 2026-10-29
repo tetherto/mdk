@@ -8,3 +8,4 @@
 
 export type { ControlTooltip } from './keyboard-shortcut-utils'
 export { getControlSectionsTooltips } from './keyboard-shortcut-utils'
+export { type QueryView, toQueryView } from './query-view'

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-app-runtime",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "MDK app runtime: runs one app's controllers in its own process and serves them over HRPC",
   "main": "index.js",
   "bin": {
@@ -25,7 +25,9 @@
   },
   "dependencies": {
     "@hyperswarm/rpc": "^3.5.0",
-    "@tetherto/mdk-worker": "^0.12.2",
+    "@tetherto/mdk-client": "^0.13.0",
+    "@tetherto/mdk-rbac": "^0.13.0",
+    "@tetherto/mdk-worker": "^0.13.0",
     "debug": "4.4.1",
     "hyperdht": "6.34.1",
     "yaml": "^2.9.0"

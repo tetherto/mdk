@@ -1,13 +1,22 @@
 'use strict'
 
-const { Miner } = require('../../../../core/mdk')
+const { Miner } = require('@tetherto/mdk-core')
 const utils = require('./utils')
 const async = require('async')
 const assert = require('assert')
-const { STATUS, POWER_MODE } = require('../../../../core/mdk').constants
+const { STATUS, POWER_MODE } = require('@tetherto/mdk-core').constants
 
 function isResOk (res) {
   return res.Code === '119' || res.Code === '118'
+}
+
+// cgminer API commands are `cmd|param,param,...` on one line, so a value
+// carrying `,`, `|` or a control character would shift or add parameters.
+function cmdArg (value) {
+  const str = String(value)
+  const unsafe = [...str].some((ch) => ch === ',' || ch === '|' || ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) === 0x7f)
+  if (unsafe) throw new Error('ERR_COMMAND_ARG_INVALID')
+  return str
 }
 
 class AvalonMiner extends Miner {
@@ -72,7 +81,7 @@ class AvalonMiner extends Miner {
   async setFanSpeed (speed) {
     // send fan-spd command
     // could not test, miner fan removed
-    const response = await this._sendCommand(`ascset|0,fan-spd,${speed}`)
+    const response = await this._sendCommand(`ascset|0,fan-spd,${cmdArg(speed)}`)
     const parsedData = utils.parseAvalonResponseString(response)
 
     return {
@@ -136,7 +145,7 @@ class AvalonMiner extends Miner {
 
   async updateAdminPassword (newPassword) {
     // ascset|0,password,<old>,<new>
-    const response = await this._sendCommand(`ascset|0,password,${this.opts.password},${newPassword}`)
+    const response = await this._sendCommand(`ascset|0,password,${cmdArg(this.opts.password)},${cmdArg(newPassword)}`)
     const parsedData = utils.parseAvalonResponseString(response)
     if (isResOk(parsedData)) {
       this.opts.password = newPassword
@@ -195,11 +204,16 @@ class AvalonMiner extends Miner {
       return { success: true, message: 'Pools are same, skipping' }
     }
 
+    // Built up front so an invalid value rejects before any pool is changed.
+    const commands = pools.map((pool, index) => 'ascset|0,setpool,' + [
+      this.username, this.password, index, pool.url, pool.worker_name, pool.worker_password
+    ].map(cmdArg).join(','))
+
     const instance = this
     const responses = await async.parallelLimit(
-      pools.map((pool, index) => {
+      commands.map((command) => {
         return async () => {
-          const response = await instance._sendCommand(`ascset|0,setpool,${instance.username},${instance.password},${index},${pool.url},${pool.worker_name},${pool.worker_password}`)
+          const response = await instance._sendCommand(command)
           return utils.parseAvalonResponseString(response)
         }
       }),
@@ -356,9 +370,12 @@ class AvalonMiner extends Miner {
   }
 
   async setNetworkConfiguration (network) {
+    // Validated before the IP change so a bad DNS entry cannot leave it half-applied.
+    const dnsString = network.network.dns.slice(0, 2).map(cmdArg).join(',')
     if (network.type === 'static') {
       // ascset|0,ip,static,<ip>,<mask>,<gw>
-      const response = await this._sendCommand(`ascset|0,ip,static,${network.network.ip},${network.network.mask},${network.network.gateway}`)
+      const { ip, mask, gateway } = network.network
+      const response = await this._sendCommand(`ascset|0,ip,static,${cmdArg(ip)},${cmdArg(mask)},${cmdArg(gateway)}`)
       const parsedData = utils.parseAvalonResponseString(response)
       assert(isResOk(parsedData), 'Failed to set static IP')
     } else {
@@ -370,7 +387,6 @@ class AvalonMiner extends Miner {
 
     // set dns
     // ascset|0,dns,<dns1>,<dns2>
-    const dnsString = network.network.dns.slice(0, 2).join(',')
     const response = await this._sendCommand(`ascset|0,dns,${dnsString}`)
     const parsedData = utils.parseAvalonResponseString(response)
     assert(isResOk(parsedData), 'Failed to set DNS')

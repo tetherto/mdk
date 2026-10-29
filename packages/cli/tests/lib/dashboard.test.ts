@@ -181,6 +181,8 @@ describe('createDashboard (monorepo template)', () => {
     const env = readFileSync(join(result.appPath!, '.env'), 'utf8');
     expect(env).toContain('VITE_GATEWAY_URL=http://localhost:4001');
     expect(env).toContain('VITE_OAUTH_BASE_URL=http://localhost:4001');
+    expect(env).toContain('VITE_AUTH_MODE=password');
+    expect(env).toContain('VITE_AUTH_BYPASS=false');
 
     // Excluded scaffold artifacts never make it into the copy.
     expect(existsSync(join(result.appPath!, 'node_modules'))).toBe(false);

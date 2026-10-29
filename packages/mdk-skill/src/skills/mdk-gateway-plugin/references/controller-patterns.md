@@ -1,16 +1,17 @@
 # Controller patterns
 
-Build the client once per app, in a `lib/client.js` every controller requires. The
+Take the client once per app, in a `lib/client.js` every controller requires. The
 `plugin/lib/client.js` that `mdk create app` scaffolds is this exact pattern:
 
 ```js
 const { config } = require('@tetherto/mdk-gateway/plugin')
-const { createMdkClient } = require('@tetherto/mdk-client')
-module.exports = createMdkClient(config)
+module.exports = config.mdkClient
 ```
 
-`config` carries the app's own Kernel identity (`kernelKey`, `kernelKeyPair`), so the client connects with the app
-runtime's key.
+`config.mdkClient` is the app runtime's Kernel client. It signs in as the app's service account (`app:<name>`), so the
+app may do exactly what `spec.rbac` grants that account: `mdk add app` writes a role granting the `permissions` in
+`mdk-app.yaml`. A call the policy does not allow throws `ERR_KERNEL_ACTION_FORBIDDEN`; let it fail the request rather
+than treating it as empty data.
 
 Controllers are plain async functions that require it:
 

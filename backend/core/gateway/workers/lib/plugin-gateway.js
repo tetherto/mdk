@@ -15,11 +15,10 @@ const { pluginLogger } = require('./logger')
 //                       error/warn/info/debug/trace/fatal + child()
 //   gw.onReady(fn)      fn runs once this gateway is serving
 //
-// Everything else a plugin needs it owns: kernel and worker data — live or
-// historical — go through the plugin's own mdk client, built from
-// config.kernelKey/kernelKeyPair/kernelBootstrap (see the telemetry plugin's
-// lib/client.js). kernelKeyPair is the persistent keypair status.rpcClientKey
-// is read from, so plugin clients dial the Kernel with the allowlisted key.
+// No Kernel keys: a plugin never builds a Kernel client from raw keys. Apps
+// reach the Kernel through the client their app runtime signs in as the app's
+// service account (config.mdkClient there), so every call is checked against
+// spec.rbac. Kernel fields in either conf layer are dropped.
 
 // What a plugin's log lines are tagged with. The manifest name is the plugin's
 // own identity; the scope is dropped because the tag prefixes every line.
@@ -31,20 +30,21 @@ function _pluginName (pluginDir) {
   return path.basename(pluginDir)
 }
 
-function buildPluginContext (wrk, pluginDir, pluginConf) {
-  const kernelKey = Buffer.isBuffer(wrk.ctx.kernelKey) ? wrk.ctx.kernelKey.toString('hex') : wrk.ctx.kernelKey
+const KERNEL_FIELDS = ['kernelKey', 'kernelKeyPair', 'kernelBootstrap', 'kernelDhtHost', 'kernelCredential']
 
+function _withoutKernelFields (conf) {
+  const out = { ...(conf || {}) }
+  for (const k of KERNEL_FIELDS) delete out[k]
+  return out
+}
+
+function buildPluginContext (wrk, pluginDir, pluginConf) {
   const context = Object.freeze({
     // The plugin's own config block (spec.gateway.plugins[].config) wins over
     // gateway-wide conf, so a plugin's settings live with the plugin.
     config: Object.freeze({
-      kernelKey: kernelKey || null,
-      // resolved lazily: net_r0.dht does not exist yet when plugins load; a
-      // host without one (the MCP server's shim) dials with an ephemeral key
-      kernelKeyPair: () => wrk.net_r0?.dht?.defaultKeyPair,
-      kernelBootstrap: wrk.ctx.kernelBootstrap || null,
-      ...wrk.conf,
-      ...pluginConf
+      ..._withoutKernelFields(wrk.conf),
+      ..._withoutKernelFields(pluginConf)
     }),
 
     // A plugin that prints with console has no level, no timestamp and no name;

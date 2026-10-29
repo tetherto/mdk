@@ -28,6 +28,19 @@ export function defaultTemplateRef(): string {
   return `v${cliPkg.version}`;
 }
 
+/** Ref a failed default-release-tag fetch falls back to: the release tag may not be published yet. */
+const FALLBACK_TEMPLATE_REF = 'main';
+
+/**
+ * Points a failed fetch at `--ref main`. Only when the caller passed no `--ref`:
+ * a ref they chose themselves (a SHA, another tag) was not "published yet" by
+ * assumption, so the hint would read oddly there.
+ */
+function mainHint(userRef: string | undefined): string {
+  if (userRef !== undefined) return '';
+  return ` If ${defaultTemplateRef()} is not published yet, retry with --ref ${FALLBACK_TEMPLATE_REF}.`;
+}
+
 /** Branch, tag or SHA — the characters a git ref in a URL path can safely use. */
 const REF_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 
@@ -189,7 +202,7 @@ export async function createDashboard(opts: DashboardOptions): Promise<Dashboard
       ok: false,
       message: local
         ? 'Could not scaffold the UI shell from the local monorepo template.'
-        : 'Could not fetch the UI shell (check your network connection and the ref).',
+        : `Could not fetch the UI shell (check your network connection and the ref).${mainHint(opts.ref)}`,
       detail: error instanceof Error ? error.message : String(error),
     };
   }
@@ -224,11 +237,15 @@ function finalizeShell(
     copyFileSync(envExample, envFile);
   }
 
-  // Point the dev-server proxy + OAuth at this stack's gateway (mdk.yaml port).
+  // Point the dev-server proxy at this stack's gateway (mdk.yaml port), and sign
+  // in the way an MDK Gateway does: user name and password (`mdk user add`),
+  // checked by the Kernel's token issuer. No bypass: the Gateway enforces spec.rbac.
   if (gatewayUrl && existsSync(envFile)) {
     let env = readFileSync(envFile, 'utf8');
     env = setEnvVar(env, 'VITE_GATEWAY_URL', gatewayUrl);
     env = setEnvVar(env, 'VITE_OAUTH_BASE_URL', gatewayUrl);
+    env = setEnvVar(env, 'VITE_AUTH_MODE', 'password');
+    env = setEnvVar(env, 'VITE_AUTH_BYPASS', 'false');
     writeFileSync(envFile, env, 'utf8');
   }
 

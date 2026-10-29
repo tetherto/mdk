@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string
   readonly VITE_OAUTH_BASE_URL: string
   readonly VITE_AUTH_BYPASS?: string
+  /** `password` or `oauth`; see `src/constants/env.ts`. */
+  readonly VITE_AUTH_MODE?: string
 }
 
 interface ImportMeta {

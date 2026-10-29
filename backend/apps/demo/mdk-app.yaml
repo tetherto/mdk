@@ -1,9 +1,0 @@
-id: io.tether.demo
-version: 0.12.2
-displayName: Demo Fleet Summary
-description: "Aggregates live telemetry and history across registered miners that report hashrate_rt in TH/s."
-permissions:
-  - resources: [workers, devices]
-    verbs: [list, read]
-  - resources: [telemetry]
-    verbs: [read]

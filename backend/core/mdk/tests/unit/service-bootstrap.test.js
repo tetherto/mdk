@@ -102,3 +102,22 @@ test('the shipped bootstrap never walks up the tree or requires by checkout path
   t.absent(/findRepoRoot|path\.dirname\(dir\)/.test(src), 'no upward search')
   t.absent(/require\(path\.join/.test(src), 'no require of a computed checkout path')
 })
+
+test('resolveDht - MDK_DHT_BOOTSTRAP / MDK_DHT_HOST, refusing public bootstrap nodes', (t) => {
+  const { resolveDht } = require('../../utils/service-bootstrap')
+  t.alike(resolveDht({}), {}, 'unset: the public DHT')
+  t.alike(resolveDht({ MDK_DHT_BOOTSTRAP: '172.31.249.2:49737', MDK_DHT_HOST: '172.31.249.11' }), {
+    bootstrap: ['172.31.249.2:49737'],
+    dhtHost: '172.31.249.11'
+  })
+  t.exception(() => resolveDht({ MDK_DHT_BOOTSTRAP: 'node3.hyperdht.org:49737' }), /ERR_MDK_DHT_BOOTSTRAP_PUBLIC/)
+})
+
+test('gatewayArgs - the DHT settings reach the spawned gateway as ctx flags', (t) => {
+  const { gatewayArgs } = require('../../utils/service-bootstrap')
+  t.alike(gatewayArgs({ env: 'production', port: 3000 }), ['--wtype', 'wrk-node-http', '--env', 'production', '--port', '3000'])
+  t.alike(
+    gatewayArgs({ env: 'development', port: 3000, dht: { bootstrap: ['127.0.0.1:49737', '127.0.0.1:49738'], dhtHost: '127.0.0.1' } }).slice(6),
+    ['--kernelBootstrap', '127.0.0.1:49737,127.0.0.1:49738', '--kernelDhtHost', '127.0.0.1']
+  )
+})

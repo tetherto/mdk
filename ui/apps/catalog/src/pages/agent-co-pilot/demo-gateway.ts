@@ -2,7 +2,7 @@
  * A stand-in for the agent gateway plugin, so this page works with no backend.
  *
  * It speaks the same four routes and the same SSE framing as
- * `backend/apps/agent`, including the parts that are easy to get wrong when
+ * the `mdk-app-agent` app, including the parts that are easy to get wrong when
  * mocking: events arrive over time rather than all at once, a write pauses the
  * stream on `pending_approval` until a decision lands on its own request, and
  * the envelope carries `turnId` / `seq` / `ts`.

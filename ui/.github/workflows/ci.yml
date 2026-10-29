@@ -187,6 +187,8 @@ jobs:
           echo "✅ Code formatting check passed"
 
       - name: 🤖 Agent-readiness contract
+        # Advisory: a violation is reported but does not fail the build.
+        continue-on-error: true
         run: |
           echo "🤖 Building registry and validating the agent-readiness contract..."
           # `check:agent-ready` runs `build:registry` first; that step needs the

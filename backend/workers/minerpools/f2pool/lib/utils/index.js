@@ -4,7 +4,7 @@ const {
   isCurrentMonth,
   convertMsToSeconds,
   getTimeRanges
-} = require('../../../../../core/mdk/lib/services/pool-utils/time')
+} = require('@tetherto/mdk-core/lib/services/pool-utils/time')
 
 /**
  * @typedef {Object} Worker

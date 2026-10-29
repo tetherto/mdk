@@ -40,6 +40,17 @@ npm run dev        # serves on http://localhost:3030
 
 Then open `http://localhost:3030` and click **Sign in with Google**.
 
+## Password sign-in (MDK stacks)
+
+An MDK stack's Gateway signs users in itself: `POST /auth/login` checks a user name and password against the Kernel's token
+issuer, and every app route then needs the access token and a `spec.rbac` rule. Set `VITE_AUTH_MODE=password` (`mdk create
+dashboard` does) and the sign-in page shows a password form instead of the Google button. Create a user with
+`mdk user add <name>`, and bind it to a role in `mdk.yaml`.
+
+[`src/auth.ts`](./src/auth.ts) builds the session with `passwordAuth()` from `@tetherto/mdk-ui-foundation`. The access token
+is short-lived and renewed silently; the refresh token stays in the Gateway's httpOnly cookie, out of reach of page scripts,
+and a reload restores the session before the router's guard runs.
+
 ## Google OAuth setup
 
 **MDK ships no OAuth implementation.** The Gateway has no API of its own and serves
@@ -74,6 +85,7 @@ development against the MDK Gateway on `localhost:3000`.
 | `VITE_MDK_API_URL`     | no       | *(empty)*                  | Base URL for authenticated XHRs (`/auth/*`, `/api/*`). Leave empty in dev — Vite's proxy keeps requests same-origin. Set this **only** when the production frontend lives on a different origin than the backend and no reverse proxy sits between them.   |
 | `VITE_OAUTH_BASE_URL`  | yes      | `http://localhost:3000`    | Absolute base URL of the OAuth issuer (e.g. `http://localhost:3000` in dev, `https://api.your-site.com` in prod). Used by the Sign-In button, which issues a top-level navigation that the Vite proxy cannot rewrite — so this must always be absolute.    |
 | `VITE_GATEWAY_URL`     | no       | `http://localhost:3000`    | Gateway URL the Vite dev server proxies `/auth`, `/oauth`, `/api` and `/pub` to. `mdk create dashboard` sets this from your stack's `mdk.yaml` gateway port; defaults to the mvp-site gateway (`:3000`) when unset.                                        |
+| `VITE_AUTH_MODE`       | no       | `oauth`                    | `password` for an MDK stack's Gateway (user name and password), `oauth` for the Google redirect. `mdk create dashboard` sets `password`. |
 | `VITE_AUTH_BYPASS`     | no       | `true`                     | Dev-only auth bypass. `true` skips the `/signin` gate and lands straight on the dashboard with a stub session (no OAuth backend needed) and disables token-refresh polling. Set to `false` (or delete) once auth is wired up. **Never enable in production.** |
 
 `VITE_API_BASE_URL` is the former name of `VITE_MDK_API_URL`. It is still
@@ -81,7 +93,7 @@ read, with a one-time console warning, and stops being read in the next
 major — the `VITE_MDK_` prefix keeps it from colliding with your own app's
 API URL.
 
-`VITE_MDK_API_URL`, `VITE_OAUTH_BASE_URL` and `VITE_AUTH_BYPASS` are read through [`src/constants/env.ts`](./src/constants/env.ts);
+`VITE_MDK_API_URL`, `VITE_OAUTH_BASE_URL`, `VITE_AUTH_MODE` and `VITE_AUTH_BYPASS` are read through [`src/constants/env.ts`](./src/constants/env.ts);
 reach for that file (don't sprinkle raw `import.meta.env` lookups across the app) when adding new ones. The
 accompanying [`src/vite-env.d.ts`](./src/vite-env.d.ts) declares the typed shape, so missing/misnamed variables
 surface as type errors. `VITE_GATEWAY_URL` is a config-time-only variable read directly in
@@ -104,6 +116,7 @@ test harness or wire up a mock Kernel; both are out of scope for this template.
 ```text
 src/
   main.tsx               React entrypoint, wraps app in <MdkProvider>
+  layers.css             The CSS layer order; imported first in main.tsx
   App.tsx                Authenticated shell: topbar + sidebar + <Outlet/>
                          Hosts useTokenPolling() at the top of the tree.
   router.tsx             Router config — /signin is public, everything else
@@ -167,6 +180,46 @@ Installing or removing an app means restarting `mdk run dashboard`, or rebuildin
 - **Pages** (`routes`) are mounted under `/app/<name>/…` and listed in the sidebar. The prefix is `/app`, not
   `/apps`, because `/apps/<name>/` is the Gateway's: it forwards those paths to the app's own routes.
 - **Panels** (`panels` with `slot: 'home'`) are rendered on Home.
+- **Sections** (`section` on a route, plus an optional `sections` list) group an app's pages in the sidebar.
+
+Each route takes these fields:
+
+| Field       | Effect                                                                                                    |
+| ----------- | --------------------------------------------------------------------------------------------------------- |
+| `path`      | Path under `/app/<name>/`. `''` is the app's landing page; a path with `:param` or `*` is routed but not listed |
+| `label`     | Sidebar label. Defaults to the app's `displayName` for the landing page, else to `path`                   |
+| `hidden`    | Routed but kept out of the sidebar, for a deep link reached from another page                             |
+| `section`   | Sidebar section the page is listed under, e.g. `'Operations'`                                             |
+| `component` | The page, rendered inside the app's `MdkAppProvider` and an error boundary                                |
+
+The sidebar lists an app with one page as a single entry and an app with several as a group named after the app. Pages
+that share a `section` form a nested group, in the order each section first appears; pages without one sit directly in
+the app's group. When the app is the only one installed and uses sections, its sections are top-level entries instead.
+
+A section needs no declaration to work. To give one an icon, list it in `sections` with a React component; the
+section's pages then carry no icon of their own:
+
+```tsx
+import { defineMdkApp } from '@tetherto/mdk-react-adapter'
+import { FinancialsNavIcon, OperationsNavIcon } from '@tetherto/mdk-react-devkit'
+
+export default defineMdkApp({
+  id: 'io.tether.reporting-tool-lite',
+  displayName: 'Reporting Tool Lite',
+  routes: [
+    { path: '', label: 'Dashboard', section: 'Operations', component: DashboardPage },
+    { path: 'cost-input', label: 'Cost Input', section: 'Financials', component: CostInputPage },
+  ],
+  sections: [
+    { label: 'Operations', icon: OperationsNavIcon },
+    { label: 'Financials', icon: FinancialsNavIcon },
+  ],
+  panels: [],
+})
+```
+
+`mdk validate app` and the shell reject a `section` that is empty or not a string, and in `sections` a missing label,
+two sections with the same label, or an `icon` that is not a React component.
 
 Each app renders inside its own error boundary and `MdkAppProvider`. An app that fails to load is listed on Home and
 does not affect the others. The code is in `src/apps/`: [`InstalledAppPage.tsx`](src/apps/InstalledAppPage.tsx) mounts an app's pages, [`AppPanels.tsx`](src/apps/AppPanels.tsx) renders its Home panels and load errors, and [`paths.ts`](src/apps/paths.ts) builds the `/app/<name>/…` paths and sidebar items.
@@ -193,7 +246,8 @@ export default defineConfig({
 })
 ```
 
-The entry default-exports `defineMdkApp({ id, displayName, routes, panels })` from `@tetherto/mdk-react-adapter`.
+The entry default-exports `defineMdkApp({ id, displayName, routes, panels, sections })` from
+`@tetherto/mdk-react-adapter`; `sections` is optional.
 Inside an app, `useMdkApp().apiUrl('/status')` gives the URL of the app's own route under the name it was installed
 as.
 

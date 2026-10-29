@@ -21,7 +21,7 @@ import { charterVersionFor } from './charter.js'
  * Streamable HTTP MCP tool server. Omit the whole object for plain grounded chat (no tools).
  *
  * @typedef {object} McpConfig
- * @property {string} url                          e.g. `'http://127.0.0.1:3008/mcp'`
+ * @property {string} url                          e.g. `'http://127.0.0.1:3101/mcp'`
  */
 
 /**

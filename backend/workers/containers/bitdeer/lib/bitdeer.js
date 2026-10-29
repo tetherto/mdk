@@ -1,6 +1,6 @@
 'use strict'
 
-const { Container } = require('../../../../core/mdk')
+const { Container } = require('@tetherto/mdk-core')
 const { getPDUValues, unMapPDU, unMapSocket, MAPPINGS } = require('./utils/pduOps')
 const { TaskQueue } = require('@bitfinex/lib-js-util-task-queue')
 const { optimizeSocketCalls } = require('./utils/optimize')
@@ -23,14 +23,21 @@ class Bitdeer extends Container {
     }
   }
 
+  // aedes requires cb on every path, and a throw here is uncaught (it would
+  // take the whole worker down), so a malformed payload is logged and dropped.
   _handleMessage (packet, cb) {
     const { topic, payload } = packet
     const _topic = topic.replace(this.opts.containerId, '')
     const _mappedFunction = _TopicMapping[_topic]
-    if (_mappedFunction === undefined) return
+    if (_mappedFunction === undefined) return cb()
+    let _mappedValue
+    try {
+      _mappedValue = _mappedFunction(JSON.parse(payload.toString()))
+    } catch (err) {
+      this.debugError(`ERR_MQTT_PAYLOAD_INVALID: ${topic}`, err)
+      return cb()
+    }
     this.updateLastSeen()
-    const _message = JSON.parse(payload.toString())
-    const _mappedValue = _mappedFunction(_message)
     for (const bucket in _mappedValue) {
       this.lastMessageCache[bucket] = _mappedValue[bucket]
     }
@@ -541,5 +548,12 @@ const _TacticsKey = {
 function _getKeyByValue (object, value) {
   return Object.keys(object)?.find(key => object[key] === value)
 }
+
+// Topics the container publishes (telemetry) and subscribes to (operations
+// sent by _sendOperationMessage); the broker ACL in broker-auth.js uses both.
+Bitdeer.TELEMETRY_TOPICS = Object.freeze(Object.keys(_TopicMapping))
+Bitdeer.COMMAND_TOPICS = Object.freeze([
+  'PumpOperate', 'PDUOperate', 'CoolerOperate', 'TacticsSet', 'ParameterSet', 'RunningOperate'
+])
 
 module.exports = Bitdeer

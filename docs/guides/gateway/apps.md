@@ -22,7 +22,8 @@ that runtime over HRPC, so no app code runs inside the Gateway. A Gateway serves
 
 ## Apps MDK ships
 
-The [apps MDK ships][supported-apps] are the source of truth for their package names and the routes each serves. Declare one by package name:
+Each app MDK ships lives in its own repository, listed in the [supported apps reference][supported-apps], and its
+README documents the routes it serves. Declare one by package name:
 
 ```yaml
 # mdk.yaml
@@ -76,12 +77,14 @@ apps/fleet/
 | `config`      | Optional | Default config handed to the controllers                                        |
 | `main`        | Optional | The app's background logic, `<file>[#export]` beside the route table. Called as `main(config, context)` and awaited before the runtime first serves, so a store or collector it sets up is ready for the controllers |
 
-> [!WARNING]
-> The Kernel does not enforce `permissions` yet. They are declared for operator review only: the app runtime's Kernel key
-> is admitted with full access, like every key in `.mdk/trusted-keys/`.
+> [!IMPORTANT]
+> The Kernel enforces `spec.rbac` on every call the app makes. `mdk add app` grants the app's service account (`app:<name>`)
+> exactly these `permissions`, as a role in `mdk.yaml` the operator may narrow, so request every Kernel resource the app
+> reads or writes: a call outside them throws `ERR_KERNEL_ACTION_FORBIDDEN` and reaches HTTP as `403`.
 
 `mdk validate app fleet` checks the manifest, its version against `package.json`, the permission rules and the route
-table, by the same rules the app runtime and the Gateway apply at boot (the version check is the validator's own).
+table, by the same rules the app runtime and the Gateway apply at boot (the version check is the validator's own), and
+that `spec.rbac` in `mdk.yaml` grants `app:fleet` what the manifest requests.
 
 </Step>
 
@@ -93,13 +96,13 @@ table, by the same rules the app runtime and the Gateway apply at boot (the vers
 
 `mdk-plugin.json` declares the plugin identity (`name`, `version`) and a `routes` array. Each route needs an `id`, a
 `handler` path, and either an `http` block with a `method` and `path`, or those same `method`/`path` fields flattened to the route's top level;
-the bundled agent app uses the flat form. Rather than copy a synthetic example, start from a real manifest and trim it:
+the agent app uses the flat form. Rather than copy a synthetic example, start from a real manifest and trim it:
 
-- [`backend/apps/demo/mdk-plugin.json`][demo-plugin-manifest]: two read-only `GET` routes with query parameters, each
+- [`mdk-app-demo/mdk-plugin.json`][demo-plugin-manifest]: two read-only `GET` routes with query parameters, each
   annotated with `safety`
 - [`examples/mvp-site/backend/gateway-plugins/site/mdk-plugin.json`][mvp-site-manifest]: four routes including `GET`s with query
 parameters, and `POST`s with a `requestBody` and path parameters
-- [`backend/apps/agent/mdk-plugin.json`][agent-plugin-manifest]: `auth: true` routes in the flat form, one of them a stream route
+- [`mdk-app-agent/mdk-plugin.json`][agent-plugin-manifest]: `auth: true` routes in the flat form, one of them a stream route
 
 Path parameters use `{param}` syntax — the loader normalises them to Fastify's `:param` format. For named exports use `"handler":
 "./controllers/foo.js#namedExport"`. The plugin reference explains what each field means and what the loader requires.
@@ -122,15 +125,16 @@ module.exports = async function live (req) {
 }
 ```
 
-```js
-// controllers/command.js — dispatch a command
-const mdkClient = require('../lib/client')
+A write a user asks for goes through `req.mdk`, the request's Kernel client. It acts for the signed-in user, so the Kernel checks
+their own `spec.rbac` rules as well as the app's, and the write-command log records them via the app:
 
+```js
+// controllers/command.js — dispatch a command for the signed-in user
 module.exports = async function command (req) {
   const deviceId = req.params.deviceId
   const { mode } = req.body
 
-  const result = await mdkClient.sendCommand(deviceId, 'setPowerMode', { mode })
+  const result = await req.mdk.sendCommand(deviceId, 'setPowerMode', { mode })
 
   return {
     deviceId,
@@ -317,11 +321,11 @@ A controller's only argument. The controller reference documents every field
 `require('@tetherto/mdk-gateway/plugin')` resolves, inside an app's controllers, to that app's own frozen context. The
 controller reference shows a controller building its own client from it:
 
-| Field      | Type       | Contains                                                                |
-| ---------- | ---------- | ----------------------------------------------------------------------- |
-| `config`   | `object`   | The `mdk-app.yaml` `config` defaults with the app's `spec.apps[].config` layered over them key-by-key, plus `kernelKey`, `kernelBootstrap` and the app's own `kernelKeyPair`, which is what `createMdkClient(config)` reads |
-| `logger`   | `object`   | The app runtime's logger, namespaced `mdk:app:<name>` |
-| `onReady`  | `function` | Registers a callback that runs once the app runtime is serving, or straight away if it already is. Errors thrown inside it are caught and logged, not fatal |
+| Field | Type | Contains |
+| --- | --- | --- |
+| `config` | `object` | The `mdk-app.yaml` `config` defaults with the app's `spec.apps[].config` layered over them key-by-key, plus `mdkClient`: the app runtime's Kernel client, signed in as the app's service account (`app:<name>`), so every call is checked against `spec.rbac` |
+| `logger` | `object` | The app runtime's logger, namespaced `mdk:app:<name>` |
+| `onReady` | `function` | Registers a callback that runs once the app runtime is serving, or straight away if it already is. Errors thrown inside it are caught and logged, not fatal |
 
 ### Supplying per-app config
 
@@ -407,46 +411,63 @@ The manifest reference shows the field in a real manifest.
 
 Add `"stream": true` to a route to own the raw `ServerResponse` instead of returning a plain value — for SSE or any
 other response Fastify shouldn't serialize. The manifest reference covers the mechanism and the
-handler's error behavior. [`backend/apps/agent`][agent-plugin-readme] is a shipping example — its message route
+handler's error behavior. [`mdk-app-agent`][agent-plugin-readme] is a shipping example — its message route
 streams `text/event-stream` this way; see the [agent Gateway-deployment guide][agent-guide] for the consumer side.
 
 ### Auth and permissions
 
-Mark a route `"auth": true` and the Gateway refuses it with `401 ERR_AUTH_UNAUTHORIZED` unless the `authVerifier` passed to
-`startGateway()` returns an identity for the request. The verifier runs before body parsing, validation, the cache and your controller.
-Its return value reaches the controller as `req._info`, so identity never comes from the request body. Routes without `"auth": true`
-are served to any caller that passes the Host check. [The Gateway's security model][gateway-concept-auth] lists the rest of the
-defaults.
+Every route of an app is checked against `spec.rbac` at the Gateway: the caller needs a bearer access token (`POST /auth/login`
+issues one) and a rule granting the route's resource and verb. Without a token the Gateway answers `401 ERR_AUTH_UNAUTHORIZED`,
+and without a rule `403 ERR_AUTH_FORBIDDEN`, before body validation, the cache and your controller. Who may call the route is the
+operator's to set in `mdk.yaml`; the manifest only says how the route is governed:
 
-The Gateway ships no identity layer. Supply one in the verifier:
+| Route field    | Status   | Description                                                                                       |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------- |
+| `verb`         | Optional | `get`, `list`, `create`, `update` or `delete`. Default: `GET` `get`, `POST` `create`, `PUT`/`PATCH` `update`, `DELETE` `delete` |
+| `resourceName` | Optional | `{ "param": "<name>" }`, `{ "query": "<name>" }` or `{ "body": "<name>" }`: where the instance a rule's `resourceNames` matches comes from |
+
+The resource is `<app>/<path>`: the app's name in `spec.apps` and the route's path template, so the route `/miners/:id` of
+`ops-center` is `ops-center/miners/:id`. A rule for it:
+
+```yaml
+spec:
+  rbac:
+    roles:
+      - name: rack3-tech
+        rules:
+          - resources: [ops-center/miners/command]
+            verbs: [create]
+            resourceNames: ["rack-3-*"]      # matched against the route's resourceName field
+    bindings:
+      - role: rack3-tech
+        subjects: [{ kind: User, name: tech@example.com }]
+```
+
+The verified identity reaches the controller as `req._info`, `{ kind, sub, email?, groups? }`, so identity never comes from the
+request body. [The Gateway's security model][gateway-concept-auth] lists the rest of the defaults.
+
+A Gateway started with no Kernel and no credential falls back to an `authVerifier` for routes marked `"auth": true`:
 
 ```js
-const { validateToken } = require('./lib/my-identity-layer')
-
 await startGateway({
-  kernel,
+  kernelKey: false,
   gatewayKeyFile: './run/gateway.key',
   apps: [{ name: 'fleet', appDir, keyFile: './run/fleet.key' }],
-  // route is { id, method, path, plugin, permissions } from the manifest
+  // route is { id, method, path, app, permissions } from the manifest
   authVerifier: async (request, route) => {
     const token = request.headers.authorization?.replace('Bearer ', '')
     if (!token) return false
-    const { email, permissions } = await validateToken(token)
-    if (!(route.permissions || []).every(p => permissions.includes(p))) {
-      throw Object.assign(new Error('ERR_AUTH_PERM_DENIED'), { statusCode: 403 })
-    }
-    return { user: { userId: email }, perms: permissions }
+    return { user: { userId: await validateToken(token) } }
   }
 })
 ```
 
-The Gateway does not interpret the manifest `"permissions"` field itself; it hands it to the verifier as `route.permissions`.
 The controller then reads the verified identity:
 
 ```js
 module.exports = async function protectedRoute (req) {
-  const { user, perms } = req._info
-  // Pass user and perms into Kernel yourself (for example as authPerms). Do not take them from req.body.
+  const { sub, groups } = req._info
+  // Who asked. Kernel calls through req.mdk act for them; config.mdkClient calls act as the app (app:<name>).
 }
 ```
 
@@ -485,14 +506,14 @@ anything is wrong — see the loader's error codes for the full list.
 [contract-schema]: ../../../backend/core/mdk-worker/mdk-contract.schema.json
 <!-- docs@tether.io: contract-schema → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/mdk-contract.schema.json -->
 
-[demo-plugin-readme]: ../../../backend/apps/demo/README.md
-<!-- docs@tether.io: demo-plugin-readme → https://github.com/tetherto/mdk/blob/main/backend/apps/demo/README.md -->
+[demo-plugin-readme]: https://github.com/tetherto/mdk-app-demo
+<!-- docs@tether.io: demo-plugin-readme → https://github.com/tetherto/mdk-app-demo -->
 
-[demo-plugin-summary]: ../../../backend/apps/demo/controllers/summary.js
-<!-- docs@tether.io: demo-plugin-summary → https://github.com/tetherto/mdk/blob/main/backend/apps/demo/controllers/summary.js -->
+[demo-plugin-summary]: https://github.com/tetherto/mdk-app-demo/blob/main/controllers/summary.js
+<!-- docs@tether.io: demo-plugin-summary → https://github.com/tetherto/mdk-app-demo/blob/main/controllers/summary.js -->
 
-[demo-plugin-history]: ../../../backend/apps/demo/controllers/history.js
-<!-- docs@tether.io: demo-plugin-history → https://github.com/tetherto/mdk/blob/main/backend/apps/demo/controllers/history.js -->
+[demo-plugin-history]: https://github.com/tetherto/mdk-app-demo/blob/main/controllers/history.js
+<!-- docs@tether.io: demo-plugin-history → https://github.com/tetherto/mdk-app-demo/blob/main/controllers/history.js -->
 
 [gateway-concept-auth]: ../../../backend/core/gateway/README.md
 <!-- docs@tether.io: gateway-concept-auth → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md -->
@@ -531,11 +552,11 @@ anything is wrong — see the loader's error codes for the full list.
 [core-apps]: ../../../backend/core/mdk/README.md#apps
 <!-- docs@tether.io: core-apps → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md#apps -->
 
-[demo-plugin-manifest]: ../../../backend/apps/demo/mdk-plugin.json
-<!-- docs@tether.io: demo-plugin-manifest → https://github.com/tetherto/mdk/blob/main/backend/apps/demo/mdk-plugin.json -->
+[demo-plugin-manifest]: https://github.com/tetherto/mdk-app-demo/blob/main/mdk-plugin.json
+<!-- docs@tether.io: demo-plugin-manifest → https://github.com/tetherto/mdk-app-demo/blob/main/mdk-plugin.json -->
 
-[agent-plugin-manifest]: ../../../backend/apps/agent/mdk-plugin.json
-<!-- docs@tether.io: agent-plugin-manifest → https://github.com/tetherto/mdk/blob/main/backend/apps/agent/mdk-plugin.json -->
+[agent-plugin-manifest]: https://github.com/tetherto/mdk-app-agent/blob/main/mdk-plugin.json
+<!-- docs@tether.io: agent-plugin-manifest → https://github.com/tetherto/mdk-app-agent/blob/main/mdk-plugin.json -->
 
 [see-an-app-serve-data]: ../../tutorials/see-an-app-serve-data.md
 <!-- docs@tether.io: see-an-app-serve-data → tutorials/see-an-app-serve-data -->
@@ -551,8 +572,8 @@ anything is wrong — see the loader's error codes for the full list.
 [expose-data]: ../agent/expose-data.md
 <!-- docs@tether.io: expose-data → guides/agent/expose-data -->
 
-[agent-plugin-readme]: ../../../backend/apps/agent/README.md
-<!-- docs@tether.io: agent-plugin-readme → https://github.com/tetherto/mdk/blob/main/backend/apps/agent/README.md -->
+[agent-plugin-readme]: https://github.com/tetherto/mdk-app-agent
+<!-- docs@tether.io: agent-plugin-readme → https://github.com/tetherto/mdk-app-agent -->
 
 [agent-guide]: ../agent/gateway-deployment.md
 <!-- docs@tether.io: agent-guide → guides/agent/gateway-deployment -->

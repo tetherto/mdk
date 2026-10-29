@@ -3,39 +3,52 @@
 const { ACTIONS } = require('../protocol/actions')
 
 /**
- * Caller admission and per-action authorization for the Kernel HRPC listener.
+ * Caller admission for the Kernel HRPC listener: which transport keys may
+ * connect at all. It grants nothing else. What a caller may do is decided per
+ * request by its access token and spec.rbac (see authorizer.js), so a key on
+ * this list is no more privileged than any other: there are no roles, no
+ * full-access entries and no admit-everyone switch.
  *
- * Roles are ordered: `admin` implies `write`, `write` implies `read`.
- *   read  — status, telemetry, worker/capability listing, action reads
- *   write — command.request / command.cancel, action push / vote / cancel
- *   admin — worker.terminate, and may vote on behalf of the users it
- *           authenticated (the payload `voter` is kept as given)
- *
- * Allowlist entries are either a hex public key (full access — the shape
- * every pre-roles config used) or `{ key, roles }`.
+ * Allowlist entries are hex public keys (or `{ key }`).
  */
 
-const ROLES = Object.freeze({ READ: 'read', WRITE: 'write', ADMIN: 'admin' })
-const ROLE_RANK = { read: 1, write: 2, admin: 3 }
-const FULL_ACCESS = Object.freeze([ROLES.ADMIN])
-
-const ACTION_ROLES = {
-  [ACTIONS.COMMAND_STATUS]: ROLES.READ,
-  [ACTIONS.TELEMETRY_PULL]: ROLES.READ,
-  [ACTIONS.STATE_PULL]: ROLES.READ,
-  [ACTIONS.WORKER_LIST]: ROLES.READ,
-  [ACTIONS.DEVICE_CAPABILITIES]: ROLES.READ,
-  [ACTIONS.ACTION_GET]: ROLES.READ,
-  [ACTIONS.ACTION_GET_BATCH]: ROLES.READ,
-  [ACTIONS.ACTION_QUERY]: ROLES.READ,
-  [ACTIONS.COMMAND_REQUEST]: ROLES.WRITE,
-  [ACTIONS.COMMAND_CANCEL]: ROLES.WRITE,
-  [ACTIONS.ACTION_PUSH]: ROLES.WRITE,
-  [ACTIONS.ACTION_PUSH_BATCH]: ROLES.WRITE,
-  [ACTIONS.ACTION_VOTE]: ROLES.WRITE,
-  [ACTIONS.ACTION_CANCEL_BATCH]: ROLES.WRITE,
-  [ACTIONS.WORKER_TERMINATE]: ROLES.ADMIN
-}
+/**
+ * Every action a caller may send. Anything else (the worker-bound protocol
+ * actions) is refused. Each one but sign-in has an RBAC check in
+ * @tetherto/mdk-rbac's KERNEL_ACTIONS; a test holds the two lists together.
+ */
+const CALLER_ACTIONS = Object.freeze([
+  ACTIONS.COMMAND_STATUS,
+  ACTIONS.TELEMETRY_PULL,
+  ACTIONS.STATE_PULL,
+  ACTIONS.WORKER_LIST,
+  ACTIONS.DEVICE_CAPABILITIES,
+  ACTIONS.ACTION_GET,
+  ACTIONS.ACTION_GET_BATCH,
+  ACTIONS.ACTION_QUERY,
+  ACTIONS.COMMAND_REQUEST,
+  ACTIONS.COMMAND_CANCEL,
+  ACTIONS.COMMAND_LOG,
+  ACTIONS.ACTION_PUSH,
+  ACTIONS.ACTION_PUSH_BATCH,
+  ACTIONS.ACTION_VOTE,
+  ACTIONS.ACTION_CANCEL_BATCH,
+  ACTIONS.WORKER_TERMINATE,
+  ACTIONS.RBAC_GET,
+  ACTIONS.RBAC_APPLY,
+  ACTIONS.AUTH_LOGIN,
+  ACTIONS.AUTH_REFRESH,
+  ACTIONS.AUTH_TOKEN,
+  ACTIONS.AUTH_LOGOUT,
+  ACTIONS.AUTH_JWKS,
+  ACTIONS.IDENTITY_USER_LIST,
+  ACTIONS.IDENTITY_USER_UPSERT,
+  ACTIONS.IDENTITY_USER_DELETE,
+  ACTIONS.IDENTITY_SA_LIST,
+  ACTIONS.IDENTITY_SA_UPSERT,
+  ACTIONS.IDENTITY_SA_DELETE,
+  ACTIONS.IDENTITY_KEYS_ROTATE
+])
 
 const HEX_KEY = /^[0-9a-f]{64}$/
 
@@ -49,51 +62,31 @@ function normalizeKey (key) {
   return hex
 }
 
-function normalizeRoles (roles) {
-  if (roles === undefined) return FULL_ACCESS
-  if (!Array.isArray(roles) || roles.length === 0) throw new Error('ERR_KERNEL_CALLER_ROLES_INVALID: roles must be a non-empty array')
-  for (const role of roles) {
-    if (!Object.hasOwn(ROLE_RANK, role)) throw new Error(`ERR_KERNEL_CALLER_ROLE_UNKNOWN: ${role}`)
-  }
-  return Object.freeze([...new Set(roles)])
-}
-
 /**
- * Parse an allowlist (`whitelist`) into Map<hexKey, roles[]>.
- * @param {Array<string|Buffer|{key: string|Buffer, roles?: string[]}>} entries
+ * Parse an allowlist (`whitelist`) into a Set of hex keys. An entry with
+ * `roles` is refused: roles no longer exist, and silently dropping them would
+ * leave an operator believing a key is limited when only spec.rbac limits it.
+ * @param {Array<string|Buffer|{key: string|Buffer}>} entries
  */
 function parseAllowlist (entries) {
-  const out = new Map()
+  const out = new Set()
   if (entries === undefined || entries === null) return out
   if (!Array.isArray(entries)) throw new Error('ERR_KERNEL_WHITELIST_INVALID: whitelist must be an array')
   for (const entry of entries) {
     if (entry && typeof entry === 'object' && !Buffer.isBuffer(entry)) {
-      out.set(normalizeKey(entry.key), normalizeRoles(entry.roles))
+      if (entry.roles !== undefined) {
+        throw new Error('ERR_KERNEL_CALLER_ROLES_UNSUPPORTED: allowlist entries only admit a key; what it may do is set by spec.rbac')
+      }
+      out.add(normalizeKey(entry.key))
     } else {
-      out.set(normalizeKey(entry), FULL_ACCESS)
+      out.add(normalizeKey(entry))
     }
   }
   return out
 }
 
-function hasRole (roles, required) {
-  const need = ROLE_RANK[required] || ROLE_RANK.admin
-  return (roles || []).some((role) => (ROLE_RANK[role] || 0) >= need)
-}
-
-// Unlisted actions (worker-bound ones a caller should never send) need admin
-// so a new action is never reachable by default.
-function requiredRole (action) {
-  return ACTION_ROLES[action] || ROLES.ADMIN
-}
-
 module.exports = {
-  ROLES,
-  FULL_ACCESS,
-  ACTION_ROLES,
+  CALLER_ACTIONS,
   normalizeKey,
-  normalizeRoles,
-  parseAllowlist,
-  hasRole,
-  requiredRole
+  parseAllowlist
 }

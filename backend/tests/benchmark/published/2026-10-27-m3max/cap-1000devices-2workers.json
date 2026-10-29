@@ -1,0 +1,463 @@
+{
+  "profileId": "cap-1000devices-2workers",
+  "sweep": "representative",
+  "mode": "multi-process",
+  "deviceCount": 1000,
+  "workerCount": 2,
+  "workersBreakdown": [
+    {
+      "workerId": "bench-worker-0",
+      "type": "mdk-worker-avalon",
+      "model": "a1346",
+      "deviceCount": 500
+    },
+    {
+      "workerId": "bench-worker-1",
+      "type": "mdk-worker-avalon",
+      "model": "a1346",
+      "deviceCount": 500
+    }
+  ],
+  "storePaths": {
+    "kernelStore": ".mdk-data/cap-1000devices-2workers/kernel-db",
+    "workerStores": [
+      {
+        "workerId": "bench-worker-0",
+        "type": "mdk-worker-avalon",
+        "model": "a1346",
+        "path": ".mdk-data/cap-1000devices-2workers/workers/bench-worker-0/store",
+        "startSizeBytes": 13068906
+      },
+      {
+        "workerId": "bench-worker-1",
+        "type": "mdk-worker-avalon",
+        "model": "a1346",
+        "path": ".mdk-data/cap-1000devices-2workers/workers/bench-worker-1/store",
+        "startSizeBytes": 13108776
+      }
+    ],
+    "gatewayStore": ".mdk-data/cap-1000devices-2workers/gateway"
+  },
+  "configArtifact": {
+    "path": "config/benchmark.config.json",
+    "hash": "2f48ab70dc13"
+  },
+  "hardware": {
+    "referenceTier": "custom",
+    "cpuModel": "Apple M3 Max",
+    "cpuCoresPhysical": "14",
+    "cpuCoresLogical": "14",
+    "ramGiB": "36",
+    "diskType": "NVMe (Apple Fabric SSD)",
+    "diskSizeGiB": "926",
+    "os": "macOS 15.8.1 (24H32), darwin arm64",
+    "nodeVersion": "v24.19.0",
+    "mdkVersion": "0.12.1 @ 2d71e224",
+    "networkPath": "simulated-in-process",
+    "notes": "Developer workstation, loopback mocks (one mock TCP/HTTP listener per Worker). Not a reference tier; results are indicative."
+  },
+  "operatingParameters": {
+    "kernelTelemetryPullMs": 10000,
+    "kernelHealthPingMs": 5000,
+    "kernelStatePullMs": 20000,
+    "workerCollectSnapsItvMs": 10000,
+    "workerStoreSnapItvMs": 20000,
+    "workerConcurrency": 500,
+    "deviceRequestTimeoutMs": 10000,
+    "collectSnapTimeoutMs": 2000,
+    "alertRulesCount": 1
+  },
+  "runReproducibility": {
+    "n": 1000,
+    "nMinimumRecommended": 100,
+    "soakMs": 60000,
+    "soakMinimumMsForGrowthClaims": 86400000,
+    "resourceSampleIntervalMs": 250,
+    "readLoadConcurrency": 1000,
+    "readLoadDurationMs": 3000,
+    "actionLoadRatePerSec": 1000,
+    "actionLoadDurationMs": 3000,
+    "actionType": "setPowerMode",
+    "actionParams": {
+      "mode": "normal"
+    },
+    "runFailureDrills": true,
+    "workerRestartTimeoutMs": 30000,
+    "kernelRestartTimeoutMs": 30000,
+    "restartServingTimeoutMs": 60000,
+    "outageDetectTimeoutMs": 30000,
+    "outageRecoveryTimeoutMs": 30000,
+    "recoveryPollIntervalMs": 250
+  },
+  "timestamps": {
+    "startUtc": "2026-10-27T11:53:02.670Z",
+    "endUtc": "2026-10-27T11:55:11.976Z"
+  },
+  "resourceSummary": {
+    "mocks": {
+      "label": "mocks",
+      "mode": "external-ps",
+      "samples": 515,
+      "avgCpuPct": 19.07805825242718,
+      "peakCpuPct": 86.2,
+      "avgRssMiB": 231.97803398058252,
+      "peakRssMiB": 271.703125,
+      "firstRssMiB": 169.1875,
+      "lastRssMiB": 262.96875,
+      "rssSlopeMiBPerHour": 2607.8518461300787,
+      "fdCountFirst": 26,
+      "fdCountLast": 137,
+      "fdSlopePerHour": 3084.428114917332
+    },
+    "kernel": {
+      "label": "kernel",
+      "mode": "external-ps",
+      "samples": 515,
+      "avgCpuPct": 22.46,
+      "peakCpuPct": 125.2,
+      "avgRssMiB": 239.7401395631068,
+      "peakRssMiB": 441.515625,
+      "firstRssMiB": 142.03125,
+      "lastRssMiB": 441.515625,
+      "rssSlopeMiBPerHour": 8330.323201260971,
+      "fdCountFirst": 34,
+      "fdCountLast": 35,
+      "fdSlopePerHour": 27.780564408466898
+    },
+    "gateway": {
+      "label": "gateway",
+      "mode": "external-ps",
+      "samples": 515,
+      "avgCpuPct": 3.6910679611650488,
+      "peakCpuPct": 30.3,
+      "avgRssMiB": 153.93783373786408,
+      "peakRssMiB": 281.703125,
+      "firstRssMiB": 108.96875,
+      "lastRssMiB": 147.34375,
+      "rssSlopeMiBPerHour": 1067.7270514039278,
+      "fdCountFirst": 47,
+      "fdCountLast": 51,
+      "fdSlopePerHour": 111.12311515132808
+    },
+    "worker-0": {
+      "label": "worker-0",
+      "mode": "external-ps",
+      "samples": 515,
+      "avgCpuPct": 21.91456310679611,
+      "peakCpuPct": 96.3,
+      "avgRssMiB": 430.913015776699,
+      "peakRssMiB": 567.28125,
+      "firstRssMiB": 295.640625,
+      "lastRssMiB": 539.421875,
+      "rssSlopeMiBPerHour": 5677.184411563443,
+      "fdCountFirst": 34,
+      "fdCountLast": 36,
+      "fdSlopePerHour": 55.5564129076066
+    },
+    "worker-1": {
+      "label": "worker-1",
+      "mode": "external-ps",
+      "samples": 515,
+      "avgCpuPct": 20.940194174757295,
+      "peakCpuPct": 81.7,
+      "avgRssMiB": 444.56301577669905,
+      "peakRssMiB": 561.4375,
+      "firstRssMiB": 340.03125,
+      "lastRssMiB": 551.953125,
+      "rssSlopeMiBPerHour": 5542.661981949621,
+      "fdCountFirst": 34,
+      "fdCountLast": 36,
+      "fdSlopePerHour": 55.55598422827336
+    }
+  },
+  "rssSlopeMiBPerHour": 8330.323201260971,
+  "deviceBaseline": {
+    "label": "deviceBaseline",
+    "n": 20,
+    "errors": 0,
+    "p50Ms": 0.127458,
+    "p95Ms": 1.260125,
+    "p99Ms": 3.089875,
+    "maxMs": 3.089875
+  },
+  "cycleHeadroomByWorker": {
+    "bench-worker-0": {
+      "deviceCount": 500,
+      "cycleMsSamples": [
+        453.94675,
+        376.726833,
+        387.98375
+      ],
+      "avgCycleMs": 406.21911100000005,
+      "maxCycleMs": 453.94675,
+      "rejected": 0,
+      "timedOut": 0
+    },
+    "bench-worker-1": {
+      "deviceCount": 500,
+      "cycleMsSamples": [
+        632.576625,
+        287.982583,
+        394.19525
+      ],
+      "avgCycleMs": 438.25148599999994,
+      "maxCycleMs": 632.576625,
+      "rejected": 0,
+      "timedOut": 0
+    }
+  },
+  "cycleHeadroomWorst": {
+    "workerId": "bench-worker-1",
+    "deviceCount": 500,
+    "cycleMsSamples": [
+      632.576625,
+      287.982583,
+      394.19525
+    ],
+    "avgCycleMs": 438.25148599999994,
+    "maxCycleMs": 632.576625,
+    "rejected": 0,
+    "timedOut": 0
+  },
+  "headroomRatio": 0.043825148599999995,
+  "throughput": {
+    "completed": 7191,
+    "rejected": 0,
+    "timedOut": 0,
+    "peakQueueDepth": 1000,
+    "errorCodes": {},
+    "readsPerSec": 1479.3252417198107
+  },
+  "actionLoad": {
+    "completed": 2697,
+    "rejected": 0,
+    "timedOut": 0,
+    "peakInFlight": 90,
+    "errorCodes": {},
+    "actionsPerSec": 885.7142857142858
+  },
+  "alerts": {
+    "rulesCount": 1,
+    "devicesWithAlerts": 1000,
+    "deviceCount": 1000,
+    "byName": {
+      "chips_temp_critical": 1000
+    },
+    "visibleViaKernel": {
+      "label": "alertVisibleViaKernel",
+      "n": 1000,
+      "errors": 0,
+      "p50Ms": 90,
+      "p95Ms": 139,
+      "p99Ms": 139,
+      "maxMs": 139
+    },
+    "visibleViaGateway": {
+      "label": "alertVisibleViaGateway",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 3626,
+      "p95Ms": 3710,
+      "p99Ms": 3716,
+      "maxMs": 3716
+    }
+  },
+  "latencies": {
+    "telemetrySingle": {
+      "label": "telemetrySingle",
+      "n": 3050,
+      "errors": 0,
+      "p50Ms": 340.2365,
+      "p95Ms": 573.496833,
+      "p99Ms": 628.959833,
+      "maxMs": 727.968666
+    },
+    "readLoadSaturation": {
+      "label": "readLoadSaturation",
+      "n": 7191,
+      "errors": 0,
+      "p50Ms": 388.032542,
+      "p95Ms": 1076.234709,
+      "p99Ms": 1526.239542,
+      "maxMs": 2206.558583
+    },
+    "status": {
+      "label": "status",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 1.001292,
+      "p95Ms": 1.660625,
+      "p99Ms": 2.770875,
+      "maxMs": 2.770875
+    },
+    "actionSubmit": {
+      "label": "actionSubmit",
+      "n": 2697,
+      "errors": 0,
+      "p50Ms": 30.6365,
+      "p95Ms": 84.151458,
+      "p99Ms": 95.843208,
+      "maxMs": 100.168292
+    },
+    "gatewayRequest": {
+      "label": "gatewayRequest",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 469.386542,
+      "p95Ms": 722.169458,
+      "p99Ms": 5595.848334,
+      "maxMs": 5595.848334
+    },
+    "gatewayTelemetrySingle": {
+      "label": "gatewayTelemetrySingle",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 270.46625,
+      "p95Ms": 362.672292,
+      "p99Ms": 408.793542,
+      "maxMs": 408.793542
+    },
+    "gatewayActionSubmit": {
+      "label": "gatewayActionSubmit",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 2.985208,
+      "p95Ms": 13.622208,
+      "p99Ms": 23.56575,
+      "maxMs": 23.56575
+    },
+    "alertVisibleViaKernel": {
+      "label": "alertVisibleViaKernel",
+      "n": 1000,
+      "errors": 0,
+      "p50Ms": 90,
+      "p95Ms": 139,
+      "p99Ms": 139,
+      "maxMs": 139
+    },
+    "alertVisibleViaGateway": {
+      "label": "alertVisibleViaGateway",
+      "n": 50,
+      "errors": 0,
+      "p50Ms": 3626,
+      "p95Ms": 3710,
+      "p99Ms": 3716,
+      "maxMs": 3716
+    }
+  },
+  "thresholds": {
+    "headroomGreenBelow": 0.7,
+    "headroomAmberBelow": 1,
+    "actionSubmitP99Ms": 2000,
+    "steadyCpuPctOfOneCore": 80,
+    "rejectPlusTimeoutMax": 0,
+    "rejectPlusTimeoutAmberPctOfAttempted": 0.01,
+    "rssSlopeFlatMiBPerHour": 18000
+  },
+  "failureBehaviour": {
+    "workerRestart": {
+      "workerId": "bench-worker-0",
+      "deviceCount": 500,
+      "recovered": true,
+      "ms": 3857,
+      "servingRestored": true,
+      "servingMs": 4934
+    },
+    "kernelRestart": {
+      "recovered": true,
+      "ms": 4389,
+      "servingRestored": true,
+      "servingMs": 6228
+    },
+    "unreachableDevice": {
+      "scope": "all devices — mocks run one shared process per worker, so a single device can't be isolated",
+      "unreachableCount": 1000,
+      "timeoutBudgetMs": 10000,
+      "concurrency": 500,
+      "analyticalEffectMs": 20000,
+      "measured": {
+        "baselineMs": 213.413917,
+        "baselineFailed": false,
+        "detectedMs": 17,
+        "failedReadMs": 2.895375,
+        "firstFailureCode": "ERR_BENCH_SNAP_FAILED",
+        "allChannelsFailedMs": 4631,
+        "recovered": true,
+        "recoveredMs": 324
+      }
+    }
+  },
+  "zeroDeviceBaseline": {
+    "resourceSummary": {
+      "kernel": {
+        "label": "kernel",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.08912133891213393,
+        "peakCpuPct": 1.5,
+        "avgRssMiB": 107.1241501046025,
+        "peakRssMiB": 144.484375,
+        "firstRssMiB": 144.484375,
+        "lastRssMiB": 65.0625,
+        "rssSlopeMiBPerHour": -4769.127802241794,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      },
+      "gateway": {
+        "label": "gateway",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.33514644351464334,
+        "peakCpuPct": 24.2,
+        "avgRssMiB": 104.39284780334728,
+        "peakRssMiB": 139.921875,
+        "firstRssMiB": 139.796875,
+        "lastRssMiB": 65.0625,
+        "rssSlopeMiBPerHour": -4486.081236556451,
+        "fdCountFirst": 47,
+        "fdCountLast": 47,
+        "fdSlopePerHour": 0
+      },
+      "worker-0": {
+        "label": "worker-0",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.12217573221757334,
+        "peakCpuPct": 9.9,
+        "avgRssMiB": 96.04380230125523,
+        "peakRssMiB": 118.140625,
+        "firstRssMiB": 118.109375,
+        "lastRssMiB": 72.265625,
+        "rssSlopeMiBPerHour": -2754.067584480601,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      },
+      "worker-1": {
+        "label": "worker-1",
+        "mode": "external-ps",
+        "samples": 239,
+        "avgCpuPct": 0.06401673640167359,
+        "peakCpuPct": 1.1,
+        "avgRssMiB": 72.80373953974896,
+        "peakRssMiB": 118.71875,
+        "firstRssMiB": 118.359375,
+        "lastRssMiB": 66.65625,
+        "rssSlopeMiBPerHour": -3107.8333973384983,
+        "fdCountFirst": 34,
+        "fdCountLast": 34,
+        "fdSlopePerHour": 0
+      }
+    }
+  },
+  "verdict": {
+    "telemetryFreshness": "green",
+    "actionSubmitP99": "green",
+    "steadyCpu": "green",
+    "rejectsPlusTimeouts": "green",
+    "rssSlope": "green",
+    "rssSlopeIndicative": true,
+    "overall": "green"
+  }
+}

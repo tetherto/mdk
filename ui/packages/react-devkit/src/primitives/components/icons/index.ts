@@ -23,6 +23,7 @@ export { ErrorStatusIcon } from './error-status-icon'
 export { ExplorerNavIcon } from './explorer-nav-icon'
 // Other icons
 export { ExportIcon } from './export-icon'
+export { ExternalLinkIcon } from './external-link-icon'
 export { FanIcon } from './fan-icon'
 // Farm stat icons
 export { FarmAlertIcon } from './farm-alert-icon'
@@ -65,6 +66,7 @@ export { OtherAlarmIcon } from './other-alarm-icon'
 export { PartlyCloudyIcon } from './partly-cloudy-icon'
 // Shared icons
 export { PinIcon } from './pin-icon'
+export { PlugIcon } from './plug-icon'
 export { PoolManagerNavIcon } from './pool-manager-nav-icon'
 
 export { PoolsIcon } from './pools-icon'

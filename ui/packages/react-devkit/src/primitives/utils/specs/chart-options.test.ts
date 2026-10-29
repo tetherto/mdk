@@ -323,6 +323,45 @@ describe('buildBarChartData', () => {
 })
 
 describe('buildBarChartOptions', () => {
+  it('writes each axis unit once, as its title', () => {
+    const result = buildBarChartOptions({
+      yUnit: 'PH/s',
+      yRightTicksFormatter: String,
+      yRightUnit: 'W/TH/s',
+    })
+    const scales = result.scales as Record<string, { title?: { display: boolean; text: string } }>
+    expect(scales.y?.title).toMatchObject({ display: true, text: 'PH/s' })
+    expect(scales.y1?.title).toMatchObject({ display: true, text: 'W/TH/s' })
+    expect(buildBarChartOptions({ yUnit: 'MWh', isHorizontal: true }).scales).toMatchObject({
+      x: { title: { text: 'MWh' } },
+    })
+  })
+
+  it('adds no axis title without a unit', () => {
+    const scales = buildBarChartOptions().scales as Record<string, { title?: unknown }>
+    expect(scales.y?.title).toBeUndefined()
+  })
+
+  it('spaces out category labels when asked', () => {
+    const scales = buildBarChartOptions({ categoryTicksPadding: 24 }).scales as Record<
+      string,
+      { ticks: { autoSkipPadding?: number } }
+    >
+    expect(scales.x?.ticks.autoSkipPadding).toBe(24)
+    const defaults = buildBarChartOptions().scales as typeof scales
+    expect(defaults.x?.ticks.autoSkipPadding).toBeUndefined()
+  })
+
+  it('keeps category labels level, on either axis', () => {
+    type Scales = Record<string, { ticks: { maxRotation?: number } }>
+    const vertical = buildBarChartOptions().scales as Scales
+    const padded = buildBarChartOptions({ categoryTicksPadding: 24 }).scales as Scales
+    const horizontal = buildBarChartOptions({ isHorizontal: true }).scales as Scales
+    expect(vertical.x?.ticks.maxRotation).toBe(0)
+    expect(padded.x?.ticks.maxRotation).toBe(0)
+    expect(horizontal.y?.ticks.maxRotation).toBe(0)
+  })
+
   it('builds default vertical bar chart options', () => {
     const options = buildBarChartOptions()
 

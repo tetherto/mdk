@@ -1,10 +1,15 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { isIP } from 'node:net';
 import { isAbsolute, resolve } from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { findCatalogApp, findCatalogWorker, type CatalogWorker } from './catalog.js';
 import { DEFAULT_HOST } from './ports.js';
 import { readProjectEnv } from './env-file.js';
 import { NAME_RE } from './names.js';
+import { rbacProblems, type RbacPolicy } from './rbac.js';
+
+const require = createRequire(import.meta.url);
 
 export interface StackAnswers {
   stackName: string;
@@ -35,6 +40,10 @@ export interface AppInstance {
   package: string;
   config: Record<string, unknown>;
   mount?: string;
+  /** The identity the app's runtime calls the Kernel as, always `app:<name>`. Written by `mdk add app`. */
+  serviceAccount?: string;
+  /** Digest of the mdk-app.yaml `permissions` install last granted (see planAppGrant in rbac.ts). */
+  permissionsDigest?: string;
 }
 
 const APP_NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
@@ -58,9 +67,30 @@ export interface McpSpec {
   port?: number;
   allowWrite?: boolean;
   allowTools?: string[];
-  token?: string;
-  identity?: Record<string, unknown>;
 }
+
+/**
+ * A private HyperDHT network instead of the public `*.hyperdht.org` bootstrap
+ * (the local / air-gapped profile). Every component's DHT node joins
+ * `bootstrap` and binds `host`. Without `bootstrap`, the process running the
+ * Kernel (`mdk run`, `mdk run kernel`) also runs the bootstrap at `host:port`,
+ * and every other `mdk run` target joins it there.
+ */
+export interface DhtSpec {
+  /** An existing private bootstrap list (`host:port`). */
+  bootstrap?: string[];
+  /**
+   * Interface every DHT node binds, and where a generated bootstrap is reached.
+   * Unset: `127.0.0.1` with a generated bootstrap; every interface when joining
+   * a `bootstrap` list.
+   */
+  host?: string;
+  /** UDP port of the generated bootstrap (default 49737). */
+  port: number;
+}
+
+export const DEFAULT_DHT_HOST = '127.0.0.1';
+export const DEFAULT_DHT_PORT = 49737;
 
 export interface StackSpec {
   apiVersion: string;
@@ -76,14 +106,22 @@ export interface StackSpec {
     };
     /**
      * Optional MCP server settings; `port` defaults to `gateway.port + 100` when
-     * the CLI boots it. Write tools stay hidden unless `allowWrite` (or the
-     * `--allow-write` flag) is set or they are named in `allowTools`; `auth: true`
-     * Gateway routes need an `identity`. `token` (use a `${VAR}` placeholder)
-     * requires `Authorization: Bearer <token>` on /mcp.
+     * the CLI boots it. Every agent signs in with its own service account and
+     * sees only the tools spec.rbac lets it call. Write tools stay hidden unless
+     * `allowWrite` (or the `--allow-write` flag) is set or they are named in
+     * `allowTools`.
      */
     mcp: McpSpec;
     workers: WorkerInstance[];
     apps: AppInstance[];
+    /**
+     * Who may do what, at the Gateway (users), the MCP server (agents) and the
+     * Kernel (apps). Absent means no policy, which denies everything. Validated
+     * by @tetherto/mdk-rbac; applied to the Kernel at boot and by `mdk rbac apply`.
+     */
+    rbac?: RbacPolicy;
+    /** Optional network settings; `dht` switches the stack to a private HyperDHT. */
+    network?: { dht?: DhtSpec };
   };
 }
 
@@ -232,6 +270,25 @@ export function buildStackSpec(answers: StackAnswers): StackSpec {
           ...(mount !== undefined ? { mount } : {}),
         };
       }),
+      // The CLI's own account gets full access through an ordinary role, so a new
+      // stack can be administered; narrow or remove it like any other binding.
+      rbac: {
+        enforcement: 'deny',
+        roles: [
+          { name: 'admin', rules: [{ resources: ['*'], verbs: ['*'] }] },
+          { name: 'gateway', rules: [{ resources: ['policy'], verbs: ['read'] }] },
+        ],
+        bindings: [
+          { role: 'admin', subjects: [{ kind: 'ServiceAccount', name: 'mdk-cli' }] },
+          {
+            role: 'gateway',
+            subjects: [
+              { kind: 'ServiceAccount', name: 'mdk-gateway' },
+              { kind: 'ServiceAccount', name: 'mdk-mcp' },
+            ],
+          },
+        ],
+      },
     },
   };
 }
@@ -295,18 +352,7 @@ export function loadStackSpec(projectDir: string): StackSpec {
   if (!existsSync(file)) {
     fail(`No ${STACK_FILE} found in ${resolve(projectDir)}.\nRun \`mdk onboard\` to create one.`);
   }
-
-  let raw: unknown;
-  try {
-    raw = parseYaml(readFileSync(file, 'utf8'));
-  } catch (error) {
-    fail(`${file} is not valid YAML: ${error instanceof Error ? error.message : String(error)}`);
-  }
-
-  if (raw === null || typeof raw !== 'object') {
-    fail(`${file} is empty or not a mapping. Run \`mdk onboard\` to recreate it.`);
-  }
-  const doc = raw as Record<string, unknown>;
+  const doc = readStackDocument(file);
 
   if (doc.kind !== 'Stack') {
     fail(`${file}: expected \`kind: Stack\`, got ${JSON.stringify(doc.kind ?? null)}.`);
@@ -332,6 +378,12 @@ export function loadStackSpec(projectDir: string): StackSpec {
 
   if (g.config != null && (typeof g.config !== 'object' || Array.isArray(g.config))) {
     fail(`${file}: \`spec.gateway.config\` must be a mapping.`);
+  }
+  if (g.config != null && (g.config as Record<string, unknown>).authVerifier !== undefined) {
+    fail(
+      `${file}: \`spec.gateway.config.authVerifier\` is no longer supported: spec.rbac governs every app route ` +
+        '(users sign in at /auth/login). Remove it, and bind users to roles in spec.rbac.',
+    );
   }
   // The process environment wins over the project's `.env`, as with dotenv.
   const vars: Record<string, string | undefined> = { ...readProjectEnv(resolve(projectDir)), ...process.env };
@@ -362,15 +414,15 @@ export function loadStackSpec(projectDir: string): StackSpec {
     }
     mcp.allowTools = rawMcp.allowTools as string[];
   }
-  if (rawMcp.token != null) {
-    if (typeof rawMcp.token !== 'string' || !rawMcp.token) fail(`${file}: \`spec.mcp.token\` must be a non-empty string.`);
-    mcp.token = resolveEnvValue(rawMcp.token, vars);
-  }
-  if (rawMcp.identity != null) {
-    if (typeof rawMcp.identity !== 'object' || Array.isArray(rawMcp.identity)) {
-      fail(`${file}: \`spec.mcp.identity\` must be a mapping.`);
+  // One shared bearer and one static identity for every agent would sit outside
+  // spec.rbac: each agent now signs in with its own service account instead.
+  for (const key of ['token', 'identity'] as const) {
+    if (rawMcp[key] != null) {
+      fail(
+        `${file}: \`spec.mcp.${key}\` is no longer supported: each AI agent signs in with its own service account ` +
+          '(`mdk sa add <agent>`), and spec.rbac decides what it may call. Remove it, and bind the agent to a role.',
+      );
     }
-    mcp.identity = resolveEnvDeep(rawMcp.identity, vars) as Record<string, unknown>;
   }
 
   const workers = Array.isArray(s.workers)
@@ -428,13 +480,29 @@ export function loadStackSpec(projectDir: string): StackSpec {
     if (a.mount != null && (typeof a.mount !== 'string' || !isValidMount(a.mount))) {
       fail(`${file}: ${at}.mount\` must be a path of literal segments starting with "/", e.g. / or /ops.`);
     }
+    if (a.serviceAccount != null && a.serviceAccount !== `app:${a.name}`) {
+      fail(`${file}: ${at}.serviceAccount\` must be "app:${a.name}" (an app always runs as its own service account).`);
+    }
+    if (a.permissionsDigest != null && (typeof a.permissionsDigest !== 'string' || !/^[0-9a-f]{16}$/.test(a.permissionsDigest))) {
+      fail(`${file}: ${at}.permissionsDigest\` is written by \`mdk add app\`; remove it rather than editing it.`);
+    }
     return {
       name: a.name,
       package: a.package,
       config: resolveEnvDeep(a.config ?? {}, vars) as Record<string, unknown>,
       ...(typeof a.mount === 'string' ? { mount: a.mount } : {}),
+      ...(typeof a.serviceAccount === 'string' ? { serviceAccount: a.serviceAccount } : {}),
+      ...(typeof a.permissionsDigest === 'string' ? { permissionsDigest: a.permissionsDigest } : {}),
     };
   });
+
+  const network = parseNetwork(file, s.network);
+
+  // Policy is never env-resolved: who may do what is written out in full.
+  const problems = rbacProblems(s.rbac);
+  if (problems.length) {
+    fail(`${file}: \`spec.rbac\` is invalid:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
+  }
 
   return {
     apiVersion: doc.apiVersion,
@@ -446,8 +514,93 @@ export function loadStackSpec(projectDir: string): StackSpec {
       mcp,
       workers,
       apps,
+      ...(s.rbac != null ? { rbac: s.rbac as RbacPolicy } : {}),
+      ...(network ? { network } : {}),
     },
   };
+}
+
+/** `file` parsed as a YAML mapping; throws a `StackSpecError` otherwise. */
+function readStackDocument(file: string): Record<string, unknown> {
+  let raw: unknown;
+  try {
+    raw = parseYaml(readFileSync(file, 'utf8'));
+  } catch (error) {
+    fail(`${file} is not valid YAML: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (raw === null || typeof raw !== 'object') {
+    fail(`${file} is empty or not a mapping. Run \`mdk onboard\` to recreate it.`);
+  }
+  return raw as Record<string, unknown>;
+}
+
+/**
+ * `spec.network.dht` of `<projectDir>/mdk.yaml`, validated on its own: undefined
+ * without the file or the section. A file that does not parse, or a `dht`
+ * section that is invalid, throws — a component that skipped a private profile
+ * would join the public DHT instead. Errors elsewhere in the file do not, so
+ * the CLI can still reach a Kernel to fix them.
+ */
+export function loadStackDht(projectDir: string): DhtSpec | undefined {
+  const file = resolve(projectDir, STACK_FILE);
+  if (!existsSync(file)) return undefined;
+  const spec = readStackDocument(file).spec;
+  const network = spec && typeof spec === 'object' ? (spec as Record<string, unknown>).network : undefined;
+  return parseNetwork(file, network)?.dht;
+}
+
+/** mdk-core's bootstrap-list checks: the one copy of hyperdht's public node set. */
+interface DhtBootstrapModule {
+  parseBootstrap(value: string[]): string[] | null;
+  resolveDhtHost(host: string | null, bootstrap: string[] | null): string | null;
+}
+
+function dhtBootstrapModule(): DhtBootstrapModule {
+  return require('@tetherto/mdk-core/lib/dht-bootstrap') as DhtBootstrapModule;
+}
+
+/** An mdk-core error message without its `ERR_…: ` code. */
+const withoutCode = (error: unknown): string => (error instanceof Error ? error.message : String(error)).replace(/^ERR_[A-Z_]+: /, '');
+
+/** `spec.network`: only `dht` so far. */
+function parseNetwork(file: string, raw: unknown): { dht?: DhtSpec } | undefined {
+  if (raw == null) return undefined;
+  if (typeof raw !== 'object' || Array.isArray(raw)) fail(`${file}: \`spec.network\` must be a mapping.`);
+  const n = raw as Record<string, unknown>;
+  if (n.dht == null) return {};
+  if (typeof n.dht !== 'object' || Array.isArray(n.dht)) fail(`${file}: \`spec.network.dht\` must be a mapping.`);
+  const d = n.dht as Record<string, unknown>;
+  const core = dhtBootstrapModule();
+
+  const host = d.host;
+  if (host != null && (typeof host !== 'string' || !isIP(host))) {
+    fail(`${file}: \`spec.network.dht.host\` must be an IP address (e.g. 127.0.0.1, or this machine's LAN address).`);
+  }
+  const port = d.port ?? DEFAULT_DHT_PORT;
+  if (typeof port !== 'number' || !Number.isInteger(port) || port < 1 || port > 65535) {
+    fail(`${file}: \`spec.network.dht.port\` must be a UDP port number.`);
+  }
+  const dht: DhtSpec = { ...(host != null ? { host: host as string } : {}), port };
+  if (d.bootstrap != null) {
+    const list = d.bootstrap;
+    const entriesMsg = `${file}: \`spec.network.dht.bootstrap\` must be a list of host:port entries.`;
+    if (!Array.isArray(list) || !list.length || !list.every((b) => typeof b === 'string')) fail(entriesMsg);
+    try {
+      dht.bootstrap = core.parseBootstrap(list as string[]) ?? undefined;
+    } catch (error) {
+      if (/^ERR_MDK_DHT_BOOTSTRAP_PUBLIC\b/.test(error instanceof Error ? error.message : '')) {
+        fail(`${file}: \`spec.network.dht.bootstrap\`: ${withoutCode(error)}.`);
+      }
+      fail(entriesMsg);
+    }
+    if (!dht.bootstrap) fail(entriesMsg);
+  }
+  try {
+    core.resolveDhtHost(dht.host ?? null, dht.bootstrap ?? null);
+  } catch (error) {
+    fail(`${file}: \`spec.network.dht.host\`: ${withoutCode(error)}.`);
+  }
+  return { dht };
 }
 
 /**

@@ -167,7 +167,7 @@ each by its subpath (`package: "@your-org/apps/ops"`):
 spec:
   apps:
     - name: agent
-      package: "@tetherto/mdk-app-agent"           # bundled; the UI calls it at /agent
+      package: "@tetherto/mdk-app-agent"           # the UI calls it at /agent
       mount: /                                        # serve at the root, not /apps/agent
     - name: demo
       package: "@tetherto/mdk-app-demo"            # an installed npm name
@@ -223,6 +223,25 @@ the pid of the first: two copies of a Worker or app share its identity keys and
 store, so the second takes over the first one's network key and the first goes
 unreachable. A lock left behind by a process that is gone is taken over. The
 Gateway and the MCP server are covered by their port check instead.
+
+#### Private HyperDHT (local or air-gapped)
+
+Every component talks HRPC over HyperDHT, which joins the public `*.hyperdht.org` bootstrap by default. Add
+`spec.network.dht` to keep the whole stack on a private network bound to one interface:
+
+```yaml
+spec:
+  network:
+    dht:
+      host: 127.0.0.1        # interface every DHT node binds (default 127.0.0.1; every interface with bootstrap)
+      port: 49737            # UDP port of the bootstrap mdk run starts (default 49737)
+      # bootstrap: [10.20.0.5:49737]  # join an existing private bootstrap instead
+```
+
+Without `bootstrap`, the process that runs the Kernel (`mdk run` or `mdk run kernel`) also runs the bootstrap at `host:port`
+and stops it after the Kernel. The other targets and every command that calls the Kernel (`mdk status`, `mdk user`, `mdk rbac`)
+join it. A bootstrap list that names a public HyperDHT node is refused. The
+[local and air-gapped profile](../../docs/guides/deployment/private-dht.md) covers PM2, Docker and isolated LANs.
 
 ### Run the dashboard
 
@@ -386,6 +405,7 @@ mdk add app github:me/my-app#v0.2.0 --name ops
 
 mdk validate app ops          # the app mdk.yaml lists as `ops` under spec.apps
 mdk validate worker rig --json
+mdk validate app --path . --smoke --strict --json   # a partner's app repo in CI
 ```
 
 `mdk add` runs `npm install --ignore-scripts --save-exact <source>` in the project (so npm records the
@@ -399,17 +419,32 @@ GitHub source has to be installed (no `--no-install`), because its package name 
 npm has fetched it. A worker without a bundled mock is added without `mock: true`; fill in its
 `config.devices[].opts`.
 
+An app runs as its own service account, `app:<name>`, which `mdk add app` records on its `spec.apps` entry, with a new credential in
+`.mdk/credentials/apps/<name>.json` that stays in this instance and never ships in the package. Install also writes a role
+`app-<name>` and its binding into `spec.rbac`, granting exactly the Kernel access the app's `mdk-app.yaml` `permissions` request;
+`mdk create app` and `mdk onboard` write the same grant for the apps they list. The
+role is then the operator's: narrowing or removing it survives a re-add of the same package. When a new version requests different
+access, `mdk add app` shows both rule sets and refuses until you pass one of the flags below.
+
+| Flag                   | Effect when the app's requested Kernel access changed                     |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `--accept-permissions` | Replaces the role with the new request, dropping any narrowing you made   |
+| `--keep-permissions`   | Keeps the role as it is and records the new request as seen               |
+
 `mdk validate app <name>` and `mdk validate worker <name>` take the name the component has in `mdk.yaml` (as
 `mdk run app <name>` does), from the project in `--dir` (default `.`), and check the package that entry resolves to.
 `mdk validate app` checks `mdk-app.yaml`, its version against `package.json`, the permission rules and the
 route table (`plugin/mdk-plugin.json`, else `mdk-plugin.json` at the package root), by the same rules the app
 runtime and the Gateway apply at boot: a reverse-DNS `id`, a semver `version`, and handlers that resolve inside
-the plugin directory, paths that start with `/` and appear once per method, and handlers (and `main`) that compile.
-`permissions` must be there (`[]` when the app makes no Kernel call); the `mdk-app-rbac` skill derives it from the code.
+the plugin directory, paths that start with `/` and appear once per method, and handlers (and `main`) that compile. Permission
+rules must name Kernel resources (`devices`, `workers`, `commands`, `actions`, `policy`, `identities`) with verbs those resources take,
+and `permissions` must be there (`[]` when the app makes no Kernel call). An app named in `mdk.yaml` is also checked against
+`spec.rbac`: a policy that binds nobody, no `app-<name>` role, a role that differs from what the manifest requests, or no binding
+for `app:<name>` each fail the check with the command that fixes it, since the Kernel would refuse the app's calls.
 Unknown `mdk-app.yaml` keys are reported, so a typo does not pass silently. `mdk validate worker` checks `package.json`
 and the `mdk-contract.json` Worker Plugin contract: at least one telemetry entry or command, command `params` as lists,
 and handlers resolved on disk and compiling. Nothing is run, so a module that throws when loaded only shows when the
-component starts. Both exit 1 on any error. The UI is not validated yet.
+component starts. Both exit 1 on any error.
 
 `mdk validate worker --path <dir>` checks a package directory that no `mdk.yaml` declares, such as a partner's own
 repo in CI. `--smoke` adds behavioral checks against the package's bundled mock, which `setup()` in its
@@ -419,6 +454,112 @@ within `--timeout`, except a `health` channel reporting a status other than `OK`
 lists because the Worker serves them from its own store. The [Worker testing guide](../../docs/guides/workers/test-a-worker.md#check-the-package)
 lists every `smoke.config.js` field.
 
+`mdk validate app --path <dir>` is the same partner-CI check for an app, and its exit code is the listing gate. `--smoke`
+loads the app's routes and `main` through the app runtime's own loader and calls every route against an in-memory
+Kernel that serves a mock fleet and grants the app exactly its `mdk-app.yaml` `permissions`, as `mdk add app` would.
+No Kernel, Gateway or DHT runs. `--strict` turns every warning into an error, including install scripts in
+`package.json` (which `mdk add` never runs) and a route `--smoke` could not call.
+
+| Smoke check                                                  | Fails when                                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| Routes load and every handler exports a function             | A handler or a module it requires throws, or does not export a function         |
+| `main` runs to completion                                    | `main` rejects, throws or does not settle within `--timeout`                    |
+| Each route answers with JSON or an `ERR_*`                   | The route throws a non-`ERR_*` error, returns a value JSON cannot encode, or hangs |
+| Each route stays within the permissions in `mdk-app.yaml`    | The route makes a Kernel call the declared rules, `resourceNames` included, do not grant |
+| A read-only route makes no Kernel write                      | A route the Gateway authorizes as `get` or `list`, or marked `safety: read-only`, sends a command or another write |
+| Each route answers with JSON or an `ERR_*` while the Kernel is down | The route hangs or crashes once every Kernel call fails with `ERR_MDK_CLIENT_UNAVAILABLE` |
+
+`smoke.config.js` at the app root is optional. Its `setup()` returns these fields, and `--smoke-config` takes the same object
+as inline JSON or a `.json` file.
+
+| Field      | Default                                         | Description                                                            |
+| ---------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| `workers`  | One worker `smoke` with one device `smoke-0`    | The mock fleet: `[{ workerId, family?, brand?, devices: [{ id, telemetry?, state?, capabilities? }] }]`. `telemetry` maps a query type to its reply |
+| `requests` | None                                            | A sample `{ params, query, body, headers }` per route id. A route with a path param or required input and no sample is skipped with a warning |
+| `config`   | None                                            | Operator config over the manifest's `config` defaults                  |
+| `teardown` | None                                            | Stops whatever `setup()` started                                       |
+
+## Access policy
+
+`spec.rbac` in `mdk.yaml` decides who may do what, at the Gateway (users), the MCP server (agents) and the Kernel (apps). No matching
+rule means denied, and a stack without `spec.rbac` denies everything. The [RBAC library](../../backend/core/rbac/README.md) defines the
+rule shape and vocabulary. Every `mdk.yaml` load validates the policy and lists each problem with its path.
+
+```bash
+mdk rbac apply          # validate spec.rbac and hand it to the running Kernel
+mdk rbac show -o json   # compare spec.rbac with the policy the Kernel enforces
+```
+
+The Kernel applies `spec.rbac` each time `mdk run` starts it. `mdk rbac apply` switches a running Kernel to an edited policy at once;
+if the Kernel refuses it, the policy in force stays. Both commands exit 1 when the Kernel is down or refuses.
+
+## Users and service accounts
+
+Every caller signs in to the Kernel's [token issuer](../../backend/core/identity/README.md) and gets a short-lived access token plus a
+refresh token that rotates on every use. Users sign in with a password. Service accounts (each app as `app:<name>`, each AI agent by
+name) sign in with their own Ed25519 key.
+
+```bash
+mdk run kernel &                                  # users live in the Kernel, so it must be running
+mdk user add ankit@example.com --admin            # the first admin: prompts for a password, binds the user to `admin`
+echo "$PW" | mdk user add ci-bot --password-stdin --group ops-team
+mdk sa add operator-agent                         # an AI agent's credential, then bind it in spec.rbac
+mdk sa list
+```
+
+`mdk user add --admin` writes the `admin` role (`resources: ["*"]`, `verbs: ["*"]`) when `spec.rbac` has none, binds the user to it,
+and applies the policy to the running Kernel. Full access is an ordinary role, so a stack has it only once a binding grants it.
+Passwords come from a prompt typed twice or from `--password-stdin`, never from a flag value.
+
+| Command                                   | Effect                                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `mdk user add <name>`                     | Creates or updates a user (`--email`, `--group`, `--admin`, `--no-password`)               |
+| `mdk user passwd <name>`                  | Sets the password and ends the user's sessions                                             |
+| `mdk user disable <name>` / `enable`      | Stops or restores sign-in; disabling ends the user's sessions                              |
+| `mdk user remove <name>`                  | Deletes the user; their `spec.rbac` bindings stay until you remove them                    |
+| `mdk user list`                           | Lists users, with `-o json \| yaml`                                                        |
+| `mdk sa add <agent>`                      | Creates an agent credential in `.mdk/credentials/agents/` and registers it with a running Kernel |
+| `mdk sa rotate <name>`                    | Replaces an app's or agent's key; the old key's sessions end                               |
+| `mdk sa remove <agent>`                   | Deletes an agent's credential and registration                                             |
+| `mdk sa list`                             | Lists credentials here against what the running Kernel registered                          |
+| `mdk sa token <name>`                     | Prints a short-lived access token for an agent's HTTP client (`-o json` adds the refresh token) |
+
+Every `mdk run` registers exactly the stack's apps and this instance's agents with the Kernel, creating a missing app credential, so
+an app removed from `spec.apps` loses its account at the next start. Deleting `.mdk/` deletes the users and credentials with it.
+
+The Kernel checks every call against `spec.rbac`. Each app runtime signs in as its app's account with the credential above,
+and the CLI signs in as its own account, `mdk-cli` (`.mdk/credentials/agents/mdk-cli.json`). So the CLI may do only what a
+binding grants it. `mdk onboard` writes one binding `mdk-cli` to an `admin` role holding wildcards; for an existing stack,
+`mdk rbac init` writes it, plus each app's grant from its `mdk-app.yaml`:
+
+```bash
+mdk rbac init     # bind mdk-cli to admin, mdk-gateway and mdk-mcp to policy: read, grant every app its Kernel access, apply
+```
+
+A Gateway started on its own (`mdk run gateway`) signs in as `mdk-gateway` to read the policy it enforces, and the MCP server
+(`mdk run mcp`) as `mdk-mcp`; under `mdk run` the Gateway uses the in-process Kernel's policy directly. Each AI agent connects to
+the MCP server with its own account's token (`mdk sa add <agent>`, then `mdk sa token <agent>` or the agent signing in itself),
+sees only the tools its roles allow, and reaches apps as itself. `spec.mcp.token`, `spec.mcp.identity` and
+`spec.gateway.config.authVerifier` are refused: spec.rbac replaces all three. Either way every app route needs a bearer token and a `spec.rbac` rule: users
+sign in at `POST /auth/login` (a scaffolded dashboard does this with a password form), and the Gateway answers `401` or `403`.
+
+The CLI acts as a user once you sign in:
+
+```bash
+mdk login ankit@example.com   # prompts for the password; or --password-stdin
+mdk whoami                    # ankit@example.com, until the session runs out
+mdk logout                    # back to mdk-cli
+```
+
+The session lives in `.mdk/session.json` (0600) and is renewed as it is used. While it lasts, `mdk status`, `mdk user`, `mdk sa`
+and `mdk rbac` act as the user, with what `spec.rbac` binds the user to; an expired session is an error, never a quiet return
+to `mdk-cli`.
+
+`mdk run` and `mdk run kernel` refuse to start when `spec.rbac` lets nobody write the policy (no subject bound to a role allowing
+`policy: write`, as after `mdk create app` on a stack with no admin yet): that Kernel would refuse the policy `mdk rbac init` hands
+it, so `mdk rbac init` comes first. They warn at start when `mdk-cli` has no binding, or when an app has none. A role you edited is left alone by `mdk rbac init`. When a running Kernel refuses the new policy because its policy in
+force does not let `mdk-cli` apply one, restarting the Kernel applies `mdk.yaml` at boot.
+
 ## Command surface
 
 | Group            | Commands                                                                              |
@@ -427,7 +568,7 @@ lists every `smoke.config.js` field.
 | Scaffold         | `mdk create worker <name>`, `mdk create app <name>`, `mdk create dashboard [name]` |
 | Add              | `mdk add app <source>`, `mdk add worker <source>`                                    |
 | Validate         | `mdk validate app <name>`, `mdk validate worker <name>`                               |
-| Run & manage     | `mdk run [target] [name]` (target: `all`\|`kernel`\|`gateway`\|`mcp`\|`worker <name>`\|`app <name>`\|`dashboard`), `mdk status` |
+| Run & manage     | `mdk run [target] [name]` (target: `all`\|`kernel`\|`gateway`\|`mcp`\|`worker <name>`\|`app <name>`\|`dashboard`), `mdk status`, `mdk rbac init`, `mdk rbac apply`, `mdk rbac show`, `mdk user …`, `mdk sa …`, `mdk login`, `mdk logout`, `mdk whoami` |
 | Agent enablement | `mdk skill add`                                                                       |
 | Meta             | `mdk version`                                                                         |
 

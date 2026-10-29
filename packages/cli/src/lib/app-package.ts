@@ -5,6 +5,7 @@ import { Script } from 'node:vm';
 import { parse as parseYaml } from 'yaml';
 import { checkAppUi } from './app-ui-check.js';
 import { isInside } from './names.js';
+import { mdkRbac } from './rbac.js';
 
 const require = createRequire(import.meta.url);
 
@@ -13,6 +14,8 @@ export const APP_MANIFEST = 'mdk-app.yaml';
 const ROUTE_TABLES = ['plugin/mdk-plugin.json', 'mdk-plugin.json'];
 const MANIFEST_KEYS = ['id', 'version', 'displayName', 'description', 'permissions', 'config', 'main'];
 const RULE_KEYS = ['resources', 'verbs', 'resourceNames'];
+/** npm lifecycle scripts that run on install of a package, not only in its own checkout. */
+const INSTALL_SCRIPTS = ['preinstall', 'install', 'postinstall'];
 // The app runtime's own rules (@tetherto/mdk-app-runtime lib/manifest.js): a
 // looser pattern here would pass a package the runtime then refuses to start.
 const ID_PATTERN = /^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/;
@@ -137,14 +140,16 @@ function checkManifest(manifest: unknown, pkg: unknown, errors: string[]): void 
   if (manifest.description !== undefined && typeof manifest.description !== 'string') {
     errors.push(`${APP_MANIFEST}: "description" must be a string`);
   }
-  // Required, even as `[]`: the operator reads it at install, and the Kernel
-  // enforces it as the app's role from the next minor, so an app that says
-  // nothing ships without the access it needs.
+  // Required, even as `[]`: the Kernel refuses every call an app's role does not
+  // allow, so an app that says nothing ships without the access it needs.
   if (permissions === undefined) {
-    errors.push(`${APP_MANIFEST}: "permissions" is required: the Kernel access the app uses, as a list of rules ([] for none)`);
+    errors.push(`${APP_MANIFEST}: "permissions" is required: the Kernel access the app needs, as a list of rules ([] for none)`);
   } else {
     if (Array.isArray(permissions)) {
+      const before = errors.length;
       permissions.forEach((rule, i) => checkRule(rule, `${APP_MANIFEST}: permissions[${i}]`, errors));
+      // Well-formed rules are then held to what install can grant: Kernel resources and their verbs.
+      if (errors.length === before) errors.push(...mdkRbac().validateAppPermissions(permissions, `${APP_MANIFEST}: permissions`));
     } else {
       errors.push(`${APP_MANIFEST}: "permissions" must be a list of rules`);
     }
@@ -217,6 +222,14 @@ export function validateApp(dir: string, opts: ValidateAppOptions = {}): AppVali
   const errors: string[] = [];
   const warnings: string[] = [];
   const pkg = readFile(dir, 'package.json', JSON.parse, errors);
+  // `mdk add` installs with --ignore-scripts, so an app that needs one of these installs broken.
+  if (isMapping(pkg) && isMapping(pkg.scripts)) {
+    for (const script of INSTALL_SCRIPTS) {
+      if (pkg.scripts[script] !== undefined) {
+        warnings.push(`package.json: scripts.${script} does not run when the app is installed (mdk add passes --ignore-scripts)`);
+      }
+    }
+  }
   const manifest = readFile(dir, APP_MANIFEST, parseYaml, errors);
   if (manifest !== undefined) {
     checkManifest(manifest, pkg, errors);

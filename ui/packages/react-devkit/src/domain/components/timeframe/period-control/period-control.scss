@@ -1,0 +1,33 @@
+@use '@primitives/styles/mixins' as *;
+
+.mdk-period-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: var(--mdk-color-text-tertiary, #6c6c66);
+  }
+
+  &__row {
+    @include flex_align;
+
+    gap: 8px;
+  }
+
+  &__preset {
+    min-width: 180px;
+  }
+
+  &__reset {
+    margin-left: auto;
+  }
+}

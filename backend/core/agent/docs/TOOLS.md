@@ -304,7 +304,7 @@ silent.
 **6. Run the battery and attach the report.** That JSON is the proof:
 
 ```sh
-node bin/mdk-agent.js --mcp-url http://127.0.0.1:3008/mcp --eval --reps 3 --out eval-report.json
+node bin/mdk-agent.js --mcp-url http://127.0.0.1:3101/mcp --eval --reps 3 --out eval-report.json
 ```
 
 Three reps, not one: routing that passes once and fails twice is the failure a single run hides,

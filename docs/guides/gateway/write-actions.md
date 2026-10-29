@@ -21,14 +21,16 @@ Create the [actions app](#create-an-actions-app) first, then [call its routes](#
 
 ## Create an actions app
 
-To enable approval-gated writes, create an app that exposes HTTP routes for the write-action workflow. Each route should call the corresponding method on the app's own `mdkClient` (built from `require('@tetherto/mdk-gateway/plugin')`, [as any app does][plugins]).
+To enable approval-gated writes, create an app that exposes HTTP routes for the write-action workflow. Each route calls the
+corresponding method on `req.mdk`, the request's Kernel client. For a signed-in user it acts for that user: the Kernel verifies
+their token, checks both the app's grant and the user's own `spec.rbac` rules, and records the user as the voter.
 
 > [!NOTE]
 > The paths shown below (`/auth/actions*`) are illustrative examples. You may use any path structure that fits your app's routing pattern.
 
 ### Required routes
 
-| Method | Example Path | `mdkClient` method | Purpose |
+| Method | Example Path | `req.mdk` method | Purpose |
 |--------|--------------|------------------|---------|
 | `GET` | `/auth/actions` | `queryActions()` | Query actions by lifecycle state (voting/ready/executing/done) |
 | `POST` | `/auth/actions/voting` | `pushAction()` | Submit a single action for approval |
@@ -45,7 +47,6 @@ apps/actions/
 ├── mdk-app.yaml
 └── plugin/
     ├── mdk-plugin.json
-    ├── lib/client.js
     └── controllers/
         ├── query.js
         ├── push.js
@@ -59,23 +60,17 @@ apps/actions/
 ```javascript
 'use strict'
 
-const mdkClient = require('../lib/client')
-
 module.exports = async function pushAction (req) {
-  // The identity your authVerifier returned for this request (route marked "auth": true)
-  const { user: { userId: voter }, perms: authPerms } = req._info
-
-  return await mdkClient.pushAction({
+  // req.mdk acts for the user the Gateway verified: Kernel checks their rules and the app's
+  return await req.mdk.pushAction({
     query: req.body.query,       // Device query/selector
     action: req.body.action,     // Action name from worker contract
     params: req.body.params,     // Action parameters
-    voter,                       // Current user identifier
-    authPerms                    // User's permissions (e.g., ['miner:w'])
+    voter: req._info.sub,        // Required by the payload; Kernel records the verified user
+    authPerms: []                // Required by the payload; spec.rbac decides
   })
 }
 ```
-
-[`lib/client.js`][plugins] builds the client once for the whole app, per the pattern in the app authoring guide.
 
 ### Manifest example (mdk-plugin.json)
 
@@ -138,8 +133,8 @@ Running it from your own code instead goes through `startGateway({ apps })` and 
 [starting apps from code][plugins-from-code] shows.
 
 > [!WARNING]
-> The Kernel does not enforce the `permissions` an app declares in `mdk-app.yaml` yet: the app runtime's Kernel key is admitted
-> with full access. The controller's own check on `req._info` is what stands between a caller and a staged write.
+> Calls through `config.mdkClient` act as the app alone: the Kernel checks only the app's grant and records the app as the voter.
+> Use `req.mdk` for anything a user asked for, so their own `devices: write` and `actions` rules gate the write.
 
 ## Call the routes from a React app
 

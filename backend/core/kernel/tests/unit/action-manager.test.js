@@ -214,6 +214,47 @@ test('action manager - voteAction checks required permissions', async (t) => {
   t.is(voted, 1)
 })
 
+test('action manager - with a device rule, a vote is checked against the stored targets, not authPerms', async (t) => {
+  const votes = []
+  const { manager } = createManager({
+    actionApprover: {
+      getAction: async () => ({
+        data: { payload: [[], { 'worker-1': { calls: [{ id: 'dev-1' }, { id: 'dev-2' }] } }, ['miner']] }
+      }),
+      voteAction: async (v) => { votes.push(v) }
+    }
+  })
+  const req = { id: 1, voter: 'app:ops', approve: true, authPerms: ['miner:w'] }
+
+  await t.exception(
+    () => manager.voteAction(req, { canWrite: (id) => id === 'dev-1' }),
+    /ERR_KERNEL_ACTION_FORBIDDEN: may not write dev-2/,
+    'self-asserted miner:w does not approve a device spec.rbac refuses'
+  )
+  t.is(votes.length, 0, 'the refused vote is not recorded')
+
+  t.is(await manager.voteAction({ ...req, authPerms: [] }, { canWrite: () => true }), 1, 'authPerms are not needed')
+  t.is(votes.length, 1)
+})
+
+test('action manager - with a device rule, a push asks every family whatever authPerms says', async (t) => {
+  let asked
+  const { manager } = createManager({
+    actionCaller: {
+      getWriteCalls: async (_q, _a, _p, permissions) => {
+        asked = permissions
+        return { targets: { 'worker-1': { reqVotes: 1, calls: [{ id: 'dev-1' }] } }, requiredPerms: ['miner'] }
+      }
+    }
+  })
+  const req = { query: { id: 'dev-1' }, action: 'reboot', params: [], voter: 'app:ops', authPerms: ['miner:w'] }
+
+  await manager.pushAction(req, { canWrite: () => true })
+  t.is(asked, null, 'spec.rbac decides, on the calls that come back')
+  await manager.pushAction(req)
+  t.alike(asked, ['miner:w'], 'in-process: authPerms still pick the families')
+})
+
 test('action manager - queryActions validates query list', async (t) => {
   const { manager } = createManager()
 
@@ -740,4 +781,24 @@ test('action manager - get, get-batch and query redact secret params but keep th
 
   const probe = await manager.queryActions({ queries: [{ type: 'voting', query: { 'params.password': 'admin' } }] })
   t.is(probe.voting.length, 0, 'query filters cannot probe secret values')
+})
+
+test('action manager - a push reaching a device the caller may not write is refused whole', async (t) => {
+  const { manager, pushed } = createManager({
+    actionCaller: {
+      getWriteCalls: async () => ({
+        targets: { 'worker-1': { reqVotes: 1, calls: [{ id: 'dev-1' }, { id: 'dev-2' }] } },
+        requiredPerms: []
+      })
+    }
+  })
+  const req = { query: {}, action: 'reboot', params: [], voter: 'v', authPerms: [] }
+  const refused = await manager.pushAction(req, { canWrite: (id) => id === 'dev-1' })
+  t.alike(refused, { id: null, errors: ['ERR_KERNEL_ACTION_FORBIDDEN: may not write dev-2'] })
+  t.is(pushed.length, 0)
+
+  const ok = await manager.pushAction(req, { canWrite: () => true })
+  t.is(ok.id, 42)
+  const batch = await manager.pushActionsBatch({ batchActionsPayload: [req], voter: 'v', authPerms: [] }, { canWrite: () => false })
+  t.is(batch[0].id, null, 'the rule carries into batches')
 })

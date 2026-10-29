@@ -15,6 +15,13 @@ The contract is dual-purpose: the Kernel validates commands against it, and AI
 operator agents read it as context. Every prose field you write is
 simultaneously documentation and agent instructions.
 
+## `contractVersion`
+
+Stamp `"contractVersion": "1"` at the top level. A stamped contract is held to
+the full v1 requirements as errors — canonical units on numeric telemetry,
+`min`/`max` on number params. Without the stamp the contract validates as
+legacy: the same gaps are reported as warnings only.
+
 ## `metadata`
 
 All five fields required:
@@ -38,7 +45,7 @@ not run without coolant flow).
 One entry per channel:
 
 ```json
-{ "name": "temperature", "unit": "C", "type": "number",
+{ "name": "temperature", "unit": "°C", "type": "number",
   "handler": "src/telemetry/temperature.js",
   "description": "Hash board temperature. If 0, device is booting." }
 ```
@@ -52,7 +59,9 @@ One entry per channel:
 - Channels that take params (e.g. a `history` channel with `{ limit }`)
   document them in `description` — extra `query` fields are passed to the
   handler as `params`.
-- `unit` whenever numeric (`TH/s`, `W`, `C`, `V`, `kW`).
+- `unit` whenever numeric, from the schema's closed vocabulary: `TH/s`, `W`,
+  `kW`, `J/TH`, `°C`, `%`, `rpm`, `V`, `A`, `Hz`, `s`, `count` (extended by PR
+  to the schema). Dimensionless counters declare `count`.
 - `description` must carry semantic boundaries an agent can reason over:
   sentinel values, staleness, validity ranges.
 
@@ -67,7 +76,9 @@ One entry per channel:
 ```
 
 - `name` is camelCase by convention (`reboot`, `setPowerMode`, `setupPools`).
-- **Bounds rule:** every `number` param declares `min` and `max`. The Kernel's
+- **Bounds rule:** every `number` param declares `min` and `max` — a schema
+  requirement under `contractVersion` `"1"`. A `default`, when declared, must
+  sit inside `[min, max]`. The Kernel's
   dispatcher rejects out-of-range values with `ERR_PARAM_RANGE` *only for
   declared bounds*
   ([`backend/core/kernel/lib/modules/command-dispatcher/index.js`](../../../../../../backend/core/kernel/lib/modules/command-dispatcher/index.js)); nothing

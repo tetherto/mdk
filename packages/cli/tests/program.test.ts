@@ -3,6 +3,9 @@ import type { Command } from 'commander';
 import { buildProgram } from '../src/program.js';
 import { pkg } from '../src/lib/pkg.js';
 
+/** Stub commands that were removed; none may be registered or listed in help. */
+const RETIRED_COMMANDS = ['get', 'describe', 'logs', 'discover', 'manifest', 'mcp'];
+
 const helpOf = (...path: string[]): string => {
   let command: Command = buildProgram();
   for (const name of path) command = command.commands.find((c) => c.name() === name)!;
@@ -33,6 +36,14 @@ describe('buildProgram', () => {
     );
   });
 
+  it('does not register or list the retired stub commands', () => {
+    const names = buildProgram().commands.map((c) => c.name());
+    for (const stub of RETIRED_COMMANDS) {
+      expect(names).not.toContain(stub);
+    }
+    expect(helpOf()).not.toMatch(new RegExp(`^ {2}(${RETIRED_COMMANDS.join('|')})\\b`, 'm'));
+  });
+
   it('declares the global --output, --verbose and --debug options', () => {
     const program = buildProgram();
     const flags = program.options.map((o) => o.long);
@@ -42,7 +53,7 @@ describe('buildProgram', () => {
   it('groups the top-level commands under headings', () => {
     const help = helpOf();
     expect(help).toContain('Usage: mdk <command> [options]');
-    expect(help).toMatch(/Set up:\n {2}onboard[\s\S]*Build:\n {2}create[\s\S]*Run:\n {2}run[\s\S]*Other:\n {2}skill/);
+    expect(help).toMatch(/Set up:\n {2}onboard[\s\S]*Build:\n {2}create[\s\S]*Run:\n {2}run[\s\S]*Auth:\n {2}rbac[\s\S]*Other:\n {2}skill/);
     expect(help).not.toMatch(/^Commands:/m);
   });
 

@@ -11,6 +11,8 @@ A segmented button control for switching between currency options. Each item can
 | `onChange` | Required | `(currency: string) => void` | - | Fired with the selected currency value when a button is clicked |
 | `value` | Required | `string` | - | Currently selected currency value |
 | `className` | Optional | `string` | - | Additional class for the root element |
+| `fullWidth` | Optional | `boolean` | `false` | Stretch to the container's width, the options sharing it evenly (a tab bar) |
+| `itemAriaLabel` | Optional | `((label: string) => string)` | - | Each button's accessible name, from its label. Defaults to "Select <label> currency"; pass your own when the options are not currencies |
 
 ### `CurrencyItem`
 

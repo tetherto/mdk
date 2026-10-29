@@ -79,6 +79,27 @@ describe('buildStackSpec', () => {
     expect(spec.spec.apps).toEqual([]);
   });
 
+  it("binds the CLI's account to an ordinary admin role, so a new stack can be administered", () => {
+    const spec = buildStackSpec({ stackName: 's', gatewayPort: 1, kernelPort: 2, workerBasePort: 3, workerPackages: [], appPackages: [] });
+    expect(spec.spec.rbac).toEqual({
+      enforcement: 'deny',
+      roles: [
+        { name: 'admin', rules: [{ resources: ['*'], verbs: ['*'] }] },
+        { name: 'gateway', rules: [{ resources: ['policy'], verbs: ['read'] }] },
+      ],
+      bindings: [
+        { role: 'admin', subjects: [{ kind: 'ServiceAccount', name: 'mdk-cli' }] },
+        {
+          role: 'gateway',
+          subjects: [
+            { kind: 'ServiceAccount', name: 'mdk-gateway' },
+            { kind: 'ServiceAccount', name: 'mdk-mcp' },
+          ],
+        },
+      ],
+    });
+  });
+
   it('seeds a bundled worker (known device shape) with a mock device', () => {
     const spec = buildStackSpec({
       stackName: 'my-stack',
@@ -183,6 +204,81 @@ describe('buildStackSpec', () => {
 function writeSpec(dir: string, content: string): void {
   writeFileSync(join(dir, STACK_FILE), content, 'utf8');
 }
+
+describe('loadStackSpec — spec.rbac', () => {
+  const BASE = ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847'];
+
+  it('carries a valid policy through, as written, and omits an absent one', () => {
+    const dir = makeTmpDir();
+    writeSpec(dir, [...BASE, '  rbac:', '    roles:', '      - name: viewer', '        rules: [{ resources: ["*"], verbs: [get, list] }]', ''].join('\n'));
+    expect(loadStackSpec(dir).spec.rbac).toEqual({ roles: [{ name: 'viewer', rules: [{ resources: ['*'], verbs: ['get', 'list'] }] }] });
+
+    const bare = makeTmpDir();
+    writeSpec(bare, [...BASE, ''].join('\n'));
+    expect(loadStackSpec(bare).spec).not.toHaveProperty('rbac');
+  });
+
+  it('lists every problem in an invalid policy', () => {
+    const dir = makeTmpDir();
+    writeSpec(dir, [...BASE, '  rbac:', '    enforcement: allow', '    bindings: [{ role: ghost, subjects: [{ kind: User, name: a }] }]', ''].join('\n'));
+    expect(() => loadStackSpec(dir)).toThrow(StackSpecError);
+    expect(() => loadStackSpec(dir)).toThrow(/`spec\.rbac` is invalid:\n {2}- spec\.rbac\.enforcement: must be "deny".*\n {2}- spec\.rbac\.bindings\[0\]\.role: no role named "ghost"/);
+  });
+
+  it('checks the fields install writes on an app', () => {
+    const app = (extra: string[]) => {
+      const dir = makeTmpDir();
+      writeSpec(dir, [...BASE, '  apps:', '    - name: tuner', '      package: "@org/tuner"', ...extra, ''].join('\n'));
+      return dir;
+    };
+    expect(loadStackSpec(app(['      serviceAccount: app:tuner', '      permissionsDigest: 0123456789abcdef'])).spec.apps[0]).toEqual({
+      name: 'tuner',
+      package: '@org/tuner',
+      config: {},
+      serviceAccount: 'app:tuner',
+      permissionsDigest: '0123456789abcdef',
+    });
+    expect(() => loadStackSpec(app(['      serviceAccount: app:other']))).toThrow(/serviceAccount` must be "app:tuner"/);
+    expect(() => loadStackSpec(app(['      permissionsDigest: hand-edited']))).toThrow(/permissionsDigest` is written by `mdk add app`/);
+  });
+});
+
+describe('loadStackSpec — spec.network.dht', () => {
+  const BASE = ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847'];
+  const load = (lines: string[]) => {
+    const dir = makeTmpDir();
+    writeSpec(dir, [...BASE, ...lines].join('\n'));
+    return loadStackSpec(dir);
+  };
+
+  it('is absent unless set, and leaves host unset unless given', () => {
+    expect(load([]).spec).not.toHaveProperty('network');
+    expect(load(['  network:', '    dht: {}']).spec.network).toEqual({ dht: { port: 49737 } });
+    expect(load(['  network:', '    dht:', '      host: 10.0.0.7', '      bootstrap: [10.0.0.5:49737]']).spec.network).toEqual({
+      dht: { host: '10.0.0.7', port: 49737, bootstrap: ['10.0.0.5:49737'] },
+    });
+    expect(load(['  network:', '    dht:', '      bootstrap: [10.0.0.5:49737]']).spec.network).toEqual({
+      dht: { port: 49737, bootstrap: ['10.0.0.5:49737'] },
+    });
+  });
+
+  it('refuses public bootstrap nodes, hostnames as bind hosts and bad ports', () => {
+    expect(() => load(['  network:', '    dht:', '      bootstrap: [node1.hyperdht.org:49737]'])).toThrow(/public HyperDHT bootstrap node/);
+    expect(() => load(['  network:', '    dht:', '      bootstrap: [88.99.3.86:49737]'])).toThrow(/public HyperDHT bootstrap node/);
+    expect(() => load(['  network:', '    dht:', '      host: localhost'])).toThrow(/dht\.host` must be an IP address/);
+    expect(() => load(['  network:', '    dht:', '      port: 70000'])).toThrow(/dht\.port` must be a UDP port/);
+    expect(() => load(['  network:', '    dht:', '      bootstrap: [nope]'])).toThrow(/host:port entries/);
+    expect(() => load(['  network:', '    dht:', '      bootstrap: [10.0.0.5:99999]'])).toThrow(/host:port entries/);
+    // mdk-core strips a suggested-ip prefix before checking for public nodes.
+    expect(() => load(['  network:', '    dht:', '      bootstrap: [10.0.0.1@88.99.3.86:49737]'])).toThrow(/public HyperDHT bootstrap node/);
+  });
+
+  it('refuses a loopback host toward a non-loopback bootstrap', () => {
+    expect(() => load(['  network:', '    dht:', '      host: 127.0.0.1', '      bootstrap: [10.0.0.5:49737]'])).toThrow(
+      /dht\.host`: a DHT node bound to 127\.0\.0\.1 cannot reach the bootstrap node 10\.0\.0\.5:49737/,
+    );
+  });
+});
 
 describe('loadStackSpec', () => {
   it('throws when mdk.yaml is missing', () => {
@@ -573,19 +669,21 @@ describe('loadStackSpec security', () => {
     vi.unstubAllEnvs();
   });
 
-  it('reads spec.mcp security options and validates their types', () => {
+  it('refuses spec.gateway.config.authVerifier: spec.rbac governs every route', () => {
     const dir = makeTmpDir();
-    writeFileSync(join(dir, '.env'), 'MDK_MCP_TOKEN=abc\n', 'utf8');
-    writeSpec(
-      dir,
-      `${base}  mcp:\n    allowWrite: true\n    allowTools: [a.b]\n    token: "\${MDK_MCP_TOKEN}"\n    identity: { user: agent }\n`,
-    );
-    expect(loadStackSpec(dir).spec.mcp).toEqual({
-      allowWrite: true,
-      allowTools: ['a.b'],
-      token: 'abc',
-      identity: { user: 'agent' },
-    });
+    writeSpec(dir, ['kind: Stack', 'apiVersion: mdk/v1', 'spec:', '  gateway:', '    port: 3847', '    config: { authVerifier: loopback }', ''].join('\n'));
+    expect(() => loadStackSpec(dir)).toThrow(/authVerifier` is no longer supported/);
+  });
+
+  it('reads spec.mcp tool options and validates their types; a static token or identity is refused', () => {
+    const dir = makeTmpDir();
+    writeSpec(dir, `${base}  mcp:\n    allowWrite: true\n    allowTools: [a.b]\n`);
+    expect(loadStackSpec(dir).spec.mcp).toEqual({ allowWrite: true, allowTools: ['a.b'] });
+
+    writeSpec(dir, `${base}  mcp:\n    token: abc\n`);
+    expect(() => loadStackSpec(dir)).toThrow(/spec\.mcp\.token` is no longer supported.*mdk sa add/);
+    writeSpec(dir, `${base}  mcp:\n    identity: { user: agent }\n`);
+    expect(() => loadStackSpec(dir)).toThrow(/spec\.mcp\.identity` is no longer supported/);
 
     writeSpec(dir, `${base}  mcp:\n    allowWrite: "yes"\n`);
     expect(() => loadStackSpec(dir)).toThrow(/spec\.mcp\.allowWrite/);

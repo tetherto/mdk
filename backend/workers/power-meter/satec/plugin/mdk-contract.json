@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../core/mdk-worker/mdk-contract.schema.json",
+  "$schema": "https://raw.githubusercontent.com/tetherto/mdk/main/backend/core/mdk-worker/mdk-contract.schema.json",
   "metadata": {
     "provider": "satec",
     "deviceFamily": "power-meter",

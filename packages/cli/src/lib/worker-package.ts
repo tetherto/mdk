@@ -9,6 +9,8 @@ export const WORKER_CONTRACT = 'mdk-contract.json';
 
 export interface WorkerValidation {
   errors: string[];
+  /** v1 strictness gaps on a legacy contract (no contractVersion): report, don't fail. */
+  warnings: string[];
   /** The package.json `name` / `version`, when readable. */
   name?: string;
   version?: string;
@@ -21,7 +23,10 @@ interface MdkWorkerLoader {
     contract: { capabilities?: { commands?: Array<{ name?: string; params?: unknown }> } };
     entries: { telemetry: Map<string, string>; commands: Map<string, string> };
   };
-  validateContract(contract: unknown, opts?: { dir?: string; semantic?: boolean }): { ok: boolean; errors: string[] };
+  validateContract(
+    contract: unknown,
+    opts?: { dir?: string; semantic?: boolean; strict?: boolean },
+  ): { ok: boolean; errors: string[]; warnings: string[] };
 }
 
 /**
@@ -32,9 +37,9 @@ interface MdkWorkerLoader {
  * own loader, with at least one entry, command params as lists, and every handler
  * compiling. None of them is executed.
  */
-export function validateWorker(dir: string): WorkerValidation {
+export function validateWorker(dir: string, opts: { strict?: boolean } = {}): WorkerValidation {
   const errors: string[] = [];
-  const result: WorkerValidation = { errors, telemetry: 0, commands: 0 };
+  const result: WorkerValidation = { errors, warnings: [], telemetry: 0, commands: 0 };
   if (!existsSync(dir) || !statSync(dir).isDirectory()) {
     errors.push(`${dir}: not a directory`);
     return result;
@@ -64,7 +69,10 @@ export function validateWorker(dir: string): WorkerValidation {
     contractJson = undefined;
   }
   if (contractJson !== undefined) {
-    errors.push(...loader.validateContract(contractJson, { dir }).errors.map((e) => `${WORKER_CONTRACT}: ${e}`));
+    const validated = loader.validateContract(contractJson, { dir, strict: opts.strict });
+    errors.push(...validated.errors.map((e) => `${WORKER_CONTRACT}: ${e}`));
+    // A standalone install can resolve an older @tetherto/mdk-worker whose validator predates warnings.
+    result.warnings.push(...(validated.warnings ?? []).map((w) => `${WORKER_CONTRACT}: ${w}`));
   }
 
   try {

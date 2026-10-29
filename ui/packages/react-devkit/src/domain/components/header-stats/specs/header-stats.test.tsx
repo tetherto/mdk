@@ -33,7 +33,7 @@ describe('HeaderEfficiencyBox', () => {
   it('formats a numeric value with two fraction digits and renders the default unit', () => {
     render(<HeaderEfficiencyBox valueWthS={28.42} />)
     expect(screen.getByText('28.42')).toBeInTheDocument()
-    expect(screen.getByText('W/TH/S')).toBeInTheDocument()
+    expect(screen.getByText('W/TH/s')).toBeInTheDocument()
   })
 
   it('falls back to em-dash when valueWthS is undefined', () => {

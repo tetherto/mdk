@@ -1,6 +1,7 @@
 'use strict'
 
 const { z } = require('zod')
+const { routeAccess, routeRequest } = require('@tetherto/mdk-rbac')
 
 // Cap on free-text arguments when the route's schema states no maxLength, so an
 // LLM can't push an unbounded string into a route handler.
@@ -118,6 +119,14 @@ function _annotationsFromSafety (safety) {
 // the reassembled { params, query, headers, body } to `opts.call`, which
 // forwards them to the app's runtime.
 //
+// With `opts.authority` (and `opts.appName`), every call is checked against
+// spec.rbac exactly as the Gateway checks the same route: the resource
+// `<app>/<path>` and the route's verb, with its instance name from the declared
+// param, query or body field. The caller's identity, a verified agent token,
+// arrives per call (`_handler(args, { identity })`) and is what the app runtime
+// receives as `req._info`. `auth` and `permissions` no longer matter then.
+//
+// Without an authority, the older static identity applies:
 // `opts.identity` travels with every call as the caller's identity (what a
 // controller reads as `req._info`, e.g. `{ user: { userId } }`). Without one, an
 // `auth: true` route refuses to run (ERR_MCP_AUTH_REQUIRED) instead of reaching
@@ -127,16 +136,18 @@ function _annotationsFromSafety (safety) {
 // do not cover (ERR_MCP_PERM_DENIED). Stream routes (`stream: true`) write to a
 // raw response an MCP call does not have, so they produce no tool.
 function generateToolsFromGatewayPlugin (plugin, opts = {}) {
-  const identity = opts.identity || null
+  const staticIdentity = opts.identity || null
+  const authority = opts.authority || null
+  if (authority && !opts.appName) throw new Error('ERR_MCP_APP_NAME_REQUIRED: tools checked against spec.rbac need their app\'s name')
 
   return plugin.routes.filter((route) => route.stream !== true).map((route) => {
     const { shape, path, query, header } = _toolShapeFromRoute(route)
     const auth = route.auth === true
     const permissions = Array.isArray(route.permissions) ? Object.freeze([...route.permissions]) : undefined
+    const access = authority ? routeAccess(opts.appName, route) : null
+    const toolId = _sanitizeId(route.id)
 
-    const _handler = async (args) => {
-      if (auth && !identity) throw new Error('ERR_MCP_AUTH_REQUIRED')
-      if (auth && missingPermissions(permissions, identity).length > 0) throw new Error('ERR_MCP_PERM_DENIED')
+    const _handler = async (args, ctx = {}) => {
       const pluginReq = { params: {}, query: {}, headers: {}, body: {} }
       for (const [key, value] of Object.entries(args || {})) {
         if (path.has(key)) pluginReq.params[key] = value
@@ -145,17 +156,50 @@ function generateToolsFromGatewayPlugin (plugin, opts = {}) {
         else pluginReq.body[key] = value
       }
 
-      const result = await opts.call(route.id, pluginReq, identity || {})
+      let identity
+      if (authority) {
+        identity = ctx.identity
+        if (!identity) throw new Error('ERR_AUTH_UNAUTHORIZED')
+        const request = routeRequest(access, pluginReq)
+        const d = authority.evaluate(identity, request)
+        if (opts.onDecision) {
+          opts.onDecision({
+            app: opts.appName,
+            route: route.id,
+            tool: toolId,
+            resource: request.resource,
+            verb: request.verb,
+            kind: identity.kind,
+            sub: identity.sub,
+            ...(request.resourceName ? { resourceName: request.resourceName } : {}),
+            decision: d.allowed ? 'allow' : 'deny',
+            reason: d.reason,
+            ...(d.role ? { role: d.role } : {}),
+            policyVersion: d.policyVersion
+          })
+        }
+        if (!d.allowed) {
+          const target = request.resourceName ? `${request.resource} ${request.resourceName}` : request.resource
+          throw new Error(`ERR_AUTH_FORBIDDEN: ${identity.sub} may not ${request.verb} ${target}`)
+        }
+      } else {
+        if (auth && !staticIdentity) throw new Error('ERR_MCP_AUTH_REQUIRED')
+        if (auth && missingPermissions(permissions, staticIdentity).length > 0) throw new Error('ERR_MCP_PERM_DENIED')
+        identity = staticIdentity || {}
+      }
+
+      const result = await opts.call(route.id, pluginReq, identity, (authority && ctx.actor) || null)
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
     }
 
     return {
-      id: _sanitizeId(route.id),
+      id: toolId,
       description: route.description || plugin.manifest.description,
       schema: shape,
       annotations: _annotationsFromSafety(route.safety),
       auth,
       ...(permissions ? { permissions } : {}),
+      ...(access ? { access } : {}),
       _handler
     }
   })

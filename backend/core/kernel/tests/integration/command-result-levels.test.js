@@ -1,6 +1,7 @@
 'use strict'
 
 const test = require('brittle')
+const DHT = require('hyperdht')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
@@ -8,6 +9,7 @@ const createTestnet = require('hyperdht/testnet')
 const KernelManager = require('../../lib/kernel.manager')
 const { WorkerRuntime } = require('../../../mdk-worker')
 const { createRawMdkClient } = require('../../../client')
+const { grantTestAdmin } = require('../../lib/testing')
 const simPlugin = require('../../../mdk-worker/tests/fixtures/sim-plugin')
 
 async function startSite (t) {
@@ -26,14 +28,17 @@ async function startSite (t) {
   t.teardown(() => worker.stop())
 
   const kernel = new KernelManager({
-    kernel: { hrpc: { whitelist: [], allowAll: true, bootstrap: testnet.bootstrap }, discovery: { mode: 'local', dir: path.join(root, 'keys') }, commandVerifyIntervalMs: 100 }
+    kernel: { hrpc: { whitelist: [], bootstrap: testnet.bootstrap }, discovery: { mode: 'local', dir: path.join(root, 'keys') }, commandVerifyIntervalMs: 100 }
   }, { storeDir: path.join(root, 'kernel'), root, loadConf: () => {} })
   await kernel.init()
   await kernel.start()
   t.teardown(() => kernel.stop())
   await kernel.registerWorker(worker.getPublicKey())
 
-  const client = createRawMdkClient({ hrpc: { key: kernel.getPublicKey(), bootstrap: testnet.bootstrap } })
+  const credential = await grantTestAdmin(kernel)
+  const keyPair = DHT.keyPair()
+  kernel.allowKey(keyPair.publicKey)
+  const client = createRawMdkClient({ hrpc: { key: kernel.getPublicKey(), bootstrap: testnet.bootstrap, keyPair }, credential })
   await client.connect()
   t.teardown(() => client.close())
   await client.waitForWorkers({ count: 1, timeoutMs: 20000 })

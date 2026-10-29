@@ -172,7 +172,8 @@ export const BTC_SATS = 1e8
 export const HOURS_IN_DAY = 24
 
 /**
- * Hashrate units per petahash/second (1e15). Used by hashrate conversion helpers.
+ * MH/s per PH/s (1e9): the hashrate conversion helpers take hashrate in MH/s,
+ * the unit miners report it in.
  * @category utilities
  * @domain generic
  * @tier internal

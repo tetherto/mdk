@@ -39,7 +39,9 @@ class ActionCaller {
    * @param {object} query
    * @param {string} action
    * @param {any[]} params
-   * @param {string[]} permissions
+   * @param {string[]|null} permissions - `<family>:w` strings naming the device
+   *   families to ask; null asks every family (a caller checked by spec.rbac,
+   *   whose device rule is applied to the calls that come back)
    */
   async getWriteCalls (query, action, params, permissions) {
     if (!isPlainObject(query)) {
@@ -66,7 +68,7 @@ class ActionCaller {
 
     await async.eachLimit(workers, this._getWriteCallsLimit, async (worker) => {
       const baseType = worker.deviceFamily
-      if (!baseType || !hasWritePermission(permissions, baseType)) {
+      if (!baseType || (permissions !== null && !hasWritePermission(permissions, baseType))) {
         return
       }
       if (!worker.channel) {

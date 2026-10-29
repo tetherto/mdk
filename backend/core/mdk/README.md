@@ -29,7 +29,6 @@ The [run a mining site tutorial](../../../docs/tutorials/run-a-site.md) is the f
 
 ```js
 const { getKernel, startGateway, waitForDiscovery, shutdown } = require('@tetherto/mdk-core')
-const { trustKernel } = require('@tetherto/mdk-core/lib/local-discovery')
 const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
 
 // 1. Start Kernel
@@ -37,8 +36,8 @@ const kernel = await getKernel()
 
 // 2. Start a Worker: each Worker package ships its own boot function that
 //    constructs a WorkerRuntime internally (see @tetherto/mdk-worker).
-//    Worker RPC is fail-closed: allow the key the Kernel dials with, then keep
-//    following the callers the Kernel admits (the Gateway calls Workers too).
+//    Worker RPC is fail-closed: allow only the key the Kernel dials with, so
+//    every command goes through the Kernel.
 const { runtime } = await startAvalonWorker({
   workerId: 'avalon-rack-1',
   model: 'a1346',
@@ -46,7 +45,6 @@ const { runtime } = await startAvalonWorker({
   allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{ info: { serialNum: 'AV-001' }, opts: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
 })
-trustKernel(runtime, kernel)
 
 // 3. Register the Worker with Kernel (same-process mode, no DHT/local discovery needed)
 await kernel.registerWorker(runtime.getPublicKey())
@@ -54,8 +52,8 @@ await kernel.registerWorker(runtime.getPublicKey())
 // 4. Wait for Kernel to discover and register the Worker
 await waitForDiscovery(kernel)
 
-// 5. Optionally start the HTTP API (admits the Gateway's key on the Kernel
-//    and, through trustKernel, on the Worker)
+// 5. Optionally start the HTTP API (admits the Gateway's key on the Kernel; the
+//    Worker keeps allowing the Kernel alone)
 const server = await startGateway({ kernel, port: 3000 })
 
 // The SDK installs no SIGINT/SIGTERM handlers unless asked
@@ -103,9 +101,10 @@ const kernel = await getKernel()
 | `opts.topicFile` | Optional | `string` | `DEFAULT_TOPIC_FILE` | Path to the topic file |
 | `opts.keyFile` | Optional | `string\|false` | `DEFAULT_KEY_FILE` | Path for the HRPC key file; `false` to disable publishing |
 | `opts.hrpc` | Optional | `object\|false` | Enabled, empty allowlist (admits nobody) | HRPC config; `false` disables the listener |
-| `opts.hrpc.whitelist` | Optional | `Array<string\|{key, roles}>` | `[]` | Caller allowlist. A hex key gets full access; `{ key, roles }` limits it to `'read'`/`'write'`/`'admin'` ([roles](../kernel/README.md#caller-admission-and-roles)) |
-| `opts.hrpc.allowAll` | Optional | `boolean` | `false` | Admit every DHT peer that knows the Kernel key. Development only; logs a warning |
+| `opts.hrpc.whitelist` | Optional | `Array<string\|{key}>` | `[]` | Caller allowlist. Who may connect; what a caller may do is set by its access token and `spec.rbac` ([authorization](../kernel/README.md#caller-admission-and-authorization)) |
+| `opts.hrpc.allowAll` | Removed | `boolean` | None | Refused at start (`ERR_KERNEL_ALLOW_ALL_REMOVED`): admission never admits every peer. An entry with `roles` is refused too (`ERR_KERNEL_CALLER_ROLES_UNSUPPORTED`) |
 | `opts.hrpc.bootstrap` | Optional | `array` | Public DHT | HyperDHT bootstrap nodes; pass the same list to every component on a private DHT network |
+| `opts.hrpc.dhtHost` | Optional | `string` | All interfaces | Interface the Kernel's DHT node binds: `127.0.0.1` on one machine, a LAN address on an isolated LAN |
 | `opts.trustedKeysDir` | Optional | `string\|false` | `<root>/.trusted-keys` | Same-machine key rendezvous (see [Trust and admission](#trust-and-admission)); `false` disables |
 | `opts.telemetryPullMs` | Optional | `number` | The Kernel's own default | Telemetry poll interval in ms |
 | `opts.healthPingMs` | Optional | `number` | The Kernel's own default | Health ping interval in ms |
@@ -181,7 +180,8 @@ const server = await startGateway({
 | `opts.kernel` | Optional, one of `opts.kernel`/`opts.kernelKey`/`opts.keyFile` must resolve a key | `KernelManager` | None | Kernel instance; Gateway stop is registered on cleanup. Its `getPublicKey()` also resolves the Kernel key. |
 | `opts.kernelKey` | Optional, see `opts.kernel` | `string\|Buffer\|false` | None | Kernel HRPC listener public key (hex or Buffer); `false` to run without one. The Gateway passes it to no app; each [app runtime](../app-runtime/README.md) takes its own `kernelKey` |
 | `opts.keyFile` | Optional, see `opts.kernel` | `string` | `DEFAULT_KEY_FILE` | Key file to resolve the Kernel key from |
-| `opts.bootstrap` | Optional | `array` | None | DHT bootstrap nodes for the Gateway's client to app runtimes (testnets) |
+| `opts.bootstrap` | Optional | `array` | None | DHT bootstrap nodes for every DHT node the Gateway starts: its net facility, Kernel client and app runtime client |
+| `opts.dhtHost` | Optional | `string` | All interfaces | Interface those DHT nodes bind |
 | `opts.common` | Optional | `object` | `{}` | Overrides for `common.json` |
 | `opts.httpd` | Optional | `object` | `{}` | Overrides for `httpd.config.json` |
 | `opts.store` | Optional | `object` | `{}` | Overrides for `store.config.json` |
@@ -191,6 +191,8 @@ const server = await startGateway({
 | `opts.handleSignals` | Optional | `boolean` | `false` | Standalone Gateway (no `opts.kernel`) only: install `SIGINT`/`SIGTERM` handlers that stop it and exit the process |
 | `opts.trustedKeysDir` | Optional | `string\|false` | `opts.kernel.trustedKeysDir`, else `DEFAULT_TRUSTED_KEYS_DIR` | Where the Gateway publishes its client key (`status.rpcClientKey`) as `gateway.pub`; `false` disables. With `opts.kernel` the key is also admitted in-process |
 | `opts.trustedKeyName` | Optional | `string` | `'gateway'` | File name for that key (set it when several Gateways share a dir) |
+| `opts.authority` | Optional | `object` | From `opts.kernel` or `opts.gatewayCredential` | What checks every app route against `spec.rbac` and serves `/auth/*` (`@tetherto/mdk-gateway/workers/lib/authority`). Default: the in-process `opts.kernel`'s issuer and policy |
+| `opts.gatewayCredential` | Optional | `{ name, privateKey }` | None | The Gateway's service account for a Kernel in another process (`opts.kernelKey`); it reads the policy, so it needs `policy: read` |
 
 ### Apps
 
@@ -240,6 +242,27 @@ a failed connect fails that app's calls with
 Lower-level Kernel start. Prefer `getKernel()` for new code. Does not register SIGINT or read the topic file, and writes the key file only when
 `opts.keyFile` is explicitly passed.
 For caller-managed construction and lifecycle, use [`createKernel()` from `@tetherto/mdk-kernel`](../kernel/README.md#createkernelopts--kernelmanager).
+
+### `startDhtBootstrap(opts?)` → `Promise<{ bootstrap, host, port, close }>`
+
+Run a private HyperDHT bootstrap: a bootstrap node at `host:port` plus persistent DHT nodes that join through it, following hyperdht's
+isolated-network pattern. Hand the returned `bootstrap` list to every component, with `dhtHost` set to the interface they bind. The
+[local and air-gapped profile](../../../docs/guides/deployment/private-dht.md) walks through a whole stack.
+
+| Option | Status | Type | Default | Description |
+| --- | --- | --- | --- | --- |
+| `opts.host` | Optional | `string` | `'127.0.0.1'` | IPv4 address the bootstrap is reached at and advertised as |
+| `opts.port` | Optional | `number` | `49737` | UDP port of the bootstrap node |
+| `opts.bindHost` | Optional | `string` | `opts.host` | Interface to bind when it differs from `host` |
+| `opts.nodes` | Optional | `number` | `2` | Persistent DHT nodes to run alongside it; announce and lookup need at least one |
+
+```js
+const net = await startDhtBootstrap({ host: '127.0.0.1' })
+const kernel = await getKernel({ hrpc: { bootstrap: net.bootstrap, dhtHost: '127.0.0.1' } })
+```
+
+`dhtFromEnv(env?)` reads `MDK_DHT_BOOTSTRAP` (comma-separated `host:port`) and `MDK_DHT_HOST` into `{ bootstrap, dhtHost }`.
+`parseBootstrap(value)` normalizes a list or a comma-separated string. Both refuse public `*.hyperdht.org` nodes.
 
 ### `waitForDiscovery(kernel, timeout?)` → `Promise<WorkerEntry[]>`
 
@@ -338,7 +361,17 @@ so the Kernel you start with `getKernel()` must admit them: pass their RPC keys 
 `kernel.allowWorkerKey()`), or set `discovery.allowAnyWorker: true` for local development. Each
 file carries a `@generated by @tetherto/mdk-core` marker; a file without it is never overwritten
 (`ERR_MDK_GENERATED_FILE_CONFLICT`) unless `config.overwrite: true`. Docker publishes Gateway ports on `127.0.0.1` unless
-`config.host` or `services[].host` names an interface. `initialize({ sources, root })` seeds config from the MDK source
+`config.host` or `services[].host` names an interface. `config.dht` switches the stack to a private HyperDHT:
+
+| `config.dht` key | Runtime | Default | Effect |
+| --- | --- | --- | --- |
+| `bootstrap` | PM2, Docker | None | An existing private bootstrap list; when set, no bootstrap service is generated |
+| `host` | PM2 | `'127.0.0.1'` with a generated bootstrap; every interface with `bootstrap` | Interface every process binds, and where the generated bootstrap is reached; a loopback `host` with a non-loopback `bootstrap` is refused |
+| `port` | PM2, Docker | `49737` | UDP port of the generated bootstrap |
+| `subnet` | Docker | `172.31.249.0/24` | Subnet of the `mdk-dht` network; the bootstrap takes `.2` and services `.10` onward, each binding its own address |
+| `internal` | Docker | `false` | Make `mdk-dht` an internal network with no route out; Gateways also join the default network to publish their port |
+
+`initialize({ sources, root })` seeds config from the MDK source
 checkout named by `sources` (required, `ERR_MDK_INIT_SOURCES_REQUIRED`) and throws `ERR_MDK_INIT_SOURCES_NOT_FOUND` when it
 is not one. MDK packages (the Gateway, Worker packages, this package) are always resolved by package name.
 
@@ -348,7 +381,6 @@ The typical pattern for running everything in one process during development:
 
 ```js
 const { getKernel, startGateway, waitForDiscovery } = require('@tetherto/mdk-core')
-const { trustKernel } = require('@tetherto/mdk-core/lib/local-discovery')
 const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
 const { startSatecWorker } = require('@tetherto/mdk-worker-satec')
 
@@ -373,9 +405,6 @@ async function main () {
     seedDevices: [{ info: { serialNum: 'SATEC-001' }, opts: { address: '192.168.1.30', port: 502, unitId: 1 } }]
   })
   await kernel.registerWorker(pm.getPublicKey())
-  // Follow later admissions (the Gateway below also calls Workers directly)
-  trustKernel(av, kernel)
-  trustKernel(pm, kernel)
 
   await waitForDiscovery(kernel)
 
@@ -389,8 +418,10 @@ main()
 ## Trust and admission
 
 The Kernel HRPC listener and every Worker RPC server are **fail-closed**: they reject public keys they were not told
-about, and an empty allowlist admits nobody. `allowAll: true` (Kernel `hrpc.allowAll`, Worker `allowAll`) is the only
-way to admit everyone; it is meant for local experiments and logs a warning.
+about, and an empty allowlist admits nobody. The Kernel has no way to admit every peer (`hrpc.allowAll` is refused at start),
+and admission grants nothing: each request's access token is checked against `spec.rbac`. A Worker's `allowAll: true`
+(`MDK_WORKER_ALLOW_ALL`) still admits everyone; it is for throwaway local experiments only, logs a warning, and `mdk run`
+never sets it.
 
 Who dials whom, and with which key:
 
@@ -400,25 +431,26 @@ Who dials whom, and with which key:
 | Apps | Kernel, and Workers directly | `status.rpcClientKey` (Gateway DHT keypair, persisted) | Kernel allowlist and Worker `allowedKeys` |
 | MCP / CLI clients | Kernel (and Workers) | a persistent `callerKeyPair(dir)` passed as `kernelKeyPair` | same |
 
+Workers admit the Kernel's key and no other, so every command reaches a device through the Kernel's checks and its
+[write-command log](../kernel/README.md#write-command-log). A caller that must reach a Worker directly
+(`sendWorkerCommand`, `pullWorkerTelemetry`) needs its key added to that Worker's `allowedKeys` (or `MDK_WORKER_ALLOWED_KEYS`)
+by the operator.
+
 The SDK wires the local cases:
 
 - **Same process.** `startGateway({ kernel })` calls `kernel.allowKey(gatewayKey)`. Workers allow
-  `kernel.getClientPublicKey()` at boot and call `trustKernel(runtime, kernel)` to mirror every write-capable caller
-  the Kernel admits later.
+  `kernel.getClientPublicKey()` and nothing else (`trustKernel(runtime, kernel)`): every device call goes through the
+  Kernel's `spec.rbac` check, so no caller it admits is let past it to a Worker.
 - **Same machine, separate processes.** Every component meets in a trusted-keys dir (`getKernel` default
   `<root>/.trusted-keys`, `DEFAULT_TRUSTED_KEYS_DIR` = `~/.mdk/.trusted-keys`). The Kernel publishes `kernel.pub` and
-  admits every other `<name>.pub`; a standalone `startGateway` publishes `gateway.pub`; a Worker process allows what it
-  finds there (`trustKeysFromDir(runtime, dir)`, after `waitForKernelKey(dir)`). The dir is created `0700`; key files
+  admits every other `<name>.pub` to connect (its token decides what it may do); a standalone `startGateway` publishes
+  `gateway.pub`; a Worker process allows only the Kernel's `kernel.pub` from there (`trustKeysFromDir(runtime, dir)`,
+  after `waitForKernelKey(dir)`). The dir is created `0700`; key files
   that are group/world-writable or owned by another user are ignored. Anyone who can write the dir is trusted, so keep it
   private, or pass `trustedKeysDir: false` and configure keys explicitly.
-- **Across machines.** Without a shared trust directory, list caller keys and roles explicitly in Kernel's `hrpc.whitelist`, and
-  Kernel's client key in each Worker's `allowedKeys`. Add other Worker callers only to grant direct access to all supported operations;
-  Kernel roles do not restrict those direct calls. A Worker that cannot learn a key fails to
+- **Across machines.** Nothing is shared automatically: put the Gateway/MCP keys in the Kernel's `hrpc.whitelist`, and
+  the Kernel client key in each Worker's `allowedKeys`. A Worker that cannot learn a key fails to
   start with `ERR_WORKER_ALLOWED_KEYS_REQUIRED` rather than admitting everyone.
-
-Automatic admission is a grant of access, not just key discovery. The [site security blueprint](../../../docs/guides/security/index.md#automatic-admission-during-startup)
-details the grants, explicit configuration, and revocation behavior. In particular, `trustedKeysDir: false` disables directory admission
-on Kernel, but does not prevent `startGateway({ kernel })` from admitting its Gateway key with full access.
 
 Helpers in `@tetherto/mdk-core/lib/local-discovery`: `trustedKeysDir(root)`, `publishTrustedKey(dir, name, key)`,
 `readTrustedKeys(dir)`, `watchTrustedKeys(dir, onKey)`, `admitTrustedKeys(kernel, dir)`, `trustKeysFromDir(runtime, dir)`,
@@ -431,6 +463,9 @@ regular, owned, non-group/world-writable `<name>.key` files holding a 64-hex key
 
 `utils/service-bootstrap.js` (`SERVICE=worker`, which also needs `MDK_REPO_ROOT`) admits the keys in `DEFAULT_TRUSTED_KEYS_DIR` plus
 `MDK_WORKER_ALLOWED_KEYS` (comma-separated hex); `MDK_WORKER_ALLOW_ALL=1` opts out for development.
+Every service passes `MDK_DHT_BOOTSTRAP` and `MDK_DHT_HOST` to the DHT nodes it starts (a Worker's boot function, the Gateway's
+`--kernelBootstrap` and `--kernelDhtHost` flags). `SERVICE=dht-bootstrap` runs `startDhtBootstrap()` from `MDK_DHT_HOST`,
+`MDK_DHT_PORT` and `MDK_DHT_NODES` until `SIGINT` or `SIGTERM`.
 
 ## Config management
 
@@ -480,6 +515,15 @@ Config file precedence:
 | `ERR_LOG_TAG_INVALID` | `tailLog` is called without `req.tag` | Provide the log `tag` in the request |
 | `ERR_LOGS_META_LOGS_REQUIRED` | LogsService is constructed without a `metaLogs` store | Pass a `metaLogs` store in the constructor options |
 | `ERR_LOGS_STORE_REQUIRED` | LogsService is constructed without a `store` | Pass a `store` in the constructor options |
+| `ERR_MDK_DHT_BOOTSTRAP_INVALID` | A bootstrap entry is not `host:port` with a port from 1 to 65535 | List entries as `host:port`, for example `127.0.0.1:49737` |
+| `ERR_MDK_DHT_BOOTSTRAP_PUBLIC` | A private bootstrap list names a public `*.hyperdht.org` node or its address | List only your own bootstrap nodes |
+| `ERR_MDK_DHT_CONFIG_INVALID` | `config.dht` is not an object, or a Docker `internal` network is combined with an external `bootstrap` list | Pass an object; drop `internal` or `bootstrap` |
+| `ERR_MDK_DHT_HOST_INVALID` | `dhtHost`, `MDK_DHT_HOST` or `config.dht.host` is not an IP address, or a bootstrap host is not IPv4 | Use an IP literal such as `127.0.0.1` or the machine's LAN address |
+| `ERR_MDK_DHT_HOST_UNREACHABLE` | `config.dht.host` is loopback and the bootstrap list names a non-loopback address | Set the host to this machine's LAN address, or leave it unset to bind every interface |
+| `ERR_MDK_DHT_NODES_INVALID` | `startDhtBootstrap` is asked for fewer than one persistent node | Pass `nodes` of 1 or more |
+| `ERR_MDK_DHT_PORT_INVALID` | The bootstrap port is not an integer from 1 to 65535 | Pass a valid UDP port |
+| `ERR_MDK_DHT_SUBNET_INVALID` | `config.dht.subnet` is not an IPv4 CIDR of `/30` or wider | Pass a subnet such as `172.31.249.0/24` |
+| `ERR_MDK_DHT_SUBNET_TOO_SMALL` | The Docker subnet has no address left for every service | Use a wider subnet |
 | `ERR_MDK_GENERATED_FILE_CONFLICT` | `startServices` would overwrite a file in the site dir it did not generate | Move the file away or pass `overwrite: true` |
 | `ERR_MDK_INIT_SOURCES_NOT_FOUND` | `initialize()` finds no MDK source checkout at `opts.sources` | Pass `opts.sources` pointing at an MDK monorepo checkout |
 | `ERR_MDK_INIT_SOURCES_REQUIRED` | `initialize()` is called without `opts.sources` | Pass `opts.sources` pointing at an MDK monorepo checkout |
@@ -488,8 +532,9 @@ Config file precedence:
 | `ERR_STATS_OP_UNKNOWN` | A stats spec names an op that is not one of the built-in ops | Use a built-in op name (`sum`, `avg`, `group_sum`, ...) |
 | `ERR_THING_INFO_INVALID` | `registerThing`/`updateThing` `info` is not an object | Pass `info` as an object |
 | `ERR_THING_INFO_CONTAINER_INVALID` / `ERR_THING_INFO_POS_INVALID` | `info.container` / `info.pos` is not a short label (64 chars of letters, digits, space, `_ . : # -`) or is a prototype key | Use a plain label |
-| `ERR_MDK_SERVICE_ENV` | The `SERVICE` env var is unset | Set `SERVICE` to `gateway` or `worker` |
-| `ERR_MDK_SERVICE_UNKNOWN` | `SERVICE` is set to something other than `gateway` or `worker` | Set `SERVICE` to `gateway` or `worker` |
+| `ERR_MDK_SERVICE_ENV` | The `SERVICE` env var is unset | Set `SERVICE` to `gateway`, `worker` or `dht-bootstrap` |
+| `ERR_MDK_SERVICE_NAME_RESERVED` | A service is named `dht-bootstrap` while `config.dht` generates that service | Rename the service |
+| `ERR_MDK_SERVICE_UNKNOWN` | `SERVICE` is set to something other than `gateway`, `worker` or `dht-bootstrap` | Set `SERVICE` to `gateway`, `worker` or `dht-bootstrap` |
 | `ERR_MDK_WORKER_ENV` | A Worker is started without both `WORKER` and `RACK`, or a non-pool Worker is started without `TYPE` | Set `WORKER` and `RACK`, and set `TYPE` for non-pool Workers |
 | `ERR_MDK_WORKER_EXPORT` | The resolved Worker package does not export the expected factory function | Check the Worker package exports the factory named in its boot spec |
 | `ERR_MDK_WORKER_UNKNOWN` | The `WORKER` name has no runtime boot entry, or the `WORKER`+`TYPE` pair has no plugin model | Use a known Worker name and a `TYPE` its boot spec defines |
@@ -544,6 +589,7 @@ mdk/
 ├── services.js           # `startServices` — facility bootstrap helpers
 ├── worker.js             # Worker-side entry point
 ├── lib/
+│   ├── dht-bootstrap.js    # `startDhtBootstrap`, `dhtFromEnv`: private HyperDHT network
 │   ├── local-discovery.js  # `discovery: { mode: 'local' }` helpers and the trusted-keys (admission) helpers
 │   ├── utils.js            # Shared helpers (isValidSnap, isOffline, etc.)
 │   ├── worker-infra.js     # `createWorkerInfra` — per-Worker infra bootstrap

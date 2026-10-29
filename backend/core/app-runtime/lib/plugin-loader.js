@@ -1,6 +1,7 @@
 'use strict'
 
 const path = require('path')
+const { routeAccessError } = require('@tetherto/mdk-rbac')
 // Deep import: index.js would pull the whole worker runtime (hyperswarm) into
 // the gateway process, which also loads route tables through this file, for a
 // loader that only needs fs/path/module.
@@ -109,6 +110,12 @@ function _validateManifest (manifest, pluginDir) {
 
     if (route.auth !== undefined && typeof route.auth !== 'boolean') {
       throw new Error(`ERR_PLUGIN_MANIFEST_INVALID: ${pluginDir}: route "${route.id}" field "auth" must be a boolean`)
+    }
+
+    // How spec.rbac governs the route: the verb it is checked as, and where its instance name is.
+    const accessError = routeAccessError(route)
+    if (accessError) {
+      throw new Error(`ERR_PLUGIN_MANIFEST_INVALID: ${pluginDir}: route "${route.id}" ${accessError}`)
     }
 
     if (seenIds.has(route.id)) {

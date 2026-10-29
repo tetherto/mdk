@@ -8,6 +8,10 @@ docs@tether_slug: guides/deployment/hosted-site
 > MDK ships no user identity at any tier. Every control on this page admits or scopes a backend process by its key, or a network by
 > its reach. The person or agent behind a request is identified only by the `authVerifier` you give the Gateway.
 
+> [!NOTE]
+> This page still describes Kernel allowlist roles. Allowlist entries now only admit a key, and `spec.rbac` decides what each caller
+> may do (see the [site security blueprint][security-blueprint]). The page is being updated to match.
+
 ## Overview
 
 This page is a reference configuration for MDK on a hosted or managed mining site: fixed hosts, a controlled network, a change
@@ -49,8 +53,8 @@ MDK can:
 - Serve the Gateway only to known `Host` names, rate limit by client IP, cap body size and send Helmet headers
 - Expose only read-only tools over MCP by default, require a bearer token on `/mcp`, and bind MCP to loopback with no option to do otherwise
 - Hold every write that changes hash, power or network membership for approval ([write actions][write-actions])
-- Run with no outside network at all, against a private bootstrap list every component shares (programmatic hosts pass the list;
-  `mdk run` uses the public DHT)
+- Run with no outside network at all, against a private bootstrap list every component shares (the
+  [local and air-gapped profile][private-dht], from code, `worker.js` or `spec.network.dht` in `mdk.yaml`)
 
 MDK cannot:
 
@@ -126,7 +130,7 @@ Pinned Worker admission through `discovery.workerKeys` applies to topic discover
 | `allowAnyWorker`                 | never                                       | `discovery.allowAnyWorker`                                | `false`                           | `false`                                    |
 | Worker caller allowlist          | set by `mdk run` from the trusted-keys dir  | boot function `allowedKeys`, `MDK_WORKER_ALLOWED_KEYS` for `worker.js` | Kernel client key plus the Gateway key | Same                             |
 | Device address allowlist         | Not exposed                                 | `conf.thing.allowedAddressCidrs` on Worker boot functions | The device VLAN CIDR              | Same                                       |
-| DHT bootstrap list               | Not exposed; `mdk run` uses the public DHT  | `getKernel({ hrpc: { bootstrap } })`, `bootstrap` on Worker boot functions and `startGateway()`; no `worker.js` override | Private list if outbound UDP is blocked | Same |
+| DHT bootstrap list and bind interface | `spec.network.dht` (`host`, `port`, `bootstrap`) | `getKernel({ hrpc: { bootstrap, dhtHost } })`, `bootstrap` and `dhtHost` on Worker boot functions and `startGateway()`; `MDK_DHT_BOOTSTRAP` and `MDK_DHT_HOST` for `worker.js` | The [private profile][private-dht] if outbound UDP is blocked | Same |
 | Gateway bind address             | Not exposed; configure the Gateway HTTP facility | `startGateway({ httpd })` overrides or the Gateway's `config/facs/httpd.config.json` | The proxy-facing interface | Same |
 | Gateway `allowedHosts`           | `spec.gateway.config.allowedHosts`          | `startGateway({ allowedHosts })`                          | The names operators type          | Same                                       |
 | Gateway `trustProxy`             | `spec.gateway.config.trustProxy`            | `startGateway({ trustProxy })`                            | `true` only behind your proxy     | Same                                       |
@@ -144,6 +148,7 @@ When Gateway is started with `startGateway({ kernel })` using a Kernel returned 
 
 - Follow the [site security blueprint][security-blueprint]: the rationale and trade-offs behind every row
 - Understand the [locked-down site shape][locked-down-site]: why pinned keys remove the topic but not the DHT
+- Compare [HRPC with a known-endpoint RPC][transport-comparison]: setup, failure modes, latency and diagnosability at a managed site
 - Map verified users onto `authPerms` in [app controllers][plugins-auth]
 - Stage fleet-changing writes with the [write-actions guide][write-actions]
 - Check the [environment requirements][environment] for the Node.js and npm baseline
@@ -156,14 +161,20 @@ When Gateway is started with `startGateway({ kernel })` using a Kernel returned 
 [trust-and-admission]: ../../../backend/core/mdk/README.md#trust-and-admission
 <!-- docs@tether.io: trust-and-admission → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md#trust-and-admission -->
 
+[private-dht]: private-dht.md
+<!-- docs@tether.io: private-dht → guides/deployment/private-dht -->
+
 [security-blueprint]: ../security/index.md
 <!-- docs@tether.io: security-blueprint → guides/security -->
 
 [locked-down-site]: ../../concepts/deployment-topologies.md#locked-down-managed-site
 <!-- docs@tether.io: locked-down-site → concepts/deployment-topologies#locked-down-managed-site -->
 
-[kernel-roles]: ../../../backend/core/kernel/README.md#caller-admission-and-roles
-<!-- docs@tether.io: kernel-roles → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#caller-admission-and-roles -->
+[transport-comparison]: ../../concepts/transport-comparison.md
+<!-- docs@tether.io: transport-comparison → concepts/transport-comparison -->
+
+[kernel-roles]: ../../../backend/core/kernel/README.md#caller-admission-and-authorization
+<!-- docs@tether.io: kernel-roles → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#caller-admission-and-authorization -->
 
 [worker-allowlist]: ../../../backend/core/mdk-worker/README.md#caller-allowlist
 <!-- docs@tether.io: worker-allowlist → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#caller-allowlist -->

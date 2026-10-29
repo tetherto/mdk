@@ -125,17 +125,17 @@ function resolveKernelTopic () {
   return kernelTopic
 }
 
-// Worker RPC is fail-closed. A standalone worker admits the keys published to
-// the default trusted-keys dir (the Kernel's client key, a Gateway's) plus any
-// MDK_WORKER_ALLOWED_KEYS (comma-separated hex); MDK_WORKER_ALLOW_ALL=1 is the
-// explicit development opt-out.
+// Worker RPC is fail-closed. A standalone worker admits the Kernel's client
+// key from the default trusted-keys dir plus any MDK_WORKER_ALLOWED_KEYS
+// (comma-separated hex); MDK_WORKER_ALLOW_ALL=1 is the explicit development
+// opt-out.
 function resolveWorkerTrust (env = process.env) {
   const { DEFAULT_TRUSTED_KEYS_DIR } = requireMdk()
-  const { readTrustedKeys } = require('@tetherto/mdk-core/lib/local-discovery')
+  const { readTrustedKeys, KERNEL_KEY_NAME } = require('@tetherto/mdk-core/lib/local-discovery')
   const allowAll = env.MDK_WORKER_ALLOW_ALL === '1' || env.MDK_WORKER_ALLOW_ALL === 'true'
   const allowedKeys = [
     ...(env.MDK_WORKER_ALLOWED_KEYS || '').split(',').map((k) => k.trim()).filter(Boolean),
-    ...readTrustedKeys(DEFAULT_TRUSTED_KEYS_DIR).map((k) => k.key)
+    ...readTrustedKeys(DEFAULT_TRUSTED_KEYS_DIR).filter((k) => k.name === KERNEL_KEY_NAME).map((k) => k.key)
   ]
   if (!allowAll && allowedKeys.length === 0) {
     throw new Error(`ERR_MDK_WORKER_ALLOWED_KEYS_REQUIRED: no trusted keys in ${DEFAULT_TRUSTED_KEYS_DIR} — start the Kernel first (it publishes kernel.pub), set MDK_WORKER_ALLOWED_KEYS, or MDK_WORKER_ALLOW_ALL=1 for local development`)
@@ -148,6 +148,12 @@ function _followTrust (handle, dir) {
   const { trustKeysFromDir } = require('@tetherto/mdk-core/lib/local-discovery')
   if (handle && handle.runtime) trustKeysFromDir(handle.runtime, dir)
   return handle
+}
+
+// Private HyperDHT settings (MDK_DHT_BOOTSTRAP, MDK_DHT_HOST) every service
+// process passes to the DHT nodes it starts; empty means the public DHT.
+function resolveDht (env = process.env) {
+  return requireMdk().dhtFromEnv(env)
 }
 
 async function runWorker (repoRoot) {
@@ -169,6 +175,7 @@ async function runWorker (repoRoot) {
     path.join(process.cwd(), 'data', rack)
   const kernelTopic = resolveKernelTopic()
   const { allowedKeys, allowAll, dir: trustDir } = resolveWorkerTrust()
+  const dht = resolveDht()
 
   const { spec, factory } = resolveWorkerBoot(worker)
 
@@ -176,7 +183,7 @@ async function runWorker (repoRoot) {
     const workerId = `${spec.prefix}-${rack}`
     const storeDir = path.join(root, 'workers', workerId, 'store')
     fs.mkdirSync(storeDir, { recursive: true })
-    return _followTrust(await factory({ workerId, rack, storeDir, root, kernelTopic, allowedKeys, allowAll }), trustDir)
+    return _followTrust(await factory({ workerId, rack, storeDir, root, kernelTopic, allowedKeys, allowAll, ...dht }), trustDir)
   }
 
   if (!type) {
@@ -191,9 +198,21 @@ async function runWorker (repoRoot) {
   const storeDir = path.join(root, 'workers', workerId, 'store')
   fs.mkdirSync(storeDir, { recursive: true })
 
-  const opts = { workerId, storeDir, kernelTopic, allowedKeys, allowAll }
+  const opts = { workerId, storeDir, kernelTopic, allowedKeys, allowAll, ...dht }
   if (!spec.noModelOpt) opts.model = model
   return _followTrust(await factory(opts), trustDir)
+}
+
+// The gateway worker's CLI flags; they land on its ctx, where it also reads
+// its DHT settings.
+function gatewayArgs ({ env, port, dht = {} }) {
+  return [
+    '--wtype', 'wrk-node-http',
+    '--env', env,
+    '--port', String(port),
+    ...(dht.bootstrap ? ['--kernelBootstrap', dht.bootstrap.join(',')] : []),
+    ...(dht.dhtHost ? ['--kernelDhtHost', dht.dhtHost] : [])
+  ]
 }
 
 function runGateway () {
@@ -205,12 +224,7 @@ function runGateway () {
   const workerPath = path.join(gatewayRoot, 'worker.js')
 
   // Spawn so bfx-svc-boot-js uses gateway as serviceRoot (require.main.filename).
-  const child = spawn(process.execPath, [
-    workerPath,
-    '--wtype', 'wrk-node-http',
-    '--env', env,
-    '--port', String(port)
-  ], {
+  const child = spawn(process.execPath, [workerPath, ...gatewayArgs({ env, port, dht: resolveDht() })], {
     cwd: gatewayRoot,
     stdio: 'inherit',
     env: process.env
@@ -227,11 +241,32 @@ function runGateway () {
   })
 }
 
+// The private HyperDHT bootstrap for a local / air-gapped site:
+//   MDK_DHT_HOST   address it is reached at and advertised as (default 127.0.0.1)
+//   MDK_DHT_PORT   UDP port (default 49737)
+//   MDK_DHT_NODES  persistent nodes alongside it (default 2)
+// Runs until SIGINT/SIGTERM.
+async function runDhtBootstrap (env = process.env) {
+  const { startDhtBootstrap, onShutdown } = requireMdk()
+  const net = await startDhtBootstrap({
+    host: env.MDK_DHT_HOST || '127.0.0.1',
+    ...(env.MDK_DHT_PORT ? { port: Number(env.MDK_DHT_PORT) } : {}),
+    ...(env.MDK_DHT_NODES ? { nodes: Number(env.MDK_DHT_NODES) } : {})
+  })
+  console.log(`mdk dht-bootstrap: serving ${net.bootstrap.join(',')} (set MDK_DHT_BOOTSTRAP=${net.bootstrap.join(',')} on every service)`)
+  onShutdown(() => net.close())
+  return net
+}
+
 async function main () {
   const service = process.env.SERVICE
 
   if (!service) {
-    throw new Error('ERR_MDK_SERVICE_ENV: SERVICE env var is required (gateway | worker)')
+    throw new Error('ERR_MDK_SERVICE_ENV: SERVICE env var is required (gateway | worker | dht-bootstrap)')
+  }
+
+  if (service === 'dht-bootstrap') {
+    return runDhtBootstrap()
   }
 
   if (service === 'gateway') {
@@ -252,8 +287,11 @@ module.exports = {
   WORKER_BOOTS,
   resolveWorkerBoot,
   runGateway,
+  gatewayArgs,
   runWorker,
+  runDhtBootstrap,
   resolveWorkerTrust,
+  resolveDht,
   main
 }
 

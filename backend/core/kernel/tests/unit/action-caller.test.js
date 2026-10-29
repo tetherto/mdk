@@ -85,6 +85,10 @@ test('action caller - getWriteCalls skips workers without write permission', asy
 
   t.is(sent.length, 0)
   t.alike(result.targets, {})
+
+  // null: a caller spec.rbac checks per device; every family is asked.
+  await caller.getWriteCalls({ id: 'dev-1' }, 'reboot', [], null)
+  t.is(sent.length, 1, 'null permissions ask the miner worker too')
 })
 
 test('action caller - getWriteCalls skips workers without a channel', async (t) => {

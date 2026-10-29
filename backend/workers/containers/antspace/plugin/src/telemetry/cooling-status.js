@@ -1,6 +1,6 @@
 'use strict'
 
-const { RUNNING_STATUS } = require('../../../../../../core/mdk').constants
+const { RUNNING_STATUS } = require('@tetherto/mdk-core').constants
 
 module.exports = async (ctx) => {
   const res = await ctx.device.getSystemData()

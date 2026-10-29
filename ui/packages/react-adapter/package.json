@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/mdk-react-adapter",
   "type": "module",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "private": false,
   "description": "React framework adapter for @tetherto/mdk-ui-foundation. Binds Zustand vanilla stores and TanStack QueryClient to React-native hooks. No Redux.",
   "license": "Apache-2.0",
@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.0",
-    "@tetherto/mdk-ui-foundation": "^0.12.2",
+    "@tetherto/mdk-ui-foundation": "^0.13.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
@@ -73,12 +73,12 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.12",
     "happy-dom": "^21.0.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "ts-morph": "^24.0.0",
     "tsx": "^4.19.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.12"
   }
 }

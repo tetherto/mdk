@@ -1,4 +1,5 @@
 import type { SettingsExportData, SettingsUser } from '../types/settings.types'
+import { downloadJson } from './download-utils'
 
 const WEBAPP_NAME = 'Appl.'
 
@@ -87,16 +88,7 @@ export const exportSettingsToFile = (data: SettingsExportData): string => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
   const filename = `mdk-settings-${timestamp}.json`
 
-  const jsonString = JSON.stringify(data, null, 2)
-  const blob = new Blob([jsonString], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-
-  URL.revokeObjectURL(url)
+  downloadJson(data, filename)
 
   return filename
 }

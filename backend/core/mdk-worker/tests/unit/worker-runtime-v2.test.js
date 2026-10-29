@@ -103,7 +103,7 @@ function zeroTelemetryContract () {
       deviceFamily: 'sensor',
       brand: 'ZeroTelemetryFixture',
       modelsSupported: ['ZT-1'],
-      overview: 'Contract declaring zero telemetry channels of its own, to prove the builtin `health` entry is genuinely synthesized onto entry.instance.telemetry rather than answered from runtime-level bookkeeping.'
+      overview: 'Contract declaring zero telemetry channels of its own.'
     },
     capabilities: {
       telemetry: [],
@@ -121,7 +121,7 @@ function customHealthContract () {
       deviceFamily: 'sensor',
       brand: 'CustomHealthFixture',
       modelsSupported: ['CH-1'],
-      overview: 'Contract that declares its own "health" telemetry channel — a real plugin handler must win over the builtin auto-injected one.'
+      overview: 'Contract that declares its own "health" telemetry channel, which must win over the runtime one.'
     },
     capabilities: {
       telemetry: [{ name: 'health', handler: 'src/telemetry/health.js', description: 'Plugin-declared health channel.' }],
@@ -209,71 +209,67 @@ test('requiring the ambient device module outside any instance throws ERR_NO_DEV
   t.exception(() => require('../../device'), /ERR_NO_DEVICE_CONTEXT/)
 })
 
-// Regression coverage for the builtin per-device health check: this is what
-// proves gateway→kernel→worker deviceId routing reaches that device's own
-// running instance code — not just the runtime's own bookkeeping. `health`
-// is registered as a plain shim in v1's own handler table (see the
-// WorkerRuntimeV2 constructor), so it is dispatched exactly like any real
-// contract-declared telemetry channel — no special casing, and the response
-// comes back in v1's standard `_pullChannel` shape: `{ name, value }`. The
-// fixture contract declares no `health` telemetry channel of its own — the
-// builtin answers it anyway.
-test('health query addressed to a deviceId returns exactly that device\'s own identity, in the standard { name, value } channel shape', async (t) => {
+function pullMetrics (runtime, deviceId) {
+  return runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: { type: 'metrics' } }, deviceId))
+}
+
+// The device health channel reports the addressed device's own telemetry
+// polls, in the standard { name, value } channel shape, and nothing else:
+// env, device opts and plugin config never leave the process through it.
+test('health reports the addressed device\'s polls as { reachable, lastSuccessAt, lastError, lastErrorAt }', async (t) => {
   const runtime = await createRuntime(FIXTURE_DIR, { env: { TOKEN: 'shared-secret' } })
 
-  const res = await pullHealth(runtime, 'cw-a')
-  t.is(res.action, ACTIONS.TELEMETRY_RESPONSE)
-  t.is(res.payload.deviceId, 'cw-a')
-  t.is(res.payload.name, 'health', 'health dispatches through the exact same shape as any real named telemetry channel')
-  t.is(res.payload.value.status, 'OK')
-  t.is(res.payload.value.id, 'cw-a')
-  t.is(res.payload.value.workerId, 'cw-rack-1')
-  // Secrets (env), device credentials (opts) and plugin config never leave
-  // the process through the builtin channel.
-  t.alike(Object.keys(res.payload.value).sort(), ['id', 'status', 'workerId'])
-  t.absent('env' in res.payload.value, 'env is not returned')
-  t.absent('opts' in res.payload.value, 'opts is not returned')
-  t.absent('config' in res.payload.value, 'config is not returned')
-  t.absent(JSON.stringify(res).includes('shared-secret'), 'the secret appears nowhere in the response')
+  const before = await pullHealth(runtime, 'cw-a')
+  t.is(before.action, ACTIONS.TELEMETRY_RESPONSE)
+  t.is(before.payload.deviceId, 'cw-a')
+  t.is(before.payload.name, 'health')
+  t.alike(before.payload.value, { reachable: null, lastSuccessAt: null, lastError: null, lastErrorAt: null }, 'unknown until a poll')
+
+  await pullMetrics(runtime, 'cw-a')
+  const after = (await pullHealth(runtime, 'cw-a')).payload.value
+  t.is(after.reachable, true)
+  t.ok(after.lastSuccessAt > 0)
+  t.is(after.lastError, null)
+  t.absent(JSON.stringify(after).includes('shared-secret'), 'the secret appears nowhere in the response')
+
+  t.is((await pullHealth(runtime, 'cw-b')).payload.value.reachable, null, 'a sibling device keeps its own record')
 })
 
-test('health query is not shadowed by (and does not require) a contract-declared channel', async (t) => {
-  const runtime = await createRuntime()
-  const contract = (await runtime.handleRequest(req(ACTIONS.CAPABILITY_REQUEST))).payload.contract
-  t.absent(contract.capabilities.telemetry.some((e) => e.name === 'health'), 'fixture contract declares no "health" channel')
-
-  const res = await pullHealth(runtime, 'cw-b')
-  t.is(res.payload.value.id, 'cw-b')
-})
-
-test('the health shim resolves to a genuine function on entry.instance.telemetry, auto-injected even when the contract declares zero telemetry channels', async (t) => {
+test('health is answered by the runtime, not a handler: no contract channel and no metrics key', async (t) => {
   const dir = writeTempPlugin(t, { contract: zeroTelemetryContract() })
-  const runtime = new WorkerRuntimeV2(dir, {
-    workerId: 'zt-rack',
-    devices: [{ deviceId: 'zt-a', config: { label: 'zt-device-a' } }]
-  })
+  const runtime = new WorkerRuntimeV2(dir, { workerId: 'zt-rack', devices: [{ deviceId: 'zt-a', config: {} }] })
   await runtime._openContexts()
 
-  const entry = runtime._devices.get('zt-a')
-  t.ok(entry.instance.telemetry.has('health'), 'health is registered directly on the instance, not on runtime bookkeeping')
-  t.is(entry.instance.telemetry.size, 1, 'the contract declared no telemetry channels of its own')
-  t.ok(runtime._plugin.handlers.telemetry.has('health'), 'and a shim for it is registered in v1\'s own handler table, same as any real channel')
+  t.absent(runtime._devices.get('zt-a').instance.telemetry.has('health'))
+  t.absent(runtime._plugin.handlers.telemetry.has('health'))
+  t.is((await pullHealth(runtime, 'zt-a')).payload.name, 'health')
 
-  // Calling the instance entry directly, with no runtime/envelope involved at
-  // all, proves it is a real per-instance function closed over this device.
-  const direct = await entry.instance.telemetry.get('health')()
-  t.is(direct.id, 'zt-a')
-  t.is(direct.opts, undefined, 'device opts are not exposed')
-
-  // The same result reached through the normal TELEMETRY_PULL dispatch path
-  // — v1's own _pullChannel, with zero special-casing in WorkerRuntimeV2.
-  const res = await pullHealth(runtime, 'zt-a')
-  t.is(res.payload.name, 'health')
-  t.is(res.payload.value.id, 'zt-a')
-  t.is(res.payload.value.workerId, 'zt-rack')
+  const metrics = (await pullMetrics(await createRuntime(), 'cw-a')).payload.metrics
+  t.alike(Object.keys(metrics), ['status'], 'the metrics aggregate carries only the declared channels')
 })
 
-test('a plugin-declared "health" telemetry channel wins over the builtin auto-injected one', async (t) => {
+test('a device that stops answering is unreachable, keeping its last success', async (t) => {
+  const dir = writeTempPlugin(t, {
+    contract: { ...zeroTelemetryContract(), capabilities: { ...zeroTelemetryContract().capabilities, telemetry: [{ name: 'hashrate', type: 'number', unit: 'TH/s', handler: 'src/telemetry/hashrate.js', description: 'Hashrate.' }] } },
+    files: { 'src/telemetry/hashrate.js': "'use strict'\n\nmodule.exports = () => { if (globalThis.__silent) throw new Error('connect ECONNREFUSED 10.0.0.5:80'); return 100 }\n" }
+  })
+  t.teardown(() => { delete globalThis.__silent })
+  const runtime = new WorkerRuntimeV2(dir, { workerId: 'zt-rack', devices: [{ deviceId: 'zt-a', config: {} }] })
+  await runtime._openContexts()
+
+  await pullMetrics(runtime, 'zt-a')
+  const ok = (await pullHealth(runtime, 'zt-a')).payload.value
+  globalThis.__silent = true
+  await pullMetrics(runtime, 'zt-a')
+  const silent = (await pullHealth(runtime, 'zt-a')).payload.value
+
+  t.is(silent.reachable, false)
+  t.is(silent.lastSuccessAt, ok.lastSuccessAt)
+  t.is(silent.lastError, 'ERR_TELEMETRY_FAILED', 'driver messages stay in the process')
+  t.ok(silent.lastErrorAt >= ok.lastSuccessAt)
+})
+
+test('a plugin-declared "health" telemetry channel wins over the runtime one', async (t) => {
   const dir = writeTempPlugin(t, {
     contract: customHealthContract(),
     files: { 'src/telemetry/health.js': "'use strict'\n\nmodule.exports = async () => ({ custom: true })\n" }
@@ -281,37 +277,9 @@ test('a plugin-declared "health" telemetry channel wins over the builtin auto-in
   const runtime = new WorkerRuntimeV2(dir, { workerId: 'ch-rack', devices: [{ deviceId: 'ch-a', config: {} }] })
   await runtime._openContexts()
 
-  const entry = runtime._devices.get('ch-a')
-  const direct = await entry.instance.telemetry.get('health')()
-  t.alike(direct, { custom: true }, 'the plugin\'s own handler is registered on the instance, not the builtin one')
-
-  // The constructor's own .has() guard must not have clobbered the shim the
-  // normal contract-loading path already installed for this declared channel.
   const res = await pullHealth(runtime, 'ch-a')
   t.is(res.payload.name, 'health')
   t.alike(res.payload.value, { custom: true }, 'TELEMETRY_PULL type=health dispatches to the plugin\'s own handler')
-})
-
-test('health query on multiple devices answers from each device\'s own instance with no cross-device leakage', async (t) => {
-  const many = [
-    { deviceId: 'cw-a', config: { label: 'device-a', port: 18080 } },
-    { deviceId: 'cw-b', config: { label: 'device-b', port: 18081 } },
-    { deviceId: 'cw-c', config: { label: 'device-c', port: 18082 } }
-  ]
-  const runtime = await createRuntime(FIXTURE_DIR, { devices: many })
-
-  const results = {}
-  for (const { deviceId } of many) {
-    results[deviceId] = (await pullHealth(runtime, deviceId)).payload.value
-  }
-
-  // Each answer carries the addressed device's own id — proves the runtime
-  // resolved that device's own instance each time, never a sibling's — and
-  // none of them leaks the device's connection opts.
-  for (const { deviceId } of many) {
-    t.is(results[deviceId].id, deviceId, `${deviceId} health reports its own id`)
-    t.is(results[deviceId].opts, undefined, `${deviceId} health does not expose its opts`)
-  }
 })
 
 test('health query for an unknown deviceId reports ERR_DEVICE_NOT_FOUND', async (t) => {
@@ -320,31 +288,10 @@ test('health query for an unknown deviceId reports ERR_DEVICE_NOT_FOUND', async 
   t.is(res.payload.error, 'ERR_DEVICE_NOT_FOUND: cw-999')
 })
 
-// health is now dispatched with zero special-casing, exactly like any real
-// named telemetry channel — and a real channel requires a deviceId, so this
-// is the correct (and expected) behavior, not a regression: there is no more
-// bespoke "aggregate across every device" response for a deviceId-less
-// health query. (Multi-device coverage lives in the per-deviceId-loop test
-// above, mirroring how the live E2E check exercises it.)
-test('health query without a deviceId reports ERR_DEVICE_ID_REQUIRED, exactly like any other named telemetry channel', async (t) => {
+test('health query without a deviceId reports ERR_DEVICE_ID_REQUIRED, like any other named telemetry channel', async (t) => {
   const runtime = await createRuntime()
   const res = await runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: { type: 'health' } }))
   t.is(res.payload.error, 'ERR_DEVICE_ID_REQUIRED: health')
-})
-
-// Documents the accepted side effect of registering `health` into the same
-// handler table _collectMetrics() iterates for the default `type: 'metrics'`
-// pull: every device's metrics aggregate now also carries a `health` key.
-test('the default metrics pull now also includes a "health" key, since it shares the same handler table', async (t) => {
-  const runtime = await createRuntime(FIXTURE_DIR, { env: { TOKEN: 'shared-secret' } })
-  const res = await runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: { type: 'metrics' } }, 'cw-a'))
-
-  t.ok('health' in res.payload.metrics, 'the metrics aggregate now carries the builtin health entry too')
-  t.is(res.payload.metrics.health.id, 'cw-a')
-  t.absent('env' in res.payload.metrics.health, 'the aggregated health entry does not carry env either')
-  t.absent('opts' in res.payload.metrics.health, 'nor device opts')
-  // The fixture's own declared channel is still present alongside it.
-  t.ok('status' in res.payload.metrics, 'the plugin\'s own declared channel is unaffected')
 })
 
 test('a missing mdk-contract.json throws ERR_CONTRACT_NOT_FOUND when constructing WorkerRuntimeV2', (t) => {

@@ -86,6 +86,9 @@ function checkContract(ui: unknown): void {
     ui.routes.forEach((route: unknown, i) => {
       if (!isRecord(route) || typeof route.path !== 'string') errors.push(`ui/index.js routes[${i}] needs a string \`path\``);
       else if (!isComponent(route.component)) errors.push(`ui/index.js routes[${i}] ("${route.path}") needs a React \`component\``);
+      else if (route.section !== undefined && (typeof route.section !== 'string' || !route.section)) {
+        errors.push(`ui/index.js routes[${i}] ("${route.path}") has a \`section\` that is not a non-empty string`);
+      }
     });
   }
 
@@ -109,6 +112,24 @@ function checkContract(ui: unknown): void {
       if (!isComponent(panel.component)) errors.push(`ui/index.js panel "${panel.id}" needs a React \`component\``);
     });
   }
+
+  if (ui.sections === undefined) return;
+  if (!Array.isArray(ui.sections)) {
+    errors.push('ui/index.js must export `sections` as an array');
+    return;
+  }
+  const labels = new Set<string>();
+  ui.sections.forEach((section: unknown, i) => {
+    if (!isRecord(section) || typeof section.label !== 'string' || !section.label) {
+      errors.push(`ui/index.js sections[${i}] needs a string \`label\``);
+      return;
+    }
+    if (labels.has(section.label)) errors.push(`ui/index.js has two sections labelled "${section.label}"`);
+    labels.add(section.label);
+    if (section.icon !== undefined && !isComponent(section.icon)) {
+      errors.push(`ui/index.js section "${section.label}" has an \`icon\` that is not a React component`);
+    }
+  });
 }
 
 try {

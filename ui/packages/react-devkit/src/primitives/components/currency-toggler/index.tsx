@@ -19,7 +19,19 @@ type CurrencyTogglerProps = {
   currencies: (string | CurrencyItem)[]
   /** Fired with the selected currency value when a button is clicked */
   onChange: (currency: string) => void
+  /**
+   * Stretch to the container's width, the options sharing it evenly (a tab bar)
+   * @default false
+   */
+  fullWidth?: boolean
+  /**
+   * Each button's accessible name, from its label. Defaults to
+   * "Select <label> currency"; pass your own when the options are not currencies
+   */
+  itemAriaLabel?: (label: string) => string
 }
+
+const currencyAriaLabel = (label: string): string => `Select ${label} currency`
 
 /**
  * CurrencyToggler component for switching between currencies
@@ -45,13 +57,42 @@ type CurrencyTogglerProps = {
  *   onChange={(currency) => console.log(currency)}
  * />
  * ```
+ *
+ * @example
+ * // As a full-width tab bar of views
+ * ```tsx
+ * <CurrencyToggler
+ *   fullWidth
+ *   currencies={[{ value: 'site', label: 'Site' }, { value: 'unit', label: 'Per unit' }]}
+ *   itemAriaLabel={(label) => `Show ${label}`}
+ *   value={view}
+ *   onChange={setView}
+ * />
+ * ```
  * @category forms
  * @domain generic
  * @tier agent-ready
  */
 const CurrencyToggler = forwardRef<HTMLDivElement, CurrencyTogglerProps>(
-  ({ currencies, value, onChange, className }, ref) => (
-    <div ref={ref} className={cn('mdk_currency_toggler', className)}>
+  (
+    {
+      currencies,
+      value,
+      onChange,
+      className,
+      fullWidth = false,
+      itemAriaLabel = currencyAriaLabel,
+    },
+    ref,
+  ) => (
+    <div
+      ref={ref}
+      className={cn(
+        'mdk_currency_toggler',
+        fullWidth && 'mdk_currency_toggler--full-width',
+        className,
+      )}
+    >
       {currencies.map((currency) => {
         const item = typeof currency === 'string' ? { value: currency, label: currency } : currency
         const label = item.label ?? item.value
@@ -61,7 +102,7 @@ const CurrencyToggler = forwardRef<HTMLDivElement, CurrencyTogglerProps>(
             type="button"
             key={item.value}
             disabled={item.disabled}
-            aria-label={`Select ${label} currency`}
+            aria-label={itemAriaLabel(label)}
             className={cn(
               'mdk_currency_toggler__button',
               value === item.value && 'mdk_currency_toggler__button--active',

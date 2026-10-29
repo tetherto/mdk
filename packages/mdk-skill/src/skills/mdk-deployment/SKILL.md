@@ -100,9 +100,11 @@ declared app's routes as agent-callable tools, over `spec.mcp.port` if set,
 else `spec.gateway.port + 100`. Routes not marked `"safety": "read-only"` are withheld
 unless it is started with `--allow-write`.
 
-Every caller publishes its Kernel key to `.mdk/trusted-keys/` (`gateway.pub`, `mcp.pub`,
-`cli.pub`, `app-<name>.pub`, …) and the fail-closed Kernel admits it with full access: an app's
-`permissions` in `mdk-app.yaml` are not enforced yet.
+Every caller signs in to the Kernel as its own service account (the CLI as `mdk-cli`, the Gateway as
+`mdk-gateway`, each app as `app:<name>`) and may do only what a `spec.rbac` binding grants it. An app's
+`permissions` in `mdk-app.yaml` become its role (`mdk create app`, `mdk add app` and `mdk rbac init` write it;
+the [`mdk-app-rbac`](../mdk-app-rbac/SKILL.md) skill derives it from the code). A `spec.rbac` under which nobody
+may write the policy makes `mdk run` refuse to boot the Kernel: run `mdk rbac init` first.
 
 Ctrl+C / SIGTERM stops components in reverse boot order (Gateway → apps → Workers →
 Kernel) and always exits, even if a component's own shutdown hangs.

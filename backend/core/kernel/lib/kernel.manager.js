@@ -9,6 +9,7 @@ const StoreFacility = require('@tetherto/hp-svc-facs-store')
 const { WorkerRegistry } = require('./modules/worker-registry')
 const { CommandDispatcher } = require('./modules/command-dispatcher')
 const { CommandStateMachine } = require('./modules/command-state-machine')
+const { CommandLog } = require('./modules/command-log')
 const { TelemetryCollector } = require('./modules/telemetry-collector')
 const { Scheduler } = require('./modules/scheduler')
 const { HealthMonitor } = require('./modules/health-monitor')
@@ -19,6 +20,9 @@ const { createStores } = require('./storage/stores')
 const { ActionCaller } = require('./modules/action-caller')
 const { ActionManager } = require('./modules/action-manager')
 const ActionApproverFacility = require('@tetherto/svc-facs-action-approver')
+const { PolicyStore, validatePolicy } = require('@tetherto/mdk-rbac')
+const { TokenIssuer } = require('@tetherto/mdk-identity')
+const { KernelAuthorizer } = require('./transport/authorizer')
 
 /**
  * MDK Kernel Manager — Orchestration Kernel
@@ -37,10 +41,29 @@ const ActionApproverFacility = require('@tetherto/svc-facs-action-approver')
  *   WorkerRegistry, CommandDispatcher, CommandStateMachine,
  *   TelemetryCollector, Scheduler, HealthMonitor
  *
+ * RBAC:
+ *   The spec.rbac in force lives in the `kernel-rbac` sub-bee (PolicyStore).
+ *   ctx.rbac, when given (the stack's mdk.yaml, including `null` for a stack
+ *   with no policy), is validated in init() and applied at start(); without it
+ *   the last applied policy is reloaded. No policy at all denies everything.
+ *
+ * Authorization:
+ *   Every HRPC request is authorized by KernelAuthorizer: an access token in
+ *   `envelope.auth`, checked against spec.rbac per device or worker it touches.
+ *   Each decision is emitted as 'authz-decision'. The caller allowlist still
+ *   decides who may connect at all.
+ *
+ * Identity:
+ *   The token issuer (TokenIssuer) lives in the `kernel-identity` sub-bee:
+ *   users, service accounts, signing keys and sessions. conf.kernel.identity
+ *   sets its issuer name and lifetimes. ctx.serviceAccounts, when given (the
+ *   stack's apps and agents with their public keys), is the exact set of
+ *   service accounts registered at start().
+ *
  * Transports:
  *   HRPCListener (@hyperswarm/rpc). Fail-closed: only allowlisted caller keys
  *   (conf.kernel.hrpc.whitelist, or allowKey() at runtime) are admitted; an
- *   empty allowlist admits nobody unless conf.kernel.hrpc.allowAll is true.
+ *   empty allowlist admits nobody. Admission only lets a key connect.
  *
  * Discovery:
  *   DHTListener (Hyperswarm topic). Fail-closed: only Worker RPC keys on
@@ -73,6 +96,9 @@ class KernelManager extends EventEmitter {
     this.healthMonitor = null
     this.actionCaller = null
     this.actionManager = null
+    this.rbac = null
+    this.identity = null
+    this.authorizer = null
 
     // Transport & discovery
     this.hrpcListener = null
@@ -89,6 +115,15 @@ class KernelManager extends EventEmitter {
     if (this._initialized) return
 
     this.loadConf('kernel', 'kernel')
+    if (this.conf.kernel && this.conf.kernel.hrpc && this.conf.kernel.hrpc.allowAll !== undefined) {
+      throw new Error('ERR_KERNEL_ALLOW_ALL_REMOVED: hrpc.allowAll is gone; admit callers by key (whitelist, allowKey)')
+    }
+
+    // An invalid policy refuses the boot before anything is opened.
+    if (this.ctx.rbac !== undefined) validatePolicy(this.ctx.rbac)
+    if (this.ctx.serviceAccounts !== undefined && !Array.isArray(this.ctx.serviceAccounts)) {
+      throw new Error('ERR_KERNEL_SERVICE_ACCOUNTS_INVALID: serviceAccounts must be a list of { name, publicKey }')
+    }
 
     await this._createFacilities(this.ctx)
     await this._initStores()
@@ -153,22 +188,47 @@ class KernelManager extends EventEmitter {
    * Admit an HRPC caller (Gateway, MCP server, CLI client) at runtime.
    * Admission is fail-closed: callers not on the allowlist are rejected.
    *
+   * Admission only lets the key connect: what it may do is decided per request
+   * by its access token and spec.rbac.
+   *
    * @param {string|Buffer} key - caller DHT public key (hex or Buffer)
-   * @param {string[]} [roles] - any of 'read' | 'write' | 'admin'; default full access
    * @returns {string} the normalized hex key
    */
-  allowKey (key, roles) {
+  allowKey (key) {
     if (!this.hrpcListener) throw new Error('ERR_KERNEL_NO_HRPC: call init() first, or HRPC is disabled')
-    const hex = this.hrpcListener.allowKey(key, roles)
-    // In-process hosts mirror write-capable callers onto their workers'
-    // allowlists (a Gateway also calls workers directly).
-    this.emit('caller-allowed', { key: hex, roles: this.hrpcListener.getCallerRoles(hex) })
+    const hex = this.hrpcListener.allowKey(key)
+    this.emit('caller-allowed', { key: hex })
     return hex
   }
 
-  /** Hex keys currently admitted with at least `minRole` ('read' | 'write' | 'admin'). */
-  listAllowedKeys (minRole = 'read') {
-    return this.hrpcListener ? this.hrpcListener.listAllowedKeys(minRole) : []
+  /** Hex keys currently admitted. */
+  listAllowedKeys () {
+    return this.hrpcListener ? this.hrpcListener.listAllowedKeys() : []
+  }
+
+  /** The RBAC record in force ({ version, appliedAt, source, policy, ... }), or null. */
+  getRbac () {
+    return this.rbac ? this.rbac.info() : null
+  }
+
+  /**
+   * Validate, persist and switch to a new spec.rbac. Throws
+   * ERR_RBAC_POLICY_INVALID (the policy in force is kept) for an invalid one.
+   * @returns {Promise<{ changed: boolean, record: object }>}
+   */
+  async applyRbac (rbac, meta) {
+    if (!this.rbac) throw new Error('ERR_KERNEL_NOT_INITIALIZED')
+    return this.rbac.apply(rbac, meta)
+  }
+
+  /**
+   * Verify an access token this Kernel issued. A token bound to a transport
+   * key verifies only with that key as `cnf`. Throws ERR_IDENTITY_TOKEN_*.
+   * @returns {object} claims
+   */
+  verifyToken (token, opts) {
+    if (!this.identity) throw new Error('ERR_KERNEL_NOT_INITIALIZED')
+    return this.identity.verify(token, opts)
   }
 
   /** Remove an HRPC caller; later requests from it are rejected. */
@@ -283,9 +343,19 @@ class KernelManager extends EventEmitter {
       verifyIntervalMs: orkConf.commandVerifyIntervalMs
     })
 
+    this.commandLog = new CommandLog({
+      store: this.stores.commandLog,
+      ttlMs: orkConf.commandLogTtlMs
+    })
+    this.stateMachine.on('command:done', ({ commandId, state, error }) => {
+      this.commandLog.append({ event: 'settled', commandId, outcome: state, error: error || null })
+        .catch(err => debug('command log append failed: %s', err.message))
+    })
+
     this.dispatcher = new CommandDispatcher({
       registry: this.registry,
-      stateMachine: this.stateMachine
+      stateMachine: this.stateMachine,
+      commandLog: this.commandLog
     })
 
     this.healthMonitor = new HealthMonitor({
@@ -322,6 +392,28 @@ class KernelManager extends EventEmitter {
       actionIntvlMs: orkConf.actionIntvlMs || 30000
     })
 
+    this.rbac = new PolicyStore({ bee: this.stores.rbac })
+
+    const idConf = orkConf.identity || {}
+    this.identity = new TokenIssuer({
+      bee: this.stores.identity,
+      issuer: idConf.issuer,
+      audience: idConf.audience,
+      accessTtlSec: idConf.accessTtlSec,
+      refreshTtlSec: idConf.refreshTtlSec,
+      familyTtlSec: idConf.familyTtlSec,
+      assertionMaxTtlSec: idConf.assertionMaxTtlSec,
+      ...(idConf.scryptParams ? { scryptParams: idConf.scryptParams } : {})
+    })
+
+    this.authorizer = new KernelAuthorizer({
+      identity: this.identity,
+      rbac: this.rbac,
+      registry: this.registry,
+      stateMachine: this.stateMachine
+    })
+    this.authorizer.on('decision', (d) => this.emit('authz-decision', d))
+
     debug('modules initialized')
   }
 
@@ -334,9 +426,12 @@ class KernelManager extends EventEmitter {
         telemetryCollector: this.telemetryCollector,
         registry: this.registry,
         actionManager: this.actionManager,
+        rbac: this.rbac,
+        identity: this.identity,
+        authorizer: this.authorizer,
         whitelist: (orkConf.hrpc && orkConf.hrpc.whitelist) || [],
-        allowAll: !!(orkConf.hrpc && orkConf.hrpc.allowAll === true),
         bootstrap: (orkConf.hrpc && orkConf.hrpc.bootstrap) || null,
+        dhtHost: (orkConf.hrpc && orkConf.hrpc.dhtHost) || null,
         store: this.store_s0
       })
     }
@@ -360,6 +455,24 @@ class KernelManager extends EventEmitter {
   async _recoverState () {
     await this.registry.recover()
     await this.stateMachine.recover()
+    try {
+      await this.rbac.load()
+    } catch (err) {
+      // A stored policy that no longer validates (an upgrade tightened the
+      // rules): the spec.rbac handed in below replaces it. Until it does the
+      // policy store is deny-all; with nothing to replace it, refuse to start.
+      if (this.ctx.rbac === undefined || !String(err.message).startsWith('ERR_RBAC_POLICY_INVALID')) throw err
+      debug('stored rbac policy no longer valid, replacing it with the one given: %s', err.message.split('\n')[0])
+    }
+    if (this.ctx.rbac !== undefined) {
+      const { changed, record } = await this.rbac.apply(this.ctx.rbac, { source: 'boot' })
+      debug('rbac policy %s %s', record.version, changed ? 'applied' : 'unchanged')
+    }
+    await this.identity.ready()
+    if (this.ctx.serviceAccounts !== undefined) {
+      const { added, updated, removed } = await this.identity.syncServiceAccounts(this.ctx.serviceAccounts)
+      debug('service accounts: +%d ~%d -%d', added.length, updated.length, removed.length)
+    }
     debug('state recovered')
   }
 

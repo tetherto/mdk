@@ -55,7 +55,8 @@ response envelope.
 | `store` | no | Persistent store (Hyperbee-style) for the DHT/RPC seeds → stable public key across restarts; without it keys are random per boot |
 | `storeDir` | no | Directory for file-backed DHT/RPC seeds (same stability as `store`, for hosts that do not own a Hyperbee). Ignored when `store` is set |
 | `services` | no | Worker-infra services (logs, settings, stats, comments, provisioning…). Served as built-ins ahead of plugin handlers and exposed to handlers as `ctx.services` |
-| `bootstrap` | no | Custom DHT bootstrap nodes (hermetic tests use `hyperdht/testnet`) |
+| `bootstrap` | no | Custom DHT bootstrap nodes: a private network's list, or `hyperdht/testnet` in hermetic tests |
+| `dhtHost` | no | Interface the DHT node binds, such as `127.0.0.1` for a same-machine private network |
 
 One runtime hosts N same-type devices behind one HRPC channel. The device
 list is fixed at construction.
@@ -108,10 +109,12 @@ device's context opens.
 - **No `disconnect()`**: whatever a handler module opens at load time (a
   socket, a file handle) lives until the process exits; nothing closes it
   automatically.
-- **Builtin `health` channel**: every directory-loaded plugin answers
-  `telemetry.pull { query: { type: 'health' } }` automatically — `{ status,
-  id, workerId }` for the addressed device (never `env`, `opts` or `config`)
-  — unless the contract itself declares a `health` channel, which always wins.
+- **Builtin `health` channel**: every plugin answers
+  `telemetry.pull { query: { type: 'health' } }` automatically — `{ reachable,
+  lastSuccessAt, lastError, lastErrorAt }` from the addressed device's last
+  metrics poll (never `env`, `opts` or `config`) — unless the contract itself
+  declares a `health` channel, which always wins and should answer the same
+  fields.
 
 `loadContract(dir)` and `createInstance({ dir, entries, device })` are also
 usable directly, without a runtime, for contract-level tests — see

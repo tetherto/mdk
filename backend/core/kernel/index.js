@@ -21,11 +21,16 @@ const KernelManager = require('./lib/kernel.manager')
  * @param {object}  [opts.listeners]
  * @param {object|boolean} [opts.listeners.hrpc] - HRPC config or false to disable
  * @param {object}  [opts.auth]
- * @param {Array<string|{key: string, roles: string[]}>} [opts.auth.whitelist] - HRPC caller allowlist. A hex
- *                                                pubkey gets full access; `{ key, roles }` limits it to
- *                                                'read' | 'write' | 'admin'. Empty (default) admits nobody;
- *                                                add callers at runtime with kernel.allowKey().
- * @param {boolean} [opts.auth.allowAll]         - Admit every DHT peer (development only; logs a warning)
+ * @param {Array<string|{key: string}>} [opts.auth.whitelist] - HRPC caller allowlist: the keys that may
+ *                                                connect. Empty (default) admits nobody; add callers at
+ *                                                runtime with kernel.allowKey(). What a caller may do is
+ *                                                set by its access token and spec.rbac.
+ * @param {object|null} [opts.rbac]              - spec.rbac from mdk.yaml, applied at start (null: deny-all).
+ *                                                Omit to keep the last applied policy.
+ * @param {Array<{name: string, publicKey: string}>} [opts.serviceAccounts] - the exact set of service accounts
+ *                                                (apps as `app:<name>`, agents by name) to register at start
+ * @param {object}  [opts.identity]               - token issuer settings: issuer, audience, accessTtlSec,
+ *                                                refreshTtlSec, familyTtlSec, assertionMaxTtlSec
  * @param {object}  [opts.discovery]
  * @param {string}  [opts.discovery.topic]       - DHT topic hex string
  * @param {string[]} [opts.discovery.workerKeys] - Worker RPC keys accepted from the topic. Empty (default)
@@ -56,9 +61,8 @@ function createKernel (opts = {}) {
     if (!conf.kernel.hrpc) conf.kernel.hrpc = {}
     conf.kernel.hrpc.whitelist = opts.auth.whitelist
   }
-  if (!hrpcDisabled && opts.auth && opts.auth.allowAll === true) {
-    if (!conf.kernel.hrpc) conf.kernel.hrpc = {}
-    conf.kernel.hrpc.allowAll = true
+  if (opts.auth && opts.auth.allowAll !== undefined) {
+    throw new Error('ERR_KERNEL_ALLOW_ALL_REMOVED: admit callers by key (auth.whitelist, kernel.allowKey)')
   }
 
   if (opts.discovery) conf.kernel.discovery = opts.discovery
@@ -78,6 +82,9 @@ function createKernel (opts = {}) {
   const ctx = { loadConf: () => {} }
   if (opts.db) ctx.storeDir = opts.db
   if (opts.root) ctx.root = opts.root
+  if (opts.rbac !== undefined) ctx.rbac = opts.rbac
+  if (opts.serviceAccounts !== undefined) ctx.serviceAccounts = opts.serviceAccounts
+  if (opts.identity) conf.kernel.identity = opts.identity
 
   return new KernelManager(conf, ctx)
 }

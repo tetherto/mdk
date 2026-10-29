@@ -42,6 +42,15 @@ test('runtime', { timeout: 120000 }, async (suite) => {
     t.alike(await client.invoke('whoami', {}), { info: {} }, 'no identity -> {}')
   })
 
+  await suite.test('req.mdk acts as the operator when the caller sent their token, else as the app', async (t) => {
+    const keys = ['_info', 'body', 'headers', 'params', 'query']
+    const asOperator = await client.invoke('kernel-client', {}, { identity: { kind: 'user', sub: 'alice' }, actor: 'operator-token' })
+    t.alike(asOperator, { keys, asApp: false, canCommand: true, leaked: false })
+    t.alike(await client.invoke('kernel-client', {}, { identity: { kind: 'user', sub: 'alice' } }), { keys, asApp: true, canCommand: true, leaked: false })
+    const bad = await failure(client.invoke('kernel-client', {}, { actor: 'x'.repeat(8193) }))
+    t.is(bad.code, 'ERR_APP_BAD_REQUEST', 'an actor that cannot be a token is refused')
+  })
+
   await suite.test('a unary call outlives the idle-connection linger', async (t) => {
     const short = await connectClient(t, testnet, publicKey, caller, { poolLingerMs: 100 })
     t.alike(await short.invoke('slow', { query: { ms: '600' } }), { waited: 600 })
@@ -76,13 +85,13 @@ test('runtime', { timeout: 120000 }, async (suite) => {
     t.is((await call(Buffer.from('}{'))).code, 'ERR_APP_BAD_REQUEST')
   })
 
-  await suite.test('operator config overrides manifest defaults; the Kernel identity is the runtime\'s own', async (t) => {
+  await suite.test('operator config overrides manifest defaults; the Kernel client is the runtime\'s own', async (t) => {
     const conf = await client.invoke('config', {})
-    t.alike([conf.greeting, conf.limit, conf.kernelKey], ['howdy', 5, kernelKey], 'operator config wins, manifest defaults remain, Buffer kernelKey is hex')
-    t.alike(conf.kernelBootstrap, [{ host: '127.0.0.1', port: 1234 }], 'config cannot point the client at another Kernel')
-    t.alike(conf.kernelKeyPairKeys, ['publicKey'], 'secret key is not enumerable')
-    t.ok(conf.kernelSecretMatchesPublic, 'config cannot override the Kernel identity')
-    t.is(conf.kernelPublicKey, runtime.getKernelPublicKey().toString('hex'))
+    t.alike([conf.greeting, conf.limit], ['howdy', 5], 'operator config wins, manifest defaults remain')
+    t.ok(conf.hasMdkClient, 'plugins get a Kernel client')
+    for (const k of ['kernelKey', 'kernelKeyPair', 'kernelBootstrap', 'kernelCredential']) t.absent(k in conf, `no ${k} in config, even when the operator sets one`)
+    t.ok(conf.configFrozen)
+    t.is(runtime.getKernelPublicKey().length, 32)
   })
 
   await suite.test('stream: head, chunks, end; errors before the head are in-band; a disconnect closes the response', async (t) => {

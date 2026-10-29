@@ -31,13 +31,9 @@ const { createInstance } = require('./instance-loader')
  * no disconnect, so whatever a plugin opens at load time lives until the
  * process exits.
  *
- * A builtin `health` telemetry channel is also registered into v1's own
- * handler table (see the constructor) so every contract-first plugin gets a
- * `TELEMETRY_PULL { query: { type: 'health' } }` channel with zero contract
- * changes, answered by `entry.instance.telemetry.get('health')` per device
- * (auto-injected by instance-loader.js). It routes through the exact same
- * dispatch v1 already uses for any real telemetry channel — no special
- * casing here.
+ * The `health` telemetry channel is v1's: every contract-first plugin gets
+ * the per-device { reachable, lastSuccessAt, lastError, lastErrorAt } from
+ * its own metrics polls, unless its contract declares a `health` channel.
  */
 class WorkerRuntimeV2 extends WorkerRuntime {
   constructor (dir, opts) {
@@ -62,15 +58,6 @@ class WorkerRuntimeV2 extends WorkerRuntime {
     // the plugin-defined opaque block, device connection details live in opts.
     this._env = Object.freeze({ ...(opts.env || {}) })
     this._config = Object.freeze({ ...(opts.config || {}) })
-
-    // Builtin `health` channel, registered the same way a real contract
-    // entry would be: a shim in v1's own handler table that resolves through
-    // _invoke() to the addressed device's instance. `this` fully exists here
-    // (after super()), so no `host` indirection is needed. Guarded so a
-    // plugin that legitimately declares its own `health` channel keeps it.
-    if (!this._plugin.handlers.telemetry.has('health')) {
-      this._plugin.handlers.telemetry.set('health', (ctx, params) => this._invoke('telemetry', 'health', ctx, params))
-    }
   }
 
   async _openContexts () {
@@ -85,9 +72,6 @@ class WorkerRuntimeV2 extends WorkerRuntime {
         workerId: this.workerId,
         logger: createLogger(`mdk:worker:${this.workerId}:${entry.deviceId}`)
       })
-      // createInstance auto-registers the builtin `health` telemetry entry
-      // (see instance-loader.js's BUILTIN_TELEMETRY) into entry.instance
-      // itself — there is no separate runtime-level snapshot to keep here.
       entry.instance = createInstance({ dir: this._dir, entries: this._entries, device })
       // v1 dispatches fn(ctx, params) and the shim routes on ctx.deviceId; the
       // plugin sees none of this. No `device` key: there is nothing to connect.

@@ -1,6 +1,6 @@
 ---
 title: Run a mining site end to end
-description: "[⏱️ <3 min] From git clone to a live site with six Workers, mock hardware, and a browser dashboard"
+description: "[⏱️ <3 min] From git clone to a live site with six Workers, mock hardware, a browser dashboard, and an AI agent answering questions about the fleet"
 docs@tether_slug: tutorials/run-a-site
 ---
 
@@ -9,13 +9,13 @@ docs@tether_slug: tutorials/run-a-site
 
 ## Overview
 
-This tutorial runs the [Starter site example][mvp-site-example] end to end: Whatsminer and Antminer Workers, Ocean, EMCD,
-SpiderPool, and Foundry pool Workers, and a SATEC powermeter Worker, each backed by a mock that speaks the real wire protocol, plus a Gateway HTTP
+This tutorial runs the [Starter site example][mvp-site-example] end to end: Whatsminer, Antminer, and SealMiner Workers, Ocean,
+EMCD, SpiderPool, and Foundry pool Workers, and a SATEC powermeter Worker, each backed by a mock that speaks the real wire protocol, plus a Gateway HTTP
 API and a React dashboard, all supervised by PM2.
 
 What you'll have at the end:
 
-- Mock miners, three mock pool APIs, and a mock powermeter, each driven by the real Worker driver code against a localhost mock
+- Mock miners, four mock pool APIs, and a mock powermeter, each driven by the real Worker driver code against a localhost mock
   instead of hardware
 - A Gateway API on `:3000` serving `/site/overview`, `/site/history`, `/site/miners/:id/command`, and `/site/miners/:id/pools`
 - A React dashboard on `:3000` with Dashboard, Containers, Monitoring, Pools, and Control pages
@@ -75,6 +75,11 @@ npm start
 pm2 list      # mocks, mocks-antminer, mocks-ocean, mocks-satec, mocks-emcd, mocks-spiderpool, mocks-foundry, kernel, worker, worker-antminer, worker-ocean, worker-satec, worker-emcd, worker-spiderpool, worker-foundry, app-site, gateway, mcp
 ```
 
+> [!WARNING]
+> PM2 identifies processes by role name and shares one daemon across every project on the machine. Starting this site while another
+> site that uses the same roles (`mocks`, `kernel`, `gateway`, `mcp`) is running restarts that site's processes instead of starting
+> new ones, and stopping either site removes both. Stop the other site first, with `npm run stop:pm2` from its directory.
+
 Wait for every app to show `online`, then open `http://localhost:3000/` in a browser. The dashboard shows live hashrate, power, and
 per-device status.
 
@@ -94,16 +99,16 @@ Expected output:
 
 ```text
 {
-  "miners": 8,
-  "pools": 3,
+  "miners": 10,
+  "pools": 4,
   "powermeters": 1
 }
 ```
 
 > [!NOTE]
 > [`config/devices.json`](../../examples/mvp-site/config/devices.json.example) seeds five Whatsminer miners, three Antminer miners,
-> and one powermeter by default. Add or remove entries there to resize the fleet; [configuring devices][mvp-site-devices] describes
-> the format. The three pools aren't seeded devices: each pool Worker reports one account from its section of
+> two SealMiner miners, and one powermeter by default. Add or remove entries there to resize the fleet; [configuring devices][mvp-site-devices] describes
+> the format. The four pools aren't seeded devices: each pool Worker reports one account from its section of
 > [`config/site.deploy.json`](../../examples/mvp-site/config/site.deploy.json.example).
 
 </Step>
@@ -141,22 +146,47 @@ remove that pool's `pool.apiUrl` so the Worker uses its package default, set `po
 
 <Step>
 
-### (Optional) Connect an AI agent over MCP
+### Ask a coding agent about the fleet
 
-> [!TIP]
-> Agents and connection modes vary; apply the method for your agent. For Claude CLI:
-> `cd examples/mvp-site`
-> `claude`
-> Accept `Use this MCP server`
-> Then your agent can query and act on the site's devices.
+The `mcp` process started in step 2 serves the site as tools on `:3101`. It is the same standalone server that `mdk run mcp`
+starts for a project scaffolded with the CLI; here the example launches it as a PM2 process.
 
-The example exposes MCP as a single surface on `:3101`, served by a standalone MCP process and listed in [`.mcp.json.example`](../../examples/mvp-site/.mcp.json.example). It carries two tool sources:
+Connect your coding agent to the server. [`.mcp.json.example`](../../examples/mvp-site/.mcp.json.example) holds the entry. For an
+agent that reads a project-level `.mcp.json` (such as Claude Code), copy it and start the agent from the example directory:
 
-- A hand-authored tool set with agent-contract metadata — [`backend/mcp-plugins/site/mcp-plugin.json`](../../examples/mvp-site/backend/mcp-plugins/site/mcp-plugin.json) — giving an agent summary-first, closed-vocabulary tools (`summarize_site`, `count_devices`, `list_devices`,
-  `get_device`, `rank_devices`, `act_device`) instead of raw route exports
+```bash
+cd examples/mvp-site
+cp .mcp.json.example .mcp.json
+claude
+```
+
+Accept the `mdk-site-agent-tools` server if prompted, then confirm it shows as connected.
+
+For any other MCP client, add `http://127.0.0.1:3101/mcp` as an HTTP server in its MCP settings.
+
+Ask these three questions in order:
+
+| Prompt | Tool the agent calls | What comes back |
+| --- | --- | --- |
+| `How is the site doing right now?` | `summarize_site` | 8 Workers and 15 devices (10 miners, 4 pools, 1 powermeter), all online |
+| `Which three miners are running the hottest?` | `rank_devices` | `AM-001`, `AM-002`, and `AM-003` at 97 °C |
+| `What power mode is WM-001 in, and how hot is it?` | `get_device` | `normal` mode, 92.9 °C |
+
+The wording and figures may vary slightly depending on your model and mock seeds, but your agent should call these tools and
+report figures like those in the table. The mock miners of one model report the same readings, so ties in the ranking are expected.
+
+> [!NOTE]
+> The MCP server withholds write tools by default, so an agent can read the fleet but cannot change it: asking it to reboot a miner
+> finds no tool to call. The example's `act_device` tool is declared but not served. See [tool exposure][mcp-tool-exposure] to
+> enable writes, and the [conversational operator agent][agent-guides] for a human approval gate on them.
+
+The server carries two tool sources:
+
+- A hand-authored tool set with agent-contract metadata ([`backend/mcp-plugins/site/mcp-plugin.json`](../../examples/mvp-site/backend/mcp-plugins/site/mcp-plugin.json)) giving an agent summary-first, closed-vocabulary tools (`summarize_site`, `count_devices`, `list_devices`,
+  `get_device`, `rank_devices`) instead of raw route exports
 - The site app's own `/site/*` routes, read off the same route table the Gateway forwards and converted into tools
 
-Point an MCP client at that URL and it can query the fleet or, with the agent-contract tools, act on it with operator approval. This local site admits its own processes through the trusted-keys directory on this machine; a hardened Kernel lists the MCP server's key with a role through [Kernel's caller allowlist][mcp-allowlist].
+Point an MCP client at that URL and it can query the fleet or, with the agent-contract tools, act on it with operator approval. This local site admits its own processes through the trusted-keys directory on this machine; a hardened Kernel restricts the MCP connection through [Kernel's caller allowlist][mcp-allowlist].
 
 </Step>
 
@@ -168,7 +198,7 @@ Point an MCP client at that URL and it can query the fleet or, with the agent-co
 npm run stop:pm2
 ```
 
-This stops and removes every PM2-managed process for this site: mocks, Workers, Kernel, Gateway, and the MCP server.
+This stops and removes every PM2-managed process for this site: mocks, Workers, Kernel, the site app, Gateway, and the MCP server.
 
 > [!NOTE]
 > The PM2 daemon itself (`pm2 list` still shows a `God Daemon` process) stays running in the background after this — that's expected,
@@ -265,6 +295,9 @@ run, [reset it][mvp-site-reset] before restarting — seed devices are only regi
 
 [agent-guides]: ../guides/agent/index.md
 <!-- docs@tether.io: agent-guides → guides/agent -->
+
+[mcp-tool-exposure]: ../../backend/core/mcp/README.md#tool-exposure
+<!-- docs@tether.io: mcp-tool-exposure → https://github.com/tetherto/mdk/blob/main/backend/core/mcp/README.md#tool-exposure -->
 
 [network-requirements]: ../reference/environment.md#requirements
 <!-- docs@tether.io: network-requirements → reference/environment#requirements -->

@@ -1,207 +1,240 @@
 ---
 name: mdk-ui-component
 description: >
-  Build a UI page/panel that renders data from an MDK Worker or Gateway
-  plugin. Use when the task mentions "UI / component / widget / dashboard",
-  "show telemetry", "chart / tile / heatmap", "render data from a
-  worker/plugin", or prompts like "create a UI to show <metric> for <device>".
+  Build UI that renders data from MDK Workers, an MDK App's routes or a Gateway plugin: a page or Home panel in an
+  MDK App's UI module (`ui-src/`, `defineMdkApp`), or a page in a dashboard shell. Use whenever a task mentions a UI,
+  page, panel, widget, component, dashboard, chart, tile, table, heatmap or report for MDK data, "show telemetry",
+  `ui-src`, `defineMdkApp` or `useMdkApp`, or prompts like "create a UI to show <metric> for <device family>".
+argument-hint: "[app or dashboard dir] [route, e.g. /api/<name>/<resource>]"
 metadata:
   suite: mdk-developer-skill
-  mdk_version: "0.5.0"
+  mdk_version: "{{MDK_VERSION}}"
 license: Apache-2.0
 ---
 
-# Build an MDK UI page for worker/plugin data
+# Build MDK UI for Worker and plugin data (`mdk-ui-component`)
 
-MDK UI shells (`apps/dashboard/`, scaffolded by `mdk create dashboard` — or
-`apps/<name>/` if named explicitly) are **composition only**. Data comes from
-a Gateway route; shaping lives in a hook; visuals come from
-`@tetherto/mdk-react-devkit`. Never invent component prop names — look them
-up in [`references/ui-registry.json`](./references/ui-registry.json).
+## Overview
 
-A fresh scaffold ships no example page — build one from these layers (see the
-shell's own [`USAGE.md`](../../../../../examples/mdk-ui-shell-template/USAGE.md), "The pattern every page should follow"):
+MDK UI is composition only. A Gateway route serves the data, a hook fetches it and shapes it into a view, a
+presentational component renders the view with `@tetherto/mdk-react-devkit`, and a thin page wires them together.
+This skill builds that chain in either place MDK UI lives. It never invents a component or a prop: every devkit
+component and its props come from [`references/ui-registry.json`](./references/ui-registry.json), and every helper or
+hook (`buildBarChartOptions`, `usePeriod`) from the installed package's type declarations (`dist/*.d.ts`).
 
-| Layer            | Owns                                                                           |
-| ---------------- | ------------------------------------------------------------------------------ |
-| Gateway route    | Your Gateway plugin's route — serves the data                                  |
-| Hook             | app-local `src/hooks/use-<thing>.ts` — `useQuery` against the route, shapes the payload in `select` |
-| Page             | `apps/dashboard/src/pages/<Name>.tsx` — thin glue, no fetch/shaping            |
-| Panel            | `apps/dashboard/src/components/<Name>Panel.tsx` — props in, markup out         |
-| Route            | `apps/dashboard/src/routes.ts` — one line                                      | 
+## Choose where the UI lives
 
-## Prerequisites (do these first)
+| The UI belongs to                                             | Build it in                         | Registered by                                       | Read next                                                          |
+| ------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------ |
+| An MDK App (installed with `mdk add app`, serves its own routes) | The app's `ui-src/`, built to `ui/` | `routes`, `panels` and `sections` in `defineMdkApp` | [`references/app-ui-module.md`](./references/app-ui-module.md) |
+| A site's own dashboard (`mdk create dashboard`)               | `apps/dashboard/src/`               | One line in `src/routes.ts`                         | [`references/page-recipe.md`](./references/page-recipe.md)        |
 
-1. **Data source exists.** If no `/api/...` route returns the metric, stop and
-   use `mdk-gateway-plugin` to create one. Confirm with `curl` that the JSON shape
-   is stable.
-2. **Contract units known.** Read the Worker `mdk-contract.json` so labels/units
-   match (`power` → `W`, etc.). Resolve it from `mdk.yaml` → `spec.workers`:
-   local `package` → `<package>/mdk-contract.json` (or legacy
-   `<package>/plugin/mdk-contract.json`); npm package → the same under
+Build in the app when the data comes from the app's own routes. Its pages then install with it, under `/app/<name>/`,
+on any dashboard, and its Home panel shows on the dashboard's landing page.
+
+## Prerequisites
+
+1. **The route exists, or its response is agreed.** If no route returns the data, use `mdk-gateway-plugin` to add
+   one, or agree its response body with whoever writes it and type the data layer from that. Call the route once
+   it serves, and confirm the JSON shape matches.
+2. **The units are known.** Read the Worker's `mdk-contract.json` so labels and units match the channel (`power` is
+   `W`). Resolve it from `mdk.yaml` `spec.workers[].package`: `<package>/mdk-contract.json`, or the same under
    `node_modules/<package>/`.
-3. **Dashboard app exists.** If missing: `mdk create dashboard` (see
-   `mdk-deployment`).
+3. **The host exists.** For an app, `mdk create app <name>` scaffolds `ui-src/` with a working page, hook and Home
+   panel (`mdk-create-app`). For a dashboard, run `mdk create dashboard` (`mdk-deployment`).
 
 ## Workflow
 
 ```mermaid
 flowchart TD
   intent["Plain-language intent"]
-  route{"/api route returns the metric?"}
-  gateway["mdk-gateway-plugin: create the route"]
-  registry["Pick components from ui-registry.json"]
-  contract["Match labels/units to the worker mdk-contract.json"]
-  build["Build the hook, panel, and page"]
-  wire["Wire the route in routes.ts"]
+  route{"Does a route return the data?"}
+  gateway["mdk-gateway-plugin: add the route"]
+  where{"App or dashboard?"}
+  data["1. Data: response type and mdkFetch request"]
+  hook["2. Hook: useQuery, toQueryView, shape into a view"]
+  component["3. Component: render each state with registry props"]
+  page["4. Page: register it in defineMdkApp or routes.ts"]
+  verify["5. Build and look at it in the dashboard"]
 
   intent --> route
-  route -->|no| gateway --> registry
-  route -->|yes| registry
-  registry --> contract
-  contract --> build --> wire
+  route -->|no| gateway --> where
+  route -->|yes| where
+  where --> data --> hook --> component --> page --> verify
 ```
 
-### 1. Pick the visual from the registry
+### 1. Data: the request and its type
 
-Open [`references/ui-registry.json`](./references/ui-registry.json) (this skill). Use
-`indexes.componentsByName` / `indexes.componentsByCategory`.
-
-| Need                          | Typical component   |
-| ----------------------------- | ------------------- |
-| Single numeric metric / total | `SingleStatCard`    |
-| Time-series                   | `LineChartCard`     |
-| Fallback text when null       | `FALLBACK` constant |
-
-Copy **exact** prop names and types from the registry entry. Example
-`SingleStatCard`: `name`, `subtitle`, `value`, `unit`, `variant`, `flash`.
-
-### 2. Add the page scaffold
-
-Add the route to `src/routes.ts` yourself — append a one-line entry above the
-`// mdk:routes-end` marker:
+One module per route, with no React: the response type, the query key and the request. `mdkFetch` from
+`@tetherto/mdk-ui-foundation` sends the signed-in operator's token and throws `MdkFetchError` with the status on a
+non-2xx answer.
 
 ```ts
-// src/routes.ts
-export const ROUTES: AppRoute[] = [
-  { path: "/<page-name>", label: "<Page Name>", page: () => import("./pages/<PageName>") },
-  // mdk:routes-end
-]
+// ui-src/data/thing.ts
+import { mdkFetch } from '@tetherto/mdk-ui-foundation'
+
+/** What `GET /api/<name>/thing` returns (`plugin/controllers/thing.js`). */
+export type Thing = { unit: string; total: number; devices: Array<{ id: string; value: number }> }
+
+export const thingQueryKey = (url: string) => ['<name>', 'thing', url] as const
+
+/** GET the thing, with the signed-in operator's token. */
+export const fetchThing = (url: string): Promise<Thing> => mdkFetch<Thing>(url)
 ```
 
-Keep each route on a **single line** and preserve the end marker; the file is
-parsed line-wise by tooling. Do not add feature pages to `router.tsx`.
+When the app keeps its route bodies as schemas (zod, say), parse the body here, `thingSchema.parse(await
+mdkFetch(url))`, so a response that drifts from the contract fails at this boundary instead of in a component.
 
-### 3. Create the data hook (shape the payload)
+### 2. Hook: fetch and shape into a view
 
-For a **project-local app** (one scaffolded under `apps/<app-name>` by `mdk create app`, referenced by
-its package name in `mdk.yaml` → `spec.apps`), put the hook in the
-dashboard. The Gateway serves the app's routes under `/apps/<app-name>` unless its entry sets
-`mount: /`, so fetch `/apps/<app-name>/api/...`. In dev, the dashboard's Vite proxy must forward
-`/apps` to the Gateway too; add `'/apps': gatewayUrl` next to `/api` in `vite.config.ts` if it is missing:
-
-`src/hooks/use-<thing>.ts`
+The hook returns a view the component can switch on, never raw query state. `toQueryView` turns the query into
+`loading`, `error` (one line that says why) or `ready`; the hook then shapes `ready` data into exactly what renders.
 
 ```ts
-import { useQuery } from '@tetherto/mdk-react-adapter'
+// ui-src/hooks/use-thing.ts
+import { toQueryView, useMdkApp, useQuery } from '@tetherto/mdk-react-adapter'
 
-// types matching the route's JSON schema in mdk-plugin.json
-export const useThing = () => {
-  const result = useQuery({
-    queryKey: ['thing'],
-    queryFn: async () => {
-      const res = await fetch('/apps/<app-name>/api/...')
-      if (!res.ok) throw new Error(`Failed (HTTP ${res.status})`)
-      const raw = await res.json()
-      // shape → render-ready; never leave shaping to the panel
-      return { /* ... */ }
-    },
-    refetchInterval: 5_000, // live tiles
+import { fetchThing, thingQueryKey } from '../data/thing'
+
+const THING_REFETCH_MS = 30_000
+
+export type ThingView =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'empty' }
+  | { status: 'ready'; total: string; devices: Array<{ id: string; value: string }> }
+
+export const useThing = (): ThingView => {
+  // The operator picks the app's installed name, so the URL comes from useMdkApp().
+  const { apiUrl } = useMdkApp()
+  const url = apiUrl('/api/<name>/thing')
+  const query = useQuery({
+    queryKey: thingQueryKey(url),
+    queryFn: () => fetchThing(url),
+    refetchInterval: THING_REFETCH_MS,
   })
+  const view = toQueryView(query, url, { unreachableHint: 'Start the stack with `mdk run`.' })
+  if (view.status !== 'ready') return view
+  if (view.data.devices.length === 0) return { status: 'empty' }
+  const { unit, total, devices } = view.data
   return {
-    info: result.data ?? EMPTY,
-    isLoading: result.isLoading,
-    error: result.error,
-    refetch: () => { void result.refetch() },
+    status: 'ready',
+    total: `${total} ${unit}`,
+    devices: devices.map((d) => ({ id: d.id, value: `${d.value} ${unit}` })),
   }
 }
 ```
 
-Rules:
+- Import `useQuery`, `useMutation` and `useQueryClient` from `@tetherto/mdk-react-adapter`, never from
+  `@tanstack/react-query`.
+- Put every input the request depends on (the period, a filter) in the `queryKey`.
+- Move shaping that is more than a few lines into a pure `<thing>-shape.ts` with no React, so it can be unit-tested
+  (the scaffold has no test runner; add Vitest to `ui-src/` for it).
+- In a dashboard page there is no `useMdkApp`: build the URL from `useMdkContext().apiBaseUrl` instead.
 
-- Import `useQuery` from `@tetherto/mdk-react-adapter`, **not** from
-  `@tanstack/react-query` directly.
-- Hook owns fetch + shaping; panel stays presentational.
-- For reusable MDK-wide endpoints, prefer adding the hook to
-  `@tetherto/mdk-react-adapter` (see the dashboard
-  [`USAGE.md`](../../../../../examples/mdk-ui-shell-template/USAGE.md)'s layered data
-  flow). App-local hooks are correct for project-local plugins.
+### 3. Component: render each state
 
-### 4. Create the presentational panel
+Props in, markup out: no fetching, no stores, no shaping beyond display. Handle every state the view has.
 
-`src/components/<Name>Panel.tsx`
+```tsx
+// ui-src/components/thing-panel.tsx
+import { EmptyState, ErrorCard, Loader, SingleStatCard } from '@tetherto/mdk-react-devkit'
 
-- Props: already-shaped `info` + `isLoading` + `error`
-- No `fetch`, no stores, no inline transforms beyond trivial display
-  (`Math.round`)
-- Handle three states: `error`, empty list, data
-- Render registry components with verified props
+import type { ThingView } from '../hooks/use-thing'
 
-### 5. Wire a thin page
-
-`src/pages/<Name>.tsx`:
-
-- Call the hook
-- Wrap in `PageLayout` with title + optional Refresh action
-- Pass hook outputs to the panel
-- Page holds **no** fetch / shaping
-
-### 6. Styles
-
-Add a BEM block under the shell namespace in `src/App.scss`, e.g.
-`.mdk-ui-shell-<name>`, matching the `className` on `PageLayout`. Reuse CSS
-variables (`--mdk-color-*`) and mirror the existing blocks in that file for
-structure (refresh button, card, error state).
-
-## Composition rules (do not break)
-
-From the dashboard [`USAGE.md`](../../../../../examples/mdk-ui-shell-template/USAGE.md):
-
-```
-Gateway plugin / foundation query
-  → adapter or app hook   (fetch + shape)
-    → thin page           (hook → panel)
-      → presentational panel + @tetherto/mdk-react-devkit
+export const ThingPanel = ({ view }: { view: ThingView }) => {
+  switch (view.status) {
+    case 'loading':
+      return <Loader />
+    case 'error':
+      return <ErrorCard title="Could not load the thing" error={view.message} />
+    case 'empty':
+      return <EmptyState description="No devices report this yet." size="sm" />
+    case 'ready':
+      return <SingleStatCard name="Total" value={view.total} />
+  }
+}
 ```
 
-Forbidden:
+Pick components from the registry: `indexes.componentsByName` gives the entry, and its `props` are the only props
+that exist. Prefer entries with `tier: "agent-ready"`.
 
-| Don't                            | Do                                                             |
-| -------------------------------- | -------------------------------------------------------------- |
-| `fetch` inside a panel/component | Hook                                                           |
-| Guess `SingleStatCard` props     | [`references/ui-registry.json`](./references/ui-registry.json) |
-| Import Ant Design / MUI          | `@tetherto/mdk-react-devkit`                                   |
-| Edit `router.tsx` for feature pages | A one-line entry in `routes.ts`                             |
-| Hard-code units ignoring the contract | Use `unit` from the API payload                           |
+| Need                                          | Component                                  |
+| --------------------------------------------- | ------------------------------------------ |
+| One figure, with a caption, tag or detail     | `SingleStatCard`                           |
+| A titled card with loading and empty states   | `ChartContainer`                           |
+| Bars over time buckets                        | `BarChart` with `buildBarChartData` and `buildBarChartOptions` |
+| A time series                                 | `LineChartCard`                            |
+| Rows with sorting                             | `DataTable`                                |
+| A report's period and bucket size             | `PeriodControl` (with `usePeriod`)         |
+| A CSV export                                  | `ExportButton` (with `toCsv`, `downloadCsv`) |
+| Loading, error and empty                      | `Loader`, `ErrorCard`, `EmptyState`        |
+| A two- or three-way toggle                    | `CurrencyToggler`                          |
+| Text                                          | `Typography`                               |
 
-## Worked recipe: "UI to show `<metric>` for `<device family>`"
+[`references/report-patterns.md`](./references/report-patterns.md) shows the period, charts, tiles, formatting and
+CSV export put together.
 
-End-to-end chain this kind of prompt implies (router skill expands this):
+### 4. Page: wire it and register it
 
-1. `mdk-gateway-plugin` — ensure `GET /api/<domain>/<resource>` exists and
-   returns a shaped payload (e.g. `{ unit, total, devices[] }`) grounded in
-   the Worker contract's telemetry channel.
-2. This skill — hook + `SingleStatCard` grid (total + per-device) + page +
-   route.
-3. `mdk-deployment` — app listed in `mdk.yaml` → `spec.apps`, `mdk run` up (app runtime + Gateway),
-   Worker online with a device.
+The page reads the hook and hands the view to the component. In an app, register it in `ui-src/index.tsx`:
 
-Detailed file checklist: [`references/page-recipe.md`](./references/page-recipe.md).
+```tsx
+import { defineMdkApp, MDK_APP_PANEL_SLOT } from '@tetherto/mdk-react-adapter'
+import { OperationsNavIcon } from '@tetherto/mdk-react-devkit'
 
-## Hand-off
+import { ThingPanel } from './components/thing-panel'
+import { useThing } from './hooks/use-thing'
+import './styles.css'
 
-| Problem                    | Skill                       |
-| -------------------------- | --------------------------- |
-| No API route / wrong shape | `mdk-gateway-plugin`        |
-| Stack not running / app not declared | `mdk-deployment` |
-| Device / telemetry channel missing | `mdk-worker-plugin` |
+const ThingPage = () => <ThingPanel view={useThing()} />
+
+export default defineMdkApp({
+  id: 'io.tether.<name>', // must equal `id` in mdk-app.yaml
+  displayName: '<Display Name>',
+  routes: [{ path: 'thing', label: 'Thing', section: 'Operations', component: ThingPage }],
+  sections: [{ label: 'Operations', icon: OperationsNavIcon }],
+  panels: [{ id: 'thing', slot: MDK_APP_PANEL_SLOT.HOME, title: 'Thing', component: ThingPage }],
+})
+```
+
+In a dashboard, add the page under `src/pages/`, wrap it in `PageLayout`, and append one line to `src/routes.ts`
+([`references/page-recipe.md`](./references/page-recipe.md)).
+
+### 5. Build and verify
+
+- **App:** run `npm run build:ui` in the app, then commit `ui/`. A GitHub install runs no build, so a stale `ui/`
+  ships stale code.
+- **Run it:** start the stack and the dashboard (`mdk run`, `mdk run dashboard`), open the page (`/app/<name>/thing`
+  for an app), and check each state: data, empty, and an error with the app's runtime stopped.
+
+## Rules
+
+| Don't                                                        | Do                                                                                 |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Call `fetch` in a component, or a bare `fetch` anywhere      | A hook, with `mdkFetch` in the data layer (a bare `fetch` sends no token)          |
+| Hardcode `/apps/<name>/...`                                  | `useMdkApp().apiUrl('/api/...')`                                                   |
+| Return `{ data, isLoading, error }` from a hook              | A view union from `toQueryView`                                                    |
+| Guess a prop                                                 | Its entry in [`references/ui-registry.json`](./references/ui-registry.json)        |
+| Import `@tetherto/mdk-react-devkit/<path>` in an app         | The package root: the dashboard shares only root specifiers with apps              |
+| Bundle React or the MDK packages into an app                 | Keep `MDK_APP_SHARED_MODULES` external in `ui-src/vite.config.ts`                  |
+| Import Ant Design, MUI or another UI kit                     | `@tetherto/mdk-react-devkit`                                                       |
+| Hold a report's range in `useState`                          | `usePeriod` and `PeriodControl`, so the period lives in the URL                    |
+| Hardcode a unit the contract or payload gives                | The `unit` from the payload or the Worker contract                                 |
+| Edit `router.tsx` for a dashboard page                       | One line in `src/routes.ts`                                                        |
+
+## Self-audit
+
+- [ ] Every request goes through `mdkFetch`, and every app URL through `useMdkApp().apiUrl`.
+- [ ] Every hook returns a view union, and every component renders each of its states.
+- [ ] Every devkit component and prop exists in [`references/ui-registry.json`](./references/ui-registry.json).
+- [ ] Devkit imports use the package root.
+- [ ] An app's `defineMdkApp` `id` equals `id` in `mdk-app.yaml`, and `ui/` is rebuilt and committed.
+- [ ] The page was opened in a running dashboard, with data and with the runtime stopped.
+
+## Next steps
+
+- [Add the route the UI reads](../mdk-gateway-plugin/SKILL.md): `mdk-gateway-plugin`, when no route serves the data
+- [Scaffold the app that hosts the UI](../mdk-create-app/SKILL.md): `mdk-create-app`, for `ui-src/` and the manifest
+- [Run the stack and the dashboard](../mdk-deployment/SKILL.md): `mdk-deployment`, when the app is not running
+- [Expose a missing telemetry channel](../mdk-worker-plugin/SKILL.md): `mdk-worker-plugin`, when the device lacks it

@@ -6,6 +6,7 @@ import type { StackSpec } from '../lib/spec.js';
 import {
   assertGatewayPortFree,
   declaredMockPorts,
+  policyRefusal,
   runApp,
   runGateway,
   runKernel,
@@ -59,7 +60,7 @@ async function runAll(dir: string, spec: StackSpec): Promise<Stoppable[]> {
   // for a failure that was knowable in the first millisecond.
   await assertGatewayPortFree(spec.spec.gateway.port);
 
-  const kernel = await runKernel(dir);
+  const kernel = await runKernel(dir, spec);
 
   // Each worker avoids the ports its not-yet-booted neighbours asked for; the
   // ones already booted are detected as bound, so this covers the whole set.
@@ -67,13 +68,13 @@ async function runAll(dir: string, spec: StackSpec): Promise<Stoppable[]> {
   const workers: Stoppable[] = [];
   for (const [i, w] of declared.entries()) {
     const reservedPorts = new Set(declared.slice(i + 1).flatMap(declaredMockPorts));
-    const handle = await runWorker(dir, w, kernel, { reservedPorts });
+    const handle = await runWorker(dir, w, kernel, { reservedPorts, spec });
     workers.push({ label: `worker ${w.name}`, stop: () => handle.stop() });
   }
 
   const apps: Stoppable[] = [];
   for (const a of spec.spec.apps) {
-    const handle = await superviseApp(dir, a, kernel);
+    const handle = await superviseApp(dir, a, kernel, undefined, spec);
     apps.push({ label: `app ${a.name}`, stop: () => handle.stop() });
   }
 
@@ -141,7 +142,7 @@ async function runTarget(
         return await runAll(dir, spec);
 
       case 'kernel': {
-        const kernel = await runKernel(dir);
+        const kernel = await runKernel(dir, spec);
         process.stderr.write(`\n${theme.ok('Kernel running.')} ${theme.muted('Press Ctrl+C to stop.')}\n`);
         return [{ label: 'kernel', stop: () => kernel.stop() }];
       }
@@ -165,7 +166,7 @@ async function runTarget(
           const known = spec.spec.workers.map((w) => w.name).join(', ') || '(none)';
           die(`No worker named "${name}" in mdk.yaml. Known workers: ${known}.`);
         }
-        const handle = await runWorker(dir, worker);
+        const handle = await runWorker(dir, worker, undefined, { spec });
         process.stderr.write(`\n${theme.ok('Worker running.')} ${theme.muted('Press Ctrl+C to stop.')}\n`);
         return [{ label: `worker ${worker.name}`, stop: () => handle.stop() }];
       }
@@ -177,7 +178,7 @@ async function runTarget(
           const known = spec.spec.apps.map((a) => a.name).join(', ') || '(none)';
           die(`No app named "${name}" in mdk.yaml. Known apps: ${known}.`);
         }
-        const handle = await runApp(dir, app);
+        const handle = await runApp(dir, app, spec);
         process.stderr.write(`\n${theme.ok('App running.')} ${theme.muted('Press Ctrl+C to stop.')}\n`);
         return [{ label: `app ${app.name}`, stop: () => handle.stop() }];
       }
@@ -240,6 +241,13 @@ export function registerRun(program: Command): void {
       }
 
       const spec = loadSpecOrDie(opts.dir);
+
+      // A Kernel booted on a policy that binds nobody cannot be handed one in
+      // place, so the first run of a fresh stack is refused here, with the fix.
+      if (resolvedTarget === 'all' || resolvedTarget === 'kernel') {
+        const refusal = policyRefusal(spec);
+        if (refusal) die(refusal);
+      }
 
       // No explicit target: boot everything together. Components can always be
       // run separately instead — `mdk run kernel` / `gateway` / `worker <name>`

@@ -37,9 +37,9 @@ Miner card / stats: `HashrateCardIcon`, `HashrateStatIcon`, `MinersStatIcon`, `B
 
 Weather: `CloudyIcon`, `PartlyCloudyIcon`, `RainThunderIcon`, `RainyIcon`, `SnowyIcon`, `SunnyIcon`, `TemperatureWeatherIcon`
 
-Navigation / UI: `ArrowIcon`, `RightArrowIcon`, `RightNavigateIcon`, `MenuIcon`, `PinIcon`, `UnPinIcon`, `ExportIcon`, `ScaleControlIcon`, `NotificationBellIcon`, `SettingsHeaderIcon`, `SignOutIcon`, `LiveIcon`
+Navigation / UI: `ArrowIcon`, `RightArrowIcon`, `RightNavigateIcon`, `MenuIcon`, `PinIcon`, `UnPinIcon`, `ExportIcon`, `ExternalLinkIcon`, `ScaleControlIcon`, `NotificationBellIcon`, `SettingsHeaderIcon`, `SignOutIcon`, `LiveIcon`
 
-Misc: `ActionsTickIcon`, `CommentIcon`, `CommentIconCommon`, `CoolingDropIcon`, `DecreaseIcon`, `IncreaseIcon`, `FarmAlertIcon`, `FarmStarIcon`, `GoogleIcon`, `MinerExplorerIcon`, `MinerOverviewIcon`, `SiteOverviewIcon`, `UserAvatarIcon`, `VolumeOffIcon`, `VolumeOnIcon`, `ProfitArrowIcon`, `ProductionDataIcon`, `PoolsIcon`
+Misc: `ActionsTickIcon`, `CommentIcon`, `CommentIconCommon`, `CoolingDropIcon`, `DecreaseIcon`, `IncreaseIcon`, `FarmAlertIcon`, `FarmStarIcon`, `GoogleIcon`, `MinerExplorerIcon`, `MinerOverviewIcon`, `SiteOverviewIcon`, `UserAvatarIcon`, `VolumeOffIcon`, `VolumeOnIcon`, `ProfitArrowIcon`, `ProductionDataIcon`, `PoolsIcon`, `PlugIcon`
 
 ## `createIcon` factory
 

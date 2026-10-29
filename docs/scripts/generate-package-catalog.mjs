@@ -24,16 +24,14 @@ const GITHUB_BLOB = 'https://github.com/tetherto/mdk/blob/main/'
 
 const MANIFESTS = [
   ':(glob)backend/core/*/package.json',
-  ':(glob)backend/apps/*/package.json',
   ':(glob)backend/workers/**/package.json',
   ':(glob)ui/packages/*/package.json',
   ':(glob)packages/*/package.json'
 ]
-const EXCLUDED = ['backend/workers/samples/', 'backend/apps/demo/']
+const EXCLUDED = ['backend/workers/samples/']
 const CONTRACTS = ['mdk-contract.json', 'plugin/mdk-contract.json']
 const GROUPS = [
   ['backend/core/', 'Core'],
-  ['backend/apps/', 'Extensions'],
   ['backend/workers/', 'Extensions'],
   ['ui/packages/', 'UI'],
   ['packages/', 'Tools']
@@ -144,7 +142,7 @@ apps that connect MDK to hardware, pools, and agents. UI is the browser toolkit,
 Availability says how you get a package:
 
 - \`workspace\`: private to the monorepo, used from a clone
-- \`publishable\`: not marked private, so it can be published to a registry
+- \`publishable\`: not marked private. A release publishes it to npm once it also sets \`publishConfig.access\` to \`public\` and its \`repository\`
 
 ${body}## Next steps
 

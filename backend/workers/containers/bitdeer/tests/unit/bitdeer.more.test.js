@@ -233,7 +233,9 @@ test('Bitdeer _handleMessage ignores unmapped topics', (t) => {
   const { c } = createContainer()
   let called = false
   c._handleMessage({ topic: 'C1Bogus', payload: Buffer.from('{}') }, () => { called = true })
-  t.is(called, false, 'callback not invoked for unknown topic')
+  // aedes needs the delivery callback on every path or later deliveries stall.
+  t.is(called, true, 'callback still invoked for unknown topic')
+  t.alike(c.lastMessageCache, {}, 'nothing cached for unknown topic')
 })
 
 test('Bitdeer topic mappings tolerate empty messages', (t) => {

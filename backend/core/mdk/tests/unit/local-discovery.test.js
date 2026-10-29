@@ -93,7 +93,7 @@ test('discoverWorkerKeys - survives fs.watch error event', async (t) => {
 })
 
 const {
-  publishTrustedKey, readTrustedKeys, watchTrustedKeys, trustKernel, callerKeyPair, waitForKernelKey
+  publishTrustedKey, readTrustedKeys, watchTrustedKeys, trustKernel, trustKeysFromDir, callerKeyPair, waitForKernelKey
 } = require('../../lib/local-discovery')
 
 const K1 = 'aa'.repeat(32)
@@ -135,22 +135,27 @@ test('trusted keys - watch reports each key once', async (t) => {
   await t.exception(() => waitForKernelKey(tmp(t), { timeoutMs: 10 }), /ERR_KERNEL_CLIENT_KEY_NOT_FOUND/)
 })
 
-test('trustKernel - mirrors the kernel client key and write-capable callers onto a worker', (t) => {
+test('trustKernel - a worker allows the Kernel client key and no caller the Kernel admits', (t) => {
   const kernel = new EventEmitter()
   kernel.getClientPublicKey = () => Buffer.from(K1, 'hex')
   kernel.listAllowedKeys = () => [K2]
   const allowed = new Set()
-  const runtime = { allowKey: (k) => allowed.add(String(k)), revokeKey: (k) => allowed.delete(k) }
+  const runtime = { allowKey: (k) => allowed.add(Buffer.isBuffer(k) ? k.toString('hex') : String(k)), revokeKey: (k) => allowed.delete(k) }
   const ctrl = trustKernel(runtime, kernel)
-  t.ok(allowed.has(K2))
-  kernel.emit('caller-allowed', { key: 'cc'.repeat(32), roles: ['read'] })
-  kernel.emit('caller-allowed', { key: 'dd'.repeat(32), roles: ['admin'] })
-  t.absent(allowed.has('cc'.repeat(32)), 'read-only callers are not mirrored')
-  t.ok(allowed.has('dd'.repeat(32)))
-  kernel.emit('caller-revoked', { key: 'dd'.repeat(32) })
-  t.absent(allowed.has('dd'.repeat(32)))
+  t.alike([...allowed], [K1], 'only the Kernel: device calls go through its spec.rbac check')
+  kernel.emit('caller-allowed', { key: 'dd'.repeat(32) })
+  t.absent(allowed.has('dd'.repeat(32)), 'admitted callers are not let past the Kernel')
   ctrl.stop()
-  t.is(kernel.listenerCount('caller-allowed'), 0)
+})
+
+test('trustKeysFromDir - a worker allows kernel.pub only', (t) => {
+  const dir = tmp(t)
+  publishTrustedKey(dir, 'kernel', K1)
+  publishTrustedKey(dir, 'gateway', K2)
+  const allowed = []
+  const ctrl = trustKeysFromDir({ workerId: 'w', allowKey: (k) => allowed.push(k) }, dir)
+  ctrl.stop()
+  t.alike(allowed, [K1])
 })
 
 test('callerKeyPair - persistent hyperdht-format keypair', (t) => {

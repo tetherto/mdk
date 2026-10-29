@@ -1,11 +1,10 @@
 'use strict'
 
-// Plugin-owned MDK client, built from the ambient gateway context. The loader
-// overrides `require('@tetherto/mdk-gateway/plugin')` per plugin (same pattern
-// as backend/apps/agent) so `config` carries this plugin's merged settings
-// including kernelKey / kernelBootstrap. Controllers import this module —
-// they never take mdkClient from a services bag.
+// The app's Kernel client. The app runtime owns it: it dials with the app's own
+// key and signs in as the app's service account (app:<name>), so what this app
+// may do is what spec.rbac grants it. The loader overrides
+// `require('@tetherto/mdk-gateway/plugin')` per plugin. Controllers import this
+// module; they never take mdkClient from a services bag.
 const { config } = require('@tetherto/mdk-gateway/plugin')
-const { createMdkClient } = require('@tetherto/mdk-client')
 
-module.exports = createMdkClient(config)
+module.exports = config.mdkClient

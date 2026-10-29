@@ -65,6 +65,11 @@ describe('calculateCurtailment', () => {
     expect(result.curtailmentRate).toBeGreaterThanOrEqual(0)
   })
 
+  it('holds the average power for the whole period, not a fixed day', () => {
+    // 1 MW for 12 h is 12 MWh, against 30 MWh available.
+    expect(calculateCurtailment(1_000_000, 30, 1, 12).curtailmentMWh).toBe(18)
+  })
+
   it('clamps curtailment rate to 0 when negative', () => {
     const result = calculateCurtailment(50_000_000, 1, 1, 24)
     expect(result.curtailmentRate).toBe(0)

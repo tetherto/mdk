@@ -82,7 +82,7 @@ default is just an entry in `metadata.modelsSupported[]`.
 
 ## QA gates
 
-Suggested CI checks that would make the IA self-enforcing. **Most are not wired today** (`check:agent-ready` and `check:plugin-reference-fresh` are the exceptions) **and none are prerequisites for the BE or FE port.** Engineering decides whether to adopt each remaining gate per-team; for any gate not adopted, docs maintainers absorb the upkeep manually (each section below names the fallback). The constraint surface stays in [`mdk-contract.schema.json`](../../../backend/core/mdk-worker/mdk-contract.schema.json) for Workers and the UI registry generator for components, whether or not these gates land.
+Suggested CI checks that would make the IA self-enforcing. **Most are not wired today** (`check:agent-ready` is the exception) **and none are prerequisites for the BE or FE port.** Engineering decides whether to adopt each remaining gate per-team; for any gate not adopted, docs maintainers absorb the upkeep manually (each section below names the fallback). The constraint surface stays in [`mdk-contract.schema.json`](../../../backend/core/mdk-worker/mdk-contract.schema.json) for Workers and the UI registry generator for components, whether or not these gates land.
 
 ### `check:contract`
 
@@ -173,29 +173,6 @@ a maintainer editing the file sees it inline. The eventual end state replaces th
 **If not adopted:** docs maintainers walk the workers tree on each integration audit and update the catalogue tables manually. The tables
 stay under [`maintainers/`](./README.md) and never graduate to user-facing `docs/integrations/`.
 
-### `check:plugin-reference-fresh`
-
-> Implemented, blocking. [`docs/scripts/generate-plugin-reference.js`](../../scripts/generate-plugin-reference.js)
-> (run `npm run regenerate-docs` from the repo root, or `npm run generate:plugin-reference` from the repo root for this generator alone)
-> reads each plugin's `mdk-plugin.json` across both plugin roots and regenerates the route tables in
-> [`supported-apps.md`](../supported-apps.md). The
-> [`docs-freshness`](../../../.github/workflows/docs-freshness.yml) workflow runs the regen-and-diff check on pull requests.
-
-Freshness gate for the generated supported-apps page. The `docs-freshness` workflow runs the [`regenerate-docs -- --check`](single-source-of-truth.md#checking-without-changing-anything) report mode and reports a non-empty diff in [`supported-apps.md`](../supported-apps.md). It catches one kind of drift:
-
-1. **Tables stale after a manifest change** — a route added, removed, or re-described in a plugin's `mdk-plugin.json` is not reflected
-in the generated tables.
-
-The check **blocks** the pull request when the generated tables are stale: a route change and its regenerated tables must land together. Run
-`npm run regenerate-docs` and commit the result in the same pull request.
-
-**Why it matters:** the route tables are the published API surface of the apps MDK ships — which a stack declares like any other package,
-and which serve nothing until it does. A table that lags the manifest documents routes that no longer exist or omits ones that do. Only the
-apps that ship in the repo are covered (those under [`backend/apps/`](../../../backend/apps/)); third-party apps a stack declares in
-`spec.apps` are external and document their own routes.
-
-Maintainers re-run `npm run regenerate-docs` and commit the output whenever a shipped app's routes change.
-
 ### `check:plugin-manifest`
 
 There is no `mdk-plugin.schema.json` today. The manifest format is enforced imperatively by `_validateManifest` in
@@ -223,7 +200,7 @@ hardcoding a command list again — the mechanism (diff a CI-run `--help` output
 
 ### Combined effect
 
-Wired, each gate closes one drift path, named in its section above: contracts parse against the schema (`check:contract`), UI exports carry their JSDoc and prose (`check:agent-ready`), the overlay tracks what ships (`check:facets-fresh`), cross-references carry port hints (`check:port-signals`), the integration catalogue tracks shipping Workers (`check:integrations-fresh`), the supported-apps page tracks each manifest (`check:plugin-reference-fresh`), every `mdk-plugin.json` is well-formed (`check:plugin-manifest`), and tutorial command lists track the source (`check:tutorial-commands-fresh`).
+Wired, each gate closes one drift path, named in its section above: contracts parse against the schema (`check:contract`), UI exports carry their JSDoc and prose (`check:agent-ready`), the overlay tracks what ships (`check:facets-fresh`), cross-references carry port hints (`check:port-signals`), the integration catalogue tracks shipping Workers (`check:integrations-fresh`), every `mdk-plugin.json` is well-formed (`check:plugin-manifest`), and tutorial command lists track the source (`check:tutorial-commands-fresh`).
 
 Unwired, maintainers chase that drift by hand: the IA still describes the shape, only enforcement is missing. The constraint surface stays in the schema and JSDoc validator; the docs layer stays an overlay, never a gatekeeper.
 

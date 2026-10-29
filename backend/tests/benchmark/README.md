@@ -44,6 +44,10 @@ and [The config file](#the-config-file) for what it controls.
 # fast correctness check (5 devices, ~seconds) — wired into `npm test`
 npm test
 
+# the same suite with coverage — CI enforces >= 80% (lines, statements,
+# functions, branches) on this package
+npm run test:coverage
+
 # the one benchmark run: boots every family in config.workers
 # simultaneously and sweeps the Cartesian product of every family's own
 # device-count range, lowest total device count first, stopping at the
@@ -104,6 +108,7 @@ Everything that isn't about sizing a run:
 - Worker operating intervals/timeouts/concurrency
 - `allowDuplicateIPs`
 - Mock port/auth password
+- Gateway rate limit (off for the harness) and the Gateway alert-poll sample size
 - Alert-induction thresholds
 - Failure-drill toggles
 - Run-reproducibility shape (`n`, soak duration, resource-sample interval, read/action load)
@@ -116,6 +121,26 @@ exception: see [`lib/site.js`][benchmark-site-lib]). `allowDuplicateIPs` is alwa
 one server per Worker; its devices share it, differentiated only by port). Mock ports are picked randomly per run
 (one per Worker, not per device), each Worker's password is read from its Worker type's own mock default, and
 `RUN_REPRODUCIBILITY`/`THRESHOLDS` are recorded verbatim into every report.
+
+The harness Gateway runs with its rate limit off (`GATEWAY_DEFAULTS.rateLimit`). The Gateway's default, 300 requests per
+minute per client IP, limits one client, and the harness is a single loopback client driving deliberate load, so with the
+limiter on it would measure the limiter rather than the Gateway. A production Gateway keeps its default.
+
+### Device reachability and error payloads
+
+A Worker answers a request for a device it holds offline (one whose `connect()` failed at boot) with a normal response
+carrying `ERR_DEVICE_UNAVAILABLE`, not a rejected call. Two checks keep that from passing as a fast, successful round trip:
+
+- Before measuring anything, every profile pulls metrics from every device and stops with `ERR_BENCH_DEVICES_UNREACHABLE`
+  if any device fails
+- Every timed call goes through `assertTelemetry` or `assertCommand` in [`lib/load.js`][benchmark-load-lib], so an
+  error payload, a `FAILED` command result, a failed `snap` channel, or a metrics response where every channel failed
+  counts as an error
+
+`snap` is checked on its own because it is the only channel that always reads the device live, and it reports a failed
+read as `{ success: false }` rather than `{ error }`. The other channels read through the miner's 5 s device-data cache
+(`fetchDeviceData` in `backend/core/mdk/lib/things/miner.js`), so for up to 5 s after a device stops answering they
+still return its last values.
 
 ### Run a real leak-detection soak
 
@@ -161,7 +186,8 @@ Measured automatically:
   the Kernel directly (`pollAlerts` in [`lib/load.js`][benchmark-load-lib]) and via the Gateway
   (`pollAlertsViaGateway`, hitting `GET /api/fleet/device/{id}/alerts` — a
   third route of the harness's app, since the Gateway has no other way to
-  surface `last.alerts`) — `n = 0` on either just means the Worker's
+  surface `last.alerts`). The Gateway side polls an evenly spread sample of up to
+  `GATEWAY_DEFAULTS.alertSampleSize` devices, not the whole fleet. `n = 0` on either just means the Worker's
   own snap interval (default 60s) didn't complete a cycle within this run's
   soak, not that induction failed.
 - **Storage breakdown**: real on-disk size per Worker store, plus a real
@@ -172,13 +198,17 @@ Measured automatically:
   kill+respawn drills for Worker restart and Kernel restart (both
   processes' identity persists across a restart against the same on-disk
   root, confirmed empirically, so the existing client reconnects on its
-  own), plus a device-outage drill. The outage drill can only make the
+  own), plus a device-outage drill. Both restart drills report two times from the kill: until
+  the restarted process is READY and until a real device read succeeds again, since READY
+  does not mean reads are being served yet. The outage drill can only make the
   **whole fleet** unreachable, not one device — every device behind a
-  Worker shares one mock server — so it reports both the measured
-  (fast-refusal, since a closed port is refused immediately rather than
-  timing out) and an analytical hung-device worst case
+  Worker shares one mock server. After killing the mocks it reads one device until a read
+  fails and until every channel fails (the cached channels keep serving the last values
+  until the cache expires), then restarts the mocks and times how long reads take to
+  succeed again. It also reports an analytical hung-device worst case
   (`timeout × ⌈device count / concurrency⌉`) from already-known operating
-  parameters. Runs once, after the steady-state checklist finishes, never
+  parameters, since a closed port is refused immediately rather than timing out.
+  Runs once, after the steady-state checklist finishes, never
   during (so it can't contaminate the capacity numbers above).
 
 Left blank, with a note in the generated report:
@@ -200,10 +230,12 @@ Left blank, with a note in the generated report:
 config/benchmark.config.json   the one input file
 lib/constants.js               Worker-type registry + fixed defaults (never edited to size a run) +
                                  ALERT_INDUCTION (per-family threshold used to trip a real alert) +
-                                 RUN_REPRODUCIBILITY.runFailureDrills/*TimeoutMs/deviceOutageMs
+                                 RUN_REPRODUCIBILITY.runFailureDrills/*TimeoutMs
 lib/site.js                    boot primitives (bootKernel/bootWorker/bootGateway/startMocks) — one
                                  mock server per Worker, bootWorker wires ALERT_INDUCTION in, and
-                                 bootGateway starts the fleet-summary app runtime before the Gateway
+                                 bootGateway starts the fleet-summary app runtime before the Gateway;
+                                 RBAC: per-root service accounts (bench-harness, mdk-gateway, app:fleet)
+                                 bound to one full-access role, applied by bootKernel
 lib/metrics.js                 per-process CPU/RSS sampler (ps -o rss,pcpu -p <pid>, every tick) +
                                  open-FD sampler (lsof -p <pid>, start/stop only) + dirSizeBytes
 lib/latency.js                 per-operation latency recorder (p50/p95/p99/max/n/errors)
@@ -220,6 +252,7 @@ processes/run-process.js       --role mocks|kernel|worker|gateway|profile (defau
                                 the checklist, then (unless disabled) runs runFailureDrills
 scenarios/benchmark.js         sweeps the Cartesian product of every config.workers entry's device range, writes one comparison matrix
 tests/benchmark.smoke.test.js  fast correctness check (not a capacity claim; skips failure drills for speed)
+tests/*.test.js                unit tests for lib/, the checklist and the sweep (fake client + Gateway, no real stack)
 results/                       generated reports (gitignored)
 ```
 

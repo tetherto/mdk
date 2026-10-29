@@ -6,26 +6,6 @@ const { createModuleContext } = require('./module-context')
 
 const SECTIONS = ['telemetry', 'commands']
 
-// Builtin telemetry entries synthesized into every instance rather than
-// loaded from a contract-declared handler file. Registered only when the
-// plugin's own contract did not already declare a channel of the same name
-// (see createInstance below) — a real plugin handler always wins. Each
-// closes over this instance's own frozen `device`, so calling it is genuine
-// per-device dispatch (`entry.instance.telemetry.get('health')(...)`), not a
-// runtime-level shortcut: it proves the addressed device's own instance
-// answered, the same way any real handler would.
-//
-// The reply is deliberately limited to identifiers: `env` (secrets resolved
-// from mdk.yaml), `opts` (device credentials) and `config` must never leave
-// the process through a telemetry channel any caller can pull.
-const BUILTIN_TELEMETRY = {
-  health: (device) => () => ({
-    status: 'OK',
-    id: device.id,
-    workerId: device.workerId
-  })
-}
-
 /**
  * Instantiate a directory-loaded Worker Plugin for one device.
  *
@@ -38,10 +18,6 @@ const BUILTIN_TELEMETRY = {
  * what the plugin sees as '@tetherto/mdk-worker/device'. Per handlers HLD §3
  * this aborts rather than degrades: a handler module that is missing, throws at
  * load or does not export a function fails here, naming the device.
- *
- * `instance.telemetry` also always carries the builtin entries in
- * BUILTIN_TELEMETRY (e.g. `health`) unless the contract declared a real
- * channel of the same name — see BUILTIN_TELEMETRY above.
  */
 function createInstance (opts) {
   const { dir, entries, device } = opts || {}
@@ -84,11 +60,6 @@ function createInstance (opts) {
 
       instance[section].set(name, fn)
     }
-  }
-
-  for (const [name, build] of Object.entries(BUILTIN_TELEMETRY)) {
-    if (instance.telemetry.has(name)) continue
-    instance.telemetry.set(name, build(device))
   }
 
   debug('instance ready for %s (%d private modules)', device.id, context.size)

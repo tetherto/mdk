@@ -5,6 +5,7 @@
     { "id": "echo", "method": "POST", "path": "/echo", "handler": "controllers/echo.js" },
     { "id": "whoami", "method": "GET", "path": "/whoami", "handler": "controllers/misc.js#whoami" },
     { "id": "whoami-auth", "method": "GET", "path": "/whoami-auth", "auth": true, "handler": "controllers/misc.js#whoami" },
+    { "id": "named", "method": "GET", "path": "/named/:id", "verb": "get", "resourceName": { "param": "id" }, "handler": "controllers/misc.js#whoami" },
     { "id": "counter", "method": "GET", "path": "/counter", "cache": ["query.k"], "handler": "controllers/misc.js#counter" },
     { "id": "counter-auth", "method": "GET", "path": "/counter-auth", "auth": true, "cache": ["query.k"], "handler": "controllers/misc.js#counter" },
     { "id": "config", "method": "GET", "path": "/config", "handler": "controllers/misc.js#config" },

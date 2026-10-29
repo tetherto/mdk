@@ -346,3 +346,30 @@ test('missingPermissions - lists what the identity lacks, treating absent perms 
   t.alike(missingPermissions(['a'], null), ['a'])
   t.pass()
 })
+
+test('generateToolsFromGatewayPlugin - with an authority, each call is checked as the Gateway checks the route', async (t) => {
+  const seen = []
+  const authority = {
+    evaluate: (identity, req) => ({ allowed: identity.sub === 'ops' && req.resourceName === 'rack-3-1', reason: 'r', policyVersion: 'v' })
+  }
+  const decisions = []
+  const plugin = {
+    manifest: { description: 'd' },
+    routes: [{ id: 'cmd', method: 'POST', path: '/miners/command', resourceName: { body: 'target' }, handler: 'x', schema: { body: { type: 'object', properties: { target: { type: 'string' } } } } }]
+  }
+  const [tool] = generateToolsFromGatewayPlugin(plugin, {
+    authority,
+    appName: 'ops-center',
+    onDecision: (d) => decisions.push(d),
+    call: async (id, req, identity) => { seen.push(identity); return { ok: true } }
+  })
+  t.alike(tool.access, { resource: 'ops-center/miners/command', verb: 'create', nameFrom: { from: 'body', field: 'target' } })
+
+  await tool._handler({ target: 'rack-3-1' }, { identity: { kind: 'serviceaccount', sub: 'ops' } })
+  t.alike(seen, [{ kind: 'serviceaccount', sub: 'ops' }], 'the caller identity, not a static one, reaches the app')
+  await t.exception(tool._handler({ target: 'rack-9' }, { identity: { kind: 'serviceaccount', sub: 'ops' } }), /ERR_AUTH_FORBIDDEN: ops may not create ops-center\/miners\/command rack-9/)
+  await t.exception(tool._handler({}, {}), /ERR_AUTH_UNAUTHORIZED/)
+  t.alike(decisions.map((d) => d.decision), ['allow', 'deny'])
+  t.is(decisions[1].resourceName, 'rack-9')
+  t.exception(() => generateToolsFromGatewayPlugin(plugin, { authority, call: async () => {} }), /ERR_MCP_APP_NAME_REQUIRED/)
+})

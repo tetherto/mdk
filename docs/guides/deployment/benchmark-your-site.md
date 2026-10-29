@@ -18,6 +18,10 @@ runs on your own hardware, instead of by hand. See [when to use this][benchmark-
 > [!NOTE]
 > Learn more from the [benchmark readme][benchmark-readme].
 
+## Next steps
+
+- [Benchmark results and operating limits](benchmark-results.md): representative results from this harness, measured limits, and recommended operating envelopes
+
 ## Links
 
 [capacity-template]: capacity-metrics-template.md

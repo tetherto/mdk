@@ -46,7 +46,7 @@ one-line `description`:
 id: io.tether.sentinel              # 1. Immutable identity, reverse-DNS
 version: 0.1.0                     # 2. Semver; must equal package.json version
 displayName: Sentinel              # 3. Shown in shell's sidebar and CLI
-permissions:                       # 4. What the app asks the operator to approve (not enforced by the Kernel yet)
+permissions:                       # 4. The Kernel access the app's service account needs; required ([] for none)
   - resources: [devices]
     verbs: [read]                  # Default: read (least privilege; [read, write] for controls/tuning)
     resourceNames: ["*"]           # Default: allow all devices ("*"), or scoped: family/brand/worker/device
@@ -69,12 +69,12 @@ config:                            # 5. Operational defaults (overridable in mdk
 * **Distinction from Dashboard Shells**: An MDK App package (`@tetherto/mdk-app-<name>`) is a backend plugin + dynamic UI shell module. It is distinct from a standalone Vite dashboard shell created via `mdk create dashboard <name>` (which defaults to `apps/dashboard`). If developing an app inside a site repo alongside an existing dashboard, ensure distinct directory names (e.g. `apps/<name>-app` or keep the dashboard at `apps/dashboard`).
 
 ### Edge Case 2: RBAC Permissions & Device Hierarchy
-* **Not enforced yet**: The Kernel does not enforce `permissions` today. They are declared for operator review, and the app
-  runtime's Kernel key is admitted with full access. Declare least privilege anyway, so review is meaningful.
-* **Target resources**: only `devices`, `workers` and `actions`, each with its own verbs
-  ([`kernel-access.md`](../mdk-app-rbac/references/kernel-access.md)); derive them from the plugin code with the
-  [`mdk-app-rbac`](../mdk-app-rbac/SKILL.md) skill. The scaffold's summary route uses `resources: [workers]`, `verbs: [list]`.
-  Never `[*]`, `[plugins]` or `[kernel]`.
+* **Enforced**: `mdk create app`, `mdk add app` and `mdk rbac init` write these rules as the role `app-<name>` in `spec.rbac`,
+  and the Kernel refuses every call the role does not allow (`ERR_KERNEL_ACTION_FORBIDDEN`, a `403` at the Gateway). Derive the
+  rules from the plugin code with the [`mdk-app-rbac`](../mdk-app-rbac/SKILL.md) skill rather than guessing them.
+* **Target resources**: only the Kernel resources `devices`, `workers`, `commands`, `actions`, `policy`, `identities`, each with its
+  own verbs ([`kernel-access.md`](../mdk-app-rbac/references/kernel-access.md)). The scaffold's summary route needs
+  `resources: [workers]`, `verbs: [list]`. Never `[*]`, `[plugins]` or `[kernel]`.
 * **Verbs**:
   * Default: `verbs: [read]` (least privilege; for monitoring, telemetry, and metrics dashboards).
   * Control / Tuning apps (reboots, parameter tuning, commands): `verbs: [read, write]`.
@@ -123,6 +123,14 @@ config:                            # 5. Operational defaults (overridable in mdk
     panels: []
   };
   ```
+* **Sidebar sections (optional)**: A route may name a `section` (e.g. `section: 'Operations'`) to be listed in a sidebar
+  group with the other pages of that section. To give a section an icon, add `sections: [{ label: 'Operations', icon: OperationsNavIcon }]`,
+  with `label` matching the routes' `section` and `icon` a React component. Omit both for a flat list; never add a
+  `sections` entry with an empty or duplicate `label`. The shell template [`README.md`](../../../../../examples/mdk-ui-shell-template/README.md)
+  documents every route field.
+* **Building the pages**: the scaffolded `ui-src/` has one page, one hook and one Home panel. To add pages, panels or
+  reports, follow [`mdk-ui-component`](../mdk-ui-component/SKILL.md), which covers the module contract, the build and
+  the data, hook and component layers.
 
 ---
 
@@ -227,11 +235,12 @@ Before completing the task, the agent must verify:
 * [ ] **Manifest Keys**: `mdk-app.yaml` contains ONLY `id`, `version`, `displayName`, `permissions` (required, `[]` for none),
   `config`, and optionally `description`.
 * [ ] **Version Parity**: `package.json` version equals `mdk-app.yaml` version.
-* [ ] **RBAC Resources**: `permissions[].resources` names Kernel resources only (`devices`, `workers`, `actions`), each verb one its
-  resource takes ([`kernel-access.md`](../mdk-app-rbac/references/kernel-access.md)).
-* [ ] **RBAC matches the code**: `node <skills-dir>/mdk-app-rbac/scripts/derive-permissions.mjs <app> --check --strict` exits 0.
-* [ ] **RBAC Verbs**: device rules default to `[read]` (or `[read, write]` for controls), containing only valid actions.
+* [ ] **RBAC Resources**: `permissions[].resources` names Kernel resources only, and every verb is one its resource takes.
+* [ ] **RBAC matches the code**: `node <skills-dir>/mdk-app-rbac/scripts/derive-permissions.mjs <app> --check` exits 0.
+* [ ] **RBAC Verbs**: device rules default to `[read]` (or `[read, write]` for controls); nothing administrative (`policy`,
+  `identities`) without a reason.
 * [ ] **Device Hierarchy / Scope**: `permissions[].resourceNames` defaults to `["*"]` (allow all) or follows `family/brand/worker/device` (using `powermeter` for power meters).
 * [ ] **Route Namespacing**: No route in `plugin/mdk-plugin.json` starts with `/apps/<name>/`; the Gateway adds that prefix.
-* [ ] **Validation**: `mdk validate app <name>` passes (the app's name in `mdk.yaml`).
-* [ ] **UI Contract**: `ui/index.js` exports an object with `id`, `displayName`, `routes`, and `panels`.
+* [ ] **Validation**: `mdk validate app <name>` passes (the app's name in `mdk.yaml`), which also checks the app's grant in
+  `spec.rbac`; run `mdk rbac init` after changing `permissions`.
+* [ ] **UI Contract**: `ui/index.js` exports an object with `id`, `displayName`, `routes`, and `panels`, plus `sections` when a section needs an icon.

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-cli",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "description": "MDK command-line tool: onboard, scaffold, run and inspect an MDK stack.",
   "type": "module",
   "bin": {
@@ -29,13 +29,15 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@tetherto/mdk-app-runtime": "^0.12.2",
-    "@tetherto/mdk-client": "^0.12.2",
-    "@tetherto/mdk-core": "^0.12.2",
-    "@tetherto/mdk-gateway": "^0.12.2",
-    "@tetherto/mdk-mcp": "^0.12.2",
-    "@tetherto/mdk-skill": "^0.12.2",
-    "@tetherto/mdk-worker": "^0.12.2",
+    "@tetherto/mdk-app-runtime": "^0.13.0",
+    "@tetherto/mdk-client": "^0.13.0",
+    "@tetherto/mdk-core": "^0.13.0",
+    "@tetherto/mdk-gateway": "^0.13.0",
+    "@tetherto/mdk-identity": "^0.13.0",
+    "@tetherto/mdk-mcp": "^0.13.0",
+    "@tetherto/mdk-rbac": "^0.13.0",
+    "@tetherto/mdk-skill": "^0.13.0",
+    "@tetherto/mdk-worker": "^0.13.0",
     "commander": "^15.0.0",
     "degit": "^3.6.6",
     "picocolors": "^1.1.1",
@@ -43,10 +45,10 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.12",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.12"
   },
   "repository": {
     "type": "git",

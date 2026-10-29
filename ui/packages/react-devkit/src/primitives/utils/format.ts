@@ -8,6 +8,8 @@
 
 import { format as dateFnsFormat } from 'date-fns/format'
 
+import { CURRENCY, UNITS } from '../constants/units'
+import { BTC_SATS } from './number'
 import type { ErrorWithTimestamp, ValueUnit } from './types'
 
 const LOCALE = 'en-US'
@@ -354,3 +356,108 @@ export const toCssSize = (value?: number | string): string | undefined =>
 
 export const convertKwToW = (valueInKw: number | string): number =>
   valueInKw && !Number.isNaN(Number(valueInKw)) ? Number(valueInKw) * 1000 : Number.NaN
+
+// ============================================================================
+// Unit Scaling
+// ============================================================================
+
+/** One unit of a measure, and how many of the measure's base unit it holds. */
+export type UnitScale = { unit: string; factor: number }
+
+/** A value in the unit it is shown in. */
+export type ScaledValue = { value: number; unit: string }
+
+/**
+ * Units for hashrate given in TH/s (TH/s, PH/s, EH/s), for `pickUnitScale` and `scaleToUnit`.
+ * @category utilities
+ * @domain generic
+ * @tier internal
+ */
+export const HASHRATE_TH_S_SCALES: readonly UnitScale[] = [
+  { unit: UNITS.HASHRATE_TH_S, factor: 1 },
+  { unit: UNITS.HASHRATE_PH_S, factor: 1e3 },
+  { unit: UNITS.HASHRATE_EH_S, factor: 1e6 },
+]
+
+/**
+ * Units for power given in W (W, kW, MW), for `pickUnitScale` and `scaleToUnit`.
+ * @category utilities
+ * @domain generic
+ * @tier internal
+ */
+export const POWER_W_SCALES: readonly UnitScale[] = [
+  { unit: UNITS.POWER_W, factor: 1 },
+  { unit: UNITS.POWER_KW, factor: 1e3 },
+  { unit: UNITS.POWER_MW, factor: 1e6 },
+]
+
+/**
+ * The largest unit in `scales` (smallest first) that `magnitude` reaches one
+ * of, else the smallest. Pick it from a series' largest value so every point
+ * of a chart shares one unit.
+ *
+ * @example
+ * ```ts
+ * pickUnitScale(HASHRATE_TH_S_SCALES, 2_500)   // { unit: 'PH/s', factor: 1000 }
+ * pickUnitScale(POWER_W_SCALES, 999)           // { unit: 'W', factor: 1 }
+ * ```
+ */
+export const pickUnitScale = (scales: readonly UnitScale[], magnitude: number): UnitScale => {
+  const size = Math.abs(magnitude)
+  const reached = scales.filter((scale) => size >= scale.factor)
+  const chosen = reached[reached.length - 1] ?? scales[0]
+  if (!chosen) throw new Error('pickUnitScale needs at least one unit')
+  return chosen
+}
+
+/**
+ * `value` in the unit it best reads in.
+ *
+ * @example
+ * ```ts
+ * const { value, unit } = scaleToUnit(1_250_000, POWER_W_SCALES) // 1.25, 'MW'
+ * formatValueUnit(value, unit)                                     // "1.25 MW"
+ * ```
+ */
+export const scaleToUnit = (value: number, scales: readonly UnitScale[]): ScaledValue => {
+  const { unit, factor } = pickUnitScale(scales, value)
+  return { value: value / factor, unit }
+}
+
+/**
+ * The two units `formatBitcoin` writes a bitcoin amount in.
+ * @category utilities
+ * @domain generic
+ * @tier internal
+ */
+export const BITCOIN_UNITS = { BTC: 'BTC', SATS: 'sats' } as const
+
+/** A unit `formatBitcoin` writes in: `'BTC'` or `'sats'`. */
+export type BitcoinUnit = (typeof BITCOIN_UNITS)[keyof typeof BITCOIN_UNITS]
+
+/**
+ * A bitcoin amount, given in BTC, written in BTC (up to 8 decimals) or in
+ * whole sats.
+ *
+ * @example
+ * ```ts
+ * formatBitcoin(0.0123)          // "0.0123 BTC"
+ * formatBitcoin(0.0123, 'sats')  // "1,230,000 sats"
+ * formatBitcoin(null)            // "-"
+ * ```
+ */
+export const formatBitcoin = (
+  btc: number | null | undefined,
+  unit: BitcoinUnit = BITCOIN_UNITS.BTC,
+  fallback = FALLBACK,
+): string => {
+  if (btc == null) return fallback
+  return unit === BITCOIN_UNITS.BTC
+    ? formatValueUnit(btc, CURRENCY.BTC_LABEL, { maximumFractionDigits: 8 }, fallback)
+    : formatValueUnit(
+        Math.round(btc * BTC_SATS),
+        BITCOIN_UNITS.SATS,
+        { maximumFractionDigits: 0 },
+        fallback,
+      )
+}

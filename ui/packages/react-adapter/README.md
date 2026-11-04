@@ -29,7 +29,11 @@ npm install @tetherto/mdk-react-adapter
   `useContextualModal`, `useSubtractedTime`, `useGetAvailableDevices`).
 - Report state: `usePeriod`, a reporting period kept in the URL, and
   `toQueryView`, a query's state as loading, error or ready.
-- Installed-app hooks: `useInstalledAppUis`, `useInstalledAppPanels`.
+- Installed-app hooks: `useInstalledApps`, `useInstalledAppUis`, `useInstalledAppPanels`.
+- App UI modules: `defineMdkApp({ id, displayName, routes, panels, sections })`,
+  the contract a shell loads. A route names its `section` to group its sidebar
+  entries; an entry in `sections` gives that section an icon, and a section works
+  without one. Field table: [the apps guide](../../../docs/guides/gateway/apps.md#the-apps-ui-module).
 - Re-exports of `useQuery`, `useMutation`, `useQueryClient` from
   `@tanstack/react-query` so consumers can stay on a single import path.
 
@@ -38,7 +42,7 @@ npm install @tetherto/mdk-react-adapter
 `<MdkProvider auth={...}>` takes an `AuthProvider` (from [`@tetherto/mdk-ui-foundation`](../ui-foundation/README.md)) —
 the seam `useMdkAuth()` reads back. Four are available:
 
-- `noAuth()` — no token, no sign-in, nothing to expire; for an open API or a fixture-backed demo
+- `noAuth()` — no token, no sign-in, nothing to expire; for a fixture-backed demo
 - `bearerTokenAuth()` — bearer token in `authStore`, session ends on a `401`; `createMdkQueryClient`'s own default
   when no provider is passed
 - `passwordAuth({ baseUrl })`: user name and password against an MDK stack's Gateway, through the Kernel's token
@@ -130,5 +134,6 @@ hooks.filter((h) => h.category === 'permission')
 
 `tsc -p tsconfig.build.json` emits ESM JS + `.d.ts` declarations into
 `dist/`, and the package `exports` map resolves there. External npm
-consumers get pre-built declarations and runtime JS — no compile step
-required on their end.
+consumers get pre-built declarations and runtime JS; the emitted relative
+imports carry no file extension, so a bundler resolves them and TypeScript
+typechecks them under `"moduleResolution": "bundler"`.

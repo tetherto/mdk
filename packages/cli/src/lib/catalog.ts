@@ -31,6 +31,8 @@ export interface CatalogEntry {
    * in its own node_modules.
    */
   repoPath?: string;
+  /** What `npm install` fetches when the package is not on npm, e.g. `github:<owner>/<repo>`. */
+  source?: string;
 }
 
 export interface CatalogApp extends CatalogEntry {
@@ -62,14 +64,15 @@ export const WORKER_CATALOG: CatalogWorker[] = [];
 
 /**
  * Apps offered by `mdk onboard`. Each lives in its own repo and installs from
- * the registry by package name; `mdk add app github:<owner>/<repo>` installs
- * one from GitHub and still picks up its `mount` here.
+ * `source` until it is published, then by package name; `mdk add app
+ * github:<owner>/<repo>` installs one from GitHub and still picks up its `mount` here.
  */
 export const APP_CATALOG: CatalogApp[] = [
   {
     value: '@tetherto/mdk-app-agent',
     label: 'mdk-app-agent',
     hint: 'auth-gated operator agent chat (sessions, SSE, approvals)',
+    source: 'github:tetherto/mdk-app-agent',
     // The UI's agent transport (ui/packages/ui-agent) calls /agent/... at the Gateway root.
     mount: '/',
   },
@@ -77,6 +80,7 @@ export const APP_CATALOG: CatalogApp[] = [
     value: '@tetherto/mdk-app-demo',
     label: 'mdk-app-demo',
     hint: 'fleet summary + history across your hashrate_rt miners',
+    source: 'github:tetherto/mdk-app-demo',
   },
 ];
 

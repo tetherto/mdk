@@ -8,9 +8,11 @@ const { routeAccess, routeRequest, IDENTITY_KIND } = require('@tetherto/mdk-rbac
 //               (after the Host check and rate limit, so failed attempts are
 //               throttled too; before the body is read). A user's token is
 //               kept as req._actorToken for the forward (plugin-adapter.js)
-//   preHandler  the identity is evaluated as the route's resource and verb,
+//   preValidation  the identity is evaluated as the route's resource and verb,
 //               with its instance name from the declared param, query or body
-//               field, or the request answers 403
+//               field, or the request answers 403. The body is parsed by now,
+//               but not yet validated: a caller with no rule gets 403, never
+//               the 400 that would describe the route's body schema
 //
 // Every request is logged with the caller, app, route and decision. No route
 // is open: a route nobody's rule covers answers 403 to everyone.
@@ -30,7 +32,7 @@ function _error (statusCode, message) {
  * @param {object} app - `{ name }`, the app the route belongs to
  * @param {object} route - the route table entry
  * @param {object} authority - see authority.js
- * @returns {{ onRequest: Function, preHandler: Function, access: object }}
+ * @returns {{ onRequest: Function, preValidation: Function, access: object }}
  */
 function createRouteAuthz (app, route, authority) {
   const access = routeAccess(app.name, route)
@@ -63,7 +65,7 @@ function createRouteAuthz (app, route, authority) {
     if (req._identity.kind === IDENTITY_KIND.USER) req._actorToken = token
   }
 
-  async function preHandler (req) {
+  async function preValidation (req) {
     const request = routeRequest(access, req)
     const d = authority.evaluate(req._identity, request)
     log(req, {
@@ -81,7 +83,7 @@ function createRouteAuthz (app, route, authority) {
     }
   }
 
-  return { onRequest, preHandler, access }
+  return { onRequest, preValidation, access }
 }
 
 module.exports = { createRouteAuthz }

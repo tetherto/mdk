@@ -265,12 +265,9 @@ export const FormCheckbox = <
     render={({ field }) => (
       <FormItem>
         <div
-          style={{
-            display: 'flex',
-            flexDirection: layout,
-            alignItems: layout === 'row' ? 'center' : 'flex-start',
-            gap: layout === 'row' ? '0.5rem' : '0.75rem',
-          }}
+          className={`mdk-form-field-row mdk-form-field-row--checkbox${
+            layout === 'row' ? ' mdk-form-field-row--row' : ''
+          }`}
         >
           <FormControl>
             <Checkbox checked={field.value} onCheckedChange={field.onChange} {...checkboxProps} />
@@ -327,12 +324,7 @@ export const FormSwitch = <
     render={({ field }) => (
       <FormItem>
         <div
-          style={{
-            display: 'flex',
-            flexDirection: layout,
-            alignItems: layout === 'row' ? 'center' : 'flex-start',
-            gap: '0.75rem',
-          }}
+          className={`mdk-form-field-row${layout === 'row' ? ' mdk-form-field-row--row' : ''}`}
         >
           <FormControl>
             <Switch checked={field.value} onCheckedChange={field.onChange} {...switchProps} />
@@ -419,14 +411,7 @@ export const FormRadioGroup = <
               const id = `${field.name}-${value}`
 
               return (
-                <div
-                  key={value}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.375rem',
-                  }}
-                >
+                <div key={value} className="mdk-form-radio-option">
                   <Radio value={value} id={id} disabled={disabled} />
                   <Label htmlFor={id}>{label}</Label>
                 </div>

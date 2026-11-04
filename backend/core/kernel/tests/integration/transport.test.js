@@ -3,17 +3,34 @@
 const test = require('brittle')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
+const createTestnet = require('hyperdht/testnet')
 const { HRPCListener } = require('../../lib/transport/hrpc-listener')
 const { WorkerChannel } = require('../../lib/transport/worker-channel')
 const { build: buildEnvelope, serialize, deserialize } = require('../../lib/protocol/envelope')
 const { ACTIONS, MESSAGE_TYPES } = require('../../lib/protocol/actions')
 const { createTestAuth } = require('../../lib/testing')
 
+// HRPCListener and a bare `new DHT()` both default to `bootstrap: null`, which
+// is hyperdht's cue to use its public bootstrap nodes. Left alone these tests
+// reach node{1,2,3}.hyperdht.org over UDP, so they pass only on a runner with
+// outbound UDP and are slowed by every real round trip. `useTestnet` stands up
+// an isolated loopback testnet for a test and records its bootstrap here, which
+// `dhtNode` and `hrpcListener` then apply. Call it in any test that opens a DHT.
+let bootstrap = null
+async function useTestnet (t) {
+  const net = await createTestnet(3, t.teardown)
+  bootstrap = net.bootstrap
+  t.teardown(() => { bootstrap = null })
+  return bootstrap
+}
+const dhtNode = (opts = {}) => new DHT({ bootstrap, ...opts })
+const hrpcListener = (opts) => new HRPCListener({ bootstrap, ...opts })
+
 // A listener with a test issuer and policy; `auth.token()` mints an access token for envelope.auth.
 async function authed (t, opts, authOpts) {
   const auth = await createTestAuth({ registry: opts.registry, ...authOpts })
   t.teardown(() => auth.close())
-  return { auth, listener: new HRPCListener({ ...opts, identity: auth.identity, authorizer: auth.authorizer }) }
+  return { auth, listener: hrpcListener({ ...opts, identity: auth.identity, authorizer: auth.authorizer }) }
 }
 
 // ─── Mock modules for listener tests ───────────────────────────────────
@@ -55,6 +72,7 @@ function createMockModules () {
 // ─── HRPC Listener Tests ──────────────────────────────────────────────
 
 test('hrpc-listener - starts, accepts request, returns response', async (t) => {
+  await useTestnet(t)
   const mocks = createMockModules()
   const { auth, listener } = await authed(t, {
     ...mocks,
@@ -68,7 +86,7 @@ test('hrpc-listener - starts, accepts request, returns response', async (t) => {
   // Create a client, admitted at runtime
   const clientKeyPair = DHT.keyPair()
   listener.allowKey(clientKeyPair.publicKey)
-  const clientDht = new DHT({ keyPair: clientKeyPair })
+  const clientDht = dhtNode({ keyPair: clientKeyPair })
   const clientRpc = new HyperswarmRPC({ dht: clientDht })
 
   t.teardown(async () => {
@@ -95,13 +113,14 @@ test('hrpc-listener - starts, accepts request, returns response', async (t) => {
 })
 
 test('hrpc-listener - whitelist blocks unauthorized client', async (t) => {
+  await useTestnet(t)
   const mocks = createMockModules()
 
   // Generate a random key for the "authorized" client
   const authorizedKeyPair = DHT.keyPair()
   const authorizedHex = authorizedKeyPair.publicKey.toString('hex')
 
-  const listener = new HRPCListener({
+  const listener = hrpcListener({
     ...mocks,
     whitelist: [authorizedHex]
   })
@@ -109,7 +128,7 @@ test('hrpc-listener - whitelist blocks unauthorized client', async (t) => {
   const { publicKey } = await listener.start()
 
   // Create an UNAUTHORIZED client (different key)
-  const unauthorizedDht = new DHT()
+  const unauthorizedDht = dhtNode()
   const unauthorizedRpc = new HyperswarmRPC({ dht: unauthorizedDht })
 
   t.teardown(async () => {
@@ -134,6 +153,7 @@ test('hrpc-listener - whitelist blocks unauthorized client', async (t) => {
 })
 
 test('hrpc-listener - whitelist admits authorized client', async (t) => {
+  await useTestnet(t)
   const mocks = createMockModules()
 
   // Generate the authorized key pair — this client's pubkey will be in the allowlist
@@ -148,7 +168,7 @@ test('hrpc-listener - whitelist admits authorized client', async (t) => {
   const { publicKey } = await listener.start()
 
   // Create an AUTHORIZED client using the allowlisted key pair
-  const authorizedDht = new DHT({ keyPair: authorizedKeyPair })
+  const authorizedDht = dhtNode({ keyPair: authorizedKeyPair })
   const authorizedRpc = new HyperswarmRPC({ dht: authorizedDht })
 
   t.teardown(async () => {
@@ -173,9 +193,10 @@ test('hrpc-listener - whitelist admits authorized client', async (t) => {
 })
 
 test('hrpc-listener - empty whitelist rejects every caller (fail closed)', async (t) => {
-  const listener = new HRPCListener({ ...createMockModules(), whitelist: [] })
+  await useTestnet(t)
+  const listener = hrpcListener({ ...createMockModules(), whitelist: [] })
   const { publicKey } = await listener.start()
-  const clientDht = new DHT()
+  const clientDht = dhtNode()
   const clientRpc = new HyperswarmRPC({ dht: clientDht })
   t.teardown(async () => {
     await clientRpc.destroy()
@@ -189,6 +210,7 @@ test('hrpc-listener - empty whitelist rejects every caller (fail closed)', async
 })
 
 test('hrpc-listener - tokens and spec.rbac gate actions, revokeKey cuts an open connection, there is no allowAll', async (t) => {
+  await useTestnet(t)
   const keyPair = DHT.keyPair()
   const policy = {
     roles: [{ name: 'lister', rules: [{ resources: ['workers'], verbs: ['list'] }] }],
@@ -196,7 +218,7 @@ test('hrpc-listener - tokens and spec.rbac gate actions, revokeKey cuts an open 
   }
   const { auth, listener } = await authed(t, { ...createMockModules(), whitelist: [keyPair.publicKey.toString('hex')] }, { policy })
   const { publicKey } = await listener.start()
-  const dht = new DHT({ keyPair })
+  const dht = dhtNode({ keyPair })
   const rpc = new HyperswarmRPC({ dht })
   t.teardown(async () => {
     await rpc.destroy()
@@ -221,8 +243,9 @@ test('hrpc-listener - tokens and spec.rbac gate actions, revokeKey cuts an open 
 })
 
 test('hrpc-listener - getRpc returns rpc instance', async (t) => {
+  await useTestnet(t)
   const mocks = createMockModules()
-  const listener = new HRPCListener({ ...mocks, whitelist: [] })
+  const listener = hrpcListener({ ...mocks, whitelist: [] })
 
   await listener.start()
   t.teardown(() => listener.stop())
@@ -303,8 +326,9 @@ test('worker-channel - send times out', async (t) => {
 // ─── HRPC + WorkerChannel E2E ────────────────────────────────────────
 
 test('worker-channel - send via HRPC to a real RPC server (worker mock)', async (t) => {
+  await useTestnet(t)
   // Start a mock "worker" RPC server
-  const workerDht = new DHT()
+  const workerDht = dhtNode()
   const workerRpc = new HyperswarmRPC({ dht: workerDht })
   const workerServer = workerRpc.createServer()
 
@@ -326,7 +350,7 @@ test('worker-channel - send via HRPC to a real RPC server (worker mock)', async 
   await workerServer.listen(workerKeyPair)
 
   // Create Kernel-side WorkerChannel with its own RPC instance
-  const kernelDht = new DHT()
+  const kernelDht = dhtNode()
   const kernelRpc = new HyperswarmRPC({ dht: kernelDht })
   const wc = new WorkerChannel({ timeout: 10000, rpc: kernelRpc })
 

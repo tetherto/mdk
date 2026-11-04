@@ -5,11 +5,11 @@ import { memo, useMemo } from 'react'
 import type { ToolLabels } from '../core/tool-label'
 import type { PendingApproval, ToolStep } from '../core/turn'
 import { AGENT_LABELS } from '../branding'
-import { describeAgentError } from '../core/error-text'
 import { parseLeakedToolCall } from '../core/prose'
 import { isSmallTalk } from '../core/small-talk'
 import { ApprovalCard, describeApprovalIntent } from './approval-card'
 import { CollapsibleAnswer } from './collapsible-answer'
+import { ErrorNotice } from './error-notice'
 import { LeakedToolCallNotice } from './leaked-tool-call-notice'
 import { NoToolsNote } from './no-tools-note'
 import { ToolChip } from './tool-chip'
@@ -25,6 +25,8 @@ export type AssistantMessageProps = {
   interrupted?: boolean
   /** The turn is still running: render plain text and the thinking indicator. */
   streaming?: boolean
+  /** Passed to the error notice, which will not offer a retry that cannot be sent. */
+  isOnline?: boolean
   toolLabels?: ToolLabels
   approval?: PendingApproval | null
   isDecisionPending?: boolean
@@ -40,6 +42,7 @@ const AssistantMessageView = ({
   error = null,
   interrupted = false,
   streaming = false,
+  isOnline = true,
   toolLabels,
   approval = null,
   isDecisionPending = false,
@@ -120,19 +123,9 @@ const AssistantMessageView = ({
         : null}
 
       {error
-        ? (
-            <p className="mdk-agent-message__error" role="alert">
-              {describeAgentError(error)}
-              {onRetry
-                ? (
-                    <button type="button" className="mdk-agent-message__retry" onClick={onRetry}>
-                      Try again
-                    </button>
-                  )
-                : null}
-            </p>
-          )
+        ? <ErrorNotice error={error} isOnline={isOnline} {...(onRetry ? { onRetry } : {})} />
         : null}
+
     </div>
   )
 }

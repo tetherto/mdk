@@ -1,6 +1,8 @@
 // Editor-only: lets you edit the starter UI in an MDK checkout without errors.
 // `mdk create app` copies only ui-src/, and writes the app's own tsconfig there.
 // The MDK packages resolve to this checkout's built ui/packages (npm run build in ui/).
+// rootDirs overlays ../app on this directory, so ui-src's `../../plugin/types`
+// resolves to the app template's plugin/ as it does in a scaffolded app.
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -13,6 +15,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "isolatedModules": true,
+    "rootDirs": [".", "../app"],
     "typeRoots": ["../../../../ui/node_modules/@types"],
     "paths": {
       "@tetherto/mdk-ui-foundation": ["../../../../ui/packages/ui-foundation/dist/index.d.ts"],

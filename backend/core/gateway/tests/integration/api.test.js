@@ -4,6 +4,7 @@ const test = require('brittle')
 const fs = require('fs')
 const path = require('path')
 const { createWorker } = require('@tetherto/tether-svc-test-helper').worker
+const createTestnet = require('hyperdht/testnet')
 const os = require('os')
 const { setTimeout: sleep } = require('timers/promises')
 const { ECHO_APP } = require('../fixtures/helpers')
@@ -61,6 +62,12 @@ test('Api', { timeout: 90000 }, async (main) => {
     fs.writeFileSync(`./${baseDir}/config/facs/httpd.config.json`, JSON.stringify({ h0: {} }))
   }
 
+  // The gateway worker's net facility joins the public HyperDHT unless it is
+  // given a bootstrap (see resolveDhtOpts in workers/http.node.wrk.js), which
+  // on a host without outbound UDP means it never reaches 'started' and the
+  // helper's 10s timer fires. Keep it on an isolated loopback testnet.
+  const testnet = await createTestnet(3, main.teardown)
+
   const startWorker = async () => {
     worker = createWorker({
       env: 'test',
@@ -70,6 +77,8 @@ test('Api', { timeout: 90000 }, async (main) => {
       storeDir: 'test-store',
       serviceRoot: `${process.cwd()}/${baseDir}`,
       port: gatewayPort,
+      kernelBootstrap: testnet.bootstrap,
+      kernelDhtHost: '127.0.0.1',
       apps: [...DECLARED_APPS, { name: 'secured', appDir: SECURED_PLUGIN, keyFile: path.join(SECURED_PLUGIN, 'runtime.key'), mount: '/' }]
     })
 

@@ -12,7 +12,7 @@ description: >
   npm audit without the root overrides, and who owns the npm scope.
 metadata:
   suite: mdk-developer-skill
-  mdk_version: "0.10.0"
+  mdk_version: "{{MDK_VERSION}}"
 license: Apache-2.0
 ---
 

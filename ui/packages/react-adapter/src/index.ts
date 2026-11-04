@@ -12,7 +12,7 @@
  *     `useTimezoneFormatter`.
  *   - Report state  — `usePeriod` (a reporting period in the URL), `toQueryView`.
  *   - React utils   — `getControlSectionsTooltips`.
- *   - Installed apps — `useInstalledAppUis`, `MdkAppProvider` / `useMdkApp`,
+ *   - Installed apps — `useInstalledApps`, `useInstalledAppUis`, `MdkAppProvider` / `useMdkApp`,
  *     `defineMdkApp` and the app UI module contract a shell loads.
  *   - Re-exports    — `useQuery`, `useMutation`, `useQueryClient`, …
  *

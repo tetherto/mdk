@@ -7,6 +7,7 @@ import { Slider } from '@tetherto/mdk-react-devkit'
 export const SliderExample = () => {
   const [value, setValue] = useState([60])
   const [range, setRange] = useState([20, 80])
+  const [fanOffset, setFanOffset] = useState([40])
 
   return (
     <div className="mdk-example-col">
@@ -18,43 +19,12 @@ export const SliderExample = () => {
           min={0}
           max={100}
           step={1}
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            userSelect: 'none',
-            width: '300px',
-            height: '20px',
-          }}
+          className="mdk-slider"
         >
-          <Slider.Track
-            style={{
-              position: 'relative',
-              flexGrow: 1,
-              borderRadius: '9999px',
-              height: '4px',
-              background: 'var(--mdk-color-bg-tertiary)',
-            }}
-          >
-            <Slider.Range
-              style={{
-                position: 'absolute',
-                height: '100%',
-                borderRadius: '9999px',
-                background: 'var(--mdk-color-primary)',
-              }}
-            />
+          <Slider.Track className="mdk-slider__track">
+            <Slider.Range className="mdk-slider__range" />
           </Slider.Track>
-          <Slider.Thumb
-            style={{
-              display: 'block',
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              background: 'var(--mdk-color-primary)',
-            }}
-            aria-label="Fan speed"
-          />
+          <Slider.Thumb className="mdk-slider__thumb" aria-label="Fan speed" />
         </Slider.Root>
       </div>
 
@@ -68,54 +38,35 @@ export const SliderExample = () => {
           min={0}
           max={100}
           step={5}
-          style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            userSelect: 'none',
-            width: '300px',
-            height: '20px',
-          }}
+          className="mdk-slider"
         >
-          <Slider.Track
-            style={{
-              position: 'relative',
-              flexGrow: 1,
-              borderRadius: '9999px',
-              height: '4px',
-              background: 'var(--mdk-color-bg-tertiary)',
-            }}
-          >
-            <Slider.Range
-              style={{
-                position: 'absolute',
-                height: '100%',
-                borderRadius: '9999px',
-                background: 'var(--mdk-color-primary)',
-              }}
-            />
+          <Slider.Track className="mdk-slider__track">
+            <Slider.Range className="mdk-slider__range" />
           </Slider.Track>
-          <Slider.Thumb
-            style={{
-              display: 'block',
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              background: 'var(--mdk-color-primary)',
-            }}
-            aria-label="Min hash rate"
-          />
-          <Slider.Thumb
-            style={{
-              display: 'block',
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              background: 'var(--mdk-color-primary)',
-            }}
-            aria-label="Max hash rate"
-          />
+          <Slider.Thumb className="mdk-slider__thumb" aria-label="Min hash rate" />
+          <Slider.Thumb className="mdk-slider__thumb" aria-label="Max hash rate" />
         </Slider.Root>
+      </div>
+
+      <div>
+        <p>Fan Curve Offset: {fanOffset[0]}%</p>
+        {/* A vertical root fills its container's height, so give the container one */}
+        <div className="mdk-example-tall">
+          <Slider.Root
+            value={fanOffset}
+            onValueChange={setFanOffset}
+            min={0}
+            max={100}
+            step={1}
+            orientation="vertical"
+            className="mdk-slider"
+          >
+            <Slider.Track className="mdk-slider__track">
+              <Slider.Range className="mdk-slider__range" />
+            </Slider.Track>
+            <Slider.Thumb className="mdk-slider__thumb" aria-label="Fan curve offset" />
+          </Slider.Root>
+        </div>
       </div>
     </div>
   )

@@ -34,7 +34,7 @@ upstream domain components can keep their data wrangling local.
 | Field | Status | Type / Options | Default | Description |
 |------|--------|----------------|---------|-------------|
 | `label` | Required | `string` | - | Range-selector button text |
-| `value` | Required | `string` | - | Timeline key (e.g. `5m`, `1h`) passed to `onTimelineChange` and matched against `timeline` |
+| `value` | Required | `string` | - | Timeline key passed to `onTimelineChange`, matched against `timeline` and passed to the chart's `timeline`. Known keys: `1m`, `5m`, `30m`, `3h`, `1D` |
 | `disabled` | Optional | `boolean` | - | Not forwarded to the range selector; currently has no effect |
 <!-- END GENERATED: props -->
 
@@ -44,7 +44,7 @@ upstream domain components can keep their data wrangling local.
 <LineChartCard
   title="Hashrate"
   data={chartData}
-  timelineOptions={[{ label: "5m", value: "5m" }, { label: "1h", value: "1h" }]}
+  timelineOptions={[{ label: "5m", value: "5m" }, { label: "3h", value: "3h" }]}
   defaultTimeline="5m"
 />
 ```
@@ -57,6 +57,16 @@ the same directory for the full shape.
 
 ## Notes
 
+- The selected timeline option's `value` goes to the chart's `timeline`, which only sets the initial zoom. Known keys
+  are `1m`, `5m`, `30m`, `3h` and `1D` (capital `D`); any other key shows the latest 24 points. The
+  [`LineChart` timeline table](../../../primitives/components/line-chart/USAGE.md#timeline) has the counts.
+- Time labels are in UTC. The card has no time zone prop of its own: pass `customDateFormat` or `fixedTimezone` through
+  `chartProps`, as the [`LineChart` time zone table](../../../primitives/components/line-chart/USAGE.md#time-labels-and-time-zones)
+  describes.
 - Wrapped in `withErrorBoundary` — chart-level crashes won't blow up the page
 - For mining-domain charts, map your history route's response to the
   `ChartCardData` payload in the query's `select` and pass it in
+- A dataset's `lineStyle` (for example `dashed`) is passed to the chart; see
+  [dashed lines](../../../primitives/components/line-chart/USAGE.md#dashed-lines).
+- A series with a narrow range needs a smaller y-axis step: pass `priceFormat` through `chartProps`, as in
+  `chartProps={{ priceFormat: { minMove: 0.001 } }}`. See the [y-axis step](../../../primitives/components/line-chart/USAGE.md#y-axis-step).

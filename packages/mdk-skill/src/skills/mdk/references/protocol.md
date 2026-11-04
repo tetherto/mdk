@@ -6,8 +6,8 @@ Source of truth: [`backend/core/kernel/lib/protocol/`](../../../../../../backend
 
 ## The envelope
 
-Every message between Kernel and Workers is exactly this object — nine fields,
-no more:
+Every message between Kernel and Workers is exactly this object, plus the
+reserved auth fields a caller sets:
 
 ```js
 {
@@ -19,11 +19,20 @@ no more:
   target: null,            // receiver identity, or null
   deviceId: 'miner-42',    // addressed device, or null for Worker-scoped
   timestamp: 1750000000000,// Date.now()
-  payload: {}              // ALL action-specific data goes here
+  payload: {},             // ALL action-specific data goes here
+  auth: '<access token>',  // a caller's token; see the scope note below
+  actor: '<access token>'  // the operator an app acts for, when there is one
 }
 ```
 
-**Never add transport-level fields — extend `payload`.** Envelopes are
+`auth` and `actor` are the reserved transport-level fields, set by the client
+and never forwarded inside a payload; each is a string of at most 8192
+characters, and `actor` must be non-empty (`ERR_ENVELOPE_AUTH_INVALID`,
+`ERR_ENVELOPE_ACTOR_INVALID`). They belong to the caller→Kernel direction:
+every caller action but `auth.*` carries `auth`, while the Kernel's own
+Kernel→Worker messages (`telemetry.pull`, `health.ping` and the rest) carry
+neither.
+**Add no other transport-level field — extend `payload`.** Envelopes are
 validated structurally (`ERR_ENVELOPE_*`) and, per action, by payload
 validators in [`schemas.js`](../../../../../../backend/core/kernel/lib/protocol/schemas.js) (`ERR_PAYLOAD_*`); unknown actions are rejected
 with `ERR_ENVELOPE_ACTION_UNKNOWN`. On the wire an envelope is
@@ -43,10 +52,13 @@ Build responses with `buildResponse(requestEnvelope, action, payload, sender)`
 | Client → Kernel → Worker | `command.request` → `command.result` | Execute a device command |
 | Client → Kernel | `command.status` → `command.status.response` | Query command lifecycle |
 | Client → Kernel | `command.cancel` → `command.cancel.response` | Cancel a pending command |
-| Client → Kernel | `command.log` | Read the write-command log (admin role) |
+| Client → Kernel | `command.log` | Read the write-command log (`commands: read`) |
 | Kernel → Worker (scheduled) | `health.ping` → `health.pong` | Liveness |
 | Gateway → Kernel only | `worker.list`, `device.capabilities`, `worker.terminate` | Kernel queries (never forwarded to Workers) |
 | Gateway → Kernel | `action.push`, `action.push-batch`, `action.get`, `action.get-batch`, `action.query`, `action.vote`, `action.cancel-batch` | Write-action approval lifecycle |
+| Client → Kernel | `auth.login`, `auth.refresh`, `auth.token`, `auth.logout`, `auth.jwks` | Sign-in; the only actions that carry no `auth` token |
+| Client → Kernel | `rbac.get`, `rbac.apply` | Read and replace `spec.rbac` (`policy: read` / `policy: write`) |
+| Client → Kernel | `identity.user.*`, `identity.sa.*`, `identity.keys.rotate` | Users, service accounts and issuer keys (`identities: read` / `identities: write`) |
 | Kernel → Worker | `write.calls.request` → `write.calls.response` | Write-call resolution (only when worker-infra services are injected) |
 
 Also defined there: `COMMAND_SCOPES` (`device` | `worker` | `rack`),

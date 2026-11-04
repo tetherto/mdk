@@ -107,7 +107,7 @@ Once `dist/index.json` is shipping, it would also unlock [`check:integrations-fr
 
 ## App route table reference
 
-The apps MDK ships live in their own repositories, each listed in [`supported-plugins.md`](../supported-apps.md). Each carries an
+The apps MDK ships live in their own repositories, each listed in [`supported-apps.md`](../supported-apps.md). Each carries an
 `mdk-plugin.json` route table, the source of truth for its HTTP routes, and documents those routes in its own README, as any
 third-party app a stack declares in `spec.apps` does.
 

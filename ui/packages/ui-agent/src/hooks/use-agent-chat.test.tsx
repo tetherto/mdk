@@ -289,7 +289,10 @@ describe('useAgentChat — failures', () => {
     expect(result.current.messages[1]?.text).toBe('partial')
   })
 
-  it('reports a missing agent plainly instead of leaking the ERR_ code', async () => {
+  it('stores the code a failed request carried, for the renderer to read out', async () => {
+    // A code, not a sentence: the transcript keeps the diagnosable value and
+    // `describeAgentError` maps it at render time, which is what lets the notice
+    // decide whether offering a retry is honest.
     fetchImpl.mockResolvedValue(
       jsonResponse({ statusCode: 503, message: 'ERR_AGENT_UNAVAILABLE: config.agent missing' }, 503),
     )
@@ -298,7 +301,19 @@ describe('useAgentChat — failures', () => {
     act(() => result.current.send('hi'))
     await waitFor(() => expect(result.current.messages).toHaveLength(2))
 
-    expect(result.current.messages[1]?.error).toBe('The agent is not configured on this gateway.')
+    expect(result.current.messages[1]?.error).toBe('ERR_AGENT_UNAVAILABLE')
+  })
+
+  it('calls a request that never left the browser offline', async () => {
+    // `fetch` rejects with a TypeError when there is no connection at all —
+    // there is no status to read because it never got one.
+    fetchImpl.mockRejectedValue(new TypeError('Failed to fetch'))
+
+    const { result } = setup()
+    act(() => result.current.send('hi'))
+    await waitFor(() => expect(result.current.messages).toHaveLength(2))
+
+    expect(result.current.messages[1]?.error).toBe('ERR_AGENT_OFFLINE')
   })
 
   it('gives up on a socket that stays open but stops delivering', async () => {
@@ -582,5 +597,64 @@ describe('useAgentChat — conversations', () => {
       live.close()
     })
     await waitFor(() => expect(result.current.isStreaming).toBe(false))
+  })
+})
+
+describe('useAgentChat — starting a conversation', () => {
+  it('reuses the empty conversation instead of minting a second', () => {
+    // Every click used to add another "New conversation" row, and since the
+    // store trims at MAX_CONVERSATIONS those empties pushed real transcripts
+    // off the end — which the gateway keeps no copy of.
+    const { result } = setup()
+
+    act(() => result.current.newConversation())
+    act(() => result.current.newConversation())
+    act(() => result.current.newConversation())
+
+    expect(result.current.conversations).toHaveLength(1)
+    expect(result.current.conversations[0]?.messages).toHaveLength(0)
+  })
+
+  it('starts a fresh one once the current conversation has something in it', async () => {
+    fetchImpl.mockImplementation((url: string) =>
+      Promise.resolve(
+        String(url).endsWith('/messages')
+          ? sseResponse(FIXTURES.readCount!.events)
+          : jsonResponse({ sessionId: 'sess-1' }),
+      ),
+    )
+    const { result } = setup()
+
+    act(() => result.current.send('hi'))
+    await waitFor(() => expect(result.current.messages.length).toBeGreaterThan(0))
+
+    act(() => result.current.newConversation())
+
+    expect(result.current.conversations).toHaveLength(2)
+    expect(result.current.active?.messages).toHaveLength(0)
+  })
+
+  it('adopts an empty conversation left behind elsewhere in the list', async () => {
+    // Make one, type in it, make another, then go back to the first: the second
+    // is now empty but no longer active. Starting a third must take that one
+    // rather than leave two empties in the list.
+    fetchImpl.mockImplementation((url: string) =>
+      Promise.resolve(
+        String(url).endsWith('/messages')
+          ? sseResponse(FIXTURES.readCount!.events)
+          : jsonResponse({ sessionId: 'sess-1' }),
+      ),
+    )
+    const { result } = setup()
+
+    act(() => result.current.send('hi'))
+    await waitFor(() => expect(result.current.messages.length).toBeGreaterThan(0))
+    const withMessages = result.current.active?.id as string
+
+    act(() => result.current.newConversation())
+    act(() => result.current.selectConversation(withMessages))
+    act(() => result.current.newConversation())
+
+    expect(result.current.conversations.filter((c) => c.messages.length === 0)).toHaveLength(1)
   })
 })

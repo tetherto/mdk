@@ -6,7 +6,7 @@ description: >
   "register a plugin", "register an app", "mdk.yaml", or MDK environment configuration.
 metadata:
   suite: mdk-developer-skill
-  mdk_version: "0.5.0"
+  mdk_version: "{{MDK_VERSION}}"
 license: Apache-2.0
 ---
 
@@ -90,7 +90,7 @@ mdk run mcp                 # standalone MCP server for AI agents (needs Kernel 
 just which command you type. Use the per-component targets and separate
 terminals when debugging one tier. Gateway port is `spec.gateway.port`
 (example: `3847`); curl an app at `http://127.0.0.1:<gateway-port>/apps/<app-name>/api/...`
-(or at `/api/...` when its entry sets `mount: /`). Each app runs in its own runtime process
+(or at `/api/...` when its entry sets `mount: /`), carrying an access token. Each app runs in its own runtime process
 and accepts calls only from the Gateway's key; the Gateway forwards each request to it.
 
 Like the dashboard, `mcp` is never part of the default `all` target — always
@@ -114,8 +114,12 @@ Kernel) and always exits, even if a component's own shutdown hangs.
 ```bash
 mdk status                              # environment + Kernel/Gateway/worker health, exit code encodes it
 mdk status -o json | jq .health
-curl -s http://127.0.0.1:3847/apps/<app-name>/api/<route> | jq .
 ```
+
+No app route is open, so reaching one needs an access token (`401 ERR_AUTH_UNAUTHORIZED` without it) and a
+`spec.rbac` rule (`403 ERR_AUTH_FORBIDDEN` without one). `mdk user add <name> --admin` gives a first operator a rule to
+sign in with, [smoke-checking a route](../mdk-app-routes/SKILL.md#6-smoke-check-the-route) has the calls, and
+the [rule a route needs](../mdk-app-rbac/SKILL.md) is that skill's subject.
 
 `mdk status` never starts, stops or repairs anything — it probes the Kernel
 over HRPC and the Gateway over HTTP, reports declared-vs-registered Workers, and
@@ -131,8 +135,8 @@ open the page route added by `mdk-ui-component`.
 | Need               | Command                                                |
 | ------------------ | ------------------------------------------------------ |
 | Guided `mdk.yaml`  | `mdk onboard`                                          |
-| New Worker package | `mdk create worker <name>` → then `mdk-worker-plugin`  |
-| New app            | `mdk create app <name>` (`mdk-create-app`) → then `mdk-gateway-plugin` for its routes |
+| New Worker package | `mdk create worker <name>` → then `mdk-worker`         |
+| New app            | `mdk create app <name>` (`mdk-create-app`) → then `mdk-app-routes` for its routes |
 | Published app      | `mdk add app <npm-or-github-source>`                   |
 | New dashboard app  | `mdk create dashboard`                                 |
 
@@ -157,7 +161,7 @@ response as a deployment signal, not a bug.
 | Next need                          | Skill                |
 | ---------------------------------- | -------------------- |
 | How many Workers / which host tier | `mdk-site-sizing`    |
-| New device Worker                  | `mdk-worker-plugin`  |
+| New device Worker                  | `mdk-worker`         |
 | New app package                    | `mdk-create-app`     |
-| New aggregation API                | `mdk-gateway-plugin` |
+| New aggregation API                | `mdk-app-routes`     |
 | New dashboard page                 | `mdk-ui-component`   |

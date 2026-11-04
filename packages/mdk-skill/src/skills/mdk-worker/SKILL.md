@@ -1,5 +1,5 @@
 ---
-name: mdk-worker-plugin
+name: mdk-worker
 description: >
   Integrate a new device into MDK as a device Worker. Use for any task like
   "new device / miner / power meter / sensor / container Worker", "build a
@@ -8,7 +8,7 @@ description: >
   Worker Plugin, or telemetry/command handlers under backend/workers/.
 metadata:
   suite: mdk-developer-skill
-  mdk_version: "0.7.0"
+  mdk_version: "{{MDK_VERSION}}"
 license: Apache-2.0
 ---
 
@@ -26,7 +26,7 @@ locally against a device mock before a Kernel ever exists.
 The final package shape (this is `assets/worker-template/`, a verbatim copy of
 `packages/cli/templates/worker/` — the same tree `mdk create worker` scaffolds):
 
-```
+```text
 <your-worker>/
 ├── mdk-contract.json            # single source of truth (package root)
 ├── package.json                 # no main/exports — the runtime loads the dir
@@ -89,13 +89,16 @@ Start from [`assets/mdk-contract.template.json`](./assets/mdk-contract.template.
   enforces bounds only when declared (`ERR_PARAM_RANGE`); an undeclared bound
   is an unprotected physical setpoint.
 - Read-only devices (meters, sensors) declare `"commands": []`.
+- Stamp `"contractVersion": "1"`. A stamped contract is held to the v1 requirements as
+  errors; an unstamped one gets the same findings as warnings, and `--strict` turns them
+  into errors.
 - `description` / `overview` / `constraints` are simultaneously machine docs
   and AI operator context — write real semantics ("If 0, device is booting"),
   and put safety thresholds in the contract, not in code comments.
 
 ### 4. Validate the contract — loop until clean
 
-```
+```bash
 node <this-skill>/scripts/validate-contract.mjs <worker>/mdk-contract.json
 ```
 
@@ -160,10 +163,14 @@ const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 const runtime = new WorkerRuntimeV2(pkgDir, {
   workerId: 'my-worker-1',
   devices: [{ deviceId: 'dev-0', opts: { host: '127.0.0.1', port: 18080 } }],
+  allowedKeys: [kernelClientKey], // the Kernel's kernel.getClientPublicKey()
   kernelTopic // hex topic → DHT announce; omit for local-only
 })
 await runtime.start()
 ```
+
+`allowedKeys` is required: `start()` throws `ERR_WORKER_ALLOWED_KEYS_REQUIRED` without it. The caller gets the key
+from the Kernel it registers with (`kernel.getClientPublicKey()`).
 
 The Worker joins the DHT topic; the Kernel pulls identity + capabilities and
 starts scheduling telemetry/health. **No Kernel changes are ever needed to add
@@ -191,7 +198,7 @@ ask to **show** the data in a UI:
 
 | Next need                                    | Skill                |
 | -------------------------------------------- | -------------------- |
-| Aggregate / expose HTTP API over this Worker | `mdk-gateway-plugin` |
+| Aggregate / expose HTTP API over this Worker | `mdk-app-routes`     |
 | Register Worker in `mdk.yaml` and run it     | `mdk-deployment`     |
 | Dashboard page / tiles / charts              | `mdk-ui-component`   |
 

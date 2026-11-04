@@ -128,7 +128,7 @@ mdk-ui/
   factory for testing
 - TanStack `QueryClient` factory: `createMdkQueryClient`
 - The client's base URL and auth-aware fetcher (`getApiBaseUrl`, `getFetcher`)
-- Auth providers: `noAuth`, `bearerTokenAuth`, `gatewayRedirectAuth`
+- Auth providers: `noAuth`, `bearerTokenAuth`, `passwordAuth`, `gatewayRedirectAuth`
 - Device type / tag helpers ([`device-tags.ts`](../packages/ui-foundation/src/utils/device-tags.ts)):
   `isMiner`, `isContainer`, brand predicates, `appendIdToTag(s)`
 - Shared API types: telemetry rows, layouts, auth, `MdkFetchError`
@@ -158,12 +158,13 @@ devicesStore.getState().setSelectedDevices([]);
 - `<MdkProvider>` — wraps `QueryClientProvider` and supplies API
   base-URL and auth context. Required at the app root for the devkit to work.
   Its `auth` prop takes an `AuthProvider` (from `@tetherto/mdk-ui-foundation`)
-  — `bearerTokenAuth()` (the default `createMdkQueryClient` applies when used
-  without a provider) or `noAuth()` for an open API, and `gatewayRedirectAuth()`
+  — `passwordAuth({ baseUrl })` for a dashboard on an MDK stack, `bearerTokenAuth()`
+  (the default `createMdkQueryClient` applies when used without a provider) or
+  `noAuth()` for fixture-backed demos, since every app route on a real stack answers
+  `401`, and `gatewayRedirectAuth()`
   for the bundled Gateway's OAuth-redirect flow, which
   is `MdkProvider`'s own default. The seam itself is complete, but
-  `gatewayRedirectAuth()`'s refresh needs the bundled Gateway `auth` plugin,
-  which ships unwired, and its sign-in redirect needs an OAuth endpoint the
+  `gatewayRedirectAuth()`'s sign-in redirect needs an OAuth endpoint the
   Gateway does not ship — see
   [`@tetherto/mdk-react-adapter`'s Authentication section](../packages/react-adapter/README.md#authentication)
 - Store hooks (one per core store): `useAuth`, `useDevices`,
@@ -173,7 +174,7 @@ devicesStore.getState().setSelectedDevices([]);
   `useIsFeatureEditingEnabled`), token lifecycle (`useAuthToken`,
   `useTokenPolling`), `useTimezoneFormatter`, and UI helpers
   (`usePagination`, `useLocalStorage`, `useKeyDown`, …)
-- Installed-app hooks: `useInstalledAppUis`, `useInstalledAppPanels`
+- Installed-app hooks: `useInstalledApps`, `useInstalledAppUis`, `useInstalledAppPanels`
 - Re-exports of `useQuery`, `useMutation`, `useQueryClient` from
   `@tanstack/react-query`
 - Subpath `./hooks` for hook modules; `./provider` for `MdkProvider`
@@ -242,7 +243,7 @@ import "@tetherto/mdk-react-devkit/styles-domain.css"; // only if using domain (
 ### `@tetherto/mdk-ui-agent`
 
 **Purpose**: The operator agent chat, as one drop-in for any MDK shell. Renders
-the agent gateway plugin's six-event SSE contract as a conversation, including
+the agent app's six-event SSE contract as a conversation, including
 tool activity and the approval gate on writes.
 
 **Location**: `packages/ui-agent`

@@ -1,5 +1,5 @@
-import type { SettingsExportData, SettingsUser } from '../types/settings.types'
-import { downloadJson } from './download-utils'
+import type { SettingsExportData, SettingsUser } from '../types/settings.types.js'
+import { downloadJson } from './download-utils.js'
 
 const WEBAPP_NAME = 'Appl.'
 
@@ -9,6 +9,12 @@ type FilterUsersParams = {
   role: string | null | undefined
 }
 
+/**
+ * Narrows a user list by email substring, by role, or by both. Omitted filters are
+ * ignored, and the email match is case-insensitive.
+ *
+ * @category general
+ */
 export const filterUsers = ({ users, email, role }: FilterUsersParams): SettingsUser[] =>
   users.filter((user) => {
     let match = true
@@ -21,12 +27,23 @@ export const filterUsers = ({ users, email, role }: FilterUsersParams): Settings
     return match
   })
 
+/**
+ * Turns a role key into a readable label, so `site_manager` becomes `Site Manager`.
+ *
+ * @category general
+ */
 export const formatRoleLabel = (role: string): string =>
   role
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 
+/**
+ * Formats a timestamp as `MM/DD/YYYY - HH:mm`. Returns `-` when the timestamp is
+ * missing or unparseable.
+ *
+ * @category general
+ */
 export const formatLastActive = (timestamp: string | undefined): string => {
   if (!timestamp) return '-'
   const date = new Date(timestamp)
@@ -39,6 +56,12 @@ export const formatLastActive = (timestamp: string | undefined): string => {
   return `${month}/${day}/${year} - ${hours}:${minutes}`
 }
 
+/**
+ * Type guard checking that parsed JSON looks like an exported settings file,
+ * meaning it carries header controls, feature flags, or a timestamp.
+ *
+ * @category general
+ */
 export const validateSettingsJson = (data: unknown): data is SettingsExportData => {
   if (!data || typeof data !== 'object') {
     return false
@@ -53,6 +76,12 @@ export const validateSettingsJson = (data: unknown): data is SettingsExportData 
   )
 }
 
+/**
+ * Reads a settings file the user picked and resolves its parsed contents,
+ * rejecting if the file cannot be read or does not validate.
+ *
+ * @category general
+ */
 export const parseSettingsFile = async (file: File): Promise<SettingsExportData> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -84,6 +113,11 @@ export const parseSettingsFile = async (file: File): Promise<SettingsExportData>
     reader.readAsText(file)
   })
 
+/**
+ * Downloads the given settings as a JSON file and returns the filename written.
+ *
+ * @category general
+ */
 export const exportSettingsToFile = (data: SettingsExportData): string => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
   const filename = `mdk-settings-${timestamp}.json`

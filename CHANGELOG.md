@@ -1,203 +1,154 @@
-# Changelog: mdk-0.13.0
+# Changelog: mdk-0.13.1
 
-## v0.13.0
+## v0.13.1
 
-- Adds **authentication and authorization** across the stack: two new packages, [`@tetherto/mdk-identity`](./backend/core/identity/README.md) (token issuer and JWT
-  verification) and [`@tetherto/mdk-rbac`](./backend/core/rbac/README.md) (policy written as `spec.rbac` in `mdk.yaml`), enforced at the Kernel, Gateway and MCP server
-- Every **Kernel HRPC request now needs an access token** and is evaluated against the policy in force, per device or Worker it touches
-- Routes **device writes through the Kernel** and keeps an append-only log of every command attempt and its outcome
-- Introduces **Worker contract schema v1**: a `contractVersion` stamp opts a contract into strict validation of canonical units and numeric parameter bounds,
-  while contracts without it keep working and report the same findings as warnings
-- Adds a **private HyperDHT bootstrap and a DHT bind host**, so a site can run on one machine or an isolated LAN with no public DHT
-- Publishes **measured benchmark results and operating envelopes**, and moves the two sample apps out of this repository
+- Routes **every device call through the Kernel**: `@tetherto/mdk-client` no longer dials a Worker, so each request is
+  authorized against the policy in force and recorded in the write-command log
+- Clears **six moderate production advisories**, by rescoping the dependency overrides that were holding two of them open
+- Publishes **spacing and control-height tokens** from the devkit, so a consumer app has layout primitives to reach for
+  instead of writing inline styles
+- Makes **`@tetherto/mdk-ui-foundation` load in plain Node**, with a build step that imports every `exports` entry to prove it
+- Adds **seven documentation pages** covering the CLI, running a Worker, the first operator, the agent over MCP and the UI packages
 
 ## Breaking changes
 
-### Every Kernel request must carry an access token
+### `@tetherto/mdk-client` has no Worker-direct path
 
-The Kernel authorizes every HRPC request through [`KernelAuthorizer`](./backend/core/kernel/lib/transport/authorizer.js). Sign-in actions (`auth.*`) pass
-through so the issuer can authenticate them itself. Every other action needs an access token in `envelope.auth`, issued by that Kernel and, when bound, bound
-to the caller's transport key. The token's identity is then evaluated against the `spec.rbac` in force, as the action's resource and verb, for each instance it
-touches: a device as family, brand, worker and device; a Worker as family, brand and worker. A command scoped to a Worker or rack is checked for every device
-that Worker owns.
+[`backend/core/client/index.js`](./backend/core/client/index.js) exports `createMdkClient` and `createRawMdkClient`.
+`createWorkerClient` is gone, and with it the only supported way to open a persistent connection to a Worker's own RPC server.
+Every request now goes to the Kernel, which authorizes it against `spec.rbac` and records each command attempt in its
+[write-command log](./backend/core/kernel/README.md).
 
-An `envelope.actor` (an app acting for the user its Gateway route authenticated) adds a second check: the operator's access token must also be a current user
-token from the same issuer, bound to no transport key, and both identities must be allowed.
+Two call sites need moving, and both have a governed equivalent:
 
-Anything the Kernel cannot resolve, such as an unknown device or a Worker that is not ready, is evaluated with no instance name, so a rule scoped by
-`resourceNames` never matches it.
+| Was | Now |
+| --- | --- |
+| `sendWorkerCommand(workerId, …)` for provisioning (`registerThing`, `updateThing`, `forgetThings`) | `pushAction`, with the Worker's `workerId` in `params[0]` |
+| `pullWorkerTelemetry(workerId, …)` for Worker-scoped history (`logs`, `historical_logs`) | `pullTelemetry(deviceId, queryType)`, which the Kernel routes to the Worker owning the device |
 
-A deployment that previously spoke to the Kernel without a token has to provision identity and policy first. `mdk rbac init` writes a starter `spec.rbac`, and
-`mdk user add` creates the first operator. `mdk run` refuses to boot a Kernel whose policy binds nobody, or whose policy nobody is allowed to write, rather than
-starting a site no one can administer.
+The `opts.hrpc` option set loses `envelope`, which only ever existed so `createWorkerClient` could validate a Worker's replies
+as MDK response envelopes. `opts.hrpc.key` is now always the Kernel listener's public key, never a Worker's RPC key.
 
-### The sample apps leave the repository
+A deployment that put a caller's key on a Worker's allowlist to reach it directly no longer needs that entry. The defaults
+left it out, so most deployments never had one.
 
-`backend/apps/agent` and `backend/apps/demo` are gone, along with the `backend/apps/*` entry in the root workspace list. Both were `private: true` and were never
-published to npm, so no package disappears from the registry, but a clone no longer carries them. They now live in their own repositories, `mdk-app-agent` and
-`mdk-app-demo`. Anything that referenced those paths, including local `mdk-app.yaml` stacks, needs repointing.
+### Two shipped skills are renamed
+
+`@tetherto/mdk-skill` installs its suite by name, so a project that invokes either of these by its old name has to update it:
+
+| Was | Now |
+| --- | --- |
+| `mdk-worker-plugin` | `mdk-worker` |
+| `mdk-gateway-plugin` | `mdk-app-routes` |
+
+The installer sweeps skills it previously shipped, so the old directories are removed on the next install rather than left
+behind alongside the new ones.
 
 ## Added
 
-### Identity: `@tetherto/mdk-identity`
+### Documentation for the npm consumer journey
 
-The token issuer and verifier shared by the Kernel, Gateway and MCP server.
+Seven pages are new:
 
-| Module | Responsibility |
-| ------------------- | ------------------------------------------------------------------ |
-| `lib/issuer.js`     | Users, service accounts and rotating refresh tokens |
-| `lib/verifier.js`   | Access-token verification for the Gateway, MCP server and Kernel |
-| `lib/jwt.js`        | JWT signing and parsing |
-| `lib/keys.js`       | Signing keys and their rotation |
-| `lib/passwords.js`  | Password hashing and verification |
-| `lib/assertion.js`  | Service-account assertions |
-| `lib/http.js`       | HTTP helpers for the sign-in routes |
+| Page | Covers |
+| --- | --- |
+| [`docs/reference/tooling/cli.md`](./docs/reference/tooling/cli.md) | Full command reference for `mdk` |
+| [`docs/guides/cli/run-with-npx.md`](./docs/guides/cli/run-with-npx.md) | Running the CLI from the registry, with no checkout |
+| [`docs/guides/cli/run-your-worker.md`](./docs/guides/cli/run-your-worker.md) | Taking a scaffolded Worker to a running one |
+| [`docs/guides/security/create-the-first-operator.md`](./docs/guides/security/create-the-first-operator.md) | Provisioning identity and policy on a fresh stack |
+| [`docs/guides/agent/connect-over-mcp.md`](./docs/guides/agent/connect-over-mcp.md) | Pointing an external agent at the MCP server |
+| [`docs/guides/ui/use-ui-foundation-headlessly.md`](./docs/guides/ui/use-ui-foundation-headlessly.md) | Consuming the stores and query layer without React |
+| [`docs/guides/ui/react/compose-reporting-layouts.md`](./docs/guides/ui/react/compose-reporting-layouts.md) | Building reporting pages out of devkit charts |
 
-### RBAC: `@tetherto/mdk-rbac`
+The README drops its numbered walkthrough and status table for a `Get started` and a `Stack` section, and the tutorials for
+building a dashboard and running a site were substantially revised against the current product.
 
-Validates `spec.rbac` from `mdk.yaml` and evaluates callers at the Gateway, MCP server and Kernel.
+### Devkit spacing and control-height tokens
 
-| Module | Responsibility |
-| ------------------- | ------------------------------------------------------------------ |
-| `lib/validate.js`   | Strict validation that collects every problem at once, with its path in `mdk.yaml` |
-| `lib/policy.js`     | Policy compilation and caller evaluation |
-| `lib/store.js`      | The policy in force, persisted and hot-applied |
-| `lib/app-grant.js`  | The role, binding and service account an app needs for its declared permissions |
-| `lib/routes.js`     | Gateway route to resource and verb mapping |
-| `lib/vocabulary.js` | Kernel resources and the verbs each one accepts |
-| `lib/glob.js`       | Resource pattern matching |
+[`ui/packages/react-devkit/src/primitives/styles/_layout.scss`](./ui/packages/react-devkit/src/primitives/styles/_layout.scss)
+publishes `--mdk-spacing-xs|sm|md|lg|xl|2xl` and `--mdk-control-height-lg|md|sm` through `styles.css`, so plain-CSS consumers
+can read them too. The devkit shipped colour tokens but no layout primitives, which left a consumer app nothing to reach for.
 
-Subjects are `User`, `Group` or `ServiceAccount`, and enforcement is `deny`. A policy that fails validation is never loaded: the caller refuses to boot, and a
-live apply keeps the last good version.
+Naming the steps re-spaces nothing. `--mdk-spacing-md` was referenced in `site-stats-bar.scss` and defined nowhere, always
+falling through to its literal value; it now resolves. The control heights are the *outer* box: there is no global
+`box-sizing: border-box`, so matching a control's `min-height` alone lands short by its border.
 
-### Kernel protocol actions, exports and the write-command log
+### UI package additions
 
-New actions in [`lib/protocol/actions.js`](./backend/core/kernel/lib/protocol/actions.js):
+- [`useInstalledApps`](./ui/packages/react-adapter/src/hooks/use-installed-apps.ts) in `@tetherto/mdk-react-adapter`, which
+  reads the apps installed on a stack
+- `AGENT_APP_ID` and `hasAgentApp` in [`@tetherto/mdk-ui-agent`](./ui/packages/ui-agent/src/core/agent-app.ts), so a shell
+  shows the co-pilot only when the agent app is actually installed
+- An error notice in `@tetherto/mdk-ui-agent` for a turn that failed, replacing a raw route label with the named app
+- A dataset `lineStyle` on the devkit's `LineChart`, for drawing a target or nominal series dashed rather than solid. The
+  existing `priceFormat` is now documented as a `chartProps` passthrough, for a series whose range is too narrow for the
+  default y-axis step.
 
-| Group | Actions |
-| ------------------------ | ------------------------------------------------------------------------------------------ |
-| Sign-in | `auth.login`, `auth.refresh`, `auth.token`, `auth.logout`, `auth.jwks` |
-| Policy | `rbac.get`, `rbac.apply` |
-| Identity administration | `identity.user.list`, `identity.user.upsert`, `identity.user.delete`, `identity.sa.list`, `identity.sa.upsert`, `identity.sa.delete`, `identity.keys.rotate` |
-| Command history | `command.log` |
+### A Node ESM guard on `@tetherto/mdk-ui-foundation`
 
-[`lib/modules/command-log/index.js`](./backend/core/kernel/lib/modules/command-log/index.js) is an append-only record of every `command.request` the Kernel
-sees. It writes one `attempt` entry per request, carrying the caller key and roles, the command, its target, and its parameters with secrets redacted, marked
-`QUEUED` or `REJECTED` with the error, and one `settled` entry per terminal outcome. Entries are keyed by time, read newest first, and deleted once older than
-`ttlMs`, which defaults to 30 days and is pruned at most hourly as entries arrive.
-
-`@tetherto/mdk-kernel` gains two subpath exports, `./protocol/params` and `./testing`.
-
-### CLI: identity, policy and session commands
-
-| Command | What it does |
-| ------------------------------------------------------- | --------------------------------------------------------------------- |
-| `mdk rbac init`, `mdk rbac apply`, `mdk rbac show`       | Write a starter `spec.rbac`, push one to a running Kernel, print the policy in force |
-| `mdk user add`, `passwd`, `remove`, `list`               | Manage operator accounts |
-| `mdk serviceaccount add`, `rotate`, `remove`, `token`, `list` | Manage service accounts and their credentials |
-| `mdk login`, `mdk logout`, `mdk whoami`                  | Sign in to a site, end the session, show the current identity |
-| `mdk validate app`                                       | Check that an app declares its required permissions and that `spec.rbac` grants them |
-
-`mdk create app` and `mdk add app` now write the role, binding and service account an app needs into `spec.rbac` from the permissions the app declares, and
-`mdk validate worker --strict` reports v1 contract requirements as errors rather than warnings.
-
-### Gateway sign-in routes
-
-[`workers/lib/auth-routes.js`](./backend/core/gateway/workers/lib/auth-routes.js) serves `/auth/login`, `/auth/token`, `/auth/refresh`, `/auth/logout` and
-`/auth/me`, and logs an `authz` decision line per attempt. Route authorization lives in `workers/lib/authz.js` and the signing authority in
-`workers/lib/authority.js`.
-
-### Worker contract schema v1
-
-[`mdk-contract.schema.json`](./backend/core/mdk-worker/mdk-contract.schema.json) gains a `contractVersion` field, currently `"1"`, and two requirements that
-apply at the strict tier:
-
-| Requirement | Applies to |
-| ------------------------------------------------------- | ------------------------------------------- |
-| `unit` is required and comes from a closed vocabulary    | Numeric telemetry metrics |
-| `min` and `max` are required                             | Numeric command parameters |
-
-The vocabulary is `TH/s`, `W`, `kW`, `J/TH`, `°C`, `%`, `rpm`, `V`, `A`, `Hz`, `s` and `count`, so an agent can aggregate the same metric across vendors.
-Command parameters also accept a `default`, which for numbers must sit inside `[min, max]`.
-
-Version gating is the point of the stamp. A contract that declares `contractVersion` opts into strict validation and gets errors. A contract without one is
-validated as legacy and reports the same findings as warnings, so existing Workers keep loading. The Worker catalogue carries the v1 strictness state as a
-visible grace-period flag.
-
-### Private HyperDHT bootstrap and DHT bind host
-
-[`backend/core/mdk/lib/dht-bootstrap.js`](./backend/core/mdk/lib/dht-bootstrap.js) runs a private HyperDHT bootstrap node, and a new `dhtHost` option sets the
-interface the DHT node binds: `127.0.0.1` to keep a site on one machine, or a LAN address on an isolated network. It is accepted by the Kernel HRPC listener
-(`opts.listeners.hrpc.dhtHost`), the Gateway, the app runtime, the client and the Worker runtime, and defaults to all interfaces. See
-[the private DHT guide](./docs/guides/deployment/private-dht.md).
-
-### UI
-
-| Package | Addition |
-| --------------------------- | ------------------------------------------------------------------------------- |
-| `@tetherto/mdk-ui-foundation` | `passwordAuth` signs a user in through the Kernel's token issuer and keeps the refresh token in an httpOnly cookie |
-| `@tetherto/mdk-ui-foundation` | `describeRequestError`, plus `download-utils` and `period-utils` helpers |
-| `@tetherto/mdk-react-adapter` | `usePeriod` holds a reporting period in the URL, and `toQueryView` shapes a query result for display |
-| `@tetherto/mdk-react-adapter` | A route may name a `section`, and a module may give each section a label and icon through `MdkAppSection`, so the sidebar groups pages |
-| `@tetherto/mdk-react-devkit`  | `PeriodControl`, a timeframe picker, plus `PlugIcon` and `ExternalLinkIcon` |
-
-### Documentation
-
-- [Build your first app](./docs/tutorials/build-your-first-app.md): a 15 minute tutorial from `git clone` to a running app with a UI
-- [Benchmark results and operating limits](./docs/guides/deployment/benchmark-results.md): measured latency, resource use and recovery for real Kernel, Gateway
-  and Worker processes, with the operating envelopes derived from them, backed by the published runs under `backend/tests/benchmark/published/`
-- [Transport comparison](./docs/concepts/transport-comparison.md): HRPC over HyperDHT against a known-endpoint RPC
-- The root [README](./README.md) replaces "Get started" with a six step quickstart that runs entirely from a clone and needs no package from the npm registry
-
-Every partner-maintained Worker under `backend/workers/` now ships a `LICENSE` file.
+[`ui/packages/ui-foundation/scripts/check-node-esm.mjs`](./ui/packages/ui-foundation/scripts/check-node-esm.mjs) runs as the
+last step of that package's build. It imports every entry of the package's `exports` map by the package's own name, so it
+checks what a consumer actually gets: a relative specifier `tsc` emitted verbatim, an `exports` path that points nowhere, or
+a missing `types` file all fail the build.
 
 ## Changed
 
-- `validateParams` is still exported from `@tetherto/mdk-worker`, but it now re-exports the Kernel's implementation from `@tetherto/mdk-kernel/protocol/params`,
-  so the Worker runtime and the Kernel validate command parameters with the same code
-- `mdk run` refuses to boot a Kernel whose policy binds nobody, or whose policy nobody may write
-- The `mdk` CLI groups the authentication commands together in its help output, and the service-account command is named `serviceaccount`
-- `SingleStatCard` can colour its value, and the level bar chart's category labels render correctly with `sats` in lowercase
-- The [`mdk-ui-component`](./packages/mdk-skill/src/skills/mdk-ui-component/SKILL.md) skill is rebuilt around app UI modules and carries a content test, and
-  [`mdk-app-rbac`](./packages/mdk-skill/src/skills/mdk-app-rbac/SKILL.md) derives an app's permissions from its code
-- The `examples/mvp-site` demo gains a sign-in page, an activity page, user types, and an access policy with roles, so it exercises the new authorization path
-- The benchmark harness measures an online fleet and reports failures it was previously hiding
+- Relative imports throughout `@tetherto/mdk-ui-foundation` carry explicit `.js` extensions, which is what Node's own ESM
+  resolver requires. The package previously loaded only through a bundler
+- `UNITS.SATS` and `CURRENCY.SATS` in the devkit are lowercase `sats`, matching how the unit is written. `BITCOIN_UNITS` is
+  derived from those currency constants rather than repeating their values
+- The devkit's monospace rules all read `--font-mono` instead of naming families individually
+- The example site's `/site/overview` lists the devices of a terminated or dead Worker in `unavailableDevices`, each marked
+  offline and stale, where before it only counted them. The UI notice names them
+- Chart tooltips read the index axis for bar charts and the value axis for horizontal charts, and `buildBarChartOptions`
+  returns Chart.js options directly
+- The CLI's onboarding installs the two catalog apps from their public repositories, and the generated app manifest records a
+  relative CLI path
+- `mdk create app` shares its types between the plugin and the UI through a generated `plugin/types.d.ts`
+- The example site and the CLI default to a private DHT bootstrap
+- `@tetherto/mdk-agent` declares itself publishable, with the file allowlist its published 0.13.0 tarball already carried.
+  The package was on the registry while its manifest here was marked private, so it would not have received this release
 
 ## Removed
 
-- `backend/apps/agent` and `backend/apps/demo`, with the `backend/apps/*` root workspace entry (see Breaking changes)
-- `backend/core/mdk-worker/lib/param-validator.js`, superseded by the Kernel's `protocol/params` module behind the same public export
+- `createWorkerClient` and the `opts.hrpc.envelope` option from `@tetherto/mdk-client` (see Breaking changes)
+- `backend/core/docs/architecture.md` and `backend/core/docs/conventions.md`, which were unfinished drafts that no page linked to
 
 ## Security
 
-- The root `overrides` pin [`body-parser`](./package.json) to `2.4.0` and `@fastify/static` to `10.1.2`
-- `vitest` and its companions move from `^4.1.2` to `^4.1.12` across the UI packages
+`npm audit --omit=dev` reported six moderate findings. They were two unrelated problems, and the repository's own overrides
+were holding both open.
+
+| Advisory | Package | Resolution |
+| --- | --- | --- |
+| GHSA-rmxm-3fg6-px4f | `@hono/node-server` | `serveStatic` decoded the request path twice, so middleware on static paths could be bypassed. The advisory covers 1.19.10 to 2.1.2 and the pin sat at 2.0.12. The pin moves to 2.1.6, which is not a major |
+| GHSA-g3hv-75wg-m249 | `minimatch` | Reached only through `@fastify/static` and `glob`. Closed by the `glob` override below, which carries `minimatch` 11 |
+| GHSA-3g3m-2fjr-6pw4 | `glob` | Every `@fastify/static` 10.x still asks for `glob` 13, and the fix exists only from `glob` 14.0.2. The override now scopes `glob` 14.0.3 under `@fastify/static` |
+
+The previous override pinned `@tetherto/svc-facs-httpd`'s `@fastify/static` *below* the version that dependency asks for, so
+it forced a downgrade past the bump meant to fix this. The new override is scoped rather than tree-wide, so `rimraf` keeps its
+own `glob` and the root `minimatch` stays where the markdown linter needs it.
 
 ## Dependencies
 
-The backend packages install on npm 12. The `@bitfinex/bfx-facs-*` facilities pulled `bfx-facs-base` from git, which npm 12 rejects with `EALLOWGIT`.
+Manifest-level changes in the root [`package.json`](./package.json):
 
-| Package | Change |
-| -------------------------- | ------------------------------------------------------------- |
-| `@tetherto/mdk-gateway`    | `@bitfinex/bfx-facs-lru` `^1.0.0` replaced by `lru` `3.1.0` |
-| `@tetherto/mdk-core`       | `@bitfinex/bfx-facs-scheduler` `^1.0.0` replaced by `node-schedule` `2.0.0`, `@bitfinex/bfx-facs-interval` dropped |
-| `@tetherto/mdk-kernel`     | `@bitfinex/bfx-facs-interval` dropped |
-
-The interval facilities were unused. The pool scheduler and the Gateway caches now use `node-schedule` and `lru` directly.
-
-`@tetherto/mdk-identity` and `@tetherto/mdk-rbac` are new dependencies of `@tetherto/mdk-kernel`, `@tetherto/mdk-gateway`, `@tetherto/mdk-mcp`,
-`@tetherto/mdk-app-runtime`, `@tetherto/mdk-client` and `@tetherto/mdk-cli`.
+| Change | Reason |
+| --- | --- |
+| `overrides."@hono/node-server"` 2.0.12 to 2.1.6 | GHSA-rmxm-3fg6-px4f |
+| `overrides."@fastify/static"` from the pin `10.1.2` to a scoped `{ "glob": "14.0.3" }` | GHSA-3g3m-2fjr-6pw4 and GHSA-g3hv-75wg-m249 |
 
 ## Fixed
 
-- `@tetherto/mdk-react-devkit` installs into a fresh project without pre-installing `zod`. Resolving the `@hookform/resolvers` peer pulled in its optional
-  `@typeschema` chain, which settled on zod 3 and clashed with the zod 4 peer, failing with `ERESOLVE`
-- `createMdkQueryClient` and `MdkProvider` accept a `fetcher` again. v0.12.0 removed it with the mining data path, but `passwordAuth` hands its renew-on-401
-  fetcher to the query client through it
-- The pool scheduler skips unscheduled jobs once it stops, and keeps `scheduler_0.del` for pool Workers that re-key a job
-- A Worker sidebar item in the shell template stays active when the URL carries a query, and query-keyed items match by subset
-- A Worker's unit type check stays a base error on legacy contracts, so a contract without `contractVersion` is not failed by a v1 rule
-- The agent's default MCP endpoint is `3101`, and the deprecated `qwen3-600m` entry is gone
-- The UI package manifests are publish-ready, as are the backend Worker packages
+- The agent treats an expired approval as refused, and keeps both `tool_result` texts literal
+- A failed agent turn is readable and its retry is honest about what it will do
+- The agent documents the case where the MCP server is down at session start
+- Agent header alignment, icon sizing, composer growth and the conversation list
+- The devkit's tooltip handler owns when the tooltip is shown, rather than racing the chart
+- The power chart's y-axis stays readable and does not go negative
+- The shell template's sign-in user field has an explicit type, and its dev server binds a configurable host
+- The shell template's quick start matches a scaffolded dashboard
+- The mdk-skill tooling follows skills symlinks that stay inside the project, and its links are repository-relative
+- Vitest restores DOM `localStorage` under Node 25 and later, through a shared TypeScript `vitest.config.base`
 
 > For previous releases, see the [changelog archive](./docs/reference/changelog-archive/2026-archive.md)

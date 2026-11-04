@@ -1,7 +1,8 @@
 /**
  * Runnable example for DataLabel.
  *
- * Wrap the app in `<MdkProvider>` so `useTimezone` can read the timezone store.
+ * Pure: dates render in the browser's timezone. Pass `timezone` to override it, or
+ * `useTimezone().timezone` from `@tetherto/mdk-react-adapter` to follow the user's selection.
  */
 import { DataLabel } from '@tetherto/mdk-react-devkit'
 

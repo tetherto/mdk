@@ -13,18 +13,33 @@ export const MINER_MODEL = {
   WHATSMINER: 'whatsminer',
 } as const
 
+/**
+ * The two-letter codes identifying a miner brand in device tags and types.
+ *
+ * @category general
+ */
 export const MINER_TYPE = {
   AVALON: 'av',
   ANTMINER: 'am',
   WHATSMINER: 'wm',
 } as const
 
+/**
+ * Display names for each miner brand code, for showing a brand in the UI.
+ *
+ * @category general
+ */
 export const MINER_BRAND_NAMES = {
   [MINER_TYPE.AVALON]: 'Avalon',
   [MINER_TYPE.ANTMINER]: 'Antminer',
   [MINER_TYPE.WHATSMINER]: 'Whatsminer',
 } as const
 
+/**
+ * The states a miner reports, from mining through to error and maintenance.
+ *
+ * @category general
+ */
 export const MinerStatuses = {
   MINING: 'mining',
   OFFLINE: 'offline',
@@ -35,6 +50,12 @@ export const MinerStatuses = {
   ALERT: 'alert',
 } as const
 
+/**
+ * Full device type identifiers for each supported miner model, as they appear
+ * on a device.
+ *
+ * @category general
+ */
 export const COMPLETE_MINER_TYPES = {
   ANTMINER_AM_S21: 'miner-am-s21',
   WHATSMINER_WM_63: 'miner-wm-m63',
@@ -49,6 +70,12 @@ export const COMPLETE_MINER_TYPES = {
   DEMO_M1: 'miner-demo-m1',
 } as const
 
+/**
+ * Full device type identifiers for the power meters and temperature sensors
+ * found in a low-voltage cabinet.
+ *
+ * @category general
+ */
 export const LV_CABINET_DEVICES_TYPE = {
   POWERMETER_ABB_B24: 'powermeter-abb-b24',
   SENSOR_TEMP_SENECA: 'sensor-temp-seneca',
@@ -57,11 +84,21 @@ export const LV_CABINET_DEVICES_TYPE = {
   POWERMETER_SCHNEIDER_PM5340: 'powermeter-schneider-pm5340',
 } as const
 
+/**
+ * The tags marking a device as a power meter or a temperature sensor.
+ *
+ * @category general
+ */
 export const LV_CABINET_DEVICES_TAG = {
   POWERMETER: 't-powermeter',
   SENSOR_TEMP: 't-sensor-temp',
 } as const
 
+/**
+ * Display names for each low-voltage cabinet device type.
+ *
+ * @category general
+ */
 export const CABINET_DEVICES_TYPES_NAME_MAP = {
   [LV_CABINET_DEVICES_TYPE.POWERMETER_ABB_B24]: 'Powermeter ABB B24',
   [LV_CABINET_DEVICES_TYPE.SENSOR_TEMP_SENECA]: 'Sensor Temp Seneca',
@@ -70,6 +107,11 @@ export const CABINET_DEVICES_TYPES_NAME_MAP = {
   [LV_CABINET_DEVICES_TYPE.POWERMETER_SCHNEIDER_PM5340]: 'Powermeter Schneider PM5340',
 } as const
 
+/**
+ * Display names for each supported miner model, such as `Antminer S21`.
+ *
+ * @category general
+ */
 export const MINER_TYPE_NAME_MAP = {
   [COMPLETE_MINER_TYPES.AVALON_AV_a1346]: 'Avalon A1346',
   [COMPLETE_MINER_TYPES.ANTMINER_AM_S21]: 'Antminer S21',
@@ -84,6 +126,12 @@ export const MINER_TYPE_NAME_MAP = {
   [COMPLETE_MINER_TYPES.WHATSMINER_WM_30SPP]: 'Whatsminer M30SPP',
 } as const
 
+/**
+ * The pool misconfiguration conditions that can raise an alert, such as a miner
+ * pointing at the wrong pool or reporting an unexpected worker name.
+ *
+ * @category general
+ */
 export const ALERT_TYPE_POOL_VALUE = {
   IP_WORKER_NAME: 'ip_worker_name',
   WRONG_MINER_POOL: 'wrong_miner_pool',
@@ -91,6 +139,11 @@ export const ALERT_TYPE_POOL_VALUE = {
   WRONG_MINER_SUBACCOUNT: 'wrong_miner_subaccount',
 } as const
 
+/**
+ * Display names for each pool alert condition.
+ *
+ * @category general
+ */
 export const ALERT_TYPE_POOL_NAME = {
   [ALERT_TYPE_POOL_VALUE.IP_WORKER_NAME]: 'IP worker name',
   [ALERT_TYPE_POOL_VALUE.WRONG_MINER_POOL]: 'Wrong miner pool',
@@ -98,6 +151,11 @@ export const ALERT_TYPE_POOL_NAME = {
   [ALERT_TYPE_POOL_VALUE.WRONG_MINER_SUBACCOUNT]: 'Wrong miner subaccount',
 } as const
 
+/**
+ * Short miner model codes used when describing what a container holds.
+ *
+ * @category general
+ */
 export const CONTAINERS_MINER_TYPE = {
   M56: 'm56',
   M30: 'm30',
@@ -105,17 +163,35 @@ export const CONTAINERS_MINER_TYPE = {
   S19XP: 's19xp',
 } as const
 
+/**
+ * Maps a two-letter miner type code to its brand key, so `am` becomes `antminer`. For the
+ * display name of a specific model, use `MINER_TYPE_NAME_MAP`.
+ *
+ * @category general
+ */
 export const MINER_MODEL_TO_TYPE_MAP = {
   [MINER_TYPE.AVALON]: MINER_MODEL.AVALON,
   [MINER_TYPE.ANTMINER]: MINER_MODEL.ANTMINER,
   [MINER_TYPE.WHATSMINER]: MINER_MODEL.WHATSMINER,
 } as const
 
+/**
+ * Caveats to show alongside a miner model, where the hardware limits what can be
+ * reported. The A1346 entry explains why its average efficiency is unavailable.
+ *
+ * @category general
+ */
 export const MINER_TYPE_MESSAGE = {
   [COMPLETE_MINER_TYPES.AVALON_AV_a1346]:
     'A1346 miners do not report consumption individually, so Avg. efficiency cannot be calculated',
 } as const
 
+/**
+ * Display labels for the raw power meter reading names, turning `I1 a` into
+ * `Current L1`.
+ *
+ * @category general
+ */
 export const PM_ATTRIBUTE_LABEL_MAP = {
   'I1 a': 'Current L1',
   'I2 a': 'Current L2',

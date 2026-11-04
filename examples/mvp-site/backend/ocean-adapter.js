@@ -23,6 +23,8 @@ const PKG_DIR = path.dirname(require.resolve('ocean-mdk-worker/package.json'))
  *   env          worker env (DATUM_USER / DATUM_PASSWORD for the authenticated DATUM channels)
  *   kernelTopic  Kernel discovery topic (hex); omit to register by key
  *   allowedKeys  public keys admitted to the worker's RPC
+ *   bootstrap    private HyperDHT bootstrap list (site.deploy.json `dht`)
+ *   dhtHost      interface the Worker's DHT node binds
  */
 async function startOceanWorker (opts) {
   if (!opts || !opts.workerId) throw new Error('ERR_WORKER_ID_REQUIRED')
@@ -36,6 +38,8 @@ async function startOceanWorker (opts) {
     allowedKeys: opts.allowedKeys || [],
     allowAll: opts.allowAll === true,
     env: opts.env || {},
+    bootstrap: opts.bootstrap || null,
+    dhtHost: opts.dhtHost || null,
     devices: [{ deviceId: opts.workerId, config: { ...opts.pool } }]
   })
 

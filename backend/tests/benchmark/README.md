@@ -40,7 +40,14 @@ and [The config file](#the-config-file) for what it controls.
 
 ## Quickstart
 
+Run `npm install` once from the repository root, which installs this package as a workspace, then work from this
+directory. `./setup-config.sh` copies [`config/benchmark.config.json.example`][benchmark-config-example] to
+`config/benchmark.config.json`, the file every command here reads, so run it before the first test or benchmark:
+
 ```bash
+cd backend/tests/benchmark
+./setup-config.sh
+
 # fast correctness check (5 devices, ~seconds) — wired into `npm test`
 npm test
 
@@ -52,7 +59,7 @@ npm run test:coverage
 # simultaneously and sweeps the Cartesian product of every family's own
 # device-count range, lowest total device count first, stopping at the
 # first combination that goes red (the fleet's breaking point — see
-# capacity-metrics-template.md "Ceiling profiles")
+# capacity-metrics-template.md "Pass / fail thresholds")
 npm run benchmark
 ```
 
@@ -65,6 +72,11 @@ as a whole additionally writes one combined `results/sweep-benchmark-matrix.md` 
 not committed) across every combination tried. Commit the specific reports you want to keep alongside a sizing decision,
 not the whole directory.
 
+The harness never adds a run number to a filename. Repeat runs of the same profile, such as
+`cap-100devices-1workers-r1` and `-r2` in [`published/`][benchmark-published], were renamed by hand with an `-r<n>` suffix
+after each run, so a later run of the same profile would not overwrite the earlier one. Do the same before re-running a
+profile whose reports you want to keep.
+
 ## The config file
 
 [`config/benchmark.config.json`][benchmark-config-example] (copy from the linked `.example`) is the only file
@@ -76,16 +88,19 @@ you edit to change what gets measured:
 | `workers`  | One entry per device family, all booted simultaneously and swept together                                       |
 
 Each `workers` entry is `{ type, model, simulateMocks, ceiling: { startDeviceCount, stepDeviceCount, maxDeviceCount } }`,
-for example, one entry from [`config/benchmark.config.json.example`][benchmark-config-example]:
+for example, the one entry in [`config/benchmark.config.json.example`][benchmark-config-example]:
 
 ```json
 {
   "type": "mdk-worker-avalon",
   "model": "a1346",
   "simulateMocks": true,
-  "ceiling": { "startDeviceCount": 10, "stepDeviceCount": 10, "maxDeviceCount": 30 }
+  "ceiling": { "startDeviceCount": 10, "stepDeviceCount": 10, "maxDeviceCount": 10 }
 }
 ```
+
+As shipped, that range is a single 10-device step. Raise `maxDeviceCount` (for example to `30` for steps of 10, 20, and 30
+devices) to sweep further.
 
 Note that `type` must be one of `Object.keys(WORKER_REGISTRY)` in [`lib/constants.js`][benchmark-constants] (one entry per
 package under [`backend/workers/miners/`][workers-miners-readme]), and `model` one of that `type`'s
@@ -105,7 +120,7 @@ Everything that isn't about sizing a run:
 
 - Host/discovery/data root
 - Kernel cadence
-- Worker operating intervals/timeouts/concurrency
+- Worker operating intervals/timeouts/concurrency (`WORKER_CONF_DEFAULTS`)
 - `allowDuplicateIPs`
 - Mock port/auth password
 - Gateway rate limit (off for the harness) and the Gateway alert-poll sample size
@@ -116,8 +131,22 @@ Everything that isn't about sizing a run:
 
 all this lives in [`lib/constants.js`][benchmark-constants].
 
-Workers always boot on their own package defaults (plus `ALERT_INDUCTION`'s threshold override, the one intentional
-exception: see [`lib/site.js`][benchmark-site-lib]). `allowDuplicateIPs` is always on (every mock lives on `127.0.0.1`,
+Workers do **not** boot on their package defaults. `bootWorker` in [`lib/site.js`][benchmark-site-lib] passes
+`WORKER_CONF_DEFAULTS` from [`lib/constants.js`][benchmark-constants] as the Worker's `conf.thing`, which runs every Worker
+faster than a production Worker so a short run still completes enough snap cycles to measure:
+
+| Setting                 | Harness | Worker default |
+| ----------------------- | ------- | -------------- |
+| `collectSnapsItvMs`     | 10 s    | 60 s           |
+| `thingQueryConcurrency` | 100     | 25             |
+| `collectSnapTimeoutMs`  | 2 s     | 120 s          |
+| `storeSnapItvMs`        | 20 s    | 300 s          |
+
+The 60× shorter snap timeout changes which device reads are abandoned, and the 15× faster snap store raises the growth/day
+in a report's Storage breakdown. `WORKER_CONF_DEFAULTS` also sets the log rotation, log cache refresh, and stats intervals,
+and the log keep count. On top of it, `bootWorker` sets the per-device timeout `thing.miner.timeout` to 10 s and applies
+`ALERT_INDUCTION`'s alert threshold override. Read every report's latency, CPU, headroom, and storage numbers as measured
+at these settings, not at a default Worker's. `allowDuplicateIPs` is always on (every mock lives on `127.0.0.1`,
 one server per Worker; its devices share it, differentiated only by port). Mock ports are picked randomly per run
 (one per Worker, not per device), each Worker's password is read from its Worker type's own mock default, and
 `RUN_REPRODUCIBILITY`/`THRESHOLDS` are recorded verbatim into every report.
@@ -152,6 +181,11 @@ a single profile, not a full sweep: a sweep repeats the soak once per combinatio
 a whole sweep would take days. Any run shorter than 24h still produces an RSS slope, but reports label it
 **indicative** rather than a confirmed signal.
 
+The two runs are held to different bars in `THRESHOLDS` ([`lib/constants.js`][benchmark-constants]). A run of 24h or more
+fails when RSS grows faster than `rssSlopeLeakMiBPerHour` (10 MiB/h, about 240 MiB a day per process), the leak bar. A shorter run is held only
+to `rssSlopeFlatMiBPerHour` (18000 MiB/h), which is calibrated to the in-flight load state a short run still accumulates.
+It isn't a leak bar, and anything above it reads amber, never red. Tune `rssSlopeLeakMiBPerHour` from a soak of a known-good build.
+
 ## What's measured vs. left blank
 
 Measured automatically:
@@ -165,8 +199,9 @@ Measured automatically:
   direct Client path does not.
 - **Write/action path**: submit through the Gateway
   (`POST /api/fleet/device/{id}/action`, another route of that app) and the direct Client → Kernel path — both real HTTP/RPC round
-  trips, not simulated. Submit and execute collapse into one measured step;
-  see "Action-approval workflow steps" under Left blank for why.
+  trips, not simulated. Both stop the clock when the Kernel accepts the command
+  (`status: 'QUEUED'`): nothing has reached the device at that point. Execution and
+  end-to-end rows stay blank; see "Action-approval workflow steps" under Left blank.
 - **Cycle headroom** (worst Worker) and **sustained read/action throughput**
   (reads/s, actions/s, rejected, timed-out, peak queue depth).
 - **Per-process CPU/RSS** (sampled every tick via `ps -o rss,pcpu -p <pid>`)
@@ -181,14 +216,14 @@ Measured automatically:
 - **Alerts path**: every device's temperature-warning threshold is forced
   below any real reading (see `ALERT_INDUCTION` in [`lib/constants.js`][benchmark-constants]), so
   the family's own alert genuinely trips on the first snap the Worker
-  collects at its own (never-overridden) cadence. The harness measures how
+  collects at the harness's snap cadence (`WORKER_CONF_DEFAULTS.collectSnapsItvMs`, 10 s). The harness measures how
   long after it starts watching that alert first becomes visible both via
   the Kernel directly (`pollAlerts` in [`lib/load.js`][benchmark-load-lib]) and via the Gateway
   (`pollAlertsViaGateway`, hitting `GET /api/fleet/device/{id}/alerts` — a
   third route of the harness's app, since the Gateway has no other way to
   surface `last.alerts`). The Gateway side polls an evenly spread sample of up to
   `GATEWAY_DEFAULTS.alertSampleSize` devices, not the whole fleet. `n = 0` on either just means the Worker's
-  own snap interval (default 60s) didn't complete a cycle within this run's
+  snap interval (10 s in the harness) didn't complete a cycle within this run's
   soak, not that induction failed.
 - **Storage breakdown**: real on-disk size per Worker store, plus a real
   growth/day computed from size at profile start vs. now, divided by the
@@ -214,8 +249,11 @@ Measured automatically:
 Left blank, with a note in the generated report:
 
 - **Action-approval workflow steps**: the full push → vote → execute workflow as distinct submit/approve/exec/e2e
-  rows, vote/approve as its own step, and batch actions across N devices in one call. All three shipped Workers
-  allowlist their write actions at a single required vote, and this harness only ever submits via `sendCommand`
+  rows, vote/approve as its own step, and batch actions across N devices in one call. The Avalon Worker this harness
+  drives allowlists every write action at a single required vote (its `plugin/boot.js` declares the pairs); the
+  Antspace and Bitdeer container Workers allowlist 2-vote actions (`resetCoolingSystem` and
+  `setLiquidSupplyTemperature`; `setTemperatureSettings`) whose real approval round this harness never exercises —
+  it only ever submits via `sendCommand`
   and its Gateway-mirrored route, never the Kernel's separate `pushAction`/`voteAction`/`queryActions` pipeline
 - **Alert generation latency in isolation**: synchronous inside the Worker process, the same reason heap/external
   memory is blank, needs in-process instrumentation this harness doesn't have
@@ -279,6 +317,9 @@ device-family agnostic because it only talks to the family through
 
 [benchmark-constants]: ./lib/constants.js
 <!-- docs@tether.io: benchmark-constants → https://github.com/tetherto/mdk/blob/main/backend/tests/benchmark/lib/constants.js -->
+
+[benchmark-published]: ./published/
+<!-- docs@tether.io: benchmark-published → https://github.com/tetherto/mdk/tree/main/backend/tests/benchmark/published -->
 
 [benchmark-site-lib]: ./lib/site.js
 <!-- docs@tether.io: benchmark-site-lib → https://github.com/tetherto/mdk/blob/main/backend/tests/benchmark/lib/site.js -->

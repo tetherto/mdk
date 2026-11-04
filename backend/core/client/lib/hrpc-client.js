@@ -3,8 +3,7 @@
 const debug = require('debug')('mdk:client:hrpc')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
-const { serialize, deserialize, validate } = require('@tetherto/mdk-kernel/protocol/envelope')
-const { MESSAGE_TYPES } = require('@tetherto/mdk-kernel/protocol/actions')
+const { serialize, deserialize } = require('@tetherto/mdk-kernel/protocol/envelope')
 
 // Default per-request timeout. protomux-rpc has none, so without it an
 // unresponsive peer would hang the caller (and pin its DHT connection) forever.
@@ -20,18 +19,14 @@ const DEFAULT_TIMEOUT_MS = 30000
  * `key` is the Kernel listener public key (hex string or Buffer) obtained from
  * `kernel.getPublicKey()`. `keyPair` (or a function returning one), or `seed`,
  * pins the DHT identity this client dials with, so the Kernel allowlist can
- * name it. A `dht`/`rpc` may be injected to share an existing transport
- * (worker clients reuse their parent's); otherwise this client owns and tears
- * down its own.
+ * name it. A `dht`/`rpc` may be injected to share an existing transport;
+ * otherwise this client owns and tears down its own.
  *
  * `timeout` (ms, default 30000) bounds every request; request(env, { timeout })
  * overrides it per call. A timed-out request rejects with ERR_MDK_REQUEST_TIMEOUT.
  *
- * `envelope: true` marks a peer that answers with MDK Protocol envelopes (a
- * Worker). Its replies are checked with the protocol's validate() and a reply
- * that is not a well-formed response envelope rejects with
- * ERR_MDK_RESPONSE_INVALID. The Kernel listener answers with bare result
- * values, so a Kernel client only rejects replies that are not valid JSON.
+ * The Kernel listener answers with bare result values; a reply that is not
+ * valid JSON rejects with ERR_MDK_RESPONSE_INVALID.
  */
 class HRPCClient {
   constructor (opts) {
@@ -48,22 +43,6 @@ class HRPCClient {
     this._connected = false
     this._timeout = opts.timeout === undefined ? DEFAULT_TIMEOUT_MS : opts.timeout
     if (!_isTimeout(this._timeout)) throw new Error('ERR_MDK_CLIENT_TIMEOUT_INVALID')
-    this._envelope = opts.envelope === true
-  }
-
-  // Transport opts for a client to another peer (a Worker) that should dial
-  // with this client's identity: the live rpc when connected (one DHT node,
-  // one keypair), else the same keyPair/seed/bootstrap/dhtHost to build an equal one.
-  childOpts () {
-    const base = { timeout: this._timeout }
-    if (this._connected && this._rpc) return { ...base, rpc: this._rpc, dht: this._dht }
-    return {
-      ...base,
-      ...(this._keyPair ? { keyPair: this._keyPair } : {}),
-      ...(this._seed ? { seed: this._seed } : {}),
-      ...(this._bootstrap ? { bootstrap: this._bootstrap } : {}),
-      ...(this._dhtHost ? { dhtHost: this._dhtHost } : {})
-    }
   }
 
   async connect () {
@@ -110,31 +89,12 @@ class HRPCClient {
       clearTimeout(timer)
     }
 
-    let res
     try {
-      res = deserialize(resBuf)
+      return deserialize(resBuf)
     } catch (err) {
       throw _invalid('ERR_RESPONSE_NOT_JSON')
     }
-    return this._envelope ? _checkEnvelope(res) : res
   }
-}
-
-function _checkEnvelope (res) {
-  // A Worker that fails before dispatch answers with a bare { error } instead
-  // of an envelope; surface its code, never an arbitrary message.
-  if (res && typeof res === 'object' && !Array.isArray(res) && Object.keys(res).length === 1 && typeof res.error === 'string') {
-    if (/^ERR_[A-Z0-9_]+/.test(res.error)) {
-      const err = new Error(res.error)
-      err.code = res.error.split(':')[0]
-      throw err
-    }
-    throw _invalid('ERR_RESPONSE_ERROR')
-  }
-  const v = validate(res)
-  if (!v.valid) throw _invalid(v.error)
-  if (res.type !== MESSAGE_TYPES.RESPONSE) throw _invalid('ERR_ENVELOPE_TYPE_INVALID')
-  return res
 }
 
 function _invalid (reason) {

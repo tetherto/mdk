@@ -36,6 +36,13 @@ describe.skipIf(source === null)('rejected-write marker', () => {
     expect(isRejectionResult(emitted!)).toBe(true)
   })
 
+  it('still matches the text the producer emits for an approval that expired', () => {
+    const emitted = /EVENT\.TOOL_RESULT[^}]*text:\s*'([^']*approval expired[^']*)'/.exec(source ?? '')?.[1]
+
+    expect(emitted, 'no expired-approval tool_result found in loop.js').toBeTruthy()
+    expect(isRejectionResult(emitted!)).toBe(true)
+  })
+
   it('does not mistake an ordinary tool result for a refusal', () => {
     expect(isRejectionResult('{"summary":"Reboot on demo-miner-a-0: queued."}')).toBe(false)
     expect(isRejectionResult('The operator rejected it earlier')).toBe(false)

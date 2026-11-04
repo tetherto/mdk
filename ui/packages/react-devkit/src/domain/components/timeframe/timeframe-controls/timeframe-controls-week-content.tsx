@@ -3,8 +3,11 @@ import { MultiLevelSelect, SelectItem } from '@primitives'
 import { monthsForYear, weeksOfMonth, weekTreeToken, YEARS } from './timeframe-controls.helper'
 
 export type TimeframeWeekTreeContentProps = {
+  /** IANA timezone the week labels and boundaries are computed in */
   timezone: string
+  /** Year whose section starts expanded */
   selectedYear: number
+  /** Month (0-11) whose section starts expanded */
   selectedMonth: number
 }
 
@@ -48,6 +51,7 @@ export const TimeframeWeekTreeContent = ({
   ))
 
 export type TimeframeWeekFlatContentProps = {
+  /** Weeks to list, as returned by `weeksOfMonth(year, month, timezone)` */
   visibleWeeks: ReturnType<typeof weeksOfMonth>
 }
 

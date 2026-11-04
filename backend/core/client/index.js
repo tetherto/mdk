@@ -27,7 +27,7 @@ const { ServiceAccountTokenSource } = require('@tetherto/mdk-identity')
  * is retried once with a fresh one.
  *
  * @param {object} opts
- * @param {object} [opts.hrpc]     - HRPC transport opts ({ key, keyPair?, seed?, bootstrap?, dhtHost?, timeout?, envelope?, dht?, rpc? })
+ * @param {object} [opts.hrpc]     - HRPC transport opts ({ key, keyPair?, seed?, bootstrap?, dhtHost?, timeout?, dht?, rpc? })
  * @param {object} [opts.transport] - Pre-built transport ({ connect, close, request }); test seam
  * @param {{ name: string, privateKey: string }} [opts.credential] - service-account credential
  * @param {{ getToken: () => Promise<string>, reset: () => void }} [opts.tokenSource]
@@ -69,19 +69,6 @@ function createRawMdkClient (opts) {
       res = await send(action, payload, deviceId, callOpts, await tokenSource.getToken(), actor)
     }
     return _raiseRefusal(res)
-  }
-
-  // A client bound to a Worker that dials with this client's identity (and,
-  // once connected, over this client's own DHT node), so a Worker allowlist
-  // that admits the Kernel-facing key admits these too. Explicit identity or
-  // transport opts in `hrpc` replace the inherited ones.
-  function workerClient (key, hrpc) {
-    const inherited = typeof transport.childOpts === 'function' ? transport.childOpts() : {}
-    if (hrpc.rpc || hrpc.dht || hrpc.keyPair || hrpc.seed) {
-      delete inherited.rpc
-      delete inherited.dht
-    }
-    return createWorkerClient(key, { ...inherited, ...hrpc })
   }
 
   const client = {
@@ -166,38 +153,6 @@ function createRawMdkClient (opts) {
       return (w && w.rpcKey) || null
     },
 
-    // Resolve the worker's key, open a short-lived worker client, send the
-    // command, close. For adapter-handled ops (registerThing/forgetThings/...).
-    // Throws ERR_MDK_WORKER_KEY_UNKNOWN if the worker isn't registered.
-    async sendWorkerCommand (workerId, deviceId, command, params, { hrpc = {}, timeout } = {}) {
-      const key = await client.getWorkerKey(workerId)
-      if (!key) throw new Error('ERR_MDK_WORKER_KEY_UNKNOWN')
-      const wc = workerClient(key, hrpc)
-      await wc.connect()
-      try {
-        return await wc.sendCommand(deviceId, command, params, { timeout })
-      } finally {
-        await wc.close()
-      }
-    },
-
-    // Worker-scoped telemetry pull (logs, logs_multi, list, stats, ext_data —
-    // the worker-infra queries that aggregate over a worker's own store rather
-    // than one device). Same key-resolve/short-lived-client shape as
-    // sendWorkerCommand; resolves with the bare telemetry payload.
-    async pullWorkerTelemetry (workerId, query, { hrpc = {}, timeout } = {}) {
-      const key = await client.getWorkerKey(workerId)
-      if (!key) throw new Error('ERR_MDK_WORKER_KEY_UNKNOWN')
-      const wc = workerClient(key, hrpc)
-      await wc.connect()
-      try {
-        const res = await wc.pullTelemetry(null, query, { timeout })
-        return res && res.payload !== undefined ? res.payload : res
-      } finally {
-        await wc.close()
-      }
-    },
-
     /**
      * The same Kernel actions, made for an operator: each request carries the
      * operator's access token (`envelope.actor`) beside this client's own, and
@@ -247,7 +202,7 @@ function _kernelActions (request) {
       return request(ACTIONS.COMMAND_STATUS, { commandId }, null, callOpts)
     },
 
-    // Write-command log, newest first; admin callers only.
+    // Write-command log, newest first; needs `commands: read`.
     getCommandLog ({ start, end, limit } = {}, callOpts) {
       return request(ACTIONS.COMMAND_LOG, { start, end, limit }, null, callOpts)
     },
@@ -300,7 +255,7 @@ function _kernelActions (request) {
       return request(ACTIONS.AUTH_JWKS, {}, null, callOpts)
     },
 
-    // Identity administration (admin only).
+    // Identity administration: the list calls need `identities: read`, the rest `identities: write`.
 
     listUsers (callOpts) {
       return request(ACTIONS.IDENTITY_USER_LIST, {}, null, callOpts)
@@ -360,15 +315,6 @@ function _kernelActions (request) {
       return request(ACTIONS.ACTION_CANCEL_BATCH, { ids, voter }, null, callOpts)
     }
   }
-}
-
-// A client bound directly to a worker by its RPC public key — same surface as
-// the Kernel client, for ops the worker adapter handles directly. Worker
-// replies are MDK envelopes and are validated as such (ERR_MDK_RESPONSE_INVALID).
-// Called on its own it dials with whatever identity `hrpcOpts` names (a random
-// one if none); sendWorkerCommand/pullWorkerTelemetry pass the parent's.
-function createWorkerClient (rpcKey, hrpcOpts = {}) {
-  return createRawMdkClient({ hrpc: { envelope: true, ...hrpcOpts, key: rpcKey } })
 }
 
 /**
@@ -516,4 +462,4 @@ function _withTimeout (promise, ms, errCode) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
-module.exports = { createMdkClient, createRawMdkClient, createWorkerClient }
+module.exports = { createMdkClient, createRawMdkClient }

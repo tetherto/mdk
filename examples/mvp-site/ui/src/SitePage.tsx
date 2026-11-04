@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useNavigate } from "react-router";
 
 import { useMdkContext, useQuery, useQueryClient } from "@tetherto/mdk-react-adapter";
 import {
@@ -46,7 +46,11 @@ function formatStamp(ts: number): string {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
+/** Cooling-loop temperature at which a miner raises a high-severity alarm. */
+const TEMP_ALARM_C = 70;
+
 export function SitePage(): JSX.Element {
+  const navigate = useNavigate();
   const { apiBaseUrl } = useMdkContext();
   const base = apiBaseUrl ?? "";
   const [selectedMiner, setSelectedMiner] = useState("");
@@ -204,12 +208,16 @@ export function SitePage(): JSX.Element {
     const out: TIncidentRowProps[] = [];
     const stamp = formatStamp(data?.ts ?? 0);
     for (const m of data?.miners ?? []) {
-      if (m.temperature > 70) {
+      // At the threshold counts as reaching it. The mocks park two sealminers
+      // on exactly 70.0C, so a strict `>` left them silent while the alarm text
+      // named 70C as the threshold - 8 alarms for 10 miners, with no visible
+      // reason for the two that were missing.
+      if (m.temperature >= TEMP_ALARM_C) {
         out.push({
           id: `temp-${m.deviceId}`,
           severity: "high",
           title: "temperature_alarm",
-          body: `Cooling-loop temperature above alarm threshold — ${m.code}: ${m.temperature.toFixed(1)}°C (threshold 70°C)`,
+          body: `Cooling-loop temperature at or above alarm threshold — ${m.code}: ${m.temperature.toFixed(1)}°C (threshold ${TEMP_ALARM_C}°C)`,
           subtitle: stamp,
         });
       }
@@ -229,15 +237,17 @@ export function SitePage(): JSX.Element {
     return out.slice(0, 20);
   }, [data?.miners, data?.ts]);
 
+  // Only the severities that actually have an incident. AlarmsBellButton hides
+  // a row whose count is undefined ("omit to hide the row"), so seeding all
+  // three at 0 forced two permanently-dead rows into the badge: nothing here
+  // ever raises `medium`, and `critical` only when a miner stops reporting.
+  // Three unexplained digits, of which one ever moved.
   const alarmCounts = useMemo(
     () =>
-      incidents.reduce(
-        (acc, i) => {
-          acc[i.severity] = (acc[i.severity] ?? 0) + 1;
-          return acc;
-        },
-        { critical: 0, high: 0, medium: 0 } as Record<TIncidentRowProps["severity"], number>,
-      ),
+      incidents.reduce<Partial<Record<TIncidentRowProps["severity"], number>>>((acc, i) => {
+        acc[i.severity] = (acc[i.severity] ?? 0) + 1;
+        return acc;
+      }, {}),
     [incidents],
   );
 
@@ -302,7 +312,7 @@ export function SitePage(): JSX.Element {
 
   if (!data) {
     return (
-      <div style={{ display: "flex", gap: 12, alignItems: "center", padding: 32 }}>
+      <div className="site-shell__loading">
         {overview.error ? (
           <>
             <Typography>Could not load the site: {errorMessage(overview.error)}</Typography>
@@ -319,11 +329,11 @@ export function SitePage(): JSX.Element {
   }
 
   const logo = (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ color: "#f7931a", display: "inline-flex" }}>
+    <div className="site-shell__brand">
+      <span className="site-brand-mark">
         <MiningStatusIcon />
       </span>
-      <Typography variant="heading3" style={{ color: "#fff", fontWeight: 700 }}>
+      <Typography variant="heading3" className="site-shell__brand-name">
         MDK Site
       </Typography>
     </div>
@@ -331,14 +341,23 @@ export function SitePage(): JSX.Element {
 
   const actions = (
     <>
-      <AlarmsBellButton counts={alarmCounts} />
+      {/* Both handlers route to the Dashboard, where ActiveIncidentsCard lists
+          the very alarms these numbers count. onSeverityClick also makes each
+          row a real button with an `aria-label`; without it the devkit renders
+          the badge `aria-hidden` as plain text, so the counts were unreachable
+          and unexplained. */}
+      <AlarmsBellButton
+        counts={alarmCounts}
+        onClick={() => void navigate("/dashboard")}
+        onSeverityClick={() => void navigate("/dashboard")}
+      />
       <ProfileMenu
         user={
           access.data ? (
             <span data-testid="profile-user">
               {access.data.user.sub}
               <br />
-              <small style={{ opacity: 0.7 }}>{access.data.roles.join(", ") || "no roles"}</small>
+              <small className="site-muted">{access.data.roles.join(", ") || "no roles"}</small>
             </span>
           ) : undefined
         }
@@ -348,7 +367,7 @@ export function SitePage(): JSX.Element {
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+    <div className="site-shell">
       <AppHeader logo={logo} actions={actions}>
         <HeaderStatsBar>
           <HeaderMinersBox
@@ -367,10 +386,17 @@ export function SitePage(): JSX.Element {
         </HeaderStatsBar>
       </AppHeader>
 
-      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+      <div className="site-shell__body">
         <AppSidebar pages={permissions.pages} />
 
-        <main style={{ flex: 1, padding: 24, display: "flex", flexDirection: "column", gap: 20, minWidth: 0, overflowY: "auto" }}>
+        <main className="site-shell__main">
+          {data.unavailableWorkers?.length ? (
+            <div className="site-unavailable" role="alert">
+              {data.unavailableWorkers.length === 1 ? "1 Worker is down, so its devices are" : `${data.unavailableWorkers.length} Workers are down, so their devices are`}{" "}
+              missing from this view: {data.unavailableWorkers.map((w) => `${w.workerId} (${w.reason})`).join(", ")}
+              {data.unavailableDevices?.length ? `. Offline devices: ${data.unavailableDevices.map((d) => d.deviceId).join(", ")}` : null}
+            </div>
+          ) : null}
           <Routes>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route

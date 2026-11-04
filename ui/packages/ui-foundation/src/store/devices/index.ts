@@ -1,13 +1,13 @@
 import { createStore } from 'zustand/vanilla'
-import { createContainersSlice } from './containers.slice'
-import { createDeviceTagsSlice } from './device-tags.slice'
-import { createFiltersSlice } from './filters.slice'
-import { createLifecycleSlice } from './lifecycle.slice'
-import { createSelectionSlice } from './selection.slice'
-import { createSocketsSlice } from './sockets.slice'
-import type { DevicesStore } from './types'
+import { createContainersSlice } from './containers.slice.js'
+import { createDeviceTagsSlice } from './device-tags.slice.js'
+import { createFiltersSlice } from './filters.slice.js'
+import { createLifecycleSlice } from './lifecycle.slice.js'
+import { createSelectionSlice } from './selection.slice.js'
+import { createSocketsSlice } from './sockets.slice.js'
+import type { DevicesStore } from './types.js'
 
-export * from './types'
+export * from './types.js'
 
 /**
  * Factory for an isolated `devicesStore` — fresh selection state for tests

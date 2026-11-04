@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand/vanilla'
-import type { DevicesStore } from './types'
+import type { DevicesStore } from './types.js'
 
 /** Cross-slice reset. `filterTags` is intentionally preserved. */
 export type LifecycleSlice = Pick<DevicesStore, 'setResetSelections'>

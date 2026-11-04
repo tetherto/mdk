@@ -5,9 +5,9 @@
  * remain consumable from any package layer.
  */
 
-export * from './app-constants'
-export * from './container-constants'
-export * from './device-constants'
-export * from './permissions.constants'
-export * from './status-constants'
-export * from './time-constants'
+export * from './app-constants.js'
+export * from './container-constants.js'
+export * from './device-constants.js'
+export * from './permissions.constants.js'
+export * from './status-constants.js'
+export * from './time-constants.js'

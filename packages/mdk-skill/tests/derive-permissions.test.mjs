@@ -69,7 +69,6 @@ describe('derive-permissions', () => {
       assert.deepEqual(out.evidence.map((e) => e.method), ['listWorkers', 'getCapabilities', 'pullTelemetry', 'withActor', 'sendCommand'])
       assert.deepEqual(out.evidence[0].at, ['plugin/controllers/summary.js:3'])
       assert.deepEqual(out.evidence[1].at, ['plugin/controllers/summary.js:6'])
-      assert.equal(out.directWorkerCalls.length, 0)
     } finally {
       fs.rmSync(dir, { recursive: true, force: true })
     }
@@ -117,11 +116,10 @@ describe('derive-permissions', () => {
     assert.deepEqual(compare([{ resources: ['devices'], verbs: ['read'] }], [{ resources: ['*'], verbs: ['*'] }]).missing, [])
     assert.deepEqual(compare([{ resources: ['workers'], verbs: ['list'] }], [{ resources: ['workers'], verbs: ['*'] }]).unused, ['workers:read', 'workers:delete'])
     assert.equal(malformedRule([{ resources: ['x'], verbs: ['y'] }, { resources: 'x', verbs: ['y'] }]), 1)
-    assert.deepEqual(derive([]), { rules: [], actor: false, direct: [] })
-    assert.deepEqual(derive([{ method: 'sendWorkerCommand', file: 'f', line: 1 }]), {
+    assert.deepEqual(derive([]), { rules: [], actor: false })
+    assert.deepEqual(derive([{ method: 'getWorkerKey', file: 'f', line: 1 }]), {
       rules: [{ resources: ['workers'], verbs: ['list'] }],
-      actor: false,
-      direct: [{ method: 'sendWorkerCommand', file: 'f', line: 1 }]
+      actor: false
     })
   })
 

@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand/vanilla'
-import type { DevicesStore } from './types'
+import type { DevicesStore } from './types.js'
 
 /** Devices selected for bulk actions (the explorer's checkbox selection). */
 export type SelectionSlice = Pick<

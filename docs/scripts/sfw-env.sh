@@ -11,6 +11,17 @@
 # skip — see linkinator.config.json's `skip` list for URLs that are never checked
 # at all; that's a different concern from this file, see the note in that config).
 #
+# Keep it that way: this list is for hosts a *link checker* fetches, and nothing
+# else. `bypass:` is the one sfw kind that tunnels straight through with no MITM
+# and no scanning, so adding a host that *delivers packages* to it silently opts
+# that supply chain out of Socket. A registry belongs on its own kind instead
+# (`npm:`, `pypi:`, `cargo:`, …), which keeps it reachable and still scanned.
+#
+# Before adding anything, check sfw's own defaults — it already ships github.com,
+# codeload.github.com, gitlab.com, bitbucket.org and most public registries. Custom
+# entries merge on top of those rather than replacing them, so re-declaring a
+# default does nothing.
+#
 #   localhost                 linkinator's own local crawl server (random port per run —
 #                              sfw matches on hostname, so the port doesn't matter)
 #   img.shields.io             README badges (CI status, release tag, license)

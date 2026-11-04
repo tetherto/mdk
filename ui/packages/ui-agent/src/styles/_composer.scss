@@ -21,6 +21,16 @@
     line-height: 19px;
     resize: none;
 
+    /* The auto-grow in `composer.tsx` writes a border-box height, and reads
+       this back rather than assuming it. Stated here so a host resetting
+       `box-sizing` on its own inputs cannot quietly change what that height
+       measures. */
+    box-sizing: border-box;
+
+    /* Past MAX_ROWS the box stops growing, so the overflow has to go
+       somewhere: scroll inside rather than clipping the caret out of view. */
+    overflow-y: auto;
+
     &::placeholder {
       color: var(--mdk-agent-text-muted);
     }

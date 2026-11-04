@@ -13,7 +13,7 @@ The maintainer surface for this monorepo's documentation: authoring conventions,
 
 Together these files describe how an artefact in `*/packages/**/` shows up in the docs catalogue: contract authority lives with the engineers ([`mdk-contract.schema.json`](../../../backend/core/mdk-worker/mdk-contract.schema.json), UI registry generator), the docs side adds prose, wires in the runnable examples, a thin presentation overlay, and the port-signal hints that let the public docs site rewrite cross-references on port.
 
-The end-user-facing content ([`concepts/`](../../concepts/), [`tutorials/`](../../tutorials/), [`guides/`](../../guides/)) and the role-based router ([`README.md`](./README.md)) live in [`docs/`](../../README.md).
+The end-user-facing content ([`concepts/`](../../concepts/), [`tutorials/`](../../tutorials/), [`guides/`](../../guides/)) and the goal-based router ([`README.md`](./README.md)) live in [`docs/`](../../README.md).
 
 ## Docs-code parity
 

@@ -42,19 +42,54 @@ function publishWorkerKey (dir, workerId, rpcKeyHex) {
 // keep watching `dir` for new ones. The listener dedupes already-known peers and
 // drops a key on connect failure (so a periodic rescan retries workers whose RPC
 // server was not yet reachable, and re-discovers all workers after an Kernel
-// restart). Returns stop() to tear the watcher + timer down.
+// restart). A key that is still failing after `warnAfterMs` is reported once at
+// warn level, naming the worker. Returns stop() to tear the watcher + timer down.
 // Only `<name>.key` files that pass the trusted-keys checks (regular file, not a
 // symlink, owned by this user, not group/world-writable, 64-hex content) are
 // offered; anything else in the dir is ignored.
-function discoverWorkerKeys (kernel, dir, { rescanMs = 4000 } = {}) {
+function discoverWorkerKeys (kernel, dir, { rescanMs = 4000, warnAfterMs = 60000 } = {}) {
   _ensurePrivateDir(dir)
+
+  // A published key that has not registered yet is ordinary during a boot — the
+  // rescan below is how it eventually gets in. One still failing a minute later
+  // is not, and said nothing above `debug`: the Kernel retried forever while the
+  // operator saw a key on disk, a worker logging MDK_READY, and an empty error
+  // log on both sides. A whole pool went missing that way for a release.
+  //
+  // So warn once per worker, named by its key file — the Kernel itself cannot do
+  // this, because identity is what would have told it the worker's id. Once, not
+  // every scan: retrying forever is the right behaviour, the silence was not.
+  const pending = new Map()
+
+  const settle = (workerId, key, registered) => {
+    const entry = pending.get(workerId)
+    const secs = (since) => Math.round((Date.now() - since) / 1000)
+
+    if (registered) {
+      // Only ever after a warning — an unresolved warning is its own bug report.
+      if (entry && entry.warned) console.warn(`[mdk-kernel] worker "${workerId}" registered after ${secs(entry.since)}s`)
+      pending.delete(workerId)
+      return
+    }
+
+    if (!entry) { pending.set(workerId, { since: Date.now(), warned: false }); return }
+    if (entry.warned || Date.now() - entry.since < warnAfterMs) return
+
+    entry.warned = true
+    console.warn(`[mdk-kernel] worker "${workerId}" published an RPC key (${key.slice(0, 16)}…) but has not registered after ${secs(entry.since)}s; the Kernel is still retrying. Usually the worker is on a different DHT — its bootstrap/dhtHost must match the site's — or its RPC server is unreachable. Run with DEBUG=mdk:kernel:discovery for the underlying error.`)
+  }
 
   const offer = (file) => {
     if (typeof file !== 'string' || !WORKER_KEY_FILE.test(file)) return
     const key = _readKeyFile(path.join(dir, file))
     if (!key) return
+    const workerId = file.slice(0, -'.key'.length)
     Promise.resolve(kernel.dhtListener.discoverWorker(key))
-      .catch((e) => debug('discover %s failed: %s', file, e.message))
+      .then((registered) => settle(workerId, key, registered))
+      .catch((e) => {
+        debug('discover %s failed: %s', file, e.message)
+        settle(workerId, key, false)
+      })
   }
 
   const scan = () => {
@@ -85,6 +120,7 @@ function discoverWorkerKeys (kernel, dir, { rescanMs = 4000 } = {}) {
         watcher = null
       }
       clearInterval(timer)
+      pending.clear()
     }
   }
 }

@@ -264,3 +264,42 @@ describe('mdk create dashboard', () => {
     process.exitCode = 0;
   });
 });
+
+describe('mdk create: build and Node checks', () => {
+  it('puts building the checkout UI packages first in the dashboard next steps', async () => {
+    createDashboardMock.mockResolvedValue({
+      ok: true,
+      appPath: '/proj/apps/custom',
+      source: 'monorepo',
+      uiPackagesHint: 'The linked MDK UI packages are not built (ui/packages/react-devkit). Build them in /mdk: npm run setup:ui && npm run build:ui',
+    });
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await buildProgram().parseAsync(['node', 'mdk', 'create', 'dashboard', 'custom']);
+    const out = stdout.mock.calls.join('');
+    expect(out).toMatch(/1\. The linked MDK UI packages are not built[\s\S]*2\. Edit[\s\S]*3\. Run it/);
+    stdout.mockRestore();
+  });
+
+  it('passes --flat through and, for a standalone app repo, points at `mdk add app github:`', async () => {
+    createAppMock.mockReturnValue({ ok: true, appPath: '/repo', packageName: 'demo', appName: 'demo', uiBuilt: true });
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await buildProgram().parseAsync(['node', 'mdk', 'create', 'app', 'demo', '--flat']);
+    expect(createAppMock).toHaveBeenCalledWith(expect.objectContaining({ name: 'demo', flat: true }));
+    const out = stdout.mock.calls.join('');
+    expect(out).toContain('mdk add app github:');
+    expect(out).not.toContain('mdk.yaml');
+    stdout.mockRestore();
+  });
+
+  it('warns when Node is older than MDK supports', async () => {
+    const version = vi.spyOn(process.versions, 'node', 'get').mockReturnValue('22.1.0');
+    createAppMock.mockReturnValue({ ok: true, appPath: '/proj/apps/demo', packageName: 'demo', appName: 'demo', stackFile: 'added' });
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    await buildProgram().parseAsync(['node', 'mdk', 'create', 'app', 'demo']);
+    expect(stderr.mock.calls.join('')).toMatch(/Node 22\.1\.0 is too old; MDK needs Node >= 24/);
+    version.mockRestore();
+    stdout.mockRestore();
+    stderr.mockRestore();
+  });
+});

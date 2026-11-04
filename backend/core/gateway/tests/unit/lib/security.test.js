@@ -15,6 +15,7 @@ const {
 } = require('../../../workers/lib/security')
 const { loadPlugin } = require('../../../workers/lib/plugin-loader')
 const { buildFastifyRoutes, errorResponse } = require('../../../workers/lib/plugin-adapter')
+const { compilePolicy } = require('@tetherto/mdk-rbac')
 
 const FIXTURES_DIR = path.join(os.tmpdir(), 'mdk-gateway-security-test-' + Date.now())
 
@@ -112,7 +113,7 @@ test('createAuthHook - fails closed', async (t) => {
 // plugins, the Host check as a root onRequest hook, app routes, the error filter.
 // The routes are mounted as app "p" at "/", with a runtime client that answers
 // from the plugin's own handlers.
-async function buildServer (manifestRoutes, sec, { port = '3000', ctx: ctxOverride, invoke } = {}) {
+async function buildServer (manifestRoutes, sec, { port = '3000', ctx: ctxOverride, invoke, authority } = {}) {
   const dir = path.join(FIXTURES_DIR, 'srv-' + Math.random().toString(36).slice(2))
   fs.mkdirSync(path.join(dir, 'controllers'), { recursive: true })
   fs.writeFileSync(path.join(dir, 'mdk-plugin.json'), JSON.stringify({ name: '@test/p', version: '1.0.0', routes: manifestRoutes }))
@@ -132,7 +133,7 @@ async function buildServer (manifestRoutes, sec, { port = '3000', ctx: ctxOverri
   const mounted = { name: 'p', mount: '/', keyFile, routes: plugin.routes }
   const client = { invoke: invoke || (async (key, routeId, req, { identity } = {}) => handlers.get(routeId)({ ...req, _info: identity || {} })) }
   app.register(async () => {
-    for (const r of buildFastifyRoutes(mounted, client, ctx, { authVerifier: o.authVerifier })) app.route(r)
+    for (const r of buildFastifyRoutes(mounted, client, ctx, { authVerifier: o.authVerifier, authority })) app.route(r)
   })
   app.setErrorHandler((err, request, reply) => {
     const body = errorResponse(err)
@@ -183,6 +184,43 @@ test('gateway http - verifier identity reaches the controller; auth runs before 
   t.is(ok.statusCode, 200)
   t.alike(ok.json().info, { user: { userId: 'op' } }, '_info is the verified identity')
   t.is(calls, 3)
+})
+
+test('gateway http - with an authority, 403 runs before body validation; the body still names the instance', async (t) => {
+  // A real spec.rbac: `op` may create ops-style commands on rack-3-* only; `nobody` has no rule.
+  const rbac = compilePolicy({
+    roles: [{ name: 'op', rules: [{ resources: ['p/cmd'], verbs: ['create'], resourceNames: ['rack-3-*'] }] }],
+    bindings: [{ role: 'op', subjects: [{ kind: 'User', name: 'op' }] }]
+  })
+  const authority = {
+    verify: async (token) => ({ kind: 'user', sub: token }),
+    evaluate: (identity, request) => rbac.evaluate(identity, request)
+  }
+  const app = await buildServer([{
+    id: 'cmd',
+    handler: './controllers/c.js',
+    resourceName: { body: 'target' },
+    http: {
+      method: 'POST',
+      path: '/cmd',
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { type: 'object', required: ['target', 'mode'], properties: { target: { type: 'string' }, mode: { type: 'string', enum: ['low', 'high'] } } } } }
+      }
+    }
+  }], {}, { authority })
+  t.teardown(() => app.close())
+  const post = (token, payload) => app.inject({ method: 'POST', url: '/cmd', headers: { ...HOST, authorization: `Bearer ${token}` }, payload })
+
+  const noRuleBadBody = await post('nobody', {})
+  t.is(noRuleBadBody.statusCode, 403, 'a caller with no rule gets 403, not the body schema')
+  t.absent(JSON.stringify(noRuleBadBody.json()).includes('required property'), 'no schema detail leaks to it')
+  t.is((await post('nobody', { target: 'rack-3-01', mode: 'low' })).statusCode, 403)
+
+  t.is((await post('op', { target: 'rack-3-01' })).statusCode, 400, 'an allowed caller still gets body validation')
+  t.is((await post('op', { target: 'rack-3-01', mode: 'low' })).statusCode, 200)
+  t.is((await post('op', { target: 'rack-4-01', mode: 'low' })).statusCode, 403, 'the instance name is read from the parsed body')
+  t.is((await post('op', { mode: 'low' })).statusCode, 403, 'no instance name fails closed against a name-scoped rule')
 })
 
 test('gateway http - Host allowlist, security headers, body limit, rate limit', async (t) => {

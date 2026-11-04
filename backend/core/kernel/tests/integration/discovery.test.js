@@ -325,3 +325,30 @@ test('discovery - directly handed keys (registerWorker / local discovery) skip t
   await listener.discoverWorker('aa'.repeat(32))
   t.is(registry.listWorkers().length, 1, 'registered without being on workerKeys')
 })
+
+test('discovery - discoverWorker reports whether the worker reached Ready', async (t) => {
+  const good = fakeChannelListener({ identity: { workerId: 'w', devices: [{ deviceId: 'd' }] }, contract: GOOD_CONTRACT })
+  t.is(await good.listener.discoverWorker('aa'.repeat(32)), true, 'registered')
+  t.is(await good.listener.discoverWorker('aa'.repeat(32)), true, 'a re-offer of a registered key still reports registered')
+
+  const bad = fakeChannelListener({ identity: { workerId: 'w', devices: [{ id: 'no-deviceId' }] }, contract: GOOD_CONTRACT })
+  t.is(await bad.listener.discoverWorker('bb'.repeat(32)), false, 'malformed identity is reported, not swallowed')
+  t.is(bad.listener._discoveredPeers.has('bb'.repeat(32)), false, 'and the key is dropped so the next offer retries')
+})
+
+// The silence behind F3: the Kernel retried a worker it could not reach every few
+// seconds, forever. A caller that retries has to see each attempt's real outcome
+// to know how long that has been going on — in particular, an offer arriving
+// while an attempt is still in flight must not come back looking like a success.
+test('discovery - an offer during an in-flight attempt resolves to that attempt', async (t) => {
+  let release
+  const blocked = new Promise((resolve) => { release = resolve })
+  const { listener } = fakeChannelListener({ identity: { workerId: 'w', devices: [{ deviceId: 'd' }] }, contract: GOOD_CONTRACT })
+  listener.workerChannel.connect = () => { throw new Error('CHANNEL_CLOSED: channel closed') }
+  listener._register = async () => { await blocked; return false }
+
+  const first = listener.discoverWorker('cc'.repeat(32))
+  const second = listener.discoverWorker('cc'.repeat(32))
+  release()
+  t.alike(await Promise.all([first, second]), [false, false], 'both see the failure')
+})

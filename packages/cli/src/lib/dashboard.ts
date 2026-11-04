@@ -1,13 +1,13 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { copyFileSync, cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
 import { fetchTemplate } from './fetch-template.js';
 import { installDeps, npmBin } from './npm.js';
-import { DIRS } from './project.js';
+import { DIRS, fileSpec } from './project.js';
 import { isInside, NAME_RE } from './names.js';
-import { checkoutRoot } from './checkout.js';
+import { checkoutRoot, UI_PACKAGES_BUILD, unbuiltPackages } from './checkout.js';
 import { pkg as cliPkg } from './pkg.js';
 import { DASHBOARD_APPS_ENV, type DashboardApp } from './dashboard-apps.js';
 
@@ -15,6 +15,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** Template subtree name — a runnable Vite app that doubles as the CLI template. */
 const TEMPLATE_DIR_NAME = 'mdk-ui-shell-template';
+
+const REPO_URL = 'https://github.com/tetherto/mdk';
+
+/** The template's path inside the MDK repo, which its docs' relative links are written against. */
+const TEMPLATE_REPO_PATH = `examples/${TEMPLATE_DIR_NAME}`;
 
 /** Package root of the CLI (from `dist/lib/*.js` and `src/lib/*.ts` alike). */
 const CLI_ROOT = resolve(__dirname, '..', '..');
@@ -51,7 +56,7 @@ const REF_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
  */
 export function shellTemplateUrl(ref = defaultTemplateRef()): string {
   if (!REF_RE.test(ref) || ref.includes('..')) throw new Error(`Invalid git ref "${ref}".`);
-  return `https://github.com/tetherto/mdk/tree/${ref}/examples/${TEMPLATE_DIR_NAME}`;
+  return `${REPO_URL}/tree/${ref}/${TEMPLATE_REPO_PATH}`;
 }
 
 /** Folder + package.json name for a stack's dashboard app. */
@@ -92,6 +97,11 @@ export interface DashboardResult {
   source?: 'monorepo' | 'github';
   /** Warning surfaced when `npm install` could not complete (scaffold still ok). */
   installWarning?: string;
+  /**
+   * Monorepo only: the linked MDK UI packages have no `dist/` yet, so the shell
+   * cannot run until they are built. Says what to run, and where.
+   */
+  uiPackagesHint?: string;
 }
 
 /** The MDK UI library packages the template links via `file:` (monorepo-local). */
@@ -149,7 +159,7 @@ function isCopyExcluded(src: string): boolean {
  * `examples/mdk-ui-shell-template` (no network). Otherwise it downloads the
  * template subtree from GitHub. Either way it finalizes the copy for its target:
  * sets the app name, rewrites the template's monorepo-local `file:` MDK deps
- * (→ absolute local links in the monorepo, → a published range standalone),
+ * (→ links relative to the dashboard in the monorepo, → a published range standalone),
  * and injects the display name.
  */
 export async function createDashboard(opts: DashboardOptions): Promise<DashboardResult> {
@@ -180,22 +190,24 @@ export async function createDashboard(opts: DashboardOptions): Promise<Dashboard
         recursive: true,
         filter: (src) => !isCopyExcluded(src),
       });
-      finalizeShell(appPath, opts.name, { templateDir: local.templateDir, isMonorepo: true, gatewayUrl });
+      finalizeShell(appPath, opts.name, { templateDir: local.templateDir, isMonorepo: true, gatewayUrl, ref: opts.ref });
     } else {
       await fetchTemplate(shellTemplateUrl(opts.ref), appPath, opts.force ?? false);
-      finalizeShell(appPath, opts.name, { templateDir: appPath, isMonorepo: false, gatewayUrl });
+      finalizeShell(appPath, opts.name, { templateDir: appPath, isMonorepo: false, gatewayUrl, ref: opts.ref });
     }
 
     // Installed in place, not at the project root: the dashboard is deliberately
     // outside the npm workspaces (see project.ts WORKSPACES) so its Vite/React
     // tree is never hoisted alongside the `file:`-linked MDK UI packages.
     const install = installDeps(appPath, opts.install !== false);
+    const uiPackagesHint = local ? unbuiltLinksHint(appPath, local.monorepoRoot) : undefined;
     return {
       ok: true,
       message: '',
       appPath,
       source: local ? 'monorepo' : 'github',
       installWarning: install.ok ? undefined : install.message,
+      ...(uiPackagesHint ? { uiPackagesHint } : {}),
     };
   } catch (error) {
     return {
@@ -209,13 +221,30 @@ export async function createDashboard(opts: DashboardOptions): Promise<Dashboard
 }
 
 /**
+ * The MDK packages the scaffolded dashboard links with `file:` export `./dist/*`
+ * and have no `prepare` step, so a fresh checkout must build them before the
+ * dashboard runs. Returns the command to run when any lacks `dist/`.
+ */
+function unbuiltLinksHint(appPath: string, monorepoRoot: string): string | undefined {
+  const pkg = JSON.parse(readFileSync(join(appPath, 'package.json'), 'utf8')) as { dependencies?: Record<string, string> };
+  const linked = Object.entries(pkg.dependencies ?? {})
+    .filter(([name, spec]) => name.startsWith(MDK_DEP_SCOPE) && spec.startsWith('file:'))
+    .map(([, spec]) => resolve(appPath, spec.slice('file:'.length)));
+  const missing = unbuiltPackages(linked);
+  if (missing.length === 0) return undefined;
+  const names = missing.map((dir) => dir.slice(monorepoRoot.length + 1)).join(', ');
+  return `The linked MDK UI packages are not built (${names}). Build them in ${monorepoRoot}: ${UI_PACKAGES_BUILD}`;
+}
+
+/**
  * Finalize the freshly copied tree for the new runnable-template conventions:
  *  - remove a stale `package-lock.json`.
  *  - copy `.env.example` → `.env` so the app loads its config out of the box.
  *  - set package.json `name` + rewrite the template's `file:` MDK deps for the
- *    target context (absolute local links in the monorepo; a published range
+ *    target context (relative local links in the monorepo; a published range
  *    standalone) so `npm install` resolves them from the new location.
  *  - inject the chosen name into the `APP_NAME` display constant.
+ *  - pin the docs' links into the rest of the MDK repo to GitHub at `ref`.
  */
 function finalizeShell(
   dir: string,
@@ -224,7 +253,8 @@ function finalizeShell(
     templateDir,
     isMonorepo,
     gatewayUrl,
-  }: { templateDir: string; isMonorepo: boolean; gatewayUrl?: string | null },
+    ref = defaultTemplateRef(),
+  }: { templateDir: string; isMonorepo: boolean; gatewayUrl?: string | null; ref?: string },
 ): void {
   rmSync(join(dir, 'package-lock.json'), { force: true });
 
@@ -251,6 +281,48 @@ function finalizeShell(
 
   rewritePackageJson(join(dir, 'package.json'), { appName, templateDir, isMonorepo });
   setDisplayName(dir, appName);
+  rewriteDocLinks(dir, ref);
+}
+
+/** Inline `](target)` links and `[slug]: target` definitions in Markdown. */
+const MD_LINK_RE = /(\]\(\s*<?|^\s*\[[^\]]+\]:\s*<?)([^)\s>#]+)(#[^)\s>]*)?/gm;
+
+/**
+ * The template's docs link into the rest of the MDK repo (`../../ui/packages/…`,
+ * `../mvp-site/…`); copied out of the repo those links dangle. Rewrite each
+ * relative link that leaves the app to its GitHub URL at `ref`, the release the
+ * template came from. Links inside the app and fenced code are left alone.
+ */
+export function rewriteDocLinks(dir: string, ref: string): void {
+  for (const file of listMarkdown(dir)) {
+    const fileDir = relative(dir, dirname(file)).split(sep).join('/');
+    let fenced = false;
+    const body = readFileSync(file, 'utf8');
+    const next = body
+      .split('\n')
+      .map((line) => {
+        if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+        if (fenced) return line;
+        return line.replace(MD_LINK_RE, (match, lead: string, target: string, hash = '') => {
+          if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('/')) return match;
+          if (!posix.normalize(posix.join(fileDir, target)).startsWith('../')) return match;
+          const repoPath = posix.normalize(posix.join(TEMPLATE_REPO_PATH, fileDir, target));
+          if (repoPath.startsWith('../')) return match;
+          const kind = target.endsWith('/') ? 'tree' : 'blob';
+          return `${lead}${REPO_URL}/${kind}/${ref}/${repoPath.replace(/\/$/, '')}${hash}`;
+        });
+      })
+      .join('\n');
+    if (next !== body) writeFileSync(file, next, 'utf8');
+  }
+}
+
+function listMarkdown(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : listMarkdown(path);
+    return entry.name.endsWith('.md') ? [path] : [];
+  });
 }
 
 /** Reads `http://localhost:<gateway.port>` from `<parentDir>/mdk.yaml`, else null. */
@@ -282,8 +354,8 @@ function setEnvVar(content: string, key: string, value: string): string {
  * chosen bare name (the `@tetherto/` scope belongs to the MDK library packages).
  * The template links MDK packages via `file:` so it runs in place; a copy must
  * not inherit those now-broken relative links:
- *   - MONOREPO → resolve each `file:` link against the template dir to an
- *     absolute local path (works from any scaffold location, no workspace needed).
+ *   - MONOREPO → resolve each `file:` link against the template dir, then
+ *     write it relative to the scaffolded app (committable, no workspace needed).
  *   - STANDALONE → rewrite `file:` MDK deps to a published range.
  */
 function rewritePackageJson(
@@ -302,7 +374,7 @@ function rewritePackageJson(
     for (const [name, spec] of Object.entries(deps)) {
       if (!spec.startsWith('file:') || !name.startsWith(MDK_DEP_SCOPE)) continue;
       deps[name] = isMonorepo
-        ? `file:${resolve(templateDir, spec.slice('file:'.length))}`
+        ? fileSpec(dirname(pkgJsonPath), resolve(templateDir, spec.slice('file:'.length)))
         : range;
     }
   }

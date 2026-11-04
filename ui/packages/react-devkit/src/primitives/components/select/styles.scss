@@ -1,20 +1,24 @@
 @use '../../styles/mixins' as *;
+@use '../../styles/layout' as layout;
 
 // Size variant variables
+//
+// The heights come from the shared layout scale rather than being declared
+// here, so `--mdk-control-height-*` and this trigger can never disagree.
 $select-lg-padding: 8px 8px 8px 14px;
 $select-lg-font-size: 14px;
 $select-lg-gap: 8px;
-$select-lg-height: 40px;
+$select-lg-height: layout.$control-content-height-lg;
 
 $select-md-padding: 4px 4px 4px 12px;
 $select-md-font-size: 12px;
 $select-md-gap: 8px;
-$select-md-height: 32px;
+$select-md-height: layout.$control-content-height-md;
 
 $select-sm-padding: 4px 4px 4px 8px;
 $select-sm-font-size: 12px;
 $select-sm-gap: 10px;
-$select-sm-height: 24px;
+$select-sm-height: layout.$control-content-height-sm;
 
 $select-colored-gap: 12px;
 

@@ -29,6 +29,8 @@ export {
   newConversation,
 } from './conversation-store'
 
+export { AGENT_APP_ID, hasAgentApp } from './agent-app'
+
 export { describeAgentError, GENERIC_TURN_ERROR } from './error-text'
 
 export type {

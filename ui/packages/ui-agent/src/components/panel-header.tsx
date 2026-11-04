@@ -38,6 +38,11 @@ const PanelHeaderView = ({
   <header className="mdk-agent-header">
     <div className="mdk-agent-header__titles">
       <h2 className="mdk-agent-header__title">
+        {/* The back control's space is reserved in both views, so the title
+            starts at the same x whichever one is showing. Switching used to
+            shunt it 20px sideways while the taller control grew the row, and
+            between that and the status line appearing the whole header
+            jumped. */}
         {view === PANEL_VIEW.CONVERSATIONS
           ? (
               <Button
@@ -48,7 +53,7 @@ const PanelHeaderView = ({
                 onClick={onToggleConversations}
               />
             )
-          : null}
+          : <span className="mdk-agent-header__back-slot" aria-hidden="true" />}
         {title}
       </h2>
       {status ? <p className="mdk-agent-header__status">{status}</p> : null}

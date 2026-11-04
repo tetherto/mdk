@@ -40,10 +40,14 @@ authentication, serves every CGI endpoint the Worker uses, and applies command w
 ```js
 const amMock = require('antminer-mdk-worker/mock/cgi-server')
 
-const mock = amMock.createServer({ port: 14080, host: '127.0.0.1', username: 'root', password: 'root' })
-await mock.ready
-// ...
-await mock.close()
+const main = async () => {
+  const mock = amMock.createServer({ port: 14080, host: '127.0.0.1', username: 'root', password: 'root' })
+  await mock.ready
+  // ...
+  await mock.close()
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
 
 [`examples/mvp-site`][mvp-site-adapter] boots one mock per seed device listed under `antminers` in
@@ -80,6 +84,7 @@ async function startAntminerWorker (opts) {
     workerId: opts.workerId,
     kernelTopic: opts.kernelTopic || null,
     storeDir: opts.storeDir,
+    allowedKeys: opts.allowedKeys || [],
     devices
   })
 
@@ -102,19 +107,27 @@ example IP address and credentials with your miner's values:
 const { getKernel } = require('@tetherto/mdk-core')
 const { startAntminerWorker } = require('./antminer-adapter')
 
-const kernel = await getKernel()
+const main = async () => {
+  const kernel = await getKernel()
 
-const worker = await startAntminerWorker({
-  workerId: 'antminer-rack-1',
-  storeDir: './store/antminer-rack-1',
-  type: 'miner-am-s21',
-  seedDevices: [{
-    info: { serialNum: 'AM-001' },
-    opts: { address: '192.168.1.10', port: 80, username: 'root', password: process.env.ANTMINER_PASSWORD }
-  }]
-})
-await kernel.registerWorker(worker.runtime.getPublicKey())
+  const worker = await startAntminerWorker({
+    workerId: 'antminer-rack-1',
+    storeDir: './store/antminer-rack-1',
+    allowedKeys: [kernel.getClientPublicKey()],
+    type: 'miner-am-s21',
+    seedDevices: [{
+      info: { serialNum: 'AM-001' },
+      opts: { address: '192.168.1.10', port: 80, username: 'root', password: process.env.ANTMINER_PASSWORD }
+    }]
+  })
+  await kernel.registerWorker(worker.runtime.getPublicKey())
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 Device `config` fields the plugin reads:
 
@@ -147,8 +160,9 @@ broader deployment mechanics.
 
 ## Troubleshooting
 
-The reference deployment is [`examples/mvp-site`][mvp-site-adapter]'s full stack: `npm start` prints
-`MDK_READY worker-antminer devices=<n>` once the Antminer Worker is up.
+The reference deployment is [`examples/mvp-site`][mvp-site-adapter]'s full stack. `npm start` launches it under PM2 and
+returns; the Antminer Worker's process log shows `MDK_READY worker-antminer devices=<n>` once the Worker is up
+(`pm2 logs worker-antminer`).
 
 An unreachable miner doesn't fail at load time: the Worker reports the device online and the failure surfaces inside
 the telemetry channel or command response that touched the network. If the Worker doesn't come up, or a mock port is
@@ -180,8 +194,8 @@ already in use, follow [miner troubleshooting][miner-troubleshooting].
 [install-pattern]: ../../../backend/workers/docs/install-pattern.md
 <!-- docs@tether.io: install-pattern → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->
 
-[deployment-topologies]: ../deployment/index.md
-<!-- docs@tether.io: deployment-topologies → guides/deployment -->
+[deployment-topologies]: ../../concepts/deployment-topologies.md
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [miner-troubleshooting]: troubleshooting.md
 <!-- docs@tether.io: miner-troubleshooting → guides/miners/troubleshooting -->

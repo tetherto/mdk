@@ -15,7 +15,7 @@ export type PermissionRequest = string | string[] | PermissionCheck
  * @example
  * ```tsx
  * const hasPerms = useHasPerms()
- * if (hasPerms('users:read')) { ... }
+ * if (hasPerms('users:r')) { ... }
  * if (hasPerms({ write: true })) { ... }
  * if (hasPerms({ cap: 'admin' })) { ... }
  * ```

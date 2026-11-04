@@ -7,14 +7,24 @@
  * documented in `docs/ARCHITECTURE.md`.
  */
 
-import { MinerStatuses } from './device-constants'
+import { MinerStatuses } from './device-constants.js'
 
+/**
+ * The states a container reports: running, offline, or stopped.
+ *
+ * @category general
+ */
 export const CONTAINER_STATUS = {
   RUNNING: 'running',
   OFFLINE: 'offline',
   STOPPED: 'stopped',
 } as const
 
+/**
+ * The power modes a miner can be set to, from `sleep` through to `high`.
+ *
+ * @category general
+ */
 export const MINER_POWER_MODE = {
   SLEEP: 'sleep',
   LOW: 'low',
@@ -22,6 +32,12 @@ export const MINER_POWER_MODE = {
   HIGH: 'high',
 } as const
 
+/**
+ * Every state a socket can show, combining the miner statuses and power modes with the
+ * connection states a socket adds: mining error, disconnected, and connecting.
+ *
+ * @category general
+ */
 export const SOCKET_STATUSES = {
   ...MinerStatuses,
   ...MINER_POWER_MODE,
@@ -30,6 +46,11 @@ export const SOCKET_STATUSES = {
   CONNECTING: 'connecting',
 } as const
 
+/**
+ * The headline states a site reports on the overview: offline, empty, not mining, or mining.
+ *
+ * @category general
+ */
 export const SITE_OVERVIEW_STATUSES = {
   OFFLINE: 'offline',
   EMPTY: 'empty',

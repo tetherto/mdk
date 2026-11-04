@@ -21,6 +21,13 @@ describe('buildChartTooltip', () => {
     expect(result.intersect).toBe(true)
   })
 
+  it('passes axis through, and omits it when unset', () => {
+    // Omitted rather than defaulted, so callers that do not know the chart's
+    // orientation keep Chart.js' own per-mode default.
+    expect('axis' in buildChartTooltip()).toBe(false)
+    expect(buildChartTooltip({ axis: 'y' }).axis).toBe('y')
+  })
+
   it('external handler creates tooltip element when opacity > 0', () => {
     const tooltip = buildChartTooltip()
     const externalHandler = tooltip.external!
@@ -36,6 +43,8 @@ describe('buildChartTooltip', () => {
 
     const mockTooltipModel = {
       opacity: 1,
+      caretX: 0,
+      caretY: 0,
       title: ['Test Title'],
       dataPoints: [
         {
@@ -102,6 +111,8 @@ describe('buildChartTooltip', () => {
 
     const mockTooltipModel = {
       opacity: 1,
+      caretX: 0,
+      caretY: 0,
       title: [],
       dataPoints: [
         {
@@ -115,6 +126,70 @@ describe('buildChartTooltip', () => {
 
     const tooltipEl = mockContainer.querySelector('[data-msdk-chart-tooltip]')
     expect(tooltipEl?.innerHTML).toContain('123.46 TH/s')
+
+    document.body.removeChild(mockContainer)
+  })
+
+  it('reads the value axis, not the index axis, on a horizontal chart', () => {
+    const tooltip = buildChartTooltip({ valueFormatter: (v) => v.toLocaleString('en-US') })
+    const externalHandler = tooltip.external!
+
+    const mockCanvas = document.createElement('canvas')
+    const mockContainer = document.createElement('div')
+    mockContainer.appendChild(mockCanvas)
+    document.body.appendChild(mockContainer)
+
+    // `indexAxis: 'y'` parses to `{ y: <category index>, x: <value> }`.
+    const mockChart = { canvas: mockCanvas, options: { indexAxis: 'y' } }
+    const mockTooltipModel = {
+      opacity: 1,
+      caretX: 0,
+      caretY: 0,
+      title: [],
+      dataPoints: [
+        {
+          dataset: { label: 'Miners', borderColor: '#00FF00' },
+          parsed: { y: 1, x: 3400 },
+        },
+      ],
+    }
+
+    externalHandler({ chart: mockChart as any, tooltip: mockTooltipModel as any })
+
+    const tooltipEl = mockContainer.querySelector('[data-msdk-chart-tooltip]')
+    expect(tooltipEl?.innerHTML).toContain('3,400')
+    expect(tooltipEl?.innerHTML).not.toContain('>1<')
+
+    document.body.removeChild(mockContainer)
+  })
+
+  it('lets a dataset override the chart orientation', () => {
+    const tooltip = buildChartTooltip({ valueFormatter: (v) => String(v) })
+    const externalHandler = tooltip.external!
+
+    const mockCanvas = document.createElement('canvas')
+    const mockContainer = document.createElement('div')
+    mockContainer.appendChild(mockCanvas)
+    document.body.appendChild(mockContainer)
+
+    const mockChart = { canvas: mockCanvas, options: { indexAxis: 'x' } }
+    const mockTooltipModel = {
+      opacity: 1,
+      caretX: 0,
+      caretY: 0,
+      title: [],
+      dataPoints: [
+        {
+          dataset: { label: 'Bars', borderColor: '#00FF00', indexAxis: 'y' },
+          parsed: { y: 4, x: 980 },
+        },
+      ],
+    }
+
+    externalHandler({ chart: mockChart as any, tooltip: mockTooltipModel as any })
+
+    const tooltipEl = mockContainer.querySelector('[data-msdk-chart-tooltip]')
+    expect(tooltipEl?.innerHTML).toContain('980')
 
     document.body.removeChild(mockContainer)
   })
@@ -134,6 +209,8 @@ describe('buildChartTooltip', () => {
 
     const mockTooltipModel = {
       opacity: 1,
+      caretX: 0,
+      caretY: 0,
       title: ['January 2024'],
       dataPoints: [
         {
@@ -166,6 +243,8 @@ describe('buildChartTooltip', () => {
 
     const mockTooltipModel = {
       opacity: 1,
+      caretX: 0,
+      caretY: 0,
       title: [],
       dataPoints: [
         {
@@ -199,6 +278,8 @@ describe('buildChartTooltip', () => {
 
     const mockTooltipModel = {
       opacity: 1,
+      caretX: 0,
+      caretY: 0,
       title: [],
       dataPoints: [
         {
@@ -236,6 +317,8 @@ describe('buildChartTooltip', () => {
 
     const mockTooltipModel = {
       opacity: 1,
+      caretX: 0,
+      caretY: 0,
       title: [],
       dataPoints: [
         {
@@ -272,6 +355,8 @@ describe('buildChartTooltip', () => {
       tooltip: {
         opacity: 1,
         title: [],
+        caretX: 0,
+        caretY: 0,
         dataPoints: [{ dataset: { label: 'T', borderColor: '#F00' }, parsed: { y: 1 } }],
       } as any,
     })
@@ -297,7 +382,10 @@ describe('buildChartTooltip', () => {
     document.body.removeChild(container)
   })
 
-  it('does not show tooltip from external handler until mousemove stores cursor', () => {
+  it('shows the first tooltip from the caret, before any mousemove is recorded', () => {
+    // The container's mousemove listener is bound inside this handler, a frame after the
+    // move that triggered it, so the first tooltip of a chart's life has no cursor to
+    // read. It must still be shown — the alternative is a blank first hover.
     const tooltip = buildChartTooltip()
     const externalHandler = tooltip.external!
 
@@ -311,24 +399,96 @@ describe('buildChartTooltip', () => {
       tooltip: {
         opacity: 1,
         title: [],
+        caretX: 40,
+        caretY: 20,
         dataPoints: [{ dataset: { label: 'T', borderColor: '#F00' }, parsed: { y: 1 } }],
       } as any,
     })
 
     const tooltipEl = container.querySelector<HTMLElement>('[data-msdk-chart-tooltip]')!
-    expect(tooltipEl.style.opacity).toBe('0')
-
-    container.dispatchEvent(
-      new MouseEvent('mousemove', { bubbles: true, clientX: 50, clientY: 30 }),
-    )
-
     expect(tooltipEl.style.opacity).toBe('1')
+    expect(tooltipEl.style.visibility).toBe('visible')
     expect(tooltipEl.style.left).toMatch(/px$/)
 
     document.body.removeChild(container)
   })
 
-  it('mouseleave hides the tooltip element', () => {
+  it('offsets the caret by where the canvas sits inside the container', () => {
+    const tooltip = buildChartTooltip()
+    const externalHandler = tooltip.external!
+
+    const canvas = document.createElement('canvas')
+    const container = document.createElement('div')
+    container.appendChild(canvas)
+    document.body.appendChild(container)
+
+    Object.defineProperty(container, 'offsetWidth', { configurable: true, get: () => 400 })
+    Object.defineProperty(container, 'offsetHeight', { configurable: true, get: () => 300 })
+    // A padded chart card: the caret is in canvas pixels, the tooltip in container ones.
+    Object.defineProperty(canvas, 'offsetLeft', { configurable: true, get: () => 20 })
+    Object.defineProperty(canvas, 'offsetTop', { configurable: true, get: () => 12 })
+
+    const show = (): void =>
+      externalHandler({
+        chart: { canvas } as any,
+        tooltip: {
+          opacity: 1,
+          title: [],
+          caretX: 100,
+          caretY: 50,
+          dataPoints: [{ dataset: { label: 'T', borderColor: '#F00' }, parsed: { y: 1 } }],
+        } as any,
+      })
+
+    show()
+    const tooltipEl = container.querySelector<HTMLElement>('[data-msdk-chart-tooltip]')!
+    Object.defineProperty(tooltipEl, 'offsetWidth', { configurable: true, get: () => 150 })
+    Object.defineProperty(tooltipEl, 'offsetHeight', { configurable: true, get: () => 80 })
+    show() // again, now that the element reports a size
+
+    // anchor = (20 + 100, 12 + 50); it fits to the right, so left = anchor.x + GAP
+    expect(tooltipEl.style.left).toBe('130px')
+    expect(tooltipEl.style.top).toBe('62px')
+
+    document.body.removeChild(container)
+  })
+
+  it('does not let a mousemove re-raise a tooltip the handler has hidden', () => {
+    // Only the handler knows whether Chart.js still has an active point. A mouse move
+    // that un-hid the element stranded it over regions Chart.js had dismissed, carrying
+    // the values of whatever point the cursor last crossed.
+    const tooltip = buildChartTooltip()
+    const externalHandler = tooltip.external!
+
+    const canvas = document.createElement('canvas')
+    const container = document.createElement('div')
+    container.appendChild(canvas)
+    document.body.appendChild(container)
+
+    const model = (opacity: number): unknown => ({
+      opacity,
+      title: [],
+      caretX: 40,
+      caretY: 20,
+      dataPoints: [{ dataset: { label: 'T', borderColor: '#F00' }, parsed: { y: 41 } }],
+    })
+
+    externalHandler({ chart: { canvas } as any, tooltip: model(1) as any })
+    const tooltipEl = container.querySelector<HTMLElement>('[data-msdk-chart-tooltip]')!
+    expect(tooltipEl.style.opacity).toBe('1')
+
+    externalHandler({ chart: { canvas } as any, tooltip: model(0) as any })
+    container.dispatchEvent(
+      new MouseEvent('mousemove', { bubbles: true, clientX: 50, clientY: 30 }),
+    )
+
+    expect(tooltipEl.style.opacity).toBe('0')
+    expect(tooltipEl.style.visibility).toBe('hidden')
+
+    document.body.removeChild(container)
+  })
+
+  it('clears the content when hiding, so no stale values can resurface', () => {
     const tooltip = buildChartTooltip()
     const externalHandler = tooltip.external!
 
@@ -342,6 +502,42 @@ describe('buildChartTooltip', () => {
       tooltip: {
         opacity: 1,
         title: [],
+        caretX: 40,
+        caretY: 20,
+        dataPoints: [{ dataset: { label: 'Series 1', borderColor: '#F00' }, parsed: { y: 41 } }],
+      } as any,
+    })
+
+    const tooltipEl = container.querySelector<HTMLElement>('[data-msdk-chart-tooltip]')!
+    expect(tooltipEl.textContent).toContain('41')
+
+    externalHandler({
+      chart: { canvas } as any,
+      tooltip: { opacity: 0, title: [], dataPoints: [] } as any,
+    })
+
+    expect(tooltipEl.childElementCount).toBe(0)
+    expect(tooltipEl.textContent).toBe('')
+
+    document.body.removeChild(container)
+  })
+
+  it('mouseleave hides the tooltip element and empties it', () => {
+    const tooltip = buildChartTooltip()
+    const externalHandler = tooltip.external!
+
+    const canvas = document.createElement('canvas')
+    const container = document.createElement('div')
+    container.appendChild(canvas)
+    document.body.appendChild(container)
+
+    externalHandler({
+      chart: { canvas } as any,
+      tooltip: {
+        opacity: 1,
+        title: [],
+        caretX: 40,
+        caretY: 20,
         dataPoints: [{ dataset: { label: 'T', borderColor: '#F00' }, parsed: { y: 1 } }],
       } as any,
     })
@@ -355,6 +551,7 @@ describe('buildChartTooltip', () => {
     container.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }))
 
     expect(tooltipEl.style.opacity).toBe('0')
+    expect(tooltipEl.childElementCount).toBe(0)
 
     document.body.removeChild(container)
   })
@@ -372,6 +569,8 @@ describe('buildChartTooltip', () => {
       chart: { canvas } as any,
       tooltip: {
         opacity: 1,
+        caretX: 0,
+        caretY: 0,
         title: [],
         dataPoints: [
           {
@@ -412,6 +611,8 @@ describe('buildChartTooltip', () => {
 
     const mockTooltipModel = {
       opacity: 1,
+      caretX: 0,
+      caretY: 0,
       title: [],
       dataPoints: [
         {
@@ -446,10 +647,18 @@ describe('buildChartTooltip', () => {
       Object.defineProperty(el, 'offsetHeight', { configurable: true, get: () => height })
     }
 
-    const render = (canvas: HTMLCanvasElement, dataPoints: unknown[], config = {}): HTMLElement => {
+    // A live Chart.js tooltip always carries a caret, which is what the handler anchors
+    // to until the cursor is known; `model` lets a test drop it to reach the no-anchor
+    // branch.
+    const render = (
+      canvas: HTMLCanvasElement,
+      dataPoints: unknown[],
+      config = {},
+      model: Record<string, unknown> = { caretX: 0, caretY: 0 },
+    ): HTMLElement => {
       buildChartTooltip(config).external!({
         chart: { canvas } as any,
-        tooltip: { opacity: 1, title: [], dataPoints } as any,
+        tooltip: { opacity: 1, title: [], dataPoints, ...model } as any,
       })
       return canvas.parentElement!.querySelector<HTMLElement>('[data-msdk-chart-tooltip]')!
     }
@@ -563,7 +772,7 @@ describe('buildChartTooltip', () => {
       container.remove()
     })
 
-    it('hides the tooltip when the stored cursor is not a finite number', () => {
+    it('falls back to the caret when the stored cursor is not a finite number', () => {
       const { canvas, container } = mount()
       container.setAttribute('data-msdk-tooltip-cursor-x', 'abc')
       container.setAttribute('data-msdk-tooltip-cursor-y', '10')
@@ -572,8 +781,25 @@ describe('buildChartTooltip', () => {
         { dataset: { label: 'T', borderColor: '#F00' }, parsed: { y: 1 } },
       ])
 
+      expect(tooltipEl.style.opacity).toBe('1')
+      container.remove()
+    })
+
+    it('hides the tooltip when neither the cursor nor the caret can be read', () => {
+      const { canvas, container } = mount()
+      container.setAttribute('data-msdk-tooltip-cursor-x', 'abc')
+      container.setAttribute('data-msdk-tooltip-cursor-y', '10')
+
+      const tooltipEl = render(
+        canvas,
+        [{ dataset: { label: 'T', borderColor: '#F00' }, parsed: { y: 1 } }],
+        {},
+        { caretX: Number.NaN, caretY: Number.NaN },
+      )
+
       expect(tooltipEl.style.opacity).toBe('0')
       expect(tooltipEl.style.visibility).toBe('hidden')
+      expect(tooltipEl.childElementCount).toBe(0)
       container.remove()
     })
   })

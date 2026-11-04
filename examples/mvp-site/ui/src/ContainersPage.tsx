@@ -1,5 +1,6 @@
 import { Navigate, useNavigate, useParams } from "react-router";
 
+import { SingleStatCard } from "@tetherto/mdk-react-devkit/domain";
 import {
   Badge,
   Button,
@@ -11,6 +12,7 @@ import {
 
 import { ContainerGrid } from "./ContainerGrid";
 import type { Container, Miner } from "./types";
+import { isMinerOnline } from "./utils";
 
 export function ContainersListPage({
   allContainers,
@@ -22,41 +24,40 @@ export function ContainersListPage({
   const navigate = useNavigate();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="site-containers">
       <Typography variant="heading3">Containers</Typography>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+      <div className="site-containers__grid">
         {allContainers.map((c) => {
           const miners = minersByContainer.get(c.id) ?? [];
-          const onlineCount = miners.filter((m) => m.status === "online").length;
+          // A Worker reports `mining` or `sleeping`, never `online`, so the
+          // previous comparison against that string counted zero on every card
+          // however many miners were up. isMinerOnline holds the real set.
+          const onlineCount = miners.filter(isMinerOnline).length;
           const isOnline = c.operatingStatus === "online";
           return (
             <Card
               key={c.deviceId}
               onClick={() => navigate(`/containers/${encodeURIComponent(c.id)}`)}
-              style={{ cursor: "pointer" }}
+              className="site-containers__card"
             >
-              <CardHeader style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, padding: "20px" }}>
-                <Typography variant="heading3" style={{ minWidth: 0, wordBreak: "break-word" }}>{c.id}</Typography>
-                <Badge status={isOnline ? "success" : "error"} text={c.operatingStatus} />
+              <CardHeader className="site-containers__card-header">
+                <Typography variant="heading3" className="site-containers__card-title">{c.id}</Typography>
+                {/* The badge is the fixed part of this row: without flexShrink
+                    a long container id squeezed it until its text met the card
+                    edge and clipped. */}
+                <span className="site-containers__card-status">
+                  <Badge status={isOnline ? "success" : "error"} text={c.operatingStatus} />
+                </span>
               </CardHeader>
-              <CardBody style={{ padding: "20px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <Typography variant="caption" style={{ color: "#555", display: "block" }}>Miners</Typography>
-                    <Typography variant="body">{onlineCount} / {miners.length} online</Typography>
-                  </div>
-                  <div>
-                    <Typography variant="caption" style={{ color: "#555", display: "block" }}>Power</Typography>
-                    <Typography variant="body">{(c.powerW / 1000).toFixed(1)} kW</Typography>
-                  </div>
-                  <div>
-                    <Typography variant="caption" style={{ color: "#555", display: "block" }}>Inlet temp</Typography>
-                    <Typography variant="body">{c.inletTempC.toFixed(1)}°C</Typography>
-                  </div>
-                  <div>
-                    <Typography variant="caption" style={{ color: "#555", display: "block" }}>Ambient temp</Typography>
-                    <Typography variant="body">{c.ambientTempC.toFixed(1)}°C</Typography>
-                  </div>
+              <CardBody className="site-containers__card-body">
+                {/* MetricCard is the devkit's own figure-with-label, so these
+                    read the same as every other number in the app. Hand-rolled
+                    Typography pairs also wrapped "online" away from its count. */}
+                <div className="site-containers__metrics">
+                  <SingleStatCard variant="compact" name="Miners online" value={`${onlineCount} / ${miners.length}`} />
+                  <SingleStatCard variant="compact" name="Power" value={(c.powerW / 1000).toFixed(1)} unit="kW" />
+                  <SingleStatCard variant="compact" name="Inlet temp" value={c.inletTempC.toFixed(1)} unit="°C" />
+                  <SingleStatCard variant="compact" name="Ambient temp" value={c.ambientTempC.toFixed(1)} unit="°C" />
                 </div>
               </CardBody>
             </Card>
@@ -81,10 +82,9 @@ export function ContainerDetailPage({
   if (!container) return <Navigate to="/containers" replace />;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+    <div className="site-container-detail">
+      <div>
         <Button variant="secondary" onClick={() => navigate("/containers")}>← Containers</Button>
-        <Typography variant="heading3">{container.id}</Typography>
       </div>
       <ContainerGrid container={container} miners={minersByContainer.get(container.id) ?? []} />
     </div>

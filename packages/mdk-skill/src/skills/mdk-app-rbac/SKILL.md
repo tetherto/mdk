@@ -70,8 +70,6 @@ The derived rules name every instance. Before writing them:
    administration, and say so in its README.
 5. If the script reports `withActor`, the route acts as the operator too; the user's own role must allow the same
    resource and verb (the two-identities section in [`kernel-access.md`](./references/kernel-access.md)).
-6. If it reports `sendWorkerCommand` or `pullWorkerTelemetry`, those dial the Worker directly; `spec.rbac` does not
-   cover them.
 
 ## Step 3: write `permissions`
 

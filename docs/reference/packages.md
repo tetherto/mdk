@@ -20,7 +20,7 @@ Availability says how you get a package:
 
 | Package | Purpose | Availability |
 | --- | --- | --- |
-| [`@tetherto/mdk-agent`][mdk-agent] | MDK operator agent — headless loop over a local (QVAC) model, consuming MDK tools via MCP | `workspace` |
+| [`@tetherto/mdk-agent`][mdk-agent] | MDK operator agent — headless loop over a local (QVAC) model, consuming MDK tools via MCP | `publishable` |
 | [`@tetherto/mdk-app-runtime`][mdk-app-runtime] | MDK app runtime: runs one app's controllers in its own process and serves them over HRPC | `publishable` |
 | [`@tetherto/mdk-client`][mdk-client] | MDK protocol client — HRPC (RPC listener) transport for Kernel | `publishable` |
 | [`@tetherto/mdk-core`][mdk-core] | MDK bootstrap utilities and worker-infra services — kernel/gateway lifecycle plus injectable log/comment/alert/stats/settings/provisioning services for runtime-hosted workers | `publishable` |

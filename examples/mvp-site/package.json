@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-mvp-site",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "MDK MVP Site",
   "private": true,
   "engines": {
@@ -20,11 +20,11 @@
   },
   "dependencies": {
     "@tetherto/mdk": "file:lib/mdk-compat",
-    "@tetherto/mdk-app-runtime": "^0.13.0",
-    "@tetherto/mdk-core": "^0.13.0",
-    "@tetherto/mdk-rbac": "^0.13.0",
-    "@tetherto/mdk-worker": "^0.13.0",
-    "@tetherto/mdk-worker-satec": "^0.13.0",
+    "@tetherto/mdk-app-runtime": "^0.13.1",
+    "@tetherto/mdk-core": "^0.13.1",
+    "@tetherto/mdk-rbac": "^0.13.1",
+    "@tetherto/mdk-worker": "^0.13.1",
+    "@tetherto/mdk-worker-satec": "^0.13.1",
     "mdk-crypto-lib": "file:lib/mdk-crypto-lib",
     "spiderpool-mdk-worker": "git+https://github.com/SpiderPool-New/spiderpool-mdk-worker.git#345f4a2b46ff59135eb4dad1803f0653c3d88911",
     "emcd-mdk-worker": "git+https://github.com/emcdio/emcd-mdk-worker.git#3ad188e1fef8fa080ce5096d7421e9b3a7052515",

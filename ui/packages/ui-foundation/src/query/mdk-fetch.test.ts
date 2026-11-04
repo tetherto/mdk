@@ -82,6 +82,63 @@ describe('createBearerFetcher', () => {
     await expect(fetcher('http://api/test')).resolves.toBeUndefined()
   })
 
+  it('returns a binary body as a Blob with its exact bytes', async () => {
+    // Bytes that are not valid UTF-8: decoding them as text would replace them
+    // with U+FFFD and corrupt the file.
+    const bytes = new Uint8Array([31, 139, 8, 0, 255, 254, 128, 0])
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(bytes, { status: 200, headers: { 'content-type': 'application/gzip' } }),
+    )
+    const fetcher = createBearerFetcher({ fetchImpl })
+
+    const result = await fetcher<Blob>('http://api/logs.tar.gz')
+
+    expect(result).toBeInstanceOf(Blob)
+    expect(new Uint8Array(await result.arrayBuffer())).toEqual(bytes)
+  })
+
+  it('returns application/octet-stream as a Blob', async () => {
+    const bytes = new Uint8Array([0, 195, 40, 255])
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(bytes, {
+          status: 200,
+          headers: { 'content-type': 'application/octet-stream' },
+        }),
+    )
+    const fetcher = createBearerFetcher({ fetchImpl })
+
+    const result = await fetcher<Blob>('http://api/export')
+
+    expect(new Uint8Array(await result.arrayBuffer())).toEqual(bytes)
+  })
+
+  it.each([
+    ['text/plain; charset=utf-8', 'hello'],
+    ['text/csv', 'a,b\n1,2'],
+    ['application/xml', '<a/>'],
+    ['application/javascript', 'export {}'],
+    ['application/problem+json', '{"title":"x"}'],
+    ['application/yaml', 'a: 1'],
+  ])('returns a %s body as a string', async (contentType, body) => {
+    const fetchImpl = vi.fn(
+      async () => new Response(body, { status: 200, headers: { 'content-type': contentType } }),
+    )
+    const fetcher = createBearerFetcher({ fetchImpl })
+
+    await expect(fetcher<string>('http://api/test')).resolves.toBe(body)
+  })
+
+  it('returns a body with no content type as a string, as before', async () => {
+    const response = new Response('plain', { status: 200 })
+    response.headers.delete('content-type')
+    const fetchImpl = vi.fn(async () => response)
+    const fetcher = createBearerFetcher({ fetchImpl })
+
+    await expect(fetcher<string>('http://api/test')).resolves.toBe('plain')
+  })
+
   it('honours a custom token getter', async () => {
     const fetchImpl = vi.fn(async () => okJson({}))
     const fetcher = createBearerFetcher({ fetchImpl, getToken: () => 'custom' })

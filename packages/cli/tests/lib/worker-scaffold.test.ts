@@ -44,7 +44,9 @@ describe('createWorker', () => {
     const pkg = JSON.parse(readFileSync(join(result.workerPath!, 'package.json'), 'utf8'));
     expect(pkg.name).toBe('demo-miner');
     // These tests run from the checkout, so the MDK backend dependency links to it.
-    expect(pkg.dependencies['@tetherto/mdk-worker']).toBe(`file:${join(REPO_ROOT, 'backend', 'core', 'mdk-worker')}`);
+    const worker: string = pkg.dependencies['@tetherto/mdk-worker'];
+    expect(worker).toMatch(/^file:\.\.?\//);
+    expect(resolve(result.workerPath!, worker.slice('file:'.length))).toBe(join(REPO_ROOT, 'backend', 'core', 'mdk-worker'));
     expect(installScaffoldMock).toHaveBeenCalledWith(dir, result.workerPath, true);
   });
 

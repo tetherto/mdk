@@ -18,7 +18,7 @@ runtime; it runs no app code.
   `app:<name>`. Otherwise `req.mdk` is `config.mdkClient`. The token never appears on `req`. Use `req.mdk` in controllers, and
   `config.mdkClient` for background work done as the app alone.
 - **Closed front door**: the HRPC server accepts only the keys in `allowedKeys` and `allowedKeyFiles`. An empty allow set denies
-  everyone, unlike the Kernel listener, where an empty whitelist is open.
+  everyone, as an empty allowlist does at the [Kernel listener](../kernel/README.md#caller-admission-and-authorization).
 
 Controllers `require('@tetherto/mdk-gateway/plugin')` and get a frozen `{ config, logger, onReady }` context. The loader
 answers that specifier itself, so the app runtime and its apps don't need `@tetherto/mdk-gateway` installed.

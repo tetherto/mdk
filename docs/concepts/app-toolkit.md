@@ -28,7 +28,11 @@ and Kernel connection.
 ## Apps
 
 Apps are the extension mechanism the Gateway serves its routes from. Each app runs in its own process under `@tetherto/mdk-app-runtime`, and a Gateway
-serves only the apps a stack declares in `spec.apps`; nothing auto-loads. The apps MDK ships and [any app you write][plugins-how-to] are declared the same way.
+serves only the apps a stack declares in `spec.apps`; nothing auto-loads. The apps MDK ships and [any app you write][app-authoring] are declared the same way.
+An app can also ship a UI module, which the dashboard shell loads at runtime and mounts alongside its own pages;
+[what's an app][whats-an-app] covers the package's two halves and [the apps guide][app-authoring] covers writing the module.
+Both halves type-check against one set of response types in the app's `plugin/types.d.ts`: the CommonJS controllers through JSDoc,
+the UI through `import type`, as [the scaffold shares them][share-types].
 
 ## Frontend packages
 
@@ -43,7 +47,7 @@ Consuming applications add the workspace dependencies directly, and consuming th
 - **[`@tetherto/mdk-react-adapter`][react-adapter]**: React bindings for that core. `<MdkProvider apiBaseUrl={...}>` at the app root, plus one store hook per store
   (`useAuth`, `useDevices`, `useTimezone`, `useNotifications`)
 - **[`@tetherto/mdk-react-devkit`][react-devkit]**: React UI library. [`src/primitives/`](../../ui/packages/react-devkit/src/primitives/) ships generic UI primitives
-  built on Radix UI; [`src/domain/`](../../ui/packages/react-devkit/src/domain/) ships mining-domain components, features, and presentation hooks
+  built on Radix UI; [`src/domain/`](../../ui/packages/react-devkit/src/domain/) ships mining-domain components and presentation hooks
 
 ### Developer entry points
 
@@ -51,9 +55,9 @@ The toolkit can be adopted at any of the following entry points, from most batte
 
 | Entry point      | Package                 | What ships | What you write | When to choose |
 | ---------------- | ----------------------- | ---------- | -------------- | -------------- |
-| UI Kit           | `@tetherto/mdk-react-devkit` (`/primitives` + `/domain` entrypoints) | Pre-built React components, shell layout, ready-made ops dashboard | Data wiring, optional theming | You want a dashboard up fast |
+| UI Kit           | `@tetherto/mdk-react-devkit` (`/primitives` + `/domain` entrypoints) | Pre-built React components and shell layout | Data wiring, optional theming | You want a dashboard up fast |
 | Framework adapter | `@tetherto/mdk-react-adapter` (React today; Vue/Svelte/WC planned) | `<MdkProvider>`, store hooks, TanStack Query re-exports | Your own components and layout | You have a design system already |
-| UI Foundation    | [`@tetherto/mdk-ui-foundation`][ui-foundation-ref] | Zustand vanilla stores, `QueryClient` factory, resource builders, auth providers, device tag helpers, API types | Framework bindings or headless utilities | You need store access outside React or are building a new adapter |
+| UI Foundation    | [`@tetherto/mdk-ui-foundation`][ui-foundation-ref] | Zustand vanilla stores, `QueryClient` factory, auth providers, device tag helpers, the installed-app constants, API types | Framework bindings or headless utilities | You need store access outside React or are building a new adapter |
 | Raw SDK          | `@tetherto/mdk-client` | MDK Protocol client, lazy connect over HRPC, reconnect on the next call after a failure | Everything above the wire: state, framework, UI | You are building a non-UI consumer (CLI, agent, backend service) |
 
 ## Architecture overview
@@ -90,7 +94,7 @@ flowchart TD
 ## Next steps
 
 - Understand the [Gateway surface][gateway-concept]
-- [Build or extend with apps][plugins-how-to]
+- [Build or extend with apps][app-authoring]
 - Explore the [frontend package architecture][ui-architecture]
 
 ## Links
@@ -98,8 +102,14 @@ flowchart TD
 [gateway-concept]: ../../backend/core/gateway/README.md
 <!-- docs@tether.io: gateway-concept → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md -->
 
-[plugins-how-to]: ../guides/gateway/apps.md
-<!-- docs@tether.io: plugins-how-to → guides/gateway/apps -->
+[app-authoring]: ../guides/gateway/apps.md
+<!-- docs@tether.io: app-authoring → guides/gateway/apps -->
+
+[share-types]: ../guides/gateway/apps.md#share-response-types-with-the-ui
+<!-- docs@tether.io: share-types → guides/gateway/apps#share-response-types-with-the-ui -->
+
+[whats-an-app]: whats-an-app.md
+<!-- docs@tether.io: whats-an-app → concepts/whats-an-app -->
 
 [ui-architecture]: ../../ui/docs/ARCHITECTURE.md
 <!-- docs@tether.io: ui-architecture → https://github.com/tetherto/mdk/blob/main/ui/docs/ARCHITECTURE.md -->

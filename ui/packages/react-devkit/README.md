@@ -28,8 +28,10 @@ internal layout keeps the two layers clearly separated:
 npm install @tetherto/mdk-react-devkit
 ```
 
-> [!NOTE]
+> [!IMPORTANT]
 > `react` and `react-dom` 19 are peer dependencies, as are `react-hook-form` `^7.55.0` and `zod` `^4.6.6`.
+> An app that writes its own form schemas also installs `@hookform/resolvers` itself. The devkit carries it as an internal
+> dependency for its own modals, so it is not installed into the app the way a peer is.
 
 ## Usage
 
@@ -73,6 +75,47 @@ See [STYLING.md](../../docs/STYLING.md) for the cascade-layer model, the public 
 tokens (`--mdk-*` custom properties), and supported component-class
 overrides.
 
+### Fonts
+
+Monospace text asks for **JetBrains Mono** through the `--font-mono` token, but the
+package ships no `@font-face` — nothing is downloaded, and the token falls back to the
+system monospace stack (`ui-monospace`, `SF Mono`, `Menlo`, `Consolas`, …). The devkit
+renders correctly without the font; shipping it is opt-in.
+
+To ship the face, add the Fontsource package to your app:
+
+```bash
+npm install @fontsource-variable/jetbrains-mono
+```
+
+and declare it under the family name the token asks for — Fontsource's own stylesheet
+registers `JetBrains Mono Variable`, which `--font-mono` does not match, so import this
+instead of `@fontsource-variable/jetbrains-mono/index.css`:
+
+```css
+/* fonts.css — imported before @tetherto/mdk-react-devkit/styles.css */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: optional;
+  src: url('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+```
+
+One variable file covers every weight (100–800); the browser downloads it only when the
+page renders a character in its `unicode-range`. Add the `latin-ext` file the same way if
+you need it. `font-display: optional` avoids a font swap after first paint.
+
+To use a different monospace face instead, leave the `@font-face` out and set the token:
+
+```css
+:root {
+  --font-mono: 'Your Mono', ui-monospace, monospace;
+}
+```
+
 ## Subpath exports
 
 | Subpath | Resolves to | Purpose |
@@ -102,6 +145,21 @@ For reading `registry.json`, `USAGE.md` files, and examples, see
 
 There is no `./hooks` or `./api` export today; those capabilities are reached
 through `./domain`, the adapter, or the foundation package.
+
+### Formatting and unit scaling
+
+Value formatters are pure functions exported from `./primitives` and the top-level barrel, so a hook can shape the
+strings and leave the component to place them.
+
+| Need | Use |
+| --- | --- |
+| A value in the unit it reads best in | `scaleToUnit(value, POWER_W_SCALES)`, which returns `{ value, unit }` |
+| One unit for a whole series, from its largest value | `pickUnitScale(HASHRATE_TH_S_SCALES, max)`, then divide by its `factor` |
+| A bitcoin amount, in BTC or whole sats | `formatBitcoin(btc)` or `formatBitcoin(btc, 'sats')` |
+
+`HASHRATE_TH_S_SCALES` and `POWER_W_SCALES` are the scale lists the package ships. Both helpers take a
+`UnitScale[]`, so a measure with its own units supplies its own list. Source:
+[`src/primitives/utils/format.ts`](./src/primitives/utils/format.ts).
 
 ## Charts: which engine
 

@@ -1,3 +1,9 @@
+/**
+ * The resources a permission can be granted over, used as the part before the `:` in a
+ * permission string such as `miner:rw`.
+ *
+ * @category general
+ */
 export const AUTH_PERMISSIONS = {
   TEMP: 'temp',
   MINER: 'miner',
@@ -20,11 +26,22 @@ export const AUTH_PERMISSIONS = {
   ELECTRICITY: 'electricity',
 } as const
 
+/**
+ * The access levels a permission grants, used as the part after the `:`. Levels are single
+ * characters and combine, so `rw` is read and write.
+ *
+ * @category general
+ */
 export const AUTH_LEVELS = {
   READ: 'r',
   WRITE: 'w',
 } as const
 
+/**
+ * The roles a user account can hold. A role carries its own set of permissions.
+ *
+ * @category general
+ */
 export const USER_ROLE = {
   ADMIN: 'admin',
   READ_ONLY: 'read_only_user',

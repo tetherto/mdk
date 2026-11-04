@@ -31,6 +31,12 @@ check needed, just a `try`/`catch` around the call if you want to remap the erro
 ## Pattern: fan-out telemetry for a device family
 
 ```js
+// One unreachable device is skipped; a Kernel refusal fails the request.
+const skipDeviceErrors = (err) => {
+  if (err && /^ERR_KERNEL_/.test(err.code || '')) throw err
+  return null
+}
+
 const isTargetFamily = (capsPayload) => {
   const telemetry =
     (capsPayload && capsPayload.capabilities && capsPayload.capabilities.telemetry) ||
@@ -50,10 +56,10 @@ module.exports = async function example (req) {
   let total = 0
 
   for (const deviceId of deviceIds) {
-    const caps = await mdkClient.getCapabilities(deviceId).catch(() => null)
+    const caps = await mdkClient.getCapabilities(deviceId).catch(skipDeviceErrors)
     if (!isTargetFamily(caps)) continue
 
-    const tel = await mdkClient.pullTelemetry(deviceId, 'metrics').catch(() => null)
+    const tel = await mdkClient.pullTelemetry(deviceId, 'metrics').catch(skipDeviceErrors)
     const metrics = (tel && tel.metrics) || {}
     const value = Number(metrics['<channel-1>']) // channel name from contract
     if (!Number.isFinite(value)) continue
@@ -80,7 +86,12 @@ Keys match contract telemetry `name` fields exactly.
 
 ### Resilience
 
-- `.catch(() => null)` per device so one offline device does not fail the route.
+- Catch per device so one offline device does not fail the route, and rethrow a Kernel refusal: it arrives as a
+  rejected call like any device error, so swallowing it answers an empty `200` when the app's own grant never covered
+  the call. Let it through and `ERR_KERNEL_ACTION_FORBIDDEN` reaches the caller as `403`.
+- These calls go through `config.mdkClient`, so the Kernel checks the app's grant and nothing else. A user the
+  `spec.rbac` route rule lets in gets whatever the app can read. Call `req.mdk` instead when the operator's own device
+  access should gate the data: it carries their token beside the app's, and the Kernel then needs both to allow it.
 - Skip non-finite numbers instead of throwing.
 - Empty `rows` is a valid 200 — the UI shows an empty state.
 

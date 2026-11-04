@@ -28,7 +28,7 @@ Mock examples and real miners use different sources for ports.
 ### Mock examples
 
 An in-repo mock listens on the port you pass to `npm run mock`, and the Worker reaches it through the `port` in that
-device's `seedDevices` entry. The two must match: the [Avalon mock run][avalon-runnable-example] uses `4028` for both.
+device's `seedDevices` entry. The two must match: the [Avalon guide's mock run][run-avalon] uses `4028` for both.
 Run `npm run mock` with no arguments to list every mock device and its types.
 
 Antminer and Whatsminer follow a different shape — they're the external
@@ -44,17 +44,23 @@ The cross-worker manifest also records the expected mock type and default port f
 Real devices use their native APIs:
 
 - Antminer: HTTP, usually port `80`, with digest-auth credentials.
-- Whatsminer: encrypted TCP, port `4028` for API v2 (the default) or `4433` for API v3 (auto-detected from the
-  port), with the API password.
-- Avalon: CGMiner TCP API, usually port `4028`, with no username or password.
+- Whatsminer: encrypted TCP with the API password, plus the API `account` on API v3 (`super` when unset). With no `port`
+  set, the plugin probes API v3 on `4433` first, then API v2 on `4028`. Set either port to pin that version.
+- Avalon: CGMiner TCP API, usually port `4028`, with the device password. Reads are unauthenticated and writes send the
+  password, but the Worker refuses to open a device registered without one: it stays offline with `ERR_DEVICE_CONFIG_INVALID`.
 
 Before registering a real miner, confirm the miner is reachable from the machine or container running the Worker.
 
 ## Antminer or Whatsminer example installs an unexpected dependency
 
-[`antminer-mdk-worker`][antminer-mdk-worker] and [`whatsminer-mdk-worker`][whatsminer-mdk-worker] are git dependencies, not versioned npm packages, and their `package.json` entries carry no pinned commit. Only the committed `package-lock.json` resolves it to a specific commit, so a plain `npm install` with a missing or discarded lockfile, or with a lockfile-regenerating command like `npm update`, can silently pull a different commit than the one already tested.
+[`antminer-mdk-worker`][antminer-mdk-worker] and [`whatsminer-mdk-worker`][whatsminer-mdk-worker] are git dependencies, not versioned
+npm packages. `examples/mvp-site/package.json` pins each one to a commit, and the committed root `package-lock.json` records the same
+commit, so a plain `npm install` fetches exactly the tested commit. The lockfile spells each entry `git+ssh://git@github.com/...`; that
+is npm's own form for a GitHub dependency, and the install still fetches over HTTPS, so no SSH key is needed.
 
-If `npm install` changes `package-lock.json` unexpectedly, or `git diff` shows the `antminer-mdk-worker` or `whatsminer-mdk-worker` entry's `resolved` commit changed, reinstall from the committed lockfile instead. `examples/mvp-site` is an npm workspace, not a standalone project — it has no lockfile of its own, so run this from the repository root:
+If `git diff` shows the `resolved` commit for either entry changed, a pin moved. Review that change, then reinstall from the
+committed lockfile. `examples/mvp-site` is an npm workspace, not a standalone project: it has no lockfile of its own, so run this
+from the repository root:
 
 ```bash
 npm ci
@@ -118,6 +124,24 @@ Stop stale example processes before starting another example. If you need to run
 HOME=/tmp/mdk-avalon node avalon-dev.js
 ```
 
+## Worker exits with `ERR_WORKER_ALLOWED_KEYS_REQUIRED`
+
+The Worker's boot call names no RPC caller, so `start()` refuses to run. Pass the Kernel's client key:
+
+```js
+const kernel = await getKernel()
+const worker = await startWhatsminerWorker({
+  workerId: 'whatsminer-rack-1',
+  storeDir: './store/whatsminer-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
+  seedDevices: [ /* ... */ ]
+})
+```
+
+A hand-written adapter must forward the option to `WorkerRuntimeV2` as `allowedKeys: opts.allowedKeys || []`, as the
+[Whatsminer][run-whatsminer] and [Antminer][run-antminer] guides show. `allowAll: true` also lets the Worker start, for a
+local check only: the runtime logs a warning and accepts any caller.
+
 ## Still blocked
 
 When asking for help on [Discord](https://discord.com/invite/tetherdev) or [GitHub issues](https://github.com/tetherto/mdk/issues) collect:
@@ -148,14 +172,11 @@ When asking for help on [Discord](https://discord.com/invite/tetherdev) or [GitH
 [backend-core]: ../../../backend/core/README.md
 <!-- docs@tether.io: no parity link -->
 
-[avalon-runnable-example]: ../../../backend/workers/miners/avalon/USAGE.md#run-against-a-mock
-<!-- docs@tether.io: avalon-runnable-example → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/USAGE.md#run-against-a-mock -->
-
 [workers-manifest]: ../../../backend/workers/docs/workers-manifest.yaml
 <!-- docs@tether.io: workers-manifest → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/workers-manifest.yaml -->
 
 [worker-health]: ../../concepts/control-plane.md#worker-health-is-not-device-liveness
-<!-- docs@tether.io: worker-health → concepts/control-plane#worker-health-is-not-device-liveness -->
+<!-- docs@tether.io: worker-health → https://github.com/tetherto/mdk/blob/main/docs/concepts/control-plane.md#worker-health-is-not-device-liveness -->
 
 [private-dht]: ../deployment/private-dht.md
 <!-- docs@tether.io: private-dht → guides/deployment/private-dht -->

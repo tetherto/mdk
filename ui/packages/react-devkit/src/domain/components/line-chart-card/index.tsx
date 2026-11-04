@@ -68,6 +68,7 @@ const mapToLineChartData = (
   datasets: datasets.map((ds) => ({
     label: ds.label,
     borderColor: legendStrokeColor(ds.borderColor),
+    lineStyle: ds.lineStyle,
     data: ds.data,
     visible: !hiddenMap[ds.label ?? ''],
   })),
@@ -237,7 +238,7 @@ const LineChartCardInner = ({
  * <LineChartCard
  *   title="Hashrate"
  *   data={chartData}
- *   timelineOptions={[{ label: '5m', value: '5m' }, { label: '1h', value: '1h' }]}
+ *   timelineOptions={[{ label: '5m', value: '5m' }, { label: '3h', value: '3h' }]}
  *   defaultTimeline="5m"
  * />
  * ```

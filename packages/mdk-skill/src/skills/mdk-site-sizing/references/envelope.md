@@ -5,8 +5,9 @@ from capacity profiles (harness reports or the fixture set under `eval/profiles/
 
 ## Profile shape
 
-Each profile is either a full harness report (`backend/tests/benchmark/results/<id>.json`)
-or the slim fields `compile-envelope.mjs` keeps:
+Each profile is either a full harness report (`backend/tests/benchmark/published/<run>/<id>.json`
+for the committed runs, `backend/tests/benchmark/results/<id>.json` for a local one) or the slim
+fields `compile-envelope.mjs` keeps:
 
 - `profileId`, `tier`, `hardware`
 - `deviceCount`, `workerCount`, `workers[]` (`type`, `model`, `deviceCount`)
@@ -25,7 +26,10 @@ tier, matching the [capacity metrics template](../../../../../../docs/guides/dep
 # fixtures (default) — what the held-out bar runs against until PE-1
 node scripts/compile-envelope.mjs
 
-# a real results/ directory from npm run benchmark
+# the committed harness runs, present in a fresh clone
+node scripts/compile-envelope.mjs --from <repo>/backend/tests/benchmark/published/2026-10-27-m3max
+
+# a local results/ directory from npm run benchmark, gitignored
 node scripts/compile-envelope.mjs --from <repo>/backend/tests/benchmark/results
 ```
 

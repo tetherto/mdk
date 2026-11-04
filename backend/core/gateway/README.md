@@ -10,8 +10,9 @@ The Gateway, `@tetherto/mdk-gateway`, delivers an HTTP interface on top of the
 [Kernel](../kernel/README.md): each app builds its own [`@tetherto/mdk-client`](../client/README.md) from its context to reach
 the Kernel, which routes a query to whichever [Worker](../../workers/README.md) owns the target device.
 
-The Gateway gates routes a manifest marks `"auth": true` through an `authVerifier` you supply, and identifying the caller stays
-your identity layer's job, as the [security model](#security-model) sets out.
+With an authority, which is a Kernel or a Gateway credential and what `mdk run` always wires, the Gateway signs callers in at
+`/auth/*` and checks every app route against `spec.rbac`. Without one, it falls back to gating the routes a manifest marks
+`"auth": true` through an `authVerifier` you supply, as the [security model](#security-model) sets out.
 
 > [!NOTE]
 > The Gateway's responsibilities stop at forwarding the request to the right controller and returning whatever that controller produces;
@@ -32,9 +33,8 @@ The Gateway declares no application routes of its own. Every REST route it serve
 | [`additionalRoutes`](#raw-fastify-routes) | Raw Fastify route objects you pass to `startGateway()` |
 | Static files | `GET /*` from `staticRootPath`, only when `common.json` sets it |
 
-Which paths that adds up to is a property of the manifests, not of the Gateway. The
-plugin route reference lists every route the plugins MDK ships serve, generated from their
-`mdk-plugin.json` files so it cannot drift.
+Which paths that adds up to is a property of the manifests, not of the Gateway: each app's route table is its own
+`mdk-plugin.json`, and the Gateway does not enumerate app routes anywhere else.
 
 > [!IMPORTANT]
 > A Gateway loads **only** what it is told to load. A stack serves just the apps it declares, and any other path gets `404`.
@@ -63,7 +63,8 @@ The Gateway has no push channel — clients poll its HTTP routes for updates.
 ## Configuration
 
 Config files are written to `opts.root/config/facs/` by `startGateway()`. Example files ship in `backend/core/gateway/config/facs/*.example`.
-Edit the generated files to persist your changes across restarts.
+Edit the generated files to persist your changes across restarts. `./setup-config.sh` seeds the active files from those examples;
+an existing file is left alone so local edits survive a re-run, and `-f` overwrites it.
 
 | File | Controls |
 |------|---------|
@@ -103,8 +104,10 @@ await startGateway({
 > `startGateway()`, used throughout this section, is exported by [`@tetherto/mdk-core`](../mdk/README.md), not by this
 > `@tetherto/mdk-gateway` package.
 
-The Gateway opens no Kernel connection: each app runtime dials Kernel over HRPC (`@hyperswarm/rpc`) with its own keypair, using the
-Kernel's listener public key. `startGateway()` still resolves that key
+The Gateway opens no Kernel connection for device traffic: each app runtime dials Kernel over HRPC (`@hyperswarm/rpc`) with its own
+keypair, using the Kernel's listener public key. For identity and policy, the Gateway uses the in-process Kernel directly when
+started with `kernel`, and reaches a Kernel in another process over HRPC as its own service account when started with
+`kernelKey` and `gatewayCredential` ([security model](#security-model)). `startGateway()` still resolves that key
 **before any boot side effects**, in this order:
 
 1. `kernelKey`: hex string or Buffer. Pass `kernelKey: false` to run without a Kernel key (useful when testing without a live Kernel).
@@ -150,14 +153,15 @@ on an in-process Kernel and publishes it to the trusted-keys dir for same-machin
   `update`, `DELETE` `delete`). A route that declares `resourceName: { param | query | body: "<field>" }` is checked for that
   instance. No matching rule answers `403 ERR_AUTH_FORBIDDEN: <sub> may not <verb> <resource> [<name>]`.
 - **Every decision is logged** as one `authz` line: `{ app, route, method, path, resource, verb, kind, sub, resourceName,
-  decision, reason, role, policyVersion }`, including `unauthenticated` refusals and `/auth/login` attempts.
+  decision, reason, role, policyVersion }`, including `unauthenticated` refusals and sign-in attempts at `POST /auth/login` and
+  `POST /auth/token`.
 - **The identity, never the token, reaches app code**: the runtime receives `{ kind, sub, email, groups }` as `req._info`;
   `authorization`, `proxy-authorization` and `cookie` headers are stripped. A signed-in user's access token travels beside the
   request as its `actor`, which the runtime sends only to the Kernel through `req.mdk`, so the Kernel verifies the user and checks
   their rules as well as the app's. A call the Kernel refuses reaches HTTP as `403`.
 - **Sign-in routes**: `POST /auth/login`, `POST /auth/token` (an AI agent's signed assertion), `POST /auth/refresh`,
   `POST /auth/logout` and `GET /auth/me` proxy the Kernel's
-  token issuer. The refresh token is set as an httpOnly, `SameSite=Strict` cookie scoped to `/auth`, `Secure` everywhere but
+  token issuer. The refresh token is set as an `HttpOnly`, `SameSite=Strict` cookie scoped to `/auth`, `Secure` everywhere but
   plain-HTTP loopback (over plain HTTP on a network the browser keeps no refresh cookie: serve TLS, or set `trustProxy` behind one); a
   client without cookies sends `"refreshIn": "body"` at login and the refresh token in the body after that.
 
@@ -190,7 +194,8 @@ Whichever path applies:
 - **Input validation**: path, query and header `parameters` and the `application/json` `requestBody` schema are validated before the request
   is forwarded
 - **Per-caller cache**: a `cache` route checked against `spec.rbac`, or behind `auth: true`, adds a SHA-256 of the verified identity
-  (`req._info`) to its cache key, so two callers never share a cached response or an in-flight call. Open routes keep one shared entry per key
+  (`req._info`) to its cache key, so two callers never share a cached response or an in-flight call. Without an authority, a route that is
+not marked `auth: true` keeps one shared entry per key
 - **Cache refresh**: `?overwriteCache=true` bypasses a cached response only for a caller the `authVerifier` returned with `cache:overwrite`
   in its `perms` array
 - **App code runs outside the Gateway**: the Gateway reads only each app's route table; the controllers run in the app's own runtime
@@ -207,8 +212,8 @@ Whichever path applies:
   the trusted-keys dir). Workers that app clients call directly must allow the same key (`allowedKeys`).
   See [Kernel Transport](../kernel/README.md#transports) and the `auth-whitelist` example
   for the key exchange pattern
-- Once connected, Kernel trusts all messages from an app runtime implicitly, apart from the device-family write permissions it requires in the
-  `authPerms` array accompanying each write action
+- Connecting admits a caller and grants it nothing: Kernel checks the access token on every request an app runtime sends and judges it
+  against `spec.rbac`, and the `authPerms` array a write action carries is ignored for any caller holding a token
 - Human and AI callers reach the same routes on the same terms: a user and a service account are checked against the same
   `spec.rbac`, and the MCP server applies the same route-to-resource mapping to agents
 
@@ -261,8 +266,9 @@ Run each app with [`createAppRuntime()`](../app-runtime/README.md) and `allowedK
 `(req)`, and each builds its own `@tetherto/mdk-client` from the context config it reads via `require('@tetherto/mdk-gateway/plugin')`.
 The plugins MDK ships run the same way, only when a stack declares them; nothing auto-registers.
 
-The [Gateway apps guide](../../../docs/guides/gateway/apps.md) and the [supported apps reference](../../../docs/reference/supported-apps.md) cover the full
-manifest schema, controller contract, and app context, and [what the loader throws](#errors) is documented here.
+The [Gateway apps guide](../../../docs/guides/gateway/apps.md) covers the authoring steps and the controller contract, and the
+[supported apps reference](../../../docs/reference/supported-apps.md) lists which apps ship and where they live. The manifest is
+documented by example and enforced by the loader; [what the loader throws](#errors) is documented here.
 
 ### Raw Fastify routes
 

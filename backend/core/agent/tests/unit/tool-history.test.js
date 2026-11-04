@@ -168,6 +168,21 @@ test('a rejected write is recorded as rejected, not as a result', async (t) => {
   t.ok(kept[1].content.includes('did NOT run'), 'the record says plainly that nothing happened')
 })
 
+test('an approval that expires is not recorded as an operator rejection', async (t) => {
+  // A host resolves an unanswered approval to null. The write must still be blocked, but telling
+  // the model the operator refused it makes the agent report a decision nobody took.
+  const kept = await turnHistory(['{"tool": "act_device", "args": {"id": "antminer-3"}}', 'Not done.'], {
+    approve: null,
+    tools: WRITE_TOOLS,
+    prompt: 'reboot antminer-3'
+  })
+
+  t.is(kept.length, 2)
+  t.ok(kept[1].content.includes('did NOT run'), 'the write is still recorded as not run')
+  t.ok(kept[1].content.includes('approval expired'), 'and says the approval expired')
+  t.absent(kept[1].content.includes('rejected'), 'not that the operator rejected it')
+})
+
 test('a long tool result is clamped before it is kept', async (t) => {
   // list_devices on a real fleet is kilobytes; persisting those verbatim every turn crowds out
   // the instructions that keep routing working.

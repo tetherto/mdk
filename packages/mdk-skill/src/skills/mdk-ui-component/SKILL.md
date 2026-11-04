@@ -1,7 +1,7 @@
 ---
 name: mdk-ui-component
 description: >
-  Build UI that renders data from MDK Workers, an MDK App's routes or a Gateway plugin: a page or Home panel in an
+  Build UI that renders data from MDK Workers or an MDK App's routes: a page or Home panel in an
   MDK App's UI module (`ui-src/`, `defineMdkApp`), or a page in a dashboard shell. Use whenever a task mentions a UI,
   page, panel, widget, component, dashboard, chart, tile, table, heatmap or report for MDK data, "show telemetry",
   `ui-src`, `defineMdkApp` or `useMdkApp`, or prompts like "create a UI to show <metric> for <device family>".
@@ -22,6 +22,12 @@ This skill builds that chain in either place MDK UI lives. It never invents a co
 component and its props come from [`references/ui-registry.json`](./references/ui-registry.json), and every helper or
 hook (`buildBarChartOptions`, `usePeriod`) from the installed package's type declarations (`dist/*.d.ts`).
 
+Import everything from the `@tetherto/mdk-react-devkit` root, whatever a registry entry's `path` says: the root
+re-exports both the primitives and the domain layer, so the specifier never depends on which one a component lives in.
+The `/primitives` and `/domain` subpaths are a tree-shaking option for a dashboard or a standalone app only — inside an
+MDK App they are not shared modules, so they bundle a second copy of the devkit with its own React context
+([`references/app-ui-module.md`](./references/app-ui-module.md)).
+
 ## Choose where the UI lives
 
 | The UI belongs to                                             | Build it in                         | Registered by                                       | Read next                                                          |
@@ -34,7 +40,7 @@ on any dashboard, and its Home panel shows on the dashboard's landing page.
 
 ## Prerequisites
 
-1. **The route exists, or its response is agreed.** If no route returns the data, use `mdk-gateway-plugin` to add
+1. **The route exists, or its response is agreed.** If no route returns the data, use `mdk-app-routes` to add
    one, or agree its response body with whoever writes it and type the data layer from that. Call the route once
    it serves, and confirm the JSON shape matches.
 2. **The units are known.** Read the Worker's `mdk-contract.json` so labels and units match the channel (`power` is
@@ -43,13 +49,16 @@ on any dashboard, and its Home panel shows on the dashboard's landing page.
 3. **The host exists.** For an app, `mdk create app <name>` scaffolds `ui-src/` with a working page, hook and Home
    panel (`mdk-create-app`). For a dashboard, run `mdk create dashboard` (`mdk-deployment`).
 
+A page that renders fixtures only, with no backend (a standalone Vite demo, say) skips 1 and 3: keep the same layers,
+with the mock data in a React-free data module, so a live route can replace it later without rework.
+
 ## Workflow
 
 ```mermaid
 flowchart TD
   intent["Plain-language intent"]
   route{"Does a route return the data?"}
-  gateway["mdk-gateway-plugin: add the route"]
+  gateway["mdk-app-routes: add the route"]
   where{"App or dashboard?"}
   data["1. Data: response type and mdkFetch request"]
   hook["2. Hook: useQuery, toQueryView, shape into a view"]
@@ -207,6 +216,8 @@ In a dashboard, add the page under `src/pages/`, wrap it in `PageLayout`, and ap
   ships stale code.
 - **Run it:** start the stack and the dashboard (`mdk run`, `mdk run dashboard`), open the page (`/app/<name>/thing`
   for an app), and check each state: data, empty, and an error with the app's runtime stopped.
+- **Standalone fixtures page:** with no app or dashboard host, run `npm run build` (which type-checks), then open the
+  page in the dev server (`npm run dev`).
 
 ## Rules
 
@@ -228,13 +239,14 @@ In a dashboard, add the page under `src/pages/`, wrap it in `PageLayout`, and ap
 - [ ] Every request goes through `mdkFetch`, and every app URL through `useMdkApp().apiUrl`.
 - [ ] Every hook returns a view union, and every component renders each of its states.
 - [ ] Every devkit component and prop exists in [`references/ui-registry.json`](./references/ui-registry.json).
-- [ ] Devkit imports use the package root.
+- [ ] Devkit imports in an app or dashboard use the package root.
 - [ ] An app's `defineMdkApp` `id` equals `id` in `mdk-app.yaml`, and `ui/` is rebuilt and committed.
-- [ ] The page was opened in a running dashboard, with data and with the runtime stopped.
+- [ ] The page was opened in a running dashboard, with data and with the runtime stopped, or, for a standalone
+      fixtures page, `npm run build` (which type-checks) passes and the page renders in the dev server.
 
 ## Next steps
 
-- [Add the route the UI reads](../mdk-gateway-plugin/SKILL.md): `mdk-gateway-plugin`, when no route serves the data
+- [Add the route the UI reads](../mdk-app-routes/SKILL.md): `mdk-app-routes`, when no route serves the data
 - [Scaffold the app that hosts the UI](../mdk-create-app/SKILL.md): `mdk-create-app`, for `ui-src/` and the manifest
 - [Run the stack and the dashboard](../mdk-deployment/SKILL.md): `mdk-deployment`, when the app is not running
-- [Expose a missing telemetry channel](../mdk-worker-plugin/SKILL.md): `mdk-worker-plugin`, when the device lacks it
+- [Expose a missing telemetry channel](../mdk-worker/SKILL.md): `mdk-worker`, when the device lacks it

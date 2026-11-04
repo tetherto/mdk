@@ -1,15 +1,17 @@
 ---
 name: mdk-skill-suite
 description: >
-  The MDK product skill suite (mdk, mdk-worker-plugin, mdk-gateway-plugin,
-  mdk-create-app, mdk-ui-component, mdk-deployment, mdk-site-sizing) is not
-  installed in this checkout. Use this whenever a task mentions MDK, a worker,
-  a Worker Plugin, a Gateway plugin, scaffolding or creating an MDK App, a UI
-  component for worker/plugin data, deploying an MDK stack, or sizing a site
-  from a description.
+  The MDK product skill suite (mdk, mdk-worker, mdk-app-routes,
+  mdk-create-app, mdk-app-rbac, mdk-ui-component, mdk-deployment,
+  mdk-site-sizing, mdk-publish-security) is not installed in this checkout.
+  Use this whenever a task mentions MDK, a worker, a Worker Plugin, a Gateway
+  plugin, scaffolding or creating an MDK App, an app's permissions, role or
+  service account, a UI component for worker/plugin data, deploying an MDK
+  stack, sizing a site from a description, or auditing the packages before an
+  npm release.
 ---
 
-# MDK skill suite 
+# MDK skill suite
 
 Run from the repo root:
 

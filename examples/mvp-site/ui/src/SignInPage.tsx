@@ -37,17 +37,17 @@ export function SignInPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <Card style={{ width: "100%", maxWidth: 440 }}>
-        <CardHeader style={{ padding: 20, display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ color: "#f7931a", display: "inline-flex" }}>
+    <div className="site-signin">
+      <Card className="site-signin__card">
+        <CardHeader className="site-signin__header">
+          <span className="site-brand-mark">
             <MiningStatusIcon />
           </span>
           <Typography variant="heading3">Sign in to MDK Site</Typography>
         </CardHeader>
-        <CardBody style={{ padding: 20 }}>
-          <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <CardBody className="site-card-pad">
+          <form onSubmit={submit} className="site-stack-12">
+            <label className="site-field">
               <Typography variant="caption">Username</Typography>
               <Input
                 autoComplete="username"
@@ -56,7 +56,7 @@ export function SignInPage() {
                 data-testid="signin-username"
               />
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label className="site-field">
               <Typography variant="caption">Password</Typography>
               <Input
                 type="password"
@@ -72,8 +72,8 @@ export function SignInPage() {
             </Button>
           </form>
 
-          <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 6 }}>
-            <Typography variant="caption" style={{ opacity: 0.7 }}>
+          <div className="site-signin__demo-users">
+            <Typography variant="caption" className="site-muted">
               Demo users, all with the password <code>{DEMO_PASSWORD}</code>:
             </Typography>
             {DEMO_USERS.map((u) => (
@@ -84,10 +84,10 @@ export function SignInPage() {
                   setUsername(u.name);
                   setPassword(DEMO_PASSWORD);
                 }}
-                style={{ all: "unset", cursor: "pointer", display: "flex", gap: 8, fontSize: 13 }}
+                className="site-signin__demo-user"
               >
-                <code style={{ minWidth: 130 }}>{u.name}</code>
-                <span style={{ opacity: 0.7 }}>{u.can}</span>
+                <code className="site-field-130">{u.name}</code>
+                <span className="site-muted">{u.can}</span>
               </button>
             ))}
           </div>

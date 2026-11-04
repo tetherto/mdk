@@ -132,8 +132,8 @@ The fastest way is [`mdk create dashboard`](../packages/cli/README.md)
 dashboard — the `mdk-ui-shell` template — alongside a running stack:
 
 ```bash
-npx @tetherto/mdk-cli create dashboard my-dashboard
-cd my-dashboard
+npx @tetherto/mdk-cli create dashboard my-dashboard   # scaffolds apps/my-dashboard in the current stack
+cd apps/my-dashboard
 npm run dev                         # http://localhost:3030
 ```
 
@@ -141,11 +141,10 @@ You can also copy [`examples/mdk-ui-shell-template/`](../examples/mdk-ui-shell-t
 directly and run it in place — it is a real Vite app, not a scaffold-only
 tree. Its README covers adding pages.
 
-That template needs a local
-[`mdk-gateway`](../backend/core/gateway/README.md)
-running on `http://localhost:3000` and a Google OAuth client. See
-[`docs/AGENT_FIRST.md`](docs/AGENT_FIRST.md#run-the-mdk-ui-shell-template-end-to-end)
-for the end-to-end recipe.
+Scaffolded by `mdk create dashboard`, the template signs in with a user name and password against the stack's Gateway
+(`mdk user add` creates the user); no Google OAuth client is needed. Run in place from the MDK repo, it starts with a dev-only
+auth bypass against a local [`mdk-gateway`](../backend/core/gateway/README.md) on `http://localhost:3000`. The
+[end-to-end recipe](docs/AGENT_FIRST.md#run-the-mdk-ui-shell-template-end-to-end) covers both, plus Google sign-in.
 
 If you'd rather wire MDK into an existing app manually, add the three
 runtime packages to its [`package.json`](./package.json):
@@ -164,19 +163,33 @@ runtime packages to its [`package.json`](./package.json):
 > system monospace stack; to ship the font, add `@fontsource-variable/jetbrains-mono` and declare it the way
 > [`apps/catalog/src/fonts.css`](./apps/catalog/src/fonts.css) does.
 
-Wrap your app in `<MdkProvider>` and import the stylesheet once:
+Wrap your app in `<MdkProvider>`, give it a session, and import the stylesheet once:
 
 ```tsx
+import ReactDOM from "react-dom/client";
+import { MdkProvider } from "@tetherto/mdk-react-adapter";
+import { passwordAuth } from "@tetherto/mdk-ui-foundation";
 import "@tetherto/mdk-react-devkit/styles.css";
 import "@tetherto/mdk-react-devkit/styles-domain.css"; // only if using domain (mining-domain) components
-import { MdkProvider } from "@tetherto/mdk-react-adapter";
+import App from "./App";
 
-ReactDOM.createRoot(rootElement).render(
-  <MdkProvider apiBaseUrl="https://gateway.example.com">
-    <App />
-  </MdkProvider>,
-);
+// User name and password against the Gateway; the provider's default is an
+// OAuth-redirect flow an MDK Gateway does not serve.
+const auth = passwordAuth();
+
+void auth.restore().finally(() => {
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <MdkProvider apiBaseUrl="" auth={auth} fetcher={auth.fetcher}>
+      <App />
+    </MdkProvider>,
+  );
+});
 ```
+
+`apiBaseUrl=""` keeps every request same-origin, which is the only arrangement a browser can use: the Gateway has no
+CORS support and the refresh cookie is `SameSite=Strict`. In production the Gateway serves the built UI; in `npm run dev`
+proxy `/auth` and your app's route prefixes to the Gateway in `vite.config.ts`, as
+[`examples/mvp-site/ui/vite.config.ts`](../examples/mvp-site/ui/vite.config.ts) does.
 
 Use components and hooks:
 

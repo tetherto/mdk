@@ -1,0 +1,79 @@
+@use '../../styles/mixins' as *;
+/* ========================================
+   Slider Component Styles
+   Class names for the Radix parts re-exported as `Slider.*`
+   ======================================== */
+
+/* Root */
+.mdk-slider {
+  @include flex_align;
+
+  position: relative;
+  width: 100%;
+  height: 20px;
+  user-select: none;
+  touch-action: none;
+
+  &[data-orientation='vertical'] {
+    flex-direction: column;
+    width: 20px;
+    height: 100%;
+  }
+
+  &[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Track (the rail) */
+.mdk-slider__track {
+  position: relative;
+  flex-grow: 1;
+  height: 4px;
+  border-radius: 9999px;
+  background-color: var(--mdk-color-white-alpha-024);
+  overflow: hidden;
+
+  &[data-orientation='vertical'] {
+    width: 4px;
+    height: auto;
+  }
+}
+
+/* Range (the filled part of the track) */
+.mdk-slider__range {
+  position: absolute;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--mdk-color-primary);
+
+  &[data-orientation='vertical'] {
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* Thumb (the handle) */
+.mdk-slider__thumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--mdk-color-primary);
+  cursor: pointer;
+  transition: transform 150ms ease;
+
+  &:hover:not([data-disabled]) {
+    transform: scale(1.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  &[data-disabled] {
+    cursor: not-allowed;
+  }
+}

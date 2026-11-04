@@ -54,29 +54,6 @@
     margin: 0;
   }
 
-  &__error {
-    display: flex;
-    gap: 8px;
-    align-items: baseline;
-    margin: 0;
-    color: var(--mdk-agent-danger);
-  }
-
-  /* "Try again" sits on the error line rather than under it: one row, and the
-     affordance is where the operator is already looking. It keeps its own width —
-     sharing the row with a two-line message otherwise broke the label mid-word. */
-  &__retry {
-    flex: none;
-    padding: 0;
-    border: none;
-    background: none;
-    color: inherit;
-    font: inherit;
-    white-space: nowrap;
-    text-decoration: underline;
-    cursor: pointer;
-  }
-
   /* A turn the operator stopped, or one the panel could not finish. */
   &__note {
     margin: 0;
@@ -440,5 +417,78 @@
 
   &__tool {
     color: var(--mdk-agent-text);
+  }
+}
+
+/* A failed turn, as an alert rather than a line of red text.
+   Icon, one sentence, and the retry — which is a real button, so it reads as
+   an action and can be shown disabled while the browser says it is offline.
+   The code the sentence replaces lives under Details. */
+.mdk-agent-error {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--mdk-agent-danger) 45%, transparent);
+  border-radius: var(--mdk-agent-radius);
+  background: color-mix(in srgb, var(--mdk-agent-danger) 8%, transparent);
+
+  &__icon {
+    display: flex;
+    flex: none;
+    align-items: center;
+    /* Optically centred on the first line of the message, not on the block. */
+    height: 19px;
+    color: var(--mdk-agent-danger);
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__message {
+    margin: 0;
+    color: var(--mdk-agent-text);
+  }
+
+  &__details {
+    margin-top: 4px;
+    color: var(--mdk-agent-text-muted);
+    font-size: 11px;
+
+    summary {
+      cursor: pointer;
+    }
+
+    code {
+      display: block;
+      margin-top: 4px;
+      overflow-wrap: anywhere;
+      user-select: all;
+    }
+  }
+
+  /* The devkit's secondary button is light-on-dark by default, which reads as a
+     filled white slab inside this panel — same treatment as the conversations
+     footer. It keeps its own width: sharing the row with a two-line message
+     otherwise broke the label mid-word. */
+  &__retry {
+    flex: none;
+    white-space: nowrap;
+    border: 1px solid var(--mdk-agent-border-strong);
+    background: transparent;
+    color: var(--mdk-agent-text);
+
+    &:hover:not(:disabled) {
+      border-color: var(--mdk-agent-accent);
+      background: var(--mdk-agent-surface-raised);
+      color: var(--mdk-color-white, #fff);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
   }
 }

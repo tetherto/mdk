@@ -8,7 +8,7 @@ description: >
   into a Kernel/Worker/Gateway layout.
 metadata:
   suite: mdk-developer-skill
-  mdk_version: "0.7.0"
+  mdk_version: "{{MDK_VERSION}}"
 license: Apache-2.0
 ---
 
@@ -27,7 +27,7 @@ site, run the sizer, quote the matching envelope.
 | --------------------------------------------------- | ---------- |
 | "How many Workers for N miners on this host?"       | This skill |
 | "Size a site from this description"                 | This skill |
-| Turn `backend/tests/benchmark/results/*.json` into advice | Compile the envelope, then this skill |
+| Turn committed `backend/tests/benchmark/published/<run>/*.json`, or a local `results/*.json`, into advice | Compile the envelope, then this skill |
 | Write `mdk.yaml` / `mdk run` after a size is agreed | Hand off to `mdk-deployment` |
 | Measure a new host | Point at the [capacity harness](../../../../../backend/tests/benchmark/README.md); do not guess |
 
@@ -88,13 +88,20 @@ prints the recommendation. That JSON is the measured envelope. Treat its
 `status`, Worker count, devices-per-Worker, and resource numbers as
 authoritative.
 
-Rebuild the envelope after a real harness run:
+Rebuild the envelope from committed runs, or from a run of your own:
 
 ```bash
+# committed: published harness runs, present in a fresh clone
+node scripts/compile-envelope.mjs --from <repo>/backend/tests/benchmark/published/2026-10-27-m3max
+
+# local: your own `npm run benchmark` output, gitignored
 node scripts/compile-envelope.mjs --from <repo>/backend/tests/benchmark/results
 ```
 
-Without committed harness reports, the envelope is compiled from
+`results/` is gitignored, so it is empty until you run the harness yourself.
+`published/` carries the committed runs, one directory per measurement date.
+
+The envelope shipped with this skill is still compiled from
 [`eval/profiles/`](./eval/profiles/cap-100devices-2workers.json) (same schema
 as a harness profile). Label any quote from a `source: fixture` envelope as
 fixture data.

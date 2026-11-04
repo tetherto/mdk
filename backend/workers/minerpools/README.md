@@ -44,7 +44,11 @@ const worker = await startF2poolWorker({
   workerId: 'f2pool-site-1',
   rack: 'site-1',
   storeDir: './store/f2pool-site-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   conf: { f2pool: { accounts: ['my-pool-account'], apiSecret: process.env.F2POOL_API_SECRET } }
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.

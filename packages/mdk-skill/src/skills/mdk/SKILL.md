@@ -24,7 +24,7 @@ a directory-loaded package (`mdk-contract.json` + `src/` handlers, hosted on
 `WorkerRuntimeV2` — the shape `mdk create worker` scaffolds) or the older
 `{ contract, dir, connect }` + handler-module shape hosted on the generic
 `WorkerRuntime` ([`backend/core/mdk-worker`](../../../../../backend/core/mdk-worker/index.js); both shapes are documented in
-[`../mdk-worker-plugin/references/worker-base-api.md`](../mdk-worker-plugin/references/worker-base-api.md)).
+[`../mdk-worker/references/worker-base-api.md`](../mdk-worker/references/worker-base-api.md)).
 All Kernel ↔ Worker communication is MDK Protocol envelopes over
 `@hyperswarm/rpc` — never direct method calls.
 
@@ -43,8 +43,8 @@ need more than one skill in order.
 
 | Task purpose                     | Use skill                            | Read first              |
 | -------------------------------- | ------------------------------------ | ----------------------- |
-| Integrate a new device (miner, power meter, sensor, container) | `mdk-worker-plugin` | [`references/protocol.md`](./references/protocol.md) |
-| Add / change a Gateway aggregation HTTP endpoint only | `mdk-gateway-plugin` | Worker `mdk-contract.json` |
+| Integrate a new device (miner, power meter, sensor, container) | `mdk-worker`                         | [`references/protocol.md`](./references/protocol.md) |
+| Add / change a Gateway aggregation HTTP endpoint only | `mdk-app-routes`                     | Worker `mdk-contract.json` |
 | Scaffold a new MDK App package ready to publish | `mdk-create-app` | [`mdk-create-app/SKILL.md`](../mdk-create-app/SKILL.md) |
 | Give an app the Kernel access its code needs (`permissions`, its role in `spec.rbac`), or fix an app's 403 | `mdk-app-rbac` | [`mdk-app-rbac/references/kernel-access.md`](../mdk-app-rbac/references/kernel-access.md) |
 | Build a UI page, panel or widget (an MDK App's `ui-src/` or a dashboard) for an **existing** route | `mdk-ui-component` | [`mdk-ui-component/SKILL.md`](../mdk-ui-component/SKILL.md) |
@@ -60,23 +60,23 @@ Prompts like **"create a UI to show \<metric\> for a \<device\>"** are
 | Step | Skill                            | What you do                           |
 | ---- | -------------------------------- | ------------------------------------- |
 | 1    | *(discovery)* | Resolve each `mdk.yaml` → `spec.workers[].package` to its `mdk-contract.json` at the package root (or legacy `plugin/mdk-contract.json`); confirm the telemetry channel, unit, and brand/fingerprint exist |
-| 2    | `mdk-gateway-plugin` | If no Gateway route returns that shaped metric, `mdk create app <name>` (scaffolds + registers under `mdk.yaml` → `spec.apps`; manifest rules in `mdk-create-app`) then write the controller + `plugin/mdk-plugin.json` |
+| 2    | `mdk-app-routes`                 | If no Gateway route returns that shaped metric, `mdk create app <name>` (scaffolds + registers under `mdk.yaml` → `spec.apps`; manifest rules in `mdk-create-app`) then write the controller + `plugin/mdk-plugin.json` |
 | 3    | `mdk-deployment`                 | Restart with `mdk run` (or `mdk run app <name>`) as needed |
 | 4    | `mdk-ui-component` | Data (`mdkFetch`) → hook (`toQueryView` view) → presentational component → thin page, registered in the app's `defineMdkApp` (or a dashboard's `routes.ts`); props from [`ui-registry.json`](../mdk-ui-component/references/ui-registry.json) only |
 | 5    | `mdk-deployment`                 | Verify with `curl` + running dashboard |
 
 Skip step 2–3 when the route already exists and returns the right JSON.
 Skip step 1's device work — if the Worker/channel is missing, insert
-`mdk-worker-plugin` **before** step 2.
+`mdk-worker` **before** step 2.
 
 ```
 User: "show / UI / dashboard for <metric> on <device family>"
         │
         ▼
-  Contract exists? ──no──► mdk-worker-plugin ──┐
+  Contract exists? ──no──► mdk-worker ─────────┐
         │ yes                                  │
         ▼                                      ▼
-  /api route exists? ──no──► mdk-gateway-plugin ──► mdk-deployment
+  /api route exists? ──no──► mdk-app-routes ──► mdk-deployment
         │ yes                                  │
         ▼                                      ▼
   mdk-ui-component  ◄──────────────────────────┘
@@ -89,10 +89,10 @@ User: "show / UI / dashboard for <metric> on <device family>"
 
 | User says                                              | Skills (ordered)                         |
 | ------------------------------------------------------ | ---------------------------------------- |
-| "Create a UI to show \<metric\> for \<device family\>" | discover contract → `mdk-gateway-plugin` → `mdk-deployment` → `mdk-ui-component` |
-| "Add a fleet-wide rollup API"                          | `mdk-gateway-plugin` → `mdk-deployment`  |
+| "Create a UI to show \<metric\> for \<device family\>" | discover contract → `mdk-app-routes` → `mdk-deployment` → `mdk-ui-component` |
+| "Add a fleet-wide rollup API"                          | `mdk-app-routes` → `mdk-deployment`      |
 | "Chart the existing `/api/...` in the dashboard"       | `mdk-ui-component`                       |
-| "Integrate a new Modbus meter"                         | `mdk-worker-plugin`                      |
+| "Integrate a new Modbus meter"                         | `mdk-worker`                             |
 | "Start Kernel + Worker + Gateway"                      | `mdk-deployment`                         |
 | "Size this site / how many Workers for N miners"       | `mdk-site-sizing`                        |
 | "Audit the packages before we publish"                 | `mdk-publish-security`                   |
@@ -113,4 +113,4 @@ User: "show / UI / dashboard for <metric> on <device family>"
 - **Use canonical `@tetherto/mdk-*` names only** — the full list lives in
   [`references/package-index.md`](./references/package-index.md).
 - **Never invent UI prop names or telemetry fields** — registry + contracts
-  only (`mdk-ui-component` / `mdk-gateway-plugin`).
+  only (`mdk-ui-component` / `mdk-app-routes`).

@@ -36,16 +36,32 @@ export function powerModesForMiner(miner: Pick<Miner, "type" | "workerId"> | und
   return family ? MINER_POWER_MODES[family] : ["normal"];
 }
 
+/** The key for miners whose `pos` encodes no PDU — they share one group. */
+export const NO_PDU = "";
+
+/** A Worker reports `mining`, or `sleeping` for a miner parked by a power-mode
+ * command. It never reports `online`, so counting that string finds nothing. */
+const ONLINE_MINER_STATUSES = new Set(["mining", "sleeping"]);
+
+export const isMinerOnline = (m: { status: string }): boolean => ONLINE_MINER_STATUSES.has(m.status);
+
 // Group miners into PDU columns by the prefix of info.pos ("<pdu>_<socket>").
+//
+// A `pos` with no separator carries no PDU, only a slot — which is what the
+// demo's devices use ("1", "2", "3"). Grouping those by the whole string gave
+// every miner a singleton group named after its own slot, so the detail page
+// drew a row of "PDU 1 / PDU 2 / PDU 3" headings with one tile under each.
+// Collect them under NO_PDU instead, and let the caller render them unlabelled.
 export function groupByPdu(miners: Miner[]) {
   const groups: Record<string, Miner[]> = {};
   for (const m of miners) {
     const sep = m.pos.lastIndexOf("_");
-    const pdu = sep === -1 ? m.pos : m.pos.slice(0, sep);
+    const pdu = sep === -1 ? NO_PDU : m.pos.slice(0, sep);
     (groups[pdu] ||= []).push(m);
   }
+  const slot = (m: Miner) => Number(m.pos.split("_").pop());
   for (const pdu of Object.keys(groups)) {
-    groups[pdu].sort((a, b) => Number(a.pos.split("_").pop()) - Number(b.pos.split("_").pop()));
+    groups[pdu].sort((a, b) => slot(a) - slot(b));
   }
   return groups;
 }

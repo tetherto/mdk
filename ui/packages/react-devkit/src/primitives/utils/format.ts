@@ -430,7 +430,7 @@ export const scaleToUnit = (value: number, scales: readonly UnitScale[]): Scaled
  * @domain generic
  * @tier internal
  */
-export const BITCOIN_UNITS = { BTC: 'BTC', SATS: 'sats' } as const
+export const BITCOIN_UNITS = { BTC: CURRENCY.BTC_LABEL, SATS: CURRENCY.SATS } as const
 
 /** A unit `formatBitcoin` writes in: `'BTC'` or `'sats'`. */
 export type BitcoinUnit = (typeof BITCOIN_UNITS)[keyof typeof BITCOIN_UNITS]

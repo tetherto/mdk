@@ -62,4 +62,69 @@ describe('lineChart', () => {
       expect(chart.timeScale.subscribeVisibleLogicalRangeChange).toHaveBeenCalled(),
     )
   })
+
+  it('draws each dataset with its lineStyle, solid by default', async () => {
+    const nominal = {
+      label: 'Nominal',
+      borderColor: '#FFFFFF',
+      lineStyle: 'dashed' as const,
+      data: points,
+    }
+    render(<LineChart data={{ datasets: [...data.datasets, nominal] }} />)
+
+    await waitFor(() => expect(chart.api.addLineSeries).toHaveBeenCalledTimes(2))
+    expect(chart.api.addLineSeries).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ lineStyle: 0 }),
+    )
+    expect(chart.api.addLineSeries).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ lineStyle: 2 }),
+    )
+  })
+
+  it('updates lineStyle on an existing series', async () => {
+    const { rerender } = render(<LineChart data={data} />)
+    await waitFor(() => expect(chart.series).toHaveLength(1))
+
+    const dotted = { datasets: [{ ...data.datasets[0]!, lineStyle: 'dotted' as const }] }
+    rerender(<LineChart data={dotted} />)
+
+    expect(chart.api.addLineSeries).toHaveBeenCalledTimes(1)
+    expect(chart.series[0]!.applyOptions).toHaveBeenCalledWith(
+      expect.objectContaining({ lineStyle: 1 }),
+    )
+  })
+
+  it('passes priceFormat to every series as a price format', async () => {
+    render(<LineChart data={data} priceFormat={{ minMove: 0.001 }} />)
+
+    await waitFor(() =>
+      expect(chart.api.addLineSeries).toHaveBeenCalledWith(
+        expect.objectContaining({ priceFormat: { type: 'price', minMove: 0.001 } }),
+      ),
+    )
+  })
+
+  it('uses the library default price format without priceFormat', async () => {
+    render(<LineChart data={data} />)
+
+    await waitFor(() =>
+      expect(chart.api.addLineSeries).toHaveBeenCalledWith(
+        expect.objectContaining({ priceFormat: { type: 'price', precision: 2, minMove: 0.01 } }),
+      ),
+    )
+  })
+
+  it('resets an existing series to the default price format when priceFormat is removed', async () => {
+    const { rerender } = render(<LineChart data={data} priceFormat={{ minMove: 0.001 }} />)
+    await waitFor(() => expect(chart.series).toHaveLength(1))
+
+    rerender(<LineChart data={data} />)
+
+    expect(chart.api.addLineSeries).toHaveBeenCalledTimes(1)
+    expect(chart.series[0]!.applyOptions).toHaveBeenLastCalledWith(
+      expect.objectContaining({ priceFormat: { type: 'price', precision: 2, minMove: 0.01 } }),
+    )
+  })
 })

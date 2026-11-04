@@ -37,7 +37,7 @@ action, and the Kernel evaluates that action as one resource and verb for each i
 | `sendCommand(id, c, p)`  | `command.request`       | `devices: write`     | the device, or every device of a worker-scoped command |
 | `getCommandLog(q)`       | `command.log`           | `commands: read`     | none                                   |
 | `getAction`, `getActionsBatch`, `queryActions` | `action.get`, `action.get-batch`, `action.query` | `actions: read` | none |
-| `pushAction`, `pushActionsBatch`, `cancelActionsBatch` | `action.push`, `action.push-batch`, `action.cancel-batch` | `actions: write` | none |
+| `pushAction`, `pushActionsBatch`, `cancelActionsBatch` | `action.push`, `action.push-batch`, `action.cancel-batch` | `actions: write`, plus `devices: write` on every device the push resolves to | none for the push itself; the device check is per resolved device |
 | `voteAction`             | `action.vote`           | `actions: vote`      | none                                   |
 | `getRbac()`              | `rbac.get`              | `policy: read`       | none                                   |
 | `applyRbac(rbac)`        | `rbac.apply`            | `policy: write`      | none                                   |
@@ -45,21 +45,45 @@ action, and the Kernel evaluates that action as one resource and verb for each i
 | `upsertUser`, `deleteUser`, `upsertServiceAccount`, `deleteServiceAccount`, `rotateSigningKey` | `identity.*` | `identities: write` | none |
 
 Helpers that first ask the Kernel for the fleet need `workers: list` as well: `getStatus`, `waitForWorkers`,
-`waitForDevice`, `getWorkerKey`. `sendWorkerCommand` and `pullWorkerTelemetry` then dial the Worker directly, which
-the Kernel does not evaluate; the Worker's own allow-list decides.
+`waitForDevice`, `getWorkerKey`.
+
+## Provisioning a device
+
+Registering, updating or forgetting a device is a `pushAction` whose `action` is `registerThing`, `updateThing` or
+`forgetThings`, with the target Worker named in `params[0].workerId`. There is no Worker-direct path: an app reaches a
+Worker only through the Kernel.
+
+An app that provisions needs `actions: write` **and** `devices: write`. `updateThing` and `forgetThings` name a device
+the registry already knows, so a `devices: write` rule narrowed with `resourceNames` matches them. `registerThing` does
+not: the device is not in the registry yet, so it resolves to no instance name, and a rule scoped to instances never
+matches a request that names none. An app that registers devices needs an unscoped `devices: write` rule,
+which grants write access to every device the policy covers, so request it only where registration is genuinely part
+of the app.
+
+`scripts/derive-permissions.mjs` does not yet model this: it maps `pushAction` to `actions: write` alone, and advises
+scoping every derived `devices` rule with `resourceNames`. For a provisioning app, add the `devices: write` rule by
+hand, unscoped, and ignore that scoping advice for it. Under `--check --strict` the script reports the added rule as
+unused; that report is the limitation, not a finding.
+
+A push that succeeds means the configuration is persisted. The device becomes operational on the next restart of its
+Worker, so an app must not treat a successful push as a live device.
 
 ## Two identities on one call
 
-A route that calls `req.mdk` (the client `withActor(token)` builds) sends the app's own token and the operator's.
-The Kernel evaluates both: the app's role must allow the resource and verb, and so must a role the operator is bound
-to. Granting the app `devices: write` is not enough for a user whose role only allows the app's routes; bind the user
+A route that calls `req.mdk` sends the app's own token, and the operator's too when the caller was a signed-in user:
+`req.mdk` is `withActor(token)` for a user and the plain app client for anyone else, so a service account calling the
+route is evaluated as the app alone.
+
+When both identities travel, the Kernel evaluates both: the app's role must allow the resource and verb, and so must a
+role the operator is bound to. Granting the app `devices: write` is not enough for a user whose role only allows the app's routes; bind the user
 to a role with the same Kernel rule, or route the call through the app's own client when the app, not the user, is
 meant to be the actor.
 
 ## Who may call the app
 
 `permissions` says nothing about callers. Who may call the app's routes is a Gateway rule in `spec.rbac`, over the
-resource `<app>/<path>` with the verbs `get`, `list`, `create`, `update`, `delete`, bound to users, groups or agents:
+resource `<app>/<path>` with the verbs `get`, `list`, `create`, `update`, `delete`, bound to users, groups or service
+accounts (an agent is a service account):
 
 ```yaml
 spec:

@@ -7,6 +7,7 @@ import { CoPilot } from "@tetherto/mdk-ui-agent";
 import { useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 
+import { useShowCoPilot } from "./apps/agent";
 import { appPageSidebarItems } from "./apps/paths";
 import { UserMenu } from "./components/UserMenu";
 import { AUTH_BYPASS } from "./constants/env";
@@ -37,6 +38,7 @@ export const App = () => {
   });
 
   const { apps } = useInstalledAppUis();
+  const showCoPilot = useShowCoPilot();
 
   const sidebarItems = useMemo(
     () => [
@@ -88,13 +90,13 @@ export const App = () => {
       {/*
         The operator co-pilot. Mounted once here rather than on a route, so it
         stays available whichever page is showing — it answers about the fleet,
-        not about the page. Delete this line to remove it.
+        not about the page. Delete this line and `showCoPilot` above to remove it.
 
-        It needs the Gateway's `/agent/*` routes, which the agent plugin serves:
-        add `@tetherto/mdk-app-agent` to your stack's `mdk.yaml`. Without it
-        the panel opens and reports that the agent is not configured.
+        It talks to the Gateway's `/agent/*` routes, which the agent app serves,
+        so it appears only when the stack installs `@tetherto/mdk-app-agent`
+        (add it to `mdk.yaml`). `VITE_AGENT_COPILOT=true` mounts it regardless.
       */}
-      <CoPilot />
+      {showCoPilot && <CoPilot />}
     </div>
   );
 };

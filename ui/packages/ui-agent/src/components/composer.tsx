@@ -5,8 +5,14 @@ import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AGENT_LABELS } from '../branding'
 import { SendIcon, StopIcon } from './icons'
 
-/** Grows with the text up to this, then scrolls. Keeps the panel usable. */
-const MAX_ROWS = 6
+/**
+ * Grows with the text up to this many rows of text, then scrolls.
+ *
+ * Counted in rows the operator can actually read, not in box height: the cap is
+ * applied to the text area and the box's own padding and borders are added back
+ * on top, so five here means five visible lines.
+ */
+const MAX_ROWS = 5
 
 export type ComposerProps = {
   disabled?: boolean
@@ -74,15 +80,34 @@ const ComposerView = ({
     textAreaRef.current?.focus()
   }, [focusKey, disabled])
 
-  // The devkit `TextArea` is a plain `<textarea>` with no auto-grow, so the
-  // height is measured here: reset first, otherwise scrollHeight only ever
-  // grows and the box never shrinks back after a deletion.
+  /**
+   * The devkit `TextArea` is a plain `<textarea>` with no auto-grow, so the
+   * height is measured here: reset first, otherwise scrollHeight only ever
+   * grows and the box never shrinks back after a deletion.
+   *
+   * The box chrome has to be accounted for explicitly, which is what #2 was.
+   * `scrollHeight` is content *plus* padding, and it was being clamped against
+   * a bare `lineHeight * MAX_ROWS` — so the cap was reached a row early while
+   * the height it then set was a full row of padding taller than it claimed,
+   * and the composer kept eating the transcript above it. The cap now bounds
+   * the text alone and the padding and borders are added back after, so
+   * MAX_ROWS is a count of readable lines. `box-sizing: border-box` is pinned
+   * in the stylesheet, so the border belongs in the number written out.
+   */
   useLayoutEffect(() => {
     const node = textAreaRef.current
     if (!node) return
     node.style.height = 'auto'
-    const lineHeight = Number.parseFloat(globalThis.getComputedStyle(node).lineHeight) || 20
-    node.style.height = `${Math.min(node.scrollHeight, lineHeight * MAX_ROWS)}px`
+
+    const style = globalThis.getComputedStyle(node)
+    const px = (value: string) => Number.parseFloat(value) || 0
+    // `lineHeight` resolves to `normal` when the cascade never sets one.
+    const lineHeight = px(style.lineHeight) || 20
+    const padding = px(style.paddingTop) + px(style.paddingBottom)
+    const borders = px(style.borderTopWidth) + px(style.borderBottomWidth)
+
+    const text = node.scrollHeight - padding
+    node.style.height = `${Math.min(text, lineHeight * MAX_ROWS) + padding + borders}px`
   }, [value])
 
   const submit = () => {

@@ -1,3 +1,10 @@
+---
+title: Code of conduct
+description: Community guidelines and expected behavior for MDK participants
+docs@tether_slug: support/community/code-of-conduct
+icon: Shield
+---
+
 # Code of conduct
 
 ## Our commitment
@@ -41,7 +48,8 @@ This Code of Conduct applies to:
 
 The Community Manager is responsible for enforcing this Code of Conduct.
 
-**Community Manager:** Gio  
+**Community Manager:** Gio\
+**Lead Maintainer:** Hemant T
 
 If you experience or witness unacceptable behavior, report it privately to the Community Manager.
 

@@ -72,19 +72,38 @@
   }
 }
 
+/* Both views draw this, and switching between them must not move it.
+   Three things used to shift: the status line is absent in chat view when the
+   host passes no `status`, the back control is 28px tall against a 20px title
+   row, and `align-items: flex-start` pinned the action icons to whichever
+   height won. The height is fixed here, the title row owns the back control's
+   width in both views, and everything centres. */
 .mdk-agent-header {
   display: flex;
   gap: 12px;
+
+  /* Title row (20px) + gap (4px) + status line (13px). */
+  --mdk-agent-header-titles-height: 37px;
+
+  /* Top-aligned, so the title keeps the same baseline whether or not there is
+     a status line under it. Centring the block instead dropped the title 8px
+     in chat view, where the host passes no status — the height matched and the
+     text still moved. */
   align-items: flex-start;
   justify-content: space-between;
   padding: 10px 12px 10px 16px;
   border-bottom: 1px solid var(--mdk-agent-border);
 
+  /* A fixed height, not a floor: with `min-height` the two views still differed
+     by a pixel, because each one's natural content rounded differently against
+     it. Fixed, the header is the same height by construction whether or not
+     there is a status line to put in it. */
   &__titles {
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0;
+    height: var(--mdk-agent-header-titles-height);
   }
 
   &__title {
@@ -98,31 +117,65 @@
     line-height: 20px;
   }
 
-  &__back {
-    margin-left: -8px;
+  /* Sized to the title's line box, not to the 28px the action buttons get:
+     a taller control here would stretch the row it sits in — and `min-height`
+     has to come too, for the devkit floor noted above. */
+  &__back,
+  &__back-slot {
+    flex: none;
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    min-height: 20px;
+    margin-left: -4px;
   }
 
+  /* Holds the back control's place in chat view. Inert — no border, no hover,
+     nothing to tab to. */
+  &__back-slot {
+    display: block;
+  }
+
+  /* One line, always. The host supplies this string, and a long one wrapping to
+     two lines would overflow the fixed box above. */
   &__status {
     margin: 0;
+    overflow: hidden;
     color: var(--mdk-agent-text-muted);
     font-size: 11px;
     line-height: 13px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
+  /* Centred on the title's own 20px line box rather than on the header, so the
+     status line underneath does not drag the icons down with it. The 28px
+     buttons overhang this box by 4px either side, which is hit area, not ink. */
   &__actions {
     display: flex;
     flex: none;
     gap: 2px;
     align-items: center;
+    height: 20px;
+  }
+
+  /* The devkit button floors itself at `min-height: 40px`, which a plain
+     `height` cannot shrink past — so the 28px asked for here was never actually
+     taking effect, and the header has been 40px-button-tall all along. That is
+     also why the icons sat where they did. */
+  &__actions button {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
   }
 
   /* The design's header actions are bare glyphs. The devkit's icon button draws
      a bordered box, so it is stripped back here — same layer, higher
-     specificity, no !important needed. */
+     specificity, no !important needed. The back control takes the same
+     treatment but keeps the smaller box set above. */
   &__actions button,
   &__back {
-    width: 28px;
-    height: 28px;
     padding: 0;
     border: none;
     background: transparent;

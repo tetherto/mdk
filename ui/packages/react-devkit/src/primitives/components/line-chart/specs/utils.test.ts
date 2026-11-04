@@ -97,6 +97,34 @@ describe('autoscaleProvider', () => {
     expect(result?.priceRange.maxValue).toBeGreaterThan(10.5)
   })
 
+  it('keeps a flat positive series above zero, whatever its magnitude', () => {
+    // Site power in MW: a flat 0.0351 used to pick up an absolute 1.2 of
+    // padding and render an axis from -1.16 to 1.24 for a quantity that
+    // cannot go negative.
+    const original = () => ({
+      priceRange: { minValue: 0.0351, maxValue: 0.0351 },
+    })
+    const provider = autoscaleProvider(false)
+
+    const result = provider(original)
+
+    expect(result?.priceRange.minValue).toBeGreaterThan(0)
+    expect(result?.priceRange.minValue).toBeLessThan(0.0351)
+    expect(result?.priceRange.maxValue).toBeGreaterThan(0.0351)
+  })
+
+  it('falls back to an absolute band for a flat series sitting at zero', () => {
+    const original = () => ({
+      priceRange: { minValue: 0, maxValue: 0 },
+    })
+    const provider = autoscaleProvider(false)
+
+    const result = provider(original)
+
+    expect(result?.priceRange.minValue).toBeLessThan(0)
+    expect(result?.priceRange.maxValue).toBeGreaterThan(0)
+  })
+
   it('sets min to 0 when beginAtZero is true', () => {
     const original = () => ({
       priceRange: { minValue: 5, maxValue: 10 },

@@ -44,13 +44,16 @@ export type ToolStatus = (typeof TOOL_STATUS)[keyof typeof TOOL_STATUS]
  * rejected write renders with the same green tick as one that ran — telling the
  * operator their refusal succeeded in doing the thing they refused.
  *
- * It is a bare string literal over there, not an exported constant, so this is
+ * An approval that expired with no decision comes back the same way, with its own
+ * text, and the write did not run either, so it is a refusal too.
+ *
+ * Both are bare string literals over there, not exported constants, so they are
  * matched on a prefix and pinned by `turn.contract.test.ts`.
  */
-const REJECTED_RESULT_PREFIX = '(rejected by operator'
+const REFUSED_RESULT_PREFIXES = ['(rejected by operator', '(no operator decision']
 
 export function isRejectionResult(text: string): boolean {
-  return text.startsWith(REJECTED_RESULT_PREFIX)
+  return REFUSED_RESULT_PREFIXES.some((prefix) => text.startsWith(prefix))
 }
 
 export type ToolStep = {

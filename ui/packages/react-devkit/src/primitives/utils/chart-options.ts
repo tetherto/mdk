@@ -2,7 +2,7 @@
  * Default chart options using theme colors
  */
 
-import type { Chart, ChartEvent, Plugin } from 'chart.js'
+import type { Chart, ChartEvent, ChartOptions, Plugin, TooltipItem } from 'chart.js'
 import { defaultChartColors } from '../constants/charts'
 import { CHART_COLORS, COLOR } from '../constants/colors'
 import { hexToOpacity } from './chart'
@@ -495,11 +495,16 @@ export const buildBarChartOptions = ({
   yRightUnit,
   categoryTicksPadding,
   tooltip: tooltipConfig,
-}: BuildBarChartOptionsInput = {}): Record<string, unknown> => {
+}: BuildBarChartOptionsInput = {}): ChartOptions<'bar'> => {
   const axisTicks = { color: CHART_COLORS.axisTicks }
   const gridColor = CHART_COLORS.gridLine
   const axisTitle = (unit: string | undefined) =>
     unit ? { title: { display: true, text: unit, color: CHART_COLORS.axisTicks } } : {}
+  // Chart.js hands a tick callback `string | number`; a value axis only ever yields numbers
+  const tickCallback =
+    (format: (value: number) => string) =>
+    (value: string | number): string =>
+      format(typeof value === 'number' ? value : Number(value))
   // Level labels, as in `defaultChartOptions`: crowded ones are skipped, not slanted
   const levelTicks = { ...axisTicks, maxRotation: 0 }
   const categoryTicks =
@@ -507,12 +512,12 @@ export const buildBarChartOptions = ({
       ? levelTicks
       : { ...levelTicks, autoSkipPadding: categoryTicksPadding }
 
-  const scales: Record<string, Record<string, unknown>> = isHorizontal
+  const scales: NonNullable<ChartOptions<'bar'>['scales']> = isHorizontal
     ? {
         x: {
           beginAtZero: true,
           stacked: isStacked,
-          ticks: { callback: (v: number) => yTicksFormatter(v), ...axisTicks },
+          ticks: { callback: tickCallback(yTicksFormatter), ...axisTicks },
           grid: { color: gridColor, offset: false },
           ...axisTitle(yUnit),
         },
@@ -522,7 +527,7 @@ export const buildBarChartOptions = ({
         y: {
           beginAtZero: true,
           stacked: isStacked,
-          ticks: { callback: (v: number) => yTicksFormatter(v), ...axisTicks },
+          ticks: { callback: tickCallback(yTicksFormatter), ...axisTicks },
           grid: { color: gridColor },
           ...axisTitle(yUnit),
         },
@@ -537,15 +542,20 @@ export const buildBarChartOptions = ({
       position: 'right',
       beginAtZero: true,
       grid: { drawOnChartArea: false },
-      ticks: { callback: (v: number) => yRightTicksFormatter(v), ...axisTicks },
+      ticks: { callback: tickCallback(yRightTicksFormatter), ...axisTicks },
       ...axisTitle(yRightUnit),
     }
   }
 
+  // Also handed to the tooltip: Chart.js resolves `mode: 'index'` against `axis || 'x'`
+  // and never reads `indexAxis`, so a horizontal tooltip would otherwise measure
+  // distance along the value axis and report whichever bar ends nearest the cursor.
+  const indexAxis = isHorizontal ? 'y' : 'x'
+
   return {
     responsive: true,
     maintainAspectRatio: false,
-    indexAxis: isHorizontal ? 'y' : 'x',
+    indexAxis,
     plugins: {
       legend: {
         display: showLegend,
@@ -558,24 +568,18 @@ export const buildBarChartOptions = ({
         },
       },
       tooltip: tooltipConfig
-        ? buildChartTooltip(tooltipConfig)
+        ? buildChartTooltip({ axis: indexAxis, ...tooltipConfig })
         : {
             displayColors,
             mode: 'index',
             intersect: false,
+            axis: indexAxis,
             callbacks: {
-              label: (ctx: {
-                dataset: {
-                  label?: string
-                  yAxisID?: string
-                }
-                parsed: {
-                  y: number
-                  x: number
-                }
-              }) => {
+              label: (ctx: TooltipItem<'bar'>) => {
                 const label = ctx.dataset.label || ''
-                const value = ctx.parsed.y ?? ctx.parsed.x
+                // The datum sits on whichever axis is not the index axis: a horizontal
+                // chart parses to `{ y: <category index>, x: <value> }`.
+                const value = isHorizontal ? ctx.parsed.x : ctx.parsed.y
                 if (value == null) return `${label}: `
                 if (ctx.dataset.yAxisID === 'y1' && yRightTicksFormatter) {
                   return `${label}: ${yRightTicksFormatter(value)}`

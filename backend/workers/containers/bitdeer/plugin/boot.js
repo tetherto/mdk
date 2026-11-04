@@ -80,15 +80,24 @@ async function startBitdeerWorker (opts) {
     telemetryTopics: Bitdeer.TELEMETRY_TOPICS,
     commandTopics: Bitdeer.COMMAND_TOPICS
   })
-  if (!opts.mqttCredentials) {
-    debug('bitdeer worker %s: MQTT broker accepts anonymous clients; set mqttCredentials to require login', opts.workerId)
+  const mqttHost = opts.mqttHost || '0.0.0.0'
+  const mqttPort = opts.mqttPort || DEFAULT_MQTT_PORT
+  if (!hasMqttCredentials(opts.mqttCredentials)) {
+    // The D40 dials in over the network, so the broker cannot default to loopback. An open
+    // broker on a reachable interface lets any host that can reach the port publish as a
+    // container, so say so where an operator will see it rather than only under DEBUG.
+    if (isLoopback(mqttHost)) {
+      debug('bitdeer worker %s: MQTT broker accepts anonymous clients on loopback', opts.workerId)
+    } else {
+      console.warn(`[mdk-worker-bitdeer] WARNING: worker ${opts.workerId} serves MQTT on ${mqttHost}:${mqttPort} without login — any host that can reach that port can connect as a container. Set mqttCredentials (and mqttTls), bind mqttHost to the container network's interface, and keep the port off other networks.`)
+    }
   }
   const server = opts.mqttTls
     ? tls.createServer(opts.mqttTls, aedes.handle)
     : net.createServer(aedes.handle)
   await new Promise((resolve, reject) => {
     server.once('error', reject)
-    server.listen({ host: opts.mqttHost || '0.0.0.0', port: opts.mqttPort || DEFAULT_MQTT_PORT }, resolve)
+    server.listen({ host: mqttHost, port: mqttPort }, resolve)
   })
 
   const infra = await createWorkerInfra({
@@ -154,4 +163,13 @@ async function startBitdeerWorker (opts) {
   }
 }
 
-module.exports = { startBitdeerWorker }
+// secureBroker only requires a login when the map has at least one entry, so `{}` is as open as none.
+function hasMqttCredentials (credentials) {
+  return !!credentials && Object.keys(credentials).length > 0
+}
+
+function isLoopback (host) {
+  return host === 'localhost' || host === '::1' || /^127\./.test(host)
+}
+
+module.exports = { startBitdeerWorker, isLoopback, hasMqttCredentials }

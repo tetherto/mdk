@@ -1,6 +1,11 @@
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
+import { checkoutRoot } from './checkout.js';
+import { pkg as cliPkg } from './pkg.js';
+
+const CLI_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /**
  * Project scaffolding shared by `mdk onboard` and `mdk create` — the files that
@@ -48,7 +53,9 @@ function npmName(name: string): string {
 
 /**
  * Ensures the project has a private root `package.json`. Creates one if absent
- * (no `workspaces` key — local packages are linked via `file:` dependencies).
+ * (no `workspaces` key — local packages are linked via `file:` dependencies),
+ * with this CLI as a devDependency so `npm run dev` and `npx mdk` resolve to it
+ * rather than to the unrelated `mdk` package on npm.
  * An existing manifest is never modified (name, deps, scripts, or workspaces).
  */
 export function ensureProjectManifest(targetDir: string, stackName: string): FileAction {
@@ -60,6 +67,9 @@ export function ensureProjectManifest(targetDir: string, stackName: string): Fil
       version: '0.1.0',
       private: true,
       scripts: { dev: 'mdk run' },
+      devDependencies: {
+        [cliPkg.name]: checkoutRoot(CLI_ROOT) ? fileSpec(targetDir, CLI_ROOT) : `^${cliPkg.version}`,
+      },
     };
     writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
     return 'created';
@@ -152,15 +162,25 @@ function setDependency(targetDir: string, packageName: string, versionSpec: stri
  * `node_modules/<packageName>`.
  */
 export function addFileDependency(targetDir: string, packageName: string, absPath: string): void {
+  setDependency(targetDir, packageName, fileSpec(targetDir, absPath));
+}
+
+/**
+ * The `file:` specifier a package.json in `fromDir` uses to reach `absPath`,
+ * relative and with forward slashes, so the manifest can be committed and works
+ * in any clone with the same layout (an absolute `/home/<user>/...` path breaks
+ * on every other machine).
+ */
+export function fileSpec(fromDir: string, absPath: string): string {
   const target = resolve(absPath);
-  const rel = relative(resolve(targetDir), target);
-  // `path.relative()` returns an absolute path when `targetDir` and `absPath`
+  const rel = relative(resolve(fromDir), target);
+  // `path.relative()` returns an absolute path when `fromDir` and `absPath`
   // are on different drives (Windows only) — fall back to the absolute path
   // rather than writing a `file:./C:/...` spec, which npm resolves under the
   // project dir and 404s.
   const posix = (isAbsolute(rel) ? target : rel).split(sep).join('/');
   const spec = isAbsolute(rel) || posix.startsWith('.') ? posix : `./${posix}`;
-  setDependency(targetDir, packageName, `file:${spec}`);
+  return `file:${spec}`;
 }
 
 /**
@@ -249,6 +269,14 @@ function runSection({ workerNames }: ReadmeOptions): string {
     'mdk run gateway',
     ...workers,
     '```',
+    '',
+    "Users live in the Kernel's identity store, so create the first operator once the stack is up. In a second terminal:",
+    '',
+    '```bash',
+    'mdk user add <name> --admin   # prompts for a password; --admin binds the first user',
+    '```',
+    '',
+    'The dashboard and every app route need a signed-in user; this is the one to sign in as.',
   ].join('\n');
 }
 
@@ -265,12 +293,11 @@ export function ensureProjectReadme(targetDir: string, opts: ReadmeOptions): Fil
         '## Dashboard',
         '',
         '```bash',
-        `cd ${opts.dashboardDir}`,
-        'npm install',
-        'npm run dev',
+        'mdk run dashboard   # separate terminal from `mdk run`',
         '```',
         '',
-        'It proxies `/auth`, `/api` and `/pub` to the Gateway, so start the stack first.',
+        `It starts the dev server in \`${opts.dashboardDir}\` and proxies \`/auth\`, \`/api\` and \`/pub\` to the Gateway, so start`,
+        'the stack first, then sign in as the operator you created.',
         '',
         '',
       ].join('\n')

@@ -55,16 +55,12 @@ export const METHODS = Object.freeze({
   rotateSigningKey: { action: 'identity.keys.rotate', resource: 'identities', verb: 'write', name: null }
 })
 
-// Client helpers that reach the Kernel through listWorkers (worker.list) before
-// doing their own thing; the direct-to-worker ones then dial the worker, which
-// the Kernel does not evaluate.
+// Client helpers that reach the Kernel through listWorkers (worker.list).
 export const HELPERS = Object.freeze({
-  getStatus: { via: 'listWorkers', direct: false },
-  waitForWorkers: { via: 'listWorkers', direct: false },
-  waitForDevice: { via: 'listWorkers', direct: false },
-  getWorkerKey: { via: 'listWorkers', direct: false },
-  sendWorkerCommand: { via: 'listWorkers', direct: true },
-  pullWorkerTelemetry: { via: 'listWorkers', direct: true }
+  getStatus: { via: 'listWorkers' },
+  waitForWorkers: { via: 'listWorkers' },
+  waitForDevice: { via: 'listWorkers' },
+  getWorkerKey: { via: 'listWorkers' }
 })
 
 // The verbs each Kernel resource takes (KERNEL_RESOURCES in @tetherto/mdk-rbac); a `*` expands over these.
@@ -141,14 +137,10 @@ export function scan (appDir) {
 export function derive (calls) {
   const byResource = new Map()
   const actor = calls.some((c) => c.method === 'withActor')
-  const direct = []
   for (const call of calls) {
     let method = call.method
     if (method === 'withActor') continue
-    if (HELPERS[method]) {
-      if (HELPERS[method].direct) direct.push(call)
-      method = HELPERS[method].via
-    }
+    if (HELPERS[method]) method = HELPERS[method].via
     const { resource, verb } = METHODS[method]
     if (!byResource.has(resource)) byResource.set(resource, new Set())
     byResource.get(resource).add(verb)
@@ -159,7 +151,7 @@ export function derive (calls) {
       resources: [resource],
       verbs: [...verbs].sort((a, b) => VERB_ORDER.indexOf(a) - VERB_ORDER.indexOf(b))
     }))
-  return { rules, actor, direct }
+  return { rules, actor }
 }
 
 /** The index of the first rule that is not `{ resources: string[], verbs: string[] }`, or -1. */
@@ -220,7 +212,7 @@ function main (argv) {
   const scanned = scan(appDir)
   if (!scanned) usage(`no mdk-plugin.json in ${appDir}/plugin or ${appDir}`)
   const { root, calls } = scanned
-  const { rules, actor, direct } = derive(calls)
+  const { rules, actor } = derive(calls)
 
   const methods = new Map()
   for (const c of calls) {
@@ -255,7 +247,7 @@ function main (argv) {
   }
 
   if (flags.has('--json')) {
-    console.log(JSON.stringify({ appDir, rules, actor, directWorkerCalls: direct, evidence, ...(diff ? { check: diff } : {}), written: flags.has('--write') }, null, 2))
+    console.log(JSON.stringify({ appDir, rules, actor, evidence, ...(diff ? { check: diff } : {}), written: flags.has('--write') }, null, 2))
   } else {
     console.log(`Kernel calls in ${path.relative(process.cwd(), root) || '.'}:`)
     if (!evidence.length) console.log('  (none: the plugin makes no Kernel call)')
@@ -269,7 +261,6 @@ function main (argv) {
       console.log('  Scope device rules with resourceNames ["family/brand/worker/device"] patterns, e.g. ["miner/*"].')
     }
     if (actor) console.log('  withActor: routes act as the operator too, so the user\'s own role must allow the same resource and verb.')
-    if (direct.length) console.log(`  ${direct.map((d) => d.method).join(', ')}: dials the worker directly; the worker's own allow-list decides, not spec.rbac.`)
     if (diff) {
       if (diff.missing.length) console.log(`\n  --check: the manifest does not allow ${diff.missing.join(', ')}; those calls are refused.`)
       if (diff.unused.length) console.log(`\n  --check: the manifest allows ${diff.unused.join(', ')}, which no call needs${flags.has('--strict') ? '' : ' (--strict fails on this)'}.`)

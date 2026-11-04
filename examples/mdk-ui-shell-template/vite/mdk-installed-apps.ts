@@ -1,9 +1,11 @@
-import type { InstalledApp, InstalledAppsResponse } from '@tetherto/mdk-ui-foundation'
+import type { InstalledAppsResponse } from '@tetherto/mdk-ui-foundation'
 import type { Plugin, ResolvedConfig } from 'vite'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { extname, join, relative, resolve, sep } from 'node:path'
 
 import { MDK_APP_UI_BASE, MDK_APP_UI_MANIFEST } from '@tetherto/mdk-ui-foundation/app-ui-paths'
+
+import { APPS_ENV, type DashboardApp, readApps } from './read-apps'
 
 /**
  * Serves the installed apps' UIs from this dashboard, and lists them — so the
@@ -22,10 +24,6 @@ import { MDK_APP_UI_BASE, MDK_APP_UI_MANIFEST } from '@tetherto/mdk-ui-foundatio
  * app means restarting the dashboard, or rebuilding it for production.
  */
 
-const APPS_ENV = 'MDK_DASHBOARD_APPS'
-
-type DashboardApp = Omit<InstalledApp, 'ui'> & { dir: string }
-
 const CONTENT_TYPES: Record<string, string> = {
   '.js': 'text/javascript',
   '.mjs': 'text/javascript',
@@ -40,31 +38,6 @@ const CONTENT_TYPES: Record<string, string> = {
   '.webp': 'image/webp',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
-}
-
-const isString = (value: unknown): value is string => typeof value === 'string' && value !== ''
-
-/** The apps `mdk run dashboard` passed in, checked enough to serve them safely. */
-const readApps = (raw: string | undefined): DashboardApp[] => {
-  if (!raw) return []
-  let apps: unknown
-  try {
-    apps = JSON.parse(raw)
-  }
-  catch {
-    throw new Error(`[mdk-installed-apps] ${APPS_ENV} is not valid JSON`)
-  }
-  if (!Array.isArray(apps)) throw new Error(`[mdk-installed-apps] ${APPS_ENV} must be a JSON array`)
-  return apps.map((app: Record<string, unknown>, i) => {
-    for (const field of ['name', 'id', 'version', 'displayName', 'apiBase', 'dir']) {
-      if (!isString(app?.[field])) throw new Error(`[mdk-installed-apps] ${APPS_ENV}[${i}] needs a string "${field}"`)
-    }
-    // The name becomes a URL segment and a build path: one plain segment only.
-    if (!/^[a-z0-9][a-z0-9._-]*$/.test(app.name as string)) {
-      throw new Error(`[mdk-installed-apps] ${APPS_ENV}[${i}]: "${String(app.name)}" is not a valid app name`)
-    }
-    return app as unknown as DashboardApp
-  })
 }
 
 const uiDirOf = (app: DashboardApp): string => join(app.dir, 'ui')

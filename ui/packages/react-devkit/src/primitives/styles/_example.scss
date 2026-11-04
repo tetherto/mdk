@@ -26,6 +26,10 @@
     gap: 0.5rem;
   }
 
+  .mdk-example-tall {
+    height: 160px;
+  }
+
   .mdk-example-grid-3 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

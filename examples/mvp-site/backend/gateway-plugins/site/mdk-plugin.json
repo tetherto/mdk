@@ -16,7 +16,7 @@
           }
         }
       },
-      "description": "Live site snapshot assembled from telemetry.pull across all workers: all miners, site power consumption from powermeters, and pool data from all minerpool workers.",
+      "description": "Live site snapshot assembled from telemetry.pull across all workers: all miners, site power consumption from powermeters, and pool data from all minerpool workers. Workers that are down are listed in unavailableWorkers with their device counts, since their devices cannot be read.",
       "errors": ["ERR_MDK_CLIENT_UNAVAILABLE"],
       "safety": "read-only"
     },
@@ -110,7 +110,7 @@
       },
       "description": "Dispatches the setPowerMode capability command to a single miner through Kernel. The new mode appears on the next telemetry poll.",
       "constraints": ["mode must be one of low | normal | high."],
-      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_DEVICE_ID_REQUIRED", "ERR_INVALID_POWER_MODE"],
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_DEVICE_ID_REQUIRED", "ERR_INVALID_POWER_MODE", "ERR_DEVICE_NOT_FOUND", "ERR_WORKER_NOT_ROUTABLE"],
       "safety": "write"
     },
     {
@@ -157,7 +157,7 @@
       },
       "description": "Dispatches the setupPools capability command to a single miner through Kernel. Pools from the request body take precedence; with no body the site-wide default from config/site.deploy.json (worker.pools) is applied. The miner reboots to pick up the new pools, so expect it to drop offline briefly.",
       "constraints": ["At most 3 pools per miner (whatsminer API limit).", "Each pool needs url and worker_name; appendId=false disables the per-device worker-name suffix."],
-      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_DEVICE_ID_REQUIRED", "ERR_INVALID_POOLS"],
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_DEVICE_ID_REQUIRED", "ERR_INVALID_POOLS", "ERR_DEVICE_NOT_FOUND", "ERR_WORKER_NOT_ROUTABLE"],
       "safety": "write"
     }
   ]

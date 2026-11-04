@@ -13,13 +13,13 @@ export {
   type PasswordAuthOptions,
   type PasswordAuthProvider,
   type PasswordCredentials,
-} from './password-auth'
+} from './password-auth.js'
 export {
   authTokenMutation,
   GATEWAY_REFRESH_INTERVAL_MS,
   gatewayRedirectAuth,
   type GatewayRedirectAuthOptions,
-} from './gateway-redirect-auth'
+} from './gateway-redirect-auth.js'
 export {
   applySession,
   type AuthProvider,
@@ -29,4 +29,4 @@ export {
   isSessionExpiredError,
   noAuth,
   SESSION_EXPIRED_STATUS,
-} from './provider'
+} from './provider.js'

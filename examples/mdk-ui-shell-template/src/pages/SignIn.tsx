@@ -44,6 +44,7 @@ const PasswordForm = ({ onError }: { onError: (message: string | null) => void }
     <form className="mdk-ui-shell-signin__form" onSubmit={(event) => void submit(event)}>
       <input
         className="mdk-ui-shell-signin__input"
+        type="text"
         name="username"
         autoComplete="username"
         placeholder="User name"

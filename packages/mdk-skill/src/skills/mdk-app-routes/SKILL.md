@@ -1,5 +1,5 @@
 ---
-name: mdk-gateway-plugin
+name: mdk-app-routes
 description: >
   Build the HTTP routes of an MDK app (route table + controllers, served
   through the Gateway) over one or more MDK Workers. Use when the task
@@ -9,7 +9,7 @@ description: >
   `/api/...` route exists yet.
 metadata:
   suite: mdk-developer-skill
-  mdk_version: "0.5.0"
+  mdk_version: "{{MDK_VERSION}}"
 license: Apache-2.0
 ---
 
@@ -18,7 +18,7 @@ license: Apache-2.0
 The Gateway serves HTTP routes from **apps**. An app is a small Node package with an `mdk-app.yaml` manifest
 and a route table (`mdk-plugin.json`, in `plugin/` or the package root); `mdk run` runs each app in its own
 process and the Gateway forwards each request to it. Each route is a controller that queries Workers through
-the app's own `@tetherto/mdk-client`, built once from `require('@tetherto/mdk-gateway/plugin')`.
+the app's own `@tetherto/mdk-client`, taken once from `config.mdkClient`.
 
 Apps are the **server half** of any "show me X from my devices" request.
 If the UI needs data that no existing route returns, build the app's route
@@ -33,7 +33,7 @@ skill owns the route table and controllers.
 | UI / chart needs a metric and no Gateway route exists | Add a route here first     |
 | Aggregate / rollup / site summary" across devices     | Add a route                |
 | Endpoint already exists (check `mdk.yaml` → `spec.apps`, or `mdk status`) | Skip — go straight to `mdk-ui-component` |
-| Need a new device protocol                            | Wrong skill — use `mdk-worker-plugin` |
+| Need a new device protocol                            | Wrong skill — use `mdk-worker` |
 
 ## Workflow
 
@@ -152,14 +152,22 @@ spec:
 
 `spec.gateway.plugins` is rejected by the CLI; move any such entry to `spec.apps`.
 Then restart (`mdk run`, or `mdk run app <app-name>` beside `mdk run gateway`).
-Wiring and boot order details live in `mdk-deployment`.
+Wiring and boot order details live in [`mdk-deployment`](../mdk-deployment/SKILL.md).
 
 ### 6. Smoke-check the route
 
-With the stack up:
+With the stack up, sign in for an access token and send it on the request. No app route is open: without a
+token the Gateway answers `401 ERR_AUTH_UNAUTHORIZED`, and without a `spec.rbac` rule over `<app>/<path>` for the
+signed-in user it answers `403 ERR_AUTH_FORBIDDEN`. `mdk user add <name> --admin` gives a first operator a rule
+to sign in with.
 
 ```bash
-curl -s http://127.0.0.1:<gateway-port>/apps/<app-name>/api/<domain>/<resource> | jq .
+TOKEN=$(curl -s -X POST http://127.0.0.1:<gateway-port>/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"username":"<user>","password":"<password>"}' | jq -er .accessToken)
+
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://127.0.0.1:<gateway-port>/apps/<app-name>/api/<domain>/<resource> | jq .
 ```
 
 Confirm the JSON matches the schema and examples in `mdk-plugin.json`.
@@ -184,11 +192,13 @@ Only then build UI against it.
 | App manifest, permissions, packaging  | `mdk-create-app`          |
 | Render this route in the dashboard    | `mdk-ui-component`        |
 | Register / restart / verify the stack | `mdk-deployment`          |
-| Device does not exist yet             | `mdk-worker-plugin` first |
+| Device does not exist yet             | `mdk-worker` first        |
 
 ## References
 
 - [`references/plugin-authoring.md`](./references/plugin-authoring.md): `mdk-plugin.json` fields + a fully populated route example
 - [`references/controller-patterns.md`](./references/controller-patterns.md): list / filter / `pullTelemetry` patterns
 - [`../mdk/references/protocol.md`](../mdk/references/protocol.md): envelope / action set
-- Shipped app repositories: [`mdk-app-demo`](https://github.com/tetherto/mdk-app-demo) (read-only fan-out), [`mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) (auth + stream routes)
+- Shipped app repositories: [`mdk-app-demo`](https://github.com/tetherto/mdk-app-demo) (read-only
+  fan-out) and [`mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) (auth + stream routes);
+  [`supported-apps.md`](https://github.com/tetherto/mdk/blob/main/docs/reference/supported-apps.md#availability) says how to install them

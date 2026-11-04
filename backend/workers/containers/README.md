@@ -43,6 +43,7 @@ const worker = await startAntspaceWorker({
   workerId: 'antspace-rack-1',
   model: 'hk3',
   storeDir: './store/antspace-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'HK3-A', container: 'container-A', location: 'site-a-01.container' },
     opts: { address: '192.168.1.100', port: 18001 }
@@ -50,3 +51,6 @@ const worker = await startAntspaceWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.

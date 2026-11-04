@@ -463,21 +463,26 @@ shell is built around a session it has no way to obtain yet. Pick
 
 ## Auth in this shell — what ships
 
-The Gateway routes requests to apps and has no API of its own, and no built-in auth or
-OAuth2 facilities. That has two consequences here:
+The Gateway serves sign-in itself (`/auth/login`, `/auth/token`, `/auth/refresh`, `/auth/logout`,
+and `/auth/me`) whenever it has an authority, which is a Kernel or a Gateway credential, as `mdk run`
+wires one. The recipe here starts the Gateway on its own with `npm start`, so it has neither, and
+those routes are not mounted. That has two consequences here:
 
-- **No OAuth implementation ships.** Sign-in is an app you write.
-- **The Gateway does not validate tokens itself.** A route marked `"auth": true`
-  answers `401` unless the `authVerifier` passed to `startGateway()` returns an
-  identity; checking your token is that verifier's job. Routes without
-  `"auth": true` are open, so an unauthenticated frontend talks to them
-  fine, which is what makes [running it without sign-in](#run-it-without-sign-in) work.
+- **No OAuth implementation ships.** The built-in sign-in is a username and a password at
+  `/auth/login`; an OAuth2 redirect flow is an app you write.
+- **Without an authority the Gateway checks no token of its own.** On this recipe a route marked
+  `"auth": true` answers `401` unless the `authVerifier` passed to `startGateway()` returns an
+  identity, and checking that token is the verifier's job, while a route without the flag is open,
+  which is what makes [running it without sign-in](#run-it-without-sign-in) work. Neither holds on a
+  stack `mdk run` boots: there the Gateway verifies the token and checks `spec.rbac` on every app
+  route, and no route is open.
 
-The frontend half is all present — the auth seam (`AuthProvider`,
+The frontend half is all present — the auth seam (`AuthProvider`, `passwordAuth`,
 `gatewayRedirectAuth`, `MdkProvider`'s `auth` prop), `<SignInGoogleButton>`,
-`RequireAuth`, `useAuthToken`, `useTokenPolling`, `authStore`. It is waiting
-on a backend that completes the redirect contract described under
-[add Google sign-in](#add-google-sign-in).
+`RequireAuth`, `useAuthToken`, `useTokenPolling`, `authStore`. Against a stack `mdk run` boots,
+`VITE_AUTH_MODE=password` signs in through the Gateway's own `/auth/login` and needs no backend of
+your own. Google sign-in is the path waiting on a backend that completes the redirect contract
+described under [add Google sign-in](#add-google-sign-in).
 
 ## Run it without sign-in
 
@@ -558,7 +563,7 @@ Needed for either path. From a directory **outside** the backend repo:
 
 ```bash
 # Option A — the root MDK CLI stands the template up alongside a stack:
-npx @tetherto/mdk-cli create dashboard my-dashboard
+npx @tetherto/mdk-cli create dashboard my-dashboard   # scaffolds apps/my-dashboard in the current stack
 
 # Option B — copy the template and run it in place. It is a real Vite app,
 # not a scaffold-only tree:
@@ -573,7 +578,7 @@ against an unpublished checkout.
 Then:
 
 ```bash
-cd my-dashboard
+cd my-dashboard                     # apps/my-dashboard after option A
 cp .env.example .env
 # Defaults already point at http://localhost:3000 — change only if you
 # moved the backend.

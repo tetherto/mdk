@@ -18,11 +18,18 @@ import { CoPilot } from '@tetherto/mdk-ui-agent'
 import '@tetherto/mdk-ui-agent/styles.css'
 ```
 
-That is the whole integration. The shell template ships with both lines already
-in place; delete them to remove it.
+That is the whole integration. The shell template ships with both lines already in place, and mounts `<CoPilot />` only when
+its app list names the agent app (`io.tether.agent`, exported as `AGENT_APP_ID`), so a dashboard without it shows no launcher. Delete them to remove it.
 
-The backend half is a stack concern: add [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) to your
-`mdk.yaml` under `spec.apps` with `mount: /`, and point it at an MCP server for the fleet tools:
+The backend half is a stack concern. [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) is a public
+repository but is **not published to npm**, so install it from the repository rather than by package name:
+
+```bash
+mdk add app github:tetherto/mdk-app-agent
+```
+
+That writes the `spec.apps` entry below into your `mdk.yaml`, `mount: /` included. Point it at an MCP server for the
+fleet tools:
 
 ```yaml
 spec:
@@ -38,8 +45,13 @@ spec:
 > The panel calls `/agent/sessions…` at the Gateway root. The Gateway serves an app under `/apps/<name>` unless its entry sets
 > `mount`, so without `mount: /` every call answers `404`. `mdk onboard` writes `mount: /` for this app.
 
-Without the app the panel opens and reports that the agent is not configured. See
-[Running it all locally](#running-it-all-locally) for the whole chain from an
+> [!IMPORTANT]
+> The chat has no backend until [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) is installed in the
+> stack. The [supported apps reference](../../../docs/reference/supported-apps.md#availability) covers where each app
+> ships from. The panel renders without it: it opens and reports that the agent is not configured, and the
+> [catalog demo](#demo) drives every state of a conversation against a stand-in gateway.
+
+See [Running it all locally](#running-it-all-locally) for the whole chain from an
 empty machine.
 
 ### Dev server
@@ -63,13 +75,12 @@ calls stay same-origin.
 | `<ChatUIEntry />`  | The same conversation as a full-height page. Default export too, so it drops into a lazy route registry. |
 | `useAgentChat()`   | The one stateful hook — session, live turn, persistence. Everything below it is presentational.          |
 | `useConversations()` | Binds the conversation store to React. |
-| [`@tetherto/mdk-ui-agent/core`](./src/core/index.ts) | The headless half: contract types, SSE reader, transport, turn reducer, conversation store. No React — also reachable from the root package, since `.` re-exports everything here; the subpath just lets a consumer skip the components. |
+| [`@tetherto/mdk-ui-agent/core`](./src/core/index.ts) | The headless half: contract types, SSE reader, transport, turn reducer, conversation store, and `AGENT_APP_ID` / `hasAgentApp` for a shell deciding whether to mount the co-pilot. No React — also reachable from the root package, since `.` re-exports everything here; the subpath just lets a consumer skip the components. |
 | [`@tetherto/mdk-ui-agent/panel`](./src/components/co-pilot-panel.tsx) | `CoPilotPanel`, for building your own launcher around the panel body. |
 
 All props are optional. Inside an `MdkProvider` the base URL and bearer token
-come from the provider's auth seam; outside one it falls back to relative URLs
-and no token — which is what a Gateway running without an identity layer serves
-anyway.
+come from the provider's auth seam. Outside one it falls back to relative URLs and
+no token, which the agent routes answer with `401`, so mount it inside a provider.
 
 Useful props: `title`, `status` (the line under the title), `toolLabels`,
 `placeholder`, `defaultOpen`, `position`, `idleTimeoutMs` /
@@ -213,7 +224,8 @@ stand-in gateway, so it runs with no backend.
 
 Four processes, in order. See the [operator agent guides](../../../docs/guides/agent/index.md) for the topology diagram and
 why order matters here: the agent connects to MCP once, when a session is created, so a panel opened before the tool
-server is up gets a session with no tools and answers from the model alone, with no error to tell you.
+server is up gets `503 ERR_AGENT_UNAVAILABLE` instead of a session. The app tries the connection again on the next request,
+so start the tool server and retry.
 
 ### 1. A model
 
@@ -250,16 +262,18 @@ together yet.
 
 ### 3. A gateway carrying the agent app
 
-Mount [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) at `/` behind its own Gateway, against the local model
-and MCP server this walkthrough already served. [Mounting the app](../../../docs/guides/agent/gateway-deployment.md#mount-the-app)
-shows the complete `mdk.yaml` and `mdk run`.
+Mount [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) at `/` behind its own Gateway, against the
+local model and MCP server this walkthrough already served.
+[Mounting the app](../../../docs/guides/agent/gateway-deployment.md#mount-the-app) shows the complete `mdk.yaml` and
+`mdk run`. This is the step that installs the app: `mdk add app github:tetherto/mdk-app-agent` fetches it from its
+repository.
 
 ### 4. The UI
 
 ```bash
 cd <your-app>            # or examples/mdk-ui-shell-template
 npm install               # first time only; this project isn't a root workspace member
-VITE_GATEWAY_URL=http://127.0.0.1:3847 VITE_AUTH_BYPASS=true npm run dev
+VITE_GATEWAY_URL=http://127.0.0.1:3847 VITE_AUTH_MODE=password VITE_AGENT_COPILOT=true npm run dev
 ```
 
 The `npm install` above only needs to cover this project's own dependencies. The `ui/` toolkit it imports via `file:` links
@@ -268,8 +282,18 @@ The `npm install` above only needs to cover this project's own dependencies. The
 
 `<your-app>` can be [`examples/mdk-ui-shell-template`](../../../examples/mdk-ui-shell-template/README.md). Open `:3030` and the launcher is in the corner. `VITE_GATEWAY_URL` feeds the
 `/agent` proxy from [Dev server](#dev-server); leave `VITE_MDK_API_URL` empty so
-calls stay relative and go through it. `VITE_AUTH_BYPASS=true` skips the shell template's `/signin` gate, landing straight on
-the dashboard with a stub session, since this walkthrough has no OAuth backend to sign in against.
+calls stay relative and go through it, the `/auth` proxy included.
+
+`VITE_AUTH_MODE=password` puts a user name and password form on the shell template's `/signin`, which signs in against step 3's
+Gateway at `/auth/login`. Create that user with
+[`mdk user add <name> --admin`](../../../packages/cli/README.md#users-and-service-accounts): the flag binds it to the `admin`
+role, and a user created without it answers `403` on the agent routes. `VITE_AUTH_BYPASS=true` does not work
+here: its stub session sends the literal token `dev-auth-bypass`, and step 3's `mdk run` stack verifies every token, so the
+co-pilot's first call answers `401`. An `.env` copied from
+[`.env.example`](../../../examples/mdk-ui-shell-template/.env.example) carries the bypass on, so set it to `false` there.
+
+`VITE_AGENT_COPILOT=true` mounts the launcher although plain `npm run dev` lists no apps; under `mdk run dashboard` the
+stack's `mdk.yaml` does that.
 
 ### Checking it
 
@@ -288,9 +312,13 @@ powermeter and a pool, so "how many miners are there?" answers 8.
 
 Without the UI:
 
+With `$TOKEN` from [signing in at the Gateway](../../../docs/guides/gateway/apps.md#call-a-route):
+
 ```bash
-SESSION=$(curl -sX POST localhost:3847/agent/sessions -H 'content-type: application/json' -d '{}' | jq -r .sessionId)
+SESSION=$(curl -sX POST localhost:3847/agent/sessions \
+  -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' -d '{}' | jq -r .sessionId)
 curl -N -X POST localhost:3847/agent/sessions/$SESSION/messages \
+  -H "Authorization: Bearer $TOKEN" \
   -H 'content-type: application/json' -d '{"text":"how many miners are there?"}'
 ```
 

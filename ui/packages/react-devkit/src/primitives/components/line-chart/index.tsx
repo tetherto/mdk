@@ -17,12 +17,11 @@ import {
   buildTooltipHTML,
   getVisibleDataPointsForTimeline,
 } from './line-chart.utils'
-import type { LineDataset, LineSeriesApi } from './line-chart.utils'
-import { CHART_COLORS, GAP, OFFSET } from './line-chart.constants'
+import { CHART_COLORS, DEFAULT_PRICE_FORMAT, GAP, LINE_STYLE, OFFSET } from './line-chart.constants'
 import { withErrorBoundary } from '../error-boundary'
 import { cn } from '../../utils'
 import { resolveChartLegendStrokeColor } from '../../utils/chart-options'
-import type { LightWeightLineChartProps } from './types'
+import type { LightWeightLineChartProps, LineDataset, LineSeriesApi } from './types'
 
 /**
  * Time-series line chart built on `lightweight-charts`. Supports multi-series
@@ -46,6 +45,7 @@ const LightWeightLineChart = ({
   customLabel,
   priceFormatter,
   roundPrecision,
+  priceFormat,
   timeline,
   fixedTimezone,
   shouldResetZoom = true,
@@ -220,6 +220,19 @@ const LightWeightLineChart = ({
     ],
   )
 
+  const { minMove, precision } = priceFormat ?? {}
+  const seriesPriceFormat = useMemo(
+    () =>
+      _isNil(minMove) && _isNil(precision)
+        ? DEFAULT_PRICE_FORMAT
+        : {
+            type: 'price' as const,
+            ...(!_isNil(minMove) && { minMove }),
+            ...(!_isNil(precision) && { precision }),
+          },
+    [minMove, precision],
+  )
+
   const totalDataPoints =
     _max(_map(data?.datasets ?? [], ({ data }) => (_isArray(data) ? data.length : 0))) ?? 0
 
@@ -291,6 +304,8 @@ const LightWeightLineChart = ({
       const lineSeriesOptions: Parameters<IChartApi['addLineSeries']>[0] = {
         color: lineColor,
         ...(dataset.borderWidth && { lineWidth: dataset.borderWidth as 1 | 2 | 3 | 4 }),
+        lineStyle: LINE_STYLE[dataset.lineStyle ?? 'solid'],
+        priceFormat: seriesPriceFormat,
         lastValueVisible: false,
         crosshairMarkerVisible: false,
         priceLineVisible: false,
@@ -320,11 +335,13 @@ const LightWeightLineChart = ({
         series.applyOptions({
           visible: ds.visible !== false,
           color: resolveChartLegendStrokeColor(ds.borderColor),
+          lineStyle: LINE_STYLE[ds.lineStyle ?? 'solid'],
+          priceFormat: seriesPriceFormat,
         })
         seriesToDatasetMap.current.set(series, ds)
       }
     }
-  }, [createChart, chartRef, data.datasets, data, priceFormatter, yTicksFormatter, chartOptions, beginAtZero, showPointMarkers])
+  }, [createChart, chartRef, data.datasets, data, priceFormatter, yTicksFormatter, chartOptions, beginAtZero, showPointMarkers, seriesPriceFormat])
 
   const resetPriceScaleWidth = (): void => {
     lastAppliedPriceScaleWidth.current = 0
@@ -579,8 +596,9 @@ const LightWeightLineChart = ({
 }
 
 /**
- * Customisable Chart.js line chart with built-in zoom, tooltip, and
- * legend. Data is passed via props; the component does no fetching.
+ * Customisable time-series line chart built on `lightweight-charts`, with
+ * built-in zoom, tooltip, and legend. Data is passed via props; the
+ * component does no fetching.
  *
  * @category charts
  * @domain generic

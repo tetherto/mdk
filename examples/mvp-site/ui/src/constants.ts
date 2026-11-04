@@ -23,7 +23,6 @@ export const SENSOR_CHART_COLORS = ["#e94e77", "#f5a623", "#50e3c2"];
 export const HASH_SERIES_COLORS = {
   mdkFullSite: "#2fd4bf",
   aggrPool: "#8aa0b5",
-  f2pool: "#a855f7",
   ocean: "#ef4444",
   nominal: "#f5c518",
 } as const;

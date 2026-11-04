@@ -53,7 +53,9 @@ mdk create app fleet
 ```
 
 This scaffolds `apps/fleet`, links it into the project's `package.json`, and adds it under `spec.apps` in `mdk.yaml`
-(`--no-stack-entry` prints the entry instead). The scaffold carries one read-only summary route:
+(`--no-stack-entry` prints the entry instead). For an app that lives in its own repo and installs with
+`mdk add app github:<owner>/<repo>#<tag>`, run `mdk create app fleet --flat` in the repo instead: it scaffolds at the repo root and touches no
+project. The scaffold carries one read-only summary route:
 
 ```text
 apps/fleet/
@@ -62,6 +64,7 @@ apps/fleet/
 └── plugin/
     ├── mdk-plugin.json        # route table
     ├── lib/client.js          # the app's MDK client
+    ├── types.d.ts             # response types, shared with the UI
     └── controllers/summary.js # one module per route
 ```
 
@@ -98,14 +101,17 @@ that `spec.rbac` in `mdk.yaml` grants `app:fleet` what the manifest requests.
 `handler` path, and either an `http` block with a `method` and `path`, or those same `method`/`path` fields flattened to the route's top level;
 the agent app uses the flat form. Rather than copy a synthetic example, start from a real manifest and trim it:
 
-- [`mdk-app-demo/mdk-plugin.json`][demo-plugin-manifest]: two read-only `GET` routes with query parameters, each
-  annotated with `safety`
 - [`examples/mvp-site/backend/gateway-plugins/site/mdk-plugin.json`][mvp-site-manifest]: four routes including `GET`s with query
 parameters, and `POST`s with a `requestBody` and path parameters
-- [`mdk-app-agent/mdk-plugin.json`][agent-plugin-manifest]: `auth: true` routes in the flat form, one of them a stream route
+- `mdk-app-demo/mdk-plugin.json`: two read-only `GET` routes with query parameters, each annotated with `safety`
+- `mdk-app-agent/mdk-plugin.json`: `auth: true` routes in the flat form, one of them a stream route
+
+The two apps live in [their own repositories][supported-apps-availability]; the `mvp-site` manifest is the one in this
+repository.
 
 Path parameters use `{param}` syntax — the loader normalises them to Fastify's `:param` format. For named exports use `"handler":
-"./controllers/foo.js#namedExport"`. The plugin reference explains what each field means and what the loader requires.
+"./controllers/foo.js#namedExport"`. The loader enforces the fields; [what it refuses, and why][gateway-readme-errors] is the
+Gateway README's `ERR_PLUGIN_MANIFEST_INVALID` row.
 
 #### 2.2 Write a controller
 
@@ -179,9 +185,8 @@ mdk run app fleet   # or only this app, in the foreground, beside `mdk run kerne
 The runtime loads the route table and every handler before it serves, so a missing file or invalid manifest fails that app
 at startup. It accepts calls only from the Gateway's key (`.mdk/gateway.key`); until it is up, its routes answer `503`.
 
-```bash
-curl http://localhost:3847/apps/fleet/api/fleet/summary
-```
+No route is open, so [sign in and send the access token](#call-a-route) to reach
+`http://localhost:3847/apps/fleet/api/fleet/summary`.
 
 [Exposing an app's routes to the operator agent][expose-data] turns them into MCP tools with no separate manifest.
 
@@ -207,11 +212,40 @@ export default defineMdkApp({
 `mdk create app` scaffolds `ui-src/` with one page and one Home panel, plus a placeholder `ui/index.js` that
 `npm run build:ui` replaces.
 
+#### Share response types with the UI
+
+Controllers are CommonJS JavaScript: the app runtime loads `.js` and `.cjs` from `plugin/`, so a TypeScript controller
+must be compiled to one first. Type a route's response once, in `plugin/types.d.ts`, and check both halves against it. The
+controller names the type with JSDoc under `// @ts-check`, and the UI imports it with `import type`, which the UI build erases:
+
+```js
+// plugin/controllers/summary.js
+// @ts-check
+/** @typedef {import('../types').AppRequest} AppRequest */
+/** @typedef {import('../types').Summary} Summary */
+
+/**
+ * @param {AppRequest} req
+ * @returns {Promise<Summary>}
+ */
+module.exports = async function summary (req) { /* ... */ }
+```
+
+```ts
+// ui-src/data/summary.ts
+import type { Summary } from '../../plugin/types'
+```
+
+`AppRequest` in the same file types the `req` every controller receives, so new controllers do not re-type it.
+The scaffold wires the summary route this way, and `npm run typecheck` checks both halves, so renaming a field fails the
+type check in the controller and in every component that reads it.
+
 | Field         | Contains                                                                                         |
 | ------------- | ------------------------------------------------------------------------------------------------ |
 | `id`          | The app's reverse-DNS id. Must equal `id` in `mdk-app.yaml`: the shell checks it against the installed app's id, so a package cannot load under another app's identity |
 | `displayName` | The name the shell shows, and the fallback for a route that sets no `label` or a panel that sets no `title` |
-| `routes`      | Pages the shell mounts under `/app/<name>/`, in the app's own sidebar group. `path` is relative, `''` being the landing page; `label` sets the sidebar label; `hidden` routes a deep link without listing it |
+| `routes`      | Pages the shell mounts under `/app/<name>/`, in the app's own sidebar group. `path` is relative, `''` being the landing page; `label` sets the sidebar label; `section` groups the page with the others naming it; `hidden` routes a deep link without listing it |
+| `sections`    | Optional. An icon for a route `section`: `label` is the `section` its routes name, `icon` a component the shell renders with no props. A section works with no entry here, which only adds what a label alone cannot |
 | `panels`      | Components the shell composes into pages it owns. `slot` picks where: every MDK shell provides `MDK_APP_PANEL_SLOT.HOME`, and a shell ignores slots it does not know |
 
 The dashboard serves its app list at `/app-ui.json`, written from the stack's `mdk.yaml` by `mdk run dashboard`. It imports
@@ -376,21 +410,26 @@ const totalHashrateMhs = (await Promise.all(pulls)).reduce((sum, v) => sum + v, 
 [`demo/controllers/summary.js`][demo-plugin-summary] is the smallest worked example of this fan-out, worth starting
 from if you're authoring your own app.
 
-There is no separate Gateway-side store for historical or aggregated data, either. Fan [`pullWorkerTelemetry`][client-readme-methods]
-out across every registered Worker and read the series from the Worker's own persisted tail-log:
+There is no separate Gateway-side store for historical or aggregated data, either. Read the series from each Worker's own
+persisted tail-log with [`pullTelemetry`][client-readme-methods], addressed to the device whose history you want:
 
 ```js
-const { workers } = await mdkClient.listWorkers()
-const results = await Promise.allSettled(
-  workers.map((w) => mdkClient.pullWorkerTelemetry(w.workerId, { type: 'logs', key: 'stat-1D', tag: 't-miner', start, end }))
-)
+const history = await mdkClient.pullTelemetry(deviceId, { type: 'logs', key: 'stat-1D', tag: 't-miner', start, end })
 ```
+
+> [!NOTE]
+> A `stat-*` log is shared: the read opens the log named by `key` and `tag`, checks the tag belongs to the device you
+> addressed, and returns the stored series without narrowing it to that device. So a response can include figures from
+> devices the caller cannot address, and a caller scoped to one device still reads the shared total
+> ([what `resourceNames` does and does not bound][rbac-scope-limits]). A tag the addressed device does not carry is
+> refused with `ERR_LOG_TAG_FORBIDDEN`. Do not treat one device as standing for its whole Worker, and do not assume a
+> Worker with no current devices has no retained history.
 
 [`demo/controllers/history.js`][demo-plugin-history] is the smallest worked example — a single-file version with an
 optional per-device filter and a Kernel-unavailable fallback.
 
 Both live and historical calls are network calls through the client — guard both [the same way](#supplying-per-app-config). An
-unguarded `pullTelemetry` or `pullWorkerTelemetry` throws `ERR_MDK_CLIENT_UNAVAILABLE` straight through to the caller as an
+unguarded `pullTelemetry` throws `ERR_MDK_CLIENT_UNAVAILABLE` straight through to the caller as an
 unhandled `500` the moment a Worker or the Kernel drops; neither path degrades more gracefully than the other.
 
 ### Send a command
@@ -446,6 +485,23 @@ spec:
 The verified identity reaches the controller as `req._info`, `{ kind, sub, email?, groups? }`, so identity never comes from the
 request body. [The Gateway's security model][gateway-concept-auth] lists the rest of the defaults.
 
+#### Call a route
+
+Sign in for an access token, then send it as a bearer token. The user to sign in as is [the first operator][first-operator]
+that `mdk user add <name> --admin` creates:
+
+```bash
+TOKEN=$(curl -s -X POST http://127.0.0.1:<gateway-port>/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"username":"<user>","password":"<password>"}' | jq -er .accessToken)
+
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://127.0.0.1:<gateway-port>/apps/<app-name>/api/<domain>/<resource> | jq .
+```
+
+The token lasts minutes and the refresh token rotates on every use, so a long-running client signs in again rather than
+holding one token. A browser dashboard uses [`passwordAuth()`][ui-sessions] instead of signing in this way.
+
 A Gateway started with no Kernel and no credential falls back to an `authVerifier` for routes marked `"auth": true`:
 
 ```js
@@ -493,7 +549,7 @@ anything is wrong — see the loader's error codes for the full list.
 - Try the [live site backend example][all-workers-guide] for a complete worked app with three routes: a live site overview,
   a historical series, and a command endpoint running under PM2 or Docker
 - Build the [minimal dashboard tutorial][minimal-dashboard] — end-to-end worked example of the single-app + controller pattern
-- Read the [demo app][demo-plugin-readme] for the smallest complete worked example of both fan-out patterns above
+- Get the [demo app][supported-apps-availability], the smallest complete worked example of both fan-out patterns above
 - Understand [how Workers declare their data][build-a-worker] via [`mdk-contract.json`][contract-schema] — what
   [`mdkClient`][client-readme-methods] reads and [`sendCommand`][client-readme-methods] dispatches
 - See the full manifest and controller reference
@@ -506,14 +562,20 @@ anything is wrong — see the loader's error codes for the full list.
 [contract-schema]: ../../../backend/core/mdk-worker/mdk-contract.schema.json
 <!-- docs@tether.io: contract-schema → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/mdk-contract.schema.json -->
 
-[demo-plugin-readme]: https://github.com/tetherto/mdk-app-demo
-<!-- docs@tether.io: demo-plugin-readme → https://github.com/tetherto/mdk-app-demo -->
+[supported-apps-availability]: ../../reference/supported-apps.md#availability
+<!-- docs@tether.io: supported-apps-availability → reference/supported-apps#availability -->
+
+[agent-plugin-readme]: https://github.com/tetherto/mdk-app-agent
+<!-- docs@tether.io: agent-plugin-readme → https://github.com/tetherto/mdk-app-agent -->
 
 [demo-plugin-summary]: https://github.com/tetherto/mdk-app-demo/blob/main/controllers/summary.js
 <!-- docs@tether.io: demo-plugin-summary → https://github.com/tetherto/mdk-app-demo/blob/main/controllers/summary.js -->
 
 [demo-plugin-history]: https://github.com/tetherto/mdk-app-demo/blob/main/controllers/history.js
 <!-- docs@tether.io: demo-plugin-history → https://github.com/tetherto/mdk-app-demo/blob/main/controllers/history.js -->
+
+[ui-sessions]: ../../../ui/packages/ui-foundation/README.md#sessions
+<!-- docs@tether.io: ui-sessions → https://github.com/tetherto/mdk/blob/main/ui/packages/ui-foundation/README.md#sessions -->
 
 [gateway-concept-auth]: ../../../backend/core/gateway/README.md
 <!-- docs@tether.io: gateway-concept-auth → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md -->
@@ -540,23 +602,23 @@ anything is wrong — see the loader's error codes for the full list.
 [gateway-readme]: ../../../backend/core/gateway/README.md
 <!-- docs@tether.io: gateway-readme → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md -->
 
-[cli-install]: ../cli/install.md
-<!-- docs@tether.io: cli-install → guides/cli/install -->
+[gateway-readme-errors]: ../../../backend/core/gateway/README.md#errors
+<!-- docs@tether.io: gateway-readme-errors → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#errors -->
 
-[cli-add]: ../../../packages/cli/README.md#adding-and-validating-apps-and-workers
-<!-- docs@tether.io: cli-add → https://github.com/tetherto/mdk/blob/main/packages/cli/README.md#adding-and-validating-apps-and-workers -->
+[cli-install]: ../cli/install.md
+<!-- docs@tether.io: cli-install → guides/cli/run-with-npm -->
+
+[cli-add]: ../../reference/tooling/cli.md#mdk-add-app-source-and-mdk-add-worker-source
+<!-- docs@tether.io: cli-add → reference/tooling/cli#mdk-add-app-source-and-mdk-add-worker-source -->
+
+[first-operator]: ../security/create-the-first-operator.md
+<!-- docs@tether.io: first-operator → guides/security/create-the-first-operator -->
 
 [app-runtime-readme]: ../../../backend/core/app-runtime/README.md
 <!-- docs@tether.io: app-runtime-readme → https://github.com/tetherto/mdk/blob/main/backend/core/app-runtime/README.md -->
 
 [core-apps]: ../../../backend/core/mdk/README.md#apps
 <!-- docs@tether.io: core-apps → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md#apps -->
-
-[demo-plugin-manifest]: https://github.com/tetherto/mdk-app-demo/blob/main/mdk-plugin.json
-<!-- docs@tether.io: demo-plugin-manifest → https://github.com/tetherto/mdk-app-demo/blob/main/mdk-plugin.json -->
-
-[agent-plugin-manifest]: https://github.com/tetherto/mdk-app-agent/blob/main/mdk-plugin.json
-<!-- docs@tether.io: agent-plugin-manifest → https://github.com/tetherto/mdk-app-agent/blob/main/mdk-plugin.json -->
 
 [see-an-app-serve-data]: ../../tutorials/see-an-app-serve-data.md
 <!-- docs@tether.io: see-an-app-serve-data → tutorials/see-an-app-serve-data -->
@@ -572,14 +634,14 @@ anything is wrong — see the loader's error codes for the full list.
 [expose-data]: ../agent/expose-data.md
 <!-- docs@tether.io: expose-data → guides/agent/expose-data -->
 
-[agent-plugin-readme]: https://github.com/tetherto/mdk-app-agent
-<!-- docs@tether.io: agent-plugin-readme → https://github.com/tetherto/mdk-app-agent -->
-
 [agent-guide]: ../agent/gateway-deployment.md
 <!-- docs@tether.io: agent-guide → guides/agent/gateway-deployment -->
 
 [control-plane]: ../../concepts/control-plane.md
-<!-- docs@tether.io: control-plane → concepts/control-plane -->
+<!-- docs@tether.io: control-plane → https://github.com/tetherto/mdk/blob/main/docs/concepts/control-plane.md -->
 
 [security-blueprint]: ../security/index.md
 <!-- docs@tether.io: security-blueprint → guides/security -->
+
+[rbac-scope-limits]: ../security/index.md#step-4-write-the-policy-and-put-identity-in-the-gateway
+<!-- docs@tether.io: rbac-scope-limits → guides/security#step-4-write-the-policy-and-put-identity-in-the-gateway -->

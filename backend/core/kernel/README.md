@@ -41,6 +41,9 @@ write-action path, which requires a device-family permission such as `miner:w` i
 npm install @tetherto/mdk-kernel
 ```
 
+Deep imports are closed: the package's `exports` map in [`package.json`](./package.json) lists every importable subpath, and
+anything outside it fails to resolve with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+
 ## Quickstart
 
 ```js
@@ -524,6 +527,7 @@ Tests use real Corestore + `tmpdir` — no mocks for storage.
 | `ERR_COMMAND_UNCONFIRMED` | A command was sent to its Worker but no response arrived (send timeout, channel error, or Kernel crash mid-flight); it may have run | Read the device state back and resubmit only if the command did not take effect; Kernel never retries it |
 | `ERR_DEVICE_ID_REQUIRED` | A device-scoped command omits `deviceId` on the envelope                    | Set `deviceId` on the envelope |
 | `ERR_DEVICE_NOT_FOUND`   | No registered Worker owns the given `deviceId`                              | Target a `deviceId` registered by a ready Worker |
+| `ERR_DEVICE_NOT_OWNED`   | A write call targets a device the named Worker no longer owns, re-checked when the action executes; returned on that call as `call.error`, not thrown | Re-resolve the device's Worker and push the action again |
 | `ERR_KERNEL_ACTION_CALLS_EMPTY` | An action push resolves to no executable write calls, either for a specific Worker or across all Workers | Confirm the query matches ready Workers and the caller holds the required write permissions |
 | `ERR_KERNEL_ACTION_FORBIDDEN` | The request's token is valid but no rule in `spec.rbac` grants its identity the action's resource and verb, for each instance the request touches (named in the message) | Bind the identity to a role that allows it in `mdk.yaml`, then `mdk rbac apply` |
 | `ERR_KERNEL_ALLOW_ALL_REMOVED` | `auth.allowAll` or `hrpc.allowAll` is set                                  | Admit callers by key: `auth.whitelist`, `kernel.allowKey()` or the trusted-keys dir |

@@ -1,130 +1,55 @@
-# MDK monorepo docs
+# MDK documentation
 
-Use this page to route to the docs you need.
+## Overview
 
-## Getting started options
+Build mining apps and operate your site with the `mdk` CLI. Start with a working example, then follow the reference owned by the part you extend.
 
-- [Quickstart: build your first app with a UI in 15 minutes](./tutorials/build-your-first-app.md)
-- [Connect your own hardware](guides/workers/build-a-worker.md)
-- [Quickstart: run a mining site end to end](./tutorials/run-a-site.md)
-- [Quickstart: build a dashboard](./tutorials/build-a-dashboard.md)
-- [Pick your role](#pick-your-role)
+## Start here
 
-## Domains
+| Goal | Guide |
+| ---- | ----- |
+| Install the CLI | [Install and verify `mdk`](guides/cli/install.md) |
+| Build an app with a UI | [First app tutorial](tutorials/build-your-first-app.md) |
+| Install an existing app | [Available apps](reference/supported-apps.md) |
+| Run a complete mock site | [Site tutorial](tutorials/run-a-site.md) |
+| Connect hardware | [Worker development](guides/workers/build-a-worker.md) |
+| Build a dashboard | [Dashboard tutorial](tutorials/build-a-dashboard.md) |
+| Share your Worker or app | [Release and catalogue listing](../CONTRIBUTING.md#release-a-worker-or-app) |
 
-The monorepo is organized into three development domains:
+## Build and operate
 
-- [Core](../backend/core/docs/README.md) — Kernel, Gateway, MCP server, MDK SDK, MDK client
-- [Workers](../backend/workers/README.md) — protocol translators for data sources, e.g., miners, pools, power meters, sensors, containers
-- [UI toolkit](../ui/README.md) — headless state and API contracts, React bindings, mining-domain components, and application scaffolding
+| Task | Owning guide or reference |
+| ---- | ------------------------- |
+| Scaffold, validate, run, and inspect a stack | [CLI reference](reference/tooling/cli.md) |
+| Create the first operator and sign in | [First operator](guides/security/create-the-first-operator.md) |
+| Package an app and declare its HTTP routes | [App development](guides/gateway/apps.md) |
+| Configure and operate the HTTP entry point | [Gateway guides](guides/gateway/index.md) |
+| Query devices or issue commands from Node.js | [Client API](../backend/core/client/README.md) |
+| Compose UI components and hooks | [UI toolkit](../ui/README.md) |
+| Test and publish a hardware integration | [Worker testing](guides/workers/test-a-worker.md) and [supported Workers](../backend/workers/docs/supported-workers.md) |
+| Configure identities and access | [Site security](guides/security/index.md) |
+| Deploy the stack | [Deployment guides](guides/deployment/index.md) |
+| Operate through a conversational agent | [Operator agent guides](guides/agent/index.md) |
 
-> Per-artefact facts live next to code under `*/packages/**/<artefact>/`, not in `docs/`.
-> Workers ship `mdk-contract.json` (existing runtime contract); UI ships `dist/registry.json` (generated from JSDoc tags on source).
+## Agent
 
-## Pick your role
+For coding, [install MDK skills](guides/ui/agent-skills.md). For live site tools, connect through the [MCP server](../backend/core/mcp/README.md).
+Load the contract for the surface you need:
 
-- [New here — what is this?](#new-here)
-- [Agent](#agent)
-- [Engineer](#engineer)
-- [Manufacturer](#manufacturer)
-- [Docs maintainer](#docs-maintainer)
+- [Worker contracts and examples](../backend/workers/docs/AGENT_READY.md): device capabilities and handlers
+- [Core SDK contracts](../backend/core/docs/AGENT_READY.md): backend APIs
+- [UI registries and usage](../ui/AGENTS.md): components, hooks, and state
 
-### New here
+## Understand the stack
 
-Start with the product, then the stack, then run something.
-
-| Topic | Where |
-| --- | --- |
-| What MDK is and why it exists | [`concepts/about.md`](concepts/about.md) |
-| How the pieces fit together | [`concepts/architecture.md`](concepts/architecture.md) |
-| What the stack is made of, and where each piece is documented | [`concepts/architecture.md`](concepts/architecture.md#the-stack) |
-| The vocabulary you need (Kernel, Worker, manager, thing, mock) | [`reference/glossary.md`](reference/glossary.md) |
-| Every package MDK ships, and what each is for | [`reference/packages.md`](reference/packages.md) |
-| Run a complete site end to end | [`tutorials/run-a-site.md`](tutorials/run-a-site.md) |
-| How Gateway, Kernel, and Workers communicate | [`concepts/control-plane.md`](concepts/control-plane.md) |
-
-### Agent
-
-You are an LLM consuming MDK at runtime.
-
-| Topic | Where |
-| --- | --- |
-| Worker runtime contracts (machine-readable) | `backend/workers/<family>/<provider>/mdk-contract.json` |
-| UI component registry (machine-readable) | `ui/<pkg>/dist/registry.json` (when shipping) |
-| Per-workspace agent-ready entry points | [`../backend/workers/docs/AGENT_READY.md`](../backend/workers/docs/AGENT_READY.md), [`../backend/core/docs/AGENT_READY.md`](../backend/core/docs/AGENT_READY.md), [`../ui/AGENTS.md`](../ui/AGENTS.md) |
-| Connect an AI agent to MDK over MCP | [`../backend/core/mcp/README.md`](../backend/core/mcp/README.md) |
-| Install Agent Skills for your coding agent (Cursor, Claude Code): `mdk skill add` | [`guides/ui/agent-skills.md`](guides/ui/agent-skills.md), [`../packages/mdk-skill/README.md`](../packages/mdk-skill/README.md) |
-
-### Engineer
-
-You build applications on MDK, or integrate a new device / pool / data feed.
-
-MDK has two developer surfaces. A React layer for browser-based operator tools and UIs, and a Node.js layer for backend services,
-scripts, and Gateway extensions. Your starting point depends on which you're building.
-
-> [!NOTE]
-> The React adapter and the Node.js client do not mirror each other one-to-one. Some Kernel operations — such as
-> the write-action flow, are methods on the Node.js `mdk-client`, which an app calls and exposes as
-> HTTP routes; a UI reads those routes with `useQuery` from the React adapter. If you are building UI, start with the [React adapter](../ui/packages/react-adapter/README.md); if you are
-> building backend, start with [`mdk-client`](../backend/core/client/README.md) — do not expect a symmetric API between the two.
-
-**Start here (all engineers)**
-
-| Topic | Where |
-| --- | --- |
-| Get started: first runnable example | [`tutorials/run-a-site.md`](tutorials/run-a-site.md) |
-| Deployment: connect Workers to a Gateway, run a site | [`guides/deployment/`](guides/deployment/index.md), and the [deployment topology concept](concepts/deployment-topologies.md) |
-| HRPC over HyperDHT against a known-endpoint RPC: setup, failures, latency, diagnosability | [`concepts/transport-comparison.md`](concepts/transport-comparison.md) |
-| Site security blueprint (identity, allowlists, UI session) | [`guides/security/`](guides/security/index.md) |
-| Worker runtime contracts (telemetry, commands, health, errors) | `backend/workers/<family>/<provider>/mdk-contract.json` + `USAGE.md` + `examples/` |
-| Build a Worker and author its contract | [`guides/workers/build-a-worker.md`](guides/workers/build-a-worker.md) |
-| Workers (lifecycle, install pattern) | [`../backend/workers/docs/install-pattern.md`](../backend/workers/docs/install-pattern.md) |
-| Runnable site examples | [`examples/mvp-site/`](../examples/mvp-site/README.md) (the Starter site: minimal, PM2-supervised) |
-
-**React / UI developer** — building browser-based operator UIs on top of MDK
-
-| Topic | Where |
-| --- | --- |
-| Build your first app with a UI, from a clean clone | [`tutorials/build-your-first-app.md`](tutorials/build-your-first-app.md) |
-| Build a dashboard end to end | [`tutorials/build-a-dashboard.md`](tutorials/build-a-dashboard.md) |
-| Scaffold a dashboard against a running stack | `mdk create dashboard` — [`../packages/cli/README.md`](../packages/cli/README.md) |
-| UI toolkit overview | [`../ui/README.md`](../ui/README.md) |
-| React adapter: stores, hooks, and the `<MdkProvider>` | [`../ui/packages/react-adapter/README.md`](../ui/packages/react-adapter/README.md) |
-| Pre-built UI components | [`../ui/packages/react-devkit/README.md`](../ui/packages/react-devkit/README.md) |
-| UI session and auth options | [`guides/security/`](guides/security/index.md#step-6-wire-the-ui-session) |
-
-**Backend / Node.js developer**: building apps, backend services, or integrating new hardware
-
-| Topic | Where |
-| --- | --- |
-| Gateway HTTP API surface and how to extend it | [`guides/gateway/`](guides/gateway/index.md) |
-| Site security blueprint | [`guides/security/`](guides/security/index.md) |
-| Build and publish an app | [`guides/gateway/apps.md`](guides/gateway/apps.md) |
-| Call Kernel directly from a Node.js service or script | [`../backend/core/client/README.md`](../backend/core/client/README.md) |
-| Start Kernel and Workers in your app | [`../backend/core/mdk/README.md`](../backend/core/mdk/README.md) |
-| Core SDK and bootstrap utilities | [`../backend/core/docs/README.md`](../backend/core/docs/README.md) |
-| Integrate new hardware (Workers) | [`guides/workers/build-a-worker.md`](guides/workers/build-a-worker.md), then the [install pattern](../backend/workers/docs/install-pattern.md) |
-| Worker runtime contracts (telemetry, commands, health, errors) | `backend/workers/<family>/<provider>/mdk-contract.json` + `USAGE.md` + `examples/` |
-| Run a container Worker | [`guides/containers/`](guides/containers/index.md) |
-| MDK Protocol envelope, action catalogue, and command targeting | [`reference/protocol/messages.md`](reference/protocol/messages.md) |
-| Kernel's internal modules (Dispatcher, CSM, Registry, and more) | [`reference/kernel/modules.md`](reference/kernel/modules.md) |
-
-### Manufacturer
-
-You make the hardware, firmware, or data feed, and want it to speak MDK by shipping a Worker package from your own
-public or private repository. MDK never forks or vendors your source: it reads your `mdk-contract.json`. To appear in the hardware catalogue, add a registry entry, or share the contract source in [an issue](https://github.com/tetherto/mdk/issues).
-
-| Topic | Where |
-| --- | --- |
-| Build a Worker for your device, firmware, or data feed | [`guides/workers/build-a-worker.md`](guides/workers/build-a-worker.md) |
-| Test your Worker against a live Kernel before you ship | [`guides/workers/test-a-worker.md`](guides/workers/test-a-worker.md) |
-| Get your Worker listed in the hardware catalogue | [raise an issue](https://github.com/tetherto/mdk/issues), or add a row to [`external-workers.json`](../backend/workers/external-workers.json) |
-
-### Docs maintainer
-
-You change documentation, conventions, or the source-of-truth IA in this repo, see [`reference/maintainers/README.md`](reference/maintainers/README.md).
+The [API surface map](../README.md#stack) links to owning references and optional description formats.
+[What runs, and what you build with](concepts/about.md#what-runs-and-what-you-build-with) separates runtime components from tools and libraries.
+Use the [architecture overview](concepts/architecture.md) for runtime boundaries, the [protocol reference](reference/protocol/messages.md)
+for Kernel and Worker messages, and the [glossary](reference/glossary.md) for terminology.
 
 ## Next steps
 
-- Browse [domains directly](#domains)
-- For a different UX, browse the published end-user documentation at [docs.mdk.tether.io](https://docs.mdk.tether.io/)
+- [Browse packages](reference/packages.md): find a package and its own reference
+- [Contribute](../CONTRIBUTING.md): development and pull-request workflow
+- [Maintain the docs](reference/maintainers/README.md): style, generation, and verification
+- [Read the published docs](https://docs.mdk.tether.io/): browse the product documentation

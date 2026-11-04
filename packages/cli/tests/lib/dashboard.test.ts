@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
 
@@ -24,6 +24,7 @@ const {
   createDashboard,
   dashboardNameFromStack,
   findDashboardDir,
+  rewriteDocLinks,
   runDashboard,
   shellTemplateUrl,
 } = await import('../../src/lib/dashboard.js');
@@ -43,6 +44,41 @@ describe('dashboardNameFromStack / shellTemplateUrl', () => {
     expect(shellTemplateUrl()).toContain(`/tree/v${version}/examples/mdk-ui-shell-template`);
     expect(shellTemplateUrl('v1.2.3')).toContain('/tree/v1.2.3/');
     expect(() => shellTemplateUrl('../../evil')).toThrow(/Invalid git ref/);
+  });
+});
+
+describe('rewriteDocLinks', () => {
+  it('pins links that leave the app to GitHub and keeps the rest', () => {
+    const dir = makeTmpDir();
+    mkdirSync(join(dir, 'docs'));
+    writeFileSync(
+      join(dir, 'USAGE.md'),
+      [
+        '[apps](../../docs/guides/gateway/apps.md#manifest) and [site](../mvp-site/README.md)',
+        '[utils](../../ui/packages/ui-foundation/src/utils/) [env](./src/constants/env.ts) [web](https://x.dev/a)',
+        '[slug]: ../../packages/cli/README.md',
+        '```md',
+        '[kept](../../in/code.md)',
+        '```',
+      ].join('\n'),
+      'utf8',
+    );
+    writeFileSync(join(dir, 'docs', 'nested.md'), '[top](../README.md) [repo](../../../README.md)', 'utf8');
+
+    rewriteDocLinks(dir, 'v9.9.9');
+
+    const base = 'https://github.com/tetherto/mdk';
+    expect(readFileSync(join(dir, 'USAGE.md'), 'utf8').split('\n')).toEqual([
+      `[apps](${base}/blob/v9.9.9/docs/guides/gateway/apps.md#manifest) and [site](${base}/blob/v9.9.9/examples/mvp-site/README.md)`,
+      `[utils](${base}/tree/v9.9.9/ui/packages/ui-foundation/src/utils) [env](./src/constants/env.ts) [web](https://x.dev/a)`,
+      `[slug]: ${base}/blob/v9.9.9/packages/cli/README.md`,
+      '```md',
+      '[kept](../../in/code.md)',
+      '```',
+    ]);
+    expect(readFileSync(join(dir, 'docs', 'nested.md'), 'utf8')).toBe(
+      `[top](../README.md) [repo](${base}/blob/v9.9.9/README.md)`,
+    );
   });
 });
 
@@ -177,6 +213,12 @@ describe('createDashboard (monorepo template)', () => {
 
     const pkg = JSON.parse(readFileSync(join(result.appPath!, 'package.json'), 'utf8'));
     expect(pkg.name).toBe('demo-dashboard');
+    // The MDK packages link to this checkout relative to the dashboard, so its package.json can be committed.
+    const devkit: string = pkg.dependencies['@tetherto/mdk-react-devkit'];
+    expect(devkit).toMatch(/^file:\.\.?\//);
+    expect(resolve(result.appPath!, devkit.slice('file:'.length))).toBe(
+      resolve(import.meta.dirname, '..', '..', '..', '..', 'ui', 'packages', 'react-devkit'),
+    );
 
     const env = readFileSync(join(result.appPath!, '.env'), 'utf8');
     expect(env).toContain('VITE_GATEWAY_URL=http://localhost:4001');
@@ -186,6 +228,12 @@ describe('createDashboard (monorepo template)', () => {
 
     // Excluded scaffold artifacts never make it into the copy.
     expect(existsSync(join(result.appPath!, 'node_modules'))).toBe(false);
+
+    // Docs links out of the template point at GitHub; none dangle from the new location.
+    const usage = readFileSync(join(result.appPath!, 'USAGE.md'), 'utf8');
+    expect(usage).toContain('](https://github.com/tetherto/mdk/blob/');
+    expect(usage).not.toMatch(/\]\(\.\.\//);
+    expect(readFileSync(join(result.appPath!, 'README.md'), 'utf8')).not.toMatch(/\]\(\.\.\//);
   });
 
   it('accepts an explicit gatewayUrl and an explicit subdir', async () => {

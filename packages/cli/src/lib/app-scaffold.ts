@@ -1,12 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { checkoutRoot } from './checkout.js';
+import { checkoutRoot, UI_PACKAGES_BUILD, unbuiltPackages } from './checkout.js';
 import { installDeps, installScaffold, npmBin, npmNeedsShell } from './npm.js';
 import { pkg as cliPkg } from './pkg.js';
-import { DIRS } from './project.js';
+import { DIRS, fileSpec } from './project.js';
 import { NAME_RE, parseOrg } from './names.js';
 import {
   appendToStackList,
@@ -57,14 +57,15 @@ const MDK_UI_PACKAGES: Record<string, string> = {
  * package, so building the UI never installs the app's backend dependencies.
  * None of it ships with the app: the built `ui/index.js` leaves React and the
  * MDK packages to the dashboard. Inside an MDK checkout the MDK packages link to
- * it, like a scaffolded dashboard; elsewhere they take the CLI's published range.
+ * it (relative to `uiSrc`, so the manifest is committable), like a scaffolded
+ * dashboard; elsewhere they take the CLI's published range.
  */
-function uiDevDependencies(): Record<string, string> {
+function uiDevDependencies(uiSrc: string): Record<string, string> {
   const root = checkoutRoot(CLI_ROOT);
   const mdk = Object.fromEntries(
     Object.entries(MDK_UI_PACKAGES).map(([name, dir]) => [
       name,
-      root ? `file:${join(root, 'ui', 'packages', dir)}` : `^${cliPkg.version}`,
+      root ? fileSpec(uiSrc, join(root, 'ui', 'packages', dir)) : `^${cliPkg.version}`,
     ]),
   );
   return {
@@ -84,10 +85,33 @@ const writeJson = (file: string, value: unknown): void =>
   writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 
 /**
+ * Inside an MDK checkout, why the starter UI cannot build yet: the linked MDK UI
+ * packages export `./dist/*` and have no `prepare` step, so they must be built
+ * in the checkout first. Undefined when they are built, or outside a checkout.
+ */
+export function unbuiltUiPackagesHint(): string | undefined {
+  const root = checkoutRoot(CLI_ROOT);
+  if (!root) return undefined;
+  const missing = unbuiltPackages(Object.values(MDK_UI_PACKAGES).map((dir) => join(root, 'ui', 'packages', dir)));
+  if (missing.length === 0) return undefined;
+  const names = missing.map((dir) => dir.slice(root.length + 1)).join(', ');
+  return `the MDK UI packages in this checkout are not built (${names}); run \`${UI_PACKAGES_BUILD}\` in ${root} first`;
+}
+
+/** Appends `line` to `<dir>/.gitignore` unless it is already there. */
+function ensureGitignore(dir: string, line: string): void {
+  const file = join(dir, '.gitignore');
+  const current = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  if (current.split(/\r?\n/).includes(line)) return;
+  writeFileSync(file, `${current}${current && !current.endsWith('\n') ? '\n' : ''}${line}\n`, 'utf8');
+}
+
+/**
  * Writes the starter UI into `<appPath>/ui-src/` (one page and one Home panel
  * showing the app's `summary` route, across the three MDK UI layers), its own
- * package.json and tsconfig, the `build:ui` / `dev:ui` / `typecheck:ui` scripts,
- * and a placeholder `ui/index.js` the build replaces.
+ * package.json and tsconfig, the `build:ui` / `dev:ui` / `typecheck*` scripts,
+ * and a placeholder `ui/index.js` the build replaces. ui-src/ also holds the
+ * tsconfig that checks `plugin/`: it owns the app's only TypeScript install.
  */
 function writeStarterUi(appPath: string, name: string): void {
   const manifest = parseYaml(readFileSync(join(appPath, 'mdk-app.yaml'), 'utf8')) as { id: string; displayName: string };
@@ -118,14 +142,34 @@ function writeStarterUi(appPath: string, name: string): void {
     },
     include: ['.'],
   });
+  // The controllers are CommonJS JavaScript; `allowJs` checks the ones that
+  // opt in with `// @ts-check` against plugin/types.d.ts, as the runtime loads them.
+  writeJson(join(uiSrc, 'tsconfig.plugin.json'), {
+    compilerOptions: {
+      target: 'ES2022',
+      module: 'nodenext',
+      moduleResolution: 'nodenext',
+      allowJs: true,
+      strict: true,
+      skipLibCheck: true,
+      noEmit: true,
+      types: [],
+    },
+    include: ['../plugin'],
+  });
   writeJson(join(uiSrc, 'package.json'), {
     name: `${packageName}-ui`,
     private: true,
     type: 'module',
-    scripts: { build: 'vite build', dev: 'vite build --watch', typecheck: 'tsc --noEmit' },
-    devDependencies: uiDevDependencies(),
+    scripts: {
+      build: 'vite build',
+      dev: 'vite build --watch',
+      typecheck: 'tsc --noEmit',
+      'typecheck:plugin': 'tsc -p tsconfig.plugin.json',
+    },
+    devDependencies: uiDevDependencies(uiSrc),
   });
-  writeFileSync(join(appPath, '.gitignore'), 'node_modules/\n', 'utf8');
+  ensureGitignore(appPath, 'node_modules/');
   updateJson(pkgFile, {
     // Publish what the app runs and shows; ui-src/ is local build input.
     files: ['mdk-app.yaml', 'plugin/', 'ui/', 'README.md'],
@@ -133,6 +177,9 @@ function writeStarterUi(appPath: string, name: string): void {
       'build:ui': 'npm --prefix ui-src run build',
       'dev:ui': 'npm --prefix ui-src run dev',
       'typecheck:ui': 'npm --prefix ui-src run typecheck',
+      'typecheck:plugin': 'npm --prefix ui-src run typecheck:plugin',
+      // Both halves, so a route's shape change fails here whichever side drifts.
+      typecheck: 'npm run typecheck:plugin && npm run typecheck:ui',
     },
   });
 
@@ -148,6 +195,8 @@ function writeStarterUi(appPath: string, name: string): void {
 
 /** Installs the starter UI's build dependencies and builds `ui/`; returns why it did not, if it did not. */
 function buildStarterUi(appPath: string): string | undefined {
+  const unbuilt = unbuiltUiPackagesHint();
+  if (unbuilt) return unbuilt;
   const install = installDeps(join(appPath, 'ui-src'));
   if (!install.ok) return install.message;
   const res = spawnSync(npmBin(), ['run', 'build:ui'], {
@@ -167,8 +216,14 @@ function buildStarterUi(appPath: string): string | undefined {
 export interface AppScaffoldOptions {
   /** App name — used for the folder, route ids/paths, and the package name. */
   name: string;
-  /** Project directory; the app is created under `<parentDir>/apps/<name>`. */
+  /** Project directory; the app is created under `<parentDir>/apps/<name>`, or in it with `flat`. */
   parentDir: string;
+  /**
+   * Scaffold into `parentDir` itself, as the root of a standalone app repo (what
+   * `mdk add app github:<owner>/<repo>` installs), instead of `apps/<name>`. The
+   * app is not linked into a project or listed in an `mdk.yaml` (default: false).
+   */
+  flat?: boolean;
   /** npm scope/org for the generated package name (e.g. `demo` -> `@demo/<name>`). */
   org?: string;
   /** Overwrite the target if it already exists (default: false). */
@@ -177,6 +232,11 @@ export interface AppScaffoldOptions {
   install?: boolean;
   /** Add the app to `<parentDir>/mdk.yaml` under `spec.apps` (default: true). */
   updateStackFile?: boolean;
+}
+
+/** What a flat scaffold would overwrite in `dest`: the template's top-level entries plus `ui-src/` and `ui/`. */
+function flatConflicts(templateSrc: string, dest: string): string[] {
+  return [...readdirSync(templateSrc), 'ui-src', 'ui'].filter((entry) => existsSync(join(dest, entry)));
 }
 
 export interface AppScaffoldResult {
@@ -244,6 +304,8 @@ function grantScaffold(parentDir: string, appPath: string, appName: string): Non
  * the linked layout `mdk run` resolves from node_modules. Substitutes the name
  * tokens, sets the package.json and manifest `name`, links the package, and
  * registers it under `spec.apps` in mdk.yaml, with its grant in `spec.rbac`.
+ * With `flat`, scaffolds into `<parentDir>` itself as a standalone app repo and
+ * skips the project link, the mdk.yaml entry and the grant.
  */
 export function createApp(opts: AppScaffoldOptions): AppScaffoldResult {
   const name = opts.name.trim();
@@ -262,19 +324,31 @@ export function createApp(opts: AppScaffoldOptions): AppScaffoldResult {
     return { ok: false, message: `App template not found at ${src}.` };
   }
 
-  const appPath = resolve(opts.parentDir, DIRS.apps, name);
-  if (appPath === resolve(opts.parentDir, DIRS.dashboard)) {
+  const flat = opts.flat === true;
+  const appPath = flat ? resolve(opts.parentDir) : resolve(opts.parentDir, DIRS.apps, name);
+  if (flat) {
+    if (existsSync(join(appPath, 'mdk.yaml'))) {
+      return {
+        ok: false,
+        message: `${appPath} is an MDK project (it has mdk.yaml); --flat scaffolds a standalone app repo. Drop --flat to create ${DIRS.apps}/${name}.`,
+      };
+    }
+    const taken = flatConflicts(src, appPath);
+    if (taken.length > 0 && !opts.force) {
+      return { ok: false, message: `${appPath} already has ${taken.join(', ')} (use --force to overwrite).` };
+    }
+  } else if (appPath === resolve(opts.parentDir, DIRS.dashboard)) {
     return {
       ok: false,
       message: `"${name}" is reserved for the dashboard (${DIRS.dashboard}, see \`mdk create dashboard\`); pick another app name.`,
     };
   }
-  if (existsSync(appPath) && !opts.force) {
+  if (!flat && existsSync(appPath) && !opts.force) {
     return { ok: false, message: `${appPath} already exists (use --force to overwrite).` };
   }
 
   try {
-    mkdirSync(resolve(opts.parentDir, DIRS.apps), { recursive: true });
+    mkdirSync(flat ? appPath : resolve(opts.parentDir, DIRS.apps), { recursive: true });
     const appName = toAppName(name);
     // Scope the package name when an org is given; the manifest name mirrors it
     // so logs and the mdk.yaml entry agree. A new app starts at the manifest's
@@ -286,10 +360,12 @@ export function createApp(opts: AppScaffoldOptions): AppScaffoldResult {
     updateJson(join(appPath, 'plugin', 'mdk-plugin.json'), { name: packageName });
     writeStarterUi(appPath, name);
 
-    const linkWarning = linkIntoProject(opts.parentDir, packageName, appPath);
-    const install = installScaffold(opts.parentDir, appPath, opts.install !== false);
+    const linkWarning = flat ? undefined : linkIntoProject(opts.parentDir, packageName, appPath);
+    const install = flat
+      ? { ...installDeps(appPath, opts.install !== false), dir: appPath }
+      : installScaffold(opts.parentDir, appPath, opts.install !== false);
     const stackFile =
-      opts.updateStackFile === false ? undefined : addAppToStackFile(opts.parentDir, packageName, appName);
+      flat || opts.updateStackFile === false ? undefined : addAppToStackFile(opts.parentDir, packageName, appName);
     const grant = stackFile === 'added' || stackFile === 'exists' ? grantScaffold(opts.parentDir, appPath, appName) : undefined;
     const uiWarning = opts.install === false ? 'install skipped (--no-install)' : buildStarterUi(appPath);
 

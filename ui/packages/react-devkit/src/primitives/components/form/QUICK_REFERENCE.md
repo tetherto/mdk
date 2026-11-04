@@ -4,6 +4,8 @@ Quick reference guide for the enhanced form system. Copy and paste examples to g
 
 ## 🚀 Quickstart
 
+Writing a schema of your own needs [`@hookform/resolvers` in the app's own dependencies](../../../../README.md#install).
+
 ```tsx
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'

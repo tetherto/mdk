@@ -15,7 +15,8 @@ A Worker plugin package is:
 
 This guide is for partners who want to integrate their own hardware, firmware, or data feed with MDK by shipping a
 Worker plugin package from their own public or private repository — no fork of this monorepo and no PR into
-`tetherto/mdk` required.
+`tetherto/mdk` required. MDK never forks or vendors your source either: the host loads the package from its own directory
+and reads its [`mdk-contract.json`][contract-schema], so your repository stays the only copy of the code.
 
 It walks through building a Worker from scratch, end to end:
 
@@ -57,7 +58,7 @@ your-worker-repo/
     telemetry/*.js         # one handler per telemetry field
     commands/*.js          # one handler per command
   mock/
-    server.js              # a standalone fake of the vendor's device API
+    server.js              # a standalone mock of the vendor's device API
   tests/
     unit/handlers.test.js  # drives loadContract() + createInstance() against the mock
                             # (no WorkerRuntimeV2 involved)
@@ -577,7 +578,7 @@ it, which is what Step 7's tests exercise per handler.
 
 ### Build a mock device
 
-Ship a standalone fake of your vendor's native API so anyone (including your own CI) can develop and test against your
+Ship a standalone mock of your vendor's native API so anyone (including your own CI) can develop and test against your
 Worker without real hardware. It should know nothing about MDK; it's the same surface a real device on the LAN would
 present.
 
@@ -854,7 +855,7 @@ For errors from a live Kernel registration or requests once your Worker is actua
 
 - List your Worker in the catalogue, either:
   - [Raise an issue](https://github.com/tetherto/mdk/issues) and share the link to your Worker contract
-  - Add a row to [`external-workers.json`](../../../backend/workers/external-workers.json)
+  - Add a row to [`external-workers.json`][external-workers]
 - Test your new [Worker's integration with MDK][test-a-worker]
 - Understand the [security boundaries][security-boundaries]
 - See the end-user experience of controlling and monitoring your device via the Worker in [Test a Worker's next steps][test-a-worker-next-steps]
@@ -908,3 +909,6 @@ For errors from a live Kernel registration or requests once your Worker is actua
 
 [test-a-worker-next-steps]: test-a-worker.md#next-steps
 <!-- docs@tether.io: test-a-worker-next-steps → guides/workers/test-a-worker -->
+
+[external-workers]: ../../../backend/workers/external-workers.json
+<!-- docs@tether.io: external-workers → https://github.com/tetherto/mdk/blob/main/backend/workers/external-workers.json -->

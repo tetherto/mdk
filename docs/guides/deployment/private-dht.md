@@ -118,7 +118,8 @@ await startServices({ runtime: 'pm2', repoRoot, dht: {}, services })
 
 The generated `ecosystem.config.js` starts `mdk-dht-bootstrap` first, on `127.0.0.1:49737`, and sets `MDK_DHT_BOOTSTRAP` and
 `MDK_DHT_HOST=127.0.0.1` on every service. For an isolated LAN, pass `dht: { host: '<this machine>', bootstrap: ['<lan ip>:49737'] }`
-and no bootstrap app is generated. Without `host`, `MDK_DHT_HOST` is not set and every service binds all interfaces.
+and no bootstrap app is generated. With a `bootstrap` list and no `host`, `MDK_DHT_HOST` is not set and every service binds all
+interfaces.
 
 ### D. Docker Compose with `startServices`
 
@@ -149,7 +150,7 @@ The Kernel is not part of the generated file. Run it on the same Docker network,
    ```
 
 2. Start one process with `DEBUG=mdk:dht-bootstrap` set to log the bootstrap address it serves.
-3. On an air-gapped host, block outbound UDP `49737` at the firewall and confirm Workers still reach `READY`.
+3. Block outbound UDP to the public bootstrap addresses at the perimeter, then confirm Workers still reach `READY`.
 
 The `private-dht` integration test in [`backend/core/mdk/tests/integration/`][integration-tests] checks the same things for each
 discovery mode and for the Gateway: sockets bound to `127.0.0.1`, and routing tables that hold loopback nodes only.
@@ -170,7 +171,7 @@ discovery mode and for the Gateway: sockets bound to `127.0.0.1`, and routing ta
 <!-- docs@tether.io: terminology → reference/glossary -->
 
 [deployment-topologies]: ../../concepts/deployment-topologies.md
-<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/backend/core/docs/README.md#connection-and-deployment-model -->
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [all-workers]: run-all-workers-site.md
 <!-- docs@tether.io: all-workers → guides/deployment/run-all-workers-site -->

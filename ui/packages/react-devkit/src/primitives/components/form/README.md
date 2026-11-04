@@ -15,6 +15,8 @@ Enhanced form system built on top of [react-hook-form](https://react-hook-form.c
 
 ### Before (basic approach)
 
+Writing a schema of your own needs [`@hookform/resolvers` in the app's own dependencies](../../../../README.md#install).
+
 ```tsx
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'

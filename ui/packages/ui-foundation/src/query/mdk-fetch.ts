@@ -5,21 +5,46 @@
  * automatically.
  */
 
-import { authStore } from '../store/auth-store'
-import { MdkFetchError } from '../types/api-mining.types'
-import type { Fetcher } from './runtime'
+import { authStore } from '../store/auth-store.js'
+import { MdkFetchError } from '../types/api-mining.types.js'
+import type { Fetcher } from './runtime.js'
 
 const TOKEN_GETTER_DEFAULT = (): string | null => authStore.getState().token
 
-const isJsonResponse = (response: Response): boolean => {
-  const contentType = response.headers.get('content-type') ?? ''
-  return contentType.includes('application/json')
+const contentTypeOf = (response: Response): string =>
+  (response.headers.get('content-type') ?? '').toLowerCase()
+
+const isJsonResponse = (response: Response): boolean =>
+  contentTypeOf(response).includes('application/json')
+
+/** Structured-text media types that are not under `text/*`. */
+const TEXT_TYPE_MARKERS = ['json', 'xml', 'javascript', 'yaml', 'x-www-form-urlencoded']
+
+/**
+ * Whether a response body is text. A missing content type counts as text, as
+ * before. Anything else (archives, images, `application/octet-stream`) is binary
+ * and must not go through `response.text()`, which decodes it as UTF-8 and
+ * replaces invalid bytes, corrupting the file.
+ */
+const isTextResponse = (response: Response): boolean => {
+  const contentType = contentTypeOf(response)
+  return (
+    contentType === '' ||
+    contentType.startsWith('text/') ||
+    TEXT_TYPE_MARKERS.some((marker) => contentType.includes(marker))
+  )
 }
 
 /**
  * Build a `Fetcher` that injects `Authorization: Bearer <token>` from the
  * supplied token getter (defaults to `authStore`). Non-2xx responses throw
  * an `MdkFetchError` carrying the HTTP status and parsed body.
+ *
+ * A 2xx body comes back by content type: JSON parsed, text (`text/*`, other
+ * JSON, XML, JavaScript, YAML, form data, or no content type) as a string, and
+ * anything else as a `Blob`,
+ * so a file download keeps its exact bytes: `mdkFetch<Blob>(url)`. Pass an
+ * `Accept` header when the route negotiates; the default is `application/json`.
  *
  * @category query
  */
@@ -60,8 +85,9 @@ export const createBearerFetcher = (
     }
 
     if (response.status === 204) return undefined as T
-    if (!isJsonResponse(response)) return (await response.text()) as unknown as T
-    return (await response.json()) as T
+    if (isJsonResponse(response)) return (await response.json()) as T
+    if (isTextResponse(response)) return (await response.text()) as unknown as T
+    return (await response.blob()) as unknown as T
   }
 
   return bearerFetch

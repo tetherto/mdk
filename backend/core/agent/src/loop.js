@@ -228,13 +228,32 @@ export async function * runToolLoop ({ model, system, messages, tools, mcp, notC
       const approved = yield { type: EVENT.PENDING_APPROVAL, name: call.tool, args: call.args }
       approvalWaitMs = Date.now() - askedAt
       if (!approved) {
-        yield { type: EVENT.TOOL_RESULT, name: call.tool, text: '(rejected by operator — not executed)', approvalWaitMs }
+        // `false` is an operator's rejection. `null`/`undefined` means no decision arrived: the
+        // approval expired or the client went away. Both block the write, but only a rejection
+        // may be reported as one, or the operator is told they refused something they never saw.
+        // Both texts stay bare literals: ui-agent matches them (turn.contract.test.ts).
+        const undecided = approved == null
+        if (undecided) {
+          yield { type: EVENT.TOOL_RESULT, name: call.tool, text: '(no operator decision — approval expired, not executed)', approvalWaitMs }
+        } else {
+          yield { type: EVENT.TOOL_RESULT, name: call.tool, text: '(rejected by operator — not executed)', approvalWaitMs }
+        }
         convo.push({ role: 'assistant', content: text })
         history.push(
           { role: 'assistant', content: text },
-          { role: 'user', content: `Result of ${call.tool}: (rejected by the operator — it did NOT run)` }
+          {
+            role: 'user',
+            content: undecided
+              ? `Result of ${call.tool}: (no operator decision before the approval expired — it did NOT run)`
+              : `Result of ${call.tool}: (rejected by the operator — it did NOT run)`
+          }
         )
-        convo.push({ role: 'user', content: 'The operator REJECTED that action, so it did NOT run. Do not retry it. Tell them in ONE sentence that it was not carried out, naming the device and never the tool.' })
+        convo.push({
+          role: 'user',
+          content: undecided
+            ? 'Nobody approved that action before the approval expired, so it did NOT run. Do not retry it. Tell them in ONE sentence that it was not carried out because no approval arrived in time, naming the device and never the tool.'
+            : 'The operator REJECTED that action, so it did NOT run. Do not retry it. Tell them in ONE sentence that it was not carried out, naming the device and never the tool.'
+        })
         continue
       }
     }

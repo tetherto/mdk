@@ -15,13 +15,13 @@ export {
   DEPRECATED_API_BASE_URL_ENV,
   getApiBaseUrl,
   resolveApiBaseUrl,
-} from './client'
-export { describeRequestError, type DescribeRequestErrorOptions } from './describe-request-error'
-export { mdkFetch } from './mdk-fetch'
+} from './client.js'
+export { describeRequestError, type DescribeRequestErrorOptions } from './describe-request-error.js'
+export { mdkFetch } from './mdk-fetch.js'
 export {
   DEFAULT_API_BASE_URL,
   type Fetcher,
   getFetcher,
   getMdkRuntime,
   type MdkRuntime,
-} from './runtime'
+} from './runtime.js'

@@ -32,7 +32,7 @@ function columns(minerCode: (deviceId: string | null) => string): DataTableColum
       cell: ({ row }) => (
         <span>
           {row.original.user ?? "—"}
-          {row.original.via && <span style={{ opacity: 0.6 }}> via {row.original.via}</span>}
+          {row.original.via && <span className="site-muted-faint"> via {row.original.via}</span>}
         </span>
       ),
     },
@@ -58,7 +58,7 @@ function columns(minerCode: (deviceId: string | null) => string): DataTableColum
     {
       accessorKey: "error",
       header: "Reason",
-      cell: ({ getValue }) => <span style={{ opacity: 0.8 }}>{getValue<string | null>() ?? ""}</span>,
+      cell: ({ getValue }) => <span className="site-muted-strong">{getValue<string | null>() ?? ""}</span>,
     },
   ];
 }
@@ -78,14 +78,14 @@ export function ActivityPage({ base, miners }: { base: string; miners: Miner[] }
 
   return (
     <Card>
-      <CardHeader style={{ padding: 20 }}>
+      <CardHeader className="site-card-pad">
         <Typography variant="heading3">Activity — miner commands</Typography>
       </CardHeader>
-      <CardBody style={{ padding: 20 }}>
+      <CardBody className="site-card-pad">
         {activity.isPending && <Spinner />}
         {activity.error && <Typography>{errorMessage(activity.error)}</Typography>}
         {activity.data && activity.data.entries.length === 0 && (
-          <Typography style={{ opacity: 0.7 }}>No commands yet. Send one from the Control page.</Typography>
+          <Typography className="site-muted">No commands yet. Send one from the Control page.</Typography>
         )}
         {activity.data && activity.data.entries.length > 0 && (
           <DataTable<ActivityEntry>

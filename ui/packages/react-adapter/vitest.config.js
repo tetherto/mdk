@@ -2,6 +2,8 @@ import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
+import { testExecArgv } from '../../vitest.config.base.ts'
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -13,6 +15,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    execArgv: testExecArgv,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist', 'build', 'coverage', '**/*.d.ts'],
 

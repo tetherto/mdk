@@ -33,6 +33,8 @@ export type MessageListProps = {
   toolLabels?: ToolLabels
   pendingApproval: PendingApproval | null
   isDecisionPending: boolean
+  /** Reaches the error notice, which will not offer a retry that cannot be sent. */
+  isOnline?: boolean
   onDecide: (approved: boolean) => void
   /** Re-asks the last question. Offered on the newest failed turn only. */
   onRetry?: VoidFunction
@@ -52,6 +54,7 @@ export const MessageList = ({
   toolLabels,
   pendingApproval,
   isDecisionPending,
+  isOnline = true,
   onDecide,
   onRetry,
 }: MessageListProps): JSX.Element => {
@@ -138,6 +141,7 @@ export const MessageList = ({
             tools={message.tools}
             error={message.error}
             interrupted={message.interrupted}
+            isOnline={isOnline}
             toolLabels={toolLabels}
             {...(message.id === retryableId && onRetry ? { onRetry } : {})}
           />
@@ -152,6 +156,7 @@ export const MessageList = ({
               tools={live.tools}
               error={live.error}
               streaming={live.status !== TURN_STATUS.COMPLETE && live.status !== TURN_STATUS.ERROR}
+              isOnline={isOnline}
               toolLabels={toolLabels}
               approval={pendingApproval}
               isDecisionPending={isDecisionPending}

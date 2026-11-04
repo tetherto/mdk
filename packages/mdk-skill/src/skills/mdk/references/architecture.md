@@ -39,7 +39,7 @@ validators ([`schemas.js`](../../../../../../backend/core/kernel/lib/protocol/sc
 
 Two Worker Plugin shapes exist side by side, hosted on two runtime classes
 that share the same envelope dispatch, DHT discovery, and Kernel-facing
-protocol. Details for both: [`../../mdk-worker-plugin/references/worker-base-api.md`](../../mdk-worker-plugin/references/worker-base-api.md).
+protocol. Details for both: [`../../mdk-worker/references/worker-base-api.md`](../../mdk-worker/references/worker-base-api.md).
 
 A module-exporting Worker package ships a **Worker Plugin** — `plugin/index.js`
 exporting `{ contract, dir, connect, disconnect? }` — plus plain device-client
@@ -86,4 +86,4 @@ implementation in this repo.
 [`examples/mvp-site/start.js`](../../../../../../examples/mvp-site/start.js) boots the whole picture as PM2-supervised processes:
 mock devices, Kernel, real Workers, Gateway, MCP server and UI. To host a single Worker
 in-process with no Kernel, `mdk validate worker --path . --smoke` runs it against the
-simulator its `smoke.config.js` starts; [`local-testing.md`](../../mdk-worker-plugin/references/local-testing.md) shows a minimal caller.
+simulator its `smoke.config.js` starts; [`local-testing.md`](../../mdk-worker/references/local-testing.md) shows a minimal caller.

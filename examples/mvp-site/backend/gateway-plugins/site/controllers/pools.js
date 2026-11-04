@@ -1,7 +1,7 @@
 'use strict'
 
 const path = require('path')
-const { requestClient } = require('./utils')
+const { requestClient, throwIfRejected } = require('./utils')
 
 const deploy = require(path.join(__dirname, '..', '..', '..', '..', 'config', 'site.deploy.json'))
 
@@ -40,6 +40,7 @@ module.exports = async (req, ctx) => {
   if (req.body && req.body.appendId === false) params.appendId = false
 
   const result = await mdkClient.sendCommand(deviceId, 'setupPools', params)
+  throwIfRejected(result)
 
   return {
     deviceId,

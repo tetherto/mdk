@@ -12,7 +12,14 @@ mdk-app.yaml                # app manifest: id, version, displayName, permission
 plugin/mdk-plugin.json      # route manifest: id, handler, http.method + http.path
 plugin/lib/client.js        # the app runtime's Kernel client, from @tetherto/mdk-gateway/plugin
 plugin/controllers/*.js     # one module per route: async (req) => result
+plugin/types.d.ts           # response types, shared by the controllers and the UI
 ```
+
+Controllers are CommonJS: the app runtime loads `.js` and `.cjs` from `plugin/`. To type them, keep each route's
+response type in `plugin/types.d.ts` and annotate the controller with `// @ts-check`, `@param {AppRequest} req` and a
+JSDoc `@returns`, as `controllers/summary.js` does. The UI in `ui-src/` imports the same type with `import type`, so a
+change to a route's shape fails the type check on both sides instead of at runtime. `npm run typecheck` checks both
+(`typecheck:plugin` and `typecheck:ui` check one each), with the TypeScript installed in `ui-src/`.
 
 Each controller receives `req` (`{ params, query, body, headers }`). Talk to
 the Kernel through the client in `plugin/lib/client.js`, which the app runtime
@@ -39,9 +46,9 @@ Mark a route that only reads with `"safety": "read-only"`: `mdk run mcp` turns r
 withholds every other one as a write unless it is started with `--allow-write`. Mark a route that changes
 devices with `"safety": "write"`.
 
-Routes are open by default. Add `"auth": true` to a route to require a caller
-identity: the Gateway then refuses it (401) unless an auth verifier is configured
-and accepts the request.
+No route is open: a caller needs an access token (`401` without one) and a
+`spec.rbac` rule for the route (`403` without one). So a route needs a rule in the
+stack's `mdk.yaml` as well as a handler here.
 
 ## Run it
 

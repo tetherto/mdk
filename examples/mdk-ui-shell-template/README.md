@@ -3,8 +3,8 @@
 This example provides a bare application shell built with MDK. It ships the **backbone** so a
 fresh app is wired end to end:
 
-- **Google OAuth sign-in** — the `/signin` page and the token lifecycle
-  (`useTokenPolling`, `RequireAuth`).
+- **Sign-in**: the `/signin` page (a password form for an MDK stack's Gateway, or a Google button for an OAuth
+  identity app) and the token lifecycle (`useTokenPolling`, `RequireAuth`).
 - **App frame** — header (logo + user/timezone/sign-out menu) and sidebar.
 - **A Home landing page** — a placeholder that confirms auth + the frame work.
 
@@ -18,34 +18,51 @@ components in `@tetherto/mdk-react-devkit`**.
 
 ## Quickstart
 
-> [!NOTE]
-> [`mdk create dashboard`](../../packages/cli/README.md) performs step 2 below automatically, including the `.env` values.
-> `mdk run dashboard` then starts it. The manual steps here are for working on this template directly.
+Scaffold the shell into an MDK stack and start it. [`mdk create dashboard`](../../packages/cli/README.md) writes `.env`
+for you: `VITE_GATEWAY_URL` and `VITE_OAUTH_BASE_URL` point at the Gateway port in the stack's `mdk.yaml`,
+`VITE_AUTH_MODE=password`, and `VITE_AUTH_BYPASS=false`.
 
 ```bash
-# 1. Backend: configure and start (one-time). The Gateway ships in the MDK
-#    repo, so run this from your MDK checkout — not from this app.
+# In your stack's directory
+mdk create dashboard              # scaffolds apps/dashboard
+mdk run                           # Kernel, Gateway and Workers; leave it running
+mdk user add <name> --admin       # second terminal: the first operator to sign in as
+mdk run dashboard                 # serves on http://localhost:3030
+```
+
+Then open `http://localhost:3030` and sign in with that user name and password.
+
+### Working on the template in the MDK repo
+
+To run this template in place, without a stack, use the dev-only auth bypass that `.env.example` ships with
+(`VITE_AUTH_BYPASS=true`). The Gateway step uses [`backend/core/gateway`](../../backend/core/gateway/README.md), which
+exists only in an MDK repo checkout.
+
+```bash
+# 1. Backend, from your MDK checkout (one-time configure)
 cd <mdk-repo>/backend/core/gateway
 ./setup-config.sh
-#  ↳ Google sign-in needs an identity app, which MDK does not ship
-#    (see "Google OAuth setup" below).
 npm install
 npm start          # serves on http://localhost:3000
 
 # 2. Frontend (this app)
-cp .env.example .env   # already points at http://localhost:3000
+cp .env.example .env   # points at http://localhost:3000, bypass on
 npm install
 npm run dev        # serves on http://localhost:3030
 ```
 
-Then open `http://localhost:3030` and click **Sign in with Google**.
+Open `http://localhost:3030`: the bypass skips `/signin` and lands on Home with a stub session. A Gateway started on its
+own has no Kernel, so it serves no `/auth/login`; real sign-in needs a stack (above) or a Google identity app
+([Google OAuth setup](#google-oauth-setup)).
 
 ## Password sign-in (MDK stacks)
 
 An MDK stack's Gateway signs users in itself: `POST /auth/login` checks a user name and password against the Kernel's token
 issuer, and every app route then needs the access token and a `spec.rbac` rule. Set `VITE_AUTH_MODE=password` (`mdk create
-dashboard` does) and the sign-in page shows a password form instead of the Google button. Create a user with
-`mdk user add <name>`, and bind it to a role in `mdk.yaml`.
+dashboard` does) and the sign-in page shows a password form instead of the Google button. Create the first operator with
+`mdk user add <name> --admin`, which binds that user to the `admin` role; later users get a narrower role bound in
+`mdk.yaml`. [Creating the first operator](../../docs/guides/security/create-the-first-operator.md) covers the step and its
+failure modes.
 
 [`src/auth.ts`](./src/auth.ts) builds the session with `passwordAuth()` from `@tetherto/mdk-ui-foundation`. The access token
 is short-lived and renewed silently; the refresh token stays in the Gateway's httpOnly cookie, out of reach of page scripts,
@@ -53,11 +70,9 @@ and a reload restores the session before the router's guard runs.
 
 ## Google OAuth setup
 
-**MDK ships no OAuth implementation.** The Gateway has no API of its own and serves
-only the apps a stack declares, so sign-in is something you supply as an app
-(`mdk create app <name>`, declared under `spec.apps` with `mount: /` so its routes sit at the Gateway root). See
-[`docs/guides/gateway/apps.md`](../../docs/guides/gateway/apps.md) in the MDK repo for the manifests and
-controller contract.
+**MDK ships no OAuth implementation.** Google sign-in is something you supply as an app
+(`mdk create app <name>`, declared under `spec.apps` with `mount: /` so its routes sit at the Gateway root). The MDK repo's
+[manifests and controller contract](../../docs/guides/gateway/apps.md) cover how to write one.
 
 This app needs that identity app to honour two ends of a redirect:
 
@@ -129,7 +144,7 @@ src/
   components/
     PageLayout.tsx       Shared page header + content wrapper
   pages/
-    SignIn.tsx           Google OAuth landing — <SignInGoogleButton/>
+    SignIn.tsx           Password form or <SignInGoogleButton/>, per VITE_AUTH_MODE
     Home.tsx             The bare landing page (replace once you add pages)
     NotFound.tsx
 ```
@@ -263,7 +278,7 @@ as.
   `http://localhost:3030` and the FE defaults to port 3030 — keep them aligned.
 - **CORS errors**: the backend has no CORS plugin; you must use the Vite
   proxy. [`vite.config.ts`](./vite.config.ts) already proxies `/auth`, `/oauth`, `/api`, and
-  `/pub` to `http://localhost:3000`. Do not call the backend directly from
+  `/pub` to `VITE_GATEWAY_URL` (`http://localhost:3000` when unset). Do not call the backend directly from
   the FE.
 - **Empty charts**: see "Known limitation" above. The backend is up but no
   miners are reporting in.

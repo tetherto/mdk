@@ -1,0 +1,222 @@
+/* Page layout for the demo site.
+ *
+ * `site-` BEM blocks, beside the devkit's own `mdk-` ones and the Containers
+ * pages' containers.css. Layout lives here rather than in `style={{}}` props:
+ * inline styles cannot be themed, cannot be overridden by a consumer's
+ * stylesheet, do not take part in the devkit's cascade, and cannot be reused.
+ *
+ * Shared shapes first — the same stack, filter row and field repeat on most
+ * pages, so they are named once by intent rather than per page.
+ */
+
+/* Vertical page/section stacks. Suffix is the gap in px, kept explicit because
+ * the pages they replace used several different ones. */
+.site-stack-4,
+.site-stack-12,
+.site-stack-16,
+.site-stack-20,
+.site-stack-24 {
+  display: flex;
+  flex-direction: column;
+}
+
+.site-stack-4 { gap: 4px; }
+.site-stack-12 { gap: 12px; }
+.site-stack-16 { gap: 16px; }
+.site-stack-20 { gap: 20px; }
+.site-stack-24 { gap: 24px; }
+
+/* A row of filter controls that wraps, with the controls sitting on one
+ * baseline regardless of whether they carry a label. */
+.site-filters,
+.site-filters-16 {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.site-filters { gap: 12px; }
+.site-filters-16 { gap: 16px; }
+
+/* Label-over-control pair inside a filter row. */
+.site-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.site-field-280 { min-width: 280px; }
+.site-field-240 { min-width: 240px; }
+.site-field-180 { min-width: 180px; }
+.site-field-160 { min-width: 160px; }
+.site-field-140 { min-width: 140px; }
+.site-field-130 { min-width: 130px; }
+.site-field-120 { min-width: 120px; }
+
+.site-row-8 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A toggle sitting in a filter row beside labelled controls. The row is
+ * `align-items: flex-end` so each field's input lands on one baseline, but a
+ * toggle has no caption above it, so it bottom-aligned at its own 24px and its
+ * switch sat ~9px below the Select's centre line. Matching the control height
+ * makes "bottom-aligned" and "centred on the control" the same thing.
+ *
+ * The height is the devkit's published token rather than a copy of its number:
+ * this rule used to restate `42px`, because the Select was sized from an SCSS
+ * variable a consumer compiling plain CSS cannot read. */
+.site-toggle-field {
+  display: flex;
+  align-items: center;
+  gap: var(--mdk-spacing-sm);
+  min-height: var(--mdk-control-height-lg);
+}
+
+/* The devkit's Card has no padding of its own, so each header and body sets
+ * its own. */
+.site-card-pad {
+  padding: 20px;
+}
+
+.site-card-pad-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+/* Secondary text. Three weights were in use; keeping them distinct so nothing
+ * changes visually. */
+.site-muted { opacity: 0.7; }
+.site-unavailable {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--mdk-color-warning, #d97706);
+  border-radius: 4px;
+}
+.site-muted-strong { opacity: 0.8; }
+.site-muted-faint { opacity: 0.6; }
+
+.site-note {
+  display: block;
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+/* Brand mark, used by the sign-in card and the app header. The colour is the
+ * devkit's own published token, not a copy of its hex. */
+.site-brand-mark {
+  display: inline-flex;
+  color: var(--mdk-color-primary);
+}
+
+/* ── Grids ─────────────────────────────────────────────────────────────── */
+
+.site-grid-280 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.site-grid-360 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+/* ── Sign-in ───────────────────────────────────────────────────────────── */
+
+.site-signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.site-signin__card {
+  width: 100%;
+  max-width: 440px;
+}
+
+.site-signin__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+}
+
+.site-signin__body {
+  padding: 20px;
+}
+
+.site-signin__demo-users {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+/* A demo-user row that fills a form for you: a button, styled as plain text. */
+.site-signin__demo-user {
+  all: unset;
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ── App shell ─────────────────────────────────────────────────────────── */
+
+.site-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.site-shell__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* `min-width: 0` so a wide table scrolls inside the main column instead of
+ * stretching the shell. */
+.site-shell__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.site-shell__loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+}
+
+.site-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-shell__brand-name {
+  color: var(--mdk-color-white);
+  font-weight: 700;
+}
+
+/* ── Miners ────────────────────────────────────────────────────────────── */
+
+.site-miners__count {
+  margin-left: auto;
+  opacity: 0.8;
+}

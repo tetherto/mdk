@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand/vanilla'
-import { type DevicesStore, getTags, NO_CONTAINER_KEY } from './types'
+import { type DevicesStore, getTags, NO_CONTAINER_KEY } from './types.js'
 
 /** Per-container device-tag map used by the tag-based selection UI. */
 export type DeviceTagsSlice = Pick<

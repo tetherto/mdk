@@ -18,6 +18,9 @@ This package is part of the MDK monorepo and requires both core and Worker depen
 npm install
 ```
 
+Deep imports are closed: the package's `exports` map in [`package.json`](./package.json) lists every importable subpath, and
+anything outside it fails to resolve with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+
 The [run a mining site tutorial](../../../docs/tutorials/run-a-site.md) is the full clone-and-install walkthrough.
 
 > [!NOTE]
@@ -65,6 +68,11 @@ const server = await startGateway({ kernel, port: 3000 })
 > - There is no single generic `startWorker(WorkerClass, opts)` entry point: every Worker package supplies its own
 > boot function that [builds a `WorkerRuntime` for its plugin](#start-a-worker).
 > - [Worker deployment options](../../../docs/concepts/deployment-topologies.md) include same-process, local, and DHT.
+> - `getKernel()` with no `rbac` keeps the policy last applied to its store, and a fresh store has none, so every HRPC
+> request is refused until a policy binds its caller. The `rbac` and `serviceAccounts`
+> [options](#getkernelopts--promisekernelmanager) apply a policy and register the accounts that sign in under it; the
+> [host-script credential step](../../../docs/guides/workers/test-a-worker.md#give-the-host-script-an-identity) runs it
+> end to end with `kernelCredential` on the client.
 
 ## API
 
@@ -77,6 +85,9 @@ Start the Kernel with defaults suited for single-process development. Automatica
 - Starts the HRPC listener **fail-closed**: the allowlist is empty unless you pass `opts.hrpc.whitelist`, and nobody is
   admitted until a key is added (`kernel.allowKey()`, `startGateway({ kernel })`, or the trusted-keys dir below). See
   [Trust and admission](#trust-and-admission)
+- Applies `opts.rbac` and registers `opts.serviceAccounts` at boot, before any caller is admitted. Without them the
+  store's last policy stands, and a fresh store has none: a request with no token gets `ERR_KERNEL_TOKEN_REQUIRED`, one
+  with a token gets `ERR_KERNEL_ACTION_FORBIDDEN`
 - Publishes `kernel.pub` (its worker-dialing key, `kernel.getClientPublicKey()`) to the trusted-keys dir and admits the
   other keys published there
 - With `opts.handleSignals: true` only, registers `SIGINT`/`SIGTERM` handlers that drain `kernel._cleanup`, stop the
@@ -106,6 +117,9 @@ const kernel = await getKernel()
 | `opts.hrpc.bootstrap` | Optional | `array` | Public DHT | HyperDHT bootstrap nodes; pass the same list to every component on a private DHT network |
 | `opts.hrpc.dhtHost` | Optional | `string` | All interfaces | Interface the Kernel's DHT node binds: `127.0.0.1` on one machine, a LAN address on an isolated LAN |
 | `opts.trustedKeysDir` | Optional | `string\|false` | `<root>/.trusted-keys` | Same-machine key rendezvous (see [Trust and admission](#trust-and-admission)); `false` disables |
+| `opts.rbac` | Optional | `object\|null` | The policy last applied to this store; a fresh store has none, which denies everything | `spec.rbac` from `mdk.yaml`, validated (`ERR_RBAC_POLICY_INVALID`) and applied at boot. `null` means no policy, which denies everything |
+| `opts.serviceAccounts` | Optional | `Array<{ name, publicKey }>` | The accounts already registered | The exact set of service accounts to register at boot: `app:<name>` for an app, a lowercase name for an agent or script, each with its 32-byte hex Ed25519 public key (`generateCredential()` in [`@tetherto/mdk-identity`](../identity/README.md#usage)). An account not listed is removed |
+| `opts.identity` | Optional | `object` | The issuer's defaults | [Token issuer](../identity/README.md#tokens) settings: `issuer`, `accessTtlSec`, `refreshTtlSec`, ... |
 | `opts.telemetryPullMs` | Optional | `number` | The Kernel's own default | Telemetry poll interval in ms |
 | `opts.healthPingMs` | Optional | `number` | The Kernel's own default | Health ping interval in ms |
 | `opts.statePullMs` | Optional | `number` | The Kernel's own default | Worker identity and device-list refresh interval in ms |
@@ -129,6 +143,7 @@ const { runtime, stop } = await startAvalonWorker({
   workerId: 'avalon-rack-1',     // one runtime process = one workerId
   model: 'a1346',
   storeDir: './data/avalon',
+  allowedKeys: [kernel.getClientPublicKey()],
   kernelTopic: null,               // omit/null to register by key instead of a DHT topic
   seedDevices: [{ info: { serialNum: 'AV-001' }, opts: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
 })
@@ -290,15 +305,17 @@ Register a one-shot cleanup handler on `SIGINT` / `SIGTERM`. Returns the handler
 
 ### `shutdown(handle)` → `Promise<void>`
 
-Gracefully stop any MDK boot handle — Kernel, Gateway, or Worker. Drains the handle's `_cleanup` array in registration order,
-then calls `.stop()` on the handle itself. Idempotent: calling `shutdown` twice on the same handle is safe.
+Gracefully stop any MDK boot handle: Kernel, Gateway, or Worker. Drains the handle's `_cleanup` array last-registered first,
+then calls `.stop()` on the handle itself. A cleanup step that throws is skipped and the rest still run. Idempotent: calling
+`shutdown` twice on the same handle is safe.
 
 ```js
 await shutdown(kernel) // stops Gateway and Workers (chained), then stops Kernel
 ```
 
 Prefer `shutdown(kernel)` over calling `shutdown` on each handle separately: passing the Kernel handle tears everything down in the
-order services were started.
+reverse of the order services registered with it, so a Gateway started after a Worker stops first. `getKernel({ handleSignals: true })`
+drains in the same order on `SIGINT` or `SIGTERM`.
 
 ### Constants
 
@@ -428,19 +445,22 @@ Who dials whom, and with which key:
 | Caller | Dials | With key | Admitted by |
 | --- | --- | --- | --- |
 | Kernel | Workers | `kernel.getClientPublicKey()` (the Kernel's DHT keypair, stable across restarts) | Worker `allowedKeys` |
-| Apps | Kernel, and Workers directly | `status.rpcClientKey` (Gateway DHT keypair, persisted) | Kernel allowlist and Worker `allowedKeys` |
-| MCP / CLI clients | Kernel (and Workers) | a persistent `callerKeyPair(dir)` passed as `kernelKeyPair` | same |
+| Apps | Kernel | `status.rpcClientKey` (Gateway DHT keypair, persisted) | Kernel allowlist |
+| MCP / CLI clients | Kernel | a persistent `callerKeyPair(dir)` passed as `kernelKeyPair` | same |
 
 Workers admit the Kernel's key and no other, so every command reaches a device through the Kernel's checks and its
-[write-command log](../kernel/README.md#write-command-log). A caller that must reach a Worker directly
-(`sendWorkerCommand`, `pullWorkerTelemetry`) needs its key added to that Worker's `allowedKeys` (or `MDK_WORKER_ALLOWED_KEYS`)
-by the operator.
+[write-command log](../kernel/README.md#write-command-log). `@tetherto/mdk-client` has no Worker-direct path; every
+other caller reaches devices through the Kernel.
 
 The SDK wires the local cases:
 
 - **Same process.** `startGateway({ kernel })` calls `kernel.allowKey(gatewayKey)`. Workers allow
   `kernel.getClientPublicKey()` and nothing else (`trustKernel(runtime, kernel)`): every device call goes through the
-  Kernel's `spec.rbac` check, so no caller it admits is let past it to a Worker.
+  Kernel's `spec.rbac` check, so no caller it admits is let past it to a Worker. A script's own client is admitted with
+  `kernel.allowKey()` and signs in as a service account from `getKernel({ rbac, serviceAccounts })`, passed to it as
+  `kernelCredential`; the
+  [host-script credential step](../../../docs/guides/workers/test-a-worker.md#give-the-host-script-an-identity) runs
+  that end to end.
 - **Same machine, separate processes.** Every component meets in a trusted-keys dir (`getKernel` default
   `<root>/.trusted-keys`, `DEFAULT_TRUSTED_KEYS_DIR` = `~/.mdk/.trusted-keys`). The Kernel publishes `kernel.pub` and
   admits every other `<name>.pub` to connect (its token decides what it may do); a standalone `startGateway` publishes

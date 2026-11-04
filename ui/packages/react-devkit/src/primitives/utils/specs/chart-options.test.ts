@@ -428,6 +428,53 @@ describe('buildBarChartOptions', () => {
     expect(tooltipCallbacks.label(mockCtx)).toBe('Empty: ')
   })
 
+  it('points the tooltip at the index axis in both orientations', () => {
+    // Chart.js resolves `mode: 'index'` against `axis || 'x'` and ignores `indexAxis`,
+    // so a horizontal chart must say `axis: 'y'` or the tooltip tracks bar length.
+    expect((buildBarChartOptions().plugins as any).tooltip.axis).toBe('x')
+    expect((buildBarChartOptions({ isHorizontal: true }).plugins as any).tooltip.axis).toBe('y')
+  })
+
+  it('threads the index axis into a custom tooltip config', () => {
+    const horizontal = buildBarChartOptions({ isHorizontal: true, tooltip: {} })
+    const vertical = buildBarChartOptions({ tooltip: {} })
+
+    expect((horizontal.plugins as any).tooltip.axis).toBe('y')
+    expect((vertical.plugins as any).tooltip.axis).toBe('x')
+  })
+
+  it('lets a caller override the tooltip axis', () => {
+    const options = buildBarChartOptions({ isHorizontal: true, tooltip: { axis: 'x' } })
+
+    expect((options.plugins as any).tooltip.axis).toBe('x')
+  })
+
+  it('reads the value axis, not the index axis, in a horizontal tooltip', () => {
+    const formatter = (v: number) => `${v} W`
+    const options = buildBarChartOptions({ isHorizontal: true, yTicksFormatter: formatter })
+
+    const tooltipCallbacks = (options.plugins as any).tooltip.callbacks
+    // A horizontal chart parses to `{ y: <category index>, x: <value> }`.
+    const mockCtx = {
+      dataset: { label: 'Miners' },
+      parsed: { y: 2, x: 3400 },
+    }
+
+    expect(tooltipCallbacks.label(mockCtx)).toBe('Miners: 3400 W')
+  })
+
+  it('returns empty label string when a horizontal tooltip value is null', () => {
+    const options = buildBarChartOptions({ isHorizontal: true })
+
+    const tooltipCallbacks = (options.plugins as any).tooltip.callbacks
+    const mockCtx = {
+      dataset: { label: 'Empty' },
+      parsed: { y: 2, x: null },
+    }
+
+    expect(tooltipCallbacks.label(mockCtx)).toBe('Empty: ')
+  })
+
   it('uses right axis formatter for y1 datasets in tooltip', () => {
     const leftFormatter = (v: number) => `${v} units`
     const rightFormatter = (v: number) => `${v}%`

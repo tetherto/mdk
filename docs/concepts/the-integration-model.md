@@ -50,7 +50,7 @@ to underneath.
 ## Next steps
 
 - [Build a Worker Plugin][build-a-worker] for a new device family
-- Understand the [app authoring flow][gateway-plugins]: build it, publish it, install it
+- Understand the [app authoring flow][apps]: build it, publish it, install it
 - Understand [the storage model][storage-model]: what a Worker Plugin decides to persist
 - Understand [architecture][architecture]: where both extension points sit in the round trip
 
@@ -71,5 +71,5 @@ to underneath.
 [build-a-worker]: ../guides/workers/build-a-worker.md
 <!-- docs@tether.io: build-a-worker → guides/workers/build-a-worker -->
 
-[gateway-plugins]: ../guides/gateway/apps.md
-<!-- docs@tether.io: gateway-plugins → guides/gateway/apps -->
+[apps]: ../guides/gateway/apps.md
+<!-- docs@tether.io: apps → guides/gateway/apps -->

@@ -115,6 +115,7 @@ const worker = await startAvalonWorker({
   workerId: 'avalon-rack-1',
   model: 'a1346',
   storeDir: './store/avalon-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'AV-001' },
     opts: { address: '192.168.1.10', port: 4028, password: 'admin' }
@@ -122,6 +123,9 @@ const worker = await startAvalonWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 `seedDevices` only seeds a fresh, empty `storeDir`; add a device to an already-running Worker with the
 `registerThing` command instead (see each package's own `USAGE.md`, e.g. [`miners/avalon/USAGE.md`][avalon-usage]).

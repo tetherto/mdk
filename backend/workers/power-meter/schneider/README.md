@@ -12,8 +12,8 @@ MDK Worker for Schneider Electric power meters. Reads 3-phase electrical measure
 ## Install
 
 > [!IMPORTANT]
-> `npm install @tetherto/mdk-worker-schneider` returns `E404`. The device Workers are not published to npm yet; they are
-> workspace packages in the MDK monorepo. Clone it and install from the repository root instead.
+> `npm install @tetherto/mdk-worker-schneider` returns `E404`. The device Workers are not published to npm; they are
+> workspace packages in the public MDK repository. Clone it and install from the repository root instead.
 
 ```bash
 git clone https://github.com/tetherto/mdk.git
@@ -36,6 +36,7 @@ const worker = await startSchneiderWorker({
   workerId: 'schneider-rack-1',
   model: 'pm5340',
   storeDir: './store/schneider-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'SCHN-A', container: 'container-A' },
     opts: { address: '192.168.1.152', port: 502, unitId: 1 }
@@ -43,6 +44,9 @@ const worker = await startSchneiderWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 `seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
 `registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is

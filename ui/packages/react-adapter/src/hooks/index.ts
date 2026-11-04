@@ -33,6 +33,8 @@ export type {
   UseInstalledAppUisResult,
 } from './use-installed-app-uis'
 export { useInstalledAppUis } from './use-installed-app-uis'
+export type { UseInstalledAppsOptions, UseInstalledAppsResult } from './use-installed-apps'
+export { useInstalledApps } from './use-installed-apps'
 export { useIsFeatureEditingEnabled } from './use-is-feature-editing-enabled'
 export { useKeyDown } from './use-key-down'
 export { useLocalStorage } from './use-local-storage'

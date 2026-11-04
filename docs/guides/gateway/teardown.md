@@ -36,7 +36,12 @@ const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
 
 const kernel = await getKernel({ handleSignals: true })
 
-const { runtime, stop } = await startAvalonWorker({ workerId: 'avalon-rack-1', model: 'a1346', storeDir: './data/avalon' })
+const { runtime, stop } = await startAvalonWorker({
+  workerId: 'avalon-rack-1',
+  model: 'a1346',
+  storeDir: './data/avalon',
+  allowedKeys: [kernel.getClientPublicKey()]
+})
 await kernel.registerWorker(runtime.getPublicKey())
 kernel._cleanup.push(stop) // cascade Worker shutdown from Kernel
 

@@ -30,7 +30,7 @@ export * from './types'
 
 export { useChartDataCheck } from './utils/chart-data-check'
 export { getContainerName } from './utils/container-utils'
-export { getHashrateString, getHashrateUnit } from './utils/device-utils'
+export { formatPowerConsumption, getHashrateString, getHashrateUnit } from './utils/device-utils'
 export type { NotificationOptions } from './utils/use-notification'
 export { useNotification } from './utils/use-notification'
 

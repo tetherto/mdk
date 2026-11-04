@@ -63,7 +63,7 @@ $_prefix: "mdk-mining-pools-panel";
     font-size: 14px;
     line-height: 22px;
     color: var(--mdk-color-text-secondary);
-    font-family: "JetBrains Mono", monospace, sans-serif;
+    font-family: var(--font-mono);
     min-width: 0;
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -93,7 +93,7 @@ $_prefix: "mdk-mining-pools-panel";
     color: var(--mdk-color-white);
     border: 1px solid var(--mdk-button-secondary-border);
     border-radius: var(--mdk-radius);
-    font-family: "JetBrains Mono", monospace, sans-serif;
+    font-family: var(--font-mono);
     white-space: nowrap;
 
     &:hover {

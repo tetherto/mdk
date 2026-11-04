@@ -101,8 +101,9 @@ async function _forward (client, app, route, method, req, timeoutMs, signal) {
 // `/apps/<name>`) and forwards every request to the app's runtime over HRPC.
 //
 // opts.authority (see authority.js): every route of the app needs a bearer
-// token and a spec.rbac rule for its resource and verb (authz.js); `auth` on a
-// route no longer matters. The verified identity reaches the app runtime as
+// token and a spec.rbac rule for its resource and verb (authz.js), checked
+// before body validation, the cache and the forward; `auth` on a route no
+// longer matters. The verified identity reaches the app runtime as
 // the call's `identity`, and a user's token as its `actor`.
 //
 // Without an authority, the older opts.authVerifier: async (request, route) =>
@@ -130,7 +131,7 @@ function buildFastifyRoutes (app, client, ctx, opts = {}) {
     if (opts.authority) {
       const authz = createRouteAuthz(app, route, opts.authority)
       fastifyRoute.onRequest = authz.onRequest
-      fastifyRoute.preHandler = authz.preHandler
+      fastifyRoute.preValidation = authz.preValidation
     } else if (route.auth === true) {
       fastifyRoute.preParsing = createAuthHook(opts.authVerifier || null, Object.freeze({
         id: route.id,

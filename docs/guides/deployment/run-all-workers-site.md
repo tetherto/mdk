@@ -37,24 +37,30 @@ Follow the [Starter site example][site-backend-example]:
 - Use [PM2][site-backend-pm2] for local process supervision on one host
 - [Verify][site-backend-verify] the fleet is up
 
+> [!WARNING]
+> The example's Gateway listens on every interface (`0.0.0.0`), and its demo users share the published password
+> `mdk-site-demo`, `admin` included. Anyone who can reach port `3000` can sign in as `admin`. Keep the site on a
+> trusted network, or remove the shared `rbac.password` from `config/site.deploy.json` so each user gets a random one.
+> The [site security blueprint][security] covers hardening a site you expose.
+
 ## Next steps
 
 - Understand the trade-offs between [deployment topologies][deployment-topologies]
 - [Register a single miner][miner-how-to] before building a site config
-- Extend the Gateway HTTP API with [custom plugins][plugins]
+- Extend the Gateway HTTP API with [custom plugins][apps]
 - Browse the [functions][mdk-functions] that wire together the [Kernel][kernel-concept], [device Workers][workers-concept], and the [Gateway][gateway-concept] HTTP
 - Build your own [Worker from scratch][build-a-worker]
 
 ## Links
 
-[deployment-topologies]: index.md
-<!-- docs@tether.io: deployment-topologies → guides/deployment -->
+[deployment-topologies]: ../../concepts/deployment-topologies.md
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [miner-how-to]: ../miners/index.md
 <!-- docs@tether.io: miner-how-to → guides/miners -->
 
-[plugins]: ../gateway/apps.md
-<!-- docs@tether.io: plugins → guides/gateway/apps -->
+[apps]: ../gateway/apps.md
+<!-- docs@tether.io: apps → guides/gateway/apps -->
 
 [site-backend-example]: ../../../examples/mvp-site/README.md
 <!-- docs@tether.io: site-backend-example → https://github.com/tetherto/mdk/tree/main/examples/mvp-site -->
@@ -85,3 +91,6 @@ Follow the [Starter site example][site-backend-example]:
 
 [build-a-worker]: ../workers/build-a-worker.md
 <!-- docs@tether.io: build-a-worker → guides/workers/build-a-worker -->
+
+[security]: ../security/index.md
+<!-- docs@tether.io: security → guides/security -->

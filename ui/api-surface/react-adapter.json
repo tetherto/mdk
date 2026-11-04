@@ -216,6 +216,18 @@
         "kind": "type"
       },
       {
+        "name": "useInstalledApps",
+        "kind": "hook"
+      },
+      {
+        "name": "UseInstalledAppsOptions",
+        "kind": "type"
+      },
+      {
+        "name": "UseInstalledAppsResult",
+        "kind": "type"
+      },
+      {
         "name": "useInstalledAppUis",
         "kind": "hook"
       },
@@ -451,6 +463,18 @@
       },
       {
         "name": "UseInstalledAppPanelsResult",
+        "kind": "type"
+      },
+      {
+        "name": "useInstalledApps",
+        "kind": "hook"
+      },
+      {
+        "name": "UseInstalledAppsOptions",
+        "kind": "type"
+      },
+      {
+        "name": "UseInstalledAppsResult",
         "kind": "type"
       },
       {

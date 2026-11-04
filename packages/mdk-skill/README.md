@@ -21,8 +21,8 @@ README is for working on the suite itself.
 src/
 ├── skills/                 # Suite content (flat: one dir per skill), hand-authored except where noted
 │   ├── mdk/                # Router + suite-wide references/
-│   ├── mdk-worker-plugin/  # Worker plugin workflow + scripts/assets
-│   ├── mdk-gateway-plugin/ # App route table + controllers workflow (scaffold via `mdk create app`)
+│   ├── mdk-worker/         # Worker plugin workflow + scripts/assets
+│   ├── mdk-app-routes/     # App route table + controllers workflow (scaffold via `mdk create app`)
 │   ├── mdk-create-app/     # MDK App workflow (package layout, manifest, plugin, UI; `mdk create app`)
 │   ├── mdk-app-rbac/       # Derive an app's permissions / spec.rbac role from its code + scripts/derive-permissions.mjs
 │   ├── mdk-ui-component/   # UI pages and panels for MDK Apps and dashboards + ui-registry (generated)
@@ -78,8 +78,10 @@ import { installSkills } from '@tetherto/mdk-skill'
 const { skills, installed, skipped } = installSkills({ client: 'all', target: process.cwd() })
 ```
 
-Install safety: it throws if `.cursor`, `.claude` or their `skills` dir under
-the target is a symlink, and it only replaces an existing `<skills-dir>/<name>`
+Install safety: it follows `.cursor`, `.claude` or their `skills` dir under
+the target when one is a symlink to a directory inside the project (the MDK
+monorepo links both to its one real `skills/`), and throws when the link leaves
+the project, dangles or points at a file. It only replaces an existing `<skills-dir>/<name>`
 whose `SKILL.md` carries `metadata.suite: mdk-developer-skill`. Symlinked or
 foreign skill dirs with a suite skill's name are left alone, listed in
 `skipped`, and reported through `onWarn` (default `console.warn`).
@@ -93,13 +95,13 @@ prompt activates the matching skills:
 
 | Example prompt                                              | Skills it should invoke           |
 | ----------------------------------------------------------- | ----------------------------------- |
-| "Add a new power meter Worker for our site"                 | `mdk-worker-plugin`                 |
-| "I need to integrate a new miner device into MDK"           | `mdk-worker-plugin`                 |
-| "Author an mdk-contract.json for a temperature sensor"      | `mdk-worker-plugin`                 |
-| "Build a plugin that aggregates hashrate across all miners" | `mdk-gateway-plugin`                |
-| "Add a cross-Worker endpoint that rolls up a site summary"  | `mdk-gateway-plugin`                |
-| "Create a dashboard widget that shows live telemetry from a Worker" | `mdk-ui-component` (and `mdk-gateway-plugin` if no `/api` route yet) |
-| "Create a UI to show \<metric\> for \<device family\>"      | discover → `mdk-gateway-plugin` → `mdk-deployment` → `mdk-ui-component` |
+| "Add a new power meter Worker for our site"                 | `mdk-worker`                        |
+| "I need to integrate a new miner device into MDK"           | `mdk-worker`                        |
+| "Author an mdk-contract.json for a temperature sensor"      | `mdk-worker`                        |
+| "Build an app that aggregates hashrate across all miners"   | `mdk-app-routes`                    |
+| "Add a cross-Worker endpoint that rolls up a site summary"  | `mdk-app-routes`                    |
+| "Create a dashboard widget that shows live telemetry from a Worker" | `mdk-ui-component` (and `mdk-app-routes` if no `/api` route yet) |
+| "Create a UI to show \<metric\> for \<device family\>"      | discover → `mdk-app-routes` → `mdk-deployment` → `mdk-ui-component` |
 | "How do I deploy the MDK stack?"                            | `mdk-deployment`                    |
 | "Size this site: 80 Whatsminer M56S on a 16-core NVMe box"  | `mdk-site-sizing`                   |
 | "Security check the packages before we publish to npm"      | `mdk-publish-security`              |
@@ -111,15 +113,15 @@ prompt activates the matching skills:
 
 ```bash
 # contract validation (exit 0/1); add --schema-only to skip the semantic checks
-node dist/skills/mdk-worker-plugin/scripts/validate-contract.mjs \
+node dist/skills/mdk-worker/scripts/validate-contract.mjs \
   packages/cli/templates/worker/mdk-contract.json
 
 # in-process smoke: telemetry sweep + command bounds, no Kernel, no DHT
-node dist/skills/mdk-worker-plugin/scripts/worker-smoke.mjs <worker-dir>
+node dist/skills/mdk-worker/scripts/worker-smoke.mjs <worker-dir>
 ```
 
 The end-to-end proof of the skill is scaffolding a new Worker from
-[`dist/skills/mdk-worker-plugin/SKILL.md`](./src/skills/mdk-worker-plugin/SKILL.md) alone — contract validation, smoke
+[`dist/skills/mdk-worker/SKILL.md`](./src/skills/mdk-worker/SKILL.md) alone — contract validation, smoke
 pass, and brittle unit tests all green before the Worker ever meets a Kernel.
 
 ## Verify the site-sizing skill

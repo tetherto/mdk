@@ -9,18 +9,36 @@
 const test = require('brittle')
 const { shutdown, onShutdown } = require('../../index')
 
-test('shutdown - kernel-like handle: drains _cleanup in order then stops', async (t) => {
+test('shutdown - kernel-like handle: drains _cleanup last-registered first, then stops', async (t) => {
   const order = []
   const handle = {
     _cleanup: [async () => order.push('c1'), async () => order.push('c2')],
     stop: () => { order.push('stop'); return Promise.resolve() }
   }
+  const registered = [...handle._cleanup]
   await shutdown(handle)
-  t.alike(order, ['c1', 'c2', 'stop'], 'cleanups before stop, in registration order')
+  t.alike(order, ['c2', 'c1', 'stop'], 'cleanups before stop, in reverse registration order')
   t.is(handle.__mdkShutdownDone, true)
+  t.ok(handle._cleanup.length === registered.length && handle._cleanup.every((fn, i) => fn === registered[i]),
+    'the cleanup list itself is left as registered, not reversed in place')
 
   await shutdown(handle) // idempotent
-  t.alike(order, ['c1', 'c2', 'stop'], 'second call is a no-op')
+  t.alike(order, ['c2', 'c1', 'stop'], 'second call is a no-op')
+})
+
+test('shutdown - a Gateway registered after a Worker stops before it, and a failing cleanup does not stop the rest', async (t) => {
+  // The teardown guide's pattern: the Worker's stop is pushed, then startGateway({ kernel }) pushes the Gateway's.
+  const order = []
+  const kernel = {
+    _cleanup: [
+      async () => order.push('trusted-keys admitter'),
+      async () => { order.push('worker'); throw new Error('boom') },
+      async () => order.push('gateway')
+    ],
+    stop: async () => { order.push('kernel') }
+  }
+  await shutdown(kernel)
+  t.alike(order, ['gateway', 'worker', 'trusted-keys admitter', 'kernel'])
 })
 
 test('shutdown - runtime-worker-like handle: promise stop()', async (t) => {

@@ -36,6 +36,7 @@ const kernel = await getKernel()
 const worker = await startSenecaWorker({
   workerId: 'seneca-rack-1',
   storeDir: './store/seneca-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'SEN-A', container: 'container-A', pos: 'lv_1' },
     opts: { address: '192.168.1.200', port: 502, unitId: 0, register: 3 }
@@ -43,3 +44,6 @@ const worker = await startSenecaWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.

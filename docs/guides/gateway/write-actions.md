@@ -12,7 +12,7 @@ them from a React app. MDK ships no React hooks for actions: the app calls its o
 ## Prerequisites
 
 - The [Gateway is running][run-gateway] with an [actions app mounted](#create-an-actions-app)
-- Your actions routes are marked `"auth": true` and the Gateway runs with an `authVerifier`, since [an unprotected route is reachable by anyone][plugins-auth]
+- Your actions routes are marked `"auth": true` and the Gateway runs with an `authVerifier`, since [an unprotected route is reachable by anyone][app-auth]
 - Your controllers pass the caller's device-family write permissions (`miner:w`, `container:w`) to Kernel as `authPerms`, which Kernel requires before
 resolving or approving a write
 - If present, your React app is wrapped in [`<MdkProvider apiBaseUrl={...}>`][react-adapter-surface]
@@ -114,7 +114,7 @@ module.exports = async function pushAction (req) {
 > [!WARNING]
 > `"auth": true` makes the Gateway answer `401` unless the `authVerifier` vouches for the caller, which matters more here than on a read route
 > because it stages fleet-changing writes. The controller still checks that the identity in `req._info` holds the write permission.
-> [Auth and permissions][plugins-auth] covers the patterns.
+> [Auth and permissions][app-auth] covers the patterns.
 
 ### Mount the app
 
@@ -130,7 +130,7 @@ spec:
 ```
 
 Running it from your own code instead goes through `startGateway({ apps })` and `createAppRuntime()`, as
-[starting apps from code][plugins-from-code] shows.
+[starting apps from code][apps-from-code] shows.
 
 > [!WARNING]
 > Calls through `config.mdkClient` act as the app alone: the Kernel checks only the app's grant and records the app as the voter.
@@ -139,28 +139,36 @@ Running it from your own code instead goes through `startGateway({ apps })` and 
 ## Call the routes from a React app
 
 Read the queue with `useQuery` and send writes with `useMutation`, both re-exported by
-[`@tetherto/mdk-react-adapter`][react-adapter]. Invalidate the queue after each write so the list refreshes:
+[`@tetherto/mdk-react-adapter`][react-adapter]. Read the configured transport with `getFetcher(queryClient)` and use it for queries and mutations. With
+`<MdkProvider auth={auth} fetcher={auth.fetcher}>`, where `auth` is a `passwordAuth()` provider, this transport sends the
+access token, refreshes it on `401`, retries the request, and parses the JSON body. Invalidate the queue after each write so the list refreshes:
 
 ```tsx
 import { useMdkContext, useMutation, useQuery, useQueryClient } from "@tetherto/mdk-react-adapter";
+import { getFetcher } from "@tetherto/mdk-ui-foundation";
 
 const QUEUE_KEY = ["actions", "voting"];
+
+type PendingAction = { id: string };
 
 function PendingActions() {
   const { apiBaseUrl } = useMdkContext();
   const queryClient = useQueryClient();
+  const fetcher = getFetcher(queryClient);
+  if (!fetcher) throw new Error("MDK fetcher is not configured");
 
   const { data: pending = [] } = useQuery({
     queryKey: QUEUE_KEY,
     // Your GET route decides how it maps the request onto `queryActions()` and what it returns;
-    // this example assumes it returns the voting actions as an array.
-    queryFn: () => fetch(`${apiBaseUrl}/auth/actions`).then((r) => r.json()),
+    // this example assumes it returns the voting actions as an array. `fetcher` parses the body
+    // and returns it as the type you give it, so name that type or `pending` arrives as `unknown`.
+    queryFn: () => fetcher<PendingAction[]>(`${apiBaseUrl}/auth/actions`),
     refetchInterval: 10_000,
   });
 
   const vote = useMutation({
     mutationFn: ({ id, approve }: { id: string; approve: boolean }) =>
-      fetch(`${apiBaseUrl}/auth/actions/voting/${id}/vote`, {
+      fetcher(`${apiBaseUrl}/auth/actions/voting/${id}/vote`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ approve }),
@@ -168,7 +176,7 @@ function PendingActions() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUEUE_KEY }),
   });
 
-  return pending.map((action: { id: string }) => (
+  return pending.map((action) => (
     <button key={action.id} type="button" onClick={() => vote.mutate({ id: action.id, approve: true })}>
       Approve {action.id}
     </button>
@@ -184,8 +192,8 @@ For complete mdk-client method signatures and protocol details, see the [mdk-cli
 ## Next steps
 
 - Understand the [approval-gated write architecture][approval-gated-writes] — including how approved actions become normal command requests
-- Protect your routes with [controller-level auth and permission checks][plugins-auth]
-- Build routes with the [app route table format][plugins], including caching and manifest fields
+- Protect your routes with [controller-level auth and permission checks][app-auth]
+- Build routes with the [app route table format][apps], including caching and manifest fields
 - Run integration coverage: [`backend/core/kernel/tests/integration/actions.test.js`][actions-test]
 
 ## Links
@@ -193,14 +201,14 @@ For complete mdk-client method signatures and protocol details, see the [mdk-cli
 [approval-gated-writes]: ../../concepts/control-plane.md#approval-gated-writes
 <!-- docs@tether.io: approval-gated-writes → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#actionmanager -->
 
-[plugins-auth]: apps.md#auth-and-permissions
-<!-- docs@tether.io: plugins-auth → guides/gateway/apps#auth-and-permissions -->
+[app-auth]: apps.md#auth-and-permissions
+<!-- docs@tether.io: app-auth → guides/gateway/apps#auth-and-permissions -->
 
-[plugins]: apps.md
-<!-- docs@tether.io: plugins → guides/gateway/apps -->
+[apps]: apps.md
+<!-- docs@tether.io: apps → guides/gateway/apps -->
 
-[plugins-from-code]: apps.md#start-apps-from-code
-<!-- docs@tether.io: plugins-from-code → guides/gateway/apps#start-apps-from-code -->
+[apps-from-code]: apps.md#start-apps-from-code
+<!-- docs@tether.io: apps-from-code → guides/gateway/apps#start-apps-from-code -->
 
 [run-gateway]: run.md
 <!-- docs@tether.io: run-gateway → guides/gateway/run -->

@@ -466,7 +466,9 @@ describe('mdk onboard', () => {
     expect(clack.log.warn).toHaveBeenCalledWith(expect.stringContaining('Could not link'));
     expect(clack.log.warn).toHaveBeenCalledWith(expect.stringContaining('no package.json'));
     expect(installPackagesMock).not.toHaveBeenCalled();
-    expect(installDepsMock).not.toHaveBeenCalled();
+    // Only the CLI the new package.json lists is left to install.
+    expect(clack.log.step).toHaveBeenCalledWith(expect.stringContaining('Installing 1 package'));
+    expect(installDepsMock).toHaveBeenCalledWith(join(dir));
   });
 
   it('reflects a hit environment (old Node, existing git/spec, a detected agent client) in the review panel and default client', async () => {
@@ -496,7 +498,21 @@ describe('mdk onboard', () => {
     expect(installPackagesMock).toHaveBeenCalledWith(join(dir), ['unknown-pkg']);
   });
 
-  it('installs via installDeps (no registry packages) when only a bundled worker is linked, with a singular install count', async () => {
+  it('installs a catalog app from its source and keeps its package name in mdk.yaml', async () => {
+    const dir = makeTmpDir();
+    clack.text.mockResolvedValueOnce(dir).mockResolvedValueOnce('src-stack');
+    clack.confirm.mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    clack.multiselect.mockResolvedValueOnce([]).mockResolvedValueOnce(['pkg-gateway-a']);
+    findCatalogAppMock.mockReturnValue({ value: 'pkg-gateway-a', label: 'pkg-gateway-a', hint: 'h', source: 'github:org/pkg-gateway-a' });
+    resolveCatalogPackageMock.mockReturnValue({ packageName: 'pkg-gateway-a', bundled: false });
+
+    await buildProgram().parseAsync(['node', 'mdk', 'onboard']);
+
+    expect(installPackagesMock).toHaveBeenCalledWith(join(dir), ['github:org/pkg-gateway-a']);
+    expect(readFileSync(join(dir, 'mdk.yaml'), 'utf8')).toContain('package: pkg-gateway-a');
+  });
+
+  it('installs via installDeps (no registry packages) when only a bundled worker is linked, counting the CLI', async () => {
     const dir = makeTmpDir();
     clack.text.mockResolvedValueOnce(dir).mockResolvedValueOnce('my-stack');
     clack.confirm
@@ -515,7 +531,7 @@ describe('mdk onboard', () => {
 
     await buildProgram().parseAsync(['node', 'mdk', 'onboard']);
 
-    expect(clack.log.step).toHaveBeenCalledWith(expect.stringContaining('Installing 1 package'));
+    expect(clack.log.step).toHaveBeenCalledWith(expect.stringContaining('Installing 2 packages'));
     expect(installDepsMock).toHaveBeenCalledWith(join(dir));
     expect(installPackagesMock).not.toHaveBeenCalled();
     expect(clack.log.warn).toHaveBeenCalledWith(expect.stringContaining('no net'));
@@ -541,6 +557,26 @@ describe('mdk onboard', () => {
     expect(clack.log.message).toHaveBeenCalledWith(expect.stringContaining('Updated .gitignore'));
     expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))).toEqual({ name: 'preexisting' });
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toContain('.mdk/');
+  });
+
+  it('prints the first-operator step and the dashboard run target in next steps', async () => {
+    const dir = makeTmpDir();
+    clack.text.mockResolvedValueOnce(dir).mockResolvedValueOnce('my-stack');
+    clack.confirm
+      .mockResolvedValueOnce(true) // add UI dashboard
+      .mockResolvedValueOnce(false) // skill
+      .mockResolvedValueOnce(true); // write mdk.yaml
+    clack.multiselect.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    createDashboardMock.mockResolvedValue({ ok: true, appPath: join(dir, 'apps', 'my-stack-dashboard') });
+
+    await buildProgram().parseAsync(['node', 'mdk', 'onboard']);
+
+    const [text] = clack.note.mock.calls.at(-1) as [string, unknown];
+    expect(text).toContain('mdk run');
+    expect(text).toContain('mdk user add <name> --admin');
+    expect(text.indexOf('mdk run')).toBeLessThan(text.indexOf('mdk user add <name> --admin'));
+    expect(text).toContain('mdk run dashboard');
+    expect(text).not.toContain('npm run dev');
   });
 
   it('reports two seed devices (plural) and an empty dashboard app path without an "at ..." suffix', async () => {

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
 
@@ -12,14 +12,22 @@ vi.mock('../../src/lib/npm.js', () => ({
   npmNeedsShell: () => false,
 }));
 vi.mock('node:child_process', () => ({ spawnSync: spawnSyncMock }));
+// Whether this checkout's UI packages are built depends on the machine, so it is set per test.
+const unbuiltPackagesMock = vi.hoisted(() => vi.fn());
+vi.mock('../../src/lib/checkout.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../src/lib/checkout.js')>()),
+  unbuiltPackages: unbuiltPackagesMock,
+}));
 
 const { createApp } = await import('../../src/lib/app-scaffold.js');
 
+const REPO_ROOT = resolve(import.meta.dirname, '..', '..', '..', '..');
 const read = (dir: string, file: string): string => readFileSync(join(dir, file), 'utf8');
 
 beforeEach(() => {
   installDepsMock.mockReset().mockReturnValue({ ok: true });
   spawnSyncMock.mockReset().mockReturnValue({ status: 0, stdout: '', stderr: '' });
+  unbuiltPackagesMock.mockReset().mockReturnValue([]);
 });
 afterEach(cleanupTmpDirs);
 
@@ -44,6 +52,11 @@ describe('createApp — starter UI', () => {
     // The app gets its own tsconfig; the template's editor-only one stays behind.
     expect(JSON.parse(read(dir, 'ui-src/tsconfig.json')).compilerOptions).toMatchObject({ jsx: 'react-jsx', strict: true });
     expect(read(dir, 'ui-src/tsconfig.json')).not.toContain('paths');
+    // The controllers type-check through ui-src's TypeScript, against plugin/.
+    expect(JSON.parse(read(dir, 'ui-src/tsconfig.plugin.json'))).toMatchObject({
+      compilerOptions: { allowJs: true, module: 'nodenext', noEmit: true },
+      include: ['../plugin'],
+    });
     expect(existsSync(join(dir, 'tsconfig.json'))).toBe(false);
   });
 
@@ -60,6 +73,8 @@ describe('createApp — starter UI', () => {
       'build:ui': 'npm --prefix ui-src run build',
       'dev:ui': 'npm --prefix ui-src run dev',
       'typecheck:ui': 'npm --prefix ui-src run typecheck',
+      'typecheck:plugin': 'npm --prefix ui-src run typecheck:plugin',
+      typecheck: 'npm run typecheck:plugin && npm run typecheck:ui',
     });
     expect(pkg.devDependencies).toBeUndefined();
     expect(pkg.files).toEqual(['mdk-app.yaml', 'plugin/', 'ui/', 'README.md']);
@@ -92,6 +107,24 @@ describe('createApp — starter UI', () => {
     const result = createApp({ name: 'demo', parentDir: makeTmpDir() });
     expect(result.uiBuilt).toBe(false);
     expect(result.uiWarning).toMatch(/build:ui exited with code 1[\s\S]*Unexpected token/);
+  });
+
+  it('links the MDK UI packages relative to ui-src/, so the manifest can be committed', () => {
+    const dir = createApp({ name: 'demo', parentDir: makeTmpDir(), install: false }).appPath!;
+    const { devDependencies } = JSON.parse(read(dir, 'ui-src/package.json')) as { devDependencies: Record<string, string> };
+    // These tests run from the checkout, so the MDK UI packages link to it.
+    const spec = devDependencies['@tetherto/mdk-react-devkit']!;
+    expect(spec).toMatch(/^file:\.\.?\//);
+    expect(resolve(dir, 'ui-src', spec.slice('file:'.length))).toBe(join(REPO_ROOT, 'ui', 'packages', 'react-devkit'));
+  });
+
+  it("does not try to build against the checkout's UI packages before they are built", () => {
+    unbuiltPackagesMock.mockReturnValue([join(REPO_ROOT, 'ui', 'packages', 'react-devkit')]);
+    const result = createApp({ name: 'demo', parentDir: makeTmpDir() });
+    expect(installDepsMock).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ ok: true, uiBuilt: false });
+    expect(result.uiWarning).toContain('ui/packages/react-devkit');
+    expect(result.uiWarning).toContain('npm run setup:ui && npm run build:ui');
   });
 
   it('skips install and build with install: false', () => {

@@ -44,7 +44,7 @@ describe('uNITS', () => {
   })
 
   it('defines Bitcoin-related units', () => {
-    expect(UNITS.SATS).toBe('Sats')
+    expect(UNITS.SATS).toBe('sats')
     expect(UNITS.VBYTE).toBe('vByte')
   })
 })
@@ -60,7 +60,7 @@ describe('cURRENCY', () => {
     expect(CURRENCY.SAT_LABEL).toBe('SAT')
     expect(CURRENCY.BTC_LABEL).toBe('BTC')
     expect(CURRENCY.USD_LABEL).toBe('USD')
-    expect(CURRENCY.SATS).toBe('Sats')
+    expect(CURRENCY.SATS).toBe('sats')
   })
 })
 

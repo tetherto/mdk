@@ -36,7 +36,7 @@ The identities are:
 | ------- | ------------- | ----------------------- |
 | A person | User name and password at the Gateway's `POST /auth/login`, or `mdk login` | `User` (name or email), or `Group` |
 | An app | An assertion signed by its own key, from its runtime | `ServiceAccount` `app:<name>` (role `app-<name>`, from its `mdk-app.yaml` grant) |
-| An AI agent | An assertion signed by its own key (`mdk sa add <agent>`) | `ServiceAccount` `<agent>` |
+| An AI agent | An assertion signed by its own key (`mdk serviceaccount add <agent>`, alias `mdk sa`) | `ServiceAccount` `<agent>` |
 | The CLI, Gateway and MCP server | Their own keys | `ServiceAccount` `mdk-cli`, `mdk-gateway`, `mdk-mcp` |
 
 The policy is default deny. No matching rule is a refusal, a stack with no bindings refuses every Kernel call, and there is no
@@ -159,7 +159,7 @@ records.
 <!-- docs@tether.io: gateway-auth-design → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#security-model -->
 
 [control-plane]: control-plane.md
-<!-- docs@tether.io: control-plane → concepts/control-plane -->
+<!-- docs@tether.io: control-plane → https://github.com/tetherto/mdk/blob/main/docs/concepts/control-plane.md -->
 
 [noise]: https://noiseprotocol.org/
 <!-- docs@tether.io: noise → https://noiseprotocol.org/ -->

@@ -387,9 +387,9 @@ async function assertDevicesReachable ({ client, allDeviceIds }) {
 // generic plugin), cycle headroom, sustained read throughput, command submit
 // latency, device baseline (approximate), resource + RSS-slope sampling,
 // alert-visible-via-Kernel latency (see alertPoll / pollAlerts in lib/load.js).
-// Not covered: full action approve/vote/e2e workflow as distinct steps (all
-// shipped workers whitelist writes at a single required vote, so submit and
-// execute collapse into one step — see README), alert generation latency
+// Not covered: full action approve/vote/e2e workflow as distinct steps —
+// every timed submit stops at Kernel accept (status: 'QUEUED'), so execution
+// and e2e report rows stay blank (see README), alert generation latency
 // in isolation, Gateway/fan-out/history alert delivery.
 async function runChecklist ({ client, devicePlan, workerDeviceMap, allDeviceIds, alertPoll, alertGatewayPoll, resourceSamplers, gatewayPort, gatewayAuth, root, profileId, sweep, deviceCount, workerCount, mode, startedUtc, storeSizesAtStartBytes }) {
   const rr = RUN_REPRODUCIBILITY

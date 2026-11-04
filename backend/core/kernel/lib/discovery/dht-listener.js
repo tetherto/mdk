@@ -45,7 +45,10 @@ class DHTListener {
     this._dht = null
     this._ownsDht = false
     this._kernelId = 'kernel:kernel:default'
-    this._discoveredPeers = new Set()
+    // rpcKey → Promise<boolean> for the registration attempt on that key. A
+    // resolved `true` entry is a registered worker and stays; a failed attempt
+    // removes itself, so the next offer of the same key retries.
+    this._discoveredPeers = new Map()
     this._workerKeys = new Set((opts.workerKeys || []).map(normalizeKey))
     this.allowAnyWorker = opts.allowAnyWorker === true
   }
@@ -167,7 +170,7 @@ class DHTListener {
     for (const worker of this.registry.getReadyWorkers()) {
       if (!worker.channel) continue
       try {
-        const identity = await this._pullIdentity(worker.channel)
+        const identity = await this._pullIdentity(worker.channel, worker.workerId)
         if (!identity) continue
         const newDeviceIds = identity.devices.map(d => d.deviceId)
         await this.registry.syncDeviceIds(worker.workerId, newDeviceIds, worker.channel)
@@ -185,32 +188,47 @@ class DHTListener {
    * that key. When the key is already known by other means — e.g. the in-process
    * registerWorker() path, or same-machine local discovery where workers publish
    * their key directly — callers hand it in here. Idempotent: a key already
-   * discovered is a no-op.
+   * discovered starts no second attempt.
+   *
+   * Resolves true once the worker is Ready, false when this attempt did not get
+   * it there. Callers that retry — local discovery rescans the keys dir every
+   * few seconds, and one attempt can outlive several scans — need that to tell
+   * a worker still starting up from one that is never going to arrive.
    */
   discoverWorker (rpcKey) {
     return this._onWorkerKeyReceived(rpcKey)
   }
 
-  async _onWorkerKeyReceived (rpcKey) {
-    if (this._discoveredPeers.has(rpcKey)) {
+  _onWorkerKeyReceived (rpcKey) {
+    // Concurrent offers of one key share the attempt already in flight, so they
+    // report its real outcome rather than "someone else is on it" — a retrying
+    // caller that saw the latter could never tell how long a key had been failing.
+    const inFlight = this._discoveredPeers.get(rpcKey)
+    if (inFlight) {
       debug(`peer already discovered: ${rpcKey.slice(0, 16)}...`)
-      return
+      return inFlight
     }
-    this._discoveredPeers.add(rpcKey)
     debug(`worker RPC key received: ${rpcKey.slice(0, 16)}...`)
 
+    // Forget a failed key so the next offer retries it; keep a registered one.
+    // The cleanup runs in `.then` rather than inside `_register` so it cannot
+    // fire before the map entry below exists.
+    const attempt = this._register(rpcKey).then((registered) => {
+      if (!registered) this._discoveredPeers.delete(rpcKey)
+      return registered
+    })
+    this._discoveredPeers.set(rpcKey, attempt)
+    return attempt
+  }
+
+  async _register (rpcKey) {
+    const peer = `${rpcKey.slice(0, 16)}...`
     try {
       const channel = this.workerChannel.connect({ rpcKey })
-      if (!channel) {
-        this._discoveredPeers.delete(rpcKey)
-        return
-      }
+      if (!channel) return false
 
-      const identity = await this._pullIdentity(channel)
-      if (!identity) {
-        this._discoveredPeers.delete(rpcKey)
-        return
-      }
+      const identity = await this._pullIdentity(channel, peer)
+      if (!identity) return false
 
       const registered = await this.registry.register({
         workerId: identity.workerId,
@@ -220,27 +238,32 @@ class DHTListener {
       })
       if (!registered) {
         await this.workerChannel.disconnect(channel)
-        this._discoveredPeers.delete(rpcKey)
-        return
+        return false
       }
 
       const contract = await this._pullCapabilities(channel)
       if (!contract || !this._validateContract(contract)) {
         debug(`invalid contract from ${identity.workerId}`)
         await this.registry.terminate(identity.workerId)
-        this._discoveredPeers.delete(rpcKey)
-        return
+        return false
       }
 
       await this.registry.setReady(identity.workerId, contract)
       debug(`worker registered: ${identity.workerId} (${identity.devices.length} devices)`)
+      return true
     } catch (err) {
       debug(`peer registration failed: ${err.message}`)
-      this._discoveredPeers.delete(rpcKey)
+      return false
     }
   }
 
-  async _pullIdentity (channel) {
+  /**
+   * `who` names the peer in the log line. Identity is what tells the Kernel a
+   * worker's id, so before it answers there is nothing to call it but its key —
+   * and an unattributed "identity.request failed" is what made a missing worker
+   * so hard to place.
+   */
+  async _pullIdentity (channel, who = 'unknown peer') {
     const envelope = buildEnvelope({
       action: ACTIONS.IDENTITY_REQUEST,
       type: MESSAGE_TYPES.REQUEST,
@@ -251,12 +274,12 @@ class DHTListener {
       const response = await this.workerChannel.send(channel, envelope, { timeout: 10000 })
       const check = this._checkReply(response, ACTIONS.IDENTITY_RESPONSE, validateIdentityResponse)
       if (!check.valid) {
-        debug(`invalid identity.response: ${check.error}`)
+        debug(`invalid identity.response from ${who}: ${check.error}`)
         return null
       }
       return response.payload
     } catch (err) {
-      debug(`identity.request failed: ${err.message}`)
+      debug(`identity.request to ${who} failed: ${err.message}`)
       return null
     }
   }

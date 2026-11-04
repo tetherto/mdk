@@ -1,0 +1,123 @@
+/* Containers list and detail.
+ *
+ * BEM blocks under a `site-` prefix, so they sit beside the devkit's own
+ * `mdk-` blocks without colliding. Layout lives here rather than in `style={{}}`
+ * props: inline styles cannot be themed, overridden by a consumer, or reused,
+ * and they defeat the devkit's own cascade.
+ */
+
+.site-containers {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.site-containers__grid {
+  display: grid;
+  /* 260px wrapped a container id like `rack-antminer-s21-telemetry-flow`
+   * onto five lines, so the header dwarfed the figures under it. */
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 12px;
+}
+
+.site-containers__card {
+  cursor: pointer;
+}
+
+.site-containers__card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px;
+}
+
+/* `min-width: 0` lets a long container id wrap instead of forcing the row wide.
+ * The three lines of reserved height keep every card's figures on the same
+ * baseline: ids differ in length, and without it each body started wherever its
+ * own title happened to end. */
+.site-containers__card-title {
+  min-width: 0;
+  min-height: 3lh;
+  word-break: break-word;
+}
+
+/* The badge is the fixed part of the header row: without this a long id
+ * squeezed it until its text met the card edge and clipped. */
+.site-containers__card-status {
+  flex-shrink: 0;
+}
+
+.site-containers__card-body {
+  padding: 20px;
+}
+
+.site-containers__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.site-container-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.site-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.site-container__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.site-container__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.site-container__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.site-container__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Tracks follow the miners present. A fixed `repeat(4, 1fr)` left a group of one
+ * holding three empty columns, so its tile sat alone against dead space. */
+.site-container__miners {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.site-container__miner-label {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.site-container__miner-metrics {
+  display: grid;
+  gap: 8px;
+}
+
+/* minmax(0, …) rather than the default `auto` minimum: a stat tile's value sets
+ * its min-content width, so `1fr` tracks refuse to shrink below it and the card
+ * clips them instead. */
+.site-container__miner-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}

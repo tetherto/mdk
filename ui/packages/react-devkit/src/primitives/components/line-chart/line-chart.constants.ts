@@ -1,3 +1,7 @@
+import type { LineStyle } from 'lightweight-charts'
+
+import type { LineDashStyle } from './types'
+
 export const TOOLTIP_DEFAULT_OFFSET = 10
 
 export const SCALE_PADDING_FACTOR_FOR_INT = 0.04
@@ -18,6 +22,20 @@ export const VISIBLE_POINTS_BY_TIMELINE: Record<string, number> = {
   '3h': 12,
   '1D': 14,
 }
+
+// lightweight-charts' `LineStyle` enum values, kept as numbers so the lazily loaded library
+// isn't pulled into the initial bundle
+export const LINE_STYLE: Record<LineDashStyle, LineStyle> = {
+  solid: 0,
+  dotted: 1,
+  dashed: 2,
+  largeDashed: 3,
+  sparseDotted: 4,
+}
+
+// lightweight-charts' own default series price format. Applied when `priceFormat` is unset so
+// dropping the prop resets a series instead of keeping the previous format.
+export const DEFAULT_PRICE_FORMAT = { type: 'price', precision: 2, minMove: 0.01 } as const
 
 export const CHART_COLORS = {
   EBONY: '#0f0f0f',

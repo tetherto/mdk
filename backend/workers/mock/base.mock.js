@@ -99,7 +99,9 @@ class BaseMock {
 
   static parseCli () {
     const leafRequire = createRequire(path.join(this.dir, 'server.js'))
-    const yargs = leafRequire('yargs/yargs')
+    // Main entry, not 'yargs/yargs': that extensionless file sits in a
+    // "type": "module" package
+    const yargs = leafRequire('yargs')
     const { hideBin } = leafRequire('yargs/helpers')
     return yargs(hideBin(process.argv))
       .option('port', { alias: 'p', type: 'number', default: this.defaultPort })

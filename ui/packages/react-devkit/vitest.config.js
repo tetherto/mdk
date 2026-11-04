@@ -2,6 +2,8 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
 import { defineConfig } from 'vitest/config'
 
+import { testExecArgv } from '../../vitest.config.base.ts'
+
 const alias = {
   '@domain': resolve(import.meta.dirname, './src/domain'),
   '@primitives': resolve(import.meta.dirname, './src/primitives'),
@@ -14,6 +16,7 @@ const define = {
 
 const sharedTestConfig = {
   globals: true,
+  execArgv: testExecArgv,
   mockReset: true,
   restoreMocks: true,
   clearMocks: true,

@@ -7,17 +7,35 @@ const test = require('brittle')
 const os = require('os')
 const fs = require('fs')
 const path = require('path')
+const crypto = require('crypto')
 const sdk = require('../..')
+const { startDhtBootstrap } = require('../../lib/dht-bootstrap')
 
-async function createKernel (t, opts) {
+const LOOPBACK = '127.0.0.1'
+
+// Without a `bootstrap` every Kernel here joins hyperdht's public network, so
+// the suite dials node{1,2,3}.hyperdht.org and pays a real timeout per kernel.
+// A loopback-only bootstrap keeps it hermetic, as in private-dht.test.js.
+async function privateDht (t) {
+  // Port 0 is not accepted by the bootstrapper; pick a free high port.
+  const net = await startDhtBootstrap({ host: LOOPBACK, port: 40000 + crypto.randomInt(20000) })
+  t.teardown(() => net.close(), { order: Infinity })
+  return { bootstrap: net.bootstrap, dhtHost: LOOPBACK }
+}
+
+async function createKernel (t, opts = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mdk-keyfile-'))
-  const kernel = await sdk.getKernel({ root, discovery: { mode: 'local' }, ...opts })
+  // `hrpc: false` disables HRPC outright; anything else keeps the private DHT
+  // while letting the caller's own hrpc keys win.
+  const dht = await privateDht(t)
+  const hrpc = opts.hrpc === false ? false : { ...dht, ...(opts.hrpc || {}) }
+  const kernel = await sdk.getKernel({ root, discovery: { mode: 'local' }, ...opts, hrpc })
   t.teardown(async () => {
     for (const fn of kernel._cleanup) { try { await fn() } catch {} }
     try { await kernel.stop() } catch {}
     try { fs.rmSync(root, { recursive: true, force: true }) } catch {}
   })
-  return { root, kernel }
+  return { root, kernel, dht }
 }
 
 test('key file - getKernel writes the HRPC public key to opts.keyFile', async (t) => {
@@ -106,8 +124,9 @@ test('trust - hrpc.allowAll is refused', async (t) => {
 
 test('trust - startGateway({ kernel }) admits the gateway client key and publishes it for other processes', { timeout: 60000 }, async (t) => {
   const { readTrustedKeys } = require('../../lib/local-discovery')
-  const { root, kernel } = await createKernel(t, { keyFile: false })
-  const hnd = await sdk.startGateway({ kernel, root: path.join(root, 'gateway'), port: 0, env: 'test', noAuth: true })
+  const { root, kernel, dht } = await createKernel(t, { keyFile: false })
+  // The gateway starts its own DHT node, so it needs the private bootstrap too.
+  const hnd = await sdk.startGateway({ kernel, root: path.join(root, 'gateway'), port: 0, env: 'test', noAuth: true, ...dht })
   t.teardown(() => new Promise((resolve) => hnd.stop(resolve)), { order: -1 })
 
   const key = hnd.status.rpcClientKey

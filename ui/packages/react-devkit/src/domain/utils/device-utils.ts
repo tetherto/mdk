@@ -78,6 +78,14 @@ export const PowerModeColors: Record<
 export const getPowerModeColor = (powerMode: keyof typeof PowerModeColors): string =>
   PowerModeColors[powerMode]
 
+/**
+ * Scales a power reading in watts to W / kW / MW, picking the unit from the
+ * magnitude unless one is forced. The power counterpart of `getHashrateUnit`:
+ * pass `forceUnit` to hold a whole chart axis on one unit.
+ *
+ * @param powerW - the reading, in watts
+ * @param forceUnit - a `UNITS` power unit to convert to instead of auto-selecting
+ */
 export const formatPowerConsumption = (
   powerW: number,
   forceUnit: string | null = null,

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-rbac",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "MDK RBAC policy library — validates spec.rbac from mdk.yaml and evaluates callers at the Gateway, MCP server and Kernel",
   "main": "index.js",
   "keywords": [

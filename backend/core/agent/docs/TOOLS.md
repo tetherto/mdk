@@ -132,7 +132,7 @@ declaration, not a name list. (If `readOnlyHint` is unstated, `destructiveHint: 
 recognized as declaring a write).
 
 > [!NOTE]
-> For tools generated from a Gateway plugin's HTTP routes, that declaration comes from the route's own `safety` field in
+> For tools generated from an app's HTTP routes, that declaration comes from the route's own `safety` field in
 > [`from-http-plugin.js`](../../mcp/lib/from-http-plugin.js): `'read-only'` maps to `readOnlyHint: true`, `'write'` maps to
 > `readOnlyHint: false` plus `destructiveHint: true`, and a route that states neither fails safe to `readOnlyHint: false` —
 > treated as a write, gated behind approval, rather than guessed from the route or tool name.

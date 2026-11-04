@@ -26,6 +26,12 @@ export const CONTAINER_MODEL = {
   IMMERSION_CONTAINER: 'container-as-immersion',
 } as const
 
+/**
+ * The container families that have their own settings screens: Bitdeer, MicroBT,
+ * hydro, and immersion.
+ *
+ * @category general
+ */
 export const CONTAINER_SETTINGS_MODEL = {
   BITDEER: 'bd',
   MICROBT: 'mbt',
@@ -33,6 +39,11 @@ export const CONTAINER_SETTINGS_MODEL = {
   IMMERSION: 'immersion',
 }
 
+/**
+ * Short codes identifying a container family in device tags and types.
+ *
+ * @category general
+ */
 export const CONTAINER_TYPE = {
   BITDEER: 'bd',
   ANTSPACE: 'as',
@@ -41,6 +52,12 @@ export const CONTAINER_TYPE = {
   ANTSPACE_IMMERSION: 'as-immersion',
 } as const
 
+/**
+ * Full device type identifiers for each supported container model, as they appear
+ * on a device.
+ *
+ * @category general
+ */
 export const COMPLETE_CONTAINER_TYPE = {
   BITMAIN_HYDRO: 'container-as-hk3',
   BITDEER_M30: 'container-bd-d40-m30',
@@ -53,6 +70,11 @@ export const COMPLETE_CONTAINER_TYPE = {
   MICROBT_BETA: 'container-mbt-beta',
 } as const
 
+/**
+ * Display names for each supported container model, such as `Bitdeer M30`.
+ *
+ * @category general
+ */
 export const CONTAINER_TYPE_NAME_MAP = {
   [COMPLETE_CONTAINER_TYPE.BITDEER_M30]: 'Bitdeer M30',
   [COMPLETE_CONTAINER_TYPE.BITDEER_M56]: 'Bitdeer M56',
@@ -64,16 +86,41 @@ export const CONTAINER_TYPE_NAME_MAP = {
   [COMPLETE_CONTAINER_TYPE.MICROBT_BETA]: 'MicroBT Beta',
 } as const
 
+/**
+ * What a container optimises for when curtailing: coin price, electricity price,
+ * or disabled.
+ *
+ * @category general
+ */
 export const CONTAINER_TACTICS_TYPE = {
   COIN: 'coin',
   DISABLED: 'disabled',
   ELECTRICITY: 'electricity',
 } as const
 
+/**
+ * The `info.container` value of a device moved into the maintenance pseudo-container.
+ * The backend does not poll a device in maintenance, recording it as offline instead, and
+ * the UI groups it under "Maintenance".
+ *
+ * @category general
+ */
 export const MAINTENANCE_CONTAINER = 'maintenance'
 
+/**
+ * The `info.container` value marking a device as not in maintenance, so it is polled
+ * normally.
+ *
+ * @category general
+ */
 export const NO_MAINTENANCE_CONTAINER = 'no_maintenance'
 
+/**
+ * The cooling measurements a container can hold thresholds against: tank pressure,
+ * oil and water temperature, and supply liquid pressure.
+ *
+ * @category general
+ */
 export const THRESHOLD_TYPE = {
   TANK_PRESSURE: 'tankPressure',
   OIL_TEMPERATURE: 'oilTemperature',
@@ -81,6 +128,12 @@ export const THRESHOLD_TYPE = {
   SUPPLY_LIQUID_PRESSURE: 'supplyLiquidPressure',
 } as const
 
+/**
+ * The severity bands a measurement can fall into, from normal through alert and
+ * alarm to the critical high and low limits.
+ *
+ * @category general
+ */
 export const THRESHOLD_LEVEL = {
   ALERT: 'alert',
   ALARM: 'alarm',

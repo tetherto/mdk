@@ -307,7 +307,7 @@ describe('formCheckbox', () => {
       </FormWrapper>,
     )
 
-    const wrapperRow = document.querySelector('[style*="flex-direction: row"]')
+    const wrapperRow = document.querySelector('.mdk-form-field-row--row')
     expect(wrapperRow).toBeInTheDocument()
 
     rerender(
@@ -318,8 +318,10 @@ describe('formCheckbox', () => {
       </FormWrapper>,
     )
 
-    const wrapperCol = document.querySelector('[style*="flex-direction: column"]')
+    // The column layout is the base class with no modifier.
+    const wrapperCol = document.querySelector('.mdk-form-field-row')
     expect(wrapperCol).toBeInTheDocument()
+    expect(wrapperCol?.classList.contains('mdk-form-field-row--row')).toBe(false)
   })
 })
 
@@ -349,7 +351,7 @@ describe('formSwitch', () => {
       </FormWrapper>,
     )
 
-    expect(document.querySelector('[style*="flex-direction: row"]')).toBeInTheDocument()
+    expect(document.querySelector('.mdk-form-field-row--row')).toBeInTheDocument()
   })
 })
 

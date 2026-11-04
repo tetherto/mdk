@@ -32,6 +32,20 @@ const verifier = createVerifier({ jwks: issuer.jwks() })                   // or
 const identity = identityFromClaims(verifier.verify(tokens.accessToken))  // what the RBAC evaluator takes
 ```
 
+A service account's credential is an Ed25519 key pair. `generateCredential()` makes one as `{ publicKey, privateKeyPem }`: the
+public key as 32-byte hex, which `upsertServiceAccount` and `getKernel({ serviceAccounts })` take, and the private key as PKCS#8
+PEM, which the account's client signs assertions with (`kernelCredential` on `@tetherto/mdk-client`). `publicKeyOfPrivate(pem)`
+recovers the hex public key from a PEM, and `normalizePublicKey(key)` lowercases a hex or `Buffer` key, throwing
+`ERR_IDENTITY_KEY_INVALID` when it is not a 32-byte Ed25519 key:
+
+```js
+const { generateCredential, publicKeyOfPrivate } = require('@tetherto/mdk-identity')
+
+const { publicKey, privateKeyPem } = generateCredential()
+await issuer.upsertServiceAccount({ name: 'operator-agent', publicKey })
+publicKeyOfPrivate(privateKeyPem) === publicKey   // true
+```
+
 `ServiceAccountTokenSource` keeps a valid access token for an app runtime or agent: it signs in once, refreshes before expiry,
 falls back to a new assertion when its session is revoked, and shares one renewal between concurrent callers. Its `request`
 reaches the issuer: over HRPC through `@tetherto/mdk-client`, or over HTTP through a Gateway with `gatewayTokenRequest`, which
@@ -131,4 +145,5 @@ are stored as SHA-256 digests, and signing keys are stored as private JWKs in th
 
 - [RBAC](../rbac/README.md): how the identity in a token is matched against `spec.rbac`
 - [Kernel](../kernel/README.md): the `auth.*` and `identity.*` actions that run the issuer
-- [CLI](../../../packages/cli/README.md): `mdk user` and `mdk sa`
+- [CLI](../../../packages/cli/README.md): `mdk user` and `mdk serviceaccount` (alias `mdk sa`)
+- [Site security blueprint](../../../docs/guides/security/index.md): provisioning identities and writing the policy that binds them

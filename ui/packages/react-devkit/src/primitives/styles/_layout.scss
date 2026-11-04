@@ -1,0 +1,40 @@
+// Layout primitives: the spacing scale and the control heights a consumer
+// needs to line its own markup up with MDK components.
+//
+// Published as CSS custom properties, not only as SCSS variables, because the
+// example apps — and most consumers — compile plain CSS and cannot `@use` the
+// devkit's internal partials. A number that exists only in SCSS gets copied
+// into a consumer stylesheet by hand and then drifts: `examples/mvp-site`
+// restated the Select's height as a literal `42px` for exactly this reason.
+
+// Control heights are the *outer* box. There is no global
+// `box-sizing: border-box`, so a trigger's `min-height` sizes its content box
+// and the 1px border sits outside it — a consumer matching `min-height` alone
+// lands 2px short.
+$control-border-width: 1px;
+$control-content-height-lg: 40px;
+$control-content-height-md: 32px;
+$control-content-height-sm: 24px;
+
+$control-height-lg: $control-content-height-lg + 2 * $control-border-width;
+$control-height-md: $control-content-height-md + 2 * $control-border-width;
+$control-height-sm: $control-content-height-sm + 2 * $control-border-width;
+
+@layer base {
+  :root {
+    /* Spacing scale. The values the shipped components already use — this
+       names them, it does not re-space anything. */
+    --mdk-spacing-xs: 4px;
+    --mdk-spacing-sm: 8px;
+    --mdk-spacing-md: 12px;
+    --mdk-spacing-lg: 16px;
+    --mdk-spacing-xl: 24px;
+    --mdk-spacing-2xl: 32px;
+
+    /* Control heights, outer box. Match one of these to sit a custom control
+       on the same baseline as a Select, Input or MultiSelect of that size. */
+    --mdk-control-height-lg: #{$control-height-lg};
+    --mdk-control-height-md: #{$control-height-md};
+    --mdk-control-height-sm: #{$control-height-sm};
+  }
+}

@@ -74,11 +74,14 @@ which may also hold your team's own committed skills:
 
 ```text
 .claude/skills/mdk/
-.claude/skills/mdk-worker-plugin/
-.claude/skills/mdk-gateway-plugin/
-.claude/skills/mdk-ui-component/
+.claude/skills/mdk-app-rbac/
+.claude/skills/mdk-app-routes/
+.claude/skills/mdk-create-app/
 .claude/skills/mdk-deployment/
+.claude/skills/mdk-publish-security/
 .claude/skills/mdk-site-sizing/
+.claude/skills/mdk-ui-component/
+.claude/skills/mdk-worker/
 ```
 
 Repeat for `.cursor/skills/` if you install there. `.claude/skills/mdk*/` is a shorter alternative, but it also hides
@@ -86,7 +89,7 @@ any skill of your own whose name starts with `mdk`.
 
 ## Next steps
 
-- [Build a dashboard][build-a-dashboard]: put the skills to work on a real page
+- [Build a dashboard][build-a-dashboard]: hand-assemble the Worker, route, and page layers the skills automate
 - See [the end-to-end flow the skill follows][ui-workflow]
 - Review [each layer's responsibilities][page-recipe]
 - Browse the [components][component-reference] the agent composes
@@ -94,14 +97,13 @@ any skill of your own whose name starts with `mdk`.
 ## Links
 
 [install-the-cli]: ../cli/install.md
-<!-- docs@tether.io: install-the-cli → guides/cli/install -->
+<!-- docs@tether.io: install-the-cli → guides/cli/run-with-npm -->
 
 [build-a-dashboard]: ../../tutorials/build-a-dashboard.md
 <!-- docs@tether.io: build-a-dashboard → tutorials/build-a-dashboard -->
 
-[cli-reference]: ../../../packages/cli/README.md#command-surface
-<!-- docs@tether.io: cli-reference → https://github.com/tetherto/mdk/blob/main/packages/cli/README.md#command-surface -->
-<!-- mdk-monorepo: temp — points at the package README's command table until the generated /reference/tooling/cli lands, then repoint to that -->
+[cli-reference]: ../../reference/tooling/cli.md#mdk-skill-add
+<!-- docs@tether.io: cli-reference → reference/tooling/cli#mdk-skill-add -->
 
 [skill-suite]: ../../../packages/mdk-skill/README.md
 <!-- docs@tether.io: skill-suite → https://github.com/tetherto/mdk/blob/main/packages/mdk-skill/README.md -->

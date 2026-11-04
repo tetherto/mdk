@@ -55,7 +55,7 @@ test('authz: 403 when no rule matches; every decision is logged with caller, app
   const authz = createRouteAuthz({ name: 'ops' }, { id: 'cmd', method: 'POST', path: '/miners/command', resourceName: { body: 'target' } }, fakeAuthority())
   const allow = fakeReq({ authorization: 'Bearer good' }, { body: { target: 'ok' } })
   await authz.onRequest(allow, fakeRep())
-  await authz.preHandler(allow)
+  await authz.preValidation(allow)
   t.alike(allow.logs[0], {
     app: 'ops',
     route: 'cmd',
@@ -74,7 +74,7 @@ test('authz: 403 when no rule matches; every decision is logged with caller, app
 
   const deny = fakeReq({ authorization: 'Bearer good' }, { body: { target: 'rack-9' } })
   await authz.onRequest(deny, fakeRep())
-  const err = await authz.preHandler(deny).catch((e) => e)
+  const err = await authz.preValidation(deny).catch((e) => e)
   t.alike([err.statusCode, err.message], [403, 'ERR_AUTH_FORBIDDEN: u may not create ops/miners/command rack-9'])
   t.is(deny.logs[0].decision, 'deny')
 })

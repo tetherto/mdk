@@ -356,7 +356,15 @@
     "react/iframe-missing-sandbox": "error",
     "react/jsx-no-script-url": "error",
     "react/no-unsafe": "warn",
-    "react/no-is-mounted": "error"
+    "react/no-is-mounted": "error",
+    "react/forbid-dom-props": [
+      "error",
+      {
+        "forbid": [
+          "style"
+        ]
+      }
+    ]
   },
   "overrides": [
     {

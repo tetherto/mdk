@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand/vanilla'
-import type { DevicesStore } from './types'
+import type { DevicesStore } from './types.js'
 
 /** Selected containers and LV cabinets (keyed by device id). */
 export type ContainersSlice = Pick<

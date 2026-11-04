@@ -12,8 +12,8 @@ MDK Worker for Antspace (Bitmain) mining container systems. Supports the HK3 and
 ## Install
 
 > [!IMPORTANT]
-> `npm install @tetherto/mdk-worker-antspace` returns `E404`. The device Workers are not published to npm yet; they are
-> workspace packages in the MDK monorepo. Clone it and install from the repository root instead.
+> `npm install @tetherto/mdk-worker-antspace` returns `E404`. The device Workers are not published to npm; they are
+> workspace packages in the public MDK repository. Clone it and install from the repository root instead.
 
 ```bash
 git clone https://github.com/tetherto/mdk.git
@@ -36,6 +36,7 @@ const worker = await startAntspaceWorker({
   workerId: 'antspace-rack-1',
   model: 'hk3',
   storeDir: './store/antspace-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'HK3-A', container: 'container-A', location: 'site-a-01.container' },
     opts: { address: '192.168.1.100', port: 18001 }
@@ -43,6 +44,9 @@ const worker = await startAntspaceWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 `seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
 `registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is

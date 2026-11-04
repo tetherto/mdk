@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-core",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "MDK bootstrap utilities and worker-infra services — kernel/gateway lifecycle plus injectable log/comment/alert/stats/settings/provisioning services for runtime-hosted workers",
   "main": "index.js",
   "keywords": [
@@ -25,9 +25,9 @@
     "@bitfinex/lib-js-util-base": "^2.1.0",
     "@bitfinex/lib-js-util-promise": "^1.1.0",
     "@tetherto/hp-svc-facs-store": "^1.0.0",
-    "@tetherto/mdk-client": "^0.13.0",
-    "@tetherto/mdk-gateway": "^0.13.0",
-    "@tetherto/mdk-kernel": "^0.13.0",
+    "@tetherto/mdk-client": "^0.13.1",
+    "@tetherto/mdk-gateway": "^0.13.1",
+    "@tetherto/mdk-kernel": "^0.13.1",
     "@tetherto/svc-facs-action-approver": "^1.0.0",
     "async": "3.2.6",
     "cron-parser": "5.10.2",

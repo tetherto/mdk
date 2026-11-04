@@ -28,6 +28,11 @@ export const AGENT_ERROR = {
   TEXT_REQUIRED: 'ERR_AGENT_MESSAGE_TEXT_REQUIRED',
   UNAVAILABLE: 'ERR_AGENT_UNAVAILABLE',
   APPROVAL_NOT_FOUND: 'ERR_AGENT_APPROVAL_NOT_FOUND',
+  /**
+   * Synthesised here, not sent by the gateway: a 404 on an agent route means
+   * the stack has no agent app installed, so the routes were never mounted.
+   */
+  ROUTES_NOT_MOUNTED: 'ERR_AGENT_ROUTES_NOT_MOUNTED',
 } as const
 
 export type AgentErrorCode = (typeof AGENT_ERROR)[keyof typeof AGENT_ERROR]
@@ -99,8 +104,30 @@ async function toApiError(response: Response): Promise<AgentApiError> {
   } catch {
     // Non-JSON body (or none). The status alone still identifies the failure.
   }
-  const code = message.split(':')[0]?.trim() || `HTTP_${response.status}`
-  return new AgentApiError(response.status, code, message)
+  return new AgentApiError(response.status, codeFor(message, response.status), message)
+}
+
+/**
+ * The `ERR_*` code a reply carries, or one standing in for the HTTP status.
+ *
+ * Only an MDK reply puts a code in `message`, so only those are split on the
+ * colon. Fastify's own replies are prose and splitting them mangles the text:
+ * a 404 reads `Route POST:/agent/sessions not found`, whose first
+ * colon-separated token is `Route POST` — and since that is not `ERR_`-shaped,
+ * `describeAgentError` passed it straight through and the operator was shown
+ * `Route POST` as the reason their message failed.
+ *
+ * Every synthesised code is `ERR_`-shaped so an unrecognised one renders as the
+ * generic sentence rather than verbatim. The untouched `message` still carries
+ * the server's own words for a bug report.
+ */
+function codeFor(message: string, status: number): string {
+  if (message.startsWith('ERR_')) {
+    const code = message.split(':')[0]?.trim()
+    if (code) return code
+  }
+  if (status === 404) return AGENT_ERROR.ROUTES_NOT_MOUNTED
+  return `ERR_AGENT_HTTP_${status}`
 }
 
 async function requestJson<T>(

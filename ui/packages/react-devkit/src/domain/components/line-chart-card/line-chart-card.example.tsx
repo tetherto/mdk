@@ -28,7 +28,7 @@ const chartData: LineChartCardData = {
 
 const timelineOptions = [
   { label: '5m', value: '5m' },
-  { label: '1h', value: '1h' },
+  { label: '3h', value: '3h' },
   { label: '1d', value: '1D' },
 ]
 

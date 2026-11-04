@@ -26,8 +26,10 @@ MDK ships three conceptual layers, each containing one or more packages:
 3. [MDK App Toolkit][mdk-app-toolkit-section].
 
 All three communicate through the **MDK protocol**. Browsers reach the Kernel through the Gateway, the consumer-facing integration boundary your team builds with the SDK;
-[AI agents][ai-agents-section] reach it instead through the standalone MCP server. MDK ships no authentication of its own at any tier: your team
-supplies it in the app controllers you write (native MCP tools authenticate at the MCP endpoint instead, not through those controllers). Tying everything together is a **single contract per device type**: the same
+[AI agents][ai-agents-section] reach it instead through the standalone MCP server. MDK ships authentication and authorization at every tier: the Kernel issues the
+tokens and needs one on every request past sign-in, and the Gateway, the MCP server, and the Kernel all judge a caller against the one `spec.rbac` policy in `mdk.yaml`.
+Your team defines [identities, roles, and trusted connections][site-security].
+Tying everything together is a **single contract per device type**: the same
 [`mdk-contract.json`][capability-contract] is designed to serve the UI (data labels), the orchestrator (validation rules), and AI agents (reasoning
 context) — today, only the orchestrator's validation rules are actually wired to it; UI and agent tooling don't read it yet.
 One file, one intended source of truth for three audiences.
@@ -86,7 +88,8 @@ hashrate, power usage, temperature alerts) across all your sites.
 - **Software developers**: build custom mining applications in any language, or leverage the
 [MDK App Toolkit][app-toolkit]'s frontend and backend tools for rapid development.
 - **AI/Automation teams**: [connect intelligent agents][ai-agents-section] that can monitor and diagnose device
-issues autonomously, then act on them once an operator approves the write
+issues autonomously, and act on them under the write rules you set: an approval-gated action or the operator agent waits for
+an operator to approve, while a direct command runs as soon as `spec.rbac` allows it
 
 ## Architecture overview
 
@@ -94,8 +97,8 @@ issues autonomously, then act on them once an operator approves the write
 to reach it. Above those two layers, the supported development path builds in two levels:
 
 - **Gateway**: the [Gateway][gateway-concept] serves the stack's apps and adds request-level caching and an HTTP interface; each app
-  builds its own `@tetherto/mdk-client` and does its own fleet aggregation. [Authenticating callers][app-auth] is left to the app
-  controllers you write. AI agents can drive the fleet over MCP, a standalone [`@tetherto/mdk-mcp`][mcp-readme] process that
+  builds its own `@tetherto/mdk-client` and does its own fleet aggregation. The Gateway signs callers in and checks
+  [a route against `spec.rbac`][app-auth] before a controller runs. AI agents can drive the fleet over MCP, a standalone [`@tetherto/mdk-mcp`][mcp-readme] process that
   derives tools from an app's routes.
 - **MDK App Toolkit**: sits on top of the Gateway. Adds publishable apps for declarative route extensions and frontend
   packages ([`@tetherto/mdk-ui-foundation`][ui-foundation], React adapter, React UI kit) for teams building operator dashboards
@@ -111,12 +114,17 @@ Each layer names its canonical doc in [the MDK stack][mdk-stack]. The [round tri
 MDK is designed from the ground up for [AI-driven operations][ai-agents-docs]. Rather than bolting AI on as an afterthought,
 intelligence is woven directly into the device definition itself.
 
-In addition to the technical schemas, every device's contract file ([`mdk-contract.json`][capability-contract]) contains:
+In addition to the technical schemas, a device's contract file ([`mdk-contract.json`][capability-contract]) can carry guidance
+written for people and agents:
 
 - **Safety rules**: for example, "Outlet temperature > 85°C requires immediate intervention"
-- **Operational constraints**: limits on command frequency, power thresholds, cooling requirements
-- **Troubleshooting guides**: if/then recovery steps an AI agent can diagnose against autonomously; the recovery
-  action itself still waits for operator approval, the same as any other write
+- **Operational constraints**: for example, limits on command frequency, power thresholds, cooling requirements
+- **Troubleshooting guides**: if/then recovery steps an AI agent can diagnose against autonomously
+
+This guidance is free text: nothing enforces it. Kernel checks a command against the contract's declared command name and
+params (required, type, allowed values, `min`/`max`), not against the written constraints, so a frequency limit or cooling
+rule holds only if the Worker or the caller applies it. A recovery action an agent takes is a write like any other: it waits
+for an operator only when it goes through an approval-gated action or the operator agent.
 
 The intent is that an AI agent connecting to MDK wouldn't need a separate knowledge base or custom prompts per device: the
 same contract that Kernel already validates commands against would also determine how AI reasons about that hardware. That
@@ -143,6 +151,23 @@ the right one automatically.
 - **More sites?** Each physical site runs its own `@tetherto/mdk-kernel` instance, each behind its own Gateway. No MDK component
 aggregates across sites: that view is your own application code calling each site's Gateway and merging the results.
 - **Site isolation**: `@tetherto/mdk-kernel` instances are fully independent. A problem at one site has zero impact on any other.
+
+## What runs, and what you build with
+
+### Runtime components
+
+- [Dashboard][dashboard-runtime]: presents app UIs and calls the Gateway over HTTP
+- [Gateway][gateway-concept]: authenticates HTTP callers, checks access, and forwards requests to apps in a CLI-managed stack
+- [Apps][app-development]: run business logic in their own processes and query the Kernel through the Node.js client
+- [Kernel][kernel-concept]: coordinates Workers and authorizes device operations
+- [Workers][worker-runtime]: adapt device APIs and declare telemetry and commands
+- [MCP server][mcp-readme]: exposes authorized tools to agents
+
+### Developer tools and libraries
+
+- [CLI][cli-reference]: scaffolds, validates, runs, and inspects a stack
+- [Node.js client][mdk-client]: calls the Kernel from apps and backend services
+- [UI toolkit][react-get-started]: provides components, hooks, and state for dashboards and app UIs
 
 ## Next steps
 
@@ -219,3 +244,18 @@ Learn more about:
 
 [architecture]: architecture.md
 <!-- docs@tether.io: architecture → concepts/architecture -->
+
+[dashboard-runtime]: ../../examples/mdk-ui-shell-template/README.md
+<!-- docs@tether.io: dashboard-runtime → https://github.com/tetherto/mdk/blob/main/examples/mdk-ui-shell-template/README.md -->
+
+[app-development]: ../guides/gateway/apps.md
+<!-- docs@tether.io: app-development → guides/gateway/apps -->
+
+[worker-runtime]: ../../backend/workers/README.md
+<!-- docs@tether.io: worker-runtime → https://github.com/tetherto/mdk/blob/main/backend/workers/README.md -->
+
+[cli-reference]: ../reference/tooling/cli.md
+<!-- docs@tether.io: cli-reference → reference/tooling/cli -->
+
+[site-security]: ../guides/security/index.md
+<!-- docs@tether.io: site-security → guides/security -->

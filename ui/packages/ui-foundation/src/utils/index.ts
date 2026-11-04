@@ -7,10 +7,10 @@
  * `@tetherto/mdk-react-devkit`.
  */
 
-export * from './auth-utils'
-export * from './device-tags'
-export * from './download-utils'
-export * from './period-utils'
-export * from './settings-utils'
-export * from './token-utils'
-export * from './url-utils'
+export * from './auth-utils.js'
+export * from './device-tags.js'
+export * from './download-utils.js'
+export * from './period-utils.js'
+export * from './settings-utils.js'
+export * from './token-utils.js'
+export * from './url-utils.js'

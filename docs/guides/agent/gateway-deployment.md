@@ -23,8 +23,9 @@ just reached over sessions instead of a REPL.
 - An [MCP tool server][mcp-server] is reachable, so the agent has fleet tools to call
 
 > [!IMPORTANT]
-> The Gateway never starts a model. `config.agent.provider` is a URL it dials, so a first session against a `baseURL` with nothing
-> behind it fails with `ERR_AGENT_UNAVAILABLE`. [Serving a model locally with QVAC][serve-the-model] covers the install, the first-run
+> The Gateway never starts a model. `config.agent.provider` is a URL it dials, so against a `baseURL` with nothing behind it
+> `POST /agent/sessions` still succeeds, and the first message's stream ends with an SSE `event: error` saying
+> "the assistant could not reach its model". [Serving a model locally with QVAC][serve-the-model] covers the install, the first-run
 > download, and the flags a lazily loaded model needs.
 
 <Steps>
@@ -34,25 +35,36 @@ just reached over sessions instead of a REPL.
 ### Mount the app
 
 Either:
-- [Select it during onboarding](#11-a-select-it-during-onboarding), or
-- [Already have an `mdk.yaml`? Add it by hand](#11-b-add-it-to-an-existing-mdkyaml)
+- [Select it during onboarding](#a-select-it-during-onboarding), or
+- [Already have an `mdk.yaml`? Add it by hand](#b-add-it-to-an-existing-mdkyaml)
 
-#### 1.1 A. Select it during onboarding
+#### A Select it during onboarding
 
 Run [`mdk onboard`][mdk-onboard] and select [`mdk-app-agent`][agent-plugin-readme] from its app catalog.
 `mdk onboard`'s wizard supports creating a compliant `mdk.yaml` from scratch, interactively.
-It installs `@tetherto/mdk-app-agent` by package name and writes its `spec.apps` entry with `mount: /`.
+It installs `@tetherto/mdk-app-agent` from [its public repository][agent-plugin-readme] and writes its `spec.apps` entry with `mount: /`.
 
 > [!NOTE]
-> Until `@tetherto/mdk-app-agent` is on npm, install it from [its repository][agent-plugin-readme] with
-> `mdk add app github:tetherto/mdk-app-agent`, which writes the same `spec.apps` entry, `mount: /` included.
+> The app is not on npm, so onboarding installs `github:tetherto/mdk-app-agent`, as `mdk add app github:tetherto/mdk-app-agent` does.
+> The dependency it records in `package.json` carries no version or ref, so the commit is pinned by your lockfile rather than by the
+> manifest. Commit the lockfile: without one, a later install resolves whatever that repository's default branch points at.
+> Installing from GitHub needs CLI 0.13.1 or later. The 0.13.0 CLI installs the app by package name, which fails because it
+> is not on npm: on 0.13.0, leave the app out of the wizard and run `mdk add app github:tetherto/mdk-app-agent` after
+> onboarding, which writes the same `spec.apps` entry, `mount: /` included.
 
-#### 1.1 B. Add it to an existing `mdk.yaml`
+#### B Add it to an existing `mdk.yaml`
 
 Already have one from a previous onboarding run? Add the app under `spec.apps` by hand, with `mount: /` and the model
 provider, the MCP url, and the approval timeout under `agent`. The app resolves from
-`node_modules/@tetherto/mdk-app-agent`. For example, a standalone gateway carrying just this app, reaching across
-to the [MVP site example][mvp-site-example]'s MCP tool server:
+`node_modules/@tetherto/mdk-app-agent`, and it is not on npm, so install it from its repository first, from the project
+directory:
+
+```bash
+npm install github:tetherto/mdk-app-agent
+```
+
+Commit the lockfile, for the reason in the note under option A. For example, a standalone gateway carrying just this app,
+reaching across to the [MVP site example][mvp-site-example]'s MCP tool server:
 
 ```yaml
 apiVersion: mdk/v1
@@ -80,18 +92,33 @@ spec:
 
 #### 1.2 Run it
 
-Once the `mdk.yaml` names the app, either way, run `mdk run`. It starts the app in its own runtime process and the Gateway
-forwards the agent routes to it.
+Once the `mdk.yaml` names the app, either way, write the access policy before the first run:
+
+```bash
+mdk rbac init
+```
+
+`mdk run` refuses a stack whose `spec.rbac` binds nobody, because the Kernel would boot with nobody able to administer it.
+`mdk rbac init` writes the starter policy: an `admin` role, the CLI bound to it, and the Gateway and MCP server bound to
+read policy. [Step 4 of the security blueprint][security-policy] covers what it writes and how to change it.
+
+Then run `mdk run`. It starts the app in its own runtime process and the Gateway forwards the agent routes to it.
 
 A stack built for just this app declares no Workers, so `mdk run` boots a Kernel it never actually uses
 (it only proxies chat to the MVP site's separate MCP server) alongside the app and the Gateway.
 
 > [!IMPORTANT]
-> The agent routes are `auth: true`. Unless `gateway.config.authVerifier` names another verifier, `mdk run` uses the built-in
-> `loopback` one: a caller on the same machine is the single `local` operator and gets the full chat and approval flow with no
-> identity setup, while a remote caller gets `401`. Serving operators on other machines needs a real verifier
-> ([Gateway security model](../../../backend/core/gateway/README.md#security-model)). A missing [`config.agent`][agent-plugin-config] block answers `503 ERR_AGENT_UNAVAILABLE` instead of
-> failing to load.
+> The agent routes are `auth: true`, so each one is checked against `spec.rbac` and needs an access token. A call without one
+> answers `401 ERR_AUTH_UNAUTHORIZED`. [Create the first operator][first-operator] with `mdk user add <name> --admin` while
+> the stack is running, then sign in at `POST /auth/login` and send the `accessToken` it returns as
+> `Authorization: Bearer <token>` ([Gateway security model][gateway-security]).
+> A missing [`config.agent`][agent-plugin-config] block
+> answers `503 ERR_AGENT_UNAVAILABLE` instead of failing to load.
+
+> [!NOTE]
+> This app requests no Kernel access of its own, so `mdk run` warns that `app agent has no binding in spec.rbac` on every
+> start, even once `mdk rbac init` has run and reports the grant already in place. There is nothing to bind for an app with
+> no `permissions`, and the warning does not stop the app serving. Running `mdk rbac init` again changes nothing.
 
 </Step>
 
@@ -103,11 +130,19 @@ Use the port your `mdk.yaml` gave the gateway: `3847` in the example above. Note
 the [MVP site][mvp-site-example]'s own gateway (`3000`) never carries the agent app; this is a separate gateway, reaching
 across to the MVP site's MCP tool server on `3101`.
 
+Sign in first. The access token comes back in the response body; every call below carries it.
+
 ```bash
-curl -X POST http://localhost:<port>/agent/sessions
+TOKEN=$(curl -s -X POST http://localhost:<port>/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"<name>","password":"<password>"}' | jq -r .accessToken)
+
+curl -X POST http://localhost:<port>/agent/sessions \
+  -H "Authorization: Bearer $TOKEN"
 # {"sessionId":"..."}
 
 curl -N -X POST http://localhost:<port>/agent/sessions/<id>/messages \
+  -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"text":"how many miners are on the site?"}'
 ```
@@ -132,12 +167,17 @@ Decide it from the paused stream's `approvalId`:
 
 ```bash
 curl -X POST http://localhost:<port>/agent/sessions/<id>/approvals/<approvalId> \
+  -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"approved":true}'
 ```
 
-Approving resumes the same stream: the tool runs for real, and the turn continues to its `token` and `done` events. Rejecting,
-or letting the approval window expire, resolves to false, and the write never runs.
+Approving resumes the same stream: the tool runs for real, and the turn continues to its `token` and `done` events. Rejecting
+resolves to false, and the write never runs. Letting the approval window (`approvalTimeoutMs`) expire blocks the write the same
+way. With `@tetherto/mdk-agent` 0.13.1 and an `mdk-app-agent` build that depends on it, the `tool_result` then reads
+`(no operator decision — approval expired, not executed)`, and the agent says no approval arrived in time. Earlier builds,
+including the 0.13.0 agent, report an expired approval as an operator rejection. Disconnecting while an approval is pending
+ends the turn: the write never runs, and the stream sends no `tool_result`.
 
 </Step>
 
@@ -147,6 +187,12 @@ or letting the approval window expire, resolves to false, and the write never ru
 
 - **Sessions and messages work, but the agent never calls a tool.** `agent.mcp` (or its `url`) is missing from the
   config — [how to fix it][agent-plugin-troubleshooting] is in the app's troubleshooting entry
+- **The agent never calls the tools your app's routes produce.** Under the default `strictToolGating`, the agent admits
+  only tools that carry an agent contract, and tools generated from app routes carry none, so it skips them. `mdk-app-agent`
+  builds after 0.13.0 log `agent skipped N MCP tool(s)` with each tool and reason when the agent is created. To admit them, set
+  `strictToolGating: false` and `capability: mid` (or `large`) under `agent`, for a model strong enough to use tools without a contract
+- **Every agent route answers `401`.** No access token on the call, or an expired one. Sign in again at
+  `POST /auth/login` and resend with `Authorization: Bearer <token>`
 - **The agent routes answer `404`.** The app entry has no `mount: /`, so its routes are served under `/apps/<name>`. Add
   `mount: /` to its `spec.apps` entry
 - Every other failure (`503`, `404`, `409`, `400`) maps to a specific cause and fix in
@@ -158,6 +204,7 @@ or letting the approval window expire, resolves to false, and the write never ru
 ## Next steps
 
 - [Read the agent app's route reference][agent-plugin-readme]: session, message, and approval routes, plus the manifest's `setup` fields
+- [Get the agent app][supported-apps-availability]: its public repository, and why the onboarding catalog cannot install it yet
 - [Understand the underlying agent][agent-core-readme]: the model and its fleet tools
 - [Submit and approve write actions][write-actions] from a React app, for the UI-driven shape of this same approval gate
 
@@ -165,6 +212,12 @@ or letting the approval window expire, resolves to false, and the write never ru
 
 [run-gateway]: ../gateway/run.md
 <!-- docs@tether.io: run-gateway → guides/gateway/run -->
+
+[first-operator]: ../security/create-the-first-operator.md
+<!-- docs@tether.io: first-operator → guides/security/create-the-first-operator -->
+
+[security-policy]: ../security/index.md#step-4-write-the-policy-and-put-identity-in-the-gateway
+<!-- docs@tether.io: security-policy → guides/security#step-4-write-the-policy-and-put-identity-in-the-gateway -->
 
 [write-actions]: ../gateway/write-actions.md
 <!-- docs@tether.io: write-actions → guides/gateway/write-actions -->
@@ -175,8 +228,11 @@ or letting the approval window expire, resolves to false, and the write never ru
 [agent-plugin-readme]: https://github.com/tetherto/mdk-app-agent
 <!-- docs@tether.io: agent-plugin-readme → https://github.com/tetherto/mdk-app-agent -->
 
+[supported-apps-availability]: ../../reference/supported-apps.md#availability
+<!-- docs@tether.io: supported-apps-availability → reference/supported-apps#availability -->
+
 [mdk-onboard]: ../cli/install.md#command-groups
-<!-- docs@tether.io: mdk-onboard → guides/cli/install#command-groups -->
+<!-- docs@tether.io: mdk-onboard → guides/cli/run-with-npm#command-groups -->
 
 [agent-plugin-config]: https://github.com/tetherto/mdk-app-agent#configuration
 <!-- docs@tether.io: agent-plugin-config → https://github.com/tetherto/mdk-app-agent#configuration -->
@@ -207,3 +263,6 @@ or letting the approval window expire, resolves to false, and the write never ru
 
 [agent-guides-index]: index.md
 <!-- docs@tether.io: agent-guides-index → guides/agent -->
+
+[gateway-security]: ../../../backend/core/gateway/README.md#security-model
+<!-- docs@tether.io: gateway-security → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#security-model -->

@@ -14,8 +14,8 @@ MDK Worker for Bitdeer D40 mining container systems. Communicates via MQTT. Supp
 ## Install
 
 > [!IMPORTANT]
-> `npm install @tetherto/mdk-worker-bitdeer` returns `E404`. The device Workers are not published to npm yet; they are
-> workspace packages in the MDK monorepo. Clone it and install from the repository root instead.
+> `npm install @tetherto/mdk-worker-bitdeer` returns `E404`. The device Workers are not published to npm; they are
+> workspace packages in the public MDK repository. Clone it and install from the repository root instead.
 
 ```bash
 git clone https://github.com/tetherto/mdk.git
@@ -48,6 +48,7 @@ const worker = await startBitdeerWorker({
   workerId: 'bitdeer-rack-1',
   model: 'm56',
   storeDir: './store/bitdeer-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   mqttPort: 10883,
   mqttCredentials: {
     'D40-M56-001': { username: 'd40-m56-001', password: process.env.D40_M56_001_MQTT_PASSWORD }
@@ -59,6 +60,9 @@ const worker = await startBitdeerWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 `seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
 `registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is
@@ -120,6 +124,26 @@ each connection to the first container it publishes or subscribes as.
 **Error codes:**
 - `E_TANK_FAIL` — Tank system failure
 - `E_EXHAUST_FAIL` — Exhaust system failure
+
+## Mock server
+
+The mock is an MQTT client, not a standalone server: it publishes canned D40 telemetry into the Worker's broker, so
+start the Worker first and the mock second. The model `type` (`d40_m56`, `d40_m30`, `d40_a1346` or `d40_s19xp`) is the
+first argument. `--id` sets the container ID the mock publishes under (the MQTT topic prefix, default `C024_D40`) and
+`--port` the broker port it connects to (default `10883`); npm needs the `--` separator before any flags:
+
+```bash
+npm run mock d40_m56
+npm run mock d40_m56 -- --port 10883 --id C024_D40
+node mock/server.js --type d40_m56 --port 10883 --id C024_D40   # custom flags: run the server directly
+```
+
+Programmatic:
+
+```js
+const bdMock = require('@tetherto/mdk-worker-bitdeer/mock/server')
+bdMock.createServer({ port: 10883, host: '127.0.0.1', type: 'd40_m56', id: 'C024_D40' })
+```
 
 ## Errors
 

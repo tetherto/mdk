@@ -12,7 +12,7 @@ Copy this into the PR or release ticket for each release.
 - [ ] Run `npm run release:bump -- <version>`. It sets every `package.json` and `mdk-app.yaml` version, moves every internal `@tetherto/mdk-*`
       pin to `^<version>`, updates the README release links, adds the release tag to the `linkinator.config.json` skip list, regenerates every
       lockfile and the UI registry, then runs `npm run release:check`. That covers the version, pin and lockfile-refresh items below, so do those
-      by hand only if the script cannot run. Reviewing the lockfile diff, the generated pages, the changelog and the release notes stay manual
+      by hand only if the script cannot run. Reviewing the lockfile diff, the generated pages and the changelog stays manual
 - [ ] Update `"version"` in every tracked `package.json` (root, `backend/`, `packages/`, `ui/`, `examples/`; not the vendored `backend/lib/mdk-crypto-lib`), following the [`bump-mdk`](./skills/bump-mdk/SKILL.md) skill
 - [ ] Update every pinned `^semver` `@tetherto/mdk-*` reference to the new version: the UI packages' sibling pins, the backend
       packages' pins on each other, and the CLI and its templates. The npm publish step accepts only exactly `^<version>`

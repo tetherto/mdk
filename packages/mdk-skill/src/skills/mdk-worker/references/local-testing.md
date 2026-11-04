@@ -58,7 +58,8 @@ const WorkerRuntimeV2 = require('<repo>/backend/core/mdk-worker/lib/worker-runti
 
 const runtime = new WorkerRuntimeV2(path.resolve('<your-worker-dir>'), {
   workerId: 'standalone-check',
-  devices: [{ deviceId: 'dev-0', config: { host: '127.0.0.1', port: MOCK_PORT } }]
+  devices: [{ deviceId: 'dev-0', config: { host: '127.0.0.1', port: MOCK_PORT } }],
+  allowAll: true // local check only: logs a warning and accepts any caller
 })
 await runtime.start() // no kernelTopic → HRPC up, but nothing announced
 
@@ -70,6 +71,9 @@ const res = await runtime.handleRequest({
 console.log(res.payload.metrics)
 await runtime.stop()
 ```
+
+`allowAll` stands in for `allowedKeys` here because no Kernel is involved; a Worker that will register with a Kernel
+passes `allowedKeys: [kernel.getClientPublicKey()]` instead, or `start()` throws `ERR_WORKER_ALLOWED_KEYS_REQUIRED`.
 
 Check here: `identity.request`, `capability.request` (handler paths must be
 stripped), `telemetry.pull` per channel, `command.request` success and

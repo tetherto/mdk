@@ -1,4 +1,8 @@
+// @ts-check
 'use strict'
+
+/** @typedef {import('../types').AppRequest} AppRequest */
+/** @typedef {import('../types').Summary} Summary */
 
 const mdkClient = require('../lib/client')
 
@@ -8,16 +12,22 @@ const mdkClient = require('../lib/client')
 // expose.
 //
 // Contract: `async (req) => result`. The return value is sent as JSON
-// (HTTP 200). Throw `Error('ERR_...')` to return a 400.
+// (HTTP 200). Throw `Error('ERR_...')` to return a 400. The return type is
+// `Summary` in `../types.d.ts`, the shape the UI imports.
+/**
+ * @param {AppRequest} req
+ * @returns {Promise<Summary>}
+ */
 module.exports = async function summary (req) {
   // The client fails per request (ERR_MDK_CLIENT_UNAVAILABLE) while the
   // Kernel is unreachable: report that instead of failing so the route stays
   // callable during boot.
+  /** @type {Array<{ workerId: string, deviceIds?: string[] }>} */
   let workers
   try {
     const resp = await mdkClient.listWorkers()
     workers = (resp && resp.workers) || []
-  } catch (err) {
+  } catch (/** @type {any} */ err) {
     if (err && err.code === 'ERR_MDK_CLIENT_UNAVAILABLE') {
       return { ok: true, kernelConnected: false, workerCount: 0, deviceCount: 0, workers: [] }
     }

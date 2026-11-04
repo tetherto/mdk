@@ -6,6 +6,12 @@ const containerId = (thg) => {
   return (thg.info && thg.info.container) || thg.id || thg.code
 }
 
+// What a Worker reports for a miner that is up: `mining`, or `sleeping` for one
+// parked by a power-mode command. Named once because both the site totals and
+// the per-container roll-up count the same thing, and because "online" is not
+// one of them — a consumer comparing against that string counts nothing.
+const ONLINE_STATUSES = new Set(['mining', 'sleeping'])
+
 const phase1CurrentA = (powerSpecific) => {
   if (!powerSpecific) return 0
   if (powerSpecific.i1_a != null) return Number(powerSpecific.i1_a) || 0
@@ -100,7 +106,7 @@ const mapPool = async (pool, mdkClient) => {
 // `ctx` is a test-only seam — see utils.js requestClient.
 module.exports = async (req, ctx) => {
   const mdkClient = requestClient(req, ctx)
-  const { byFamily, pools } = await loadSite(mdkClient, { status: true })
+  const { byFamily, pools, unavailable, unavailableDevices } = await loadSite(mdkClient, { status: true })
 
   const minerThings = byFamily.miner || []
   const containerThings = byFamily.container || []
@@ -133,23 +139,41 @@ module.exports = async (req, ctx) => {
   const totals = miners.reduce((acc, m) => {
     acc.hashrateMhs += m.hashrateMhs
     acc.powerW += m.powerW
-    if (m.status === 'mining' || m.status === 'sleeping') acc.onlineCount++
+    if (ONLINE_STATUSES.has(m.status)) acc.onlineCount++
     return acc
   }, { hashrateMhs: 0, powerW: 0, onlineCount: 0 })
+
+  // Roll the miners already mapped above up to their container. The demo runs
+  // no container Worker, so every rack is synthesized below from the miners
+  // that name it; without this it reads `unknown` and 0 W while the miners
+  // inside it report a mining status and their draw. A container Worker's own
+  // telemetry still wins — this only fills what it did not report.
+  const fromMiners = new Map()
+  for (const m of miners) {
+    if (!m.container) continue
+    const roll = fromMiners.get(m.container) || { powerW: 0, onlineCount: 0 }
+    roll.powerW += m.powerW
+    if (ONLINE_STATUSES.has(m.status)) roll.onlineCount++
+    fromMiners.set(m.container, roll)
+  }
+  const rollupFor = (id) => fromMiners.get(id) || { powerW: 0, onlineCount: 0 }
+  const derivedStatus = (roll) => (roll.onlineCount > 0 ? 'online' : 'unknown')
 
   const containerById = new Map()
   for (const thg of containerThings) {
     const id = containerId(thg)
     const s = snapStats(thg)
+    const roll = rollupFor(id)
     containerById.set(id, {
       deviceId: thg.id,
       id,
       code: thg.code,
-      operatingStatus: s.status || 'unknown',
-      powerW: s.power_w || 0,
+      operatingStatus: s.status || derivedStatus(roll),
+      powerW: s.power_w || roll.powerW,
       ambientTempC: s.ambient_temp_c || 0,
       inletTempC: sensorByContainer.get(id) || 0,
-      minerCount: 0
+      minerCount: 0,
+      onlineCount: roll.onlineCount
     })
   }
 
@@ -158,15 +182,17 @@ module.exports = async (req, ctx) => {
   for (const m of miners) {
     if (!m.container) continue
     if (!containerById.has(m.container)) {
+      const roll = rollupFor(m.container)
       containerById.set(m.container, {
         deviceId: m.container,
         id: m.container,
         code: m.container,
-        operatingStatus: 'unknown',
-        powerW: 0,
+        operatingStatus: derivedStatus(roll),
+        powerW: roll.powerW,
         ambientTempC: 0,
         inletTempC: sensorByContainer.get(m.container) || 0,
-        minerCount: 0
+        minerCount: 0,
+        onlineCount: roll.onlineCount
       })
     }
   }
@@ -197,11 +223,18 @@ module.exports = async (req, ctx) => {
     pools: poolData,
     sensors,
     miners,
+    // Workers whose devices could not be read: their miners are missing from
+    // `miners` because of an outage, not because the site has none.
+    unavailableWorkers: unavailable,
+    // Their devices, each flagged offline and stale. The Kernel doesn't report a down
+    // Worker's device family, so they are listed here instead of guessed into `miners`.
+    unavailableDevices,
     totals: {
       hashrateMhs: totals.hashrateMhs,
       powerW: totals.powerW,
       minerCount: miners.length,
-      onlineCount: totals.onlineCount
+      onlineCount: totals.onlineCount,
+      unavailableDeviceCount: unavailableDevices.length
     }
   }
 }

@@ -14,8 +14,7 @@ failure. Paths are relative to the monorepo root.
 | `@tetherto/mdk-gateway` | [`backend/core/gateway`](../../../../../../backend/core/gateway/README.md) | HTTP Gateway in front of the Kernel                |
 | `@tetherto/mdk-client`  | [`backend/core/client`](../../../../../../backend/core/client/README.md) | Consumer client library                              |
 | `@tetherto/mdk-mcp`     | [`backend/core/mcp`](../../../../../../backend/core/mcp/README.md) | MCP server: exposes MDK data/actions to AI agents as tools |
-
-Also under [`backend/core/`](../../../../../../backend/core/README.md): `plugins/` (Gateway plugin surface, no published package yet).
+| `@tetherto/mdk-app-runtime` | [`backend/core/app-runtime`](../../../../../../backend/core/app-runtime/README.md) | App runtime: runs one app's controllers in its own process and serves them to the Gateway over HRPC |
 
 ## Workers ([`backend/workers/`](../../../../../../backend/workers/README.md))
 

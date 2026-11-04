@@ -16,8 +16,11 @@ The Bitdeer D40 speaks MQTT, and the Worker embeds the broker (one per Worker pr
 
 Deployment-specific requirements:
 
-- A Node.js service or script in your deployment that runs the MDK Worker and registers containers
+- A Node.js service or script in your deployment that runs the MDK Worker and registers containers, run from a clone of
+  the MDK repository after `npm install` at its root. `@tetherto/mdk-worker-bitdeer` is not published to npm, so
+  `require('@tetherto/mdk-worker-bitdeer')` resolves only through the repository's workspace
 - A supported D40 container configured to publish into the Worker's embedded MQTT broker, reachable on that broker's port (default `10883`)
+- An MQTT username and password for each container that supports MQTT login, for the [broker login](#22-register-your-container)
 
 <Steps>
 
@@ -43,7 +46,7 @@ broker, so start the Worker first and the mock second, both from the repository 
    const { startBitdeerWorker } = require('@tetherto/mdk-worker-bitdeer')
 
    const main = async () => {
-     const kernel = await getKernel()
+     const kernel = await getKernel({ handleSignals: true })
 
      const worker = await startBitdeerWorker({
        workerId: 'bitdeer-dev',
@@ -57,6 +60,7 @@ broker, so start the Worker first and the mock second, both from the repository 
        }]
      })
      await kernel.registerWorker(worker.runtime.getPublicKey())
+     kernel._cleanup.push(worker.stop) // Ctrl+C stops the Worker before the Kernel
 
      console.log('Kernel HRPC key:', kernel.getPublicKey().toString('hex'))
      console.log('Device:', worker.services.provisioning.listDeviceIds()[0])
@@ -76,7 +80,7 @@ broker, so start the Worker first and the mock second, both from the repository 
    same container ID:
 
    ```bash
-   npm run mock d40_m56 10883 id=D40-DEV
+   npm run mock d40_m56 -- --port 10883 --id D40-DEV
    ```
 
 Expected output from `bitdeer-dev.js`, with your own key and device ID:
@@ -86,6 +90,9 @@ Kernel HRPC key: a94550e7f07fc2a1ebe38aa1cd482664c164d1d751f6470966611cdc40c6590
 Device: 815d7e65-39a4-4d13-938c-ebafb3b730e5
 Ctrl+C to stop.
 ```
+
+Ctrl+C stops the Worker, then the Kernel: the script opts into signal handling and chains the Worker's `stop`, so a
+second run starts without a lock error. [Stop the services cleanly][teardown] covers the contract.
 
 Once the mock connects, the Kernel pulls live telemetry (container power, temperature, per-phase data) through the
 Worker. The mock's model and container ID options are in [the Bitdeer README][bitdeer-readme].
@@ -117,6 +124,10 @@ const worker = await startBitdeerWorker({
   model: 'm56',
   storeDir: './store/bitdeer-rack-1',
   mqttPort: 10883,
+  mqttHost: '10.0.20.5', // the Worker's address on the container network
+  mqttCredentials: {
+    'D40-M56-001': { username: 'd40-m56-001', password: process.env.D40_M56_001_MQTT_PASSWORD }
+  },
   allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'D40-M56-001', container: 'container-A' },
@@ -129,24 +140,61 @@ await kernel.registerWorker(worker.runtime.getPublicKey())
 `allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
 (`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
+The broker is a network service the containers connect to, so secure it like one:
+
+- `mqttCredentials` gives each container its own MQTT login; a client's login decides which container it speaks for. Configure
+  the same username and password on the container
+- `mqttHost` binds the broker to one interface. The default, `0.0.0.0`, listens on every interface
+- `mqttTls` serves MQTTS (`tls.createServer` options) where the containers support it
+
+> [!WARNING]
+> Without `mqttCredentials`, the broker accepts anonymous clients on every interface. Any host that reaches the broker port
+> can connect as a registered container that has not connected yet and send that container's telemetry. The broker refuses
+> publishes to command topics and confines each client to one container; the [Bitdeer README][bitdeer-readme-protocol] lists
+> what a client may and may not do. The Worker prints a warning at start when it serves a non-loopback `mqttHost` without
+> `mqttCredentials`. Keep the broker port off every network but the container network.
+
 > [!WARNING]
 > Make sure the container is configured to publish into this Worker's broker port before registering. Commands act on
 > physical cooling and power hardware, prioritize thermal safety.
 
 `seedDevices` only seeds a fresh, empty `storeDir`, once persisted, the device set survives restarts on its own.
-To add a container to an already-running fleet, send the `registerThing` command to the live Worker instead:
+To add a container to an already-running fleet, push a `registerThing` write action through the Kernel instead. The Kernel routes it to the Worker
+named in `params[0].workerId` and runs it once the action has the approvals that Worker requires. `kernel` is the handle
+the boot script holds; from another process, pass the Kernel's public key instead:
 
 ```js
 const { createMdkClient } = require('@tetherto/mdk-client')
+const { name, privateKeyPem } = require('./.mdk/credentials/agents/provisioner.json')
 
-const client = createMdkClient({ kernelKey: kernel.getPublicKey() })
-await client.connect()
-await client.sendWorkerCommand('bitdeer-rack-1', null, 'registerThing', {
-  id: 'D40-M56-002',
-  info: { serialNum: 'D40-M56-002', container: 'container-A' },
-  opts: { containerId: 'D40-M56-002' }
-})
+const main = async () => {
+  const client = createMdkClient({
+    kernelKey: kernel.getPublicKey(),
+    kernelCredential: { name, privateKey: privateKeyPem }
+  })
+  await client.connect()
+  await client.pushAction({
+    query: {},
+    action: 'registerThing',
+    voter: 'provisioner',
+    authPerms: ['container:w'],
+    params: [{
+      workerId: 'bitdeer-rack-1',
+      id: 'D40-M56-002',
+      info: { serialNum: 'D40-M56-002', container: 'container-A' },
+      opts: { containerId: 'D40-M56-002' }
+    }]
+  })
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
+
+`registerThing` is a write action, so the Kernel evaluates it against `spec.rbac` before any Worker sees it.
+`mdk sa add provisioner` writes the credential this reads, and the account needs `actions: write` to push, plus
+`devices: write`. [Provisioning a device][provisioning-rules] covers how to scope that grant and why a successful push
+is not yet a live device.
+
 
 > [!IMPORTANT]
 > `registerThing` persists the container config immediately, but the running Worker does not pick it up until it is stopped
@@ -173,8 +221,14 @@ If the script does not print those values, or if broker port `10883` is already 
 
 ## Links
 
+[teardown]: ../gateway/teardown.md
+<!-- docs@tether.io: teardown → guides/gateway/teardown -->
+
 [container-guide-assumptions]: index.md#prerequisites
 <!-- docs@tether.io: container-guide-assumptions → guides/containers#prerequisites -->
+
+[bitdeer-readme-protocol]: ../../../backend/workers/containers/bitdeer/README.md#protocol
+<!-- docs@tether.io: bitdeer-readme-protocol → https://github.com/tetherto/mdk/blob/main/backend/workers/containers/bitdeer/README.md#protocol -->
 
 [bitdeer-readme]: ../../../backend/workers/containers/bitdeer/README.md
 <!-- docs@tether.io: bitdeer-readme → https://github.com/tetherto/mdk/blob/main/backend/workers/containers/bitdeer/README.md -->
@@ -182,8 +236,11 @@ If the script does not print those values, or if broker port `10883` is already 
 [install-pattern]: ../../../backend/workers/docs/install-pattern.md
 <!-- docs@tether.io: install-pattern → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->
 
-[deployment-topologies]: ../deployment/index.md
-<!-- docs@tether.io: deployment-topologies → guides/deployment -->
+[deployment-topologies]: ../../concepts/deployment-topologies.md
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [miner-troubleshooting]: ../miners/troubleshooting.md
 <!-- docs@tether.io: miner-troubleshooting → guides/miners/troubleshooting -->
+
+[provisioning-rules]: ../security/index.md#provisioning-a-device
+<!-- docs@tether.io: provisioning-rules → guides/security#provisioning-a-device -->

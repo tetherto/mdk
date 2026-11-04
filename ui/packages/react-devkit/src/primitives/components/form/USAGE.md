@@ -138,7 +138,7 @@ Form primitives built on react-hook-form. Use with a `useForm()` instance.
 ## Example
 
 ```tsx
-const schema = z.object({ email: z.string().email() });
+const schema = z.object({ email: validators.email() });
 const form = useForm({ resolver: zodResolver(schema), defaultValues: { email: "" } });
 
 <Form form={form} onSubmit={form.handleSubmit(onSubmit)}>

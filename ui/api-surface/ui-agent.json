@@ -8,6 +8,10 @@
         "kind": "function"
       },
       {
+        "name": "AGENT_APP_ID",
+        "kind": "const"
+      },
+      {
         "name": "AGENT_CONTRACT_VERSION",
         "kind": "const"
       },
@@ -206,6 +210,10 @@
       {
         "name": "GENERIC_TURN_ERROR",
         "kind": "const"
+      },
+      {
+        "name": "hasAgentApp",
+        "kind": "function"
       },
       {
         "name": "humanizeToolName",
@@ -422,6 +430,10 @@
         "kind": "function"
       },
       {
+        "name": "AGENT_APP_ID",
+        "kind": "const"
+      },
+      {
         "name": "AGENT_CONTRACT_VERSION",
         "kind": "const"
       },
@@ -584,6 +596,10 @@
       {
         "name": "GENERIC_TURN_ERROR",
         "kind": "const"
+      },
+      {
+        "name": "hasAgentApp",
+        "kind": "function"
       },
       {
         "name": "humanizeToolName",

@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "import", "jsdoc", "node", "vitest"],
+  "plugins": ["typescript", "unicorn", "import", "jsdoc", "node", "vitest", "react"],
   "categories": {
     "correctness": "off"
   },
@@ -128,6 +128,8 @@
     "valid-typeof": ["error", { "requireStringLiterals": true }],
     "vars-on-top": "error",
     "yoda": ["error", "never"],
+
+    "react/forbid-dom-props": ["error", { "forbid": ["style"] }],
 
     "import/first": "error",
     "import/no-duplicates": "error",
@@ -271,6 +273,22 @@
       "files": ["packages/ui-foundation/src/presets/**"],
       "rules": {
         "no-restricted-imports": "off"
+      }
+    },
+    {
+      // `style` is still in use here, so the rule would only collect disables.
+      //
+      // The devkit's remaining uses are dynamic — `style={{ height }}`,
+      // `backgroundColor: color`, `width: header.getSize()` — and each needs
+      // converting to the custom-property pattern `alarm-row` already uses
+      // (the value stays inline as `--mdk-*`, the rule moves to SCSS) before
+      // the rule can be turned on. The catalog's are demo markup that should
+      // move to the `demo-section__*` classes its own CLAUDE.md already
+      // mandates. Both are tracked on #757; everything else in this workspace
+      // is clean and guarded by default.
+      "files": ["packages/react-devkit/src/**", "apps/catalog/src/**"],
+      "rules": {
+        "react/forbid-dom-props": "off"
       }
     },
     {

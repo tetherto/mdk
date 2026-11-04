@@ -1,10 +1,11 @@
 {
   "name": "__PLUGIN_NAME__",
   "version": "0.1.0",
-  "description": "MDK app plugin — HTTP endpoints that aggregate worker telemetry.",
+  "description": "MDK app — HTTP endpoints that aggregate worker telemetry.",
   "routes": [
     {
       "id": "__PLUGIN_NAME__.summary",
+      "description": "The workers the Kernel knows, with how many devices each one runs.",
       "handler": "./controllers/summary.js",
       "safety": "read-only",
       "http": {

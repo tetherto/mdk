@@ -15,13 +15,13 @@ export function MonitoringPage({
   sensors: Sensor[];
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="site-stack-24">
       {powermeters.length > 0 && (
-        <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <section className="site-stack-12">
           <Typography variant="heading3">Power meters</Typography>
           <div
             data-testid="powermeter-charts"
-            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}
+            className="site-grid-280"
           >
             {powermeters.map((meter, i) => (
               <PowermeterChart
@@ -36,11 +36,11 @@ export function MonitoringPage({
       )}
 
       {sensors.length > 0 && (
-        <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <section className="site-stack-12">
           <Typography variant="heading3">Temperature sensors</Typography>
           <div
             data-testid="sensor-charts"
-            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}
+            className="site-grid-280"
           >
             {sensors.map((sensor, i) => (
               <SensorChart

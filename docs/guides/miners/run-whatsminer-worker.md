@@ -22,8 +22,10 @@ Deployment-specific requirements:
   dependency, not on the npm registry — see [its own README][whatsminer-mdk-worker] for the exact version/ref to pin)
 - A Node.js service or script in your deployment that constructs the adapter below and registers the resulting Worker
 - A supported Whatsminer device reachable from the machine or container running the Worker
-- The miner API reachable over encrypted TCP: port `4028` for API v2 (the default) or `4433` for API v3
-- The Whatsminer API password — the plugin negotiates a session token from it; there is no separate username
+- The miner API reachable over encrypted TCP: with no `port` set, the plugin probes API v3 on `4433` first, then API v2
+  on `4028`; set either port to pin that version
+- The Whatsminer API password, from which the plugin derives its auth tokens. API v3 firmware also takes an API
+  `account`: the account set up on your miner
 
 <Steps>
 
@@ -74,6 +76,7 @@ async function startWhatsminerWorker (opts) {
     workerId: opts.workerId,
     kernelTopic: opts.kernelTopic || null,
     storeDir: opts.storeDir,
+    allowedKeys: opts.allowedKeys || [],
     devices
   })
 
@@ -90,24 +93,35 @@ input validation and debug logging — copy the real file rather than this excer
 #### 2.2 Register your miner
 
 Add this to the Node.js service or script that runs your Worker. The snippet shows the minimum boot call seeding one
-Whatsminer device; replace the example IP address and password with your miner's values:
+Whatsminer device; replace the example IP address, password and account with your miner's values:
 
 ```js
 const { getKernel } = require('@tetherto/mdk-core')
 const { startWhatsminerWorker } = require('./whatsminer-adapter')
 
-const kernel = await getKernel()
+const main = async () => {
+  const kernel = await getKernel()
 
-const worker = await startWhatsminerWorker({
-  workerId: 'whatsminer-rack-1',
-  storeDir: './store/whatsminer-rack-1',
-  seedDevices: [{
-    info: { serialNum: 'WM-001' },
-    opts: { address: '192.168.1.10', port: 4028, password: 'admin' }
-  }]
-})
-await kernel.registerWorker(worker.runtime.getPublicKey())
+  const worker = await startWhatsminerWorker({
+    workerId: 'whatsminer-rack-1',
+    storeDir: './store/whatsminer-rack-1',
+    allowedKeys: [kernel.getClientPublicKey()],
+    seedDevices: [{
+      info: { serialNum: 'WM-001' },
+      opts: { address: '192.168.1.10', password: 'admin', account: 'admin' }
+    }]
+  })
+  await kernel.registerWorker(worker.runtime.getPublicKey())
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
+
+Leave `port` unset so the plugin probes API v3 on `4433` and then API v2 on `4028`; set it only to pin one version.
+`account` is read by API v3 firmware and ignored by API v2. Leave it unset and the plugin sends `super`.
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 > [!WARNING]
 > Make sure each miner's IP is reachable from the machine or container running the Worker before registering.
@@ -128,8 +142,8 @@ mechanics.
 ## Troubleshooting
 
 There is no minimal single-file development example to check readiness output against — the reference deployment is
-[`examples/mvp-site`][mvp-site-adapter]'s full stack (`npm start` prints `MDK_READY worker devices=<n>` once the
-Whatsminer Worker is up).
+[`examples/mvp-site`][mvp-site-adapter]'s full stack. `npm start` launches it under PM2 and returns; the Whatsminer
+Worker's process log shows `MDK_READY worker devices=<n>` once the Worker is up (`pm2 logs worker`).
 
 If the Worker does not come up, or a mock port is already in use, follow [miner troubleshooting][miner-troubleshooting].
 
@@ -156,8 +170,8 @@ If the Worker does not come up, or a mock port is already in use, follow [miner 
 [install-pattern]: ../../../backend/workers/docs/install-pattern.md
 <!-- docs@tether.io: install-pattern → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->
 
-[deployment-topologies]: ../deployment/index.md
-<!-- docs@tether.io: deployment-topologies → guides/deployment -->
+[deployment-topologies]: ../../concepts/deployment-topologies.md
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [miner-troubleshooting]: troubleshooting.md
 <!-- docs@tether.io: miner-troubleshooting → guides/miners/troubleshooting -->

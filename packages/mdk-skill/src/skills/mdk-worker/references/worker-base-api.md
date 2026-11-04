@@ -54,6 +54,8 @@ response envelope.
 | `kernelTopic` | no | Hex string or Buffer; when set, the runtime announces on this DHT topic |
 | `store` | no | Persistent store (Hyperbee-style) for the DHT/RPC seeds → stable public key across restarts; without it keys are random per boot |
 | `storeDir` | no | Directory for file-backed DHT/RPC seeds (same stability as `store`, for hosts that do not own a Hyperbee). Ignored when `store` is set |
+| `allowedKeys` | yes* | Hex strings or Buffers naming the RPC callers the runtime accepts, normally `[kernel.getClientPublicKey()]`; `start()` throws `ERR_WORKER_ALLOWED_KEYS_REQUIRED` when empty. *Or `allowAll` |
+| `allowAll` | no | `true` accepts any caller and logs a warning at `start()`; local development only |
 | `services` | no | Worker-infra services (logs, settings, stats, comments, provisioning…). Served as built-ins ahead of plugin handlers and exposed to handlers as `ctx.services` |
 | `bootstrap` | no | Custom DHT bootstrap nodes: a private network's list, or `hyperdht/testnet` in hermetic tests |
 | `dhtHost` | no | Interface the DHT node binds, such as `127.0.0.1` for a same-machine private network |

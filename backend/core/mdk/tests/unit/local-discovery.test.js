@@ -241,3 +241,63 @@ test('discoverWorkerKeys - offers only regular, private, owned, 64-hex .key file
 
   t.alike([...new Set(discovered)], [K1], 'only the valid key was offered')
 })
+
+// F3's second defect: a worker the Kernel could not reach was retried forever and
+// said nothing above `debug`, so a missing pool looked like a healthy stack.
+function captureWarnings (t) {
+  const lines = []
+  const orig = console.warn
+  console.warn = (...args) => lines.push(args.join(' '))
+  t.teardown(() => { console.warn = orig })
+  return lines
+}
+
+test('discoverWorkerKeys - a worker that never registers is named at warn level, once', async (t) => {
+  const dir = path.join(keysTmp(t), 'keys')
+  publishWorkerKey(dir, 'ocean-pool-worker', K1)
+  const warnings = captureWarnings(t)
+
+  const kernel = { dhtListener: { discoverWorker: async () => false } }
+  const ctrl = discover(kernel, dir, { rescanMs: 20, warnAfterMs: 100 })
+  t.teardown(() => ctrl.stop())
+
+  await new Promise((resolve) => setTimeout(resolve, 60))
+  t.alike(warnings, [], 'silent while a slow start is still plausible')
+
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  t.is(warnings.length, 1, 'warned once, not once per rescan')
+  t.ok(warnings[0].includes('"ocean-pool-worker"'), 'names the worker')
+  t.ok(warnings[0].includes(K1.slice(0, 16)), 'and the key that is failing')
+})
+
+test('discoverWorkerKeys - a registered worker is silent, and a recovery resolves its warning', async (t) => {
+  const dir = path.join(keysTmp(t), 'keys')
+  publishWorkerKey(dir, 'late-worker', K1)
+  const warnings = captureWarnings(t)
+
+  let ready = false
+  const kernel = { dhtListener: { discoverWorker: async () => ready } }
+  const ctrl = discover(kernel, dir, { rescanMs: 20, warnAfterMs: 100 })
+  t.teardown(() => ctrl.stop())
+
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  t.is(warnings.length, 1, 'warned while unreachable')
+
+  ready = true
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  t.is(warnings.length, 2, 'the recovery is reported too — an unresolved warning is its own bug report')
+  t.ok(warnings[1].includes('registered after'), warnings[1])
+})
+
+test('discoverWorkerKeys - a healthy worker never warns', async (t) => {
+  const dir = path.join(keysTmp(t), 'keys')
+  publishWorkerKey(dir, 'healthy-worker', K1)
+  const warnings = captureWarnings(t)
+
+  const kernel = { dhtListener: { discoverWorker: async () => true } }
+  const ctrl = discover(kernel, dir, { rescanMs: 20, warnAfterMs: 50 })
+  t.teardown(() => ctrl.stop())
+
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  t.alike(warnings, [])
+})

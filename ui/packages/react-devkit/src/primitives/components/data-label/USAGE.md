@@ -27,6 +27,7 @@ const end = new Date(2025, 2, 15)
 
 ## Notes
 
-- Wrap your app in `<MdkProvider>` so the timezone store is available
+- Pure: pass `timezone` to override the browser's, and `useTimezone().timezone` from `@tetherto/mdk-react-adapter` to follow the
+  user's selection
 - Styling uses the `mdk-data-label` BEM block; no size or color variants
 - Use a dark toolbar background so default light text remains readable

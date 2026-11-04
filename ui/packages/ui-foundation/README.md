@@ -19,8 +19,8 @@ npm install @tetherto/mdk-ui-foundation
 
 ### Sessions
 
-- **`AuthProvider`**: the seam that says how a session works (token source, sign-in, refresh, sign-out). `bearerTokenAuth()`
-  and `noAuth()` ship here; the mining preset ships `gatewayRedirectAuth()`
+- **`AuthProvider`**: the seam that says how a session works (token source, sign-in, refresh, sign-out). `bearerTokenAuth()`,
+  `noAuth()` and `gatewayRedirectAuth()` all ship here
 - **`passwordAuth({ baseUrl })`**: user name and password against an MDK stack's Gateway, through the Kernel's token issuer.
   `signInWithPassword({ username, password })` calls `POST /auth/login`; the refresh token stays in the Gateway's httpOnly
   cookie, out of reach of page scripts. The provider renews the access token on a timer and when a request comes back 401 (pass
@@ -46,9 +46,11 @@ await auth.signInWithPassword({ username, password }) // on the sign-in page
 
 ### Auth
 
-- **Providers**: `gatewayRedirectAuth({ oauthBaseUrl })` — the Gateway's OAuth-redirect sign-in plus
+- **Providers**: `passwordAuth({ baseUrl })` for every dashboard on an MDK stack;
+  `gatewayRedirectAuth({ oauthBaseUrl })` for the Gateway's OAuth-redirect sign-in plus
   `POST /auth/token` refresh (`authTokenMutation`) on a 250 s cadence; `bearerTokenAuth()` for a
-  Gateway-issued token you already hold; `noAuth()` for a Gateway without an auth plugin
+  Gateway-issued token you already hold; `noAuth()` for fixture-backed demos, since every app route
+  on a real stack answers `401`
 
 ### Device types and tags
 
@@ -90,9 +92,16 @@ Additional type modules: [`types/settings.types.ts`](./src/types/settings.types.
 | `./store`            | Zustand vanilla stores                                                                 |
 | `./query`            | `createMdkQueryClient` and the client's base URL / fetcher readers                    |
 | `./types`            | Shared type contracts                                                                  |
+| `./app-shared-modules` | The modules a shell hands installed app UIs through its import map                   |
+| `./app-ui-paths`     | The manifest and mount paths a shell reads installed app UIs from                      |
 | `./stores.json`      | Machine-readable store + query-helper manifest (generated at build time)              |
 
 ## Build strategy
 
 Fully pre-built: TypeScript → ESM JS + `.d.ts` declarations under `dist/`. Consuming framework
 adapters import the compiled output.
+
+Every relative import in the published source names its `.js` file, with no `@/` alias, and the package compiles with
+`"moduleResolution": "NodeNext"` and no `paths`, so `tsc` rejects either. `npm run build` ends with `check:node-esm`, which
+imports every `exports` entry in plain `node`. So `dist/` loads without a bundler, and its declarations typecheck under
+both `"moduleResolution": "nodenext"` and `"bundler"`.

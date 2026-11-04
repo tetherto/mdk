@@ -1,5 +1,5 @@
 id: io.tether.benchmark-fleet
-version: 0.12.2
+version: 0.13.1
 displayName: Benchmark Fleet Summary
 description: "Benchmark harness app: aggregates hashrate and power across every registered device."
 permissions:

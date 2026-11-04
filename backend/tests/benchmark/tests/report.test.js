@@ -85,6 +85,25 @@ test('evaluateThresholds: RSS slope red is demoted to amber below the 24h soak',
   t.is(evaluateThresholds(makeProfile({ rssSlopeMiBPerHour: null }), THRESHOLDS).rssSlope, '_')
 })
 
+test('evaluateThresholds: a full soak is held to the leak bar, not the short-run one', (t) => {
+  // 1 GiB/h is far below the short-run bar but is a real leak over 24 h.
+  const leaking = makeProfile({ rssSlopeMiBPerHour: 1024 })
+  leaking.runReproducibility.soakMs = leaking.runReproducibility.soakMinimumMsForGrowthClaims
+  t.ok(THRESHOLDS.rssSlopeFlatMiBPerHour > 1024, 'the short-run bar would have passed it')
+  t.is(evaluateThresholds(leaking, THRESHOLDS).rssSlope, 'red', 'a 24 h soak flags it')
+
+  const flat = makeProfile({ rssSlopeMiBPerHour: THRESHOLDS.rssSlopeLeakMiBPerHour / 2 })
+  flat.runReproducibility.soakMs = flat.runReproducibility.soakMinimumMsForGrowthClaims
+  t.is(evaluateThresholds(flat, THRESHOLDS).rssSlope, 'green', 'growth under the leak bar stays green')
+
+  const shortRun = makeProfile({ rssSlopeMiBPerHour: 1024 })
+  t.is(evaluateThresholds(shortRun, THRESHOLDS).rssSlope, 'green', 'a short run still uses the load-calibrated bar')
+
+  const shrinking = makeProfile({ rssSlopeMiBPerHour: -1024 })
+  shrinking.runReproducibility.soakMs = shrinking.runReproducibility.soakMinimumMsForGrowthClaims
+  t.is(evaluateThresholds(shrinking, THRESHOLDS).rssSlope, 'green', 'a heap that shrinks over a full soak is not a leak')
+})
+
 test('writeReport: writes JSON + template-shaped Markdown (drills skipped)', (t) => {
   const dir = tmpDir(t)
   const store = path.join(dir, 'store')

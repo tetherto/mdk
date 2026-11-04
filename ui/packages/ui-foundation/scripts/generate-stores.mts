@@ -9,7 +9,7 @@
  *   {
  *     "version", "package",
  *     "stores": [{ name, category, description, state, actions, factory, singleton, file }],
- *     "queryHelpers": [{ name, signature, description, category, file }]
+ *     "queryHelpers": [{ name, signature, description, descriptionFull?, category, file }]
  *   }
  *
  * Each store entry pairs the `createX` factory with the module-level
@@ -68,6 +68,8 @@ type QueryHelperEntry = {
   name: string;
   signature: string;
   description: string;
+  /** Every paragraph of the TSDoc, list items on their own lines; present only when it differs from `description`. */
+  descriptionFull?: string;
   category: string;
   file: string;
 };
@@ -155,6 +157,40 @@ const extractDescription = (docs: JsDocLike[]): string => {
   const raw = last.getDescription();
   const firstPara = raw.split(/\n\s*\n/)[0] ?? raw;
   return truncate(normaliseWhitespace(firstPara), DESCRIPTION_MAX_CHARS);
+};
+
+const LIST_ITEM = /^\s*(\d+\.|[-*+])\s/;
+
+const indentOf = (line: string): number => line.length - line.trimStart().length;
+
+// Paragraphs are kept whole and uncapped on purpose: the point is to keep what
+// `description`'s first-paragraph, DESCRIPTION_MAX_CHARS cut drops (for example
+// `resolveApiBaseUrl`'s numbered resolution order). List items keep their
+// indentation relative to the paragraph's shallowest item, so nesting survives.
+const extractDescriptionFull = (docs: JsDocLike[]): string | undefined => {
+  const last = docs[docs.length - 1];
+  if (!last) return undefined;
+  const full = last
+    .getDescription()
+    .split(/\n\s*\n/)
+    .map((para) => {
+      if (para.trimStart().startsWith("```")) return para.trim();
+      const rows = para.split("\n").filter((line) => line.trim());
+      const baseIndent = Math.min(
+        ...rows.filter((line) => LIST_ITEM.test(line)).map(indentOf),
+      );
+      return rows
+        .reduce<string[]>((lines, line) => {
+          if (LIST_ITEM.test(line)) lines.push(line.slice(baseIndent).trimEnd());
+          else if (lines.length === 0) lines.push(line.trim());
+          else lines[lines.length - 1] += ` ${line.trim()}`;
+          return lines;
+        }, [])
+        .join("\n");
+    })
+    .filter(Boolean)
+    .join("\n\n");
+  return full && full !== extractDescription(docs) ? full : undefined;
 };
 
 const VALID_STORE_CATEGORIES: StoreCategory[] = [
@@ -366,10 +402,12 @@ const collectQueryHelpers = (project: Project): QueryHelperEntry[] => {
     }
 
     const docs = getJsDocsBubbling(decl);
+    const descriptionFull = extractDescriptionFull(docs);
     helpers.push({
       name,
       signature: truncate(normaliseWhitespace(signature), SIGNATURE_MAX_CHARS),
       description: extractDescription(docs),
+      ...(descriptionFull ? { descriptionFull } : {}),
       category: extractAnyCategory(docs, "query"),
       file: toRelative(source.getFilePath()),
     });

@@ -6,11 +6,21 @@
  * here as additional primitives (telemetry, commands, etc.) are introduced.
  */
 
-export * from './api-mining.types'
-export * from './chart.types'
-export * from './settings.types'
+export * from './api-mining.types.js'
+export * from './chart.types.js'
+export * from './settings.types.js'
 
+/**
+ * A listener called with the new value whenever a store changes.
+ *
+ * @category general
+ */
 export type SubscriberCallback<T> = (value: T) => void
+/**
+ * Call to stop a subscription. Returned when you subscribe to a store.
+ *
+ * @category general
+ */
 export type Unsubscribe = () => void
 
 /**

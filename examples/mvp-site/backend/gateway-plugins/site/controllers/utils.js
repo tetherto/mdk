@@ -19,6 +19,19 @@ const requestClient = (req, ctx) => {
 // The Kernel refused this caller (or the user it acts for) the call.
 const isForbidden = (err) => !!err && String(err.code || err.message).startsWith('ERR_KERNEL_ACTION_FORBIDDEN')
 
+// The Kernel answers a command it refuses before queuing it (unknown device or
+// Worker, a Worker it cannot route to, a command or params outside the contract)
+// with { status: 'REJECTED', error } rather than throwing. Raise it, so the caller
+// gets an error status and the reason instead of a 200: 404 when the target does
+// not exist, 422 otherwise.
+const NOT_FOUND_CODES = ['ERR_DEVICE_NOT_FOUND', 'ERR_WORKER_NOT_FOUND']
+const throwIfRejected = (result) => {
+  if (!result || result.status !== 'REJECTED') return
+  const code = String(result.error || 'ERR_COMMAND_REJECTED')
+  const statusCode = NOT_FOUND_CODES.some((c) => code.startsWith(c)) ? 404 : 422
+  throw Object.assign(new Error(code), { statusCode })
+}
+
 // Fallback when a config pull fails or omits deviceFamily — keyed by stable workerId.
 const WORKER_FAMILY = {
   'whatsminer-worker': 'miner',
@@ -81,9 +94,26 @@ const adaptContractMiners = async (mdkClient, worker) => {
   }))
 }
 
+const readableDeviceIds = async (mdkClient, deviceIds) => {
+  const readable = await Promise.all(deviceIds.map(async (deviceId) => {
+    try {
+      await mdkClient.getCapabilities(deviceId)
+      return true
+    } catch (err) {
+      return !isForbidden(err)
+    }
+  }))
+  return deviceIds.filter((_, i) => readable[i])
+}
+
 // List workers and classify each by deviceFamily (contract or workerId fallback).
 // One list pull per worker — with { status: true } each thing carries its latest
 // snapshot (thg.last.snap). The minerpool is a scheduler worker with no things.
+//
+// A Worker whose devices cannot be read (Kernel reports it DEAD or TERMINATED, or
+// the contract adapter failed) is listed in `unavailable` as { workerId, reason },
+// so a consumer can tell an outage from an empty site instead of seeing its
+// devices silently disappear.
 const loadSite = async (mdkClient, opts = {}) => {
   if (!mdkClient) throw new Error('ERR_MDK_CLIENT_UNAVAILABLE')
 
@@ -92,9 +122,20 @@ const loadSite = async (mdkClient, opts = {}) => {
 
   const byFamily = {}
   const pools = []
+  const unavailable = []
+  // The devices of a Worker that is down, flagged rather than dropped. Same rule as the
+  // forbidden-skip below: only devices this caller may read. device.capabilities is checked
+  // as devices:read and answered by the Kernel, so it still works while the Worker is down.
+  const unavailableDevices = []
 
   await Promise.all(workers.map(async (w) => {
-    if (w.state === 'TERMINATED' || w.healthState === 'DEAD') return
+    if (w.state === 'TERMINATED' || w.healthState === 'DEAD') {
+      unavailable.push({ workerId: w.workerId, reason: w.state === 'TERMINATED' ? 'TERMINATED' : 'DEAD' })
+      for (const deviceId of await readableDeviceIds(mdkClient, w.deviceIds || [])) {
+        unavailableDevices.push({ deviceId, workerId: w.workerId, status: 'offline', stale: true })
+      }
+      return
+    }
 
     const anchor = telemetryAnchor(w)
     let cfg
@@ -114,9 +155,12 @@ const loadSite = async (mdkClient, opts = {}) => {
     }
 
     if (!family) {
-      // No worker-infra surface — fall back to contract classification
-      // (rejections mean "not adaptable", same as unknown family before).
-      const adapted = await adaptContractMiners(mdkClient, w).catch(() => null)
+      // No worker-infra surface — fall back to contract classification. A
+      // rejection means the Worker did not answer, which is reported, not hidden.
+      const adapted = await adaptContractMiners(mdkClient, w).catch((err) => {
+        if (!isForbidden(err)) unavailable.push({ workerId: w.workerId, reason: String((err && (err.code || err.message)) || 'ERR_WORKER_UNAVAILABLE') })
+        return null
+      })
       if (adapted && adapted.length) {
         if (!byFamily.miner) byFamily.miner = []
         byFamily.miner.push(...adapted)
@@ -149,7 +193,9 @@ const loadSite = async (mdkClient, opts = {}) => {
     for (const thg of things) byFamily[family].push({ ...thg, workerId: w.workerId })
   }))
 
-  return { workers, byFamily, pools }
+  unavailable.sort((a, b) => a.workerId.localeCompare(b.workerId))
+  unavailableDevices.sort((a, b) => a.deviceId.localeCompare(b.deviceId))
+  return { workers, byFamily, pools, unavailable, unavailableDevices }
 }
 
 // Pool stats come two ways with the same row shape: the WorkerRuntime pool
@@ -189,4 +235,4 @@ const snapConfig = (thg) => {
   return (thg && thg.last && thg.last.snap && thg.last.snap.config) || {}
 }
 
-module.exports = { loadSite, snapStats, snapConfig, requestClient, pullPoolStats, pullPoolStatsHistory, WORKER_FAMILY, resolveFamily }
+module.exports = { loadSite, snapStats, snapConfig, requestClient, throwIfRejected, pullPoolStats, pullPoolStatsHistory, WORKER_FAMILY, resolveFamily }

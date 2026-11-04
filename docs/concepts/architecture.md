@@ -66,8 +66,10 @@ one device family (the contract declares the capability surface; the plugin's ha
 
 ## The three tiers
 
-**[Gateway][gateway-concept]**: a container that hosts plugins and exposes them over HTTP. It is the active side of the
-Kernel connection (it dials Kernel, never the reverse). This is the tier where *user*-level authentication, aggregation,
+**[Gateway][gateway-concept]**: an HTTP router in front of the Kernel. It reads each app's route table and forwards the
+request to that app's own runtime process, running no app code itself. App runtimes dial Kernel for device traffic. For identity and
+policy, the Gateway uses an in-process Kernel directly, or dials a Kernel in another process as its own service account.
+Whoever connects is the active side, and Kernel never dials up. This is the tier where *user*-level authentication, aggregation,
 and business logic live. Aggregation here means the cross-Worker queries no single Worker can answer — site hashrate,
 average temperature, cross-rack efficiency — resolved in controller code, since Kernel computes none of them. Kernel's own
 allowlist, when configured, gates which *connections* it accepts: a [transport-level check, not a user identity][security-boundaries].
@@ -132,6 +134,11 @@ Discover each layer's canonical docs:
 For the per-package detail in each workspace, read the [core package index][core-docs] and the [UI toolkit index][ui-index].
 How many of each a deployment runs is covered by [scalability][scalability].
 
+> [!NOTE]
+> The [React adapter][react-adapter] and the [Node.js client][client-concept] do not mirror each other. Some Kernel operations,
+> such as the [write-action flow][write-actions], are methods on the client, which an app calls and exposes as HTTP routes; a UI
+> reads those routes with `useQuery` from the adapter. Start with the adapter for UI work and with the client for backend work.
+
 ## Next steps
 
 - Understand [the integration model][integration-model]: what a Worker Plugin and an app each get to do
@@ -148,7 +155,7 @@ How many of each a deployment runs is covered by [scalability][scalability].
 <!-- docs@tether.io: worker-discovery → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/architecture.md#discovery-model -->
 
 [deployment-connectivity]: deployment-topologies.md#discovery-vs-transport
-<!-- docs@tether.io: deployment-connectivity → concepts/deployment-topologies#discovery-vs-transport -->
+<!-- docs@tether.io: deployment-connectivity → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md#discovery-vs-transport -->
 
 [worker-allowlist]: ../../backend/core/mdk-worker/README.md#caller-allowlist
 <!-- docs@tether.io: worker-allowlist → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#caller-allowlist -->
@@ -161,6 +168,12 @@ How many of each a deployment runs is covered by [scalability][scalability].
 
 [client-concept]: ../../backend/core/client/README.md
 <!-- docs@tether.io: client-concept → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md -->
+
+[react-adapter]: ../../ui/packages/react-adapter/README.md
+<!-- docs@tether.io: react-adapter → https://github.com/tetherto/mdk/blob/main/ui/packages/react-adapter/README.md -->
+
+[write-actions]: ../guides/gateway/write-actions.md
+<!-- docs@tether.io: write-actions → guides/gateway/write-actions -->
 
 [kernel-concept]: ../../backend/core/kernel/README.md
 <!-- docs@tether.io: kernel-concept → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md -->

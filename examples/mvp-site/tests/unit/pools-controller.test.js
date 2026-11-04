@@ -71,6 +71,18 @@ test('pools controller - falls back to config worker.pools', async (t) => {
   t.alike(res.pools, deploy.worker.pools.map((p) => p.url))
 })
 
+test('pools controller - a rejected command answers 404 with the Kernel error', async (t) => {
+  const { services } = makeServices({ status: 'REJECTED', error: 'ERR_DEVICE_NOT_FOUND' })
+  const pools = [{ url: 'stratum+tcp://p:1', worker_name: 'w' }]
+  try {
+    await controller({ params: { deviceId: 'nope' }, body: { pools } }, services)
+    t.fail('expected a rejection')
+  } catch (err) {
+    t.is(err.message, 'ERR_DEVICE_NOT_FOUND')
+    t.is(err.statusCode, 404)
+  }
+})
+
 test('pools controller - passes appendId false through', async (t) => {
   const { services, calls } = makeServices()
   const pools = [{ url: 'stratum+tcp://p:1', worker_name: 'w' }]

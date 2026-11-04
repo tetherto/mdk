@@ -11,13 +11,13 @@
  *   - Shared API types and pool/settings/chart type contracts
  */
 
-export * from './apps'
-export * from './auth'
-export * from './constants'
-export * from './query'
-export * from './store'
-export * from './types'
+export * from './apps/index.js'
+export * from './auth/index.js'
+export * from './constants/index.js'
+export * from './query/index.js'
+export * from './store/index.js'
+export * from './types/index.js'
 
-export * from './utils'
+export * from './utils/index.js'
 
 export const VERSION = '0.0.1'

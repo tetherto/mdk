@@ -5,7 +5,7 @@
 export type AuthConfig = {
   /** User has super admin privileges */
   superAdmin?: boolean
-  /** Array of permission strings (e.g., ['users:read', 'posts:rw']) */
+  /** Array of permission strings (e.g., ['users:r', 'posts:rw']) */
   permissions?: string[]
   /** User has write access */
   write?: boolean
@@ -17,7 +17,7 @@ export type AuthConfig = {
  * Permission check criteria
  */
 export type PermissionCheck = {
-  /** Permission string to check (e.g., 'users:read', 'posts:rw') */
+  /** Permission string to check (e.g., 'users:r', 'posts:rw') */
   perm?: string
   /** Check if user has write access */
   write?: boolean
@@ -64,7 +64,7 @@ const hasSegregatedPermission = (userPermissions: string[], requestedPerm: strin
  *
  * @param config - User's authentication configuration
  * @param check - Permission criteria to validate
- * @param check.perm - Permission string to check (e.g., 'users:read', 'posts:rw')
+ * @param check.perm - Permission string to check (e.g., 'users:r', 'posts:rw')
  * @param check.write - Check if user has write access
  * @param check.cap - Capability to check (e.g., 'admin', 'revenue')
  * @returns true if user has the requested permission
@@ -72,7 +72,7 @@ const hasSegregatedPermission = (userPermissions: string[], requestedPerm: strin
  * @example
  * ```ts
  * // Direct permission match
- * checkPermission(config, { perm: 'users:read' })
+ * checkPermission(config, { perm: 'users:r' })
  *
  * // Segregated permission levels (user has 'users:rw', checking for 'users:r')
  * checkPermission(config, { perm: 'users:r' }) // true

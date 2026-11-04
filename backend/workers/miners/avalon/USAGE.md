@@ -4,7 +4,7 @@ Drives Canaan Avalon Bitcoin miners over the native TCP CGMiner API. Supports on
 
 This page documents what's specific to Avalon: the SDK surface: the manager class this package exports, how to run a mock device, and the shape of `registerThing` options. For the runtime contract — telemetry units, command shapes, error codes, alert thresholds — read [`mdk-contract.json`](plugin/mdk-contract.json) directly. For model coverage across all Workers, see the [generated catalogue](../../docs/supported-workers.md).
 
-For the canonical install pattern that applies to every Worker in the monorepo, see [`backend/workers/docs/install-pattern.md`](../../docs/install-pattern.md). 
+For the canonical install pattern that applies to every Worker in the monorepo, see [`backend/workers/docs/install-pattern.md`](../../docs/install-pattern.md).
 
 ## Exported functions
 
@@ -93,19 +93,38 @@ metadata stored alongside the device; common fields
 read by the dashboard are `container`, `serialNum`, `macAddress`, `pos`, and `site`. Nothing in `info` affects Worker
 behavior.
 
-To register a device with an already-running Worker instead of at boot, send the `registerThing` command over HRPC:
+To register a device with an already-running Worker instead of at boot, push a `registerThing` write action through the Kernel. The Kernel routes it
+to the Worker named in `params[0].workerId` and runs it once the action has the approvals that Worker requires:
 
 ```js
 const { createMdkClient } = require('@tetherto/mdk-client')
+const { name, privateKeyPem } = require('./.mdk/credentials/agents/provisioner.json')
 
-const client = createMdkClient({ kernelKey: kernel.getPublicKey() })
+const client = createMdkClient({
+  kernelKey: kernel.getPublicKey(),
+  kernelCredential: { name, privateKey: privateKeyPem }
+})
 await client.connect()
-await client.sendWorkerCommand('avalon-rack-1', null, 'registerThing', {
-  id: 'AV-002',
-  info: { container: 'site-1', serialNum: 'AV-002' },
-  opts: { address: '127.0.0.1', port: 14031 }
+await client.pushAction({
+  query: {},
+  action: 'registerThing',
+  voter: 'provisioner',
+  authPerms: ['miner:w'],
+  params: [{
+    workerId: 'avalon-rack-1',
+    id: 'AV-002',
+    info: { container: 'site-1', serialNum: 'AV-002' },
+    opts: { address: '127.0.0.1', port: 14031 }
+  }]
 })
 ```
+
+`registerThing` is a write action, so the Kernel evaluates it against `spec.rbac` before any Worker sees it.
+`mdk sa add provisioner` writes the credential this reads, and the account needs `actions: write` to push, plus
+`devices: write`.
+[Provisioning a device](../../../../docs/guides/security/index.md#provisioning-a-device) covers how to scope that grant
+and why a successful push is not yet a live device.
+
 
 `registerThing` persists the device config immediately, but it only takes effect once the Worker is stopped and
 restarted (`await worker.stop()`, then `startAvalonWorker` again with the same `storeDir` and no `seedDevices`) —
@@ -115,15 +134,16 @@ there is no hot-add. See
 
 ## Run against a mock
 
-Start the mock from the repo root, then boot the Worker against it with the `startAvalonWorker` call in
-[Registering devices](#registering-devices):
+Start the mock from the repo root on the port your `seedDevices` entry names, then boot the Worker against it with the
+`startAvalonWorker` call in [Registering devices](#registering-devices), which uses `14030`:
 
 ```bash
 npm run mock a1346 14030
 ```
 
 The [Avalon Worker guide](../../../../docs/guides/miners/run-avalon-worker.md) has a complete, runnable `avalon-dev.js`
-for the second terminal.
+for the second terminal. Its seed entry uses the CGMiner default `4028`, so start the mock with `npm run mock a1346 4028`
+for that script.
 
 ## Capabilities
 

@@ -8,6 +8,23 @@
 import { createIcon } from '@tetherto/mdk-react-devkit/primitives'
 
 /**
+ * The header set shares one grid.
+ *
+ * `size` only scales the `svg` box — it says nothing about how much of that box
+ * the drawing fills. The header renders New conversation, Conversations and
+ * Close side by side at 16px, so a glyph that inks less of its viewBox than its
+ * neighbour reads as a smaller icon however equal the `size` props are. That is
+ * what shipped: Close spanned 6.8 of its 16px box against New conversation's
+ * 14.5, with stroke widths of 1.1, 1.2 and 1.4 between them.
+ *
+ * So every header glyph is drawn on a 16×16 viewBox, inked inside the same
+ * 14px live area — 1 to 15 on both axes — at {@link GLYPH_STROKE}. A chevron
+ * cannot fill a square, so BackIcon matches on height and centres on width;
+ * everything else fills the area outright.
+ */
+const GLYPH_STROKE = '1.2'
+
+/**
  * The launcher glyph: a round speech bubble whose tail points to the
  * bottom-right corner.
  *
@@ -57,9 +74,9 @@ export const SendIcon = createIcon({
  * New conversation: a square-cornered message box with a center-bottom tail and
  * a plus inside.
  *
- * Squared off, not rounded — the design's box runs the full 16px width with hard
- * corners, and the tail drops from the middle of the bottom edge rather than
- * from a corner.
+ * Squared off, not rounded — the design's box has hard corners, and the tail
+ * drops from the middle of the bottom edge rather than from a corner. Scaled to
+ * the shared live area: box 1 → 15 across, tail tip on the baseline at y 15.
  */
 export const MessagePlusIcon = createIcon({
   displayName: 'MessagePlusIcon',
@@ -67,9 +84,15 @@ export const MessagePlusIcon = createIcon({
   defaultWidth: 16,
   defaultHeight: 16,
   path: ({ color }) => (
-    <g stroke={color} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.1">
-      <path d="M0.75 0.75H15.25V12.05H9.1L7.6 15.1L6.1 12.05H0.75Z" />
-      <path d="M7.6 4.2V9.2M5.1 6.7H10.1" />
+    <g
+      stroke={color}
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={GLYPH_STROKE}
+    >
+      <path d="M1 1H15V11.9H9L8 15L7 11.9H1Z" />
+      <path d="M8 4V8.9M5.55 6.45H10.45" />
     </g>
   ),
 })
@@ -77,6 +100,9 @@ export const MessagePlusIcon = createIcon({
 /**
  * Conversations: two squares, each with a rule to its right — a list whose
  * bullets are boxes, not the plain stack of lines this originally drew.
+ *
+ * The rules sit on each square's centre line, and the pair spans the full live
+ * area top to bottom so the glyph weighs the same as its neighbours.
  */
 export const ListLayoutIcon = createIcon({
   displayName: 'ListLayoutIcon',
@@ -84,14 +110,21 @@ export const ListLayoutIcon = createIcon({
   defaultWidth: 16,
   defaultHeight: 16,
   path: ({ color }) => (
-    <g stroke={color} fill="none" strokeLinecap="square" strokeWidth="1.1">
-      <path d="M0.55 1.55H4.45V5.45H0.55Z" />
-      <path d="M0.55 10.55H4.45V14.45H0.55Z" />
-      <path d="M7.1 3.5H15.45M7.1 12.5H15.45" />
+    <g
+      stroke={color}
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={GLYPH_STROKE}
+    >
+      <path d="M1 1H4.9V4.9H1Z" />
+      <path d="M1 11.1H4.9V15H1Z" />
+      <path d="M7.2 2.95H15M7.2 13.05H15" />
     </g>
   ),
 })
 
+/** Close: the live area's two diagonals, corner to corner. */
 export const CloseIcon = createIcon({
   displayName: 'CloseIcon',
   viewBox: '0 0 16 16',
@@ -100,9 +133,11 @@ export const CloseIcon = createIcon({
   path: ({ color }) => (
     <path
       stroke={color}
+      fill="none"
       strokeLinecap="round"
-      strokeWidth="1.2"
-      d="M4.6 4.6 11.4 11.4M11.4 4.6 4.6 11.4"
+      strokeLinejoin="round"
+      strokeWidth={GLYPH_STROKE}
+      d="M1 1 15 15M15 1 1 15"
     />
   ),
 })
@@ -134,6 +169,12 @@ export const TrashIcon = createIcon({
   ),
 })
 
+/**
+ * Back: a 45° chevron, full live-area height.
+ *
+ * A chevron cannot fill a square, so this matches the set on height (1 → 15)
+ * and centres its 7px width rather than stretching to meet the edges.
+ */
 export const BackIcon = createIcon({
   displayName: 'BackIcon',
   viewBox: '0 0 16 16',
@@ -142,10 +183,11 @@ export const BackIcon = createIcon({
   path: ({ color }) => (
     <path
       stroke={color}
+      fill="none"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="1.4"
-      d="M10 3 5 8l5 5"
+      strokeWidth={GLYPH_STROKE}
+      d="M11.5 1 4.5 8l7 7"
     />
   ),
 })

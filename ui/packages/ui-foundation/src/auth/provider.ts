@@ -19,8 +19,8 @@
 
 import type { QueryClient } from '@tanstack/query-core'
 
-import { authStore } from '../store/auth-store'
-import { MdkFetchError } from '../types/api-mining.types'
+import { authStore } from '../store/auth-store.js'
+import { MdkFetchError } from '../types/api-mining.types.js'
 
 /**
  * HTTP status a backend returns once the bearer token has expired. Any request —
@@ -145,8 +145,9 @@ export const bearerTokenAuth = (options: BearerTokenAuthOptions = {}): AuthProvi
 /**
  * No authentication: no token, no sign-in, nothing to expire.
  *
- * For a Gateway running without an auth plugin (local dev), and for a demo
- * where there is no server to authenticate against. `RequireAuth` gates on token presence, so a demo using
+ * For a fixture-backed demo, where there is no server to authenticate against:
+ * every app route on a real stack answers 401, so this is not a way onto one.
+ * `RequireAuth` gates on token presence, so a demo using
  * this needs to render its content outside that guard (or seed a placeholder
  * token) — `noAuth` deliberately does not fake one, because a fake token would
  * be sent as a real `Authorization` header.

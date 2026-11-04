@@ -22,6 +22,15 @@ export const APP_NAME = 'MDK UI Shell'
 export const AUTH_BYPASS: boolean = import.meta.env.VITE_AUTH_BYPASS === 'true'
 
 /**
+ * Mounts the operator co-pilot even when this dashboard's app list does not
+ * name the agent app: for a dashboard run with plain `npm run dev`, or built
+ * with `npm run build` outside `mdk run dashboard`, against a Gateway that
+ * carries it. Vite inlines it at build time. `mdk run dashboard` needs no flag;
+ * it lists the stack's apps, and the co-pilot follows the agent app.
+ */
+export const AGENT_COPILOT: boolean = import.meta.env.VITE_AGENT_COPILOT === 'true'
+
+/**
  * How users sign in. `password` (an MDK stack's Gateway: `POST /auth/login`
  * through the Kernel's token issuer) or `oauth` (the mining Gateway's Google
  * redirect, the default). `mdk create dashboard` sets `password`.

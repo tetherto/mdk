@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -85,12 +85,58 @@ describe('createApp', () => {
 
     const pkg = JSON.parse(readFileSync(join(appPath, 'package.json'), 'utf8'));
     // These tests run from the checkout, so the MDK backend dependency links to it.
-    expect(pkg.dependencies['@tetherto/mdk-client']).toBe(`file:${join(REPO_ROOT, 'backend', 'core', 'client')}`);
+    const client: string = pkg.dependencies['@tetherto/mdk-client'];
+    expect(client).toMatch(/^file:\.\.?\//);
+    expect(resolve(appPath, client.slice('file:'.length))).toBe(join(REPO_ROOT, 'backend', 'core', 'client'));
 
     const readme = readFileSync(join(appPath, 'README.md'), 'utf8');
     expect(readme).toContain('@tetherto/mdk-gateway/plugin');
     expect(readme).toContain('plugin/lib/client.js');
     expect(readme).toMatch(/do \*\*not\*\* take `mdkClient`/);
+  });
+
+  describe('flat (a standalone app repo)', () => {
+    it('scaffolds at the root of the directory, not under apps/<name>, and links nothing', () => {
+      const dir = makeTmpDir();
+      mkdirSync(join(dir, '.git'));
+      writeFileSync(join(dir, '.git', 'HEAD'), 'ref: refs/heads/__PLUGIN_NAME__\n');
+      writeFileSync(join(dir, '.gitignore'), 'dist/\n');
+
+      const result = createApp({ name: 'ops', parentDir: dir, flat: true });
+
+      expect(result).toMatchObject({ ok: true, appPath: resolve(dir) });
+      expect(result.stackFile).toBeUndefined();
+      expect(result.grant).toBeUndefined();
+      expect(installScaffoldMock).not.toHaveBeenCalled();
+      for (const entry of ['package.json', 'mdk-app.yaml', 'plugin/mdk-plugin.json', 'ui-src/index.tsx', 'ui/index.js']) {
+        expect(existsSync(join(dir, entry))).toBe(true);
+      }
+      expect(existsSync(join(dir, 'apps'))).toBe(false);
+      expect(validateApp(dir).errors).toEqual([]);
+      // Files the template did not bring are left as they were.
+      expect(readFileSync(join(dir, '.git', 'HEAD'), 'utf8')).toBe('ref: refs/heads/__PLUGIN_NAME__\n');
+      expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('dist/\nnode_modules/\n');
+    });
+
+    it('refuses an MDK project directory', () => {
+      const dir = makeTmpDir();
+      writeFileSync(join(dir, 'mdk.yaml'), 'metadata:\n  name: my-stack\n', 'utf8');
+      const result = createApp({ name: 'ops', parentDir: dir, flat: true });
+      expect(result.ok).toBe(false);
+      expect(result.message).toMatch(/is an MDK project/);
+      expect(existsSync(join(dir, 'mdk-app.yaml'))).toBe(false);
+    });
+
+    it('refuses to overwrite an existing app without --force', () => {
+      const dir = makeTmpDir();
+      writeFileSync(join(dir, 'package.json'), '{"name":"mine"}');
+      const blocked = createApp({ name: 'ops', parentDir: dir, flat: true });
+      expect(blocked.ok).toBe(false);
+      expect(blocked.message).toMatch(/already has package\.json/);
+      expect(readFileSync(join(dir, 'package.json'), 'utf8')).toBe('{"name":"mine"}');
+
+      expect(createApp({ name: 'ops', parentDir: dir, flat: true, force: true }).ok).toBe(true);
+    });
   });
 
   it('refuses the name reserved for the dashboard', () => {

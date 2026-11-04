@@ -50,7 +50,8 @@ export declare function assemble(): AssembleResult;
 
 /**
  * Install the assembled skills into a project's client skills directories.
- * Throws if a client dir segment under the target is a symlink; skips (and
+ * Follows a client dir segment that is a symlink to a directory inside the
+ * project, and throws if one leaves the project, dangles or points at a file; skips (and
  * warns about) existing same-named skill dirs that are not suite skills. Stale
  * MDK-shipped skills are swept; user-authored skills are left untouched.
  */

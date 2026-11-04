@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { PendingApproval, ToolStep } from '../core/turn'
 import { TOOL_STATUS } from '../core/turn'
@@ -169,12 +169,36 @@ describe('AssistantMessage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('could not complete')
   })
 
-  it('reads an ERR_ code out as a sentence', () => {
+  it('reads an ERR_ code out as a sentence, keeping the code under Details', () => {
     // The reducer records what the `error` event carried, which is a bare code.
+    // The sentence is what the operator reads; the code is what a bug report
+    // needs, so it is folded away rather than dropped.
     render(<AssistantMessage text="" error="ERR_AGENT_STREAM_TRUNCATED" />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('ended before the answer finished')
-    expect(screen.getByRole('alert')).not.toHaveTextContent('ERR_')
+
+    const details = screen.getByText('Details').closest('details')
+    expect(details).not.toBeNull()
+    expect(details).not.toHaveAttribute('open')
+    expect(details).toHaveTextContent('ERR_AGENT_STREAM_TRUNCATED')
+  })
+
+  it('does not offer a retry that cannot work', () => {
+    // Re-sending to a stack with no agent app fails identically, so the button
+    // would only teach the operator that it does nothing.
+    render(<AssistantMessage text="" error="ERR_AGENT_ROUTES_NOT_MOUNTED" onRetry={vi.fn()} />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent('no agent app installed')
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
+  })
+
+  it('disables the retry while the browser says it is offline', () => {
+    render(
+      <AssistantMessage text="" error="ERR_AGENT_OFFLINE" isOnline={false} onRetry={vi.fn()} />,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent("You're offline")
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeDisabled()
   })
 
   it('offers a retry on a failed turn, so the question is not retyped', async () => {
@@ -499,5 +523,119 @@ describe('ConversationList', () => {
 
     expect(screen.getByText('No conversations yet.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new conversation/i })).toBeInTheDocument()
+  })
+})
+
+describe('ConversationList — the delete confirmation', () => {
+  const rows = [
+    {
+      id: 'c1',
+      title: 'Site status',
+      sessionId: 'sess-1',
+      messages: [],
+      createdAt: 1_000,
+      updatedAt: Date.now(),
+    },
+  ]
+
+  const renderList = (onDelete = vi.fn()) => {
+    render(
+      <ConversationList
+        conversations={rows}
+        activeId="c1"
+        onSelect={vi.fn()}
+        onCreate={vi.fn()}
+        onDelete={onDelete}
+      />,
+    )
+    return onDelete
+  }
+
+  const openConfirm = async () =>
+    userEvent.click(screen.getByRole('button', { name: /Delete conversation: Site status/ }))
+
+  it('leaves the row intact, status and all', async () => {
+    // The buttons used to replace the badge, so the status the operator was
+    // deciding about disappeared at the moment they needed it.
+    renderList()
+    await openConfirm()
+
+    expect(screen.getByText('Idle')).toBeInTheDocument()
+    expect(screen.getByText('Site status')).toBeInTheDocument()
+    expect(screen.getByText(/messages/)).toBeInTheDocument()
+    expect(screen.getByText('Delete this conversation?')).toBeInTheDocument()
+  })
+
+  it('puts focus on Cancel, not on the destructive button', async () => {
+    // The strip opens under the pointer; Delete must not be one stray Enter away.
+    renderList()
+    await openConfirm()
+
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus()
+  })
+
+  it('backs out on Escape', async () => {
+    const onDelete = renderList()
+    await openConfirm()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.queryByText('Delete this conversation?')).not.toBeInTheDocument()
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(screen.getByText('Idle')).toBeInTheDocument()
+  })
+})
+
+describe('Composer — the auto-grow', () => {
+  // happy-dom lays nothing out, so the box model the effect reads is supplied
+  // here: the real stylesheet's 19px line, 10px padding each side, 1px border.
+  const LINE = 19
+  const PADDING = 20
+  const BORDERS = 2
+
+  function withBoxModel(textHeight: number) {
+    const style = {
+      lineHeight: `${LINE}px`,
+      paddingTop: '10px',
+      paddingBottom: '10px',
+      borderTopWidth: '1px',
+      borderBottomWidth: '1px',
+      boxSizing: 'border-box',
+    } as CSSStyleDeclaration
+
+    vi.spyOn(globalThis, 'getComputedStyle').mockReturnValue(style)
+    vi.spyOn(HTMLTextAreaElement.prototype, 'scrollHeight', 'get').mockReturnValue(
+      textHeight + PADDING,
+    )
+  }
+
+  afterEach(() => vi.restoreAllMocks())
+
+  it('adds the box chrome on top of the text rather than inside it', async () => {
+    // Two lines of text should be two lines tall, plus the padding and borders
+    // that are not text. `scrollHeight` already carries the padding, so it has
+    // to come off before the cap is applied and go back on after.
+    withBoxModel(LINE * 2)
+    render(<Composer onSend={vi.fn()} />)
+
+    await userEvent.type(screen.getByRole('textbox'), 'a')
+
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).style.height).toBe(
+      `${LINE * 2 + PADDING + BORDERS}px`,
+    )
+  })
+
+  it('caps at MAX_ROWS of readable text, not of box', async () => {
+    // The cap used to be compared against `scrollHeight` with the padding still
+    // in it, so the box stopped a row early and then stood a row of padding
+    // taller than the number claimed — which is what kept eating the transcript.
+    withBoxModel(LINE * 40)
+    render(<Composer onSend={vi.fn()} />)
+
+    await userEvent.type(screen.getByRole('textbox'), 'a')
+
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).style.height).toBe(
+      `${LINE * 5 + PADDING + BORDERS}px`,
+    )
   })
 })

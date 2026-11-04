@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand/vanilla'
-import type { DevicesStore } from './types'
+import type { DevicesStore } from './types.js'
 
 /** Free-text/tag filters applied to device list views. */
 export type FiltersSlice = Pick<DevicesStore, 'filterTags' | 'setFilterTags' | 'removeFilterTag'>

@@ -16,6 +16,7 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const { spawn } = require('child_process')
+const createTestnet = require('hyperdht/testnet')
 
 const FIXTURES = path.join(__dirname, '..', 'fixtures')
 
@@ -42,15 +43,22 @@ function waitFor (child, token, timeoutMs) {
   })
 }
 
-test('dht topic discovery - separately-spawned kernel + worker register over shared topic (no bootstrap)', { timeout: 60000 }, async (t) => {
+test('dht topic discovery - separately-spawned kernel + worker register over shared topic (no key handoff)', { timeout: 60000 }, async (t) => {
   const topic = crypto.randomBytes(32).toString('hex')
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mdk-dht-repro-'))
   const orkStore = path.join(root, 'kernel')
   const workerStore = path.join(root, 'worker')
 
+  // What this reproduces is two *separate processes* meeting through the topic
+  // with no key handoff. Which DHT carries them is incidental, so run it on a
+  // loopback testnet rather than the public network: the children reach it over
+  // loopback, and the test no longer needs outbound UDP.
+  const testnet = await createTestnet(3, t.teardown)
+  const bootstrap = ['--bootstrap', testnet.bootstrap.map((n) => `${n.host}:${n.port}`).join(',')]
+
   // Kernel joins first (client querying); worker joins after (server announcing),
   // so the Kernel connects during the worker's join window — the failure timing.
-  const kernel = spawnFixture('repro-kernel.js', topic, orkStore)
+  const kernel = spawnFixture('repro-kernel.js', topic, orkStore, bootstrap)
   t.teardown(() => new Promise((resolve) => {
     let pending = 2
     const done = () => {
@@ -69,7 +77,7 @@ test('dht topic discovery - separately-spawned kernel + worker register over sha
 
   const clientKey = (kernel._out.match(/REPRO_KERNEL_STARTED client=([0-9a-f]{64})/) || [])[1]
   t.ok(clientKey, 'Kernel published its client key')
-  const worker = spawnFixture('repro-worker.js', topic, workerStore, ['--allow', clientKey])
+  const worker = spawnFixture('repro-worker.js', topic, workerStore, ['--allow', clientKey, ...bootstrap])
   const workerReady = await waitFor(worker, 'REPRO_WORKER_READY', 15000)
   t.ok(workerReady, 'worker process announced on the topic')
 

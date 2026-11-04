@@ -60,7 +60,7 @@ errors, fields, safety/annotation values). If yes, use a table; leave genuine na
   the last.
 - Describe current behavior only, present tense, as if the software always worked this way. No "used to", "was
   guessed from", "previously fell back to", or other before/after framing in a table or its surrounding prose — that
-  belongs in `CHANGELOG.md` and the release notes, not here.
+  belongs in `CHANGELOG.md`, not here.
 - Verify every row against the actual source (the function/config it describes) before writing it, and again after
   any later style-only edit to the table (a prose-to-table conversion can silently merge or drop a distinct case).
 

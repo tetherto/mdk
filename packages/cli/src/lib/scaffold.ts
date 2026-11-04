@@ -1,9 +1,9 @@
 import { cpSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMap, isSeq, parseDocument, YAMLSeq, type Document, type YAMLMap } from 'yaml';
 import { checkoutRoot } from './checkout.js';
-import { addFileDependency, ensureProjectManifest, readStackName } from './project.js';
+import { addFileDependency, ensureProjectManifest, fileSpec, readStackName } from './project.js';
 
 /** Package root of the CLI (from `dist/lib/*.js` and `src/lib/*.ts` alike). */
 const CLI_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -33,10 +33,14 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** Copies a bundled template to `dest`, replacing every `tokens` key with its value in each file. */
+/**
+ * Copies a bundled template to `dest`, replacing every `tokens` key with its value in each copied
+ * file. Only the template's own files are rewritten, so copying into a directory that already holds
+ * other files (a repo root, with its `.git/`) leaves those alone.
+ */
 export function copyTemplate(src: string, dest: string, tokens: Record<string, string>): void {
   cpSync(src, dest, { recursive: true });
-  for (const file of walk(dest)) {
+  for (const file of walk(src).map((f) => join(dest, relative(src, f)))) {
     const content = readFileSync(file, 'utf8');
     const replaced = Object.entries(tokens).reduce((text, [token, value]) => text.replaceAll(token, value), content);
     if (replaced !== content) writeFileSync(file, replaced, 'utf8');
@@ -51,9 +55,10 @@ export function updateJson(file: string, fields: Record<string, unknown>): void 
 
 /**
  * Inside an MDK checkout, points the MDK backend packages a scaffolded worker or app depends on at
- * the checkout (absolute `file:` links), as the starter UI and the dashboard already do for the UI
- * packages, so the project's `npm install` works without those packages on the registry. A CLI
- * installed standalone keeps the template's published range.
+ * the checkout (`file:` links relative to the package, so the manifest stays committable), as the
+ * starter UI and the dashboard already do for the UI packages, so the project's `npm install` works
+ * without those packages on the registry. A CLI installed standalone keeps the template's published
+ * range.
  */
 export function linkCheckoutBackend(packageFile: string, cliRoot = CLI_ROOT): void {
   const root = checkoutRoot(cliRoot);
@@ -63,7 +68,7 @@ export function linkCheckoutBackend(packageFile: string, cliRoot = CLI_ROOT): vo
   if (!deps) return;
   for (const [name, dir] of Object.entries(BACKEND_PACKAGES)) {
     const target = join(root, 'backend', 'core', dir);
-    if (name in deps && existsSync(join(target, 'package.json'))) deps[name] = `file:${target}`;
+    if (name in deps && existsSync(join(target, 'package.json'))) deps[name] = fileSpec(dirname(packageFile), target);
   }
   writeFileSync(packageFile, `${JSON.stringify(json, null, 2)}\n`, 'utf8');
 }

@@ -65,8 +65,9 @@ apps/fleet/
 | `ui/`           | An ES module default-exporting `defineMdkApp({ id, displayName, routes, panels })`, built from `ui-src/` and committed | The dashboard shell, which mounts its pages and panels |
 | `package.json`  | The npm identity, and the `files` list that decides what ships in the tarball | npm, and `mdk add app` |
 
-[`mdk-app-demo`][demo-app] is a shipped app you can read end to end: its manifest, its route table, and one controller
-per route. It serves routes only, so the `ui/` half is the one part it does not show; `mdk create app` scaffolds that.
+[`mdk-app-demo`][demo-app] is a [shipped app][supported-apps] you can read end to end: its manifest, its route table, and
+one controller per route. It serves routes only, so the `ui/` half is the one part it does not show; `mdk create app`
+scaffolds that.
 
 ## What's yours versus what's reused
 
@@ -105,6 +106,9 @@ A Worker Plugin is a separate thing you may also own: it integrates one device f
 
 [glossary]: ../reference/glossary.md
 <!-- docs@tether.io: glossary → reference/glossary -->
+
+[supported-apps]: ../reference/supported-apps.md#availability
+<!-- docs@tether.io: supported-apps → reference/supported-apps#availability -->
 
 [demo-app]: https://github.com/tetherto/mdk-app-demo
 <!-- docs@tether.io: demo-app → https://github.com/tetherto/mdk-app-demo -->

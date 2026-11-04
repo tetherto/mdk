@@ -1,8 +1,8 @@
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/query-core'
 
-import { type AuthProvider, bearerTokenAuth, isSessionExpiredError } from '../auth/provider'
-import { createBearerFetcher } from './mdk-fetch'
-import { DEFAULT_API_BASE_URL, type Fetcher } from './runtime'
+import { type AuthProvider, bearerTokenAuth, isSessionExpiredError } from '../auth/provider.js'
+import { createBearerFetcher } from './mdk-fetch.js'
+import { DEFAULT_API_BASE_URL, type Fetcher } from './runtime.js'
 
 const readViteEnv = (key: string): string | undefined => {
   try {
@@ -218,4 +218,4 @@ export const createMdkQueryClient = (options: CreateMdkQueryClientOptions = {}):
  * Re-exported for backwards compatibility — the implementation moved to
  * `./runtime` alongside the rest of the runtime readers.
  */
-export { getApiBaseUrl } from './runtime'
+export { getApiBaseUrl } from './runtime.js'

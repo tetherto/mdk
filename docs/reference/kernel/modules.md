@@ -16,6 +16,7 @@ characteristics. It communicates with the others only through its declared inter
 ## Modules
 
 - [`WorkerRegistry`][worker-registry]: holds two flat indexes, `deviceId` to its owning Worker and `workerId` to that Worker's record, and drives each Worker through its registration lifecycle
+- [`KernelAuthorizer`][kernel-authorizer]: verifies the access token on every HRPC request but sign-in, and evaluates its identity against the policy in force, once per device or Worker the request touches
 - [`CommandDispatcher`][command-dispatcher]: validates an incoming command, resolves the target device or devices, and hands off to the Command State Machine
 - [`CommandStateMachine`][command-state-machine]: tracks every command's execution lifecycle in a write-ahead log
 - [`CommandLog`][command-log]: records every command request, accepted or refused, with its caller, target, params and outcome
@@ -44,6 +45,9 @@ characteristics. It communicates with the others only through its declared inter
 
 [worker-registry]: ../../../backend/core/kernel/README.md#workerregistry
 <!-- docs@tether.io: worker-registry → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#workerregistry -->
+
+[kernel-authorizer]: ../../../backend/core/kernel/README.md#caller-admission-and-authorization
+<!-- docs@tether.io: kernel-authorizer → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#caller-admission-and-authorization -->
 
 [command-dispatcher]: ../../../backend/core/kernel/README.md#commanddispatcher
 <!-- docs@tether.io: command-dispatcher → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#commanddispatcher -->

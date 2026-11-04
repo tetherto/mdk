@@ -50,16 +50,13 @@ docs/reference/maintainers/notes.md
 # client's expected directory (.claude/skills, .cursor/skills, ...) so every
 # agent discovers the same files with zero duplication. The mdk-skill product
 # suite is generated FROM packages/mdk-skill INTO those same client dirs via
-# `npm run install:skills`, which resolves through the symlinks into /skills/ —
-# ignore its known output names so a local run never gets committed alongside
-# the hand-authored ones.
-/skills/mdk/
-/skills/mdk-worker-plugin/
-/skills/mdk-gateway-plugin/
-/skills/mdk-ui-component/
-/skills/mdk-deployment/
-/skills/mdk-site-sizing/
-/skills/mdk-create-app/
+# `npm run install:skills`, which resolves through the symlinks into /skills/.
+# Every generated skill is named mdk*, so one glob ignores them all (a hand-kept
+# list drifts as skills are added or renamed); the hand-authored mdk* skills are
+# re-included below so a local run never gets committed alongside them.
+/skills/mdk*/
+!/skills/mdk-docs-style/
+!/skills/mdk-skill-suite/
 
 # Vale style rules. The rules live in tetherto/docs-template (the `vale` branch),
 # checked out beside this repo at `.tether-vale-source` by CI and locally (see

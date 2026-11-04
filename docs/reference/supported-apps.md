@@ -1,6 +1,6 @@
 ---
 title: Supported apps
-description: The apps MDK ships and where each one documents its routes
+description: The apps MDK ships, where each one documents its routes, and how to get them
 docs@tether_slug: reference/supported-apps
 ---
 
@@ -13,29 +13,39 @@ is offered through [`mdk onboard`][mdk-onboard], and is declared by its package 
 The Gateway serves an app's routes under `/apps/<name>` unless the app's `spec.apps` entry sets `mount`; `mount: /` serves them
 at the Gateway root.
 
+## Availability
+
+Install an app from its repository with `mdk add app github:tetherto/<repository>`, which writes its `spec.apps` entry, `mount` included. `mdk onboard`
+installs them from the same repositories. The browser half of the agent app, the [`@tetherto/mdk-ui-agent`][ui-agent-readme] panel, is on npm and renders
+without the app.
+
 ## Route tables
 
-| App     | Package                   | Repository                      | Mount                                                            |
-| ------- | ------------------------- | ------------------------------- | ---------------------------------------------------------------- |
-| `agent` | `@tetherto/mdk-app-agent` | [`mdk-app-agent`][mdk-app-agent] | `/`, because its UI calls `/agent/sessions…` at the Gateway root |
-| `demo`  | `@tetherto/mdk-app-demo`  | [`mdk-app-demo`][mdk-app-demo]   | The default, `/apps/demo`                                        |
+| App     | Package                   | Repository                       | Availability                  | Mount                                                            |
+| ------- | ------------------------- | -------------------------------- | ----------------------------- | ---------------------------------------------------------------- |
+| `agent` | `@tetherto/mdk-app-agent` | [`mdk-app-agent`][mdk-app-agent] | Public repository, not on npm | `/`, because its UI calls `/agent/sessions…` at the Gateway root |
+| `demo`  | `@tetherto/mdk-app-demo`  | [`mdk-app-demo`][mdk-app-demo]   | Public repository, not on npm | The default, `/apps/demo`                                        |
 
 Each repository's README carries the app's route table, configuration, and errors.
 
 ## Next steps
 
-- [Declare an app in your stack][gateway-plugins-guide]: the manifests, controllers, and how a stack runs them
+- [Declare an app in your stack][apps-guide]: the manifests, controllers, and how a stack runs them
+- [Render the agent chat][ui-agent-readme]: the npm package that pairs with the `agent` app, and what it shows without one
 
 ## Links
 
-[gateway-plugins-guide]: ../guides/gateway/apps.md
-<!-- docs@tether.io: gateway-plugins-guide → guides/gateway/apps -->
+[apps-guide]: ../guides/gateway/apps.md
+<!-- docs@tether.io: apps-guide → guides/gateway/apps -->
 
 [mdk-onboard]: ../guides/cli/install.md#command-groups
-<!-- docs@tether.io: mdk-onboard → guides/cli/install#command-groups -->
+<!-- docs@tether.io: mdk-onboard → guides/cli/run-with-npm#command-groups -->
 
 [mdk-app-agent]: https://github.com/tetherto/mdk-app-agent
 <!-- docs@tether.io: mdk-app-agent → https://github.com/tetherto/mdk-app-agent -->
 
 [mdk-app-demo]: https://github.com/tetherto/mdk-app-demo
 <!-- docs@tether.io: mdk-app-demo → https://github.com/tetherto/mdk-app-demo -->
+
+[ui-agent-readme]: ../../ui/packages/ui-agent/README.md
+<!-- docs@tether.io: ui-agent-readme → https://github.com/tetherto/mdk/blob/main/ui/packages/ui-agent/README.md -->

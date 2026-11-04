@@ -5,6 +5,8 @@ import { HashRouter } from "react-router";
 
 import "@tetherto/mdk-react-devkit/styles.css";
 import "@tetherto/mdk-react-devkit/styles-domain.css";
+import "./containers.css";
+import "./pages.css";
 import { auth } from "./auth";
 import { SignInPage } from "./SignInPage";
 import { SitePage } from "./SitePage";

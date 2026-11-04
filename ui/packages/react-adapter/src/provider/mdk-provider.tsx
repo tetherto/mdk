@@ -31,8 +31,10 @@ export type MdkProviderProps = {
   /**
    * How the session works: token source, sign-in, refresh, sign-out. Defaults to
    * `gatewayRedirectAuth()` minus a redirect target. Pass
-   * `gatewayRedirectAuth({ oauthBaseUrl })` to enable sign-in, or `noAuth()` for
-   * a Gateway running without an auth plugin.
+   * `passwordAuth({ baseUrl })` for a dashboard on an MDK stack,
+   * `gatewayRedirectAuth({ oauthBaseUrl })` for the OAuth-redirect flow, or
+   * `noAuth()` for a fixture-backed demo: every app route on a real stack
+   * answers 401.
    */
   auth?: AuthProvider
   /** Transport override, such as `passwordAuth().fetcher`. Defaults to a bearer fetcher reading from `auth`. */

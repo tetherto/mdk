@@ -18,7 +18,10 @@ independent of how MDK [scales logically][scaling] (adding Workers, adding sites
 
 Before choosing a shape, it helps to understand which components initiate connections:
 
-- The Gateway dials Kernel — it is the active side of that connection, over [Hyperswarm RPC (HRPC)][hrpc-glossary] using the Kernel's public key (read from the well-known key file on the same host, or passed as `kernelKey` for a remote host)
+- Each app runtime dials Kernel for device traffic, over [Hyperswarm RPC (HRPC)][hrpc-glossary] using the Kernel's public key (read
+  from the well-known key file on the same host, or passed as `kernelKey` for a remote host). The Gateway uses an in-process Kernel
+  directly; with a Kernel in another process it dials the same way, as its own service account, for identity and policy. Whoever
+  connects is the active side
 - Kernel discovers Workers and initiates every RPC call — Workers are passive; they become reachable and wait
 - Kernel initiates all telemetry pulls and commands. Workers answer those requests; they do not push telemetry. Workers still
   participate in DHT networking to make themselves reachable.

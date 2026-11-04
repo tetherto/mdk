@@ -68,8 +68,15 @@ export type Overview = {
   pools: Pool[];
   sensors: Sensor[];
   miners: Miner[];
-  totals: { hashrateMhs: number; powerW: number; minerCount: number; onlineCount: number };
+  // Workers that are down; their devices are missing from `miners` and `containers`.
+  unavailableWorkers?: UnavailableWorker[];
+  unavailableDevices?: UnavailableDevice[];
+  totals: { hashrateMhs: number; powerW: number; minerCount: number; onlineCount: number; unavailableDeviceCount?: number };
 };
+
+export type UnavailableWorker = { workerId: string; reason: string };
+
+export type UnavailableDevice = { deviceId: string; workerId: string; status: "offline"; stale: true };
 
 export type HistoryPoint = { ts: number; value: number };
 export type History = { metric: string; unit: string; deviceId?: string; log: HistoryPoint[] };

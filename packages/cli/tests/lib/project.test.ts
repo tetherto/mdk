@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   DIRS,
@@ -34,6 +34,9 @@ describe('ensureProjectManifest', () => {
     expect(pkg.name).toBe('my-stack');
     expect(pkg.private).toBe(true);
     expect(pkg.workspaces).toBeUndefined();
+    const cli = pkg.devDependencies['@tetherto/mdk-cli'];
+    expect(cli).toMatch(/^file:\.\.?\//);
+    expect(resolve(dir, cli.slice('file:'.length))).toMatch(/packages[\\/]cli$/);
   });
 
   it('slugifies an unusual stack name, falling back to mdk-stack if empty', () => {
@@ -299,6 +302,15 @@ describe('ensureProjectReadme', () => {
     expect(content).not.toContain('Dashboard');
   });
 
+  it('tells the reader to create the first operator once the stack runs', () => {
+    const dir = makeTmpDir();
+    ensureProjectReadme(dir, { stackName: 'my-stack', workerNames: [] });
+    const content = readFileSync(join(dir, 'README.md'), 'utf8');
+    expect(content).toContain('mdk user add <name> --admin');
+    expect(content).toMatch(/second terminal/);
+    expect(content).toMatch(/sign in/i);
+  });
+
   it('lists each worker in the per-component commands, or a placeholder with none', () => {
     const dir = makeTmpDir();
     ensureProjectReadme(dir, { stackName: 'my-stack', workerNames: ['a', 'b'] });
@@ -321,6 +333,8 @@ describe('ensureProjectReadme', () => {
     });
     const content = readFileSync(join(dir, 'README.md'), 'utf8');
     expect(content).toContain('## Dashboard');
-    expect(content).toContain('cd apps/dashboard');
+    expect(content).toContain('mdk run dashboard');
+    expect(content).not.toContain('cd apps/dashboard');
+    expect(content).toMatch(/sign in as the operator/i);
   });
 });

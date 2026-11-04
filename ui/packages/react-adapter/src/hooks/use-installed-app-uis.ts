@@ -1,22 +1,11 @@
-import {
-  appManifestQueryKey,
-  appUisQueryKey,
-  fetchAppManifest,
-  type LoadAppManifest,
-  MDK_APP_UI_MANIFEST,
-} from '@tetherto/mdk-ui-foundation'
+import { appUisQueryKey } from '@tetherto/mdk-ui-foundation'
 import { useQuery } from '@tanstack/react-query'
 
 import { loadAppUis } from '../apps/load-app-ui'
 import type { AppUiLoadFailure, ImportAppModule, LoadedAppUi } from '../apps/types'
+import { useInstalledApps, type UseInstalledAppsOptions } from './use-installed-apps'
 
-export type UseInstalledAppUisOptions = {
-  /** Disable the lookup. Defaults to on. */
-  enabled?: boolean
-  /** Where the dashboard lists the installed apps. Defaults to `MDK_APP_UI_MANIFEST` (`/app-ui.json`). */
-  manifestUrl?: string
-  /** Reads the app list. Defaults to `fetch` against the page's origin. */
-  loadManifest?: LoadAppManifest
+export type UseInstalledAppUisOptions = UseInstalledAppsOptions & {
   /** Module importer for the app entries. Defaults to the browser's dynamic `import()`. */
   importModule?: ImportAppModule
 }
@@ -64,18 +53,9 @@ export const useInstalledAppUis = (
   options: UseInstalledAppUisOptions = {},
 ): UseInstalledAppUisResult => {
   const enabled = options.enabled ?? true
-  const manifestUrl = options.manifestUrl ?? MDK_APP_UI_MANIFEST
-  const loadManifest = options.loadManifest ?? fetchAppManifest
+  const listing = useInstalledApps(options)
 
-  const listing = useQuery({
-    queryKey: appManifestQueryKey(manifestUrl),
-    queryFn: () => loadManifest(manifestUrl),
-    enabled,
-    staleTime: Infinity,
-    retry: false,
-  })
-
-  const installed = listing.data?.apps
+  const installed = listing.apps
   const uis = useQuery({
     queryKey: appUisQueryKey(installed),
     queryFn: () => loadAppUis(installed ?? [], { importModule: options.importModule }),

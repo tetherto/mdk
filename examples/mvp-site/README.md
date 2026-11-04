@@ -28,9 +28,18 @@ Antminer, and SealMiner workers, Ocean, EMCD, SpiderPool, and Foundry pool worke
 - **SATEC powermeter worker** — mock power readings, scaled to the seeded miner count
 - **MDK React UI** — Dashboard, Containers, Miners, Monitoring, Pools, Control, and Activity pages, served
   from the Gateway behind a sign-in page
-- **Users and permissions** — seven demo users, from a read-only viewer to a hosting client who sees only their own
+- **Users and permissions** — demo users, from a read-only viewer to a hosting client scoped to their own
   miners, each checked by the Gateway on every route and by the Kernel on every device
   (`rbac` in [`config/site.deploy.json`](./config/site.deploy.json.example))
+
+> [!CAUTION]
+> The demo's Antminer Worker Plugin does not serve `logs` queries; it returns `ERR_UNKNOWN_QUERY_TYPE: logs`.
+> For Workers that serve shared `stat-*` logs, `resourceNames` bounds which devices a caller may address, but a read
+> through an allowed device can return an aggregate that includes other devices. When adapting this demo for tenants
+> who must not see each other's figures, keep each tenant's shared aggregates in a separate Worker, as
+> [the policy step](../../docs/guides/security/index.md#step-4-write-the-policy-and-put-identity-in-the-gateway)
+> explains.
+
 - **One MCP surface, two tool sources** — a standalone MCP process (`--role mcp`) serves both a hand-authored tool set
   ([`backend/mcp-plugins/site`](./backend/mcp-plugins/site/)), with agent-contract metadata and curated granularity, and the
   site app's own HTTP routes, read off the same route table the Gateway forwards and converted into tools whose calls go
@@ -77,20 +86,29 @@ matching plugin dir is skipped with a warning.
 
 ### Private HyperDHT bootstrap
 
-Every role that talks HRPC (Kernel, Workers, `app-site`, Gateway, MCP) starts a HyperDHT node. By default these nodes join the
-public HyperDHT through the `*.hyperdht.org` bootstrap nodes, so the site needs outbound UDP. To keep the site off the public
-network and run with no internet access, add a `dht` section to `config/site.deploy.json`:
+Every role that talks HRPC (Kernel, Workers, `app-site`, Gateway, MCP) starts a HyperDHT node. The demo is a mock site that runs
+entirely on one machine, so `config/site.deploy.json.example` ships a **private bootstrap on loopback** and the site needs no
+internet access at all:
 
 ```json
 "dht": { "host": "127.0.0.1", "port": 49737 }
 ```
 
+Remove that section to join the public HyperDHT through the `*.hyperdht.org` bootstrap nodes instead — which needs outbound UDP
+to those hosts. On a network that blocks it, every role still reports `online` and `MDK_READY` while no Kernel call ever
+completes: the Gateway answers `503 ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED`, MCP tools return `ERR_MDK_STATUS_TIMEOUT`, and
+`mdk status` reports the Kernel unreachable. Keep the private bootstrap unless you need roles on more than one host.
+
 | `dht` value                                   | What runs                                                                            |
 | --------------------------------------------- | ------------------------------------------------------------------------------------ |
-| No `dht` section (the default)                | Every role joins the public HyperDHT                                                 |
-| `{ "host", "port" }`                          | A `dht-bootstrap` role serves `host:port`; every role joins it and binds `host`      |
+| `{ "host", "port" }` (the shipped default)    | A `dht-bootstrap` role serves `host:port`; every role joins it and binds `host`      |
+| No `dht` section                              | Every role joins the public HyperDHT; needs outbound UDP to `*.hyperdht.org`         |
 | `{ "host", "bootstrap": ["10.0.0.5:49737"] }` | Every role joins the listed bootstrap and binds `host`; no `dht-bootstrap` role runs |
 | `{ "bootstrap": ["10.0.0.5:49737"] }`         | Every role joins the listed bootstrap and binds every interface                      |
+
+> [!NOTE]
+> The bootstrap binds `127.0.0.1`, so the roles must share a host. Spreading them across machines means setting `dht.host` to a
+> reachable interface, or pointing every role at one `bootstrap` address.
 
 There is no need to edit `pm2.roles`: `npm start` adds the `dht-bootstrap` role to the front when the `dht` section needs it, and
 skips it with a warning when it does not. Start order does not matter: a role that starts first joins as soon as the bootstrap
@@ -232,7 +250,9 @@ npm run build:ui
 
 `config/devices.json` is gitignored (local/per-dev config). It is an object
 keyed by device type — `miners` feed the Whatsminer worker, `antminers` the
-Antminer worker, `sealminers` the SealMiner worker, `powermeters` the SATEC worker. Copy [`config/devices.json.example`](./config/devices.json.example) and adjust:
+Antminer worker, `sealminers` the SealMiner worker, `powermeters` the SATEC worker. Copy [`config/devices.json.example`](./config/devices.json.example) and adjust.
+Nothing checks a `devices.json` left over from an earlier checkout against the example, so after pulling a new release diff
+yours against `devices.json.example` and add any key it has gained:
 
 ```json
 {
@@ -377,9 +397,10 @@ Every process keeps its runtime state under one directory, `root` in `config/sit
 └── mcp/               # MCP caller identity
 ```
 
-Seed devices are only registered **once**, when a worker's store is
-empty. If you change [`config/devices.json`](./config/devices.json.example) (miners or powermeters) after the
-first run, clear state before restarting:
+What a change to [`config/devices.json`](./config/devices.json.example) after the first run needs depends on the worker. The
+Whatsminer, Antminer, and SealMiner adapters rebuild their device list from the file on every start, so a restart picks up miner
+changes. The SATEC powermeter worker registers its seed devices only **once**, on an empty store, so after a powermeter change
+clear state before restarting:
 
 ```bash
 npm run stop:pm2

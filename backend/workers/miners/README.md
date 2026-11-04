@@ -29,7 +29,7 @@ miners/<vendor>/
       telemetry/*.js
       commands/*.js
   lib/                 # the vendor device driver `plugin.connect()` returns
-  mock/                # a standalone fake of the vendor's native API
+  mock/                # a standalone mock of the vendor's native API
 ```
 
 ## Common telemetry fields
@@ -90,6 +90,7 @@ const worker = await startAvalonWorker({
   workerId: 'avalon-rack-1',
   model: 'a1346',
   storeDir: './store/avalon-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'AV-001', container: 'A', pos: 'A1' },
     opts: { address: '192.168.1.10', port: 4028, password: 'admin' }
@@ -97,6 +98,9 @@ const worker = await startAvalonWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 Each package's own `USAGE.md` (e.g. [avalon][avalon-usage])
 documents its `model` values, mock, and the `registerThing` command for adding a device to an already-running Worker.

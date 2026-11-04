@@ -3,8 +3,8 @@ name: mdk-create-app
 description: >
   Scaffold a new MDK App package ready to publish. Use whenever a task mentions
   "create app", "scaffold app", "mdk create app", or generating an MDK App's
-  mdk-app.yaml, package.json, plugin/, and ui/ modules.
-argument-hint: "<name> [--org <scope>] [--id <reverse-dns>] [--display <name>] [--devices <pattern>] [--verbs <read|read,write>]"
+  mdk-app.yaml, package.json, plugin/, ui-src/ and ui/ modules.
+argument-hint: "<name> [--org <scope>] [--flat] [--id <reverse-dns>] [--display <name>] [--devices <pattern>] [--verbs <read|read,write>]"
 metadata:
   suite: mdk-developer-skill
   mdk_version: "{{MDK_VERSION}}"
@@ -21,19 +21,28 @@ This skill governs the **creation and scaffolding phase** of an MDK App before i
 
 ## 1. The Package Layout
 
-Every scaffolded app follows the canonical structure:
+Every scaffolded app follows the canonical structure, as `mdk create app` writes it:
 
 ```text
-@tetherto/mdk-app-<name>@<version>
-├── package.json        # name, version, files, dependencies, peerDependencies
+<name>/
+├── package.json        # name, version, files (mdk-app.yaml, plugin/, ui/, README.md), build:ui/dev:ui/typecheck:ui scripts
 ├── mdk-app.yaml        # app manifest
-├── plugin/             # backend plugin template
+├── README.md
+├── plugin/             # backend plugin
 │   ├── mdk-plugin.json # route table (the Gateway serves it under /apps/<name> unless mounted)
-│   ├── controllers/    # route handlers
-│   └── lib/            # client helper used by the handlers
-└── ui/                 # built UI module with index entry point
-    └── index.js
+│   ├── controllers/    # route handlers (the starter has summary.js)
+│   └── lib/client.js   # the app's ambient MDK client
+├── ui-src/             # UI source, not published: defineMdkApp module, data/hooks/components/pages, Vite build
+│   ├── index.tsx
+│   ├── vite.config.ts
+│   └── package.json    # the UI's own build dependencies
+└── ui/                 # built UI module, published and committed
+    ├── index.js
+    └── style.css
 ```
+
+[`mdk-ui-component/references/app-ui-module.md`](../mdk-ui-component/references/app-ui-module.md) describes every file
+under `ui-src/` and the build.
 
 ---
 
@@ -47,9 +56,11 @@ id: io.tether.sentinel              # 1. Immutable identity, reverse-DNS
 version: 0.1.0                     # 2. Semver; must equal package.json version
 displayName: Sentinel              # 3. Shown in shell's sidebar and CLI
 permissions:                       # 4. The Kernel access the app's service account needs; required ([] for none)
-  - resources: [devices]
-    verbs: [read]                  # Default: read (least privilege; [read, write] for controls/tuning)
-    resourceNames: ["*"]           # Default: allow all devices ("*"), or scoped: family/brand/worker/device
+  - resources: [workers]           # The scaffold's summary route lists workers
+    verbs: [list]
+  - resources: [devices]           # Add a rule like this only for a route that reads or commands devices
+    verbs: [read]                  # read (least privilege); [read, write] for controls/tuning
+    resourceNames: ["miner/*"]     # "*" for all devices, or scoped: family/brand/worker/device
 config:                            # 5. Operational defaults (overridable in mdk.yaml)
   driftThresholdPct: 10
 ```
@@ -63,9 +74,14 @@ config:                            # 5. Operational defaults (overridable in mdk
 ## 3. Edge Cases & Validation Rules
 
 ### Edge Case 1: Directory & Location Context
-* **Standalone Repo Mode (Outside an MDK project)**: If the current directory is an empty folder or standalone repo (no `mdk.yaml` in current or parent directories), scaffold files **directly at the root of the current directory**:
-  `./package.json`, `./mdk-app.yaml`, `./plugin/`, `./ui/`.
-* **Site Project Mode (Inside an MDK project)**: If an `mdk.yaml` exists in the current or parent directory, scaffold under `apps/<name>/`.
+* **Site Project Mode (Inside an MDK project)**: If an `mdk.yaml` exists in the project directory, run `mdk create app <name>`.
+  It scaffolds `apps/<name>/`, links the package into the project's `package.json`, adds it under `spec.apps` and grants
+  its permissions in `spec.rbac`.
+* **Standalone Repo Mode (an app repo, installed with `mdk add app github:<owner>/<repo>#<tag>`)**: run
+  `mdk create app <name> --flat` at the repo root. It scaffolds `./package.json`, `./mdk-app.yaml`, `./plugin/`,
+  `./ui-src/` and `./ui/` directly in the directory, and links nothing: no project, no `mdk.yaml`. It refuses a
+  directory that has `mdk.yaml`, and one that already has any of those files unless `--force` is given. Never scaffold
+  into a throwaway project and move `apps/<name>/` out.
 * **Distinction from Dashboard Shells**: An MDK App package (`@tetherto/mdk-app-<name>`) is a backend plugin + dynamic UI shell module. It is distinct from a standalone Vite dashboard shell created via `mdk create dashboard <name>` (which defaults to `apps/dashboard`). If developing an app inside a site repo alongside an existing dashboard, ensure distinct directory names (e.g. `apps/<name>-app` or keep the dashboard at `apps/dashboard`).
 
 ### Edge Case 2: RBAC Permissions & Device Hierarchy
@@ -100,29 +116,38 @@ config:                            # 5. Operational defaults (overridable in mdk
 ### Edge Case 3: Naming, Scoping & Version Parity
 * **`<name>`**: Lowercase kebab-case slug (`^[a-z0-9][a-z0-9._-]*$`). No uppercase letters, spaces, or slashes.
 * **`id`**: Immutable reverse-DNS format (`^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$`, e.g. `io.tether.<name>`).
-* **`package.json` Name**: Defaults to `@tetherto/mdk-app-<name>` (or `@<scope>/mdk-app-<name>` if custom org specified).
+* **`package.json` Name**: `mdk create app` writes `<name>`, or `@<scope>/<name>` with `--org <scope>`. Rename it
+  before publishing if you want the `mdk-app-<name>` convention (`@<scope>/mdk-app-<name>`).
 * **Version Parity**: `package.json#version` and `mdk-app.yaml#version` **must match byte-for-byte** (defaults to `0.1.0`).
 
 ### Edge Case 4: Route Namespacing in `plugin/mdk-plugin.json`
 * **The Gateway adds the prefix**: The Gateway serves every route of an app under `/apps/<name>`, where `<name>` is the app's
   `spec.apps[].name` in `mdk.yaml`. Declare paths **without** that prefix:
-  * Example: `/status` in `mdk-plugin.json` is served at `/apps/sentinel/status`.
+  * Example: the scaffold's `/api/sentinel/summary` in `mdk-plugin.json` is served at `/apps/sentinel/api/sentinel/summary`.
   * Never write `/apps/<name>/...` in the route table; it would be served at `/apps/<name>/apps/<name>/...`.
 * **Root mount**: An app whose client calls fixed root paths (the agent app's `/agent/sessions`, an identity app's `/oauth/...`)
   sets `mount: /` on its `spec.apps` entry instead, and its paths are served as written. Prefixed is the default because it
   keeps installed apps from colliding.
 
 ### Edge Case 5: Dynamic UI Shell Module Contract
-* The UI entry point (`ui/index.js`) is read dynamically by the UI shell.
-* It must export a default object with:
-  ```javascript
-  export default {
-    id: 'io.tether.<name>',
+* The dashboard imports the built `ui/index.js` at runtime. Its source is `ui-src/index.tsx`, which default-exports
+  `defineMdkApp` from `@tetherto/mdk-react-adapter`:
+  ```tsx
+  import { defineMdkApp, MDK_APP_PANEL_SLOT } from '@tetherto/mdk-react-adapter'
+
+  import { OverviewPage, SummaryHomePanel } from './pages/overview-page'
+  import './styles.css'
+
+  export default defineMdkApp({
+    id: '<id from mdk-app.yaml>', // the dashboard refuses a mismatch
     displayName: '<DisplayName>',
-    routes: [],
-    panels: []
-  };
+    routes: [{ path: '', component: OverviewPage }],
+    panels: [{ id: 'summary', slot: MDK_APP_PANEL_SLOT.HOME, component: SummaryHomePanel }],
+  })
   ```
+* Pages reach the app's own routes through `useMdkApp().apiUrl('/api/<name>/...')` and `mdkFetch`, never a hardcoded
+  `/apps/<name>/...` URL: the operator chooses the installed name.
+* Rebuild with `npm run build:ui` after every change under `ui-src/`, and commit `ui/`: `mdk add app github:...` runs no build.
 * **Sidebar sections (optional)**: A route may name a `section` (e.g. `section: 'Operations'`) to be listed in a sidebar
   group with the other pages of that section. To give a section an icon, add `sections: [{ label: 'Operations', icon: OperationsNavIcon }]`,
   with `label` matching the routes' `section` and `icon` a React component. Omit both for a flat list; never add a
@@ -142,9 +167,10 @@ Collect or confirm the definition parameters with sensible fallbacks:
 | Parameter | Prompt / Meaning | Default / Fallback |
 | :--- | :--- | :--- |
 | **`name`** | App slug (kebab-case) | Required (e.g. `sentinel`) |
-| **`id`** | Reverse-DNS identity | `io.tether.<name>` |
-| **`displayName`** | Human name for shell sidebar and CLI | TitleCase `<name>` |
-| **`devices`** | Target hardware hierarchy (`resourceNames`) | `*` (allow all devices) |
+| **`id`** | Reverse-DNS identity | The CLI writes `com.example.<name>`; set your own |
+| **`displayName`** | Human name for shell sidebar and CLI | The CLI writes `<name>`; TitleCase it |
+| **`location`** | In a site project, or the root of its own repo | Project when `mdk.yaml` exists, else ask (`--flat`) |
+| **`devices`** | Target hardware hierarchy (`resourceNames`) | No device rule (the starter lists workers only) |
 | **`verbs`** | Access level needed | `read` (least privilege; `read, write` for controls) |
 | **`config`** | Initial default settings | `{}` |
 
@@ -152,80 +178,73 @@ Collect or confirm the definition parameters with sensible fallbacks:
 
 ### Step 2: Scaffold Files
 
-Inside an MDK project, `mdk create app <name>` (`--org <scope>` for a scoped package name) is the canonical method: it
-scaffolds `apps/<name>` with `mdk-app.yaml`, `plugin/mdk-plugin.json`, a client and one read-only route, links the package,
-and adds it under `spec.apps` in `mdk.yaml`. Then adjust `id`, `permissions` and the routes as below, and check the result
-with `mdk validate app <name>`.
+`mdk create app` is the canonical method; it needs Node >= 24.
 
-Without the CLI (standalone repo mode, or a layout the template does not cover), create the files directly according to
-the location context:
+* **In a site project**: `mdk create app <name>` (`--org <scope>` for a scoped package name) scaffolds `apps/<name>`,
+  links the package, adds it under `spec.apps` in `mdk.yaml` and grants its permissions in `spec.rbac`.
+* **In an app repo**: `mdk create app <name> --flat` scaffolds at the repo root and links nothing.
+
+Both write `mdk-app.yaml`, `plugin/` (a client and one read-only `/api/<name>/summary` route) and the starter UI in
+`ui-src/`, then install the UI's build dependencies and build it into `ui/`. Inside an MDK checkout the MDK packages
+link to the checkout with relative `file:` paths, and the UI packages must be built there first
+(`npm run setup:ui && npm run build:ui` at the checkout root); the CLI says so instead of building when they are not.
+
+Then adjust `id`, `displayName`, `permissions` and the routes, rebuild the UI with `npm run build:ui`, and check the
+result with `mdk validate app <name>` (in a project).
+
+Without the CLI, copy the CLI's templates (`packages/cli/templates/app/` and `packages/cli/templates/app-ui/ui-src/`)
+and replace their `__PLUGIN_NAME__`, `__PLUGIN_APP__`, `__PACKAGE_NAME__`, `__APP_*__` placeholders. The files that
+matter, in their scaffolded form:
 
 1. **`package.json`**:
 ```json
 {
-  "name": "@tetherto/mdk-app-<name>",
+  "name": "@<scope>/<name>",
   "version": "0.1.0",
-  "files": [
-    "mdk-app.yaml",
-    "plugin/",
-    "ui/"
-  ],
-  "dependencies": {},
-  "peerDependencies": {}
+  "files": ["mdk-app.yaml", "plugin/", "ui/", "README.md"],
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "build:ui": "npm --prefix ui-src run build",
+    "dev:ui": "npm --prefix ui-src run dev",
+    "typecheck:ui": "npm --prefix ui-src run typecheck"
+  },
+  "dependencies": { "@tetherto/mdk-client": "^<mdk version>" }
 }
 ```
 
 2. **`mdk-app.yaml`**:
 ```yaml
-id: io.tether.<name>
+id: com.example.<name>
 version: 0.1.0
 displayName: <DisplayName>
-permissions:
-  - resources: [devices]
-    verbs: [<verbs, default: read>]
-    resourceNames: ["<device-pattern, default: *>"]
+permissions: [{ resources: [workers], verbs: [list] }]
 config: {}
 ```
 
 3. **`plugin/mdk-plugin.json`**:
 ```json
 {
-  "id": "io.tether.<name>",
   "name": "<name>",
+  "version": "0.1.0",
   "routes": [
     {
-      "id": "<name>.status",
-      "handler": "controllers/status.js",
-      "http": {
-        "method": "GET",
-        "path": "/status"
-      }
+      "id": "<name>.summary",
+      "handler": "./controllers/summary.js",
+      "safety": "read-only",
+      "http": { "method": "GET", "path": "/api/<name>/summary" }
     }
   ]
 }
 ```
 
-4. **`plugin/controllers/status.js`**:
-```javascript
-'use strict'
+4. **`plugin/controllers/summary.js`**: `module.exports = async function summary (req) { ... }`, calling the Kernel
+   through `require('../lib/client')` (the app's ambient MDK client, `config.mdkClient` from `@tetherto/mdk-gateway/plugin`).
 
-module.exports = async function status (req) {
-  return { status: 'OK', app: '<name>' }
-}
-```
+5. **`ui-src/`**: `index.tsx` default-exporting `defineMdkApp` (Edge Case 5), with `vite.config.ts` and `package.json`
+   as in [`app-ui-module.md`](../mdk-ui-component/references/app-ui-module.md). Build it with `npm run build:ui`.
 
-5. **`ui/index.js`**:
-```javascript
-export default {
-  id: 'io.tether.<name>',
-  displayName: '<DisplayName>',
-  routes: [],
-  panels: []
-};
-```
-
-*(`mdk create app` takes only `<name>`, `--org`, `--dir`, `--force`, `--no-install` and `--no-stack-entry` today; set `id`,
-`displayName` and `permissions` in the generated `mdk-app.yaml` by hand.)*
+*(`mdk create app` takes `<name>`, `--org`, `--dir`, `--flat`, `--force`, `--no-install` and `--no-stack-entry`; set
+`id`, `displayName` and `permissions` in the generated `mdk-app.yaml` by hand.)*
 
 ---
 
@@ -243,4 +262,6 @@ Before completing the task, the agent must verify:
 * [ ] **Route Namespacing**: No route in `plugin/mdk-plugin.json` starts with `/apps/<name>/`; the Gateway adds that prefix.
 * [ ] **Validation**: `mdk validate app <name>` passes (the app's name in `mdk.yaml`), which also checks the app's grant in
   `spec.rbac`; run `mdk rbac init` after changing `permissions`.
-* [ ] **UI Contract**: `ui/index.js` exports an object with `id`, `displayName`, `routes`, and `panels`, plus `sections` when a section needs an icon.
+* [ ] **UI Contract**: `ui-src/index.tsx` default-exports `defineMdkApp({ id, displayName, routes, panels })` (plus
+  `sections` when a section needs an icon), its `id` equals `id` in `mdk-app.yaml`, and `ui/` is rebuilt and committed.
+* [ ] **Location**: in a site project the app is under `apps/<name>/`; an app repo has it at the root (`--flat`).

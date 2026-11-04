@@ -7,7 +7,7 @@ docs@tether_slug: guides/security
 > [!WARNING]
 > MDK enforces user identity and an access policy at every entry point, and it fails closed: a stack whose `spec.rbac` binds nobody
 > refuses every call. That policy, TLS, network isolation and secrets are still part of the site you build. Treat
-> [`mvp-site`](../../../examples/mvp-site/README.md) and per-family snippets as boot demos, not a production template.
+> [`mvp-site`][mvp-site-example] and per-family snippets as boot demos, not a production template.
 
 ## Overview
 
@@ -40,13 +40,13 @@ Build around these. They are current `0.y.z` behavior.
 | Layer   | What MDK does                                                                          | What you own       |
 | ------- | -------------------------------------------------------------------------------------- | ------------------ |
 | Policy  | `spec.rbac` in `mdk.yaml` is the only place policy is written. Default deny, no superadmin (`admin` is an ordinary role holding wildcards), an invalid policy refused at load | The roles and bindings, reviewed like code |
-| UI      | `passwordAuth()` signs in through the Gateway, keeps the access token in memory and the refresh token in an httpOnly cookie | HTTPS, a real `apiBaseUrl`, hiding write controls the user cannot use |
-| Gateway | Serves `/auth/*` from the Kernel's token issuer. Checks a bearer token and a `spec.rbac` rule on every app route; no route is open. Host allowlist (loopback), rate limit, Helmet headers, body limit on by default | TLS in front, `allowedHosts`, `trustProxy` behind a proxy you control |
+| UI      | `passwordAuth()` signs in through the Gateway, keeps the access token in memory and the refresh token in an `HttpOnly` cookie | HTTPS, a real `apiBaseUrl`, hiding write controls the user cannot use |
+| Gateway | Serves `/auth/*` from the Kernel's token issuer. Checks a bearer token and a `spec.rbac` rule on every app route; no route is open. Host allowlist (loopback), rate limit, Helmet headers, body limit on by default. The Host allowlist blocks DNS rebinding in browsers; it is not a network boundary. The Gateway's own HRPC listener (`r0`) admits no peers by default | TLS in front, `allowedHosts`, `trustProxy` behind a proxy you control, a firewall on the bound port, keeping `r0.allow` empty |
 | App runtime | Runs one app's controllers in its own process and admits only the Gateway's and MCP server's keys. Calls Kernel as service account `app:<name>`, holding only the grant its `mdk-app.yaml` `permissions` requested, and acting for the signed-in user through `req.mdk` so Kernel checks the user too | Reviewing an app's code and requested grant before installing it, narrowing the grant |
 | Kernel  | Admits a key to connect (allowlist or trusted-keys dir), which grants nothing. Checks the access token on every request but sign-in against `spec.rbac`, per action and per device. Records every `command.request` attempt | Admitting the right keys, the policy, guarding the Kernel store |
 | Workers | Noise transport and key-addressed HRPC. Admit only the Kernel's client key, so every device call passes the Kernel's checks and write-command log | Network isolation, device secrets, payload checks |
 | MCP / agent | `POST /mcp` on `127.0.0.1`. Each agent signs in as its own service account and lists only the tools its rules allow | Agent accounts and their bindings, human approval for writes |
-| Devices / pools | Vendor protocol APIs and authentication | Device-network isolation |
+| Devices / pools | Vendor protocol APIs and authentication. The [Bitdeer Worker][run-bitdeer] is the reverse: it runs an MQTT broker that containers publish into, on all interfaces and accepting anonymous clients unless you set `mqttCredentials` | Device-network isolation, `mqttCredentials`, `mqttHost` and `mqttTls` on every Bitdeer Worker |
 
 Consumers enter through the Gateway; AI agents enter through the standalone MCP server. The browser never holds a Kernel key. Direct Kernel or Worker
 reachability is a backend-network concern, not a product feature.
@@ -66,7 +66,7 @@ Pick a [deployment topology][deployment-topologies] before you write policy. Iso
 | Option                 | When to pick it                        | Trade-off                                                |
 | ---------------------- | -------------------------------------- | -------------------------------------------------------- |
 | Single process         | Local demos, tests, smallest footprint | One heap. A compromise of the process is the whole site. |
-| Local (one OS process per service, shared directory) | One machine, production-like restarts, or a step toward microservices | Stronger isolation than a single heap. Kernel and Workers still share the host, and the trusted-keys dir is the admission boundary. No DHT. |
+| Local (one OS process per service, shared directory) | One machine, production-like restarts, or a step toward microservices | Stronger isolation than a single heap. Kernel and Workers still share the host, and the trusted-keys dir is the admission boundary. No discovery topic, but HRPC between the processes still runs over HyperDHT, on the public bootstrap nodes unless you set up a [private DHT][private-dht]. |
 | Microservices over DHT | Enterprise sites: separate hosts or containers, resource limits per service, Workers away from Kernel | Peers that know the discovery topic can find Kernel and Workers. Key distribution and a Kernel allowlist are mandatory. |
 
 Suggested default: [microservices][deployment-topologies] (one process or container per service, discovery over DHT), with three
@@ -80,7 +80,7 @@ Pass the Kernel public key to a remote Gateway as `kernelKey`. Treat the DHT dis
 credential: generate a site-specific topic, distribute it out of band, and do not reuse example or well-known values. Pair this
 shape with a [Kernel allowlist](#step-2-admit-the-gateway-to-kernel) that names every caller key.
 
-Do not pass [`@tetherto/mdk-client`](../../../backend/core/client/README.md) or Kernel keys into the browser. HTTP to the
+Do not pass [`@tetherto/mdk-client`][mdk-client] or Kernel keys into the browser. HTTP to the
 Gateway is the only operator path.
 
 </Step>
@@ -154,8 +154,11 @@ write-command log apply. The device network is still yours to isolate: a Worker'
 | `allowAll` on `WorkerRuntime` (`MDK_WORKER_ALLOW_ALL=1`) | Throwaway local experiments only | Any peer that learns the Worker key reaches devices with no policy check and no log entry. `mdk run` never sets it |
 
 Suggested default: persist each Worker's `storeDir` so its key is stable, treat that key as a machine identity, and register the Worker
-with Kernel only after the device network is isolated. On DHT, keep Worker public keys and the discovery topic off the operator network
-and out of git. Inject device passwords and pool API keys from a secret manager or protected environment. Never put secrets in
+with Kernel only after the device network is isolated. On DHT, keep the discovery topic off the operator network and out of git.
+Worker public keys are not secret: Kernel returns every Worker's key to any caller whose rules grant `workers: list`, so each
+Worker's `allowedKeys` holding only the Kernel client key is what keeps other callers out. Keeping Worker keys out of git is still
+worth doing as defence in depth: a known key names a target, and under an `allowAll` misconfiguration it is all a peer needs to
+reach devices. Inject device passwords and pool API keys from a secret manager or protected environment. Never put secrets in
 `mdk-contract.json`, git, or a committed seed file.
 
 Validate command payloads again in the handler (types, ranges, allowed targets). Kernel checks the command name and params against
@@ -181,25 +184,38 @@ A package never decides who may call it. An app only requests its own Kernel acc
 the request or binds nobody. Who may call the app's routes is set by your own roles.
 
 The Gateway is the user identity seam. It serves `POST /auth/login`, `POST /auth/token`, `POST /auth/refresh`, `POST /auth/logout`
-and `GET /auth/me` from the Kernel's token issuer, and on every app route it checks a bearer access token and a `spec.rbac` rule for
-the route's resource and verb (`401 ERR_AUTH_UNAUTHORIZED`, `403 ERR_AUTH_FORBIDDEN`) before body validation, the cache or the app.
-A route that declares `resourceName` (from a param, query or body field) is checked for that instance. The app receives the verified
-identity, `{ kind, sub, email?, groups? }`, as `req._info`, never the token. The [Gateway apps guide][plugins-auth] covers the route
-fields.
+and `GET /auth/me` from the Kernel's token issuer. A client that keeps no cookies, such as the CLI or a script, sends
+`"refreshIn": "body"` at login and gets its refresh token in the body instead, which the [Gateway's sign-in
+routes][gateway-security] cover along with the rest of the cookie behavior.
+
+On every app route it checks a bearer access token and a `spec.rbac` rule for the route's resource and verb
+(`401 ERR_AUTH_UNAUTHORIZED`, `403 ERR_AUTH_FORBIDDEN`) before body validation, the cache or the app. A route that declares
+`resourceName` (from a param, query or body field) is checked for that instance. The app receives the verified identity,
+`{ kind, sub, email?, groups? }`, as `req._info`, never the token. The [Gateway apps guide][app-auth] covers the route fields.
 
 #### Options
 
 | Option                                  | When to pick it | Trade-off                             |
 | --------------------------------------- | --------------- | ------------------------------------- |
 | [`mdk rbac init`][cli-access-policy] | Every stack, and after `mdk add app` | Binds `mdk-cli` to `admin`, `mdk-gateway` and `mdk-mcp` to `gateway` (`policy: read`), and writes each app's grant. A role you edited is left alone |
-| [`mdk user add <name> --admin`][cli-users] | The first operator | Writes the `admin` role if missing and binds the user. Keep the number of admins small; `admin` holds every wildcard |
+| [`mdk user add <name> --admin`][first-operator] | The first operator | Writes the `admin` role if missing and binds the user. Keep the number of admins small; `admin` holds every wildcard |
 | Narrow roles bound to `Group` subjects (`mdk user add --group`) | Teams with different duties (read-only staff, one rack's technicians) | More roles to review. `resourceNames` such as `rack-3-*` keep a technician to one rack |
 | A custom `authVerifier` with no authority | A Gateway started with neither a Kernel nor a credential | Not checked against `spec.rbac`, and refused in `mdk.yaml` (`spec.gateway.config.authVerifier`). Outside the supported path once a stack has a policy |
 
-Suggested default: run `mdk rbac init` before the first `mdk run` (a `spec.rbac` under which nobody may write the policy makes
-`mdk run` refuse to boot the Kernel, which could not be handed a policy afterwards), create the first operator with `mdk user add <name> --admin`, then give
-everyone else a narrow role bound by group. Read the effective policy with `mdk rbac show` after every change, and keep `mdk.yaml`
-in review like code.
+> [!CAUTION]
+> `resourceNames` bounds which devices an identity may address, not whose data it may see. A `stat-*` aggregate log is
+> shared: a read is authorized against the device it is addressed to and returns the stored series without narrowing it
+> to that device, so an identity scoped to one device can read a total that other devices contributed to. A tag the
+> addressed device does not carry is still refused (`ERR_LOG_TAG_FORBIDDEN`), and the other devices stay unaddressable.
+> Where tenants must not see each other's figures, separate them by Worker so they share no aggregate, rather than by
+> `resourceNames` alone.
+
+Suggested default: run `mdk rbac init` before the first `mdk run` (a `spec.rbac` that binds no user and no group, and whose
+bound subjects include nobody who may write the policy, makes `mdk run` refuse to boot the Kernel, which could not be handed a
+policy afterwards), [create the first operator][first-operator] with `mdk user add <name> --admin`, then give
+everyone else a narrow role bound by group. `mdk user add` needs a running Kernel, so the order is `mdk rbac init`, then
+`mdk run` (or `mdk run kernel`), then `mdk user add`. Read the effective policy with `mdk rbac show` after every change,
+and keep `mdk.yaml` in review like code.
 Single sign-on federation is not built in: users and passwords live in the Kernel's identity store.
 
 ```yaml
@@ -233,7 +249,9 @@ Also, on the Gateway:
   the browser keeps no refresh cookie and every reload signs the user out
 - Set `trustProxy` only behind a TLS proxy whose hop count you trust: it makes the Gateway see `https`, and without a trusted proxy
   client IPs (and so rate limits) can be spoofed
-- List the names clients use in `allowedHosts`; only loopback on the bound port passes the Host check by default
+- List the names clients use in `allowedHosts`; only loopback on the bound port passes the Host check by default. The check stops
+  a DNS-rebinding page in a browser from reading the Gateway; it does not keep the network out, because any client can send
+  `Host: localhost`. What keeps the network out is the token and `spec.rbac` check, and a firewall on the bound port
 - Tune `rateLimit` (default 300 requests per minute per IP). It is counted before the auth check, so failed sign-ins are throttled too
 - Ship the Gateway's `authz` decision lines (subject, route, resource, verb, decision, policy version) to your log store
 - Tune `rateLimit` for writes. `?overwriteCache=true` is honored only for an identity
@@ -265,6 +283,26 @@ the payload's self-asserted `authPerms` are ignored on both push and vote; they 
 without the operator's token needs `actions: delegate`. Prefer `req.mdk`, which needs no `delegate` grant, and grant `delegate`
 only to an app whose code you trust to name the right user.
 
+#### Provisioning a device
+
+Registering, updating or forgetting a device is a write action (`registerThing`, `updateThing`, `forgetThings`) pushed
+through the Kernel with the target Worker in `params[0].workerId`. It needs `actions: write` to push, and
+`devices: write` on every device the push resolves to.
+
+The payload requires `voter` and `authPerms` (`ERR_PAYLOAD_VOTER_REQUIRED`, `ERR_PAYLOAD_AUTH_PERMS_REQUIRED`), so a
+push without them is refused before its targets are resolved. For a caller carrying a token the Kernel then ignores
+what they assert and evaluates the caller's own identity and rules instead, so they satisfy the schema rather than
+grant anything.
+
+`updateThing` and `forgetThings` name a device the registry already knows, so a `devices: write` rule narrowed with
+`resourceNames` matches them normally. `registerThing` does not: the device is not in the registry yet, so it resolves
+to no instance name, and a rule scoped to instances never matches a request that names none. Registering needs an
+unscoped `devices: write` rule, which grants write access to every device the policy covers. Bind that to a dedicated
+provisioning account rather than to an operator role, and keep the scoped rule for everything else.
+
+A push that resolves and executes means the configuration is persisted. The running Worker does not publish the new
+device: it appears after the Worker restarts against the same store.
+
 Suggested default: approval-gated writes for anything that changes hash, power, or network membership, with the people who vote bound
 to a role holding `actions: vote` and `devices: write` on the affected devices. Direct commands only where a single operator's
 `devices: write` rule is enough. Keep `commands: read` with the people who audit.
@@ -276,7 +314,7 @@ to a role holding `actions: vote` and `devices: write` on the affected devices. 
 ### Step 6: Wire the UI session
 
 [`passwordAuth()`][ui-sessions] from `@tetherto/mdk-ui-foundation` signs a user in through the Gateway's `/auth/login`. The access
-token stays in memory; the refresh token stays in an httpOnly, `SameSite=Strict` cookie scoped to `/auth`, out of reach of page
+token stays in memory; the refresh token stays in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/auth`, out of reach of page
 scripts. The provider renews the token on a timer and on a `401`, and tabs refresh one at a time under a Web Locks lock. Refresh
 tokens rotate on every use, and a used one presented again revokes the whole session (theft detection). The one exception is two
 clients refreshing at once: within about 10 seconds of its use, while its successor is still unused, a used token gets that same
@@ -405,8 +443,9 @@ These hold by design. Plan the site around them.
 - [RBAC policy model][rbac]: rule shape, subjects, and the full vocabulary
 - [Token issuer][identity]: access and refresh tokens, sessions, and when tokens stop working
 - [Access policy commands][cli-access-policy]: `mdk rbac init`, `apply` and `show`
-- [Users and service accounts][cli-users]: `mdk user`, `mdk sa`, and `mdk login`
-- [Route rules in app controllers][plugins-auth]: `verb`, `resourceName`, and `req._info`
+- [Create the first operator and sign in][first-operator]: `mdk user add --admin`, the dashboard, `POST /auth/login` and `mdk login`
+- [Users and service accounts][cli-users]: `mdk user passwd`, `disable`, `remove`, and `mdk sa` for agents
+- [Route rules in app controllers][app-auth]: `verb`, `resourceName`, and `req._info`
 - [Deployment topologies][deployment-topologies]: this blueprint assumes microservices; local and single-process are smaller footprints
 - [Hosted-site reference configuration][hosted-site]: two profiles and one settings table
 - [Security policy][security-policy]: report product vulnerabilities through a private advisory, not a public issue
@@ -417,16 +456,16 @@ These hold by design. Plan the site around them.
 <!-- docs@tether.io: security-boundaries → concepts/security-boundaries -->
 
 [control-plane]: ../../concepts/control-plane.md
-<!-- docs@tether.io: control-plane → concepts/control-plane -->
+<!-- docs@tether.io: control-plane → https://github.com/tetherto/mdk/blob/main/docs/concepts/control-plane.md -->
 
 [deployment-topologies]: ../../concepts/deployment-topologies.md
-<!-- docs@tether.io: deployment-topologies → concepts/deployment-topologies -->
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [hosted-site]: ../deployment/hosted-site.md
 <!-- docs@tether.io: hosted-site → guides/deployment/hosted-site -->
 
-[plugins-auth]: ../gateway/apps.md#auth-and-permissions
-<!-- docs@tether.io: plugins-auth → guides/gateway/apps#auth-and-permissions -->
+[app-auth]: ../gateway/apps.md#auth-and-permissions
+<!-- docs@tether.io: app-auth → guides/gateway/apps#auth-and-permissions -->
 
 [write-actions]: ../gateway/write-actions.md
 <!-- docs@tether.io: write-actions → guides/gateway/write-actions -->
@@ -461,11 +500,14 @@ These hold by design. Plan the site around them.
 [identity]: ../../../backend/core/identity/README.md
 <!-- docs@tether.io: identity → https://github.com/tetherto/mdk/blob/main/backend/core/identity/README.md -->
 
-[cli-access-policy]: ../../../packages/cli/README.md#access-policy
-<!-- docs@tether.io: cli-access-policy → https://github.com/tetherto/mdk/blob/main/packages/cli/README.md#access-policy -->
+[cli-access-policy]: ../../reference/tooling/cli.md#mdk-rbac
+<!-- docs@tether.io: cli-access-policy → reference/tooling/cli#mdk-rbac -->
 
-[cli-users]: ../../../packages/cli/README.md#users-and-service-accounts
-<!-- docs@tether.io: cli-users → https://github.com/tetherto/mdk/blob/main/packages/cli/README.md#users-and-service-accounts -->
+[cli-users]: ../../reference/tooling/cli.md#auth
+<!-- docs@tether.io: cli-users → reference/tooling/cli#auth -->
+
+[first-operator]: create-the-first-operator.md
+<!-- docs@tether.io: first-operator → guides/security/create-the-first-operator -->
 
 [mcp-agents]: ../../../backend/core/mcp/README.md#ai-agents-and-the-mcp-server
 <!-- docs@tether.io: mcp-agents → https://github.com/tetherto/mdk/blob/main/backend/core/mcp/README.md#ai-agents-and-the-mcp-server -->
@@ -479,8 +521,20 @@ These hold by design. Plan the site around them.
 [run-avalon]: ../miners/run-avalon-worker.md
 <!-- docs@tether.io: run-avalon → guides/miners/run-avalon-worker -->
 
+[run-bitdeer]: ../containers/run-bitdeer-worker.md
+<!-- docs@tether.io: run-bitdeer → guides/containers/run-bitdeer-worker -->
+
+[private-dht]: ../deployment/private-dht.md
+<!-- docs@tether.io: private-dht → guides/deployment/private-dht -->
+
 [run-whatsminer]: ../miners/run-whatsminer-worker.md
 <!-- docs@tether.io: run-whatsminer → guides/miners/run-whatsminer-worker -->
 
 [run-antminer]: ../miners/run-antminer-worker.md
 <!-- docs@tether.io: run-antminer → guides/miners/run-antminer-worker -->
+
+[mvp-site-example]: ../../../examples/mvp-site/README.md
+<!-- docs@tether.io: mvp-site-example → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/README.md -->
+
+[mdk-client]: ../../../backend/core/client/README.md
+<!-- docs@tether.io: mdk-client → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md -->

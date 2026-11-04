@@ -3,10 +3,29 @@
 const test = require('brittle')
 const crypto = require('crypto')
 const DHT = require('hyperdht')
+const createTestnet = require('hyperdht/testnet')
 const { HRPCListener } = require('../../../kernel/lib/transport/hrpc-listener')
 const { createTestAuth } = require('../../../kernel/lib/testing')
 const { createAssertion } = require('@tetherto/mdk-identity')
-const { createRawMdkClient, createMdkClient } = require('../../index')
+const {
+  createRawMdkClient: rawMdkClient,
+  createMdkClient: mdkClient
+} = require('../../index')
+
+// Both HRPCListener and the client default to `bootstrap: null`, which is
+// hyperdht's cue to use its public bootstrap nodes. Left alone these tests
+// would do real network I/O against node{1,2,3}.hyperdht.org, so they would
+// pass only on a runner with outbound UDP and fail anywhere without it.
+// `authedListener` stands up an isolated loopback testnet per test and records
+// its bootstrap here; the two wrappers below put every client on that same
+// testnet, so no call site has to pass it. A test that builds a client with no
+// `hrpc` transport (an mock `rpc`, or an argument-validation case) is left
+// untouched, since it never opens a DHT.
+let bootstrap = null
+const createRawMdkClient = (opts = {}) =>
+  rawMdkClient(opts.hrpc ? { ...opts, hrpc: { bootstrap, ...opts.hrpc } } : opts)
+const createMdkClient = (config = {}, opts) =>
+  mdkClient({ kernelBootstrap: bootstrap, ...config }, opts)
 
 function createMockModules () {
   const workers = [
@@ -46,13 +65,16 @@ let lastAuth = null
 // The Kernel admits callers by key (there is no allowAll): the tests' clients dial with this one.
 const CLIENT_KP = DHT.keyPair(crypto.randomBytes(32))
 async function authedListener (t, opts) {
+  const testnet = await createTestnet(3, t.teardown)
+  bootstrap = testnet.bootstrap
+  t.teardown(() => { bootstrap = null })
   const auth = await createTestAuth({ registry: opts.registry })
   t.teardown(() => auth.close())
   credential = auth.credential
   lastAuth = auth
   const { allowAll, ...rest } = opts
   const whitelist = allowAll ? [CLIENT_KP.publicKey.toString('hex')] : rest.whitelist
-  return new HRPCListener({ ...rest, whitelist, identity: auth.identity, authorizer: auth.authorizer })
+  return new HRPCListener({ ...rest, bootstrap, whitelist, identity: auth.identity, authorizer: auth.authorizer })
 }
 
 async function startListener (t) {
@@ -233,44 +255,6 @@ test('hrpc client - createMdkClient passes opts.timeout to the transport', async
   await t.exception(() => mdkClient.listWorkers(), /ERR_MDK_REQUEST_TIMEOUT/)
 })
 
-test('hrpc client - worker clients dial a Worker with the parent kernelKeyPair', async (t) => {
-  const HyperswarmRPC = require('@hyperswarm/rpc')
-  const { serialize, deserialize, buildResponse } = require('../../../kernel/lib/protocol/envelope')
-  const { ACTIONS } = require('../../../kernel/lib/protocol/actions')
-
-  const keyPair = DHT.keyPair(crypto.randomBytes(32))
-  const callerKey = keyPair.publicKey.toString('hex')
-
-  // A stand-in Worker RPC server whose firewall admits only the caller key.
-  const workerRpc = new HyperswarmRPC()
-  const seenKeys = []
-  const server = workerRpc.createServer({
-    firewall: (remotePublicKey) => {
-      seenKeys.push(remotePublicKey.toString('hex'))
-      return remotePublicKey.toString('hex') !== callerKey
-    }
-  })
-  server.respond('mdk', async (buf) => {
-    const env = deserialize(buf)
-    return serialize(buildResponse(env, ACTIONS.COMMAND_RESULT, { status: 'SUCCESS' }, 'w1'))
-  })
-  await server.listen()
-  t.teardown(async () => { await server.close(); await workerRpc.destroy() })
-
-  const mods = createMockModules()
-  mods.registry.listWorkers = () => [{ workerId: 'w1', state: 'READY', deviceIds: ['d1'], rpcKey: server.publicKey.toString('hex') }]
-  const listener = await authedListener(t, { ...mods, whitelist: [callerKey] })
-  const { publicKey } = await listener.start()
-  t.teardown(() => listener.stop())
-
-  const mdkClient = createMdkClient({ kernelKey: publicKey.toString('hex'), kernelKeyPair: () => keyPair, kernelCredential: credential })
-  t.teardown(() => mdkClient.close())
-
-  const res = await mdkClient.sendWorkerCommand('w1', 'd1', 'reboot', {})
-  t.is(res.payload.status, 'SUCCESS', 'admitted by a Worker firewall that names only the kernelKeyPair')
-  t.ok(seenKeys.length > 0 && seenKeys.every((k) => k === callerKey), 'the Worker only ever saw the parent key')
-})
-
 test('hrpc client - a request without a token is refused; a credential signs in once and is reused', async (t) => {
   const { publicKey } = await startListener(t)
 
@@ -304,10 +288,4 @@ test('hrpc client - a rejected token is renewed and the request retried once', a
   t.teardown(() => client.close())
   t.is((await client.listWorkers()).workers.length, 1)
   t.is(handed, 2)
-})
-
-test('hrpc client - bootstrap and dhtHost are handed to child clients before connect', (t) => {
-  const { HRPCClient } = require('../../lib/hrpc-client')
-  const client = new HRPCClient({ key: 'ab'.repeat(32), seed: Buffer.alloc(32, 7), bootstrap: ['127.0.0.1:49737'], dhtHost: '127.0.0.1' })
-  t.alike(client.childOpts(), { timeout: 30000, seed: Buffer.alloc(32, 7), bootstrap: ['127.0.0.1:49737'], dhtHost: '127.0.0.1' })
 })

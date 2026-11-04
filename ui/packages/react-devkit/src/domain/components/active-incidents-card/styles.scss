@@ -76,6 +76,13 @@ $_prefix: 'mdk-active-incidents-card';
     @include flex_row_align_start;
 
     width: 100%;
+  }
+
+  /* The pointer belongs to the row that actually handles a click. It used to sit
+   * unconditionally on `__row-content`, which covers the whole row, so a card
+   * rendered without `onItemClick` still offered a pointer on every incident and
+   * then did nothing when one was clicked. */
+  &__row--clickable &__row-content {
     cursor: pointer;
   }
 
@@ -90,7 +97,7 @@ $_prefix: 'mdk-active-incidents-card';
     font-size: 12px;
     font-weight: 500;
     color: var(--mdk-color-soft-gray);
-    font-family: 'JetBrains Mono', monospace, sans-serif;
+    font-family: var(--font-mono);
   }
 
   &__row-subtitle {

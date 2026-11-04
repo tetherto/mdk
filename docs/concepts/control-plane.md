@@ -15,13 +15,13 @@ Use this page to understand which layer receives a request, which layer validate
 
 ## Responsibility boundaries
 
-**Gateway** owns the consumer-facing surface: it routes HTTP to the apps its stack declares, each in its own runtime process. It is also where
-authentication belongs, though it implements none: that logic lives in [the app controllers you write][app-auth]. Browser UIs enter MDK
+**Gateway** owns the consumer-facing surface: it routes HTTP to the apps its stack declares, each in its own runtime process. It also owns sign-in, serving the
+Kernel's token issuer over `/auth/*` and checking [every app route][app-auth] against `spec.rbac`. Browser UIs enter MDK
 through the Gateway (they do not talk to Kernel directly). Agents can also reach MDK over MCP, a standalone
 [`@tetherto/mdk-mcp`][mcp-readme] process that derives tools from an app's routes.
 
 **Kernel** owns coordination: Worker registry, telemetry routing, health checks, command dispatch, command state, and the
-write-action approval modules. Kernel trusts established callers; it does not validate user identity.
+write-action approval modules. Kernel verifies the access token on every request past sign-in and judges the caller against `spec.rbac`.
 
 **Workers** own hardware integration. They declare capabilities, answer Kernel-initiated telemetry and state pulls, resolve candidate
 write calls for approval-gated actions, and execute final commands against devices.
@@ -50,7 +50,10 @@ state). Kernel keeps no per-device staleness or last-seen signal, `mdk status` r
 The direction of each connection is intentional:
 
 - Dashboards and UIs call the Gateway over HTTP; agents call the standalone MCP server over MCP
-- The Gateway and the MCP server each dial Kernel over [Hyperswarm RPC (HRPC)][hrpc-glossary] through their own `@tetherto/mdk-client` — each a distinct Kernel caller, subject to [Kernel's allowlist][mcp-allowlist]
+- App runtimes and the MCP server dial Kernel over [Hyperswarm RPC (HRPC)][hrpc-glossary] through their own `@tetherto/mdk-client`,
+  app runtimes for device traffic and the MCP server for tool calls. The Gateway does the same for identity and policy only when
+  its Kernel is in another process, as its own service account; started with an in-process Kernel it uses that Kernel directly.
+  Each remote caller is distinct, subject to [Kernel's allowlist][mcp-allowlist]
 - Kernel discovers Workers, then initiates every Worker RPC
 - Workers never initiate upstream calls to Kernel or the Gateway
 
@@ -72,7 +75,8 @@ The Gateway dials with one persistent key, derived from a seed kept in its store
 status file (`<root>/status/wrk-node-http-<port>.json`). That is the [value to allowlist][mcp-allowlist], and it survives restarts.
 
 Transport identity is not user identity. The HRPC allowlist controls which backend processes may connect to Kernel, and it says nothing about the
-person or agent behind a request. Establishing that is [the job of the app controllers][app-auth] serving people, browser applications, and agents.
+person or agent behind a request. That arrives as the request's access token, issued by the Kernel's token issuer when the caller signs in and checked
+against [the rules `spec.rbac` grants them][app-auth].
 
 ## Request paths
 
@@ -86,7 +90,7 @@ tail-log. An app does have a writable directory of its own, the `data/` subdirec
 `config.dataDir`.
 
 > [!NOTE]
-> For app controller mechanics, use the [app authoring guide][plugins-how-to].
+> For app controller mechanics, use the [app authoring guide][app-authoring].
 
 ### Direct commands
 
@@ -118,9 +122,10 @@ flowchart TB
   actionCaller --> commandRequest
 ```
 
-The Gateway may expose an HTTP actions surface through plugins. The Gateway checks the user's token against the route's
-`spec.rbac` rule; the app then calls Kernel as its own service account (`app:<name>`), so Kernel checks the app's grant, not
-the user. Kernel owns [`ActionManager`][action-manager], [`ActionCaller`][action-caller], and the target checks at the protocol layer: a push needs
+An app a stack declares may put an HTTP actions surface in front of this. The Gateway checks the user's token against the route's
+`spec.rbac` rule and forwards the request to the app's own runtime process; the app then calls Kernel as its own service account
+(`app:<name>`), carrying the signed-in user's token beside its own, so Kernel allows the call only where `spec.rbac` grants both. Kernel owns [`ActionManager`][action-manager], [`ActionCaller`][action-caller], and the target
+checks at the protocol layer: a push needs
 `actions: write` and `devices: write` on every device it resolves to, and a vote needs `actions: vote` and `devices: write`
 on every device of the stored action. For a caller with a token, the `authPerms` a payload carries are ignored; they only
 apply to in-process calls. Workers answer
@@ -232,7 +237,7 @@ The write-action flow is reachable from two different layers depending on where 
 
 ## Next steps
 
-- Build Gateway routes with the [app authoring guide][plugins-how-to]
+- Build Gateway routes with the [app authoring guide][app-authoring]
 - Secure a production site with the [security blueprint][security-blueprint]
 - Submit and approve write actions with the [write-actions how-to][write-actions-how-to]
 - Review the [Kernel modules][kernel-readme]
@@ -253,7 +258,7 @@ The write-action flow is reachable from two different layers depending on where 
 <!-- docs@tether.io: react-adapter-readme → https://github.com/tetherto/mdk/blob/main/ui/packages/react-adapter/README.md -->
 
 [deployment-topologies]: deployment-topologies.md
-<!-- docs@tether.io: deployment-topologies → concepts/deployment-topologies -->
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [workers-discovery]: ../../backend/workers/docs/architecture.md#discovery-model
 <!-- docs@tether.io: workers-discovery → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/architecture.md#discovery-model -->
@@ -276,8 +281,8 @@ The write-action flow is reachable from two different layers depending on where 
 [app-auth]: ../guides/gateway/apps.md#auth-and-permissions
 <!-- docs@tether.io: app-auth → guides/gateway/apps#auth-and-permissions -->
 
-[plugins-how-to]: ../guides/gateway/apps.md
-<!-- docs@tether.io: plugins-how-to → guides/gateway/apps -->
+[app-authoring]: ../guides/gateway/apps.md
+<!-- docs@tether.io: app-authoring → guides/gateway/apps -->
 
 [mcp-readme]: ../../backend/core/mcp/README.md
 <!-- docs@tether.io: mcp-readme → https://github.com/tetherto/mdk/blob/main/backend/core/mcp/README.md -->

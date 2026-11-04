@@ -10,6 +10,7 @@ import { deviceId, deviceSerial } from '../lib/spec.js';
 import { createApp } from '../lib/app-scaffold.js';
 import { grantLine } from '../lib/grant-report.js';
 import { DIRS } from '../lib/project.js';
+import { detectEnvironment, NODE_MIN_MAJOR } from '../lib/detect.js';
 import { theme, tick, arrow } from '../lib/theme.js';
 
 /**
@@ -61,7 +62,18 @@ export function registerCreate(program: Command): void {
     .addHelpText(
       'after',
       examples('mdk create worker rig', 'mdk create app ops-center --org your-org', 'mdk create dashboard'),
-    );
+    )
+    // What `create` scaffolds declares `engines.node >=24` and installs and builds
+    // under this Node, so say so up front rather than through an npm or Vite error.
+    .hook('preAction', () => {
+      const env = detectEnvironment();
+      if (!env.nodeOk) {
+        process.stderr.write(
+          `${theme.warn('warning')}: Node ${env.nodeVersion} is too old; MDK needs Node >= ${NODE_MIN_MAJOR}, ` +
+            `so installing or building the scaffold may fail.\n`,
+        );
+      }
+    });
 
   create
     .command('worker')
@@ -169,18 +181,28 @@ export function registerCreate(program: Command): void {
     )
     .option('--org <scope>', 'npm scope for the package name, e.g. your-org -> @your-org/<name>')
     .option('--dir <path>', 'Project directory', '.')
+    .option(
+      '--flat',
+      'Scaffold into <dir> itself, as the root of a standalone app repo (for `mdk add app github:...`), ' +
+        'not linked into a project or added to mdk.yaml',
+      false,
+    )
     .option('--force', 'Overwrite the target if it already exists', false)
     .option('--no-install', 'Skip `npm install` and building the starter UI')
     .option('--no-stack-entry', 'Do not add the app to mdk.yaml')
-    .addHelpText('after', examples('mdk create app ops-center', 'mdk create app ops-center --org your-org'))
+    .addHelpText(
+      'after',
+      examples('mdk create app ops-center', 'mdk create app ops-center --org your-org', 'mdk create app ops-center --flat'),
+    )
     .action(
       (
         name: string,
-        opts: { org?: string; dir: string; force: boolean; install: boolean; stackEntry: boolean },
+        opts: { org?: string; dir: string; flat: boolean; force: boolean; install: boolean; stackEntry: boolean },
       ) => {
         const result = createApp({
           name,
           parentDir: opts.dir,
+          flat: opts.flat,
           org: opts.org,
           force: opts.force,
           install: opts.install,
@@ -207,6 +229,16 @@ export function registerCreate(program: Command): void {
             ? `  ${tick} Built the starter UI ${arrow} ${theme.value('ui/index.js')} ${theme.muted('(source in ui-src/)')}\n`
             : `  ${theme.warn('!')} Starter UI not built: ${result.uiWarning}\n` +
               `    ${theme.muted('Build it yourself:')} ${theme.cmd(`cd ${result.appPath} && npm --prefix ui-src install && npm run build:ui`)}\n`);
+
+        if (opts.flat) {
+          out +=
+            `\n${theme.label('Next steps')}\n` +
+            `  ${theme.muted('1.')} Add routes in ${theme.value('plugin/mdk-plugin.json')} + ${theme.value('plugin/controllers/')}, and set ${theme.key('id')} and ${theme.key('permissions')} in ${theme.value('mdk-app.yaml')}.\n` +
+            `  ${theme.muted('2.')} Edit the UI in ${theme.value('ui-src/')}; rebuild with ${theme.cmd('npm run build:ui')} and commit ${theme.value('ui/')}.\n` +
+            `  ${theme.muted('3.')} Tag and push, then install it in a project: ${theme.cmd('mdk add app github:<owner>/<repo>#<tag>')}\n`;
+          process.stdout.write(out);
+          return;
+        }
 
         // Apps are referenced by package name (resolved via the `file:` link),
         // so the manual snippet uses the package name too.
@@ -306,11 +338,15 @@ export function registerCreate(program: Command): void {
           }
           const from =
             result.source === 'monorepo' ? 'local monorepo template' : 'GitHub template';
+          const steps = [
+            ...(result.uiPackagesHint ? [result.uiPackagesHint] : []),
+            `Edit ${theme.value(`${result.appPath}/.env`)} if you need a different Gateway/OAuth URL.`,
+            `Run it: ${theme.cmd(`mdk run dashboard --dir ${opts.dir}`)}`,
+          ];
           const out =
             `Scaffolded ${result.appPath} ${theme.muted(`(${from})`)}\n` +
             `\n${theme.label('Next steps')}\n` +
-            `  ${theme.muted('1.')} Edit ${theme.value(`${result.appPath}/.env`)} if you need a different Gateway/OAuth URL.\n` +
-            `  ${theme.muted('2.')} Run it: ${theme.cmd(`mdk run dashboard --dir ${opts.dir}`)}\n`;
+            steps.map((step, i) => `  ${theme.muted(`${i + 1}.`)} ${step}\n`).join('');
           process.stdout.write(out);
           return;
         }

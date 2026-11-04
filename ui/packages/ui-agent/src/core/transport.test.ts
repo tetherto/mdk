@@ -89,6 +89,42 @@ describe('createSession', () => {
     expect((error as AgentApiError).code).toBe(AGENT_ERROR.UNAVAILABLE)
     expect((error as AgentApiError).message).toContain('config.agent missing')
   })
+
+  it("names the missing agent app when the gateway has no agent routes", async () => {
+    // Fastify's own 404 body, which is prose rather than a code.
+    fetchImpl.mockResolvedValue(
+      jsonErrorResponse(404, 'Route POST:/agent/sessions not found'),
+    )
+
+    const error = await createSession({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    }).catch((caught: unknown) => caught)
+
+    expect(error).toBeInstanceOf(AgentApiError)
+    expect((error as AgentApiError).code).toBe(AGENT_ERROR.ROUTES_NOT_MOUNTED)
+    // The server's wording stays on the message for a bug report.
+    expect((error as AgentApiError).message).toBe('Route POST:/agent/sessions not found')
+  })
+
+  it('does not mistake a session 404 for missing routes', async () => {
+    fetchImpl.mockResolvedValue(jsonErrorResponse(404, 'ERR_AGENT_SESSION_NOT_FOUND'))
+
+    const error = await createSession({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    }).catch((caught: unknown) => caught)
+
+    expect((error as AgentApiError).code).toBe(AGENT_ERROR.SESSION_NOT_FOUND)
+  })
+
+  it('synthesises an ERR_-shaped code for any other status', async () => {
+    fetchImpl.mockResolvedValue(jsonErrorResponse(500, 'Internal Server Error'))
+
+    const error = await createSession({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    }).catch((caught: unknown) => caught)
+
+    expect((error as AgentApiError).code).toBe('ERR_AGENT_HTTP_500')
+  })
 })
 
 describe('decideApproval', () => {

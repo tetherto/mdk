@@ -5,8 +5,8 @@ MDK Worker for the F2Pool Bitcoin mining pool. Fetches hashrate, worker stats, a
 ## Install
 
 > [!IMPORTANT]
-> `npm install @tetherto/mdk-worker-f2pool` returns `E404`. The device Workers are not published to npm yet; they are
-> workspace packages in the MDK monorepo. Clone it and install from the repository root instead.
+> `npm install @tetherto/mdk-worker-f2pool` returns `E404`. The device Workers are not published to npm; they are
+> workspace packages in the public MDK repository. Clone it and install from the repository root instead.
 
 ```bash
 git clone https://github.com/tetherto/mdk.git
@@ -32,16 +32,21 @@ const worker = await startF2poolWorker({
   workerId: 'f2pool-site-1',
   rack: 'site-1',
   storeDir: './store/f2pool-site-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   conf: { f2pool: { accounts: ['my-f2pool-account'], apiSecret: 'your-api-secret', apiUrl: 'https://api.f2pool.com/v2' } }
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 | Option                  | Status   | Type       | Default | Description                                                        |
 | ----------------------- | -------- | ---------- | ------- | ------------------------------------------------------------------ |
 | `workerId`              | Required | `string`   | None    | One runtime process = one `workerId`                               |
 | `rack`                  | Required | `string`   | None    | Rack identifier; also the pool store prefix                        |
 | `storeDir`              | Required | `string`   | None    | Persistent store directory                                         |
+| `allowedKeys`           | Required | `string[]` or `Buffer[]` | None | RPC caller keys the Worker accepts; pass `kernel.getClientPublicKey()`. `start()` throws `ERR_WORKER_ALLOWED_KEYS_REQUIRED` when empty |
 | `conf.f2pool.accounts`  | Required | `string[]` | None    | F2Pool usernames to poll                                           |
 | `conf.f2pool.apiSecret` | Required | `string`   | None    | Sent as the `F2P-API-SECRET` header                                |
 | `conf.f2pool.apiUrl`    | Optional | `string`   | None; requests target an empty base URL if omitted | The F2Pool API base URL; [`config/f2pool.json.example`](config/f2pool.json.example) ships `https://api.f2pool.com/v2` as a template value, not a code-level default |

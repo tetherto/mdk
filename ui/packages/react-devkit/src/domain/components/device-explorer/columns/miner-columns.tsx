@@ -64,18 +64,14 @@ export const getMinerColumns = ({
       return (
         <div>
           {containerName === MAINTENANCE_CONTAINER ? (
-            <DeviceCardColText
-              style={{
-                color: 'var(--mdk-color-warning)',
-              }}
-            >
+            <DeviceCardColText className="mdk-device-card-col-text--warning">
               Maintenance
             </DeviceCardColText>
           ) : (
             <DeviceCardColText>{containerName}</DeviceCardColText>
           )}
           {Boolean(error || err) && (
-            <DeviceCardColText style={{ color: 'var(--mdk-button-danger-bg)' }}>
+            <DeviceCardColText className="mdk-device-card-col-text--danger">
               {
                 (err
                   ? ERROR_MESSAGES[err as keyof typeof ERROR_MESSAGES] || err

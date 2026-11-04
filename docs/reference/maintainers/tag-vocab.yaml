@@ -111,8 +111,6 @@ categories:
     label: Layout
   widgets:
     label: Widgets
-  dashboards:
-    label: Dashboards
   actions:
     label: Actions
   feedback:

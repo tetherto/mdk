@@ -35,7 +35,7 @@ Every Worker package follows the same layout:
 │   └── src/
 │       ├── telemetry/*.js   # one handler per metric field
 │       └── commands/*.js    # one handler per write action
-├── mock/                    # fake device API for local / CI testing
+├── mock/                    # mock device API for local / CI testing
 └── tests/
 ```
 

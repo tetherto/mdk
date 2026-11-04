@@ -163,7 +163,7 @@ async function runOnboard(): Promise<void> {
   let workerPackages: string[] | symbol = [];
   if (WORKER_CATALOG.length > 0) {
     workerPackages = await multiselect({
-      message: 'Worker plugins to install',
+      message: 'Workers to install',
       options: WORKER_CATALOG.map(({ value, label, hint }) => ({ value, label, hint })),
       required: false,
     });
@@ -317,10 +317,12 @@ async function runOnboard(): Promise<void> {
   const w = spinner();
   w.start('Writing project files');
   await delay(400);
+  let manifestCreated = false;
   try {
     mkdirSync(targetDir, { recursive: true });
     writeFileSync(specPath, toYaml(spec), 'utf8');
     const manifest = ensureProjectManifest(targetDir, stackName);
+    manifestCreated = manifest === 'created';
     const gitignore = ensureProjectGitignore(targetDir);
     if (Object.keys(pendingSecrets).length) writeProjectEnv(targetDir, pendingSecrets);
     w.stop(`${tick} Wrote ${theme.value(specPath)}`);
@@ -382,13 +384,13 @@ async function runOnboard(): Promise<void> {
         continue;
       }
     }
-    if (!isLocalPackagePath(pkgName)) registryPackages.push(pkgName);
+    if (!isLocalPackagePath(pkgName)) registryPackages.push(entry?.source ?? pkgName);
   }
   const npmPlugins = [...new Set(registryPackages)];
-  const needsInstall = linkedBundled || npmPlugins.length > 0;
+  const needsInstall = linkedBundled || npmPlugins.length > 0 || manifestCreated;
 
   if (needsInstall) {
-    const count = (linkedBundled ? 1 : 0) + npmPlugins.length;
+    const count = (linkedBundled ? 1 : 0) + npmPlugins.length + (manifestCreated ? 1 : 0);
     log.step(theme.brand(`Installing ${count} package${count === 1 ? '' : 's'}`));
     const result = npmPlugins.length
       ? installPackages(targetDir, npmPlugins)
@@ -523,7 +525,7 @@ async function runOnboard(): Promise<void> {
   const specHint =
     seeded.length === workers.length && workers.length > 0
       ? `${seeded.length === 1 ? 'a seed device is' : 'seed devices are'} already declared — runnable as-is`
-      : 'add devices & plugin config, then save';
+      : 'add devices & worker config, then save';
 
   const parts = [
     theme.label('1. Review your spec'),
@@ -533,19 +535,24 @@ async function runOnboard(): Promise<void> {
     cmdBlock(runRows),
     theme.muted(`Or separately: mdk run kernel · ${perComponentHint} · mdk run app <name> · mdk run gateway`),
     '',
-    theme.label('3. Manage it'),
+    // Users live in the Kernel, so this comes after the stack is up; the spec
+    // binds only the CLI and the apps, so nobody can sign in until it runs.
+    theme.label('3. Create the first operator'),
+    cmdBlock([['mdk user add <name> --admin', 'in a second terminal; prompts for a password']]),
+    theme.muted('The dashboard and every app route need a signed-in user; --admin binds the first one.'),
+    '',
+    theme.label('4. Manage it'),
     cmdBlock([
       ['mdk status', 'check the stack'],
-      ['mdk create worker', 'scaffold a new worker plugin'],
+      ['mdk create worker', 'scaffold a new worker (a device integration)'],
       ['mdk create app', 'scaffold a new app (HTTP routes over your devices)'],
     ]),
   ];
   if (dashboardPath) {
-    const rel = relative(process.cwd(), dashboardPath) || dashboardPath;
     parts.push(
       '',
-      theme.label('4. Start the dashboard'),
-      cmdBlock([[`cd ${rel}`], ['npm run dev', 'dependencies are already installed']]),
+      theme.label('5. Start the dashboard'),
+      cmdBlock([['mdk run dashboard', 'then sign in as the operator you created']]),
     );
   }
 

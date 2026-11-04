@@ -9,8 +9,8 @@ Single device family — `startSenecaWorker` takes no `model` option.
 ## Install
 
 > [!IMPORTANT]
-> `npm install @tetherto/mdk-worker-seneca` returns `E404`. The device Workers are not published to npm yet; they are
-> workspace packages in the MDK monorepo. Clone it and install from the repository root instead.
+> `npm install @tetherto/mdk-worker-seneca` returns `E404`. The device Workers are not published to npm; they are
+> workspace packages in the public MDK repository. Clone it and install from the repository root instead.
 
 ```bash
 git clone https://github.com/tetherto/mdk.git
@@ -32,6 +32,7 @@ const kernel = await getKernel()
 const worker = await startSenecaWorker({
   workerId: 'seneca-rack-1',
   storeDir: './store/seneca-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: {
       serialNum: 'SEN-A',
@@ -49,6 +50,9 @@ const worker = await startSenecaWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 `seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
 `registerThing` command over HRPC instead — it persists immediately but only takes effect after the Worker is

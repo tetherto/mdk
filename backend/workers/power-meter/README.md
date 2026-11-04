@@ -39,6 +39,7 @@ const worker = await startAbbWorker({
   workerId: 'abb-rack-1',
   model: 'b23',
   storeDir: './store/abb-rack-1',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'ABB-A', container: 'container-A' },
     opts: { address: '192.168.1.150', port: 502, unitId: 1 }
@@ -46,6 +47,9 @@ const worker = await startAbbWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 ## Deployment topology
 

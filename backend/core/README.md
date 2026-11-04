@@ -6,13 +6,18 @@ Core infrastructure packages for MDK. These packages form the coordination layer
 
 | Package | npm name | Description |
 |---------|----------|-------------|
-| [`kernel/`](./kernel/README.md) | `@tetherto/mdk-kernel` | Orchestration Kernel — DHT discovery, command dispatch, telemetry, health monitoring |
-| [`mdk/`](./mdk/README.md) | `@tetherto/mdk-core` | Bootstrap utilities: `getKernel()`, `startGateway()`, `waitForDiscovery()` |
-| [`mdk-worker/`](./mdk-worker/lib/worker-runtime.js) | `@tetherto/mdk-worker` | Worker Runtime: hosts a Worker Plugin's devices behind one HRPC channel to Kernel |
-| [`gateway/`](./gateway/README.md) | `@tetherto/mdk-gateway` | HTTP server — fleet aggregation via plugins |
+| [`kernel/`](./kernel/README.md) | `@tetherto/mdk-kernel` | Orchestration Kernel — DHT discovery, command dispatch, telemetry, health monitoring, and the token issuer |
+| [`mdk/`](./mdk/README.md) | `@tetherto/mdk-core` | Bootstrap utilities: `getKernel()`, `startGateway()`, `waitForDiscovery()`, plus the injectable services runtime-hosted Workers use |
+| [`mdk-worker/`](./mdk-worker/README.md) | `@tetherto/mdk-worker` | Worker Runtime: hosts a Worker Plugin's devices behind one HRPC channel to Kernel |
+| [`gateway/`](./gateway/README.md) | `@tetherto/mdk-gateway` | HTTP router — signs callers in, checks each app route against `spec.rbac`, forwards to the app's runtime |
+| [`app-runtime/`](./app-runtime/README.md) | `@tetherto/mdk-app-runtime` | Runs one app's controllers in its own process and serves them to the Gateway over HRPC |
 | [`mcp/`](./mcp/README.md) | `@tetherto/mdk-mcp` | Standalone MCP server that exposes app routes and native tools to AI agents |
-| [`client/`](./client/README.md) | `@tetherto/mdk-client` | Client — connects Gateway to Kernel over HRPC |
-| `examples/` | _(runnable demos)_ | End-to-end examples — single Worker, full site, DHT multi-process |
+| [`client/`](./client/README.md) | `@tetherto/mdk-client` | Protocol client — the HRPC transport apps, the Gateway and the MCP server use to reach Kernel |
+| [`identity/`](./identity/README.md) | `@tetherto/mdk-identity` | Token issuer and JWT verification: users, service accounts, rotating refresh tokens |
+| [`rbac/`](./rbac/README.md) | `@tetherto/mdk-rbac` | Policy library: validates `spec.rbac` from `mdk.yaml` and judges callers at the Gateway, MCP server and Kernel |
+| [`agent/`](./agent/README.md) | `@tetherto/mdk-agent` | Operator agent: a headless loop over a local model, using MDK tools over MCP (workspace-private) |
+
+The end-to-end runnable example is [`examples/mvp-site/`](../../examples/mvp-site/README.md) at the repository root.
 
 ## Dependency graph
 

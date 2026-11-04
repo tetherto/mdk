@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { linkCheckoutBackend } from '../../src/lib/scaffold.js';
+import { unbuiltPackages } from '../../src/lib/checkout.js';
 import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
 
 afterEach(() => cleanupTmpDirs());
@@ -33,10 +34,13 @@ describe('linkCheckoutBackend', () => {
 
     linkCheckoutBackend(pkg, cliRoot);
 
-    expect(readDeps(pkg)).toEqual({
-      '@tetherto/mdk-client': `file:${join(root, 'backend', 'core', 'client')}`,
-      debug: '4.4.1',
-    });
+    const deps = readDeps(pkg)!;
+    expect(deps.debug).toBe('4.4.1');
+    // Relative to the package, never an absolute /home/<user>/... path that breaks on another machine.
+    expect(deps['@tetherto/mdk-client']).toMatch(/^file:\.\.?\//);
+    expect(resolve(dirname(pkg), deps['@tetherto/mdk-client']!.slice('file:'.length))).toBe(
+      join(root, 'backend', 'core', 'client'),
+    );
   });
 
   it('keeps the published range for a package the checkout does not have', () => {
@@ -76,5 +80,18 @@ describe('scaffold templates', () => {
       .filter(([name, range]) => name.startsWith('@tetherto/') && !range.startsWith('file:'))
       .map(([name]) => name);
     expect(unlinked).toEqual([]);
+  });
+});
+
+describe('unbuiltPackages', () => {
+  it('lists the linked packages that have a package.json but no dist/', () => {
+    const root = makeTmpDir();
+    for (const [dir, built] of [['built', true], ['unbuilt', false]] as const) {
+      mkdirSync(join(root, dir, built ? 'dist' : ''), { recursive: true });
+      writeJson(join(root, dir, 'package.json'), { name: dir });
+    }
+    expect(unbuiltPackages([join(root, 'built'), join(root, 'unbuilt'), join(root, 'missing')])).toEqual([
+      join(root, 'unbuilt'),
+    ]);
   });
 });

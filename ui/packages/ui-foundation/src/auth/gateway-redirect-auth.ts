@@ -15,14 +15,19 @@
 
 import type { QueryClient } from '@tanstack/query-core'
 
-import { mdkFetch } from '../query/mdk-fetch'
-import { buildUrl, type Fetcher, getApiBaseUrl, getFetcher } from '../query/runtime'
-import { authStore } from '../store/auth-store'
-import type { AuthTokenRequest, AuthTokenResponse } from '../types/api-mining.types'
-import { MdkFetchError } from '../types/api-mining.types'
-import { getRolesFromAuthToken } from '../utils/token-utils'
-import { extractAuthTokenFromUrl, stripAuthTokenFromUrl } from '../utils/url-utils'
-import { applySession, type AuthProvider, type AuthTokenStore, bearerTokenAuth } from './provider'
+import { mdkFetch } from '../query/mdk-fetch.js'
+import { buildUrl, type Fetcher, getApiBaseUrl, getFetcher } from '../query/runtime.js'
+import { authStore } from '../store/auth-store.js'
+import type { AuthTokenRequest, AuthTokenResponse } from '../types/api-mining.types.js'
+import { MdkFetchError } from '../types/api-mining.types.js'
+import { getRolesFromAuthToken } from '../utils/token-utils.js'
+import { extractAuthTokenFromUrl, stripAuthTokenFromUrl } from '../utils/url-utils.js'
+import {
+  applySession,
+  type AuthProvider,
+  type AuthTokenStore,
+  bearerTokenAuth,
+} from './provider.js'
 
 /** The Gateway's token refresh route. */
 const AUTH_TOKEN_PATH = '/auth/token'

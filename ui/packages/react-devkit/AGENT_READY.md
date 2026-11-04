@@ -35,7 +35,7 @@ flowchart TD
 | Tag                 | Required for                               | Allowed values                                                 |
 | ------------------- | ------------------------------------------ | -------------------------------------------------------------- |
 | `@tier`             | every public export                        | `agent-ready` &#124; `advanced` &#124; `internal`              |
-| `@category`         | tier ≠ `internal`                          | `charts` &#124; `tables` &#124; `cards` &#124; `forms` &#124; `dialogs` &#124; `navigation` &#124; `layout` &#124; `widgets` &#124; `dashboards` &#124; `actions` &#124; `feedback` &#124; `misc` |
+| `@category`         | tier ≠ `internal`                          | `charts` &#124; `tables` &#124; `cards` &#124; `forms` &#124; `dialogs` &#124; `navigation` &#124; `layout` &#124; `widgets` &#124; `actions` &#124; `feedback` &#124; `misc` |
 | `@domain`           | tier ≠ `internal`                          | `mining-operations` &#124; `financial-reporting` &#124; `device-management` &#124; `generic` |
 | `@kernelCapability` | `agent-ready` **with** `@domain ≠ generic` | `hashrate-monitoring` &#124; `pool-performance` &#124; `energy-consumption` &#124; `incident-alerts` &#124; `device-telemetry` &#124; `device-management` &#124; *(extendable)* — required for mining domains, skipped for generic primitives |
 | `@example`          | optional, encouraged                       | inline TSX in the JSDoc                                        |
@@ -68,7 +68,7 @@ export const MyCard = forwardRef<HTMLDivElement, MyCardProps>(
 
 Plus, next to the component file:
 
-```
+```text
 my-card/
   index.tsx
   my-card.example.tsx       ← runnable example, imports only from "@tetherto/mdk-react-devkit"
@@ -77,7 +77,7 @@ my-card/
 
 `USAGE.md` skeleton:
 
-```markdown
+````markdown
 # MyCard
 
 One-paragraph summary of what the component does.
@@ -97,7 +97,7 @@ One-paragraph summary of what the component does.
 ## Notes
 
 - Anything non-obvious about composition, accessibility, performance.
-```
+````
 
 > **How this renders — write the prose, let the pipeline own props & examples.**
 > The docs site does **not** render `USAGE.md` verbatim. `<ComponentDoc>`
@@ -257,6 +257,9 @@ flowchart TD
 ## Pointers
 
 - Registry schema: [`scripts/registry-types.ts`](scripts/registry-types.ts)
+- Value formatters, which are helpers rather than registry entries, so no index above finds them:
+  [`src/primitives/utils/format.ts`](src/primitives/utils/format.ts) holds `scaleToUnit` and `pickUnitScale` with
+  `HASHRATE_TH_S_SCALES` / `POWER_W_SCALES`, and `formatBitcoin` for BTC or whole sats.
 - Reference for "well-documented agent-ready component":
   [`src/domain/components/active-incidents-card/`](src/domain/components/active-incidents-card/USAGE.md)
 - Reference for "well-documented agent-ready hook" — coming when we tier

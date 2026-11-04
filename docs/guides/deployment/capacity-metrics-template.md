@@ -23,7 +23,7 @@ Absolute numbers without reference hardware, device baseline, and a zero-device 
 | How many Workers for `N` devices? | Devices-per-Worker recommendation × `N`, validated by Worker-split sweeps |
 | CPU / RAM / disk for that layout | Zero-device baseline + per-device marginal cost |
 | Is this configuration supported? | Pass/fail thresholds (green / amber / red) |
-| What breaks first? | Ceiling profiles and failure-behaviour section |
+| What breaks first? | Profile comparison matrix (the first red row of a sweep) and failure-behaviour section |
 
 ## Reference hardware
 
@@ -196,14 +196,14 @@ Time from consumer request until usable payload returns.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Telemetry read (single device) | Gateway → Kernel → Worker → Gateway | `_` | `_` | `_` | `_` | `_` | `_` |
 | Telemetry read (single device) | Kernel → Worker only | `_` | `_` | `_` | `_` | `_` | `_` |
-| Telemetry / overview read (aggregate) | Gateway (+ plugin) → Kernel → Workers | `_` | `_` | `_` | `_` | `_` | `_` |
+| Telemetry / overview read (aggregate) | Gateway → app runtime → Kernel → Workers | `_` | `_` | `_` | `_` | `_` | `_` |
 | Device list / registry read | Gateway → Kernel | `_` | `_` | `_` | `_` | `_` | `_` |
 
 Scheduled Kernel telemetry pull and health ping are Kernel-internal timers with no client-observable start/end signal distinct from the reads above — not independently measurable without in-process Kernel instrumentation, so they're not tracked as separate rows.
 
 ### Write / action path
 
-Split **submit** and **execution** so bottlenecks are visible. A separate approval round only exists if the Worker's write-action whitelist requires more than one vote — every shipped worker whitelists at a single required vote, so submit and execute collapse into one step.
+Split **submit** and **execution** so bottlenecks are visible. Submission ends when the Kernel accepts the command (`status: 'QUEUED'`); execution settles asynchronously after acceptance, so the two stay separate measurements even at a single required vote — the Avalon Worker the benchmark harness drives allowlists all its write actions at one vote, which only removes the separate approval round, not the execution step, and container Workers such as Antspace and Bitdeer allowlist some actions at two votes, adding a real approval round. A harness that times acceptance alone leaves the execution and end-to-end rows blank rather than filling them with the submit number.
 
 | Operation | Boundary | p50 ms | p95 ms | p99 ms | max ms | n | errors |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -224,7 +224,7 @@ Track delivery — when Kernel or Gateway consumers can read the alert — separ
 | Operation | Boundary | p50 ms | p95 ms | p99 ms | max ms | n | errors |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Alert visible via Kernel (pull / list / query) | Consumer → Kernel → alert source | `_` | `_` | `_` | `_` | `_` | `_` |
-| Alert visible via Gateway (HTTP / WebSocket / plugin) | Consumer → Gateway → Kernel / store | `_` | `_` | `_` | `_` | `_` | `_` |
+| Alert visible via Gateway (HTTP / WebSocket / app route) | Consumer → Gateway → Kernel / store | `_` | `_` | `_` | `_` | `_` | `_` |
 
 Fan-out to N subscribers and historical (range-read) alert queries need Gateway capabilities (a subscription/push mechanism, a history store) beyond a single request/response endpoint — out of scope until the Gateway carries one.
 
@@ -260,7 +260,7 @@ Measure process failure recovery on at least one profile per reference tier. "Un
 
 One row per capacity profile. Copy columns as needed. Leave cells blank until measured. Prefer profile ids like `cap-10dev` / `cap-100dev-w2` (not `cap-10m`, which reads as ten minutes).
 
-| Profile id | Tier | Real/sim | Kernels | Gateways | Plugins | W | D | Alert rules | CPU sum % | RSS sum | Heap sum | Disk now | Disk/day | Headroom | Reads/s | Actions/s | Rejects+timeouts | Read p99 | Action e2e p99 | Alert gen p99 | Status |
+| Profile id | Tier | Real/sim | Kernels | Gateways | Apps | W | D | Alert rules | CPU sum % | RSS sum | Heap sum | Disk now | Disk/day | Headroom | Reads/s | Actions/s | Rejects+timeouts | Read p99 | Action e2e p99 | Alert gen p99 | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `cap-10dev` | `_` | `_` | 1 | 1 | 1 | 3 | 12 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
 | `cap-50dev` | `_` | `_` | 1 | 1 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |

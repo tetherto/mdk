@@ -16,4 +16,14 @@
     white-space: normal;
     width: auto;
   }
+
+  // Tones, so a caller marking a cell as a warning or an error states which it
+  // is rather than reaching into the theme for a colour from JS.
+  &--warning {
+    color: var(--mdk-color-warning);
+  }
+
+  &--danger {
+    color: var(--mdk-button-danger-bg);
+  }
 }

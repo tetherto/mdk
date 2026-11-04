@@ -34,7 +34,7 @@ Use these guides to choose a site deployment shape.
 <!-- docs@tether.io: terminology → reference/glossary -->
 
 [deployment-topologies]: ../../concepts/deployment-topologies.md
-<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/backend/core/docs/README.md#connection-and-deployment-model -->
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [all-workers]: run-all-workers-site.md
 <!-- docs@tether.io: all-workers → guides/deployment/run-all-workers-site -->

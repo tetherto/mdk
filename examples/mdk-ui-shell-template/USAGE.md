@@ -159,7 +159,7 @@ never imports an app. `mdk run dashboard` hands the apps to
 | --- | --- |
 | All apps' pages, under `/app/<name>/…` | The catch-all route in [`router.tsx`](./src/router.tsx) → [`src/apps/InstalledAppPage.tsx`](./src/apps/InstalledAppPage.tsx) |
 | Sidebar entries for app pages (one group per app, a nested group per route `section` with the icon from the app's `sections`; a lone app's sections go top-level) | `appPageSidebarItems` in [`src/apps/paths.ts`](./src/apps/paths.ts), used by [`App.tsx`](./src/App.tsx) |
-| The highlighted sidebar entry (the page's path, whatever its own query; an entry keyed by a query, like `/pools?view=sites`, while the URL has those params) | `sidebarActiveId` in [`src/sidebar-active-id.ts`](./src/sidebar-active-id.ts), used by [`App.tsx`](./src/App.tsx) |
+| The highlighted sidebar entry (the page's path, whatever its own query; an entry keyed by a query, like `/app/<name>/list?view=open`, while the URL has those params) | `sidebarActiveId` in [`src/sidebar-active-id.ts`](./src/sidebar-active-id.ts), used by [`App.tsx`](./src/App.tsx) |
 | Panels on a shell page | `<AppPanels slot={MDK_APP_PANEL_SLOT.HOME} />` ([`src/apps/AppPanels.tsx`](./src/apps/AppPanels.tsx)), fed by `useInstalledAppPanels` |
 | React and the MDK packages shared with apps | The import map from [`vite/mdk-shared-modules.ts`](./vite/mdk-shared-modules.ts) |
 
@@ -168,7 +168,7 @@ a panel with that `slot`.
 
 ## Extending: add a new chart card
 
-(Assumes a chart page exists under `src/pages/`.)
+The template ships no chart page; these steps add a chart card to a page you added under `src/pages/`.
 
 1. Pick / add a chart component in
    [`packages/react-devkit/src/domain/components/dashboard/`](../../ui/packages/react-devkit/src/domain/components/dashboard/index.ts).

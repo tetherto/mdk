@@ -56,3 +56,31 @@
     pointer-events: none;
   }
 }
+
+// A control sitting beside, or above, its label. `layout` is a prop with two
+// values, so it is a modifier class — not a flex direction recomputed inline on
+// every render.
+.mdk-form-field-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--mdk-spacing-md);
+
+  &--row {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+// The checkbox variant tightens its gap when the two sit on one line.
+.mdk-form-field-row--checkbox.mdk-form-field-row--row {
+  gap: var(--mdk-spacing-sm);
+}
+
+// One radio and its label. 6px sits between the published steps: it is the
+// optical gap for a 16px control, not a layout rhythm a consumer would reuse.
+.mdk-form-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

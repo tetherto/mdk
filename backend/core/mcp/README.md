@@ -14,6 +14,9 @@ no app code: a tool call is forwarded to the app's [runtime](../app-runtime/READ
 > your app's root `package.json` overrides it. See the Gateway's
 > [known dependency advisory](../gateway/README.md#known-dependency-advisory).
 
+Deep imports are closed: the package's `exports` map in [`package.json`](./package.json) lists every importable subpath, and
+anything outside it fails to resolve with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+
 ## AI agents and the MCP server
 
 An AI agent reaches fleet data through this server, not through the [Gateway](../gateway/README.md)'s HTTP surface — a
@@ -119,12 +122,13 @@ exposed is never registered: the model can neither list nor call it. One `consol
 | App route | `safety` is `"read-only"`. `"write"` or unstated maps to `readOnlyHint: false` | Same, and with an authority, a rule letting the agent call it (`<app>/<path>` and its verb; a route with a `resourceName` is listed and checked per call). Without one, an `auth: true` route also needs `identity`, whose `perms` must hold every entry of the route's `permissions` |
 | App route with `stream: true` | n/a | Never: it needs a raw HTTP response an MCP call doesn't have |
 
-When `allowTools` is set, only the listed tools are exposed. Without `identity`, app routes get an empty `_info`, as on the
-Gateway itself for an unauthenticated route. An `auth: true` route refuses to run (`ERR_MCP_AUTH_REQUIRED`) rather than reach
+When `allowTools` is set, only the listed tools are exposed. Without an authority and without `identity`, app routes get an
+empty `_info`, as on an authority-less Gateway for a route it does not gate. An `auth: true` route refuses to run
+(`ERR_MCP_AUTH_REQUIRED`) rather than reach
 the app with an empty `_info` that it could read as the local, privileged caller.
 
-On the Gateway, the `authVerifier` checks a route's `permissions`. An MCP call reaches the app runtime as a trusted key with no
-verifier in between, so the server makes the same check itself: an `auth: true` route is exposed only when every entry of its
+On a Gateway without an authority, the `authVerifier` checks a route's `permissions`. An MCP call reaches the app runtime as a
+trusted key with no verifier in between, so the server makes the same check itself: an `auth: true` route is exposed only when every entry of its
 `permissions` is in `identity.perms`, and a call to it refuses with `ERR_MCP_PERM_DENIED` otherwise. Give the MCP identity only
 the permissions you want the model to have.
 
@@ -215,10 +219,13 @@ problem; the [error codes](#errors) name each.
 
 [`examples/mvp-site/deploy/run-process.js`](../../../examples/mvp-site/deploy/run-process.js) runs this as its own PM2-supervised process
 (`--role mcp`): it resolves the Kernel key using the same `.kernel-key` discovery the Gateway uses, then calls
-`createMcpServer(root, port, { kernelKey, kernelKeyPair }, MCP_PLUGIN_DIRS, apps, { handleSignals: true, keyFile })` — the hand-authored MCP tool dirs plus the site app, whose routes are derived into tools forwarded to its `--role app-site` runtime. Write tools stay withheld there.
+`createMcpServer(root, port, { kernelKey, kernelKeyPair }, MCP_PLUGIN_DIRS, apps, { handleSignals: true, keyFile })` — the
+hand-authored MCP tool dirs plus the site app, whose routes are derived into tools forwarded to its `--role app-site` runtime. Write
+tools stay withheld there.
 
 ## Testing
 
-`npm test` runs `standard` lint, unit tests ([`tests/unit/`](./tests/unit/)), and integration tests ([`tests/integration/`](./tests/integration/)) — the latter cover
+`npm test` runs `standard` lint, unit tests ([`tests/unit/`](./tests/unit/)), and integration tests
+([`tests/integration/`](./tests/integration/)) — the latter cover
 schema enforcement, multi-plugin-dir merging, error handling, the opt-in shutdown handlers, the Host/Origin/token checks, write
 and auth gating, and output framing.

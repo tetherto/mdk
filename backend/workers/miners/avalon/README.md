@@ -11,8 +11,8 @@ MDK Worker for Canaan Avalon Bitcoin miners. Supports the A1346 family.
 ## Install
 
 > [!IMPORTANT]
-> `npm install @tetherto/mdk-worker-avalon` returns `E404`. The device Workers are not published to npm yet; they are
-> workspace packages in the MDK monorepo. Clone it and install from the repository root instead.
+> `npm install @tetherto/mdk-worker-avalon` returns `E404`. The device Workers are not published to npm; they are
+> workspace packages in the public MDK repository. Clone it and install from the repository root instead.
 
 ```bash
 git clone https://github.com/tetherto/mdk.git
@@ -35,6 +35,7 @@ const worker = await startAvalonWorker({
   workerId: 'avalon-rack-3',
   model: 'a1346',
   storeDir: './store/avalon-rack-3',
+  allowedKeys: [kernel.getClientPublicKey()],
   seedDevices: [{
     info: { serialNum: 'AV-001', container: 'container-C', pos: 'C1' },
     opts: { address: '192.168.1.30', port: 4028 }
@@ -42,6 +43,9 @@ const worker = await startAvalonWorker({
 })
 await kernel.registerWorker(worker.runtime.getPublicKey())
 ```
+
+`allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
+(`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
 `seedDevices` only seeds a fresh, empty `storeDir`. To add a device to an already-running Worker, send the
 `registerThing` command over HRPC instead — see [USAGE.md](USAGE.md#registering-devices) for the full pattern and the

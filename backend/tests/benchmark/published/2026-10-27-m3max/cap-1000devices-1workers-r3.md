@@ -167,12 +167,17 @@ All latencies in **milliseconds**, same percentile set across profiles.
 | Operation | Boundary | p50 ms | p95 ms | p99 ms | max ms | n | errors |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Send / submit action | Client → Gateway → Kernel accept | 2.9 | 3.9 | 13.6 | 13.6 | 50 | 0 |
-| Action execution (Kernel dispatch → Worker → device ack) | Client → Kernel → Worker → device ack | 11.0 | 66.9 | 105.1 | 118.0 | 2707 | 0 |
-| End-to-end write action (submit → executed / terminal state) | Client → … → device → client-visible result | 11.0 | 66.9 | 105.1 | 118.0 | 2707 | 0 |
+| Send / submit action (direct, under load) | Client → Kernel accept | 11.0 | 66.9 | 105.1 | 118.0 | 2707 | 0 |
+| Action execution (Kernel dispatch → Worker → device ack) | Kernel ActionCaller → Worker → device | `_` | `_` | `_` | `_` | `_` | `_` |
+| End-to-end write action (submit → executed / terminal state) | Client → … → device → client-visible result | `_` | `_` | `_` | `_` | `_` | `_` |
 
-| Action type | reqVotes | e2e p50 ms | e2e p99 ms | exec-only p50 ms | exec-only p99 ms | n |
+Both submit rows stop when the Kernel accepts the command (`status: 'QUEUED'`); nothing has reached the device at that
+point. Execution and end-to-end rows are left blank: this harness does not time the dispatch → execute → terminal-state
+workflow (see "What's measured vs. left blank" in the harness README).
+
+| Action type | reqVotes | accept p50 ms | accept p99 ms | exec-only p50 ms | exec-only p99 ms | n |
 | --- | --- | --- | --- | --- | --- | --- |
-| setPowerMode | `_` (whitelisted per-worker in each package's own boot.js — not read back here) | 11.0 | 105.1 | 11.0 | 105.1 | 2707 |
+| setPowerMode | `_` (allowlisted per-worker in each package's own boot.js — not read back here) | 11.0 | 105.1 | `_` | `_` | 2707 |
 
 ### Alerts path
 
@@ -189,7 +194,7 @@ Active alert names this run: chips_temp_critical (1000).
 | Criterion | Green | Amber | Red | Profile result |
 | --- | --- | --- | --- | --- |
 | Telemetry freshness (cycle ≤ interval) | headroom < 0.7 | 0.7–1 | ≥ 1 | 0.067 (**green**) |
-| Action e2e p99 | ≤ 2000 ms | n/a — binary criterion, no amber band | above green | 105.1 ms (**green**) |
+| Action accept p99 (submit → `QUEUED`) | ≤ 2000 ms | n/a — binary criterion, no amber band | above green | 105.1 ms (**green**) |
 | Steady-state CPU (busiest process) | ≤ 80% | n/a — binary criterion, no amber band | above green | 39.1% (**green**) |
 | Rejected + timed-out under sustained load | 0 | < 1.0% of attempted | otherwise | 0 / 7427 attempted, 0.00% (**green**) |
 | RSS slope over 24 h soak | flat (≤ 18000 MiB/h) | red demoted to amber when soak < 24h (indicative) | clear leak (soak ≥ 24h) | 8532.700 MiB/h (**green**) |

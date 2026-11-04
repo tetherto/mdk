@@ -2,6 +2,7 @@
   "root": ".site-data",
   "host": "127.0.0.1",
   "discovery": "local",
+  "dht": { "host": "127.0.0.1", "port": 49737 },
   "worker": {
     "id": "whatsminer-m56s-telemetry-flow",
     "model": "m56s",

@@ -15,16 +15,16 @@
 
 import type { QueryClient } from '@tanstack/query-core'
 
-import { createBearerFetcher } from '../query/mdk-fetch'
-import type { Fetcher } from '../query/runtime'
-import { authStore } from '../store/auth-store'
-import { MdkFetchError } from '../types/api-mining.types'
+import { createBearerFetcher } from '../query/mdk-fetch.js'
+import type { Fetcher } from '../query/runtime.js'
+import { authStore } from '../store/auth-store.js'
+import { MdkFetchError } from '../types/api-mining.types.js'
 import {
   applySession,
   type AuthProvider,
   type AuthTokenStore,
   isSessionExpiredError,
-} from './provider'
+} from './provider.js'
 
 export type PasswordAuthOptions = {
   /** The Gateway's origin; `''` (default) for relative URLs through the dev proxy. */
@@ -93,6 +93,15 @@ const stripTrailingSlashes = (value: string): string => {
 }
 
 /**
+ * Signs a user in with a username and password through the Gateway, and keeps that
+ * session alive. The access token is short-lived and held in memory; the refresh
+ * token is an httpOnly cookie, renewed on a timer (`refreshIntervalMs`, four minutes by
+ * default) and again whenever a request comes back 401, and restored once on reload by
+ * calling `restore()`.
+ *
+ * This is the auth provider for a dashboard served by an MDK stack. Pass the result
+ * to `MdkProvider` as `auth`, and its `fetcher` as `fetcher`.
+ *
  * @category auth
  */
 export const passwordAuth = (options: PasswordAuthOptions = {}): PasswordAuthProvider => {

@@ -3,6 +3,7 @@
 @forward 'base';
 @forward 'mixins';
 @forward 'colors';
+@forward 'layout';
 @forward 'fonts';
 @forward 'animations';
 
@@ -25,6 +26,7 @@
 @use '../components/tabs/styles' as tabs;
 @use '../components/input/styles' as input;
 @use '../components/label/styles' as label;
+@use '../components/slider/styles' as slider;
 @use '../components/switch/styles' as switch;
 @use '../components/typography/styles' as typography;
 @use '../components/breadcrumbs/styles' as breadcrumbs;

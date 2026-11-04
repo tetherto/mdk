@@ -4,6 +4,7 @@ import type {
   ChartStatsFooterItem,
   IChartApi,
   LightWeightLineChartProps,
+  LineDashStyle,
   MinMaxAvgValues,
 } from '@primitives'
 
@@ -12,6 +13,8 @@ export type LineChartCardDataset = {
   label?: string
   /** Line color */
   borderColor: string
+  /** Stroke pattern, e.g. `dashed` for a target or nominal line. Defaults to `solid` */
+  lineStyle?: LineDashStyle
   /**
    * Data points. `x` is a Unix timestamp in **milliseconds** — `LineChart`
    * divides it by 1000 to derive the lightweight-charts `UTCTimestamp`.
@@ -60,7 +63,10 @@ export type LineChartCardData = {
 }>
 
 export type TimelineOption = {
-  /** Timeline key (e.g. `5m`, `1h`) passed to `onTimelineChange` and matched against `timeline` */
+  /**
+   * Timeline key passed to `onTimelineChange`, matched against `timeline` and passed to the
+   * chart's `timeline`. Known keys: `1m`, `5m`, `30m`, `3h`, `1D`
+   */
   value: string
   /** Range-selector button text */
   label: string

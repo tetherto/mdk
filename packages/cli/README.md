@@ -49,11 +49,10 @@ the whole directory to reset a stack.
 
 ## Develop
 
-Install once from the packages workspace root (this links `@tetherto/mdk-skill`
-into the CLI), then work from this package:
+Install once from the repo root (this links `@tetherto/mdk-skill` into the CLI), then work from this package:
 
 ```bash
-npm install --prefix ..       # from packages/ — links workspace deps
+npm install --prefix ../..    # from packages/cli: root workspace install, links workspace deps
 npm run dev -- --help         # run from source via tsx
 npm run build                 # compile to dist/
 node dist/index.js --help     # run the built CLI
@@ -92,11 +91,13 @@ CLI=/path/to/mdk/packages/cli/dist/index.js
 
 # Install the MDK Developer Skill (via the @tetherto/mdk-skill entry point)
 node "$CLI" skill add --client all --dir .
-ls .cursor/skills .claude/skills   # mdk, mdk-gateway-plugin, mdk-deployment, mdk-worker-plugin, mdk-ui-component, mdk-site-sizing, mdk-create-app
+ls .cursor/skills .claude/skills   # mdk, mdk-app-rbac, mdk-app-routes, mdk-create-app, mdk-deployment, mdk-publish-security,
+                                   # mdk-site-sizing, mdk-ui-component, mdk-worker
 
-# Scaffold the MDK UI shell into apps/dashboard, named <stack>-dashboard from mdk.yaml
-node "$CLI" create dashboard --dir .
-ls apps/dashboard                  # src/, vite.config.ts, package.json, ...
+# Scaffold the MDK UI shell into apps/my-dashboard. Pass a name here: with no name, create reads
+# the stack name from mdk.yaml, which only `onboard` (below) writes
+node "$CLI" create dashboard my-dashboard --dir .
+ls apps/my-dashboard               # src/, vite.config.ts, package.json, ...
 ```
 
 The onboarding wizard needs a real terminal (TTY), so run it directly (not
@@ -116,7 +117,7 @@ Dev mode works the same without building — run from `packages/cli`:
 
 ```bash
 npm run dev -- skill add --client cursor --dir /tmp/mdk-try
-npm run dev -- create dashboard --dir /tmp/mdk-try
+npm run dev -- create dashboard my-dashboard --dir /tmp/mdk-try
 npm run dev -- onboard
 ```
 
@@ -452,7 +453,10 @@ repo in CI. `--smoke` adds behavioral checks against the package's bundled mock,
 command in `commands` must succeed. After `teardown()`, every channel and command must fail with an `ERR_*` error code
 within `--timeout`, except a `health` channel reporting a status other than `OK`, and the channels `offlineTelemetry`
 lists because the Worker serves them from its own store. The [Worker testing guide](../../docs/guides/workers/test-a-worker.md#check-the-package)
-lists every `smoke.config.js` field.
+lists every `smoke.config.js` field. `--strict` holds a legacy contract to the full v1 requirements, so the gaps a
+contract without a `contractVersion` stamp reports as warnings become errors instead. A stamped contract is already held
+to them, and the [contract validation reference](../../backend/core/mdk-worker/README.md#contract-validation) covers
+which requirements sit at that tier.
 
 `mdk validate app --path <dir>` is the same partner-CI check for an app, and its exit code is the listing gate. `--smoke`
 loads the app's routes and `main` through the app runtime's own loader and calls every route against an in-memory
@@ -501,9 +505,9 @@ name) sign in with their own Ed25519 key.
 
 ```bash
 mdk run kernel &                                  # users live in the Kernel, so it must be running
-mdk user add ankit@example.com --admin            # the first admin: prompts for a password, binds the user to `admin`
+mdk user add ops@example.com --admin              # the first admin: prompts for a password, binds the user to `admin`
 echo "$PW" | mdk user add ci-bot --password-stdin --group ops-team
-mdk sa add operator-agent                         # an AI agent's credential, then bind it in spec.rbac
+mdk serviceaccount add operator-agent             # an AI agent's credential, then bind it in spec.rbac (`mdk sa` is the alias)
 mdk sa list
 ```
 
@@ -555,22 +559,23 @@ The session lives in `.mdk/session.json` (0600) and is renewed as it is used. Wh
 and `mdk rbac` act as the user, with what `spec.rbac` binds the user to; an expired session is an error, never a quiet return
 to `mdk-cli`.
 
-`mdk run` and `mdk run kernel` refuse to start when `spec.rbac` lets nobody write the policy (no subject bound to a role allowing
-`policy: write`, as after `mdk create app` on a stack with no admin yet): that Kernel would refuse the policy `mdk rbac init` hands
-it, so `mdk rbac init` comes first. They warn at start when `mdk-cli` has no binding, or when an app has none. A role you edited is left alone by `mdk rbac init`. When a running Kernel refuses the new policy because its policy in
+`mdk run` and `mdk run kernel` refuse to start when `spec.rbac` binds no user and no group, and its bound subjects include nobody
+who may write the policy, as after `mdk create app` on a stack with no admin yet: that Kernel would refuse the policy
+`mdk rbac init` hands it, so `mdk rbac init` comes first. A policy that binds a user keeps `policy: write` optional, so that stack
+boots and policy changes go through `mdk.yaml` and a restart. They warn at start when `mdk-cli` has no binding, or when an app
+has none. A role you edited is left alone by `mdk rbac init`. When a running Kernel refuses the new policy because its policy in
 force does not let `mdk-cli` apply one, restarting the Kernel applies `mdk.yaml` at boot.
 
 ## Command surface
 
-| Group            | Commands                                                                              |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| Onboarding       | `mdk onboard`                                                                         |
-| Scaffold         | `mdk create worker <name>`, `mdk create app <name>`, `mdk create dashboard [name]` |
-| Add              | `mdk add app <source>`, `mdk add worker <source>`                                    |
-| Validate         | `mdk validate app <name>`, `mdk validate worker <name>`                               |
-| Run & manage     | `mdk run [target] [name]` (target: `all`\|`kernel`\|`gateway`\|`mcp`\|`worker <name>`\|`app <name>`\|`dashboard`), `mdk status`, `mdk rbac init`, `mdk rbac apply`, `mdk rbac show`, `mdk user …`, `mdk sa …`, `mdk login`, `mdk logout`, `mdk whoami` |
-| Agent enablement | `mdk skill add`                                                                       |
-| Meta             | `mdk version`                                                                         |
+| Group            | Commands                                                                                                  |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| Set up           | `mdk onboard`                                                                                             |
+| Build            | `mdk create worker <name>`, `mdk create app <name>`, `mdk create dashboard [name]`, `mdk add app <source>`, `mdk add worker <source>`, `mdk validate app <name>`, `mdk validate worker <name>` |
+| Run              | `mdk run [target] [name]` (target: `all`\|`kernel`\|`gateway`\|`mcp`\|`worker <name>`\|`app <name>`\|`dashboard`), `mdk status` |
+| Auth             | `mdk rbac init`, `mdk rbac apply`, `mdk rbac show`, `mdk user …`, `mdk serviceaccount …`, `mdk login`, `mdk logout`, `mdk whoami` |
+| Agent enablement | `mdk skill add`                                                                                           |
+| Meta             | `mdk version`                                                                                             |
 
 Global flags:
 

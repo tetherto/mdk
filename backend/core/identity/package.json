@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-identity",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "MDK identity: the token issuer (users, service accounts, rotating refresh tokens) and JWT verification for the Gateway, MCP server and Kernel",
   "main": "index.js",
   "keywords": [

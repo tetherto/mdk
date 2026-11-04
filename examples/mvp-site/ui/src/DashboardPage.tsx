@@ -1,5 +1,6 @@
 import {
   ActiveIncidentsCard,
+  formatPowerConsumption,
   getHashrateString,
   getHashrateUnit,
   LineChartCard,
@@ -72,12 +73,6 @@ function hashChartData(
         currentValue: currentValue(aggrLatest),
       },
       {
-        label: "F2pool Hash Rate",
-        borderColor: HASH_SERIES_COLORS.f2pool,
-        data: flatLine(x0, x1, 0),
-        currentValue: currentValue(0),
-      },
-      {
         label: "Ocean Hash Rate",
         borderColor: HASH_SERIES_COLORS.ocean,
         data: oceanPool.length ? toAxis(oceanPool) : flatLine(x0, x1, 0),
@@ -104,28 +99,38 @@ function powerChartData(
   consumptionMw: number,
   nowTs: number,
 ): LineChartCardData {
-  const series: XYPoint[] = historyToPoints(powerHistory, W_PER_MW);
+  // Work in watts — the unit the history arrives in — and pick the axis unit
+  // from the magnitude, the same way the hash-rate chart above does. Pinning
+  // the axis to MW labelled a 35 kW demo site "0.03 MW" at every tick, which
+  // lightweight-charts then dropped as duplicates, leaving no axis at all.
+  const series: XYPoint[] = historyToPoints(powerHistory);
+  const consumptionW = consumptionMw * W_PER_MW;
   const [x0, x1] = xRange(series, nowTs);
-  const points = series.length ? series : flatLine(x0, x1, consumptionMw);
-  const latest = series.length ? series[series.length - 1].y : consumptionMw;
-  const ys = points.map((p) => p.y);
-  const fmt = (v: number) => `${v.toFixed(2)} MW`;
+  const pointsW = series.length ? series : flatLine(x0, x1, consumptionW);
+  const latestW = series.length ? series[series.length - 1].y : consumptionW;
+
+  const ysW = pointsW.map((p) => p.y);
+  const axisUnit = formatPowerConsumption(Math.max(...ysW.map(Math.abs))).unit;
+  const toAxis = (w: number) => formatPowerConsumption(w, axisUnit).value ?? 0;
+  const fmt = (w: number) => `${toAxis(w).toFixed(2)} ${axisUnit}`;
+  const latestValue = { value: toAxis(latestW).toFixed(2), unit: axisUnit };
+
   return {
     datasets: [
       {
         label: "Total Consumption",
         borderColor: POWER_SERIES_COLOR,
-        data: points,
-        currentValue: { value: latest.toFixed(2), unit: "MW" },
+        data: pointsW.map((p) => ({ x: p.x, y: toAxis(p.y) })),
+        currentValue: latestValue,
       },
     ],
     minMaxAvg: {
-      min: fmt(Math.min(...ys)),
-      max: fmt(Math.max(...ys)),
-      avg: fmt(ys.reduce((sum, y) => sum + y, 0) / ys.length),
+      min: fmt(Math.min(...ysW)),
+      max: fmt(Math.max(...ysW)),
+      avg: fmt(ysW.reduce((sum, y) => sum + y, 0) / ysW.length),
     },
-    highlightedValue: { value: latest.toFixed(2), unit: "MW" },
-    yTicksFormatter: (v: number) => `${v.toFixed(2)} MW`,
+    highlightedValue: latestValue,
+    yTicksFormatter: (v: number) => `${v.toFixed(2)} ${axisUnit}`,
   };
 }
 
@@ -157,7 +162,7 @@ export function DashboardPage({
   poolsLoading: boolean;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="site-stack-20">
       <LineChartCard
         title="Hash Rate"
         data={hashChartData(hashHistory, siteHashHistory, oceanHistory, siteMhs, nominalMhs, nowTs)}
@@ -178,7 +183,7 @@ export function DashboardPage({
         minHeight={280}
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 16 }}>
+      <div className="site-grid-360">
         <ActiveIncidentsCard label="Active Alerts" items={incidents} isLoading={incidentsLoading} emptyMessage="No active alerts" />
         <MiningPoolsPanel rows={poolRows} isLoading={poolsLoading} />
       </div>

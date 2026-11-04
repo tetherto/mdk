@@ -1,6 +1,6 @@
 'use strict'
 
-const { requestClient } = require('./utils')
+const { requestClient, throwIfRejected } = require('./utils')
 
 // Union of the demo's per-family modes: Whatsminer accepts low | normal |
 // high, SealMiner names its boost high_performance. Sleep would power the
@@ -27,6 +27,7 @@ module.exports = async (req, ctx) => {
   if (!POWER_MODES.includes(mode)) throw new Error('ERR_INVALID_POWER_MODE')
 
   const result = await mdkClient.sendCommand(deviceId, 'setPowerMode', { mode })
+  throwIfRejected(result)
 
   return {
     deviceId,

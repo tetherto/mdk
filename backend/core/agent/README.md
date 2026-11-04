@@ -10,7 +10,8 @@ The model routes and narrates; the tools compute. Nothing leaves the machine.
 > This page is reference: the model, the CLI flags, the capability budgets, and the session-store contract. For a
 > walkthrough that runs it end to end, see [Run the agent as a standalone CLI](../../../docs/guides/agent/run-standalone.md).
 > Behind the Gateway, the [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) app serves this agent
-> as a chat API instead; the [agent guide chooser](../../../docs/guides/agent/index.md) covers both paths.
+> as a chat API instead; the [agent guide chooser](../../../docs/guides/agent/index.md) covers both paths, and the
+> [supported apps reference](../../../docs/reference/supported-apps.md#availability) says how to install that app.
 
 ## Prerequisites
 

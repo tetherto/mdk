@@ -59,10 +59,10 @@ function FilterSelect({
   testId: string;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div className="site-field">
       <Typography variant="caption">{label}</Typography>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger style={{ minWidth: 160 }} data-testid={testId}>
+        <SelectTrigger className="site-field-160" data-testid={testId}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -87,16 +87,16 @@ export function MinersPage({ miners }: { miners: Miner[] }) {
   const { rows, options, filtered, summary } = useMinerRows(miners, { search, family, status, container });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="site-stack-16">
       <Typography variant="heading3">Miners</Typography>
 
       <Card>
-        <CardHeader style={{ padding: "20px" }}>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <CardHeader className="site-card-pad">
+          <div className="site-filters">
+            <div className="site-field">
               <Typography variant="caption">Search</Typography>
               <Input
-                style={{ minWidth: 240 }}
+                className="site-field-240"
                 placeholder="Miner, worker or container"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -112,13 +112,13 @@ export function MinersPage({ miners }: { miners: Miner[] }) {
               options={options.container}
               testId="miners-container"
             />
-            <Typography variant="caption" style={{ marginLeft: "auto", opacity: 0.8 }} data-testid="miners-summary">
+            <Typography variant="caption" className="site-miners__count" data-testid="miners-summary">
               {filtered.length} of {rows.length} miners · {summary.online} online ·{" "}
               {getHashrateString(summary.hashrateMhs)} · {(summary.powerW / 1000).toFixed(1)} kW
             </Typography>
           </div>
         </CardHeader>
-        <CardBody style={{ padding: "20px" }}>
+        <CardBody className="site-card-pad">
           {rows.length === 0 ? (
             <Typography>No miners reported yet.</Typography>
           ) : (

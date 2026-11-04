@@ -25,5 +25,9 @@ Existing READMEs and package docs predate this scope apply [`style.md`](../../do
 
 ## Hard constraints
 
-- Don't touch historical files e.g. [`CHANGELOG.md`](../../CHANGELOG.md), release notes, or `package.json`, `node_modules`, or lock files without explicit approval
-- "Hands off by default" is not "exempt from style". When you *do* edit [`CHANGELOG.md`](../../CHANGELOG.md) or release notes with approval (e.g. cutting a release via the `changelog` skill), [`style.md`](../../docs/reference/maintainers/style.md)'s prose rules still apply — including the 150–180 char line length (tables and fenced code exempt)
+- Don't touch historical files e.g. [`CHANGELOG.md`](../../CHANGELOG.md), the
+  [changelog archive](../../docs/reference/changelog-archive/2026-archive.md), or `package.json`, `node_modules`, or lock files
+  without explicit approval
+- "Hands off by default" is not "exempt from style". When you *do* edit [`CHANGELOG.md`](../../CHANGELOG.md) or an archived entry
+  with approval (e.g. cutting a release via the `changelog` skill), [`style.md`](../../docs/reference/maintainers/style.md)'s prose
+  rules still apply — including the 150–180 char line length (tables and fenced code exempt)

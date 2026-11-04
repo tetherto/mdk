@@ -12,6 +12,10 @@ it was rendered from. Store paths in the JSON are relative to `backend/tests/ben
 Every run used MDK 0.12.1 at commit `2d71e224`, with no uncommitted changes to the harness, on one Apple M3 Max workstation
 with simulated Avalon A1346 devices on loopback. Every report records config hash `2f48ab70dc13`.
 
+That release predates mandatory request authorization. From 0.13.0 every Kernel request carries an access token the Kernel
+verifies and evaluates against the policy in force, which is per-request work these runs never paid. Re-run the
+[benchmark harness][benchmark-harness] on the current release to measure what it costs.
+
 | Files                                 | Profile                  | Notes                                                                 |
 | ------------------------------------- | ------------------------ | --------------------------------------------------------------------- |
 | `cap-10devices-1workers-r{1,2,3}.*`   | 10 devices, 1 Worker     | Three runs. `r3` is amber: 14 saturation reads timed out              |
@@ -25,6 +29,15 @@ with simulated Avalon A1346 devices on loopback. Every report records config has
 | `cap-5000devices-5workers-r{1,2}.*`   | 5,000 devices, 5 Workers | Two runs. `r1` is red: 2,105 action submits rejected with `ERR_WORKER_NOT_ROUTABLE` |
 
 ## Reading these reports
+
+### Action latency labels corrected after publication
+
+As generated at `2d71e224`, each report filled its "Action execution (Kernel dispatch → Worker → device ack)" and
+"End-to-end write action" rows from the under-load submit timer and called its threshold "Action e2e p99". That timer stops
+when the Kernel accepts the command (`status: 'QUEUED'`), before anything reaches the device. The Markdown labels were
+corrected in place on 2026-11-03: the loaded numbers now sit in a "Send / submit action (direct, under load)" row, the
+execution and end-to-end rows are blank, and the threshold reads "Action accept p99". No measured number changed, and the
+JSON files are untouched (their `actionSubmit` key already named the measurement correctly).
 
 ### Network path
 
@@ -47,6 +60,9 @@ here carries both fields with their correct values, and the Markdown reports, wh
 - [Benchmark harness](../../README.md): how to produce reports like these on your own hardware
 
 ## Links
+
+[benchmark-harness]: ../../README.md
+<!-- docs@tether.io: benchmark-harness → guides/deployment/benchmark-your-site#overview -->
 
 [benchmark-results]: ../../../../../docs/guides/deployment/benchmark-results.md
 <!-- docs@tether.io: benchmark-results → guides/deployment/benchmark-results -->

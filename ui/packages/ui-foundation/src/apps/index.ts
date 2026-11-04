@@ -15,8 +15,8 @@
  * @category apps
  */
 
-export { MDK_APP_SHARED_MODULES, type MdkAppSharedModule } from './shared-modules'
-export { MDK_APP_UI_BASE, MDK_APP_UI_MANIFEST } from './ui-paths'
+export { MDK_APP_SHARED_MODULES, type MdkAppSharedModule } from './shared-modules.js'
+export { MDK_APP_UI_BASE, MDK_APP_UI_MANIFEST } from './ui-paths.js'
 
 /**
  * Where an app's UI is served: its entry module, and the stylesheets its build

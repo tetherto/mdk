@@ -15,9 +15,10 @@ The `mdk` command-line tool. Every command registered in
   **`validate`** (`app`, `worker`): scaffold, install and check packages.
 - **`run`** (`all`, `kernel`, `gateway`, `mcp`, `worker`, `app`, `dashboard`) and
   **`status`**: boot the stack from `mdk.yaml` and report its health.
-- **`rbac`**, **`user`**, **`sa`**, **`login`**, **`logout`**, **`whoami`**:
+- **`rbac`**, **`user`**, **`serviceaccount`** (alias **`sa`**), **`login`**, **`logout`**, **`whoami`**:
   access policy, users, service accounts and the CLI's own session.
-- **`skill add`** and **`version`**.
+- **`skill add`**: install agent skills.
+- **`version`**: print CLI version metadata.
 
 The earlier planned commands `get`, `describe`, `logs`, `discover`, `manifest` and
 `mcp register` are not part of the CLI and are not registered, so they do not
@@ -103,18 +104,15 @@ Each `commands/*.ts` file exports `register<Name>(program)` functions that
 ## Build, run, test
 
 ```bash
-npm install --prefix ..      # from this directory (packages/cli) — links workspace deps
+npm install --prefix ../..   # from this directory (packages/cli): root workspace install, links workspace deps
 npm run dev -- <args>        # run from source via tsx, e.g. npm run dev -- onboard
 npm run build                # compile to dist/
 node dist/index.js <args>    # run the built CLI
 npm run clean                # remove dist/
 ```
 
-This package is a member of the `packages/` npm workspace root (alongside
-`@tetherto/mdk-skill`) — a workspace scoped to `packages/`, separate from the
-monorepo root's own `workspaces` field, which does not (yet) list `packages/cli`
-— so this package's own deps install via a single `npm install` from
-`packages/`.
+This package is a member of the monorepo root npm workspace (alongside `@tetherto/mdk-skill`), so a single
+`npm install` at the repo root installs its deps and links `@tetherto/mdk-skill` into it.
 
 Always `npm run build` after changes and smoke-test the affected command before
 finishing. Run `npm test` (vitest) — it covers `src/lib` and `src/commands` —

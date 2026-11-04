@@ -1,10 +1,11 @@
-# `TimeframeControls` & `TimeframeWeekTreeContent`
+# `TimeframeControls`, `TimeframeWeekFlatContent` & `TimeframeWeekTreeContent`
 
 Controls for selecting a reporting time frame: year, month, and optional week picker.
 
 | Component                  | Description                                                                                        |
 | -------------------------- | -------------------------------------------------------------------------------------------------- |
 | `TimeframeControls`        | Full time-frame picker: year, month, and optional week selection in horizontal or stacked layout   |
+| `TimeframeWeekFlatContent` | Flat week list used inside `TimeframeControls`                                                     |
 | `TimeframeWeekTreeContent` | Hierarchical year → month → week tree used inside `TimeframeControls`                              |
 
 <!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
@@ -29,15 +30,15 @@ Controls for selecting a reporting time frame: year, month, and optional week pi
 
 | Prop | Status | Type / Options | Default | Description |
 |------|--------|----------------|---------|-------------|
-| `visibleWeeks` | Required | `Week[]` | - | - |
+| `visibleWeeks` | Required | `Week[]` | - | Weeks to list, as returned by `weeksOfMonth(year, month, timezone)` |
 
 ### `TimeframeWeekTreeContent` props
 
 | Prop | Status | Type / Options | Default | Description |
 |------|--------|----------------|---------|-------------|
-| `selectedMonth` | Required | `number` | - | - |
-| `selectedYear` | Required | `number` | - | - |
-| `timezone` | Required | `string` | - | - |
+| `selectedMonth` | Required | `number` | - | Month (0-11) whose section starts expanded |
+| `selectedYear` | Required | `number` | - | Year whose section starts expanded |
+| `timezone` | Required | `string` | - | IANA timezone the week labels and boundaries are computed in |
 
 ### `TimeframeControlsDateRange`
 

@@ -46,7 +46,7 @@ test('withActor - the same Kernel actions, nothing else, and no way to read the 
   for (const name of ['listWorkers', 'pullTelemetry', 'sendCommand', 'getCommandStatus', 'pushAction', 'voteAction', 'cancelActionsBatch']) {
     t.is(typeof view[name], 'function', name)
   }
-  for (const name of ['connect', 'close', 'withActor', 'sendWorkerCommand']) t.absent(view[name], `no ${name}`)
+  for (const name of ['connect', 'close', 'withActor', 'getStatus']) t.absent(view[name], `no ${name}`)
   t.absent(JSON.stringify(Object.values(view).map(String)).includes('user-token'))
   t.ok(Object.isFrozen(view))
   t.exception(() => client.withActor(''), /ERR_MDK_CLIENT_ACTOR_REQUIRED/)

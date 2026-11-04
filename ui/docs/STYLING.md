@@ -86,7 +86,7 @@ Overriding tokens in your app:
   --mdk-color-primary: #5b8cff;
   --mdk-color-primary-button-hover: #7fa3ff;
   --mdk-button-primary-text: #ffffff;
-  --mdk-radius: 6px;
+  --mdk-color-surface: #16181d;
 }
 ```
 
@@ -105,9 +105,8 @@ The most common knobs:
 | `--mdk-color-primary`            | Brand / accent color                |
 | `--mdk-color-surface`            | Default surface background           |
 | `--mdk-color-text-secondary`     | Body text on dark surfaces           |
-| `--mdk-radius`                   | Default control corner radius        |
 | `--mdk-font-size`                | Default control font size            |
-| `--mdk-shadow-sm` / `-md` / `-lg`| Elevation tokens                     |
+| `--mdk-shadow-md` / `-lg`        | Elevation tokens                     |
 | `--mdk-button-primary-bg`        | Primary button background            |
 | `--mdk-table-header-bg`          | Data table header background         |
 
@@ -277,7 +276,7 @@ Tests for the plugin live at
 ```
 
 `npm run build:scss` runs Vite across every workspace that defines that
-script (currently the devkit and fonts packages).
+script (currently the devkit and ui-agent packages).
 
 ### Authoring SCSS
 

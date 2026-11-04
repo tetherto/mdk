@@ -134,7 +134,8 @@ function _writeConfigWithOverride (examplePath, destPath, overrides) {
  * @param {string|false} [opts.trustedKeysDir] - Same-machine key rendezvous (default <root>/.trusted-keys).
  *                                       The Kernel publishes kernel.pub (its worker-dialing key,
  *                                       kernel.getClientPublicKey()) there and admits every other
- *                                       `<name>.pub` as a full-access caller. `false` disables both.
+ *                                       `<name>.pub` to connect; its access token decides what it may do.
+ *                                       `false` disables both.
  * @param {object} [opts.discovery]   - Discovery config: { mode: 'dht' | 'local', dir?, workerKeys?, allowAnyWorker? }.
  *                                       Default 'dht' (Hyperswarm topic; works on one host or
  *                                       across machines). 'local' is a faster same-machine option:
@@ -224,14 +225,9 @@ async function getKernel (opts = {}) {
 
   // Library default: leave the process's signals alone (tear down with
   // shutdown(kernel)). Standalone processes opt in with handleSignals.
-  if (opts.handleSignals === true) {
-    onShutdown(async () => {
-      for (const fn of kernel._cleanup) {
-        try { await fn() } catch {}
-      }
-      await kernel.stop()
-    })
-  }
+  // Same path as an explicit shutdown(kernel), so a process that also calls
+  // shutdown(kernel) itself drains _cleanup once, not twice.
+  if (opts.handleSignals === true) onShutdown(() => shutdown(kernel))
 
   return kernel
 }
@@ -514,17 +510,24 @@ function onShutdown (cleanupFn, { signals = ['SIGINT', 'SIGTERM'], forceMs = 300
   return handler
 }
 
+// Runs a handle's _cleanup steps last-registered first, so whatever started
+// last stops first: a Gateway pushed by startGateway({ kernel }) stops before a
+// Worker pushed earlier, and both before the Kernel's own trusted-keys steps.
+// A step that throws is logged and skipped; the rest still run. The list itself
+// is left as registered.
+async function _drainCleanup (cleanup) {
+  for (const fn of [...cleanup].reverse()) {
+    try { await fn() } catch (err) { debug('cleanup error: %s', err && err.message) }
+  }
+}
+
 // Tear down any boot handle without the caller knowing its shape: drain
-// _cleanup, then stop via the handle's top-level stop() (kernel/gateway/
-// runtime worker). Idempotent and partial-handle safe.
+// _cleanup (last-registered first), then stop via the handle's top-level stop()
+// (kernel/gateway/runtime worker). Idempotent and partial-handle safe.
 async function shutdown (handle) {
   if (!handle || handle.__mdkShutdownDone) return
 
-  if (Array.isArray(handle._cleanup)) {
-    for (const fn of handle._cleanup) {
-      try { await fn() } catch (err) { debug('cleanup error: %s', err && err.message) }
-    }
-  }
+  if (Array.isArray(handle._cleanup)) await _drainCleanup(handle._cleanup)
 
   if (typeof handle.stop === 'function') {
     // kernel.stop() resolves a promise; gateway hnd.stop(cb) calls back.

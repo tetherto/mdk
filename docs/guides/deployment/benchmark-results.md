@@ -56,6 +56,10 @@ than a loopback mock, and a different host, device family, or operating interval
 | Date           | 2026-10-27                                                               |
 | Config hash    | `2f48ab70dc13` (`config/benchmark.config.json`)                          |
 
+These runs predate mandatory request authorization. From 0.13.0 every Kernel request carries an access token that the Kernel
+verifies and evaluates against the policy in force, per instance the action touches. That is per-request work the numbers below
+never paid. Re-run the [benchmark harness][benchmark-harness] on the current release to measure what it costs on your hardware.
+
 ### Topology
 
 Every profile runs the same process layout a supervised deployment uses: the mocks, the Kernel, the Gateway (with the harness's
@@ -382,7 +386,7 @@ process and invalidates the profile.
 - [Benchmark your site](benchmark-your-site.md): run the same harness on your own hardware and device count
 - [Capacity and metrics template](capacity-metrics-template.md): what every profile records and the pass/fail thresholds
 - [Scalability](../../concepts/scalability.md): devices per Worker, Workers per Kernel, and Kernels per site
-- [Deployment topologies](../../concepts/deployment-topologies.md): how these processes are packaged on one or many hosts
+- [Deployment topologies][deployment-topologies]: how these processes are packaged on one or many hosts
 
 ## Links
 
@@ -406,3 +410,6 @@ process and invalidates the profile.
 
 [published-reports]: ../../../backend/tests/benchmark/published/2026-10-27-m3max/README.md
 <!-- docs@tether.io: published-reports → https://github.com/tetherto/mdk/blob/main/backend/tests/benchmark/published/2026-10-27-m3max/README.md -->
+
+[deployment-topologies]: ../../concepts/deployment-topologies.md
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->

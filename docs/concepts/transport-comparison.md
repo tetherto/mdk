@@ -152,7 +152,7 @@ Kernel and its Workers share a host, and run a private bootstrap where outbound 
 
 ## Next steps
 
-- [Deployment topologies](deployment-topologies.md): pick how Kernel learns Worker keys before choosing a network design
+- [Deployment topologies][deployment-topologies]: pick how Kernel learns Worker keys before choosing a network design
 - [Hosted-site reference configuration](../guides/deployment/hosted-site.md): apply the key, allowlist and bootstrap settings for a managed site
 - [Benchmark your site](../guides/deployment/benchmark-your-site.md): measure Kernel, Gateway and Workers on your own hardware
 
@@ -162,7 +162,7 @@ Kernel and its Workers share a host, and run a private bootstrap where outbound 
 <!-- docs@tether.io: hrpc-glossary → reference/glossary#hyperswarm-rpc -->
 
 [deployment-topologies]: deployment-topologies.md
-<!-- docs@tether.io: deployment-topologies → concepts/deployment-topologies -->
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [hosted-site]: ../guides/deployment/hosted-site.md
 <!-- docs@tether.io: hosted-site → guides/deployment/hosted-site -->
@@ -171,7 +171,7 @@ Kernel and its Workers share a host, and run a private bootstrap where outbound 
 <!-- docs@tether.io: health-monitor → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#healthmonitor -->
 
 [locked-down-site]: deployment-topologies.md#locked-down-managed-site
-<!-- docs@tether.io: locked-down-site → concepts/deployment-topologies#locked-down-managed-site -->
+<!-- docs@tether.io: locked-down-site → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md#locked-down-managed-site -->
 
 [private-dht]: ../guides/deployment/private-dht.md
 <!-- docs@tether.io: private-dht → guides/deployment/private-dht -->

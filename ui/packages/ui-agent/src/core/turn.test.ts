@@ -95,6 +95,16 @@ describe('reduceTurn — approval', () => {
     expect(step.isError).toBeUndefined()
   })
 
+  it('marks a write whose approval expired rejected, not ok', () => {
+    // No decision arrived, so the write never ran; the chip must not show a success tick.
+    const events = FIXTURES.writeRejected!.events.map((event) =>
+      event.type === EVENT.TOOL_RESULT
+        ? { ...event, text: '(no operator decision — approval expired, not executed)' }
+        : event,
+    )
+    expect(replay(events).tools[0]!.status).toBe(TOOL_STATUS.REJECTED)
+  })
+
   it('only treats a refusal as such when the step was awaiting approval', () => {
     // A read tool answering with that prose is still a normal result.
     const events: WireEvent[] = [

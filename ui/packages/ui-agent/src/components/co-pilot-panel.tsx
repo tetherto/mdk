@@ -91,6 +91,7 @@ export const CoPilotPanel = ({
                 toolLabels={toolLabels}
                 pendingApproval={chat.pendingApproval}
                 isDecisionPending={chat.isDecisionPending}
+                isOnline={chat.isOnline}
                 onDecide={chat.decide}
                 onRetry={chat.retry}
               />

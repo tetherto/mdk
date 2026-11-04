@@ -29,6 +29,12 @@ export default defineConfig(({ mode }) => {
   // the stack's mdk.yaml gateway port so the UI hits the right backend.
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const gatewayUrl = env.VITE_GATEWAY_URL || 'http://localhost:3000'
+  // Which interface the dev server binds. Vite binds loopback by default, and
+  // `mdk run dashboard` passes no arguments, so a stack running in a VM,
+  // container or remote box served a dashboard nothing outside could reach.
+  // Set VITE_DEV_HOST (`0.0.0.0`, or one address) to publish it; unset keeps
+  // the safe default of loopback only.
+  const devHost = env.VITE_DEV_HOST || false
 
   return {
   // mdkSharedModules lends this shell's React and MDK packages to the installed
@@ -55,6 +61,7 @@ export default defineConfig(({ mode }) => {
     fs: {
       allow: [appRoot, mdkPackagesRoot],
     },
+    host: devHost,
     port: 3030,
     proxy: {
       '/auth': gatewayUrl,

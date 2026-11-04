@@ -119,9 +119,9 @@ describe('backend and UI scaffolded by one CLI', () => {
   });
 
   it(
-    'typechecks the app\'s starter UI',
+    'typechecks the app\'s controllers and starter UI',
     () => {
-      const result = npm(join(PROJECT, 'apps', 'ops'), ['run', 'typecheck:ui'], INSTALL_TIMEOUT);
+      const result = npm(join(PROJECT, 'apps', 'ops'), ['run', 'typecheck'], INSTALL_TIMEOUT);
       expect(result.status, result.stdout + result.stderr).toBe(0);
     },
     INSTALL_TIMEOUT,

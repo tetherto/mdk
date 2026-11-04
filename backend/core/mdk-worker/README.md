@@ -8,14 +8,49 @@ contract.
 ## What this package exports
 
 ```js
-const { WorkerRuntime, loadPlugin, loadContract, createInstance, createModuleContext } = require('@tetherto/mdk-worker')
+const { WorkerRuntime, WorkerRuntimeV2, loadPlugin, loadContract, validateContract, validateParams, createInstance, createModuleContext } = require('@tetherto/mdk-worker')
 ```
+
+Deep imports are closed: the package's `exports` map in [`package.json`](./package.json) lists every importable subpath, and
+anything outside it fails to resolve with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
 
 - `WorkerRuntime`: starts the Hyperswarm RPC server, dispatches MDK Protocol actions to per-device handlers, and
   persists the DHT/RPC keypair. It creates `opts.storeDir` owner-only (mode `0700`) and writes any file-backed seed
   `0600`, so the Worker's identity stays readable only by its owner
 - `loadPlugin`: loads a plugin object (`mdk-contract.json`, handlers, ...) from a directory
+- `validateContract`: [validates a parsed contract](#contract-validation) against the vendored schema
+- `validateParams`: checks command parameters against a contract's `params`. It re-exports the Kernel's implementation from
+  `@tetherto/mdk-kernel/protocol/params`, so a Worker runtime and Kernel accept exactly the same payloads
 - `loadContract`, `createInstance`, `createModuleContext` — the loader internals `loadPlugin` composes
+- `WorkerRuntimeV2` is the directory-loaded runtime a new Worker package builds on, which
+  [Build a third-party Worker](../../../docs/guides/workers/build-a-worker.md) walks through
+
+## Contract validation
+
+`validateContract(contract, { dir, semantic, strict })` checks a parsed `mdk-contract.json` against the vendored
+[`mdk-contract.schema.json`](./mdk-contract.schema.json) and returns `{ ok, errors, warnings }`. `ok` means no errors, and
+warnings never fail a contract. Findings come back on that object rather than being thrown, unlike the loader codes under
+[Errors](#errors).
+
+A contract that stamps `"contractVersion": "1"` opts into the v1 generation and is held to its requirements as errors. A
+contract without the stamp is validated as legacy: v1 strictness findings come back as warnings, so those gaps do not
+prevent loading. Pass `strict: true` to hold a legacy contract to the full requirements anyway, which is what
+`mdk validate worker --strict` does.
+
+| Requirement                          | Applies to                  | Legacy contract | Stamped contract       |
+| ------------------------------------ | --------------------------- | --------------- | ---------------------- |
+| `contractVersion` is declared        | The contract                | Warning         | Satisfied by the stamp |
+| `unit` is declared                   | Numeric telemetry metrics   | Warning         | Error                  |
+| `unit` uses the canonical vocabulary | Any declared telemetry unit | Warning         | Error                  |
+| `min` and `max` are declared         | Numeric command parameters  | Warning         | Error                  |
+
+The tier is declared structurally, by `x-mdk-strict` on the schema node, so it never depends on a message's text. Everything
+else the schema requires is an error at both tiers: a wrong JSON type, a missing required property, an unexpected property,
+or a value outside an allowed set.
+
+`semantic: false` runs schema conformance alone, skipping duplicate-name, parameter-bound consistency, default-range and
+handler-file checks. The catalogue generator uses this mode. `dir` is the package directory used to resolve handler paths
+when semantic checks are enabled; without it, only the handler-file checks are skipped.
 
 ## Store services
 
@@ -88,24 +123,34 @@ The Worker RPC server is **fail-closed**. Only public keys on its allowlist may 
 connect time and every request is re-checked (`ERR_WORKER_CALLER_NOT_ALLOWED`), so `revokeKey()` applies to open
 connections. Every request is envelope-validated (`validateFull`) before dispatch.
 
+A fragment, not a script: `plugin` and `devices` come from the Worker package, `kernel` is an initialized Kernel, and
+`directCallerKeyHex` is `keyPair.publicKey.toString('hex')`, the public key of the DHT keypair the direct caller dials with
+(`createRawMdkClient({ hrpc: { key: rpcKey, keyPair } })` from `@tetherto/mdk-client`, where `rpcKey` is the Worker's RPC public key).
+Call `await client.connect()` before issuing requests. A caller whose `keyPair` does not produce the allowed key is refused.
+
 ```js
 const runtime = new WorkerRuntime(plugin, {
   workerId: 'rack-1',
   devices,
   allowedKeys: [kernel.getClientPublicKey()] // the key the Kernel dials Workers with
 })
-runtime.allowKey(gatewayClientKeyHex)        // more callers, before or after start()
-runtime.revokeKey(hex)
+runtime.allowKey(directCallerKeyHex)         // a direct caller, before or after start()
+runtime.revokeKey(directCallerKeyHex)
 runtime.getAllowedKeys()
 await runtime.start()
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `allowedKeys` | `[]` | Hex/Buffer public keys allowed to call. `start()` throws `ERR_WORKER_ALLOWED_KEYS_REQUIRED` when empty |
-| `allowAll` | `false` | Admit every DHT peer that learns the Worker key. Development only; logs a warning at start |
-| `bootstrap` | HyperDHT public bootstrap | Bootstrap nodes for the Worker's HyperDHT node; pass the same list to every component on a private DHT network |
-| `dhtHost` | All interfaces | Interface the Worker's DHT node binds, such as `127.0.0.1` ([private DHT](../../../docs/guides/deployment/private-dht.md)) |
+> [!CAUTION]
+> A caller admitted this way reaches the Worker without going through the Kernel, so `spec.rbac` never judges the request
+> and the [write-command log](../kernel/README.md#write-command-log) never records it. Admit one only for an operator tool
+> that has to reach a device directly, and revoke it when that work is done.
+
+| Option        | Default | Description                                                              |
+| ------------- | ------- | ------------------------------------------------------------------------ |
+| `allowedKeys` | `[]`    | Hex/Buffer public keys allowed to call. `start()` throws `ERR_WORKER_ALLOWED_KEYS_REQUIRED` when empty |
+| `allowAll`    | `false` | Admit every DHT peer that learns the Worker key. Development only; logs a warning at start |
+| `bootstrap`   | HyperDHT public bootstrap | Bootstrap nodes for the Worker's HyperDHT node; pass the same list to every component on a private DHT network |
+| `dhtHost`     | All interfaces | Interface the Worker's DHT node binds, such as `127.0.0.1` ([private DHT](../../../docs/guides/deployment/private-dht.md)) |
 
 Admit the Kernel's **client** key (`kernel.getClientPublicKey()`), not its listener key (`getPublicKey()`), and no other,
 so every command reaches a device through the Kernel's checks and its
@@ -121,12 +166,12 @@ Every in-repo Worker boot function forwards `allowedKeys` /
 answers `telemetry.pull` `{ query: { type: 'health' } }` for each device with what its last metrics poll (the Kernel's
 scheduled `telemetry.pull`) saw:
 
-| Field | Meaning |
-| --- | --- |
-| `reachable` | `true` when any telemetry channel answered on the last poll, `false` when none did or the device is offline, `null` before the first poll |
-| `lastSuccessAt` | Time (ms) of the last poll a channel answered, or `null` |
-| `lastError` | The last channel error code (`ERR_TELEMETRY_FAILED`, `ERR_DEVICE_UNAVAILABLE: <id>`, or the handler's `ERR_*`), kept after the device recovers |
-| `lastErrorAt` | Time (ms) of that error, or `null` |
+| Field            | Meaning                                                                         |
+| ---------------- | ------------------------------------------------------------------------------- |
+| `reachable`      | `true` when any telemetry channel answered on the last poll, `false` when none did or the device is offline, `null` before the first poll |
+| `lastSuccessAt`  | Time (ms) of the last poll a channel answered, or `null`                        |
+| `lastError`      | The last channel error code (`ERR_TELEMETRY_FAILED`, `ERR_DEVICE_UNAVAILABLE: <id>`, or the handler's `ERR_*`), kept after the device recovers |
+| `lastErrorAt`    | Time (ms) of that error, or `null`                                              |
 
 "Worker up, device silent" is `reachable: false` on a `READY`, `HEALTHY` Worker. A plugin that knows better (a device with its
 own status endpoint) may declare a `health` telemetry channel; it replaces the built-in one and should answer the same fields.
@@ -163,61 +208,76 @@ checked anything:
 ## Errors
 
 The plugin and contract loaders validate their inputs and throw on the first problem; the request handlers instead
-return these codes on the response envelope's `error` field rather than throwing.
+return these codes on the response envelope's `error` field rather than throwing. The `ERR_CONTRACT_*` codes that
+[`validateContract`](#contract-validation) produces are returned in its `errors` and `warnings` lists, and a strict-tier
+finding lands in `warnings` on a contract that carries no `contractVersion`, unless `strict: true` forces it to an error.
 
-| Code | Fires when | Fix |
-| --- | --- | --- |
-| `ERR_COMMAND_FAILED` | A command handler or built-in service throws an error whose message does not start with `ERR_` (details are logged locally) | Check the Worker's `mdk:worker:runtime` debug log; throw `ERR_*` errors from handlers |
-| `ERR_CONTRACT_DIR_REQUIRED` | `loadContract` is called without a non-empty package-directory string | Pass the plugin package directory as `pkgDir` |
-| `ERR_CONTRACT_INVALID_JSON` | The package's `mdk-contract.json` cannot be parsed as JSON | Correct the JSON syntax in `mdk-contract.json` |
-| `ERR_CONTRACT_NOT_FOUND` | `mdk-contract.json` cannot be read in the package directory | Ensure `mdk-contract.json` exists in the package directory |
-| `ERR_DEVICE_CONFIG_INVALID` | A device spec supplies `config` that is not an object | Pass `config` as an object or omit it |
-| `ERR_DEVICE_ID_DUPLICATE` | Two device specs share the same `deviceId` | Give each device a unique `deviceId` |
-| `ERR_DEVICE_ID_MISSING` | A device spec has no non-empty string `deviceId` | Give every device spec a `deviceId` string |
-| `ERR_DEVICE_ID_REQUIRED` | A non-metrics telemetry query or a device command arrives with no `deviceId` | Include the target `deviceId` in the request |
-| `ERR_DEVICE_INSTANCE_MISSING` | A handler is invoked for a device that has no open instance | Register the device and open its instance before invoking handlers |
-| `ERR_DEVICE_NOT_FOUND` | A request targets a `deviceId` the Worker does not hold | Target a `deviceId` the Worker manages |
-| `ERR_DEVICE_UNAVAILABLE` | A telemetry or command request targets a device that is not online | Wait for the device to reconnect and come online before retrying |
-| `ERR_DEVICES_REQUIRED` | The runtime is started with an empty or missing device list where empty is not allowed | Supply at least one device spec |
-| `ERR_INSTANCE_DEVICE_ID_REQUIRED` | `createInstance` is called with a device that has no non-empty `id` | Give the device object an `id` string |
-| `ERR_INSTANCE_DEVICE_REQUIRED` | `createInstance` is called without a device object | Pass a `device` object to `createInstance` |
-| `ERR_INSTANCE_DIR_REQUIRED` | `createInstance` is called without a non-empty `dir` string | Pass the plugin directory as `dir` |
-| `ERR_INSTANCE_ENTRIES_REQUIRED` | `createInstance` is called without an `entries` object | Pass the resolved `entries` map |
-| `ERR_INSTANCE_HANDLER_LOAD_FAILED` | A handler module throws while being loaded | Fix the error inside the handler module |
-| `ERR_INSTANCE_HANDLER_NOT_FOUND` | A handler file path in the contract cannot be resolved | Correct the handler path in the contract |
-| `ERR_INSTANCE_HANDLER_NOT_FUNCTION` | A resolved handler module does not export a function | Export a function from the handler module |
-| `ERR_MODULE_CONTEXT_DIR_REQUIRED` | The module context is created without a non-empty `dir` string | Pass a directory when creating the module context |
-| `ERR_NO_DEVICE_CONTEXT` | `@tetherto/mdk-worker/device` is required outside a plugin instance | Load the plugin via `createInstance({ dir, entries, device })` so the device context exists |
-| `ERR_PARAM_ENUM` | A command param is not one of its declared `enum` values | Send one of the declared values |
-| `ERR_PARAM_RANGE` | A numeric command param is outside its declared `min`/`max`, or a `deviceIds` list is longer than 1000 | Send a value in range; split long device lists |
-| `ERR_PARAM_REQUIRED` | A param declared `required: true` is missing or `null` | Include the param |
-| `ERR_PARAM_TYPE` | A command param does not match its declared `type`, or `deviceIds` is not an array of strings | Send the declared type |
-| `ERR_PARAMS_INVALID` | Command `params` is not an object after positional normalization | Send `params` as an object |
-| `ERR_PLUGIN_CONNECT_NOT_FUNCTION` | The plugin's `connect` is not a function | Provide a `connect` function on the plugin |
-| `ERR_PLUGIN_CONTRACT_CAPABILITIES_MISSING` | The contract has no `capabilities` object | Add a `capabilities` object to the contract |
-| `ERR_PLUGIN_CONTRACT_METADATA_MISSING` | The contract has no `metadata` object | Add a `metadata` object to the contract |
-| `ERR_PLUGIN_CONTRACT_MISSING` | The plugin carries no contract object | Provide the plugin's contract |
-| `ERR_PLUGIN_DIR_MISSING` | The plugin has no non-empty `dir` string | Set the plugin's `dir` |
-| `ERR_PLUGIN_DISCONNECT_NOT_FUNCTION` | The plugin defines `disconnect` as something other than a function | Make `disconnect` a function or omit it |
-| `ERR_PLUGIN_DUPLICATE_NAME` | Two entries in a contract section share a name | Give each entry in the section a unique name |
-| `ERR_PLUGIN_ENTRY_NAME_MISSING` | A contract section entry has no non-empty `name` | Give every entry a `name` |
-| `ERR_PLUGIN_HANDLER_MISSING` | A contract entry has no non-empty `handler` path | Set the entry's `handler` path |
-| `ERR_PLUGIN_HANDLER_NOT_FOUND` | An entry's handler file cannot be required | Correct the entry's handler path |
-| `ERR_PLUGIN_HANDLER_NOT_FUNCTION` | An entry's handler module does not export a function | Export a function from the handler |
-| `ERR_PLUGIN_LOAD_HANDLER_NOT_FUNCTION` | `loadHandler` is provided but is not a function | Pass a function for `loadHandler` or omit it |
-| `ERR_PLUGIN_REQUIRED` | `loadPlugin` is called without a plugin object | Pass a plugin object to `loadPlugin` |
-| `ERR_PLUGIN_SECTION_NOT_ARRAY` | A contract capabilities section is present but is not an array | Make each capabilities section an array |
-| `ERR_REQUEST_FAILED` | The RPC responder fails before or outside action dispatch (for example an undecodable request) | Send a well-formed MDK envelope |
-| `ERR_SEED_FILE_INVALID` | A seed path in `storeDir` is not a regular file | Remove the entry so a new seed can be created |
-| `ERR_SEED_FILE_MALFORMED` | A seed file in `storeDir` is not exactly 32 bytes | Restore the seed from backup, or delete it to accept a new Worker identity |
-| `ERR_SEED_FILE_OWNER` | A seed file in `storeDir` is owned by another user | Run the Worker as the file's owner or fix the ownership |
-| `ERR_SEED_FILE_SYMLINK` | A seed path in `storeDir` is a symbolic link | Replace the link with the real file |
-| `ERR_TELEMETRY_FAILED` | A telemetry handler or built-in query throws an error whose message does not start with `ERR_` (details are logged locally) | Check the Worker's `mdk:worker:runtime` debug log; throw `ERR_*` errors from handlers |
-| `ERR_UNKNOWN_ACTION` | An envelope carries an action the runtime does not handle | Send a supported action |
-| `ERR_UNKNOWN_COMMAND` | A command request names a command the plugin does not define | Send a command declared in the contract |
-| `ERR_UNKNOWN_QUERY_TYPE` | A telemetry query names a type the plugin does not provide | Query a telemetry type declared in the contract |
-| `ERR_WORKER_DIR_REQUIRED` | WorkerRuntimeV2 is started without a non-empty `dir` string | Pass the Worker package directory as `dir` |
-| `ERR_WORKER_ID_REQUIRED` | The runtime is constructed without a `workerId` string | Pass a `workerId` string |
+| Code                                       | Fires when                                           | Fix                                       |
+| ------------------------------------------ | ---------------------------------------------------- | ----------------------------------------- |
+| `ERR_COMMAND_FAILED`                       | A command handler or built-in service throws an error whose message does not start with `ERR_` (details are logged locally) | Check the Worker's `mdk:worker:runtime` debug log; throw `ERR_*` errors from handlers |
+| `ERR_CONTRACT_DEFAULT_RANGE`               | A command parameter's `default` falls outside its own `min` and `max` | Move the default inside the range, or widen the range |
+| `ERR_CONTRACT_DIR_REQUIRED`                | `loadContract` is called without a non-empty package-directory string | Pass the plugin package directory as `pkgDir` |
+| `ERR_CONTRACT_DUPLICATE_NAME`              | Two entries in the same contract section share a `name` | Give every telemetry metric and command a unique name |
+| `ERR_CONTRACT_ENUM`                        | A value sits outside the schema's allowed set, such as a `unit` outside the canonical vocabulary | Use one of the values the message lists   |
+| `ERR_CONTRACT_HANDLER_NOT_FOUND`           | A `handler` path resolves to no file in the package directory | Correct the handler path, or add the missing file |
+| `ERR_CONTRACT_INVALID_JSON`                | The package's `mdk-contract.json` cannot be parsed as JSON | Correct the JSON syntax in `mdk-contract.json` |
+| `ERR_CONTRACT_MINIMUM`                     | A numeric value is below the minimum the schema sets for it | Raise the value to at least the minimum the message names |
+| `ERR_CONTRACT_NO_CONNECT`                  | A v1 `WorkerRuntime` calls `connect` on a plugin `loadContract` built, which carries a placeholder because a directory-loaded package has no process-wide connect | Host a directory-loaded package on `WorkerRuntimeV2`, which builds an instance per device instead |
+| `ERR_CONTRACT_NOT_FOUND`                   | `mdk-contract.json` cannot be read in the package directory | Ensure `mdk-contract.json` exists in the package directory |
+| `ERR_CONTRACT_PARAM_BOUNDS_INVALID`        | A command parameter declares a `min` above its `max` | Correct the bounds so `min` is not above `max` |
+| `ERR_CONTRACT_REQUIRED`                    | A property the schema requires is missing; at the strict tier that includes `contractVersion` | Add the property the message names        |
+| `ERR_CONTRACT_TYPE`                        | A value's JSON type differs from the one the schema declares | Correct the value's type                  |
+| `ERR_CONTRACT_UNEXPECTED`                  | The contract carries a property the schema does not define | Remove the property, or correct its spelling |
+| `ERR_DEVICE_CONFIG_INVALID`                | A device spec supplies `config` that is not an object | Pass `config` as an object or omit it     |
+| `ERR_DEVICE_ID_DUPLICATE`                  | Two device specs share the same `deviceId`           | Give each device a unique `deviceId`      |
+| `ERR_DEVICE_ID_MISSING`                    | A device spec has no non-empty string `deviceId`     | Give every device spec a `deviceId` string |
+| `ERR_DEVICE_ID_REQUIRED`                   | A non-metrics telemetry query or a device command arrives with no `deviceId` | Include the target `deviceId` in the request |
+| `ERR_DEVICE_INSTANCE_MISSING`              | A handler is invoked for a device that has no open instance | Register the device and open its instance before invoking handlers |
+| `ERR_DEVICE_NOT_FOUND`                     | A request targets a `deviceId` the Worker does not hold | Target a `deviceId` the Worker manages    |
+| `ERR_DEVICE_UNAVAILABLE`                   | A telemetry or command request targets a device that is not online | Wait for the device to reconnect and come online before retrying |
+| `ERR_DEVICES_REQUIRED`                     | The runtime is started with an empty or missing device list where empty is not allowed | Supply at least one device spec           |
+| `ERR_INSTANCE_DEVICE_ID_REQUIRED`          | `createInstance` is called with a device that has no non-empty `id` | Give the device object an `id` string     |
+| `ERR_INSTANCE_DEVICE_REQUIRED`             | `createInstance` is called without a device object   | Pass a `device` object to `createInstance` |
+| `ERR_INSTANCE_DIR_REQUIRED`                | `createInstance` is called without a non-empty `dir` string | Pass the plugin directory as `dir`        |
+| `ERR_INSTANCE_ENTRIES_REQUIRED`            | `createInstance` is called without an `entries` object | Pass the resolved `entries` map           |
+| `ERR_INSTANCE_HANDLER_LOAD_FAILED`         | A handler module throws while being loaded           | Fix the error inside the handler module   |
+| `ERR_INSTANCE_HANDLER_NOT_FOUND`           | A handler file path in the contract cannot be resolved | Correct the handler path in the contract  |
+| `ERR_INSTANCE_HANDLER_NOT_FUNCTION`        | A resolved handler module does not export a function | Export a function from the handler module |
+| `ERR_MODULE_CONTEXT_DIR_REQUIRED`          | The module context is created without a non-empty `dir` string | Pass a directory when creating the module context |
+| `ERR_NO_DEVICE_CONTEXT`                    | `@tetherto/mdk-worker/device` is required outside a plugin instance | Load the plugin via `createInstance({ dir, entries, device })` so the device context exists |
+| `ERR_PARAM_ENUM`                           | A command param is not one of its declared `enum` values | Send one of the declared values           |
+| `ERR_PARAM_RANGE`                          | A numeric command param is outside its declared `min`/`max`, or a `deviceIds` list is longer than 1000 | Send a value in range; split long device lists |
+| `ERR_PARAM_REQUIRED`                       | A param declared `required: true` is missing or `null` | Include the param                         |
+| `ERR_PARAM_TYPE`                           | A command param does not match its declared `type`, or `deviceIds` is not an array of strings | Send the declared type                    |
+| `ERR_PARAMS_INVALID`                       | Command `params` is not an object after positional normalization | Send `params` as an object                |
+| `ERR_PLUGIN_CONNECT_NOT_FUNCTION`          | The plugin's `connect` is not a function             | Provide a `connect` function on the plugin |
+| `ERR_PLUGIN_CONTRACT_CAPABILITIES_MISSING` | The contract has no `capabilities` object            | Add a `capabilities` object to the contract |
+| `ERR_PLUGIN_CONTRACT_METADATA_MISSING`     | The contract has no `metadata` object                | Add a `metadata` object to the contract   |
+| `ERR_PLUGIN_CONTRACT_MISSING`              | The plugin carries no contract object                | Provide the plugin's contract             |
+| `ERR_PLUGIN_DIR_MISSING`                   | The plugin has no non-empty `dir` string             | Set the plugin's `dir`                    |
+| `ERR_PLUGIN_DISCONNECT_NOT_FUNCTION`       | The plugin defines `disconnect` as something other than a function | Make `disconnect` a function or omit it   |
+| `ERR_PLUGIN_DUPLICATE_NAME`                | Two entries in a contract section share a name       | Give each entry in the section a unique name |
+| `ERR_PLUGIN_ENTRY_NAME_MISSING`            | A contract section entry has no non-empty `name`     | Give every entry a `name`                 |
+| `ERR_PLUGIN_HANDLER_MISSING`               | A contract entry has no non-empty `handler` path     | Set the entry's `handler` path            |
+| `ERR_PLUGIN_HANDLER_NOT_FOUND`             | An entry's handler file cannot be required           | Correct the entry's handler path          |
+| `ERR_PLUGIN_HANDLER_NOT_FUNCTION`          | An entry's handler module does not export a function | Export a function from the handler        |
+| `ERR_PLUGIN_LOAD_HANDLER_NOT_FUNCTION`     | `loadHandler` is provided but is not a function      | Pass a function for `loadHandler` or omit it |
+| `ERR_PLUGIN_REQUIRED`                      | `loadPlugin` is called without a plugin object       | Pass a plugin object to `loadPlugin`      |
+| `ERR_PLUGIN_SECTION_NOT_ARRAY`             | A contract capabilities section is present but is not an array | Make each capabilities section an array   |
+| `ERR_REQUEST_FAILED`                       | The RPC responder fails before or outside action dispatch (for example an undecodable request) | Send a well-formed MDK envelope           |
+| `ERR_SEED_FILE_INVALID`                    | A seed path in `storeDir` is not a regular file      | Remove the entry so a new seed can be created |
+| `ERR_SEED_FILE_MALFORMED`                  | A seed file in `storeDir` is not exactly 32 bytes    | Restore the seed from backup, or delete it to accept a new Worker identity |
+| `ERR_SEED_FILE_OWNER`                      | A seed file in `storeDir` is owned by another user   | Run the Worker as the file's owner or fix the ownership |
+| `ERR_SEED_FILE_SYMLINK`                    | A seed path in `storeDir` is a symbolic link         | Replace the link with the real file       |
+| `ERR_TELEMETRY_FAILED`                     | A telemetry handler or built-in query throws an error whose message does not start with `ERR_` (details are logged locally) | Check the Worker's `mdk:worker:runtime` debug log; throw `ERR_*` errors from handlers |
+| `ERR_UNKNOWN_ACTION`                       | An envelope carries an action the runtime does not handle | Send a supported action                   |
+| `ERR_UNKNOWN_COMMAND`                      | A command request names a command the plugin does not define | Send a command declared in the contract   |
+| `ERR_UNKNOWN_QUERY_TYPE`                   | A telemetry query names a type the plugin does not provide | Query a telemetry type declared in the contract |
+| `ERR_WORKER_ALLOWED_KEY_INVALID`           | An entry in `allowedKeys` is not a 32-byte hex public key | Pass each key as 64 hex characters, or as a Buffer |
+| `ERR_WORKER_ALLOWED_KEYS_REQUIRED`         | `start()` is called with no `allowedKeys`            | Pass the Kernel client key from `kernel.getClientPublicKey()` |
+| `ERR_WORKER_CALLER_NOT_ALLOWED`            | A caller's public key is not on the allowlist, checked at connect and again on every request | Add the caller's key to `allowedKeys`, or dial with an allowed keypair |
+| `ERR_WORKER_DIR_REQUIRED`                  | WorkerRuntimeV2 is started without a non-empty `dir` string | Pass the Worker package directory as `dir` |
+| `ERR_WORKER_ID_REQUIRED`                   | The runtime is constructed without a `workerId` string | Pass a `workerId` string                  |
 
 ## Next steps
 

@@ -87,21 +87,21 @@ export function ControlPage({
   const lock = (allowed: boolean) => (allowed ? "" : " — not permitted");
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="site-stack-16">
       <Card>
-        <CardHeader style={{ padding: "20px" }}><Typography variant="heading3">Target miner</Typography></CardHeader>
-        <CardBody style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <CardHeader className="site-card-pad"><Typography variant="heading3">Target miner</Typography></CardHeader>
+        <CardBody className="site-card-pad-stack">
           {access && (
             <Typography variant="caption" data-testid="control-roles">
               Signed in as <strong>{access.user.sub}</strong> · roles: {access.roles.join(", ") || "none"} ·{" "}
               {powerModeMiners.size} miner(s) for power mode, {poolMiners.size} for pools
             </Typography>
           )}
-          <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div className="site-filters-16">
+            <div className="site-field">
               <Typography variant="caption">Miner</Typography>
               <Select value={selectedMiner} onValueChange={setSelectedMiner}>
-                <SelectTrigger style={{ minWidth: 280 }} data-testid="miner-select">
+                <SelectTrigger className="site-field-280" data-testid="miner-select">
                   <SelectValue placeholder={listed.length ? "Select a miner" : "No miners you may control"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -113,7 +113,7 @@ export function ControlPage({
                 </SelectContent>
               </Select>
             </div>
-            <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <label className="site-toggle-field">
               <Switch checked={showAll} onCheckedChange={setShowAll} data-testid="show-all-miners" />
               <Typography variant="caption">Include miners I may not control (to see the server refuse)</Typography>
             </label>
@@ -123,13 +123,13 @@ export function ControlPage({
 
       {canSetPowerMode && (
         <Card>
-          <CardHeader style={{ padding: "20px" }}><Typography variant="heading3">Set miner power mode</Typography></CardHeader>
-          <CardBody style={{ padding: "20px" }}>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <CardHeader className="site-card-pad"><Typography variant="heading3">Set miner power mode</Typography></CardHeader>
+          <CardBody className="site-card-pad">
+            <div className="site-filters">
+              <div className="site-field">
                 <Typography variant="caption">Power mode</Typography>
                 <Select value={selectedMode} onValueChange={setSelectedMode}>
-                  <SelectTrigger style={{ minWidth: 140 }} data-testid="mode-select">
+                  <SelectTrigger className="site-field-140" data-testid="mode-select">
                     <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
                   <SelectContent>
@@ -150,33 +150,33 @@ export function ControlPage({
 
       {canSetPools && (
         <Card>
-          <CardHeader style={{ padding: "20px" }}><Typography variant="heading3">Configure pools</Typography></CardHeader>
-          <CardBody style={{ padding: "20px" }}>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <CardHeader className="site-card-pad"><Typography variant="heading3">Configure pools</Typography></CardHeader>
+          <CardBody className="site-card-pad">
+            <div className="site-filters">
+              <div className="site-field">
                 <Typography variant="caption">Pool URL</Typography>
                 <Input
-                  style={{ minWidth: 280 }}
+                  className="site-field-280"
                   placeholder="stratum+tcp://pool:3333"
                   value={poolUrl}
                   onChange={(e) => setPoolUrl(e.target.value)}
                   data-testid="pool-url"
                 />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div className="site-field">
                 <Typography variant="caption">Worker name</Typography>
                 <Input
-                  style={{ minWidth: 180 }}
+                  className="site-field-180"
                   placeholder="account.worker"
                   value={poolWorker}
                   onChange={(e) => setPoolWorker(e.target.value)}
                   data-testid="pool-worker"
                 />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div className="site-field">
                 <Typography variant="caption">Password</Typography>
                 <Input
-                  style={{ minWidth: 120 }}
+                  className="site-field-120"
                   placeholder="x"
                   value={poolPassword}
                   onChange={(e) => setPoolPassword(e.target.value)}
@@ -198,7 +198,7 @@ export function ControlPage({
               </Button>
               {poolsMsg && <Typography data-testid="pools-msg">{poolsMsg}</Typography>}
             </div>
-            <Typography variant="caption" style={{ display: "block", marginTop: 8, opacity: 0.7 }}>
+            <Typography variant="caption" className="site-note">
               Leave the fields empty to apply the site default from config/site.deploy.json (worker.pools).
               The miner reboots to pick up new pools.
             </Typography>
@@ -208,10 +208,10 @@ export function ControlPage({
 
       {listed.length > 0 && (
         <Card>
-          <CardHeader style={{ padding: "20px" }}>
+          <CardHeader className="site-card-pad">
             <Typography variant="heading3">{showAll ? "All miners" : "Miners you may control"}</Typography>
           </CardHeader>
-          <CardBody style={{ padding: "20px" }}>
+          <CardBody className="site-card-pad">
             <DataTable<Miner>
               data={listed}
               columns={MINER_TABLE_COLUMNS}

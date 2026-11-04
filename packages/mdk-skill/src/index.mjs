@@ -16,6 +16,11 @@ const DIST = path.join(PKG_DIR, 'dist', 'skills')
 
 const SKILL_MD_MAX_LINES = 500
 
+// Installed skills leave the monorepo, so a relative link into the rest of the
+// repo (`../../../../../examples/...`) dangles. Assembly pins those to this
+// release on GitHub; links between files that ship in the bundle stay relative.
+const REPO_URL = 'https://github.com/tetherto/mdk'
+
 // Frontmatter key every suite skill carries (`metadata.suite`). installSkills
 // only replaces an existing skill dir that has it, and only sweeps a stale one
 // (no longer shipped) that has it, so a user's own skill is never deleted.
@@ -35,7 +40,7 @@ const REQUIRED = [
   'mdk/references/protocol.md',
   'mdk/references/glossary.md',
   'mdk/references/mdk-contract.schema.json',
-  'mdk-gateway-plugin/SKILL.md',
+  'mdk-app-routes/SKILL.md',
   'mdk-create-app/SKILL.md',
   'mdk-app-rbac/SKILL.md',
   'mdk-app-rbac/references/kernel-access.md',
@@ -50,22 +55,22 @@ const REQUIRED = [
   'mdk-site-sizing/references/envelope.json',
   'mdk-site-sizing/scripts/size-site.mjs',
   'mdk-site-sizing/scripts/eval-held-out.mjs',
-  'mdk-worker-plugin/SKILL.md',
-  'mdk-worker-plugin/references/mdk-contract.schema.json',
-  'mdk-worker-plugin/references/contract-authoring.md',
-  'mdk-worker-plugin/references/worker-base-api.md',
-  'mdk-worker-plugin/references/device-families.md',
-  'mdk-worker-plugin/references/local-testing.md',
-  'mdk-worker-plugin/assets/mdk-contract.template.json',
-  'mdk-worker-plugin/assets/worker-template/mdk-contract.json',
-  'mdk-worker-plugin/assets/worker-template/src/client.js',
-  'mdk-worker-plugin/assets/worker-template/mock/server.js',
-  'mdk-worker-plugin/assets/worker-template/smoke.config.js',
-  'mdk-worker-plugin/scripts/validate-contract.mjs',
-  'mdk-worker-plugin/scripts/worker-smoke.mjs'
+  'mdk-worker/SKILL.md',
+  'mdk-worker/references/mdk-contract.schema.json',
+  'mdk-worker/references/contract-authoring.md',
+  'mdk-worker/references/worker-base-api.md',
+  'mdk-worker/references/device-families.md',
+  'mdk-worker/references/local-testing.md',
+  'mdk-worker/assets/mdk-contract.template.json',
+  'mdk-worker/assets/worker-template/mdk-contract.json',
+  'mdk-worker/assets/worker-template/src/client.js',
+  'mdk-worker/assets/worker-template/mock/server.js',
+  'mdk-worker/assets/worker-template/smoke.config.js',
+  'mdk-worker/scripts/validate-contract.mjs',
+  'mdk-worker/scripts/worker-smoke.mjs'
 ]
 
-function copyEntry (entry) {
+function copyEntry (entry, sources) {
   const src = path.resolve(REPO_ROOT, entry.source)
   const dest = path.resolve(DIST, entry.dest)
   if (!fs.existsSync(src)) throw new Error(`source missing: ${entry.source}`)
@@ -73,7 +78,12 @@ function copyEntry (entry) {
   const excluded = new Set(entry.exclude || [])
   fs.cpSync(src, dest, {
     recursive: true,
-    filter: (from) => !excluded.has(path.basename(from))
+    filter: (from) => {
+      if (excluded.has(path.basename(from))) return false
+      // Later entries layer onto earlier ones, so the last copy owns the file.
+      if (!fs.statSync(from).isDirectory()) sources.set(path.join(dest, path.relative(src, from)), from)
+      return true
+    }
   })
 }
 
@@ -92,6 +102,45 @@ function injectVersion (files, version) {
     const body = fs.readFileSync(file, 'utf8')
     if (!body.includes('{{MDK_VERSION}}')) continue
     fs.writeFileSync(file, body.replaceAll('{{MDK_VERSION}}', version))
+  }
+}
+
+// Inline `](target)` links and `[slug]: target` definitions; fenced code is left alone.
+const LINK_RE = /(\]\(\s*<?|^\s*\[[^\]]+\]:\s*<?)([^)\s>#]+)(#[^)\s>]*)?/gm
+
+function isExternal (target) {
+  return /^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('/')
+}
+
+/**
+ * Rewrite every relative link in `body` (a file assembled at `distFile` from
+ * `srcFile`) whose target does not ship in dist/skills to a GitHub URL at `ref`.
+ * Exported for tests.
+ */
+export function rewriteRepoLinks (body, { distFile, srcFile, ref, distRoot = DIST, repoRoot = REPO_ROOT }) {
+  let fenced = false
+  return body.split('\n').map((line) => {
+    if (/^\s*(```|~~~)/.test(line)) fenced = !fenced
+    if (fenced) return line
+    return line.replace(LINK_RE, (match, lead, target, hash = '') => {
+      if (isExternal(target)) return match
+      const inDist = path.resolve(path.dirname(distFile), target)
+      if (inDist.startsWith(distRoot + path.sep) && fs.existsSync(inDist)) return match
+      const inRepo = path.resolve(path.dirname(srcFile), target)
+      const rel = path.relative(repoRoot, inRepo)
+      if (rel.startsWith('..') || path.isAbsolute(rel) || !fs.existsSync(inRepo)) return match
+      const kind = fs.statSync(inRepo).isDirectory() ? 'tree' : 'blob'
+      return `${lead}${REPO_URL}/${kind}/${ref}/${rel.split(path.sep).join('/')}${hash}`
+    })
+  }).join('\n')
+}
+
+function rewriteLinks (files, sources, ref) {
+  for (const file of files) {
+    if (!file.endsWith('.md') || !sources.has(file)) continue
+    const body = fs.readFileSync(file, 'utf8')
+    const next = rewriteRepoLinks(body, { distFile: file, srcFile: sources.get(file), ref })
+    if (next !== body) fs.writeFileSync(file, next)
   }
 }
 
@@ -137,10 +186,12 @@ export function assemble () {
   fs.rmSync(DIST, { recursive: true, force: true })
   fs.mkdirSync(DIST, { recursive: true })
 
-  for (const entry of map.entries) copyEntry(entry)
+  const sources = new Map()
+  for (const entry of map.entries) copyEntry(entry, sources)
 
   const files = walk(DIST)
   injectVersion(files, mdkVersion)
+  rewriteLinks(files, sources, `v${mdkVersion}`)
   check(files)
 
   return { files: files.length, version: mdkVersion }
@@ -166,17 +217,38 @@ function lstatOrNull (p) {
   }
 }
 
-// Create <root>/<segments...> one level at a time, refusing any segment that is
-// a symlink, so a planted `.claude -> /elsewhere` cannot redirect the install
-// (and its deletes) outside the project.
+// True when `p` is `root` itself or a path below it. Both must be real paths.
+function isInside (root, p) {
+  const rel = path.relative(root, p)
+  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel))
+}
+
+// Create <root>/<segments...> one level at a time. A segment that is a symlink
+// is followed only when it resolves to a directory inside the project, as in
+// the MDK monorepo, where `.claude/skills` and `.cursor/skills` link to the one
+// real `skills/`. A planted `.claude -> /elsewhere`, or a dangling link, still
+// throws, so the install (and its deletes) cannot be redirected outside the
+// project.
 function ensureRealDir (root, segments) {
   let dir = root
   for (const seg of segments) {
     dir = path.join(dir, seg)
     const st = lstatOrNull(dir)
-    if (!st) fs.mkdirSync(dir)
-    else if (st.isSymbolicLink()) throw new Error(`refusing to install through symlink ${dir}`)
-    else if (!st.isDirectory()) throw new Error(`${dir} exists and is not a directory`)
+    if (!st) {
+      fs.mkdirSync(dir)
+    } else if (st.isSymbolicLink()) {
+      let real
+      try {
+        real = fs.realpathSync(dir)
+      } catch {
+        throw new Error(`refusing to install through dangling symlink ${dir}`)
+      }
+      if (!isInside(root, real)) throw new Error(`refusing to install through symlink ${dir}: it leaves the project`)
+      if (!fs.statSync(real).isDirectory()) throw new Error(`${dir} links to ${real}, which is not a directory`)
+      dir = real
+    } else if (!st.isDirectory()) {
+      throw new Error(`${dir} exists and is not a directory`)
+    }
   }
   return dir
 }
@@ -211,7 +283,9 @@ function sweepStale (targetDir, shipped) {
  * @param {(msg: string) => void} [options.onWarn=console.warn] Called for each skill dir left untouched.
  * @returns {{ skills: string[], installed: Array<{ client: string, dir: string, removed: string[] }>, skipped: Array<{ client: string, skill: string, dir: string, reason: string }> }}
  *
- * Throws if `.cursor`/`.claude` or `skills` under the target is a symlink. An
+ * Throws if `.cursor`/`.claude` or `skills` under the target is a symlink that
+ * leaves the project, dangles, or does not point at a directory; a symlink to a
+ * directory inside the project is followed. An
  * existing `<skills-dir>/<name>` is replaced only when its SKILL.md carries the
  * suite marker (`metadata.suite: mdk-developer-skill`); a symlink or a foreign
  * skill with the same name is skipped with a warning.

@@ -1,4 +1,4 @@
-import { MdkFetchError } from '../types/api-mining.types'
+import { MdkFetchError } from '../types/api-mining.types.js'
 
 // The Gateway answered, but nothing serves this route: the app's runtime is not
 // running, or the route is not in its plugin/mdk-plugin.json.

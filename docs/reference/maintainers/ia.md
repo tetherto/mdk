@@ -38,7 +38,7 @@ ui/<pkg>/src/.../<component>/
 
 | Location | Owns |
 |----------|------|
-| [`docs/`](../../README.md) | Role-based router ([`README.md`](../../README.md)) and end-user-facing SoT content ([`concepts/`](../../concepts/)) |
+| [`docs/`](../../README.md) | Goal-based router ([`README.md`](../../README.md)) and end-user-facing SoT content ([`concepts/`](../../concepts/)) |
 | [`docs/reference/maintainers/`](README.md) | Docs maintainer plumbing: this file, [`agent-ready-sdk.md`](agent-ready-sdk.md), [`tag-vocab.yaml`](tag-vocab.yaml), [`single-source-of-truth.md`](single-source-of-truth.md), and the hand-maintained [`integrations/`](integrations/index.md) catalogue (lives here, not at `docs/integrations/`, until [`check:integrations-fresh`](#checkintegrations-fresh) keeps it honest) |
 | [`backend/core/docs/`](../../../backend/core/docs/README.md) | Core workspace conventions (`mdk`, `client`, `kernel`, `gateway`, …) |
 | [`ui/`](../../../ui/README.md) | UI workspace conventions for react-devkit, adapter, ui-foundation, CLI |
@@ -121,7 +121,7 @@ catalogue keeps working in the meantime — no production blocker.
 ### `check:agent-ready` (UI side)
 
 The UI workspace's lint gate fails when a public export is missing required JSDoc tags (`@tier`, `@category`,
-`@domain`, `@kernelCapability`) or its co-located `USAGE.md` / `*.example.tsx`. It is the one gate already wired, as a blocking root-CI job; [`single-source-of-truth.md`](single-source-of-truth.md#pr-workflow) owns the job detail and its paired USAGE-baseline check.
+`@domain`, `@kernelCapability`) or its co-located `USAGE.md` / `*.example.tsx`. It is the one gate already wired, as an advisory (non-blocking) root-CI job: a new violation is reported on the pull request but does not fail it. [`single-source-of-truth.md`](single-source-of-truth.md#pr-workflow) owns the job detail and its paired USAGE-baseline check.
 
 **Why it matters:** the contract this IA describes only holds if every UI export actually carries the JSDoc that drives `dist/registry.json`. The
 gate is what keeps that promise honest.

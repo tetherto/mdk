@@ -88,10 +88,10 @@ test('auto client - a failed Kernel request rejects with the error code, then re
   t.alike(await mdkClient.listWorkers(), { workers: [] }, 'next request succeeds once the Kernel is back')
 
   try {
-    await mdkClient.sendWorkerCommand('w1', 'dev-1', 'reboot')
-    t.fail('unknown worker should have rejected')
+    await mdkClient.waitForWorkers({ timeoutMs: 1, intervalMs: 1 })
+    t.fail('waiting for an absent worker should have rejected')
   } catch (err) {
-    t.is(err.message, 'ERR_MDK_WORKER_KEY_UNKNOWN', 'client ERR_ codes pass through unwrapped')
+    t.is(err.message, 'ERR_MDK_WAIT_WORKERS_TIMEOUT', 'client ERR_ codes pass through unwrapped')
   }
 })
 

@@ -226,7 +226,15 @@ const THRESHOLDS = {
   // load knobs, the profile's device counts, or runChecklist's own control
   // flow (anything that changes how long a profile run actually takes)
   // change meaningfully.
-  rssSlopeFlatMiBPerHour: 18000
+  rssSlopeFlatMiBPerHour: 18000,
+  // The bar a real >= 24h soak is held to. The 18000 above is calibrated for
+  // short runs, where in-flight load state is still growing and extrapolates
+  // to huge per-hour rates; applied to a full soak it let a steady 1 GiB/h
+  // leak (~24 GiB/day) read green. Over 24h, load-driven state has plateaued,
+  // so sustained growth is the leak signal: 10 MiB/h is ~240 MiB/day per
+  // process, which a long-running site cannot absorb for weeks. A starting
+  // point: tune per site from a soak of a known-good build.
+  rssSlopeLeakMiBPerHour: 10
 }
 
 module.exports = {

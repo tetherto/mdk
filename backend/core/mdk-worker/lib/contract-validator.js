@@ -38,7 +38,8 @@ function _push (out, strict, code, text) {
 // Implements the JSON Schema subset mdk-contract.schema.json uses (type, enum,
 // const, required, properties, additionalProperties, items, if/then, minimum,
 // allOf, x-mdk-strict). A schema feature outside this subset would validate as
-// always-passing here; the ajv parity test in backend/workers guards that drift.
+// always-passing here; the ajv parity test in
+// test/contract-validator-parity.test.mjs guards that drift.
 function _validateNode (schema, value, at, out, inStrict) {
   const strict = inStrict || schema['x-mdk-strict'] === true
   if (schema.type && !_matchesType(schema.type, value)) {

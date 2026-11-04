@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { CURRENCY, UNITS } from '../../constants/units'
 import {
+  BITCOIN_UNITS,
   convertKwToW,
   FALLBACK,
   formatBitcoin,
@@ -298,6 +300,12 @@ describe('formatBitcoin', () => {
   it('writes whole sats', () => {
     expect(formatBitcoin(0.0123, 'sats')).toBe('1,230,000 sats')
     expect(formatBitcoin(0.000000014, 'sats')).toBe('1 sats')
+  })
+
+  it('writes the same unit labels as the currency constants', () => {
+    expect(BITCOIN_UNITS.BTC).toBe(CURRENCY.BTC_LABEL)
+    expect(BITCOIN_UNITS.SATS).toBe(CURRENCY.SATS)
+    expect(BITCOIN_UNITS.SATS).toBe(UNITS.SATS)
   })
 
   it('falls back for a missing amount', () => {

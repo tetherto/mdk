@@ -7,4 +7,4 @@
  * and the store's tests; the public API (`DevicesStore`, `createDevicesStore`,
  * `devicesStore`, `NO_CONTAINER_KEY`, …) is unchanged.
  */
-export * from './devices'
+export * from './devices/index.js'

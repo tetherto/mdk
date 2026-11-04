@@ -4,13 +4,24 @@ import type { MutableRefObject } from 'react'
 export type { IChartApi } from 'lightweight-charts'
 export type LineDataPoint = { x: number; y: number | null | undefined }
 export type ExtraTooltipData = Record<number, string>
+/** Stroke pattern of a line series */
+export type LineDashStyle = 'solid' | 'dotted' | 'dashed' | 'largeDashed' | 'sparseDotted'
 export type LineDataset = {
   label?: string
   visible?: boolean
   borderColor: string
   borderWidth?: number
+  /** Stroke pattern, e.g. `dashed` for a target or nominal line. Defaults to `solid` */
+  lineStyle?: LineDashStyle
   extraTooltipData?: ExtraTooltipData
   data: LineDataPoint[]
+}
+/** Y-axis step and decimals, passed to every series as a lightweight-charts `price` format */
+export type LineChartPriceFormat = {
+  /** Smallest step between y values and axis ticks. Defaults to `0.01` */
+  minMove?: number
+  /** Decimals shown. Derived from `minMove` when unset */
+  precision?: number
 }
 export type LineSeriesApi = ISeriesApi<'Line', Time>
 export type LineChartData = {
@@ -32,7 +43,7 @@ export type LightWeightLineChartProps = {
    */
   yTicksFormatter?: (value: number) => string
   /**
-   * TODO: Doc
+   * Name shown in the tooltip row of a series that has no `label`; a dataset's own `label` wins
    */
   customLabel?: string
   /**
@@ -44,12 +55,19 @@ export type LightWeightLineChartProps = {
    */
   roundPrecision?: number
   /**
-   * TODO: DOC
+   * Y-axis step and decimals. The default `minMove` of `0.01` leaves a series that moves less
+   * than that (e.g. 0.942 to 0.945) with no y-axis labels; set e.g. `{ minMove: 0.001 }`
+   */
+  priceFormat?: LineChartPriceFormat
+  /**
+   * Bucket interval of the data (`1m`, `5m`, `30m`, `3h`, `1D`; case-sensitive). Sets how many
+   * of the latest points are visible on load or when it changes (15, 12, 12, 12, 14; 24 for any
+   * other key) while `shouldResetZoom` is on. Without it the whole series fits
    */
   timeline?: string
   /**
-   * Applies offset if provided, otherwise timestamps are assumed to already be in local time.
-   * Otherwise, use browser's current timezone offset for consistent time display
+   * IANA time zone (e.g. `Europe/Berlin`) whose offset is added to every timestamp, so the
+   * default UTC axis labels read as that zone's wall-clock time
    */
   fixedTimezone?: string
   /**
@@ -73,7 +91,8 @@ export type LightWeightLineChartProps = {
    */
   backgroundColor?: string
   /**
-   * Custom date format
+   * `date-fns` format for axis and crosshair time labels, rendered in the browser's local time
+   * zone. Without it, labels are in UTC
    */
   customDateFormat?: string
   /**

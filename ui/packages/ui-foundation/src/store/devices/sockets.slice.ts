@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand/vanilla'
-import type { DevicesStore, SocketData } from './types'
+import type { DevicesStore, SocketData } from './types.js'
 
 /** Selected miner sockets, grouped per container. */
 export type SocketsSlice = Pick<

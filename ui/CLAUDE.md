@@ -69,8 +69,8 @@ or write the stores directly via `store.getState()` / `store.setState()`.
 
 ### Data fetching
 
-MDK ships no data hooks for specific endpoints. An app reads the routes
-its Gateway plugins serve with `useQuery` (re-exported by
+MDK ships no data hooks for specific endpoints. A UI reads the routes
+an app serves with `useQuery` (re-exported by
 `@tetherto/mdk-react-adapter`, on the client `<MdkProvider>` builds via
 `createMdkQueryClient`), in small hooks of its own, and passes the result
 to devkit components as props.
@@ -117,7 +117,7 @@ This is the rule that organises everything else — break it and the layers coll
   adapter and devkit consume them but never reimplement them.
 - **No tag / aggregate-field strings leak past the data layer.** Page
   files must never reference `t-miner`, `t-powermeter`, `power_w_sum_aggr`,
-  `site_power_w`, etc. Those belong in the Gateway plugin or the hook's
+  `site_power_w`, etc. Those belong in the app's controller or the hook's
   `select`.
 
 **Red flag — stop and refactor (or file techdebt):**

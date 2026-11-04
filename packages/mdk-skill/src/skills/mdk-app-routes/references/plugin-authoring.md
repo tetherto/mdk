@@ -35,7 +35,9 @@ it would a published package. `mdk-app.yaml`'s `version` must equal this
 | `name` / `version` / `description` | Package identity (often mirrors package.json) |
 | `routes[].id` | Stable id (`<domain>.<resource>`) |
 | `routes[].handler` | Relative path, e.g. `./controllers/power.js` |
-| `routes[].auth` | `true` makes the Gateway answer `401` unless its `authVerifier` returns an identity, which reaches the controller as `req._info`. The Gateway hands `permissions` to that verifier as `route.permissions` and does not interpret them itself |
+| `routes[].auth` | Not an access switch under `mdk run`: the Gateway checks every route against `spec.rbac`, whatever `auth` says. A request needs a bearer token (`401` without one) and a rule that grants the caller the route's verb on its resource (`403` otherwise). The resource is `<app>/<path>`, e.g. `ops/api/ops/summary`. The caller's identity, never its token, reaches the controller as `req._info`. `spec.gateway.config.authVerifier` is refused |
+| `routes[].verb` | Optional RBAC verb. Without it the verb follows the method: `GET` `get`, `POST` `create`, `PUT`/`PATCH` `update`, `DELETE` `delete` |
+| `routes[].resourceName` | Optional `{ "param" \| "query" \| "body": "<field>" }`: where the request names the instance, so a `spec.rbac` rule with `resourceNames` can scope it |
 | `routes[].http.method` | `GET` / `POST` / … |
 | `routes[].http.path` | Path the UI fetches (`/api/...`), served under `/apps/<app-name>` unless the app is mounted elsewhere |
 | `routes[].http.responses` | Document `200` schema + error statuses |
@@ -66,13 +68,13 @@ it would a published package. `mdk-app.yaml`'s `version` must equal this
 
 ## Fully populated route example
 
-Every field from the table above, together, on one route:
+Every field from the table above, together, on one route. What the route grants is set in `spec.rbac`, not here:
 
 ```json
 {
   "id": "example.metric",
   "handler": "./controllers/metric.js",
-  "auth": false,
+  "auth": true,
   "http": {
     "method": "GET",
     "path": "/api/example/metric",

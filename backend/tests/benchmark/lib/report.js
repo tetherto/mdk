@@ -63,9 +63,16 @@ function evaluateThresholds (profile, thresholds) {
   // the report without failing the whole profile on statistical noise.
   const isIndicativeSoak = profile.runReproducibility.soakMs < profile.runReproducibility.soakMinimumMsForGrowthClaims
   const rssSlope = profile.rssSlopeMiBPerHour
+  // A full soak is held to the leak bar; a short run only to the load-calibrated one.
+  const rssBar = isIndicativeSoak
+    ? thresholds.rssSlopeFlatMiBPerHour
+    : (thresholds.rssSlopeLeakMiBPerHour ?? thresholds.rssSlopeFlatMiBPerHour)
+  // On a full soak only growth is a leak: a heap that shrinks over 24h is not one. A short
+  // run keeps reading the magnitude, since its slope is noise in either direction.
+  const rssMeasure = isIndicativeSoak ? Math.abs(rssSlope) : rssSlope
   let rssStatus = rssSlope == null
     ? '_'
-    : (Math.abs(rssSlope) <= thresholds.rssSlopeFlatMiBPerHour ? 'green' : 'red')
+    : (rssMeasure <= rssBar ? 'green' : 'red')
   if (isIndicativeSoak && rssStatus === 'red') rssStatus = 'amber'
 
   const overall = worstOf([headroomStatus, actionStatus, cpuStatus, rejectsStatus, rssStatus])
@@ -387,12 +394,17 @@ ${latRow('Device list / registry read', 'Client → Kernel (bypasses Gateway)', 
 | Operation | Boundary | p50 ms | p95 ms | p99 ms | max ms | n | errors |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 ${latRow('Send / submit action', 'Client → Gateway → Kernel accept', lat.gatewayActionSubmit)}
-${latRow('Action execution (Kernel dispatch → Worker → device ack)', 'Client → Kernel → Worker → device ack', lat.actionSubmit)}
-${latRow('End-to-end write action (submit → executed / terminal state)', 'Client → … → device → client-visible result', lat.actionSubmit)}
+${latRow('Send / submit action (direct, under load)', 'Client → Kernel accept', lat.actionSubmit)}
+${latRow('Action execution (Kernel dispatch → Worker → device ack)', 'Kernel ActionCaller → Worker → device', null)}
+${latRow('End-to-end write action (submit → executed / terminal state)', 'Client → … → device → client-visible result', null)}
 
-| Action type | reqVotes | e2e p50 ms | e2e p99 ms | exec-only p50 ms | exec-only p99 ms | n |
+Both submit rows stop when the Kernel accepts the command (\`status: 'QUEUED'\`); nothing has reached the device at that
+point. Execution and end-to-end rows are left blank: this harness does not time the dispatch → execute → terminal-state
+workflow (see "What's measured vs. left blank" in the harness README).
+
+| Action type | reqVotes | accept p50 ms | accept p99 ms | exec-only p50 ms | exec-only p99 ms | n |
 | --- | --- | --- | --- | --- | --- | --- |
-| ${rr.actionType} | \`_\` (whitelisted per-worker in each package's own boot.js — not read back here) | ${fmt(lat.actionSubmit.p50Ms)} | ${fmt(lat.actionSubmit.p99Ms)} | ${fmt(lat.actionSubmit.p50Ms)} | ${fmt(lat.actionSubmit.p99Ms)} | ${lat.actionSubmit.n} |
+| ${rr.actionType} | \`_\` (allowlisted per-worker in each package's own boot.js — not read back here) | ${fmt(lat.actionSubmit.p50Ms)} | ${fmt(lat.actionSubmit.p99Ms)} | \`_\` | \`_\` | ${lat.actionSubmit.n} |
 
 ### Alerts path
 
@@ -421,10 +433,10 @@ function renderThresholds (profile, verdict) {
 | Criterion | Green | Amber | Red | Profile result |
 | --- | --- | --- | --- | --- |
 | Telemetry freshness (cycle ≤ interval) | headroom < ${t.headroomGreenBelow} | ${t.headroomGreenBelow}–${t.headroomAmberBelow} | ≥ ${t.headroomAmberBelow} | ${fmt(profile.headroomRatio, 3)} (**${verdict.telemetryFreshness}**) |
-| Action e2e p99 | ≤ ${t.actionSubmitP99Ms} ms | n/a — binary criterion, no amber band | above green | ${fmt(lat.actionSubmit.p99Ms)} ms (**${verdict.actionSubmitP99}**) |
+| Action accept p99 (submit → \`QUEUED\`) | ≤ ${t.actionSubmitP99Ms} ms | n/a — binary criterion, no amber band | above green | ${fmt(lat.actionSubmit.p99Ms)} ms (**${verdict.actionSubmitP99}**) |
 | Steady-state CPU (busiest process) | ≤ ${t.steadyCpuPctOfOneCore}% | n/a — binary criterion, no amber band | above green | ${fmt(cpu)}% (**${verdict.steadyCpu}**) |
 | Rejected + timed-out under sustained load | 0 | < ${(t.rejectPlusTimeoutAmberPctOfAttempted * 100).toFixed(1)}% of attempted | otherwise | ${rejectsPlusTimeouts} / ${attempted} attempted, ${(rejectsPct * 100).toFixed(2)}% (**${verdict.rejectsPlusTimeouts}**) |
-| RSS slope over 24 h soak | flat (≤ ${t.rssSlopeFlatMiBPerHour} MiB/h) | red demoted to amber when soak < 24h (indicative) | clear leak (soak ≥ 24h) | ${fmt(profile.rssSlopeMiBPerHour, 3)} MiB/h (**${verdict.rssSlope}**) |
+| RSS slope over 24 h soak | ≤ ${t.rssSlopeLeakMiBPerHour ?? t.rssSlopeFlatMiBPerHour} MiB/h on a ≥ 24 h soak; ≤ ${t.rssSlopeFlatMiBPerHour} MiB/h on a shorter, indicative run | red demoted to amber when soak < 24h (indicative) | above the bar on a ≥ 24 h soak (leak) | ${fmt(profile.rssSlopeMiBPerHour, 3)} MiB/h (**${verdict.rssSlope}**) |
 
 **Overall: ${verdict.overall.toUpperCase()}**
 `
@@ -544,7 +556,7 @@ function matrixRow (profile, verdict) {
 }
 
 function buildComparisonMatrixMarkdown (entries) {
-  const header = '| Profile id | Tier | Real/sim | Kernels | Gateways | Plugins | W | D | Alert rules | CPU sum % | RSS sum | Heap sum | Disk now | Disk/day | Headroom | Reads/s | Actions/s | Rejects+timeouts | Read p99 | Action e2e p99 | Alert gen p99 | Status |\n' +
+  const header = '| Profile id | Tier | Real/sim | Kernels | Gateways | Plugins | W | D | Alert rules | CPU sum % | RSS sum | Heap sum | Disk now | Disk/day | Headroom | Reads/s | Actions/s | Rejects+timeouts | Read p99 | Action accept p99 | Alert gen p99 | Status |\n' +
     '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |'
   const rows = entries.map(({ profile, verdict }) => `| ${matrixRow(profile, verdict).join(' | ')} |`)
   return [header, ...rows].join('\n') + '\n'

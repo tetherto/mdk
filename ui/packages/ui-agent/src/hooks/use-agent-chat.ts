@@ -12,7 +12,7 @@ import type { ChatMessage, Conversation, ConversationStore } from '../core/conve
 import type { AgentTurnState, PendingApproval } from '../core/turn'
 import type { AgentConfigOptions } from './use-agent-config'
 import { conversationStore as defaultStore, MESSAGE_ROLE } from '../core/conversation-store'
-import { describeAgentError, GENERIC_TURN_ERROR } from '../core/error-text'
+import { ERR_OFFLINE } from '../core/error-text'
 import {
   AGENT_ERROR,
   AgentApiError,
@@ -37,9 +37,25 @@ import { useConversations } from './use-conversations'
 const SESSION_RESET_NOTICE
   = 'New session — the agent does not remember the messages above this line.'
 
-function describeError(error: unknown): string {
-  if (error instanceof AgentApiError) return describeAgentError(error.code) ?? error.message
-  return GENERIC_TURN_ERROR
+/** Nothing identified the failure. The renderer generalises it. */
+const ERR_UNKNOWN = 'ERR_AGENT_UNKNOWN'
+
+/**
+ * The code to store for a turn that threw rather than ending on an `error` event.
+ *
+ * A code, not a sentence. `toApiError` already guarantees an `ERR_`-shaped one
+ * for every reply, including those that carried none of their own, and keeping
+ * it is what lets the transcript stay diagnosable and the notice decide whether
+ * offering a retry is honest — a stack with no agent app and a gateway that is
+ * merely busy read identically once both have been flattened to prose.
+ */
+function classifyError(error: unknown): string {
+  if (error instanceof AgentApiError) return error.code
+  // `fetch` rejects with a TypeError when the request never left the browser:
+  // no connection, no DNS, no route, or the gateway refusing outright. There is
+  // no status to read because it never got one.
+  if (error instanceof TypeError) return ERR_OFFLINE
+  return ERR_UNKNOWN
 }
 
 function isAbort(error: unknown): boolean {
@@ -68,6 +84,11 @@ export type UseAgentChatResult = {
   /** The turn currently streaming, rendered after `messages`. Null when idle. */
   live: AgentTurnState | null
   isStreaming: boolean
+  /**
+   * What the browser reports about the connection. Read to stop the panel
+   * offering a retry that cannot leave the machine.
+   */
+  isOnline: boolean
   pendingApproval: PendingApproval | null
   /** A decision has been POSTed and the stream has not resumed yet. */
   isDecisionPending: boolean
@@ -96,6 +117,11 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRes
   const [live, setLive] = useState<AgentTurnState | null>(null)
   const [isBusy, setIsBusy] = useState(false)
   const [decidedApprovalId, setDecidedApprovalId] = useState<string | null>(null)
+
+  // `navigator` is absent under SSR, and a browser that never reports either
+  // event leaves this true — the safe default, since the worst case is an
+  // enabled button that fails the way it would have anyway.
+  const [isOnline, setIsOnline] = useState(() => globalThis.navigator?.onLine ?? true)
 
   // Read inside async callbacks, where the rendered value would be stale.
   const liveRef = useRef<AgentTurnState | null>(null)
@@ -138,6 +164,18 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRes
     },
     [],
   )
+
+  useEffect(() => {
+    if (typeof globalThis.addEventListener !== 'function') return
+    const goOnline = () => setIsOnline(true)
+    const goOffline = () => setIsOnline(false)
+    globalThis.addEventListener('online', goOnline)
+    globalThis.addEventListener('offline', goOffline)
+    return () => {
+      globalThis.removeEventListener('online', goOnline)
+      globalThis.removeEventListener('offline', goOffline)
+    }
+  }, [])
 
   /**
    * A stored `sessionId` outlives the session it names — the gateway holds
@@ -237,7 +275,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRes
         // An abort is the operator's own doing: keep whatever streamed, add no
         // error. Anything else becomes the turn's error. Either way a tool call
         // still outstanding is closed — it will never report back now.
-        state = isAbort(error) ? abortTurn(state) : failTurn(state, describeError(error))
+        state = isAbort(error) ? abortTurn(state) : failTurn(state, classifyError(error))
       } finally {
         // An abort cancels the reader rather than rejecting the read, so it
         // usually ends the loop normally and never reaches the catch above. The
@@ -323,10 +361,62 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRes
     void runTurn(lastQuestion.text)
   }, [runTurn, store])
 
+  /**
+   * Re-asks the question that failed for want of a connection, once the browser
+   * says there is one again.
+   *
+   * Only that case. A turn that failed for any other reason failed for a reason
+   * that coming back online does not fix, and re-sending it unprompted would be
+   * the panel talking to the gateway on its own. The latch makes it one attempt
+   * per offline→online transition: `retry` changes identity as the turn settles,
+   * so without it this effect would re-fire against its own still-failed result.
+   */
+  const autoRetriedRef = useRef(false)
+  useEffect(() => {
+    if (!isOnline) {
+      autoRetriedRef.current = false
+      return
+    }
+    if (autoRetriedRef.current || busyRef.current) return
+
+    const conversationId = store.getState().activeId
+    if (!conversationId) return
+    const messages = store
+      .getState()
+      .conversations.find((conversation) => conversation.id === conversationId)?.messages ?? []
+    if (messages.at(-1)?.error !== ERR_OFFLINE) return
+
+    autoRetriedRef.current = true
+    retry()
+  }, [isOnline, retry, store])
+
+  /**
+   * Starts a conversation, or returns to the empty one that already exists.
+   *
+   * Every click used to mint another row, so a handful of idle clicks filled
+   * the list with identical "New conversation" entries — and because
+   * `sortAndCap` trims at `MAX_CONVERSATIONS`, those empties pushed real
+   * transcripts off the end, which the gateway keeps no copy of. An empty
+   * conversation is indistinguishable from the one this would create, so the
+   * active one is reused when it is already empty and any other empty is
+   * adopted rather than joined by a second. That holds the invariant the view
+   * needs: never more than one empty row.
+   */
   const newConversation = useCallback(() => {
     if (busyRef.current) return
+
+    const { conversations, activeId } = store.getState()
+    const isEmpty = (conversation: Conversation) => conversation.messages.length === 0
+    const reusable
+      = conversations.find((conversation) => conversation.id === activeId && isEmpty(conversation))
+        ?? conversations.find(isEmpty)
+
+    if (reusable) {
+      select(reusable.id)
+      return
+    }
     create()
-  }, [create])
+  }, [create, select, store])
 
   const selectConversation = useCallback(
     (id: string) => {
@@ -371,6 +461,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRes
     messages: active?.messages ?? [],
     live,
     isStreaming: isBusy,
+    isOnline,
     pendingApproval,
     isDecisionPending: pendingApproval !== null && decidedApprovalId === pendingApproval.approvalId,
     // A turn paused on an approval still holds the session busy, so this stays

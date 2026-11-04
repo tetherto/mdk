@@ -16,7 +16,8 @@ consume this repo's data rather than risk drift between the two sites. These str
 
 2. [UI manifests](#ui-manifests): the UI packages generate machine-readable manifests from JSDoc tags which also write to `USAGE.md` files.
 
-3. [Generation scripts](#generation-scripts): scripts read source-of-truth files (`mdk-contract.json`, `mdk-plugin.json`, JSDoc) and regenerate docs so they never drift from the code.
+3. [Generation scripts](#generation-scripts): scripts read source-of-truth files (`mdk-contract.json`, JSDoc) and regenerate docs so
+   they never drift from the code.
 
 ## Port signals
 
@@ -140,7 +141,7 @@ cd ui
 npm run check:agent-ready --workspace @tetherto/mdk-react-devkit
 ```
 
-This gate runs in root CI as the **🤖 Agent-readiness contract (UI)** job in [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml), on any pull request that changes `ui/` or CI infrastructure. It builds the registry and checks registry completeness, the `USAGE.md` prop-table policy, and agent-ready metadata as one contract. A paired **🔒 USAGE baseline monotonicity** job compares `usage-proptable-baseline.json` against the pull request base as sets, so a new prop-table path cannot be baselined in: additions fail, removals are allowed. See [`ui/packages/react-devkit/AGENT_READY.md`](../../../ui/packages/react-devkit/AGENT_READY.md) for the rules it enforces.
+This gate runs in root CI as the **🤖 Agent-readiness contract (UI)** job in [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml), on any pull request that changes `ui/` or CI infrastructure. It builds the registry and checks registry completeness, the `USAGE.md` prop-table policy, and agent-ready metadata as one contract. A paired **🔒 USAGE baseline monotonicity** job compares `usage-proptable-baseline.json` against the pull request base as sets, so a new prop-table path is reported: additions fail the step, removals pass. Both jobs are advisory. `continue-on-error` sits on the checking step rather than the job, so the job ends green and a violation is reported on the pull request without blocking the merge. Neither belongs in the required status checks, and a red step still has to be read and acted on. See [`ui/packages/react-devkit/AGENT_READY.md`](../../../ui/packages/react-devkit/AGENT_READY.md) for the rules it enforces.
 
 [`ia.md`](ia.md) treats these manifests as the source of truth for UI component tiers, categories, domains, and Kernel capabilities, and tracks the proposed `check:facets-fresh` gate (see [`ia.md § QA gates`](ia.md#qa-gates)). Until it lands, maintainers track new agent-ready components manually during IA audits.
 
@@ -158,6 +159,7 @@ Generated docs are a **checked projection of the facts that ship**, not a second
 | Package metadata | Package reference |
 | UI types and JSDoc | Component registry |
 | Component registry | Skill component reference, `## Props` sections in devkit `USAGE.md` files, docs-site props tables |
+| CLI command definitions | [CLI reference](#cli-reference), hand-maintained until its generator lands |
 
 Change a fact once at its source (a prop type, option, default, or JSDoc description; a Worker contract) and every projection follows on the next regeneration. Forget, and CI names the exact drift before it merges. The `check:usage-proptables` gate stops new hand-authored props tables from becoming competing sources of truth: existing debt is baselined, removals are allowed, additions or swaps fail.
 
@@ -293,6 +295,27 @@ Keeps the component data shipped inside the `mdk-ui-component` skill in step wit
 The copy is verbatim on purpose. Trimming it to what the skill reads today would create a second shape to keep in step with the devkit's registry schema.
 
 Regenerate through `npm run regenerate-docs` or `npm run generate:ui-registry` from the repo root, never the devkit's `build:registry` alone: both route through turbo so the devkit's type dependencies build first, while the bare script on an unbuilt checkout resolves those imports to `any` and writes a registry that silently will not match a built tree.
+
+### CLI reference
+
+Lists every `mdk` command with its arguments, flags and defaults, so end users never have to read the CLI package README
+to find a flag.
+
+**Source:** the Commander definitions in `packages/cli/src/commands/*.ts` and `packages/cli/src/program.ts` (`.command`,
+`.argument`, `.option`, `.description`, `.summary`), plus the `spec.mcp` keys `packages/cli/src/lib/spec.ts` accepts.
+
+**Output:** [`docs/reference/tooling/cli.md`](../tooling/cli.md)
+
+**Generator:** none yet. The page is a hand-maintained projection, and its frontmatter `notes:` says so and points here.
+Until a generator exists, a change to a command's help string and the matching row on the page travel in the same pull
+request, and a release review re-checks every row against the source.
+
+The generator to add is a `TARGETS` entry in [`docs/scripts/regenerate-docs.mjs`](../../scripts/regenerate-docs.mjs)
+that builds the program with `buildProgram()` from `packages/cli/src/program.ts`, walks `program.commands` recursively,
+and emits the per-command tables from each command's registered arguments and options, with the help group from
+`HELP_GROUPS` as the section. The narrative sentences around the tables stay hand-written, outside generated markers, so
+the page keeps its links to the owning guides. Once that lands, the `notes:` key comes off the frontmatter and the page
+carries the usual `DO NOT EDIT` header for its generated regions.
 
 ### Freshness in CI
 

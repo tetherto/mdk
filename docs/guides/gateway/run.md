@@ -39,10 +39,12 @@ const server = await startGateway({ kernel, port: 3000 })
 ```
 
 > [!WARNING]
-> The Gateway ships no identity layer. Routes a manifest marks `"auth": true` answer `401` until you pass `startGateway()` an `authVerifier`
-> backed by your own identity layer, as [auth and permissions][plugins-auth] describes; every other route is served to any caller. Only
-> `localhost`, `127.0.0.1` and `[::1]` on the bound port pass the Host check by default, so list the names your clients use in `allowedHosts`
-> when you bind to a LAN address.
+> A Gateway started with a Kernel, as above, or with a Gateway credential checks a bearer access token and a `spec.rbac` rule on
+> every app route before the request reaches the app, so [write the policy][security-policy] before you expose the port. A route
+> an app declares with `"auth": true` and its own `permissions` is authorized the same way, as [auth and permissions][app-auth]
+> describes. A custom `authVerifier` function is for a Gateway started with no authority at all; it is not how you add
+> authentication to this path. Only `localhost`, `127.0.0.1` and `[::1]` on the bound port pass the Host check by default, so
+> list the names your clients use in `allowedHosts` when you bind to a LAN address.
 
 The full configuration reference, including all `startGateway()` options, is in the [Gateway API reference][gateway-readme].
 
@@ -116,7 +118,7 @@ npm start
 
 ## Next steps
 
-- [Add routes with the plugin system][plugins-how-to]
+- [Add routes with the plugin system][app-authoring]
 - [Review all configuration options][gateway-readme]
 - Understand the [extension model, auth design, and Kernel connection][gateway-concept]
 - Choose a [deployment shape][deployment-topologies]
@@ -138,15 +140,18 @@ npm start
 [gateway-readme]: ../../../backend/core/gateway/README.md
 <!-- docs@tether.io: gateway-readme → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md -->
 
-[plugins-how-to]: apps.md
-<!-- docs@tether.io: plugins-how-to → guides/gateway/apps -->
+[app-authoring]: apps.md
+<!-- docs@tether.io: app-authoring → guides/gateway/apps -->
 
 
-[plugins-auth]: apps.md#auth-and-permissions
-<!-- docs@tether.io: plugins-auth → guides/gateway/apps#auth-and-permissions -->
+[app-auth]: apps.md#auth-and-permissions
+<!-- docs@tether.io: app-auth → guides/gateway/apps#auth-and-permissions -->
 
-[deployment-topologies]: ../deployment/index.md
-<!-- docs@tether.io: deployment-topologies → guides/deployment -->
+[security-policy]: ../security/index.md#step-5-authorize-writes
+<!-- docs@tether.io: security-policy → guides/security#step-5-authorize-writes -->
+
+[deployment-topologies]: ../../concepts/deployment-topologies.md
+<!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [mdk-readme]: ../../../backend/core/mdk/README.md
 <!-- docs@tether.io: mdk-readme → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md -->

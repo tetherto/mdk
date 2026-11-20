@@ -18,14 +18,15 @@ const {
 // pass only on a runner with outbound UDP and fail anywhere without it.
 // `authedListener` stands up an isolated loopback testnet per test and records
 // its bootstrap here; the two wrappers below put every client on that same
-// testnet, so no call site has to pass it. A test that builds a client with no
-// `hrpc` transport (an mock `rpc`, or an argument-validation case) is left
-// untouched, since it never opens a DHT.
+// testnet, bound to loopback like the listener, so no call site has to pass
+// it. A test that builds a client with no `hrpc` transport (an mock `rpc`, or
+// an argument-validation case) is left untouched, since it never opens a DHT.
+const LOOPBACK = '127.0.0.1'
 let bootstrap = null
 const createRawMdkClient = (opts = {}) =>
-  rawMdkClient(opts.hrpc ? { ...opts, hrpc: { bootstrap, ...opts.hrpc } } : opts)
+  rawMdkClient(opts.hrpc ? { ...opts, hrpc: { bootstrap, dhtHost: LOOPBACK, ...opts.hrpc } } : opts)
 const createMdkClient = (config = {}, opts) =>
-  mdkClient({ kernelBootstrap: bootstrap, ...config }, opts)
+  mdkClient({ kernelBootstrap: bootstrap, kernelDhtHost: LOOPBACK, ...config }, opts)
 
 function createMockModules () {
   const workers = [
@@ -65,7 +66,7 @@ let lastAuth = null
 // The Kernel admits callers by key (there is no allowAll): the tests' clients dial with this one.
 const CLIENT_KP = DHT.keyPair(crypto.randomBytes(32))
 async function authedListener (t, opts) {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   bootstrap = testnet.bootstrap
   t.teardown(() => { bootstrap = null })
   const auth = await createTestAuth({ registry: opts.registry })
@@ -74,7 +75,7 @@ async function authedListener (t, opts) {
   lastAuth = auth
   const { allowAll, ...rest } = opts
   const whitelist = allowAll ? [CLIENT_KP.publicKey.toString('hex')] : rest.whitelist
-  return new HRPCListener({ ...rest, bootstrap, whitelist, identity: auth.identity, authorizer: auth.authorizer })
+  return new HRPCListener({ ...rest, bootstrap, dhtHost: LOOPBACK, whitelist, identity: auth.identity, authorizer: auth.authorizer })
 }
 
 async function startListener (t) {
@@ -161,8 +162,7 @@ test('hrpc client - action.push round-trips through the RPC listener', async (t)
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'user@example.com',
-    authPerms: ['miner:w']
+    voter: 'user@example.com'
   })
 
   t.is(calls.length, 1)

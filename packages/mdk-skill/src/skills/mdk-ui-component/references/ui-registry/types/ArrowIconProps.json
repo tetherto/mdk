@@ -1,0 +1,1 @@
+{"name":"ArrowIconProps","path":"src/primitives/components/icons/arrow-icon.tsx","kind":"type","description":"","public":true,"definition":"{ isOpen?: boolean } & IconProps"}

@@ -1,0 +1,1 @@
+{"name":"DialogContentProps","path":"src/primitives/components/dialog/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** Renders `DialogTitle` (and optional `DialogDescription`) inside the header */ title?: string /** Renders `DialogDescription` below the title */ description?: string /** * Whether clicking the overlay closes the dialog * @default true…"}

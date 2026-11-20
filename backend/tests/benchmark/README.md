@@ -131,23 +131,9 @@ Everything that isn't about sizing a run:
 
 all this lives in [`lib/constants.js`][benchmark-constants].
 
-Workers do **not** boot on their package defaults. `bootWorker` in [`lib/site.js`][benchmark-site-lib] passes
-`WORKER_CONF_DEFAULTS` from [`lib/constants.js`][benchmark-constants] as the Worker's `conf.thing`, which runs every Worker
-faster than a production Worker so a short run still completes enough snap cycles to measure:
-
-| Setting                 | Harness | Worker default |
-| ----------------------- | ------- | -------------- |
-| `collectSnapsItvMs`     | 10 s    | 60 s           |
-| `thingQueryConcurrency` | 100     | 25             |
-| `collectSnapTimeoutMs`  | 2 s     | 120 s          |
-| `storeSnapItvMs`        | 20 s    | 300 s          |
-
-The 60× shorter snap timeout changes which device reads are abandoned, and the 15× faster snap store raises the growth/day
-in a report's Storage breakdown. `WORKER_CONF_DEFAULTS` also sets the log rotation, log cache refresh, and stats intervals,
-and the log keep count. On top of it, `bootWorker` sets the per-device timeout `thing.miner.timeout` to 10 s and applies
-`ALERT_INDUCTION`'s alert threshold override. Read every report's latency, CPU, headroom, and storage numbers as measured
-at these settings, not at a default Worker's. `allowDuplicateIPs` is always on (every mock lives on `127.0.0.1`,
-one server per Worker; its devices share it, differentiated only by port). Mock ports are picked randomly per run
+Workers are hosted on `WorkerRuntimeV2` from their package directory (see [`lib/site.js`][benchmark-site-lib]) with the
+plan's device list, polling at `WORKER_CONF_DEFAULTS.collectSnapsItvMs`. Every mock lives on `127.0.0.1`, one server
+per Worker; its devices share it, differentiated only by port. Mock ports are picked randomly per run
 (one per Worker, not per device), each Worker's password is read from its Worker type's own mock default, and
 `RUN_REPRODUCIBILITY`/`THRESHOLDS` are recorded verbatim into every report.
 
@@ -213,10 +199,12 @@ Measured automatically:
   `gateway` role's process, so the Gateway's samples include the app.
 - An **approximate** device-only baseline (raw TCP connect to the mock's
   port — a floor, not the full vendor-protocol round trip).
-- **Alerts path**: every device's temperature-warning threshold is forced
-  below any real reading (see `ALERT_INDUCTION` in [`lib/constants.js`][benchmark-constants]), so
-  the family's own alert genuinely trips on the first snap the Worker
-  collects at the harness's snap cadence (`WORKER_CONF_DEFAULTS.collectSnapsItvMs`, 10 s). The harness measures how
+- **Alerts path**: a family that declares thresholds in `ALERT_INDUCTION`
+  ([`lib/constants.js`][benchmark-constants]) has its temperature-warning
+  threshold forced below any real reading, so its own alert trips on the
+  first snap. No in-repo miner family does today: the Avalon package is a
+  `WorkerRuntimeV2` plugin without an alerts service, so `rulesCount` reads 0
+  and both latency rows stay empty. When a family is declared, the harness measures how
   long after it starts watching that alert first becomes visible both via
   the Kernel directly (`pollAlerts` in [`lib/load.js`][benchmark-load-lib]) and via the Gateway
   (`pollAlertsViaGateway`, hitting `GET /api/fleet/device/{id}/alerts` — a

@@ -2,14 +2,16 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { copyFileSync, cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stripVTControlCharacters } from 'node:util';
 import { parse as parseYaml } from 'yaml';
 import { fetchTemplate } from './fetch-template.js';
-import { installDeps, npmBin } from './npm.js';
+import { installDeps, npmBin, type InstallResult } from './npm.js';
 import { DIRS, fileSpec } from './project.js';
 import { isInside, NAME_RE } from './names.js';
 import { checkoutRoot, UI_PACKAGES_BUILD, unbuiltPackages } from './checkout.js';
 import { pkg as cliPkg } from './pkg.js';
 import { DASHBOARD_APPS_ENV, type DashboardApp } from './dashboard-apps.js';
+import { theme } from './theme.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -37,12 +39,18 @@ export function defaultTemplateRef(): string {
 const FALLBACK_TEMPLATE_REF = 'main';
 
 /**
- * Points a failed fetch at `--ref main`. Only when the caller passed no `--ref`:
- * a ref they chose themselves (a SHA, another tag) was not "published yet" by
- * assumption, so the hint would read oddly there.
+ * Points a failed fetch at `--ref main`, but only when the ref it failed on is
+ * this CLI's own release tag — the one case where "not published yet" can be
+ * true. A ref chosen deliberately (a SHA, another tag, `main` itself) gets no
+ * hint, since it would read oddly there.
+ *
+ * Keyed on the ref's value rather than on whether a `--ref` was passed: the
+ * `create dashboard` command declares `defaultTemplateRef()` as the flag's
+ * commander default, so by here the release tag arrives as an explicit ref
+ * whether the user typed it or not.
  */
-function mainHint(userRef: string | undefined): string {
-  if (userRef !== undefined) return '';
+function mainHint(ref: string | undefined): string {
+  if (ref !== undefined && ref !== defaultTemplateRef()) return '';
   return ` If ${defaultTemplateRef()} is not published yet, retry with --ref ${FALLBACK_TEMPLATE_REF}.`;
 }
 
@@ -97,11 +105,41 @@ export interface DashboardResult {
   source?: 'monorepo' | 'github';
   /** Warning surfaced when `npm install` could not complete (scaffold still ok). */
   installWarning?: string;
+  /** The first `npm install` failed and was retried with `--legacy-peer-deps`. */
+  installRetried?: boolean;
   /**
    * Monorepo only: the linked MDK UI packages have no `dist/` yet, so the shell
    * cannot run until they are built. Says what to run, and where.
    */
   uiPackagesHint?: string;
+}
+
+/** npm flag the dashboard install falls back to (see `installDashboardDeps`). */
+export const LEGACY_PEER_DEPS_FLAG = '--legacy-peer-deps';
+
+/** Printed when the first install failed and the retry with LEGACY_PEER_DEPS_FLAG succeeded, under npm's error. */
+export const LEGACY_PEER_DEPS_RETRY_NOTICE = `npm install failed, so it was retried with ${LEGACY_PEER_DEPS_FLAG}; the npm error above can be ignored.`;
+
+/**
+ * Runs `npm install` in the dashboard, retrying once with `--legacy-peer-deps`
+ * when npm itself fails. npm 11.0 to 11.5 crash with "Cannot read properties of
+ * null (reading 'edgesOut')" while resolving the template's nested optional peers
+ * (oxlint -> vite-plus -> vitest 5, against the template's vitest 4); npm 11.6
+ * fixed it. The retry skips that peer resolution, and the template declares the
+ * MDK packages' peers itself, so the tree still builds. A missing `npm` is not
+ * retried: it would fail the same way.
+ */
+function installDashboardDeps(dir: string, run: boolean): InstallResult & { retried?: boolean } {
+  const first = installDeps(dir, run);
+  if (first.ok || first.exitCode === undefined) return first;
+
+  const retry = installDeps(dir, run, [LEGACY_PEER_DEPS_FLAG]);
+  if (retry.ok) return { ...retry, retried: true };
+  return {
+    ...retry,
+    retried: true,
+    message: `${retry.message ?? 'npm install failed.'} If you are on npm 11.0 to 11.5, upgrade to npm 11.6 or newer.`,
+  };
 }
 
 /** The MDK UI library packages the template links via `file:` (monorepo-local). */
@@ -199,7 +237,7 @@ export async function createDashboard(opts: DashboardOptions): Promise<Dashboard
     // Installed in place, not at the project root: the dashboard is deliberately
     // outside the npm workspaces (see project.ts WORKSPACES) so its Vite/React
     // tree is never hoisted alongside the `file:`-linked MDK UI packages.
-    const install = installDeps(appPath, opts.install !== false);
+    const install = installDashboardDeps(appPath, opts.install !== false);
     const uiPackagesHint = local ? unbuiltLinksHint(appPath, local.monorepoRoot) : undefined;
     return {
       ok: true,
@@ -207,6 +245,7 @@ export async function createDashboard(opts: DashboardOptions): Promise<Dashboard
       appPath,
       source: local ? 'monorepo' : 'github',
       installWarning: install.ok ? undefined : install.message,
+      installRetried: install.retried,
       ...(uiPackagesHint ? { uiPackagesHint } : {}),
     };
   } catch (error) {
@@ -412,29 +451,67 @@ function hasDevScript(dir: string): boolean {
 }
 
 /**
- * Locates a scaffolded dashboard app in a project. Tries the canonical
- * `apps/dashboard` first (what `mdk create dashboard` uses with no `--name`);
- * failing that, scans `apps/*` for the first app with a `dev` script, so a
- * dashboard created with a custom name is still found without extra plumbing.
- * Returns null when no app is found.
+ * Every app under `apps/` that can run as a dashboard — i.e. has a `dev` script
+ * — by directory name, sorted. A scaffolded *app* declares `dev:ui` rather than
+ * `dev` (see `app-scaffold.ts`), so this lists dashboards only.
+ *
+ * The directory name is the selector because `mdk create dashboard <name>`
+ * creates `apps/<name>`; the one divergence is the default dashboard, whose
+ * directory is `dashboard` while its package is `<stack>-dashboard`.
  */
-export function findDashboardDir(projectDir: string): string | null {
+export function dashboardNames(projectDir: string): string[] {
+  const appsRoot = resolve(projectDir, DIRS.apps);
+  if (!existsSync(appsRoot)) return [];
+  return readdirSync(appsRoot)
+    .sort()
+    .filter((name) => hasDevScript(join(appsRoot, name)));
+}
+
+/**
+ * Locates a scaffolded dashboard app in a project.
+ *
+ * With a `name` it is `apps/<name>` or nothing — a project can hold several
+ * dashboards, so a named request must never silently land on another one.
+ * Callers validate the name first (`isValidName`); the `isInside` guard here is
+ * the backstop that keeps a traversing name inside `apps/`.
+ *
+ * With no name, tries the canonical `apps/dashboard` first (what `mdk create
+ * dashboard` uses with no name); failing that, the first `apps/*` with a `dev`
+ * script, so a dashboard created with a custom name is still found without
+ * extra plumbing. Callers say which one they picked — see `mdk run dashboard`.
+ *
+ * Returns null when no matching app is found.
+ */
+export function findDashboardDir(projectDir: string, name?: string): string | null {
+  const appsRoot = resolve(projectDir, DIRS.apps);
+
+  if (name !== undefined) {
+    const dir = resolve(appsRoot, name);
+    if (!isInside(appsRoot, dir) || dir === appsRoot) return null;
+    return hasDevScript(dir) ? dir : null;
+  }
+
   const canonical = resolve(projectDir, DIRS.dashboard);
   if (hasDevScript(canonical)) return canonical;
 
-  const appsRoot = resolve(projectDir, DIRS.apps);
   if (!existsSync(appsRoot)) return null;
-  for (const name of readdirSync(appsRoot).sort()) {
-    const dir = join(appsRoot, name);
+  for (const entry of readdirSync(appsRoot).sort()) {
+    const dir = join(appsRoot, entry);
     if (hasDevScript(dir)) return dir;
   }
   return null;
 }
 
+/** The line Vite prints once its dev server listens: `  ➜  Local:   http://localhost:3030/`. */
+const DEV_SERVER_LISTENING = /\bLocal:\s+https?:\/\//;
+const DASHBOARD_UP_TIMEOUT_MS = 30_000;
+
 /** A running dashboard dev server and how to stop it. */
 export interface DashboardHandle {
   process: ChildProcess;
   stop: () => Promise<void>;
+  /** Resolves with how the dev server exited (`code 1`), if it exits without `stop()`. */
+  crashed: Promise<string>;
 }
 
 /**
@@ -447,21 +524,62 @@ export interface DashboardHandle {
  * alongside anyone else's, see `project.ts`), so it can only run as its own
  * process. `apps` (see `describeDashboardApps`) reaches it in the
  * `MDK_DASHBOARD_APPS` environment variable, so it can load their UIs. The
- * returned promise resolves once the process has actually spawned
- * (Node's `'spawn'` event) and rejects if it never could (e.g. `npm` missing).
+ * returned promise resolves once the dev server prints the `Local:` URL Vite
+ * prints when it listens (or, failing that, after `DASHBOARD_UP_TIMEOUT_MS`,
+ * with a warning), and rejects if it could not start (e.g. `npm` missing) or
+ * exits before that.
  */
 export function runDashboard(dir: string, apps: DashboardApp[] = []): Promise<DashboardHandle> {
   return new Promise((resolveHandle, reject) => {
     // Fixed argv only: win32 needs a shell to run `npm.cmd` (see npm.ts).
     const child = spawn(npmBin(), ['run', 'dev'], {
       cwd: dir,
-      stdio: 'inherit',
+      // stdout is piped to see the URL the dev server prints once it listens.
+      stdio: ['inherit', 'pipe', 'inherit'],
       // The installed apps travel to the dev server, which serves their UIs.
-      env: { ...process.env, [DASHBOARD_APPS_ENV]: JSON.stringify(apps) },
+      env: {
+        ...process.env,
+        // Piping stdout hides the terminal from the dev server, which would then drop its colours.
+        ...(process.stdout.isTTY ? { FORCE_COLOR: '1' } : {}),
+        [DASHBOARD_APPS_ENV]: JSON.stringify(apps),
+      },
       shell: process.platform === 'win32',
     });
 
+    let stopping = false;
+    let crash: (how: string) => void = () => {};
+    const handle: DashboardHandle = {
+      process: child,
+      crashed: new Promise((resolve) => (crash = resolve)),
+      stop: () =>
+        new Promise((resolveStop) => {
+          stopping = true;
+          if (child.exitCode !== null || child.signalCode !== null) {
+            resolveStop();
+            return;
+          }
+          child.once('exit', () => resolveStop());
+          child.kill('SIGTERM');
+        }),
+    };
+
+
+    let up = false;
+    const started = (): void => {
+      up = true;
+      clearTimeout(timer);
+      resolveHandle(handle);
+    };
+    // A dev server that never prints the line (a silent logLevel, its own dev script) still counts as up.
+    const timer = setTimeout(() => {
+      process.stderr.write(
+        `${theme.warn('warning')}: the dashboard dev server printed no Local: URL within ${DASHBOARD_UP_TIMEOUT_MS / 1000}s; it may still be starting.\n`,
+      );
+      started();
+    }, DASHBOARD_UP_TIMEOUT_MS);
+
     child.once('error', (error: NodeJS.ErrnoException) => {
+      clearTimeout(timer);
       reject(
         error.code === 'ENOENT'
           ? new Error('npm was not found on PATH — cannot start the dashboard dev server.')
@@ -469,19 +587,22 @@ export function runDashboard(dir: string, apps: DashboardApp[] = []): Promise<Da
       );
     });
 
-    child.once('spawn', () => {
-      resolveHandle({
-        process: child,
-        stop: () =>
-          new Promise((resolveStop) => {
-            if (child.exitCode !== null || child.signalCode !== null) {
-              resolveStop();
-              return;
-            }
-            child.once('exit', () => resolveStop());
-            child.kill('SIGTERM');
-          }),
-      });
+    // Whole lines, so a URL split across chunks still matches; colour codes stripped first.
+    let partial = '';
+    child.stdout?.on('data', (chunk: Buffer) => {
+      process.stdout.write(chunk);
+      if (up) return;
+      const lines = (partial + chunk.toString()).split('\n');
+      partial = lines.pop() ?? '';
+      if (lines.some((line) => DEV_SERVER_LISTENING.test(stripVTControlCharacters(line)))) started();
+    });
+
+    child.once('exit', (code, signal) => {
+      clearTimeout(timer);
+      if (stopping) return;
+      const how = signal ? `signal ${signal}` : `code ${code}`;
+      reject(new Error(`The dashboard dev server exited with ${how} before it started.`));
+      crash(how);
     });
   });
 }

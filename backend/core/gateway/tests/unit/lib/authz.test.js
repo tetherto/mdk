@@ -26,35 +26,35 @@ test('authz: 401 without or with a bad token, logged; the identity is set from a
   t.alike(authz.access, { resource: 'ops/miners/command', verb: 'create', nameFrom: { from: 'body', field: 'target' } })
 
   const none = fakeReq()
-  await t.exception(authz.onRequest(none, fakeRep()), /ERR_AUTH_UNAUTHORIZED/)
+  await t.exception(authz.preParsing(none, fakeRep()), /ERR_AUTH_UNAUTHORIZED/)
   t.is(none.logs[0].reason, 'no-token')
   const bad = fakeReq({ authorization: 'Bearer nope' })
   const rep = fakeRep()
-  await t.exception(authz.onRequest(bad, rep), /ERR_AUTH_UNAUTHORIZED/)
+  await t.exception(authz.preParsing(bad, rep), /ERR_AUTH_UNAUTHORIZED/)
   t.alike([bad.logs[0].decision, bad.logs[0].reason, rep.headers['www-authenticate']], ['unauthenticated', 'ERR_IDENTITY_TOKEN_SIGNATURE', 'Bearer error="invalid_token"'])
-  await t.exception(authz.onRequest(fakeReq({ authorization: 'Basic good' }), fakeRep()), /ERR_AUTH_UNAUTHORIZED/, 'bearer only')
+  await t.exception(authz.preParsing(fakeReq({ authorization: 'Basic good' }), fakeRep()), /ERR_AUTH_UNAUTHORIZED/, 'bearer only')
 
   const good = fakeReq({ authorization: 'bearer  good ' })
-  await authz.onRequest(good, fakeRep())
+  await authz.preParsing(good, fakeRep())
   t.alike(good._info, { kind: 'user', sub: 'u' })
 })
 
 test('authz: a user token is kept for the forward, never as the identity; a service-account token is not', async (t) => {
   const route = { id: 'cmd', method: 'POST', path: '/miners/command' }
   const user = fakeReq({ authorization: 'Bearer good' })
-  await createRouteAuthz({ name: 'ops' }, route, fakeAuthority()).onRequest(user, fakeRep())
+  await createRouteAuthz({ name: 'ops' }, route, fakeAuthority()).preParsing(user, fakeRep())
   t.is(user._actorToken, 'good')
   t.absent(JSON.stringify(user._info).includes('good'), 'the identity never carries the token')
 
   const agent = fakeReq({ authorization: 'Bearer good' })
-  await createRouteAuthz({ name: 'ops' }, route, fakeAuthority({ verify: async () => ({ kind: 'serviceaccount', sub: 'agent:x' }) })).onRequest(agent, fakeRep())
+  await createRouteAuthz({ name: 'ops' }, route, fakeAuthority({ verify: async () => ({ kind: 'serviceaccount', sub: 'agent:x' }) })).preParsing(agent, fakeRep())
   t.absent(agent._actorToken)
 })
 
 test('authz: 403 when no rule matches; every decision is logged with caller, app, route and policy', async (t) => {
   const authz = createRouteAuthz({ name: 'ops' }, { id: 'cmd', method: 'POST', path: '/miners/command', resourceName: { body: 'target' } }, fakeAuthority())
   const allow = fakeReq({ authorization: 'Bearer good' }, { body: { target: 'ok' } })
-  await authz.onRequest(allow, fakeRep())
+  await authz.preParsing(allow, fakeRep())
   await authz.preValidation(allow)
   t.alike(allow.logs[0], {
     app: 'ops',
@@ -73,7 +73,7 @@ test('authz: 403 when no rule matches; every decision is logged with caller, app
   })
 
   const deny = fakeReq({ authorization: 'Bearer good' }, { body: { target: 'rack-9' } })
-  await authz.onRequest(deny, fakeRep())
+  await authz.preParsing(deny, fakeRep())
   const err = await authz.preValidation(deny).catch((e) => e)
   t.alike([err.statusCode, err.message], [403, 'ERR_AUTH_FORBIDDEN: u may not create ops/miners/command rack-9'])
   t.is(deny.logs[0].decision, 'deny')

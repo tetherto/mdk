@@ -17,7 +17,7 @@ const requestClient = (req, ctx) => {
 }
 
 // The Kernel refused this caller (or the user it acts for) the call.
-const isForbidden = (err) => !!err && String(err.code || err.message).startsWith('ERR_KERNEL_ACTION_FORBIDDEN')
+const isForbidden = (err) => !!err && String(err.code || err.message || err).startsWith('ERR_KERNEL_ACTION_FORBIDDEN')
 
 // The Kernel answers a command it refuses before queuing it (unknown device or
 // Worker, a Worker it cannot route to, a command or params outside the contract)
@@ -32,7 +32,8 @@ const throwIfRejected = (result) => {
   throw Object.assign(new Error(code), { statusCode })
 }
 
-// Fallback when a config pull fails or omits deviceFamily — keyed by stable workerId.
+// Fallback when the worker.list row carries no deviceFamily (a Worker not yet READY,
+// a contract without metadata, or an older Kernel) — keyed by stable workerId.
 const WORKER_FAMILY = {
   'whatsminer-worker': 'miner',
   'minerpool-worker': 'minerpool',
@@ -44,27 +45,20 @@ const WORKER_FAMILY = {
   'foundry-pool-worker': 'minerpool'
 }
 
-const resolveFamily = (worker, cfg) => {
-  const fromContract = cfg && cfg.config && cfg.config.contract && cfg.config.contract.deviceFamily
-  if (fromContract) return fromContract
-  return WORKER_FAMILY[worker.workerId] || null
-}
+const resolveFamily = (worker) => worker.deviceFamily || WORKER_FAMILY[worker.workerId] || null
 
-const telemetryAnchor = (worker) => {
-  const deviceIds = worker.deviceIds || []
-  return deviceIds[0] || worker.workerId
-}
-
-// Adapter for workers that don't serve the worker-infra `config`/`list`
-// queries (e.g. a Worker scaffolded by `mdk create worker`):
-// classify by published
-// capability (the Kernel registry exposes contract.capabilities, not
-// metadata — a worker declaring a hashrate_rt channel is a miner) and
-// synthesize the thing shape the controllers read from plain per-device
-// `metrics` pulls. Only miners are adapted — theirs is the card shape the
-// overview knows how to render.
+// Adapter for workers that don't serve the worker-infra `list` query (e.g. a
+// Worker scaffolded by `mdk create worker`): classify by published capability
+// (a worker declaring a hashrate_rt channel is a miner) and synthesize the
+// thing shape the controllers read from plain per-device `metrics` pulls.
+// Power meters are adapted by adaptContractMeters below. Every device of a
+// Worker shares its contract and the Kernel answers device.capabilities from
+// its registry, so any device the caller may read gives the Worker's
+// capabilities.
 const adaptContractMiners = async (mdkClient, worker) => {
-  const caps = await mdkClient.getCapabilities(telemetryAnchor(worker))
+  const [deviceId] = worker.deviceIds || []
+  if (!deviceId) return null
+  const caps = await mdkClient.getCapabilities(deviceId)
   const telemetry = (caps && caps.capabilities && caps.capabilities.telemetry) || []
   if (!telemetry.some((t) => t.name === 'hashrate_rt')) return null
 
@@ -94,6 +88,26 @@ const adaptContractMiners = async (mdkClient, worker) => {
   }))
 }
 
+// A contract power meter (e.g. @tetherto/mdk-worker-satec on WorkerRuntimeV2)
+// has no thing record either. Its `snap` channel answers the legacy snapshot
+// the overview reads; a meter it cannot read comes back as { id, error }, not
+// as a zero reading. A contract carries no position, so every contract meter
+// counts as the site meter; a site with per-container meters would read `pos`
+// from config/devices.json instead. The Kernel does not require a contract's
+// metadata.brand, so the workerId stands in for it in the label's type.
+const adaptContractMeters = (mdkClient, worker) => Promise.all((worker.deviceIds || []).map(async (deviceId) => {
+  const tel = await mdkClient.pullTelemetry(deviceId, { type: 'snap' }).catch((err) => ({ error: err }))
+  if (!tel || tel.error || !tel.value) return { id: deviceId, error: (tel && tel.error) || 'ERR_SNAP_EMPTY' }
+  return {
+    id: deviceId,
+    code: deviceId,
+    type: `powermeter-${String(worker.brand || worker.workerId).toLowerCase()}`,
+    info: { pos: 'site' },
+    last: { snap: tel.value },
+    workerId: worker.workerId
+  }
+}))
+
 const readableDeviceIds = async (mdkClient, deviceIds) => {
   const readable = await Promise.all(deviceIds.map(async (deviceId) => {
     try {
@@ -106,9 +120,12 @@ const readableDeviceIds = async (mdkClient, deviceIds) => {
   return deviceIds.filter((_, i) => readable[i])
 }
 
-// List workers and classify each by deviceFamily (contract or workerId fallback).
-// One list pull per worker — with { status: true } each thing carries its latest
-// snapshot (thg.last.snap). The minerpool is a scheduler worker with no things.
+// List workers and classify each by deviceFamily (worker.list row or workerId
+// fallback). One Worker-scoped list per worker (pullWorkerQuery, checked by the
+// Kernel on every device of the Worker) — with { status: true } each thing carries
+// its latest snapshot (thg.last.snap). A Worker without the worker-infra store
+// answers a bare device list, no things, and is adapted from its contract instead.
+// The minerpool is a scheduler worker whose one device is the worker itself.
 //
 // A Worker whose devices cannot be read (Kernel reports it DEAD or TERMINATED, or
 // the contract adapter failed) is listed in `unavailable` as { workerId, reason },
@@ -137,26 +154,41 @@ const loadSite = async (mdkClient, opts = {}) => {
       return
     }
 
-    const anchor = telemetryAnchor(w)
-    let cfg
-    try {
-      cfg = await mdkClient.pullTelemetry(anchor, { type: 'config' })
-    } catch (err) {
-      // A user whose roles cover only some devices (a hosting client) sees
-      // only those: a worker they may not read is left out, not an error.
-      if (isForbidden(err)) return
-      throw err
-    }
-    const family = resolveFamily(w, cfg)
+    const deviceIds = w.deviceIds || []
+    const family = resolveFamily(w)
 
     if (family === 'minerpool') {
-      pools.push({ workerId: w.workerId, deviceId: anchor })
+      pools.push({ workerId: w.workerId, deviceId: deviceIds[0] || w.workerId })
       return
     }
 
-    if (!family) {
-      // No worker-infra surface — fall back to contract classification. A
+    const query = { workers: [w.workerId], type: 'list', limit: Math.max(deviceIds.length, 1) }
+    if (opts.status) query.status = true
+    let reply
+    try {
+      reply = await mdkClient.pullWorkerQuery(query)
+    } catch (err) {
+      // A user whose roles cover only some devices (a hosting client) sees
+      // only those: a worker they may not read as a whole is left out, not an error.
+      if (isForbidden(err)) return
+      throw err
+    }
+    const answer = reply && reply.workers && reply.workers[w.workerId]
+    if (!answer) {
+      unavailable.push({ workerId: w.workerId, reason: String((reply && reply.errors && reply.errors[w.workerId]) || 'ERR_WORKER_UNAVAILABLE') })
+      return
+    }
+
+    if (!Array.isArray(answer.things)) {
+      // No worker-infra store — fall back to contract classification. A
       // rejection means the Worker did not answer, which is reported, not hidden.
+      if (family === 'power-meter') {
+        for (const meter of await adaptContractMeters(mdkClient, w)) {
+          if (!meter.error) (byFamily[family] = byFamily[family] || []).push(meter)
+          else if (!isForbidden(meter.error)) unavailableDevices.push({ deviceId: meter.id, workerId: w.workerId, status: 'offline', stale: true })
+        }
+        return
+      }
       const adapted = await adaptContractMiners(mdkClient, w).catch((err) => {
         if (!isForbidden(err)) unavailable.push({ workerId: w.workerId, reason: String((err && (err.code || err.message)) || 'ERR_WORKER_UNAVAILABLE') })
         return null
@@ -168,29 +200,21 @@ const loadSite = async (mdkClient, opts = {}) => {
       return
     }
 
-    let limit = Math.max((w.deviceIds || []).length, 1)
-    try {
-      const countRes = await mdkClient.pullTelemetry(anchor, { type: 'count' })
-      if (countRes && countRes.count > 0) limit = countRes.count
-    } catch {}
-
-    const query = { type: 'list', limit }
-    if (opts.status) query.status = true
-    const tel = await mdkClient.pullTelemetry(anchor, query)
-    const things = (tel && tel.things) || []
-    if (!things.length) {
+    if (!answer.things.length) {
       // Container worker is registered but returned no things (e.g. MQTT broker
       // initialising before its first snap). Add a stub using the device ID so the
       // container card still appears in the overview.
-      if (family === 'container' && anchor !== w.workerId) {
+      if (family === 'container' && deviceIds[0]) {
         if (!byFamily[family]) byFamily[family] = []
-        byFamily[family].push({ id: anchor, code: anchor, info: { container: anchor }, last: {}, workerId: w.workerId })
+        byFamily[family].push({ id: deviceIds[0], code: deviceIds[0], info: { container: deviceIds[0] }, last: {}, workerId: w.workerId })
       }
       return
     }
 
+    // Things of a family the overview has no card for are not rendered.
+    if (!family) return
     if (!byFamily[family]) byFamily[family] = []
-    for (const thg of things) byFamily[family].push({ ...thg, workerId: w.workerId })
+    for (const thg of answer.things) byFamily[family].push({ ...thg, workerId: w.workerId })
   }))
 
   unavailable.sort((a, b) => a.workerId.localeCompare(b.workerId))

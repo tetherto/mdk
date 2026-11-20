@@ -11,6 +11,8 @@ const DHT = require('hyperdht')
 const sdk = require('../../..')
 const { createRawMdkClient } = require('../../../../client')
 
+const LOOPBACK = '127.0.0.1'
+
 const ACTION_TYPES = {
   // Container actions
   SWITCH_CONTAINER: 'switchContainer',
@@ -46,7 +48,7 @@ const ACTION_TYPES = {
 }
 
 const setupTestnet = async ({ t }) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const bootstrap = testnet.bootstrap
 
   return {
@@ -60,7 +62,8 @@ const createKernel = async ({ root, bootstrap }) => {
     root,
     hrpc: {
       whitelist: [],
-      bootstrap
+      bootstrap,
+      dhtHost: LOOPBACK
     },
     discovery: {
       mode: 'local'
@@ -80,7 +83,7 @@ const workerFactory = ({
 }) => {
   // Runtime-hosted fixtures (Worker Plugins) bring their own factory and
   // return { workerId, deviceId, stop }.
-  return fixture.createWorker({ root, kernel, bootstrap })
+  return fixture.createWorker({ root, kernel, bootstrap, dhtHost: LOOPBACK })
 }
 
 const createClient = async ({
@@ -96,6 +99,7 @@ const createClient = async ({
   const mdkClient = createRawMdkClient({
     hrpc: {
       bootstrap,
+      dhtHost: LOOPBACK,
       key,
       keyPair
     },
@@ -170,26 +174,60 @@ const getDoneAction = async ({
   }, 5)
 }
 
+// An action entry may carry, besides the pushAction payload:
+//   extraVoters    [{ voter }] cast after the push (reqVotes > 1)
+//   expectNoTarget the push must resolve no target (ERR_KERNEL_ACTION_CALLS_EMPTY)
+//   verify         async ({ done, worker }) run once the action is done, to check
+//                  its outcome beyond "reached the done table"
 const actionTester = ({
   kernel,
   mdkClient
 }) => async ({
-  action
+  action,
+  worker
 }) => {
-  const { extraVoters, ...actionPayload } = action
+  const { extraVoters, expectNoTarget, verify, ...actionPayload } = action
+
+  if (expectNoTarget) {
+    const resp = await requestWithTimeout(() => mdkClient.pushAction(actionPayload))
+    if (resp.id) throw new Error(`ERR_UNEXPECTED_TARGET: ${JSON.stringify(resp)}`)
+    if (!resp.errors.includes('ERR_KERNEL_ACTION_CALLS_EMPTY')) throw new Error(`ERR_UNEXPECTED_ERRORS: ${JSON.stringify(resp.errors)}`)
+    return
+  }
+
   const { id } = await dispatchAction({
     mdkClient, action: actionPayload
   })
 
   if (extraVoters && extraVoters.length > 0) {
-    for (const { voter, authPerms } of extraVoters) {
-      await mdkClient.voteAction({ id, voter, approve: true, authPerms })
+    for (const { voter } of extraVoters) {
+      await mdkClient.voteAction({ id, voter, approve: true })
     }
   }
 
-  await getDoneAction({
+  const done = await getDoneAction({
     mdkClient, id
   })
+  if (verify) await verify({ done, worker })
+}
+
+// verify() for a provisioning action: the approver completed it, every call
+// was dispatched, and the Worker's store shows `expectDevice` (a predicate on
+// the device record, or null for "gone").
+const verifyProvisioned = (deviceId, expectDevice) => async ({ done, worker }) => {
+  if (done.status !== 'COMPLETED') throw new Error(`ERR_ACTION_NOT_COMPLETED: ${done.status} ${done.error || ''}`)
+  for (const target of Object.values(done.targets)) {
+    for (const call of target.calls) {
+      if (call.error) throw new Error(`ERR_CALL_FAILED: ${call.id} ${call.error}`)
+      if (!call.commandId) throw new Error(`ERR_CALL_NOT_DISPATCHED: ${call.id}`)
+    }
+  }
+  const dev = worker.handle.services.provisioning.getDevice(deviceId)
+  if (expectDevice === null) {
+    if (dev) throw new Error(`ERR_DEVICE_STILL_PROVISIONED: ${deviceId}`)
+  } else if (!dev || !expectDevice(dev)) {
+    throw new Error(`ERR_DEVICE_NOT_PROVISIONED: ${deviceId} ${JSON.stringify(dev || null)}`)
+  }
 }
 
 const getTestHarness = async ({ t }) => {
@@ -271,7 +309,7 @@ const runFixtureTests = (fixtures, { mockTiming = 'before', preActionDelay = 0 }
 
         await t.execution(async () => {
           try {
-            await testAction({ action })
+            await testAction({ action, worker })
           } catch (error) {
             console.error(error.message)
             throw error
@@ -285,5 +323,6 @@ const runFixtureTests = (fixtures, { mockTiming = 'before', preActionDelay = 0 }
 module.exports = {
   ACTION_TYPES,
   getTestHarness,
-  runFixtureTests
+  runFixtureTests,
+  verifyProvisioned
 }

@@ -15,6 +15,7 @@ A modal dialog built on Radix UI `@radix-ui/react-dialog`. Provides composable p
 | `closeOnEscape` | Optional | `boolean` | `true` | Whether pressing Escape closes the dialog |
 | `description` | Optional | `string` | - | Renders `DialogDescription` below the title |
 | `onClose` | Optional | `VoidFunction` | - | Fired when the ✕ button is clicked |
+| `overlayClassName` | Optional | `string` | - | Additional class for the overlay behind the dialog |
 | `title` | Optional | `string` | - | Renders `DialogTitle` (and optional `DialogDescription`) inside the header |
 
 ### `DialogHeader` props
@@ -69,3 +70,6 @@ const [open, setOpen] = useState(false)
 
 - `DialogContent` omits `aria-describedby` automatically when no `description` is provided
 - Use `DialogTrigger` for uncontrolled open state; use the `open` / `onOpenChange` props on `Dialog` for controlled usage
+- The `closable` ✕ button's accessible name is "Close"
+- `overlayClassName` adds a class to the overlay `DialogContent` renders, for example to blur the page behind one dialog
+  without changing the others

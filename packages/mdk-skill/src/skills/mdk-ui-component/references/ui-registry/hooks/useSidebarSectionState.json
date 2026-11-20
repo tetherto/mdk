@@ -1,0 +1,1 @@
+{"name":"useSidebarSectionState","path":"src/primitives/components/sidebar/use-sidebar-state.ts","description":"Custom hook to persist individual section open/closed states in localStorage","tier":"agent-ready","public":true,"signature":"(sectionId: string, defaultOpen: boolean) => [boolean, (open: boolean) => void]","category":"navigation","domainContext":"generic"}

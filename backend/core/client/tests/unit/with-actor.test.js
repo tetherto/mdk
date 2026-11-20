@@ -73,3 +73,37 @@ test('withActor - on the auto-connecting client it is synchronous and connects o
   await t.exception(view.connect(), /ERR_MDK_CLIENT_NO_SUCH_METHOD/)
   t.exception(() => mdkClient.withActor(null), /ERR_MDK_CLIENT_ACTOR_REQUIRED/)
 })
+
+test('a request waits on a shared sign-in only as long as its own timeout', async (t) => {
+  let release
+  const source = { getToken: () => new Promise((resolve) => { release = resolve }), reset () {} }
+  const transport = captureTransport()
+  const client = createRawMdkClient({ transport, tokenSource: source })
+  await client.connect()
+
+  const started = Date.now()
+  await t.exception(client.listWorkers({ timeout: 50 }), /ERR_MDK_REQUEST_TIMEOUT/)
+  t.ok(Date.now() - started < 1000, 'gave up at its own timeout')
+  t.is(transport.requests.length, 0, 'nothing was sent without a token')
+
+  const waiting = client.listWorkers()
+  release('late-token')
+  await waiting
+  t.is(transport.requests.at(-1).auth, 'late-token', 'a request without a timeout still gets the shared token')
+})
+
+test('connect - warmupTimeoutMs bounds each warmup try', async (t) => {
+  const seen = []
+  const transport = captureTransport()
+  transport.request = async (envelope, opts) => {
+    seen.push(opts)
+    throw new Error('ERR_MDK_REQUEST_TIMEOUT')
+  }
+  const client = createRawMdkClient({ transport })
+  await client.connect({ warmup: true, warmupRetries: 2, warmupDelayMs: 0, warmupTimeoutMs: 5000 })
+  t.alike(seen, [{ timeout: 5000 }, { timeout: 5000 }])
+
+  seen.length = 0
+  await client.connect({ warmup: true, warmupRetries: 1 })
+  t.alike(seen, [{}], 'without it, the transport default')
+})

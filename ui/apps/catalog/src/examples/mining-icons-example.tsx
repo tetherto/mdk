@@ -233,38 +233,6 @@ const ICON_CATEGORIES: { title: string; icons: IconEntry[] }[] = [
 
 const SIZES = [16, 24, 32, 48]
 
-const iconCellStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '8px',
-  padding: '12px',
-  borderRadius: '8px',
-  background: 'rgba(255, 255, 255, 0.05)',
-  minWidth: '100px',
-}
-
-const iconNameStyle: React.CSSProperties = {
-  fontSize: '10px',
-  opacity: 0.6,
-  textAlign: 'center',
-  wordBreak: 'break-all',
-}
-
-const gridStyle: React.CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '12px',
-  marginBottom: '24px',
-}
-
-const categoryTitleStyle: React.CSSProperties = {
-  fontSize: '16px',
-  fontWeight: 600,
-  marginBottom: '12px',
-  opacity: 0.8,
-}
-
 export const MiningIconsExample = (): JSX.Element => {
   const [selectedSize, setSelectedSize] = useState(24)
   const [customColor, setCustomColor] = useState('#F7931A')
@@ -272,20 +240,13 @@ export const MiningIconsExample = (): JSX.Element => {
   return (
     <section className="demo-section">
       <DemoPageHeader title="Mining Icons" />
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center' }}>
-        <label style={{ fontSize: '14px' }}>
+      <div className="mining-icons__toolbar">
+        <label className="mining-icons__control">
           Size:
           <select
             value={selectedSize}
             onChange={(e) => setSelectedSize(Number(e.target.value))}
-            style={{
-              marginLeft: '8px',
-              padding: '4px 8px',
-              background: '#333',
-              color: '#fff',
-              border: '1px solid #555',
-              borderRadius: '4px',
-            }}
+            className="mining-icons__select"
           >
             {SIZES.map((s) => (
               <option key={s} value={s}>
@@ -294,33 +255,33 @@ export const MiningIconsExample = (): JSX.Element => {
             ))}
           </select>
         </label>
-        <label style={{ fontSize: '14px' }}>
+        <label className="mining-icons__control">
           Color (single-color icons):
           <input
             type="color"
             value={customColor}
             onChange={(e) => setCustomColor(e.target.value)}
-            style={{ marginLeft: '8px', verticalAlign: 'middle' }}
+            className="mining-icons__color-input"
           />
-          <span style={{ marginLeft: '4px', opacity: 0.6 }}>{customColor}</span>
+          <span className="mining-icons__color-value">{customColor}</span>
         </label>
       </div>
 
       {/* Icon grid by category */}
       {ICON_CATEGORIES.map((category) => (
         <div key={category.title}>
-          <h3 style={categoryTitleStyle}>{category.title}</h3>
-          <div style={gridStyle}>
+          <h3 className="mining-icons__category-title">{category.title}</h3>
+          <div className="mining-icons__grid">
             {category.icons.map(({ name, component: Icon, multiColor }) => (
-              <div key={name} style={iconCellStyle}>
+              <div key={name} className="mining-icons__cell">
                 <Icon
                   size={multiColor ? selectedSize : undefined}
                   width={multiColor ? undefined : selectedSize}
                   height={multiColor ? undefined : selectedSize}
                   color={multiColor ? undefined : customColor}
                 />
-                <span style={iconNameStyle}>{name}</span>
-                {multiColor && <span style={{ fontSize: '9px', opacity: 0.4 }}>multi-color</span>}
+                <span className="mining-icons__name">{name}</span>
+                {multiColor && <span className="mining-icons__tag">multi-color</span>}
               </div>
             ))}
           </div>
@@ -328,12 +289,12 @@ export const MiningIconsExample = (): JSX.Element => {
       ))}
 
       {/* Size comparison */}
-      <h3 style={categoryTitleStyle}>Size Comparison</h3>
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'end', marginBottom: '24px' }}>
+      <h3 className="mining-icons__category-title">Size Comparison</h3>
+      <div className="mining-icons__sizes">
         {SIZES.map((size) => (
-          <div key={size} style={{ ...iconCellStyle, minWidth: 'auto' }}>
+          <div key={size} className="mining-icons__cell mining-icons__cell--auto">
             <DashboardNavIcon size={size} color={customColor} />
-            <span style={iconNameStyle}>{size}px</span>
+            <span className="mining-icons__name">{size}px</span>
           </div>
         ))}
       </div>

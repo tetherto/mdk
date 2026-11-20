@@ -19,10 +19,19 @@ module.exports = function () {
     2024: { value: 3848, name: 'apparent_power_va', buffer: buffer14To24, offset: 20 }
   }
 
+  // Registers are encoded on every read, not once at start, so a value edited
+  // while the mock runs (state[2022].value = …) reaches the next poll.
+  function encode () {
+    Object.values(state).forEach(({ value, buffer, offset }) => {
+      buffer.writeInt16BE(value, offset)
+    })
+  }
+
   function bind (connection) {
     connection.on('read-holding-registers', (request, reply) => {
       const address = request.request.address !== 65535 ? request.request.address : 0
       const quantity = request.request.quantity
+      encode()
 
       const bufferStart = 2013
       let buffer
@@ -39,22 +48,11 @@ module.exports = function () {
     })
   }
 
-  const getInitialState = () => {
-    // Update `active_power_w` value with `getRandomPower()`
-    state[2022].value = getRandomPower()
-
-    Object.entries(state).forEach(([_, { value, buffer, offset }]) => {
-      buffer.writeInt16BE(value, offset)
-    })
-
-    return state
-  }
-
-  // Preserve the initial state for the reset
-  const initialState = JSON.parse(JSON.stringify(getInitialState()))
+  // Only the values are snapshotted: the register entries keep their Buffers.
+  const initialValues = Object.fromEntries(Object.entries(state).map(([addr, { value }]) => [addr, value]))
 
   function cleanup () {
-    Object.assign(state, initialState)
+    for (const [addr, value] of Object.entries(initialValues)) state[addr].value = value
     return state
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "MDK Worker Runtime — hosts a Worker Plugin's devices behind one HRPC channel to the Kernel",
   "main": "index.js",
   "keywords": [
@@ -15,23 +15,25 @@
   },
   "type": "commonjs",
   "scripts": {
-    "lint": "standard",
-    "lint:fix": "standard --fix",
+    "lint": "bfx-lint-js .",
+    "lint:fix": "bfx-lint-js . --fix",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
     "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js",
     "test:integration": "NODE_ENV=test brittle tests/integration/*.test.js",
     "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
-    "@tetherto/mdk-kernel": "^0.13.1",
     "@hyperswarm/rpc": "3.5.0",
-    "debug": "4.4.1",
+    "@tetherto/hp-svc-facs-store": "^1.0.0",
+    "@tetherto/mdk-kernel": "^0.14.0",
+    "@tetherto/mdk-stats": "^0.14.0",
+    "debug": "4.4.3",
     "hyperdht": "6.34.1",
-    "hyperswarm": "4.17.0"
+    "hyperswarm": "4.17.2"
   },
   "devDependencies": {
     "brittle": "3.18.0",
-    "standard": "17.1.2"
+    "@bitfinex/lint-js": "^1.0.0"
   },
   "repository": {
     "type": "git",
@@ -51,7 +53,9 @@
   "exports": {
     ".": "./index.js",
     "./device": "./device.js",
+    "./sweep-memo": "./lib/sweep-memo.js",
     "./lib/module-context": "./lib/module-context.js",
+    "./lib/schema-subset": "./lib/schema-subset.js",
     "./lib/worker-runtime": "./lib/worker-runtime.js",
     "./mdk-contract.schema.json": "./mdk-contract.schema.json",
     "./package.json": "./package.json"

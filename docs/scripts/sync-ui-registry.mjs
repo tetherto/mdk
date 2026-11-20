@@ -5,8 +5,10 @@
 // USAGE.md files and examples in the devkit's source. The skill ships a committed copy so an agent
 // that installed the suite alone still has component props to read.
 //
-// The copy is verbatim. Trimming it would create a second shape to keep in step with the devkit's
-// registry schema, and the skill already ships the file at full size.
+// The copy is split, not one file: references/ui-registry/index.json lists the names, and each
+// component, hook and type is its own file holding its registry entry verbatim, so an agent reads
+// the entries it uses rather than the whole registry (lib/ui-registry-split.mjs has the layout).
+// Entries stay verbatim, so the devkit's registry schema remains the only shape to keep in step with.
 //
 // Prerequisite: ui/'s dependencies, since build:registry runs through tsx. Without them this exits
 // with EXIT_PREREQUISITE and leaves the committed copy untouched, so a docs-only checkout reports a
@@ -30,11 +32,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
+import { splitIsCurrent, splitProblem, writeSplitRegistry } from './lib/ui-registry-split.mjs'
+
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(HERE, '../..')
 const UI_ROOT = path.join(REPO_ROOT, 'ui')
 const REGISTRY = path.join(UI_ROOT, 'packages/react-devkit/dist/registry.json')
-const TARGET = path.join(REPO_ROOT, 'packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry.json')
+const REFERENCES = path.join(REPO_ROOT, 'packages/mdk-skill/src/skills/mdk-ui-component/references')
+const TARGET = path.join(REFERENCES, 'ui-registry')
+// The single-file copy this split replaced; removed when found, so a checkout never ships both.
+const LEGACY_TARGET = path.join(REFERENCES, 'ui-registry.json')
 
 // Distinct from 1 so the regenerate-docs orchestrator can tell "not set up for this" from "broken".
 export const EXIT_PREREQUISITE = 2
@@ -86,33 +93,24 @@ function main () {
   if (!manifest.version || !manifest.packageVersion) {
     fail(`${rel(REGISTRY)} is missing its version fields; the committed copy is unchanged`)
   }
+  const problem = splitProblem(manifest)
+  if (problem) fail(`${rel(REGISTRY)} cannot be split: ${problem}; the committed copy is unchanged`)
+
+  const legacy = fs.existsSync(LEGACY_TARGET)
+  if (legacy) fs.rmSync(LEGACY_TARGET)
 
   // The registry stamps a fresh generatedAt on every build and a fresh gitSha on every commit, so a
   // byte comparison would call the committed copy stale forever and the freshness check would cry
   // wolf. Rewrite only when the content a reader depends on has actually moved.
-  if (fs.existsSync(TARGET) && !contentDiffers(TARGET, manifest)) {
+  if (splitIsCurrent(TARGET, manifest)) {
     log(`${rel(TARGET)} is already current (schema ${manifest.version}, ${manifest.package} ${manifest.packageVersion})`)
+    if (legacy) log(`removed ${rel(LEGACY_TARGET)}, which the split replaces`)
     return
   }
 
-  fs.mkdirSync(path.dirname(TARGET), { recursive: true })
-  fs.writeFileSync(TARGET, raw)
-  log(`wrote ${rel(TARGET)} from ${rel(REGISTRY)} (schema ${manifest.version}, ${manifest.package} ${manifest.packageVersion})`)
-}
-
-// Everything except the two provenance fields that move on their own.
-function substance (manifest) {
-  const { generatedAt, generatedFrom, ...rest } = manifest
-  return JSON.stringify(rest)
-}
-
-function contentDiffers (target, manifest) {
-  try {
-    return substance(JSON.parse(fs.readFileSync(target, 'utf8'))) !== substance(manifest)
-  } catch {
-    // An unreadable or malformed committed copy is exactly what this script is here to replace.
-    return true
-  }
+  const files = writeSplitRegistry(TARGET, manifest)
+  log(`wrote ${files.size} files to ${rel(TARGET)} from ${rel(REGISTRY)} (schema ${manifest.version}, ${manifest.package} ${manifest.packageVersion})`)
+  if (legacy) log(`removed ${rel(LEGACY_TARGET)}, which the split replaces`)
 }
 
 // Only run when invoked directly, so regenerate-docs can import EXIT_PREREQUISITE without

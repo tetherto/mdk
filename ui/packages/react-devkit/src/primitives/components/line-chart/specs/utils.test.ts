@@ -113,7 +113,10 @@ describe('autoscaleProvider', () => {
     expect(result?.priceRange.maxValue).toBeGreaterThan(0.0351)
   })
 
-  it('falls back to an absolute band for a flat series sitting at zero', () => {
+  it('bands a flat series sitting at zero above the axis floor, not around it', () => {
+    // Zero is the one value with no magnitude to scale the band from, so it
+    // falls back to an absolute one. Spread either side of the reading, that
+    // put a site idling at 0 MW on an axis running from -1.2 to 1.2.
     const original = () => ({
       priceRange: { minValue: 0, maxValue: 0 },
     })
@@ -121,8 +124,32 @@ describe('autoscaleProvider', () => {
 
     const result = provider(original)
 
-    expect(result?.priceRange.minValue).toBeLessThan(0)
+    expect(result?.priceRange.minValue).toBe(0)
     expect(result?.priceRange.maxValue).toBeGreaterThan(0)
+  })
+
+  it('starts a flat zero series at zero when beginAtZero is true', () => {
+    const original = () => ({
+      priceRange: { minValue: 0, maxValue: 0 },
+    })
+    const provider = autoscaleProvider(true)
+
+    const result = provider(original)
+
+    expect(result?.priceRange.minValue).toBe(0)
+  })
+
+  it('keeps the band below a flat negative series', () => {
+    const original = () => ({
+      priceRange: { minValue: -5, maxValue: -5 },
+    })
+    const provider = autoscaleProvider(false)
+
+    const result = provider(original)
+
+    expect(result?.priceRange.minValue).toBeLessThan(-5)
+    expect(result?.priceRange.maxValue).toBeLessThan(0)
+    expect(result?.priceRange.maxValue).toBeGreaterThan(-5)
   })
 
   it('sets min to 0 when beginAtZero is true', () => {

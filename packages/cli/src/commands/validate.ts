@@ -152,7 +152,7 @@ export function registerValidate(program: Command): void {
     )
     .option('--dir <path>', 'Project directory (the one holding mdk.yaml)', '.')
     .option('--path <dir>', 'Check this package directory instead of a name declared in mdk.yaml')
-    .option('--strict', 'Fail on warnings too (a stale UI build, a route --smoke skipped)', false)
+    .option('--strict', 'Fail on warnings too (a stale UI build, a route --smoke skipped, a route-table schema finding)', false)
     .option('--smoke', 'Also call every route against a mock Kernel that grants only the declared permissions', false)
     .option('--smoke-config <json|path>', 'Mock fleet and sample requests for --smoke: inline JSON, a .json file, or a module with setup()')
     .option('--timeout <ms>', 'Deadline per smoke route call', '10000')

@@ -35,7 +35,7 @@ upstream domain components can keep their data wrangling local.
 |------|--------|----------------|---------|-------------|
 | `label` | Required | `string` | - | Range-selector button text |
 | `value` | Required | `string` | - | Timeline key passed to `onTimelineChange`, matched against `timeline` and passed to the chart's `timeline`. Known keys: `1m`, `5m`, `30m`, `3h`, `1D` |
-| `disabled` | Optional | `boolean` | - | Not forwarded to the range selector; currently has no effect |
+| `disabled` | Optional | `boolean` | - | Renders the option greyed out and unselectable — a range the current data source cannot serve, say. Honoured by both the card's range selector and `TimelineSelector` |
 <!-- END GENERATED: props -->
 
 ## Minimal example

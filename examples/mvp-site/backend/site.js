@@ -40,7 +40,7 @@ const { startPoolPluginWorker } = require('./pool-adapter')
 const emcd = require('emcd-mdk-worker')
 const spiderpool = require('spiderpool-mdk-worker')
 const foundry = require('foundry-mdk-worker')
-const { startSatecWorker } = require('@tetherto/mdk-worker-satec')
+const { startSatecWorker } = require('./satec-adapter')
 const wmMock = require('whatsminer-mdk-worker/mock/api-v3-server')
 const amMock = require('antminer-mdk-worker/mock/cgi-server')
 const smMock = require('sealminer-mdk-worker/mock/server')
@@ -490,16 +490,16 @@ const bootFoundryWorker = ({ kernel, kernelTopic, root, mode = DISCOVERY }) => {
   })
 }
 
+// Same fixed-device-list model as bootWorker: the SATEC plugin is loaded by
+// directory, so the provisioning store, allowDuplicateIPs and thing timers of
+// its retired V1 boot no longer apply. collectSnapsItvMs sizes the plugin's
+// 15-minute power average; the poll cadence is the runtime's.
 const bootSatecWorker = async ({ kernel, kernelTopic, root, mode = DISCOVERY, devices }) => {
   const handle = await startSatecWorker({
     allowedKeys: await workerTrust({ kernel, root }),
     workerId: SATEC_WORKER_ID,
-    model: deploy.satec.worker.model,
     storeDir: workerStoreDir(root, SATEC_WORKER_ID),
-    conf: {
-      allowDuplicateIPs: deploy.satec.worker.allowDuplicateIPs,
-      thing: deploy.satec.worker.thing
-    },
+    config: { collectSnapsItvMs: deploy.satec.worker.collectSnapsItvMs },
     kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null,
     ...DHT,
     seedDevices: devices

@@ -10,10 +10,13 @@
 // dashes, so npm forwards them as-is (no `--` needed):
 //   - a bare number is the port      (14028          ->  --port 14028)
 //   - key=value sets any flag        (host=0.0.0.0   ->  --host 0.0.0.0)
+// From the first dashed token on, the rest of the entry is passed to the mock
+// as-is, so raw flags after npm's `--` work too.
 //
 // Usage (from the repo root):
 //   npm run mock a1346, f2pool
 //   npm run mock M4M20 4009 host=0.0.0.0 mockControlPort=5009, M1M20 4008
+//   npm run mock d40_m56 -- --port 10883 --id D40-DEV
 //
 // Run with no arguments to list every device and its types. For raw mock CLI
 // flags, run a worker's mock/server.js directly.
@@ -103,7 +106,8 @@ function main () {
       console.error(`  ✗ ${entry}  —  ${err.message}`)
       continue
     }
-    const flags = rest.flatMap(toFlags)
+    const dashed = rest.findIndex((t) => t.startsWith('-'))
+    const flags = dashed === -1 ? rest.flatMap(toFlags) : [...rest.slice(0, dashed).flatMap(toFlags), ...rest.slice(dashed)]
     const args = [target.server, ...(target.type ? ['--type', target.type] : []), ...flags]
     // cwd = the worker package dir so mocks that read cwd-relative paths (e.g.
     // bitdeer's ./mock/d40/data) resolve the same as a per-package `npm run mock`.

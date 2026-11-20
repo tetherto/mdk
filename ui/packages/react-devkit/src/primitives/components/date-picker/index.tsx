@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 
 import { cn } from '../../utils'
 import { Button } from '../button'
+import { Dialog, DialogContent, DialogTrigger } from '../dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '../popover'
 import { forwardRef, type JSX, useEffect, useMemo, useState } from 'react'
 
@@ -96,6 +97,8 @@ export const DatePicker = forwardRef<HTMLButtonElement, DatePickerProps>(
             mode="single"
             selected={selected}
             onSelect={handleSelect}
+            defaultMonth={selected}
+            fixedWeeks
             className={cn('mdk-date-picker__calendar', calendarClassName, className)}
             {...props}
           />
@@ -172,38 +175,25 @@ export type DateRangePickerProps = {
   modalClassName?: string
 } & Omit<DayPickerProps, 'mode' | 'selected'>
 
-// Default preset items
+// Default preset items: "Last 7 Days" is the 7 whole days ending today (today and the six days before it)
 const getDefaultPresets = (): PresetItem[] => {
   const today = new Date()
-  const addDays = (date: Date, days: number): Date => {
-    const result = new Date(date)
-    result.setDate(result.getDate() + days)
-    return result
+  const daysEnding = (days: number): { from: Date; to: Date } => {
+    const from = new Date(today)
+    from.setDate(from.getDate() - (days - 1))
+    return { from, to: today }
   }
 
-  return [
-    {
-      label: 'Last 7 Days',
-      value: { from: addDays(today, -7), to: today },
-    },
-    {
-      label: 'Last 14 Days',
-      value: { from: addDays(today, -14), to: today },
-    },
-    {
-      label: 'Last 30 Days',
-      value: { from: addDays(today, -30), to: today },
-    },
-    {
-      label: 'Last 90 Days',
-      value: { from: addDays(today, -90), to: today },
-    },
-  ]
+  return [7, 14, 30, 90].map((days) => ({
+    label: `Last ${days} Days`,
+    value: daysEnding(days),
+  }))
 }
 
 /**
  * Date-range selection component with preset shortcuts (last 7/14/30/90
- * days) and a modal interface. Controlled via `selected` / `onSelect`.
+ * days) in a centered modal over a blurred overlay, closed with ✕, Escape or
+ * the overlay (which discard the draft). Controlled via `selected` / `onSelect`.
  *
  * @category forms
  * @domain generic
@@ -236,6 +226,13 @@ export const DateRangePicker = forwardRef<HTMLButtonElement, DateRangePickerProp
   ): JSX.Element => {
     const [open, setOpen] = useState(false)
     const [draftRange, setDraftRange] = useState<DateRange | undefined>(selected)
+    // The first month shown: the selected range's on open, a preset's once one is clicked
+    const [month, setMonth] = useState<Date | undefined>(props.defaultMonth ?? selected?.from)
+
+    const handleOpenChange = (next: boolean): void => {
+      if (next) setMonth(props.defaultMonth ?? selected?.from)
+      setOpen(next)
+    }
 
     // Sync draft with external changes
     useEffect(() => {
@@ -261,6 +258,7 @@ export const DateRangePicker = forwardRef<HTMLButtonElement, DateRangePickerProp
 
     const handlePresetClick = (preset: PresetItem): void => {
       setDraftRange(preset.value)
+      if (preset.value.from) setMonth(preset.value.from)
     }
 
     // Check if a preset is active
@@ -296,8 +294,8 @@ export const DateRangePicker = forwardRef<HTMLButtonElement, DateRangePickerProp
     const isRangeComplete = draftRange?.from && draftRange?.to
 
     return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
           <Button
             ref={ref}
             variant="secondary"
@@ -307,16 +305,16 @@ export const DateRangePicker = forwardRef<HTMLButtonElement, DateRangePickerProp
           >
             <span className="mdk-date-picker__text">{displayText}</span>
           </Button>
-        </PopoverTrigger>
-        <PopoverContent
+        </DialogTrigger>
+        {/* Closing with ✕, Escape or the overlay discards the draft: it resyncs to `selected`
+            once `open` is false */}
+        <DialogContent
+          title="Select Date Range"
+          closable
+          onClose={() => setOpen(false)}
           className={cn('mdk-date-picker__modal', modalClassName)}
-          align="start"
-          collisionPadding={16}
-          sideOffset={8}
+          overlayClassName="mdk-date-picker__overlay"
         >
-          <div className="mdk-date-picker__modal-header">
-            <h3 className="mdk-date-picker__modal-title">Select Date Range</h3>
-          </div>
 
           <div className="mdk-date-picker__modal-body">
             <div className="mdk-date-picker__calendar-container">
@@ -325,9 +323,15 @@ export const DateRangePicker = forwardRef<HTMLButtonElement, DateRangePickerProp
                 selected={draftRange}
                 onSelect={handleSelect}
                 numberOfMonths={2}
+                fixedWeeks
                 disabled={getDisabledDays()}
                 className={cn('mdk-date-picker__calendar', calendarClassName, className)}
                 {...props}
+                month={props.month ?? month}
+                onMonthChange={(next) => {
+                  setMonth(next)
+                  props.onMonthChange?.(next)
+                }}
               />
             </div>
 
@@ -372,8 +376,8 @@ export const DateRangePicker = forwardRef<HTMLButtonElement, DateRangePickerProp
               Apply Range
             </Button>
           </div>
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
     )
   },
 )

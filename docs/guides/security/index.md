@@ -41,7 +41,7 @@ Build around these. They are current `0.y.z` behavior.
 | ------- | -------------------------------------------------------------------------------------- | ------------------ |
 | Policy  | `spec.rbac` in `mdk.yaml` is the only place policy is written. Default deny, no superadmin (`admin` is an ordinary role holding wildcards), an invalid policy refused at load | The roles and bindings, reviewed like code |
 | UI      | `passwordAuth()` signs in through the Gateway, keeps the access token in memory and the refresh token in an `HttpOnly` cookie | HTTPS, a real `apiBaseUrl`, hiding write controls the user cannot use |
-| Gateway | Serves `/auth/*` from the Kernel's token issuer. Checks a bearer token and a `spec.rbac` rule on every app route; no route is open. Host allowlist (loopback), rate limit, Helmet headers, body limit on by default. The Host allowlist blocks DNS rebinding in browsers; it is not a network boundary. The Gateway's own HRPC listener (`r0`) admits no peers by default | TLS in front, `allowedHosts`, `trustProxy` behind a proxy you control, a firewall on the bound port, keeping `r0.allow` empty |
+| Gateway | Serves `/auth/*` from the Kernel's token issuer. Checks a bearer token and a `spec.rbac` rule on every app route; no route is open. Host allowlist (loopback), rate limit, Helmet headers, body limit on by default. The Host allowlist blocks DNS rebinding in browsers; it is not a network boundary. The Gateway's own HRPC listener (`r0`) admits no peers by default | TLS in front, `allowedHosts`, `trustProxy` set to the address of a proxy you control, a firewall on the bound port, keeping `r0.allow` empty |
 | App runtime | Runs one app's controllers in its own process and admits only the Gateway's and MCP server's keys. Calls Kernel as service account `app:<name>`, holding only the grant its `mdk-app.yaml` `permissions` requested, and acting for the signed-in user through `req.mdk` so Kernel checks the user too | Reviewing an app's code and requested grant before installing it, narrowing the grant |
 | Kernel  | Admits a key to connect (allowlist or trusted-keys dir), which grants nothing. Checks the access token on every request but sign-in against `spec.rbac`, per action and per device. Records every `command.request` attempt | Admitting the right keys, the policy, guarding the Kernel store |
 | Workers | Noise transport and key-addressed HRPC. Admit only the Kernel's client key, so every device call passes the Kernel's checks and write-command log | Network isolation, device secrets, payload checks |
@@ -155,7 +155,7 @@ write-command log apply. The device network is still yours to isolate: a Worker'
 
 Suggested default: persist each Worker's `storeDir` so its key is stable, treat that key as a machine identity, and register the Worker
 with Kernel only after the device network is isolated. On DHT, keep the discovery topic off the operator network and out of git.
-Worker public keys are not secret: Kernel returns every Worker's key to any caller whose rules grant `workers: list`, so each
+Worker public keys are not secret: Kernel returns a Worker's key to any caller whose rules grant `workers: read` on it, so each
 Worker's `allowedKeys` holding only the Kernel client key is what keeps other callers out. Keeping Worker keys out of git is still
 worth doing as defence in depth: a known key names a target, and under an `allowAll` misconfiguration it is all a peer needs to
 reach devices. Inject device passwords and pool API keys from a secret manager or protected environment. Never put secrets in
@@ -183,13 +183,14 @@ A package never decides who may call it. An app only requests its own Kernel acc
 `app:<name>`, and the role is yours to narrow from then on. `mdk validate app <name>` fails when the grant is missing, differs from
 the request or binds nobody. Who may call the app's routes is set by your own roles.
 
-The Gateway is the user identity seam. It serves `POST /auth/login`, `POST /auth/token`, `POST /auth/refresh`, `POST /auth/logout`
-and `GET /auth/me` from the Kernel's token issuer. A client that keeps no cookies, such as the CLI or a script, sends
-`"refreshIn": "body"` at login and gets its refresh token in the body instead, which the [Gateway's sign-in
-routes][gateway-security] cover along with the rest of the cookie behavior.
+The Gateway is the user identity seam. It serves the [sign-in routes under `/auth`][gateway-http-api] from the Kernel's token
+issuer. A client that keeps no cookies, such as a script, sends
+`"refreshIn": "body"` at login and gets its refresh token in the body instead; the [Gateway HTTP API
+reference][gateway-http-api] covers it. `mdk login` signs in to the Kernel directly, not through `/auth`.
 
 On every app route it checks a bearer access token and a `spec.rbac` rule for the route's resource and verb
-(`401 ERR_AUTH_UNAUTHORIZED`, `403 ERR_AUTH_FORBIDDEN`) before body validation, the cache or the app. A route that declares
+(`401 ERR_AUTH_UNAUTHORIZED`, `403 ERR_AUTH_FORBIDDEN`) before body validation, the cache or the app. The Gateway reference lists
+[every error an app route can answer][app-route-errors], in the order the checks run. A route that declares
 `resourceName` (from a param, query or body field) is checked for that instance. The app receives the verified identity,
 `{ kind, sub, email?, groups? }`, as `req._info`, never the token. The [Gateway apps guide][app-auth] covers the route fields.
 
@@ -207,8 +208,11 @@ On every app route it checks a bearer access token and a `spec.rbac` rule for th
 > shared: a read is authorized against the device it is addressed to and returns the stored series without narrowing it
 > to that device, so an identity scoped to one device can read a total that other devices contributed to. A tag the
 > addressed device does not carry is still refused (`ERR_LOG_TAG_FORBIDDEN`), and the other devices stay unaddressable.
-> Where tenants must not see each other's figures, separate them by Worker so they share no aggregate, rather than by
-> `resourceNames` alone.
+> Every other store query addressed to a device (`list`, `logs_multi`, `historical_logs`, `stats`, `thing_config`)
+> answers for that device only; `count`, `config`, `settings` and `ext_data` are Worker-level facts. A Worker-scoped
+> read (`pullWorkerQuery`) is checked against every device of the Worker. The contract per query type is listed in the
+> [apps guide][apps-read-contract]. Where tenants must not
+> see each other's figures, separate them by Worker so they share no aggregate, rather than by `resourceNames` alone.
 
 Suggested default: run `mdk rbac init` before the first `mdk run` (a `spec.rbac` that binds no user and no group, and whose
 bound subjects include nobody who may write the policy, makes `mdk run` refuse to boot the Kernel, which could not be handed a
@@ -245,18 +249,16 @@ spec:
 
 Also, on the Gateway:
 
-- Terminate TLS in front of it. The refresh cookie is `Secure` everywhere but plain-HTTP loopback, so over plain HTTP on a network
-  the browser keeps no refresh cookie and every reload signs the user out
-- Set `trustProxy` only behind a TLS proxy whose hop count you trust: it makes the Gateway see `https`, and without a trusted proxy
-  client IPs (and so rate limits) can be spoofed
+- Terminate TLS in front of it: over plain HTTP on a network the browser keeps no refresh cookie, so every reload signs the user
+  out ([the cookie rule][gateway-security])
+- Set `trustProxy` only behind a TLS proxy you control, to that proxy's address or subnet: it makes the Gateway see `https`. Not
+  `true`: it trusts every `X-Forwarded-For` entry, so a client sets its own IP and escapes the rate limit. A hop count is refused,
+  since it trusts no proxy
 - List the names clients use in `allowedHosts`; only loopback on the bound port passes the Host check by default. The check stops
   a DNS-rebinding page in a browser from reading the Gateway; it does not keep the network out, because any client can send
   `Host: localhost`. What keeps the network out is the token and `spec.rbac` check, and a firewall on the bound port
-- Tune `rateLimit` (default 300 requests per minute per IP). It is counted before the auth check, so failed sign-ins are throttled too
+- Tune [`rateLimit`][gateway-config], for writes too. It is counted before the auth check, so failed sign-ins and failed bearer tokens are throttled too.
 - Ship the Gateway's `authz` decision lines (subject, route, resource, verb, decision, policy version) to your log store
-- Tune `rateLimit` for writes. `?overwriteCache=true` is honored only for an identity
-  whose `perms` holds `cache:overwrite`
-- `trustProxy` is off by default. Turn it on only behind a proxy whose hop count you trust, or client IPs (and so rate limits) can be spoofed
 
 </Step>
 
@@ -278,8 +280,8 @@ requires both the app's and the user's rules to allow the write, and records the
 | Approval-gated write ([`action.push`][kernel-action-manager], then votes) | Fleet-changing actions: power mode, pool assignment, container PDU, bulk reboot | Slower. A push needs `actions: write` and `devices: write` on every device it resolves to. A vote is checked against the stored action's target devices with the voter's own `devices: write` rule. The [write-actions guide][write-actions] covers the HTTP side |
 | Agent-proposed write with a human approval pause | Operator agent (`approvalTimeoutMs` on [`@tetherto/mdk-app-agent`](https://github.com/tetherto/mdk-app-agent)) | The model cannot execute a write until someone approves |
 
-For a caller with a token, the voter and requester are the operator it acts for (`req.mdk`), else the caller's own identity, and
-the payload's self-asserted `authPerms` are ignored on both push and vote; they apply only to in-process calls. Naming another voter
+For a caller with a token, the voter and requester are the operator it acts for (`req.mdk`), else the caller's own identity,
+on both push and vote. Naming another voter
 without the operator's token needs `actions: delegate`. Prefer `req.mdk`, which needs no `delegate` grant, and grant `delegate`
 only to an app whose code you trust to name the right user.
 
@@ -289,16 +291,19 @@ Registering, updating or forgetting a device is a write action (`registerThing`,
 through the Kernel with the target Worker in `params[0].workerId`. It needs `actions: write` to push, and
 `devices: write` on every device the push resolves to.
 
-The payload requires `voter` and `authPerms` (`ERR_PAYLOAD_VOTER_REQUIRED`, `ERR_PAYLOAD_AUTH_PERMS_REQUIRED`), so a
-push without them is refused before its targets are resolved. For a caller carrying a token the Kernel then ignores
-what they assert and evaluates the caller's own identity and rules instead, so they satisfy the schema rather than
-grant anything.
+The payload requires `voter` (`ERR_PAYLOAD_VOTER_REQUIRED`), so a push without one is refused before its targets are
+resolved. The Kernel evaluates the caller's own identity and rules, never what a payload asserts.
 
 `updateThing` and `forgetThings` name a device the registry already knows, so a `devices: write` rule narrowed with
 `resourceNames` matches them normally. `registerThing` does not: the device is not in the registry yet, so it resolves
 to no instance name, and a rule scoped to instances never matches a request that names none. Registering needs an
 unscoped `devices: write` rule, which grants write access to every device the policy covers. Bind that to a dedicated
 provisioning account rather than to an operator role, and keep the scoped rule for everything else.
+
+This is a current limitation, not the final shape. The Kernel knows the target Worker when the push arrives, so a
+rule scoped to a Worker (`family/brand/worker`) can follow later; a rule scoped to a device id never can, because the
+id does not exist until the Worker has registered the device. `registerThing` is served only by a Worker on the
+[Worker Runtime's store services][worker-store-services]; a `WorkerRuntimeV2` device list is fixed when it starts.
 
 A push that resolves and executes means the configuration is persisted. The running Worker does not publish the new
 device: it appears after the Worker restarts against the same store.
@@ -314,11 +319,10 @@ to a role holding `actions: vote` and `devices: write` on the affected devices. 
 ### Step 6: Wire the UI session
 
 [`passwordAuth()`][ui-sessions] from `@tetherto/mdk-ui-foundation` signs a user in through the Gateway's `/auth/login`. The access
-token stays in memory; the refresh token stays in an `HttpOnly`, `SameSite=Strict` cookie scoped to `/auth`, out of reach of page
-scripts. The provider renews the token on a timer and on a `401`, and tabs refresh one at a time under a Web Locks lock. Refresh
-tokens rotate on every use, and a used one presented again revokes the whole session (theft detection). The one exception is two
-clients refreshing at once: within about 10 seconds of its use, while its successor is still unused, a used token gets that same
-successor, so both hold one refresh token and the next reuse of it, by whoever is behind, revokes the session.
+token stays in memory, and the refresh token in a cookie page scripts cannot read ([how the Gateway sets it][gateway-http-api]).
+The provider renews the token on a timer and on a `401`, and tabs refresh one at a time under a Web Locks lock. A refresh token
+works once, and presenting a used one revokes the whole session, with a short grace for two clients refreshing at once: the
+[identity package's session rules][identity-sessions] give the details.
 
 #### Options
 
@@ -417,10 +421,10 @@ These hold by design. Plan the site around them.
 | Boundary or limit | What happens | What to do |
 | ----------------- | ------------ | ---------- |
 | App routes are a confused-deputy boundary | The Gateway checks the user against the route's rule and forwards their token. A controller calling Kernel through `req.mdk` acts for that user: Kernel checks both `app:<name>` and the user. A controller calling through `config.mdkClient` acts as the app alone, and Kernel does not re-check the user | Use `req.mdk` for work done for a request, keep each app's grant narrow (`resourceNames`), and review app controller code like any privileged service |
-| Policy at a remote Gateway | A Gateway or MCP server in its own process polls the policy every 5 seconds. A failed poll keeps the last good policy, so a Kernel blip does not lock the site, but for 60 seconds at most (`maxStaleMs`): past that it allows nothing until a poll succeeds. Kernel switches at once | Watch for failing polls; run the Gateway in the Kernel's process where an instant switch matters |
-| Revoked access tokens at the edge | A password change, disable, delete, group or email change, or new service-account key refuses the subject's tokens at once wherever the issuer verifies: every Kernel request, and an in-process Gateway or MCP server. A Gateway or MCP server in another process polls every subject's token version with the policy, so there a revoked token keeps working until the next poll (up to 5 seconds); Kernel refuses it at once | Treat the edge window as one poll interval. Kernel-backed calls stop immediately |
-| Login lockout is in memory | Failed sign-ins lock a user name (5 failures, doubling from 30 seconds up to 15 minutes), counted in the Kernel's memory; a Kernel restart clears it | Rate-limit `/auth/login` at the proxy too, and alert on repeated failures in the `authz` log |
-| Service-account assertions | An assertion lives at most 60 seconds and is single use, remembered in the store across restarts | Keep agent and app private keys on the host that owns them |
+| Policy at a remote Gateway | A Gateway or MCP server in its own process polls the policy. A failed poll keeps the last good policy, so a Kernel blip does not lock the site, but only for a bounded time, after which it allows nothing until a poll succeeds ([intervals][gateway-security]). Kernel switches at once | Watch for failing polls; run the Gateway in the Kernel's process where an instant switch matters |
+| Revoked access tokens at the edge | A change that revokes a subject's tokens takes effect at once wherever the issuer verifies; a Gateway or MCP server in another process sees it at its next policy poll ([when access tokens stop working][identity-access]). Kernel refuses the token at once | Treat the edge window as one poll interval. Kernel-backed calls stop immediately |
+| Login lockout is in memory | Failed sign-ins lock a user name for a doubling interval ([`throttle`][identity-tokens]), counted in the Kernel's memory; a Kernel restart clears it | Rate-limit `/auth/login` at the proxy too, and alert on repeated failures in the `authz` log |
+| Service-account assertions | An assertion is short-lived ([`assertionMaxTtlSec`][identity-tokens]) and single use, remembered in the store across restarts | Keep agent and app private keys on the host that owns them |
 
 ## Decision cheat sheet
 
@@ -466,6 +470,12 @@ These hold by design. Plan the site around them.
 
 [app-auth]: ../gateway/apps.md#auth-and-permissions
 <!-- docs@tether.io: app-auth → guides/gateway/apps#auth-and-permissions -->
+
+[apps-read-contract]: ../gateway/apps.md#read-hardware-data
+<!-- docs@tether.io: apps-read-contract → guides/gateway/apps#read-hardware-data -->
+
+[worker-store-services]: ../../../backend/core/mdk-worker/README.md#store-services
+<!-- docs@tether.io: worker-store-services → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#store-services -->
 
 [write-actions]: ../gateway/write-actions.md
 <!-- docs@tether.io: write-actions → guides/gateway/write-actions -->
@@ -517,6 +527,24 @@ These hold by design. Plan the site around them.
 
 [gateway-security]: ../../../backend/core/gateway/README.md#security-model
 <!-- docs@tether.io: gateway-security → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#security-model -->
+
+[app-route-errors]: ../../../backend/core/gateway/docs/http-api.md#errors-on-every-app-route
+<!-- docs@tether.io: app-route-errors → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/docs/http-api.md#errors-on-every-app-route -->
+
+[gateway-http-api]: ../../../backend/core/gateway/docs/http-api.md
+<!-- docs@tether.io: gateway-http-api → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/docs/http-api.md -->
+
+[gateway-config]: ../../../backend/core/gateway/README.md#configuration
+<!-- docs@tether.io: gateway-config → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#configuration -->
+
+[identity-sessions]: ../../../backend/core/identity/README.md#sessions-end-when
+<!-- docs@tether.io: identity-sessions → https://github.com/tetherto/mdk/blob/main/backend/core/identity/README.md#sessions-end-when -->
+
+[identity-access]: ../../../backend/core/identity/README.md#access-tokens-stop-working-when
+<!-- docs@tether.io: identity-access → https://github.com/tetherto/mdk/blob/main/backend/core/identity/README.md#access-tokens-stop-working-when -->
+
+[identity-tokens]: ../../../backend/core/identity/README.md#tokens
+<!-- docs@tether.io: identity-tokens → https://github.com/tetherto/mdk/blob/main/backend/core/identity/README.md#tokens -->
 
 [run-avalon]: ../miners/run-avalon-worker.md
 <!-- docs@tether.io: run-avalon → guides/miners/run-avalon-worker -->

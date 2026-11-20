@@ -49,8 +49,7 @@ mkdir my-site && cd my-site
 mdk onboard
 ```
 
-Answer yes to the UI dashboard prompt so the shell lands in `apps/dashboard`. Skip the Worker catalogue prompt when
-your package is not listed in it; the next step declares it by hand.
+Answer yes to the UI dashboard prompt so the shell lands in `apps/dashboard`. The next step declares your Worker by hand.
 
 </Step>
 
@@ -75,10 +74,15 @@ spec:
         devices:
           - id: miner-0
             opts: { host: 127.0.0.1, port: 18080 }
+            info: { rack: rack-1 }               # optional labels for aggregate reads
 ```
 
 `config.devices[].opts` is whatever your plugin reads per device, so copy the shape your `smoke.config.js` returns as
-`config`. With `mock: true` the CLI starts one simulator per device and the Worker talks to it instead of hardware.
+`config`. `config.devices[].info` is an optional object of labels, such as `rack` or `container`, that
+[aggregate reads group and filter on][worker-telemetry-collector] as `info.<key>`; your plugin never sees it. With `mock: true` the CLI starts one simulator per device from the package's `mock/server.js` and the Worker
+talks to it instead of hardware. A package that ships its simulator under another name sets `mock` to that module's
+path inside the package, for example `mock: mock/cgi-server.js`. `mdk run` refuses a mock module that is missing, is not a
+file, sits outside the package, or does not export `createServer`.
 
 #### B. From npm or GitHub
 
@@ -90,9 +94,11 @@ mdk add worker github:your-org/my-miner-worker#v0.1.0 --name my-miner
 ```
 
 `mdk add worker` runs `npm install --save-exact`, checks the package with the same rules as `mdk validate`, and only
-then adds it under `spec.workers` in `mdk.yaml`. The entry's `name` is the package name with its `mdk-worker-` prefix
-stripped, so the npm form lands as `my-miner` by itself and the GitHub form gets `--name` to match. A package without
-a bundled mock is added without `mock: true`, so fill in `config.devices[].opts` with the address of your hardware.
+then adds it under `spec.workers` in `mdk.yaml`. A GitHub source is recorded in `package.json` at the commit it resolved
+to, `github:<owner>/<repo>#<sha>`, rather than at `#v0.1.0`. The entry's `name` is the package name with its
+`mdk-worker-` prefix stripped, so the npm form lands as `my-miner` by itself and the GitHub form gets `--name` to match.
+A package without a bundled mock is added without `mock: true`, so fill in `config.devices[].opts` with the address of
+your hardware.
 
 Either way, check the declared entry resolves and passes the package rules:
 
@@ -210,9 +216,9 @@ that failed to build at scaffold time is rebuilt with `npm run build:ui` inside 
 
 ## Next steps
 
-- [Build a minimal dashboard][minimal-dashboard]: write the app route and page by hand when the starter UI is not enough
 - [Run the Starter site example][mvp-site]: see a supervised, multi-Worker fleet
 - [Connect the operator agent][agent-guides]: query and command Workers over MCP
+- [Build a minimal dashboard][minimal-dashboard]: write the app route and page by hand when the starter UI is not enough
 - [Run the CLI with npx][run-with-npx]: run `mdk` commands with nothing installed, and see which of these steps still apply in CI
 
 ## Links
@@ -228,6 +234,9 @@ that failed to build at scaffold time is rebuilt with `npm run build:ui` inside 
 
 [test-a-worker-troubleshooting]: ../workers/test-a-worker.md#startup-and-discovery
 <!-- docs@tether.io: test-a-worker-troubleshooting → guides/workers/test-a-worker -->
+
+[worker-telemetry-collector]: ../../../backend/core/mdk-worker/README.md#telemetry-collector
+<!-- docs@tether.io: worker-telemetry-collector → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#telemetry-collector -->
 
 [network-requirements]: ../../reference/environment.md#requirements
 <!-- docs@tether.io: network-requirements → reference/environment#requirements -->

@@ -1,0 +1,1 @@
+{"name":"RadioProps","path":"src/primitives/components/radio/index.tsx","kind":"type","description":"","public":true,"definition":"{ // Key prop re-declared from the Radix item so it surfaces in the generated docs // (type reuses Radix's via indexed access — cannot drift). /** Value associated with this option */ value: RadioItemProps['value'] /** * Size variant of th…"}

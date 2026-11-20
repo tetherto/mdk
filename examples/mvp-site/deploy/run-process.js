@@ -37,8 +37,9 @@ const readKernelTopic = (root, mode) => {
 
 // The site's private HyperDHT bootstrap (site.deploy.json `dht`): every other
 // role joins it at host:port and binds its DHT node to host, so nothing in the
-// site talks to the public *.hyperdht.org nodes. Start order does not matter: a
-// DHT node that starts first joins as soon as the bootstrap answers.
+// site talks to the public *.hyperdht.org nodes. A role's DHT node never takes
+// the bootstrap's port, so the bootstrap starts in any order; a node that
+// started first joins on its next refresh, within about five minutes.
 const runDhtBootstrap = async () => {
   if (!DHT_CONF || DHT_CONF.bootstrap) throw new Error('ERR_DHT_BOOTSTRAP_ROLE_UNUSED: site.deploy.json has no dht section, or lists its own dht.bootstrap')
   const net = await startDhtBootstrap({ host: DHT_CONF.host, port: DHT_CONF.port })
@@ -250,9 +251,7 @@ const runSatecWorker = async () => {
 
   const { powermeters } = loadSeedDevices()
   const handle = await bootSatecWorker({ kernelTopic, root, mode, devices: powermeters })
-  const seeded = handle.services.provisioning.listDeviceIds().length
-
-  console.log('MDK_READY worker-satec devices=%d', seeded)
+  console.log('MDK_READY worker-satec devices=%d', handle.seeded)
 }
 
 // Each gateway plugin dir <name> runs as an app in its own `app-<name>` process.

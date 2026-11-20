@@ -70,5 +70,9 @@
       height: 10px;
       flex-shrink: 0;
     }
+
+    &--medium {
+      background-color: var(--mdk-color-warning);
+    }
   }
 }

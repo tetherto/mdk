@@ -1,0 +1,1 @@
+{"name":"DataLabelProps","path":"src/primitives/components/data-label/index.tsx","kind":"type","description":"","public":true,"definition":"Partial<{ /** * Range start; formatted in the active timezone (`dd/MM/yy`). */ startDate: Date | null /** * Range end; formatted in the active timezone (`dd/MM/yy`). */ endDate: Date | null /** * Label text; defaults to `PERIOD`. * @defaul…"}

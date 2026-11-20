@@ -36,7 +36,7 @@ One file, one intended source of truth for three audiences.
 
 ### The orchestration kernel
 
-[Kernel][kernel-concept], the Orchestration Kernel, is distributed as [`@tetherto/mdk-kernel`][architecture-kernel]. It's the central coordination engine of MDK
+[Kernel][kernel-concept], is distributed as [`@tetherto/mdk-kernel`][architecture-kernel]. It's the central coordination engine of MDK
 and serves as a controller: it knows which devices are online, routes commands to the right place, monitors health, and collects performance data.
 
 `@tetherto/mdk-kernel` communicates with Workers, never devices directly, through a standardized language called the **MDK Protocol**, a common set
@@ -44,7 +44,8 @@ of messages every Worker in the system understands, regardless of the device man
 `@tetherto/mdk-kernel` thanks to the Worker, a
 device-specific translator that sits between the Kernel and your hardware: it speaks the MDK Protocol upward, and the device's native API downward.
 
-The Kernel is **pull-only**, **device-agnostic**, and **self-healing**.
+The Kernel is **pull-only**, **device-agnostic**, and **self-healing**: [its write-command log recovers][storage-recovery] from a
+clean stop or a crash the store survives, and a `SIGKILL` can leave the store unusable.
 
 Learn more about the [internal modules, recovery flows, and protocol specs][kernel-modules] that back those guarantees.
 
@@ -97,7 +98,7 @@ an operator to approve, while a direct command runs as soon as `spec.rbac` allow
 to reach it. Above those two layers, the supported development path builds in two levels:
 
 - **Gateway**: the [Gateway][gateway-concept] serves the stack's apps and adds request-level caching and an HTTP interface; each app
-  builds its own `@tetherto/mdk-client` and does its own fleet aggregation. The Gateway signs callers in and checks
+  has its own `@tetherto/mdk-client` and does its own fleet aggregation. The Gateway signs callers in and checks
   [a route against `spec.rbac`][app-auth] before a controller runs. AI agents can drive the fleet over MCP, a standalone [`@tetherto/mdk-mcp`][mcp-readme] process that
   derives tools from an app's routes.
 - **MDK App Toolkit**: sits on top of the Gateway. Adds publishable apps for declarative route extensions and frontend
@@ -207,6 +208,9 @@ Learn more about:
 
 [kernel-modules]: ../../backend/core/kernel/README.md#architecture
 <!-- docs@tether.io: kernel-modules → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#architecture -->
+
+[storage-recovery]: the-storage-model.md#whats-authoritative-and-whats-cached
+<!-- docs@tether.io: storage-recovery → concepts/the-storage-model#whats-authoritative-and-whats-cached -->
 
 [whats-an-app]: whats-an-app.md
 <!-- docs@tether.io: whats-an-app → concepts/whats-an-app -->

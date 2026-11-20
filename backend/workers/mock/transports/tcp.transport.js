@@ -11,6 +11,7 @@ class TcpTransport extends BaseTransport {
       socket.on('error', () => socket.destroy())
       socket.on('data', (chunk) => onData(socket, chunk))
     })
+    this._trackConnections(this.server)
     if (typeof this.handlers.onClose === 'function') this.server.on('close', this.handlers.onClose)
     this.server.listen(port, host)
     return this

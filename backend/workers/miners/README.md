@@ -1,9 +1,7 @@
 # Workers/miners
 
-Bitcoin ASIC miner Workers. Each ships a Worker Plugin (`plugin/{index.js,mdk-contract.json,boot.js}`) hosted on
-[`WorkerRuntime`][mdk-worker-runtime], with mining-specific config (alert thresholds, stats specs) layered on top via
-[`createWorkerInfra`][worker-infra] — see [Worker Runtime store services][worker-runtime-store] for how that shared
-plumbing works.
+Bitcoin ASIC miner Workers. Each package is a directory-loaded Worker Plugin, an `mdk-contract.json` at its root plus
+the handler files it names, hosted by [`WorkerRuntimeV2`][mdk-worker-runtime-v2].
 
 ## Packages
 
@@ -16,102 +14,85 @@ and [Run a Whatsminer Worker][run-whatsminer-worker] for how they're hosted.
 
 ## Package shape
 
-Every package here follows the same layout, each `boot.js` calling `createWorkerInfra()` then constructing
-`WorkerRuntime` the same way:
+Every package here follows the same layout. `WorkerRuntimeV2` loads it by directory, so there is no boot function or
+plugin module to `require()`:
 
 ```text
 miners/<vendor>/
-  plugin/
-    index.js        # the Worker Plugin: { contract, dir, connect, disconnect }
-    mdk-contract.json
-    boot.js          # start<Vendor>Worker(opts) — infra + WorkerRuntime, exported from the package root
-    src/
-      telemetry/*.js
-      commands/*.js
-  lib/                 # the vendor device driver `plugin.connect()` returns
+  mdk-contract.json    # the telemetry fields, commands, health states and errors the Worker serves
+  src/
+    device.js          # builds one device's driver from its config, once per device
+    telemetry/*.js     # one handler per telemetry field
+    commands/*.js      # one handler per command
+  lib/                 # the vendor device driver, the package's only export
   mock/                # a standalone mock of the vendor's native API
 ```
 
 ## Common telemetry fields
 
-All miner Workers report these standard telemetry fields:
+Every miner Worker shipped here declares these telemetry fields; its `mdk-contract.json` is the full list:
 
-| Field | Unit | Description |
-|-------|------|-------------|
-| `hashrate_rt` | TH/s | Real-time hashrate |
-| `hashrate_avg` | TH/s | Average hashrate |
-| `power` | W | Current power draw |
-| `temperature` | °C | Chip temperature |
-| `fan_speed_in` | RPM | Inlet fan speed |
-| `fan_speed_out` | RPM | Outlet fan speed |
-| `status` | — | Device status string |
-| `uptime` | s | Seconds since last boot |
-| `accepted_shares` | — | Total accepted shares |
-| `rejected_shares` | — | Total rejected shares |
-| `pool_url` | — | Active pool URL |
-| `efficiency` | W/TH | Power efficiency |
-| `power_mode` | — | Current power mode |
+| Field          | Unit | Description                                 |
+|----------------|------|---------------------------------------------|
+| `hashrate_avg` | TH/s | Average hashrate                            |
+| `power`        | W    | Current power draw                          |
+| `temperature`  | C    | Average chip temperature                    |
+| `fan_speed`    | RPM  | Average fan speed                           |
+| `status`       |      | Device status                               |
+| `uptime`       | s    | Seconds since last boot                     |
+| `efficiency`   | W/TH | Power efficiency                            |
+| `power_mode`   |      | Current power mode                          |
+| `snap`         |      | Full structured snapshot (stats and config) |
 
 ## Common commands
 
-All miner Workers support these commands (declared in `mdk-contract.json`):
+Every miner Worker shipped here declares these commands; its `mdk-contract.json` is the full list:
 
-| Command | Parameters | Description |
-|---------|-----------|-------------|
-| `reboot` | — | Restart the miner (2–3 min downtime) |
-| `setPowerMode` | `mode: string` | Change power/performance mode |
-| `setLED` | `enabled: boolean` | Toggle physical LED indicator |
-| `setupPools` | `pools: object` | Configure mining pool URLs |
-| `setPowerPct` | `pct: number (0–100)` | Set power draw percentage |
-| `registerThing` | `info, opts` | Register a new device |
-| `updateThing` | `info, opts` | Update device connection info |
-| `forgetThings` | `ids` | Remove devices |
-| `saveSettings` | — | Persist Worker settings |
-| `saveComment` | `text` | Add a device annotation |
-| `editComment` | `commentId, text` | Edit annotation |
-| `deleteComment` | `commentId` | Delete annotation |
-| `downloadLogs` | — | Download raw diagnostic logs |
+| Command        | Parameters         | Description                          |
+|----------------|--------------------|--------------------------------------|
+| `reboot`       |                    | Restart the miner (2 to 3 min downtime) |
+| `setPowerMode` | `mode: string`     | Change the power mode                |
+| `setLED`       | `enabled: boolean` | Toggle the physical LED indicator    |
+| `setupPools`   | `pools: object`    | Configure mining pools               |
+
+No miner Worker shipped here serves device provisioning (`registerThing`, `updateThing`, `forgetThings`), Worker
+settings (`saveSettings`) or device comments (`saveComment`, `editComment`, `deleteComment`). Those are
+[store services][worker-runtime-store] built-ins, served only by a legacy Worker that injects them.
 
 ## Health states
 
-All miner contracts declare: `OK`, `DEGRADED`, `OFFLINE`
-
-Common alerts: `alert.overheat`, `alert.fan_failure`, `alert.psu_failure`, `alert.hashrate_low`
+Every miner contract shipped here declares `OK`, `DEGRADED`, `OFFLINE`.
 
 ## Quickstart
 
 ```js
+const path = require('path')
 const { getKernel } = require('@tetherto/mdk-core')
-const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
 const kernel = await getKernel()
 
-const worker = await startAvalonWorker({
+const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-avalon/package.json')), {
   workerId: 'avalon-rack-1',
-  model: 'a1346',
   storeDir: './store/avalon-rack-1',
   allowedKeys: [kernel.getClientPublicKey()],
-  seedDevices: [{
-    info: { serialNum: 'AV-001', container: 'A', pos: 'A1' },
-    opts: { address: '192.168.1.10', port: 4028, password: 'admin' }
-  }]
+  devices: [{ deviceId: 'AV-001', config: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
 })
-await kernel.registerWorker(worker.runtime.getPublicKey())
+await runtime.start()
+await kernel.registerWorker(runtime.getPublicKey())
 ```
 
 `allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
 (`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
-Each package's own `USAGE.md` (e.g. [avalon][avalon-usage])
-documents its `model` values, mock, and the `registerThing` command for adding a device to an already-running Worker.
+The device list is fixed at construction: adding or removing a miner is a config edit and a restart. Each package's
+own `USAGE.md` (e.g. [avalon][avalon-usage]) documents its device options and mock; with `mdk run`, the same device
+list sits under the Worker's `config.devices` in `mdk.yaml`.
 
 ## Links
 
-[mdk-worker-runtime]: ../../core/mdk-worker/lib/worker-runtime.js
-<!-- docs@tether.io: mdk-worker-runtime → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/lib/worker-runtime.js -->
-
-[worker-infra]: ../../core/mdk/lib/worker-infra.js
-<!-- docs@tether.io: worker-infra → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/lib/worker-infra.js -->
+[mdk-worker-runtime-v2]: ../../core/mdk-worker/lib/worker-runtime-v2.js
+<!-- docs@tether.io: mdk-worker-runtime-v2 → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/lib/worker-runtime-v2.js -->
 
 [worker-runtime-store]: ../../core/mdk-worker/README.md#store-services
 <!-- docs@tether.io: worker-runtime-store → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#store-services -->

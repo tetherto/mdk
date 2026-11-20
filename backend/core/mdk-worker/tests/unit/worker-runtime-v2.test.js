@@ -38,6 +38,10 @@ function req (action, payload = {}, deviceId = null) {
   }
 }
 
+function pullSnapshot (runtime) {
+  return runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: { type: 'snapshot' } }))
+}
+
 function pullStatus (runtime, deviceId) {
   return runtime.handleRequest(req(ACTIONS.TELEMETRY_PULL, { query: { type: 'status' } }, deviceId))
 }
@@ -316,4 +320,22 @@ test('a handler that does not export a function throws ERR_INSTANCE_HANDLER_NOT_
   const runtime = new WorkerRuntimeV2(dir, { workerId: 'w', devices: [{ deviceId: 'bad-device', config: {} }] })
 
   await t.exception(runtime._openContexts(), /ERR_INSTANCE_HANDLER_NOT_FUNCTION: bad-device: commands\.broken/)
+})
+
+test('the telemetry collector reaches V2 through opts.config and defaults its store under storeDir', async (t) => {
+  const storeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdk-worker-v2-'))
+  t.teardown(() => fs.rmSync(storeDir, { recursive: true, force: true }), { order: 1 })
+  const runtime = await createRuntime(FIXTURE_DIR, { storeDir, config: { telemetryPollIntervalMs: 10 } })
+  await runtime._startTelemetry()
+  t.teardown(() => runtime._stopTelemetry())
+
+  for (let i = 0; i < 200 && (await pullSnapshot(runtime)).payload.snapshotTs === null; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 5))
+  }
+  await runtime._telemetry.poller.stop()
+  const { devices } = (await pullSnapshot(runtime)).payload
+  t.alike(Object.keys(devices).sort(), ['cw-a', 'cw-b'])
+  t.is(devices['cw-a'].metrics.status.value.id, 'cw-a', 'the shim resolved the right instance')
+  t.is(devices['cw-b'].metrics.status.value.id, 'cw-b')
+  t.ok(fs.existsSync(path.join(storeDir, 'telemetry')))
 })

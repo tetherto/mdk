@@ -19,7 +19,7 @@ export const PoolDetailsPopoverPage = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">Pool Details Popover</h2>
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+      <div className="demo-section__showcase demo-section__showcase--stretch">
         <section>
           <h3>Default</h3>
           <PoolDetailsPopover

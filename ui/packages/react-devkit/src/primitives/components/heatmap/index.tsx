@@ -1,16 +1,16 @@
-import { forwardRef } from "react"
+import { forwardRef } from 'react'
 
-import { cn, getHeatmapColor, HEATMAP_FALLBACK_COLOR, HEATMAP_GRADIENT } from "../../utils"
+import { cn, getHeatmapColor, HEATMAP_FALLBACK_COLOR, HEATMAP_GRADIENT } from '../../utils'
 // oxlint-disable-next-line no-unused-vars -- in scope for the {@link HeatmapLegend} below
-import { HeatmapLegend } from "./heatmap-legend"
-import type { HeatmapCell, HeatmapProps } from "./types"
-import { getHeatmapRange } from "./utils"
+import { HeatmapLegend } from './heatmap-legend'
+import type { HeatmapCell, HeatmapProps } from './types'
+import { getHeatmapRange } from './utils'
 
-import "./styles.scss"
+import './styles.scss'
 
 const cellText = (cell: HeatmapCell): string => {
   if (cell.label !== undefined) return cell.label
-  return cell.value === null ? "" : String(cell.value)
+  return cell.value === null ? '' : String(cell.value)
 }
 
 /**
@@ -46,7 +46,7 @@ export const Heatmap = forwardRef<HTMLDivElement, HeatmapProps>(
       emptyColor = HEATMAP_FALLBACK_COLOR,
       showValues = false,
       renderCell,
-      ariaLabel = "Heatmap",
+      ariaLabel = 'Heatmap',
       className,
     },
     ref,
@@ -59,9 +59,10 @@ export const Heatmap = forwardRef<HTMLDivElement, HeatmapProps>(
     return (
       <div
         ref={ref}
-        className={cn("mdk-heatmap", className)}
+        className={cn('mdk-heatmap', className)}
         role="img"
         aria-label={ariaLabel}
+        // oxlint-disable-next-line react/forbid-dom-props -- column count is a runtime prop
         style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}
       >
         {data.map((row, rowIndex) =>
@@ -75,6 +76,7 @@ export const Heatmap = forwardRef<HTMLDivElement, HeatmapProps>(
               <div
                 key={cell.key ?? `${rowIndex}-${colIndex}`}
                 className="mdk-heatmap__cell"
+                // oxlint-disable-next-line react/forbid-dom-props -- cell colour computed from the cell value
                 style={{ backgroundColor: color }}
               >
                 {renderCell
@@ -88,12 +90,7 @@ export const Heatmap = forwardRef<HTMLDivElement, HeatmapProps>(
     )
   },
 )
-Heatmap.displayName = "Heatmap"
+Heatmap.displayName = 'Heatmap'
 
-export { HeatmapLegend } from "./heatmap-legend"
-export type {
-  HeatmapCell,
-  HeatmapCellContext,
-  HeatmapLegendProps,
-  HeatmapProps,
-} from "./types"
+export { HeatmapLegend } from './heatmap-legend'
+export type { HeatmapCell, HeatmapCellContext, HeatmapLegendProps, HeatmapProps } from './types'

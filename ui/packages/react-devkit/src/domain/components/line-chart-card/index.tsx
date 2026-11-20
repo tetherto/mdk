@@ -16,7 +16,6 @@ import {
   withErrorBoundary,
 } from '@primitives'
 
-
 import type {
   LineChartCardData,
   LineChartCardDataset,
@@ -26,9 +25,10 @@ import type {
 import { type CSSProperties, useCallback, useMemo, useRef, useState } from 'react'
 
 const mapToRangeSelectorOptions = (options: TimelineOption[]): RangeSelectorOption[] =>
-  options.map(({ label, value }) => ({
+  options.map(({ label, value, disabled }) => ({
     label,
     value,
+    disabled,
   }))
 
 const legendStrokeColor = (borderColor: string): string =>
@@ -129,10 +129,7 @@ const LineChartCardInner = ({
   }, [])
 
   const datasets = chartData?.datasets ?? []
-  const labeledDatasets = useMemo(
-    () => datasets.filter((ds) => ds.label),
-    [datasets],
-  )
+  const labeledDatasets = useMemo(() => datasets.filter((ds) => ds.label), [datasets])
 
   const handleLegendToggleByIndex = useCallback(
     (index: number) => {
@@ -186,6 +183,7 @@ const LineChartCardInner = ({
   return (
     <div
       className={cn('mdk-line-chart-card', className)}
+      // oxlint-disable-next-line react/forbid-dom-props -- consumer-supplied minHeight, passed as a custom property
       style={
         {
           '--mdk-line-chart-card-min-height':

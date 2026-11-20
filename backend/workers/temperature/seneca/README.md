@@ -69,6 +69,10 @@ Modbus TCP on port 502. The `unitId` and `register` identify the specific measur
 |-------|------|-------------|
 | `temperature` | °C | Ambient temperature reading from the sensor |
 
+The Worker Runtime polls every field above every 30 s (`telemetryPollIntervalMs` in `mdk-contract.json`) and stores the series,
+so a fleet read through `mdkClient.pullSnapshot()` or `mdkClient.pullAggregate()` costs no device call. An operator overrides the
+interval per instance in `mdk.yaml` under `spec.workers[].config` (`null` turns polling off).
+
 ## Commands
 
 Temperature sensors are read-only. Standard device management commands are supported: `registerThing`, `updateThing`, `forgetThings`, `saveSettings`, `saveComment`, `editComment`, `deleteComment`.
@@ -91,6 +95,16 @@ Programmatic:
 const senMock = require('@tetherto/mdk-worker-seneca/mock/server')
 senMock.createServer({ host: '127.0.0.1', port: 502, type: 'seneca' })
 ```
+
+## Errors
+
+| Code                        | Fires when                                                                           | Fix                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| `ERR_DEVICE_CONFIG_INVALID` | A device is connected without `address`, `port`, `unitId`, or `register` in its config | Provide all four in the device config                    |
+| `ERR_NO_CLIENT`             | `SenecaSensor` is built without `getClient`. The Worker Plugin always passes one, so only a host that builds the class itself meets this code. | Pass `getClient`                                         |
+| `ERR_NO_VALUE`              | A read of the temperature register returns no value. The snapshot reports it in `stats.errors` with `status: error`; nothing is thrown to the caller. | Check the device's `address`, `port`, `unitId`, and `register` |
+| `ERR_STORE_DIR_REQUIRED`    | `startSenecaWorker()` is called without `opts.storeDir`                              | Pass a `storeDir` path                                   |
+| `ERR_WORKER_ID_REQUIRED`    | `startSenecaWorker()` is called without `opts.workerId`                              | Pass a `workerId`                                        |
 
 ## Testing
 

@@ -87,6 +87,61 @@ test('onShutdown - runs cleanup once and registers SIGINT + SIGTERM', async (t) 
   t.is(cleanups, 1, 'cleanup ran exactly once (idempotent)')
 })
 
+test('onShutdown - handlers share one shutdown: all run, last-registered first, then one exit', async (t) => {
+  const realExit = process.exit
+  const order = []
+  process.exit = () => { order.push('exit') }
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+  const slow = onShutdown(async () => { await sleep(50); order.push('slow') }, { forceMs: 5000 })
+  const fast = onShutdown(async () => { order.push('fast') })
+  t.teardown(() => {
+    process.exit = realExit
+    for (const h of [slow, fast]) {
+      process.removeListener('SIGINT', h)
+      process.removeListener('SIGTERM', h)
+    }
+  })
+
+  await Promise.all([fast(), slow()]) // one signal reaches every handler
+  t.alike(order, ['fast', 'slow', 'exit'], 'the slow cleanup is not cut off, and the process exits once')
+})
+
+test('onShutdown - an emitted signal runs every handler, though Node detaches each once listener before calling it', async (t) => {
+  const realExit = process.exit
+  const order = []
+  let exited
+  const done = new Promise((resolve) => { exited = resolve })
+  process.exit = () => { order.push('exit'); exited() }
+  t.teardown(() => { process.exit = realExit })
+
+  // SIGUSR2 keeps the emitted signal away from the test runner's own handlers.
+  onShutdown(async () => { order.push('first-registered') }, { signals: ['SIGUSR2'] })
+  onShutdown(async () => { order.push('last-registered') }, { signals: ['SIGUSR2'] })
+  process.emit('SIGUSR2')
+  await done
+
+  t.alike(order, ['last-registered', 'first-registered', 'exit'], 'the invoked handler keeps its own cleanup')
+  t.is(process.listenerCount('SIGUSR2'), 0, 'both once listeners are gone')
+})
+
+test('onShutdown - a handler removed from its signals before shutdown does not run', async (t) => {
+  const realExit = process.exit
+  process.exit = () => {}
+  const ran = []
+  const kept = onShutdown(async () => { ran.push('kept') })
+  const removed = onShutdown(async () => { ran.push('removed') })
+  for (const sig of ['SIGINT', 'SIGTERM']) process.removeListener(sig, removed)
+  t.teardown(() => {
+    process.exit = realExit
+    process.removeListener('SIGINT', kept)
+    process.removeListener('SIGTERM', kept)
+  })
+
+  await kept()
+  t.alike(ran, ['kept'], 'removing the handler cancelled its cleanup')
+})
+
 test('onShutdown - swallows a throwing cleanup and still exits', async (t) => {
   const realExit = process.exit
   let exits = 0
@@ -101,4 +156,51 @@ test('onShutdown - swallows a throwing cleanup and still exits', async (t) => {
 
   await handler() // must not reject
   t.ok(exits >= 1, 'still reached process.exit despite the cleanup error')
+})
+
+test('onShutdown - a cleanup still running at forceMs force-exits with code 1', async (t) => {
+  const realExit = process.exit
+  const codes = []
+  let forced
+  const forcedP = new Promise((resolve) => { forced = resolve })
+  process.exit = (code) => { codes.push(code); if (code === 1) forced() }
+
+  // Hangs until the force timer fires, then resolves so the shared shutdown
+  // finishes and clears its latch for later tests.
+  const handler = onShutdown(() => forcedP, { forceMs: 20 })
+  t.teardown(() => {
+    process.exit = realExit
+    process.removeListener('SIGINT', handler)
+    process.removeListener('SIGTERM', handler)
+  })
+
+  // The force timer is unref'd; keep the loop alive until it fires.
+  const keepAlive = setInterval(() => {}, 1000)
+  await handler()
+  clearInterval(keepAlive)
+  t.is(codes[0], 1, 'the force timer exits non-zero, so a supervisor sees the cut-off cleanup')
+})
+
+test('onShutdown - rejects a forceMs that is not a finite number >= 0, registering nothing', async (t) => {
+  const intBefore = process.listenerCount('SIGINT')
+  for (const forceMs of ['5000', NaN, Infinity, -1, null, 2 ** 31]) {
+    t.exception(() => onShutdown(() => {}, { forceMs }), /ERR_SHUTDOWN_FORCE_MS_INVALID/, `forceMs ${String(forceMs)}`)
+  }
+  t.is(process.listenerCount('SIGINT'), intBefore, 'no signal handler was registered')
+})
+
+test('onShutdown - accepts forceMs at the bounds, 0 and Node\'s timer limit 2^31 - 1', async (t) => {
+  for (const forceMs of [0, 2 ** 31 - 1]) {
+    const handler = onShutdown(() => {}, { forceMs })
+    process.removeListener('SIGINT', handler)
+    process.removeListener('SIGTERM', handler)
+    t.pass(`forceMs ${forceMs} accepted`)
+  }
+})
+
+test('getKernel / startGateway - reject an invalid shutdownForceMs before starting anything', async (t) => {
+  const { getKernel, startGateway } = require('../../index')
+  await t.exception(getKernel({ handleSignals: true, shutdownForceMs: '5000' }), /ERR_SHUTDOWN_FORCE_MS_INVALID: shutdownForceMs/)
+  await t.exception(startGateway({ handleSignals: true, shutdownForceMs: -1 }), /ERR_SHUTDOWN_FORCE_MS_INVALID: shutdownForceMs/)
+  await t.exception(getKernel({ handleSignals: true, shutdownForceMs: 2 ** 31 }), /ERR_SHUTDOWN_FORCE_MS_INVALID: shutdownForceMs/)
 })

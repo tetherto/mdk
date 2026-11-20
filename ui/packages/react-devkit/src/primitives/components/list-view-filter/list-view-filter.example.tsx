@@ -56,24 +56,22 @@ export const ListViewFilterExample = () => {
   }
 
   return (
-    <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-lg">
+      <div className="mdk-example-inline mdk-example-inline--gap-md">
         <ListViewFilter options={FILTER_OPTIONS} localFilters={filters} onChange={handleChange} />
-        <span style={{ fontSize: 13, color: 'var(--mdk-color-text-secondary, #888)' }}>
+        <span className="mdk-example-caption">
           {activeCount > 0 ? `${activeCount} filter(s) active` : 'No filters active'}
         </span>
       </div>
 
       {/* Pre-seeded with one filter */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="mdk-example-inline mdk-example-inline--gap-md">
         <ListViewFilter
           options={FILTER_OPTIONS}
           localFilters={{ status: ['active'] }}
           onChange={() => undefined}
         />
-        <span style={{ fontSize: 13, color: 'var(--mdk-color-text-secondary, #888)' }}>
-          Pre-seeded: status=active
-        </span>
+        <span className="mdk-example-caption">Pre-seeded: status=active</span>
       </div>
     </div>
   )

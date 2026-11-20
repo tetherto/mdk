@@ -1,0 +1,1 @@
+{"name":"FormCheckboxProps","path":"src/primitives/components/form/form-fields.tsx","kind":"type","description":"","public":true,"definition":"BaseFormFieldProps<TFieldValues, TName> & { checkboxProps?: React.ComponentProps<typeof Checkbox> layout?: 'row' | 'column' }"}

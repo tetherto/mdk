@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { buildCatalog } from '../docs/scripts/generate-package-catalog.mjs'
+import { buildCatalog, render } from '../docs/scripts/generate-package-catalog.mjs'
 
 function fixture (files) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'package-catalog-'))
@@ -39,15 +39,14 @@ test('an integration takes its section, name, purpose, and models from its contr
   }])
 })
 
-test('unlistable packages are reported, and samples are skipped', () => {
+test('unlistable packages are reported', () => {
   const root = fixture({
     'backend/core/a/package.json': { name: '@t/a', private: true },
     'backend/core/b/package.json': { name: '@t/a', description: 'same name' },
     'backend/workers/miners/c/package.json': { name: '@t/c', description: 'c' },
-    'backend/workers/miners/c/mdk-contract.json': '{ not json',
-    'backend/workers/samples/s/package.json': { name: '@t/s' }
+    'backend/workers/miners/c/mdk-contract.json': '{ not json'
   })
-  const manifests = ['backend/core/a', 'backend/core/b', 'backend/workers/miners/c', 'backend/workers/samples/s']
+  const manifests = ['backend/core/a', 'backend/core/b', 'backend/workers/miners/c']
     .map((dir) => `${dir}/package.json`)
 
   const { entries, errors } = buildCatalog(root, manifests)
@@ -57,4 +56,13 @@ test('unlistable packages are reported, and samples are skipped', () => {
   assert.equal(errors[1], 'backend/core/b/package.json: duplicate package name @t/a')
   assert.match(errors[2], /^backend\/workers\/miners\/c\/package\.json: mdk-contract\.json: /)
   assert.deepEqual(entries.map((e) => e.name), ['@t/a', '@t/a', '@t/c'])
+})
+
+test('render keeps the ref a package link already has and writes main for a new package', () => {
+  const entry = (name, docs) => ({ group: 'Core', section: null, name, purpose: 'Core', availability: 'publishable', docs, models: [] })
+  const existing = '<!-- docs@tether.io: mdk-core → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/kernel/README.md -->'
+  const out = render([entry('@tetherto/mdk-core', 'backend/core/kernel/README.md'), entry('@tetherto/mdk-new', 'backend/core/new/README.md')], existing)
+  assert.match(out, /docs@tether\.io: mdk-core → https:\/\/github\.com\/tetherto\/mdk\/blob\/v0\.14\.0\/backend\/core\/kernel\/README\.md -->/)
+  assert.match(out, /docs@tether\.io: mdk-new → https:\/\/github\.com\/tetherto\/mdk\/blob\/main\/backend\/core\/new\/README\.md -->/)
+  assert.equal(render([entry('@tetherto/mdk-core', 'backend/core/kernel/README.md')]).includes('/blob/main/backend/core/kernel/README.md'), true)
 })

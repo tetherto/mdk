@@ -49,13 +49,15 @@ What the package holds, as [`mdk create app`][app-guide] scaffolds it:
 ```text
 apps/fleet/
 ├── mdk-app.yaml               # app manifest
-├── package.json               # `files` ships the manifest, plugin/, and ui/
+├── package.json               # `files` ships the manifest, plugin/, ui/ and README.md
+├── README.md
 ├── plugin/
 │   ├── mdk-plugin.json        # route table
-│   ├── lib/client.js          # the app's own mdk-client
+│   ├── lib/client.js          # re-exports the app runtime's Kernel client
+│   ├── types.d.ts             # response types, shared with the UI
 │   └── controllers/summary.js # one module per route
-├── ui-src/                    # UI source
-└── ui/index.js                # the built UI module, committed
+├── ui-src/                    # UI source with its own package.json and Vite build, not published
+└── ui/index.js                # the built UI module, committed; a placeholder until `npm run build:ui`
 ```
 
 | Part            | What it is                                          | Who reads it              |

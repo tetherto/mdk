@@ -11,6 +11,30 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+
+    &--gap-sm {
+      gap: var(--mdk-spacing-sm);
+    }
+
+    &--gap-lg {
+      gap: var(--mdk-spacing-lg);
+    }
+
+    &--gap-xl {
+      gap: var(--mdk-spacing-xl);
+    }
+
+    &--gap-2xl {
+      gap: var(--mdk-spacing-2xl);
+    }
+
+    &--centered {
+      align-items: center;
+    }
+
+    &--narrow {
+      max-width: 320px;
+    }
   }
 
   .mdk-example-mosaic-cell {
@@ -24,6 +48,18 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+
+    &--gap-md {
+      gap: var(--mdk-spacing-md);
+    }
+
+    &--gap-lg {
+      gap: var(--mdk-spacing-lg);
+    }
+
+    &--gap-2xl {
+      gap: var(--mdk-spacing-2xl);
+    }
   }
 
   .mdk-example-tall {
@@ -34,5 +70,59 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
+  }
+
+  .mdk-example-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mdk-example-min-width {
+    min-width: 220px;
+  }
+
+  .mdk-example-flush {
+    margin: 0;
+  }
+
+  // Muted helper text next to a demoed component.
+  .mdk-example-caption {
+    font-size: 13px;
+    color: var(--mdk-color-text-secondary);
+
+    &--sm {
+      font-size: 11px;
+    }
+  }
+
+  // Stand-in content block rendered inside a demoed component.
+  .mdk-example-panel {
+    padding: var(--mdk-spacing-lg);
+    font-size: 13px;
+
+    &--compact {
+      padding: var(--mdk-spacing-md) var(--mdk-spacing-lg);
+    }
+
+    &--error {
+      color: rgb(var(--mdk-color-error));
+    }
+  }
+
+  .mdk-example-surface {
+    background: var(--mdk-color-surface-elevated);
+    border-radius: 4px;
+  }
+
+  .mdk-example-button {
+    margin-bottom: var(--mdk-spacing-sm);
+    padding: var(--mdk-spacing-xs) var(--mdk-spacing-md);
+    cursor: pointer;
+  }
+
+  .mdk-example-header-content {
+    align-self: center;
+    padding: 0 var(--mdk-spacing-lg);
   }
 }

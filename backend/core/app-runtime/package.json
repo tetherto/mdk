@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-app-runtime",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "MDK app runtime: runs one app's controllers in its own process and serves them over HRPC",
   "main": "index.js",
   "bin": {
@@ -17,24 +17,24 @@
     "node": ">=24"
   },
   "scripts": {
-    "lint": "standard",
-    "lint:fix": "standard --fix",
+    "lint": "bfx-lint-js .",
+    "lint:fix": "bfx-lint-js . --fix",
     "test": "npm run lint && npm run test:unit",
     "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js",
     "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
     "@hyperswarm/rpc": "^3.5.0",
-    "@tetherto/mdk-client": "^0.13.1",
-    "@tetherto/mdk-rbac": "^0.13.1",
-    "@tetherto/mdk-worker": "^0.13.1",
-    "debug": "4.4.1",
+    "@tetherto/mdk-client": "^0.14.0",
+    "@tetherto/mdk-rbac": "^0.14.0",
+    "@tetherto/mdk-worker": "^0.14.0",
+    "debug": "4.4.3",
     "hyperdht": "6.34.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
     "brittle": "3.18.0",
-    "standard": "17.1.0"
+    "@bitfinex/lint-js": "^1.0.0"
   },
   "repository": {
     "type": "git",
@@ -48,11 +48,14 @@
     "index.js",
     "lib/",
     "bin/",
+    "mdk-plugin.schema.json",
+    "docs/",
     "README.md"
   ],
   "exports": {
     ".": "./index.js",
     "./lib/plugin-loader": "./lib/plugin-loader.js",
+    "./mdk-plugin.schema.json": "./mdk-plugin.schema.json",
     "./bin/run-app.js": "./bin/run-app.js",
     "./package.json": "./package.json"
   }

@@ -1,0 +1,1 @@
+{"name":"BadgeProps","path":"src/primitives/components/badge/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** * Badge content (wraps children with badge) */ children?: ReactNode /** * Number to display in badge * If > overflowCount, will show \"overflowCount+\" * @default 0 */ count?: number /** * Maximum count to display * @default 99 */ over…"}

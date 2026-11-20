@@ -2,13 +2,13 @@
 title: CLI reference
 description: Every `mdk` command, its arguments, flags and defaults, grouped as `mdk --help` groups them
 docs@tether_slug: reference/tooling/cli
-lastReviewedAt: "0.13.1"
+lastReviewedAt: "0.14.0"
 notes: "hand-maintained from the Commander definitions in packages/cli/src/commands until a generator target lands; the plan for that generator is in reference/maintainers/single-source-of-truth.md#cli-reference"
 ---
 
 ## Overview
 
-`mdk` is the command-line tool that scaffolds, runs and checks an MDK stack from the `mdk.yaml` spec in a project directory.
+`mdk` is the command-line tool that scaffolds, runs and checks an MDK stack from the [`mdk.yaml` stack file][mdk-yaml] in a project directory.
 This page lists every command with its arguments, flags and defaults, in the groups `mdk --help` uses. It states what each
 command takes and does, not how to sequence them: the [install guide][cli-install] puts `mdk` on your PATH, the
 [Worker guide][run-your-worker] runs a stack end to end, and the [first operator page][first-operator] creates the user who
@@ -23,8 +23,8 @@ so it has no `--dir`. Commands that print data honor the global `--output` flag.
 | Flag                 | Status   | Type      | Default | Description                                        |
 | -------------------- | -------- | --------- | ------- | -------------------------------------------------- |
 | `-o, --output <fmt>` | Optional | `string`  | `table` | Output format for data: `table`, `json`, or `yaml` |
-| `-v, --verbose`      | Optional | `boolean` | `false` | Increase log detail                                |
-| `--debug`            | Optional | `boolean` | `false` | Print stack traces for unexpected failures         |
+| `-v, --verbose`      | Optional | `boolean` | `false` | Turn on the MDK components' debug logs, by setting `DEBUG=mdk:*` unless `DEBUG` is already set |
+| `--debug`            | Optional | `boolean` | `false` | Print the stack trace of an unexpected failure     |
 | `--version`          | Optional | `boolean` | `false` | Print the CLI version and exit                     |
 | `-h, --help`         | Optional | `boolean` | `false` | Print usage help and exit                          |
 
@@ -32,8 +32,9 @@ so it has no `--dir`. Commands that print data honor the global `--output` flag.
 
 ### `mdk onboard`
 
-Sets up a new project interactively: checks the environment, asks which Workers, apps and dashboard to include, writes
-`mdk.yaml`, `package.json`, `.gitignore` and a project `README.md`, and prints the commands to run it. The policy it writes
+Sets up a new project interactively: checks the environment, asks which apps and dashboard to include, writes
+`mdk.yaml`, `package.json`, `.gitignore`, a project `README.md` and, when an app's setup asks for a secret, a project `.env`,
+and prints the commands to run it. The policy it writes
 binds the CLI's own account and each app, so the stack boots; the [first operator][first-operator] is created afterwards.
 It takes no flags and needs an interactive terminal.
 
@@ -61,7 +62,7 @@ manifest requests in `spec.rbac`. `<name>` follows the Worker rule.
 
 | Flag               | Status   | Type      | Default | Description                                                  |
 | ------------------ | -------- | --------- | ------- | ------------------------------------------------------------ |
-| `--org <scope>`    | Optional | `string`  | none    | npm scope for the package name                               |
+| `--org <scope>`    | Optional | `string`  | none    | Names the npm package `@<scope>/<name>` and the app id `com.<scope>.<name>` in `mdk-app.yaml` |
 | `--dir <path>`     | Optional | `string`  | `.`     | Project directory                                            |
 | `--flat`           | Optional | `boolean` | `false` | Scaffold into `<dir>` itself as the root of a standalone app repo, for `mdk add app github:…`; nothing is linked or added to `mdk.yaml` |
 | `--force`          | Optional | `boolean` | `false` | Overwrite the target if it already exists                    |
@@ -83,8 +84,10 @@ Scaffolds the MDK UI shell into `apps/dashboard`, named `<stack>-dashboard` from
 ### `mdk add app <source>` and `mdk add worker <source>`
 
 Installs a package from npm or GitHub with `npm install --ignore-scripts --save-exact`, checks it with the same rules as
-`mdk validate`, then adds it to `mdk.yaml` under `spec.apps` or `spec.workers`. A refused package leaves `mdk.yaml` and
-`package.json` unchanged. A path on disk is refused: reference a local package by path in `mdk.yaml` instead.
+`mdk validate`, then adds it to `mdk.yaml` under `spec.apps` or `spec.workers`. For a GitHub source, the commit the
+lockfile resolved is written into `package.json` as `github:<owner>/<repo>#<sha>`, so the dependency doesn't follow a
+branch or tag. A refused package leaves `mdk.yaml` and `package.json` unchanged. A path on disk is refused: reference a
+local package by path in `mdk.yaml` instead.
 
 `<source>` is one of:
 
@@ -98,13 +101,15 @@ Installs a package from npm or GitHub with `npm install --ignore-scripts --save-
 | Flag                   | Status   | Type      | Default | Applies to | Description                                                  |
 | ---------------------- | -------- | --------- | ------- | ---------- | ------------------------------------------------------------ |
 | `--dir <path>`         | Optional | `string`  | `.`     | both       | Project directory                                            |
-| `--name <name>`        | Optional | `string`  | derived | both       | Name in `mdk.yaml`; the default strips the `mdk-app-` or `mdk-worker-` prefix from the package name |
+| `--name <name>`        | Optional | `string`  | derived | both       | Name in `mdk.yaml`; the default strips the `mdk-`, `mdk-app-`, `mdk-worker-` or `mdk-plugin-` prefix from the package name |
 | `--no-install`         | Optional | `boolean` | `false` | both       | Skip `npm install`; the npm package must already be installed. Not for GitHub sources |
 | `--accept-permissions` | Optional | `boolean` | `false` | app        | When the app's requested Kernel access changed, replace its role in `spec.rbac` with the new request |
 | `--keep-permissions`   | Optional | `boolean` | `false` | app        | When the app's requested Kernel access changed, keep its role as it is and record the new request as seen |
 
 An app installs as service account `app:<name>`, with a credential under `.mdk/credentials/apps/` and a role in `spec.rbac`
-granting exactly what its `mdk-app.yaml` requests. A Worker without a bundled mock is added without `mock: true`.
+granting exactly what its `mdk-app.yaml` requests. A Worker whose package ships `mock/server.js` is added with `mock: true`; one that ships its simulator
+under another single `mock/*server*.js` name is added with that path, and one with no bundled mock is
+added without `mock`, so fill in `config.devices[].opts` with the address of your hardware.
 
 ### `mdk validate app [name]` and `mdk validate worker [name]`
 
@@ -133,7 +138,14 @@ The [Worker testing guide][test-a-worker-smoke] lists every `smoke.config.js` fi
 
 Starts the Kernel, Workers, app runtimes and Gateway from `mdk.yaml`, or one component. Runs in the foreground; Ctrl+C
 stops everything in reverse boot order. Each Kernel, Worker and app runs once per project, held by a lock under
-`.mdk/run/`. A `spec.rbac` that binds nobody is refused before boot, with `mdk rbac init` as the fix.
+`.mdk/run/`. The `all` and `kernel` targets refuse to boot a `spec.rbac` that binds no user or group and lets no bound
+account write the policy, since nobody could administer the Kernel; `mdk rbac init` is the fix.
+
+A Worker the Kernel refuses does not stop the rest of the stack: `mdk run` prints
+`! worker <name> not registered with the Kernel (<error>)` in place of its ready line. A device or
+name bound to another Worker survives a restart, and a `warning:` line names the `worker.terminate` call
+that releases it; a Worker the Kernel could not reach gets the DHT hint instead, which the
+[local and air-gapped profile][private-dht] covers.
 
 | Target      | Starts                                                        | Takes `[name]` |
 | ----------- | ------------------------------------------------------------- | -------------- |
@@ -142,7 +154,7 @@ stops everything in reverse boot order. Each Kernel, Worker and app runs once pe
 | `gateway`   | The Gateway alone, signing in as `mdk-gateway`                | no             |
 | `worker`    | One Worker and its mock devices                               | yes            |
 | `app`       | One app runtime in the foreground                             | yes            |
-| `dashboard` | The scaffolded UI shell's dev server, as its own process      | no             |
+| `dashboard` | The scaffolded UI shell's dev server, as its own process      | yes            |
 | `mcp`       | A standalone MCP server over the apps `spec.apps` declares; never part of `all` and needs the Kernel reachable | no |
 
 | Flag               | Status   | Type      | Default | Description                                                  |
@@ -153,6 +165,13 @@ stops everything in reverse boot order. Each Kernel, Worker and app runs once pe
 > [!NOTE]
 > `--detach` is reserved and refused until background runs land. `mdk run` stays in the foreground, and `mdk --help`
 > does not list the flag.
+
+`mdk run dashboard [name]` takes the directory name a dashboard was scaffolded under: `mdk create dashboard ops-ui`
+creates `apps/ops-ui`, so `mdk run dashboard ops-ui` runs it. The default dashboard (`mdk create dashboard` with no
+name) is `dashboard`, after its directory, not after its `<stack>-dashboard` package name. An unknown name is refused
+with the list of dashboards the project holds. With no name, `apps/dashboard` is used when it exists, otherwise the
+first app under `apps/` with a `dev` script; either way the chosen one is printed as `Dashboard: apps/<name>` before
+the dev server starts.
 
 `mdk run mcp` reads these optional keys from `spec.mcp` in `mdk.yaml`:
 
@@ -181,7 +200,7 @@ and repairs nothing; its one write is the CLI's caller key under `.mdk/trusted-k
 | `1`       | Gathering the report threw an unexpected error                             | Read the printed error and check `--dir`  |
 | `2`       | `--output` names a format other than `table`, `json` or `yaml`             | Pass one of the three                     |
 | `4`       | An environment precondition fails: old Node, a missing or invalid `mdk.yaml`, a declared package that does not resolve | Fix the precondition the report names |
-| `5`       | The stack is not fully up: Kernel or Gateway unreachable, a Worker not `READY`, an app not running | Check the component the report marks unhealthy |
+| `5`       | The stack is not fully up: Kernel or Gateway unreachable, a Worker not `READY`, an app not running; or the Kernel is up but the session ran out or the account may not list Workers, so they were not checked | Check the component the report marks unhealthy; for a refusal, `mdk login` again or bind the account to a role that may list Workers |
 
 ## Auth
 
@@ -197,9 +216,12 @@ sequence. Every command in this group takes `-d, --dir <path>` (default `.`).
 | `mdk rbac apply` | Validates `spec.rbac`, listing every problem, and hands it to the running Kernel, which switches at once. A refused policy leaves the one in force untouched |
 | `mdk rbac show`  | Compares `spec.rbac` with the policy the Kernel enforces                                                 |
 
-`apply` and `show` exit `1` when the Kernel is down or refuses the policy. `init` still writes `mdk.yaml` with the Kernel
-down and exits `0`, since the Kernel applies the file when it next starts; it exits `1` when an app's grant cannot be
-written. All three exit `1` on an invalid `spec.rbac`.
+`mdk rbac apply` exits `1` when the Kernel is down, when your session has expired or your permission is refused, or when the
+Kernel refuses the policy. `mdk rbac show` exits `1` when the Kernel is down or the policy could not be read, as with an expired
+session or a missing permission, and prints the error with no comparison; a policy that differs from `spec.rbac` exits `0`.
+`mdk rbac init` still writes `mdk.yaml` and exits `0` with the Kernel down or your sign-in refused, since the Kernel applies the
+file when it next starts; it exits `1` when an app is invalid or its grant fails, and reports a role that conflicts with the app's
+request without failing. All three exit `1` on an invalid `spec.rbac`, and `2` on an unknown `--output` format.
 
 ### `mdk user`
 
@@ -225,7 +247,8 @@ Flags of `mdk user add`:
 | `--password-stdin` | Optional | `boolean` | `false` | Read the password from `stdin` instead of prompting twice   |
 
 `mdk user passwd` takes `--password-stdin` too. A password is never accepted as a flag value, and the Kernel refuses one
-shorter than twelve characters.
+shorter than twelve characters. When the signed-in account may list users, `mdk user passwd`, `mdk user disable`, and
+`mdk user enable` refuse a name the Kernel has no user for and exit `1`.
 
 ### `mdk serviceaccount`
 
@@ -234,11 +257,11 @@ a named account per AI agent. The private key stays in `.mdk/credentials/` and n
 
 | Command                 | Effect                                                                                             |
 | ----------------------- | -------------------------------------------------------------------------------------------------- |
-| `mdk sa add <agent>`    | Creates an agent credential and registers it with a running Kernel; bind it to a role in `spec.rbac` next |
+| `mdk sa add <name>`     | Creates an agent credential and registers it with a running Kernel; bind it to a role in `spec.rbac` next |
 | `mdk sa rotate <name>`  | Replaces the key of `app:<app>` or an agent; the old key's sessions end                            |
-| `mdk sa remove <agent>` | Deletes an agent's credential and registration                                                      |
+| `mdk sa remove <name>`  | Deletes an agent's credential and registration; fails for a name that has neither                  |
 | `mdk sa token <name>`   | Signs in as the account and prints a short-lived access token for an HTTP client; `-o json` adds the refresh token |
-| `mdk sa list`           | Lists the credentials here against what the running Kernel registered                              |
+| `mdk sa list`           | Lists the credentials here against what the running Kernel registered; exits `1` when the registrations could not be read (session ran out or no permission), as `mdk user list` does |
 
 ### `mdk login <username>`, `mdk logout`, `mdk whoami`
 
@@ -247,11 +270,11 @@ it lasts, `mdk status`, `mdk user`, `mdk sa` and `mdk rbac` act as you, with wha
 session is an error, never a quiet return to the service account. `mdk logout` ends the session, and `mdk whoami` prints
 who the CLI acts as, honoring `-o json` and `-o yaml`.
 
-| Flag               | Status   | Type      | Default | Applies to | Description                     |
-| ------------------ | -------- | --------- | ------- | ---------- | ------------------------------- |
-| `--password-stdin` | Optional | `boolean` | `false` | `login`    | Read the password from `stdin`  |
+| Flag               | Status   | Type      | Default | Applies to  | Description                     |
+| ------------------ | -------- | --------- | ------- | ----------- | ------------------------------- |
+| `--password-stdin` | Optional | `boolean` | `false` | `mdk login` | Read the password from `stdin`  |
 
-## Agent enablement
+## Other
 
 ### `mdk skill add`
 
@@ -262,11 +285,13 @@ Installs the MDK Developer Skill suite into the project, so a coding agent knows
 | `--client <client>` | Optional | `string` | `all`   | Target client: `cursor`, `claude` or `all` |
 | `--dir <path>`      | Optional | `string` | `.`     | Project directory                        |
 
-## Meta
-
 ### `mdk version`
 
 Prints the package name and version to stdout. `mdk --version` prints the version alone.
+
+### `mdk help [command]`
+
+Prints usage help for `mdk`, or for one command; the same as `mdk <command> --help`.
 
 ## Next steps
 
@@ -276,6 +301,9 @@ Prints the package name and version to stdout. `mdk --version` prints the versio
 - [Read the CLI package notes][cli-package]: how the CLI is built, tested and run from source
 
 ## Links
+
+[mdk-yaml]: ../mdk-yaml.md
+<!-- docs@tether.io: mdk-yaml → reference/mdk-yaml -->
 
 [cli-install]: ../../guides/cli/install.md
 <!-- docs@tether.io: cli-install → guides/cli/run-with-npm -->
@@ -291,6 +319,9 @@ Prints the package name and version to stdout. `mdk --version` prints the versio
 
 [apps-guide]: ../../guides/gateway/apps.md
 <!-- docs@tether.io: apps-guide → guides/gateway/apps -->
+
+[private-dht]: ../../guides/deployment/private-dht.md
+<!-- docs@tether.io: private-dht → guides/deployment/private-dht -->
 
 [test-a-worker-smoke]: ../../guides/workers/test-a-worker.md#check-the-package
 <!-- docs@tether.io: test-a-worker-smoke → guides/workers/test-a-worker#check-the-package -->

@@ -6,7 +6,9 @@ docs@tether_slug: guides/miners/run-avalon-worker
 
 ## Overview
 
-This page details how to run the Canaan Avalon Worker. Select the development (mock) or real-device path.
+This page details how to run the Canaan Avalon Worker. The package is a directory-loaded Worker Plugin
+(`mdk-contract.json` plus handler files) that `mdk run` hosts from `mdk.yaml`, or that your own Node.js service
+hosts on [`WorkerRuntimeV2`][worker-runtime-v2]. Select the development (mock) or real-device path.
 
 ## Prerequisites
 
@@ -14,13 +16,13 @@ Review [common deployment prerequisites][miner-guide-assumptions] before you sta
 
 Deployment-specific requirements:
 
-- A Node.js service or script in your deployment that runs the MDK Worker and registers devices, run from a clone of
-  the MDK repository after `npm install` at its root. `@tetherto/mdk-worker-avalon` is not published to npm, so
-  `require('@tetherto/mdk-worker-avalon')` resolves only through the repository's workspace
+- An MDK project with `mdk.yaml` (`mdk create`), or a Node.js service or script in your deployment that hosts the Worker.
+  `@tetherto/mdk-worker-avalon` is not published to npm, so the package resolves only through the workspace of an MDK
+  repository clone after `npm install` at its root: keep the project or script inside that clone
 - A supported Avalon device reachable from the machine or container running the Worker
 - The miner API reachable over the native CGMiner TCP API, typically port `4028`
-- A `password` for each device: reads need no credentials, but write commands such as a pool change send it, and the Worker
-  refuses to open a device without one, which stays offline with `ERR_DEVICE_CONFIG_INVALID`
+- A `password` for each device: reads need no credentials, and the Worker's own validation refuses to load a device without one
+  (`ERR_DEVICE_CONFIG_INVALID`)
 
 <Steps>
 
@@ -31,8 +33,33 @@ Deployment-specific requirements:
 <details>
 <summary>Run against a mock</summary>
 
-The Avalon Worker ships a mock A1346 that answers the CGMiner API with canned data. Run the mock in one terminal and the
-Worker in a second, both from the repository root.
+The Avalon Worker ships a mock A1346 that answers the CGMiner API with canned data. Declare the Worker in `mdk.yaml`
+with `mock: true` and `mdk run` starts one mock per device, on the port each device names:
+
+```yaml
+spec:
+  workers:
+    - name: avalon
+      package: '@tetherto/mdk-worker-avalon'
+      config:
+        mock: true
+        devices:
+          - id: AV-DEV-001
+            opts: { address: 127.0.0.1, port: 14030, password: admin }
+```
+
+```bash
+mdk run
+```
+
+Expected output includes a line for the Worker:
+
+```text
+✔ worker avalon ready 3538566ecb38…
+```
+
+To host the Worker yourself instead of with `mdk run`, run the mock in one terminal and a host script in a second,
+both from the repository root:
 
 1. Start the mock on the CGMiner port:
 
@@ -49,26 +76,22 @@ Worker in a second, both from the repository root.
    const os = require('os')
    const path = require('path')
    const { getKernel } = require('@tetherto/mdk-core')
-   const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
+   const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
    const main = async () => {
      const kernel = await getKernel({ handleSignals: true })
 
-     const worker = await startAvalonWorker({
+     const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-avalon/package.json')), {
        workerId: 'avalon-dev',
-       model: 'a1346',
        storeDir: path.join(os.tmpdir(), 'mdk-dev', 'avalon'),
        allowedKeys: [kernel.getClientPublicKey()],
-       seedDevices: [{
-         info: { container: 'dev', serialNum: 'AV-DEV-001' },
-         opts: { address: '127.0.0.1', port: 4028, password: 'admin' }
-       }]
+       devices: [{ deviceId: 'AV-DEV-001', config: { address: '127.0.0.1', port: 4028, password: 'admin' } }]
      })
-     await kernel.registerWorker(worker.runtime.getPublicKey())
-     kernel._cleanup.push(worker.stop) // Ctrl+C stops the Worker before the Kernel
+     await runtime.start()
+     await kernel.registerWorker(runtime.getPublicKey())
+     kernel._cleanup.push(() => runtime.stop()) // Ctrl+C stops the Worker before the Kernel
 
      console.log('Kernel HRPC key:', kernel.getPublicKey().toString('hex'))
-     console.log('Device:', worker.services.provisioning.listDeviceIds()[0])
      console.log('Ctrl+C to stop.')
    }
 
@@ -81,19 +104,18 @@ Worker in a second, both from the repository root.
    node avalon-dev.js
    ```
 
-Expected output, with your own key and device ID:
+Expected output, with your own key:
 
 ```text
-Kernel HRPC key: e9c1f37dc46f5a6a08fcd6d75a697477491e82b9282d9f2d72bee2ab584d0c70
-Device: 17aad636-6ebb-4cb0-8865-c7a200625dfe
+Kernel HRPC key: a4303ca6404442264fda55e37a35db3400eeab1a4b4b68f9e1413fff99f9521e
 Ctrl+C to stop.
 ```
 
 Ctrl+C stops the Worker, then the Kernel: the script opts into signal handling and chains the Worker's `stop`, so a
 second run starts without a lock error. [Stop the services cleanly][teardown] covers the contract.
 
-The Kernel then pulls live telemetry (hashrate, power, temperature) from the mock through the Worker. The mock's
-options are in [USAGE.md][avalon-usage].
+Either way, the Kernel then pulls live telemetry (hashrate, power, temperature) from the mock through the Worker. The
+mock's options are in [USAGE.md][avalon-usage].
 
 </details>
 
@@ -107,32 +129,47 @@ options are in [USAGE.md][avalon-usage].
 
 Avalon ships one model family today, `a1346` — confirm this against the [USAGE.md][avalon-usage] as new models are added.
 
-#### 2.2 Register your miner
+#### 2.2 Declare your miner
 
-Avalon devices use the native CGMiner TCP API on port 4028. Reads need no credentials, but write commands such as a pool
-change send the device password, and the Avalon Worker Plugin refuses to open a device registered with no `password`: it
-stays offline with `ERR_DEVICE_CONFIG_INVALID`. Add this code to the Node.js service or script that runs the MDK Worker in your
-deployment. The snippet shows the minimum boot call seeding one Avalon device; replace the example IP address and
-password with your miner's values:
+Avalon devices use the native CGMiner TCP API on port 4028. Reads over the API need no credentials, but the Avalon Worker Plugin's
+own validation refuses to load a device with no `password` (`ERR_DEVICE_CONFIG_INVALID`).
+
+> [!WARNING]
+> `setupPools` sends no device credentials, so the miner rejects the pool change, keeps its pools, and reboots. With a `pools`
+> parameter the command returns `success: false`; without one it still returns `success: true`.
+
+Point the `mdk.yaml` entry at the real miner and drop `mock`:
+
+```yaml
+spec:
+  workers:
+    - name: avalon
+      package: '@tetherto/mdk-worker-avalon'
+      config:
+        devices:
+          - id: AV-001
+            opts: { address: 192.168.1.30, port: 4028, password: admin }
+```
+
+Without `mdk run`, add this to the Node.js service or script that hosts the Worker. The snippet seeds one Avalon
+device; replace the example IP address and password with your miner's values:
 
 ```js
+const path = require('path')
 const { getKernel } = require('@tetherto/mdk-core')
-const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
 const main = async () => {
   const kernel = await getKernel()
 
-  const worker = await startAvalonWorker({
+  const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-avalon/package.json')), {
     workerId: 'avalon-rack-1',
-    model: 'a1346',
     storeDir: './store/avalon-rack-1',
     allowedKeys: [kernel.getClientPublicKey()],
-    seedDevices: [{
-      info: { container: 'site-1', serialNum: 'AV-001' },
-      opts: { address: '192.168.1.30', port: 4028, password: 'admin' }
-    }]
+    devices: [{ deviceId: 'AV-001', config: { address: '192.168.1.30', port: 4028, password: 'admin' } }]
   })
-  await kernel.registerWorker(worker.runtime.getPublicKey())
+  await runtime.start()
+  await kernel.registerWorker(runtime.getPublicKey())
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })
@@ -144,48 +181,12 @@ main().catch((err) => { console.error(err); process.exit(1) })
 > [!WARNING]
 > Make sure each miner's IP is reachable from the machine or container running the Worker before registering. Commands act on physical hardware — prioritize thermal safety.
 
-`seedDevices` only seeds a fresh, empty `storeDir` — once persisted, the device set survives restarts on its own. To add a device to an
-already-running fleet, push a `registerThing` write action through the Kernel instead. The Kernel routes it to the Worker named in
-`params[0].workerId` and runs it once the action has the approvals that Worker requires. `kernel` is the handle the boot
-script holds; from another process, pass the Kernel's public key instead:
-
-```js
-const { createMdkClient } = require('@tetherto/mdk-client')
-const { name, privateKeyPem } = require('./.mdk/credentials/agents/provisioner.json')
-
-const main = async () => {
-  const client = createMdkClient({
-    kernelKey: kernel.getPublicKey(),
-    kernelCredential: { name, privateKey: privateKeyPem }
-  })
-  await client.connect()
-  await client.pushAction({
-    query: {},
-    action: 'registerThing',
-    voter: 'provisioner',
-    authPerms: ['miner:w'],
-    params: [{
-      workerId: 'avalon-rack-1',
-      id: 'AV-002',
-      info: { container: 'site-1', serialNum: 'AV-002' },
-      opts: { address: '192.168.1.31', port: 4028, password: 'admin' }
-    }]
-  })
-}
-
-main().catch((err) => { console.error(err); process.exit(1) })
-```
-
-`registerThing` is a write action, so the Kernel evaluates it against `spec.rbac` before any Worker sees it.
-`mdk sa add provisioner` writes the credential this reads, and the account needs `actions: write` to push, plus
-`devices: write`. [Provisioning a device][provisioning-rules] covers how to scope that grant and why a successful push
-is not yet a live device.
-
-
 > [!IMPORTANT]
-> `registerThing` persists the device config immediately, but the running Worker does not pick it up until it is stopped and restarted (`await worker.stop()`, then call `startAvalonWorker` again with the same `storeDir` and no `seedDevices`) — there is no hot-add.
+> The device list is fixed at construction — there is no `registerThing`/`updateThing`/`forgetThings` equivalent.
+> Adding, updating, or removing a miner means editing the device list and restarting the Worker.
 
-For the full `seedDevices`/`registerThing` option reference and the mock `createServer` options, see the Worker's [USAGE.md][avalon-usage] and the shared [install pattern][install-pattern].
+The full device option reference and the mock `createServer` options are in the Worker's [USAGE.md][avalon-usage]
+and the shared [install pattern][install-pattern].
 
 </Step>
 
@@ -193,10 +194,9 @@ For the full `seedDevices`/`registerThing` option reference and the mock `create
 
 ## Troubleshooting
 
-A working development run of `avalon-dev.js` prints `Kernel HRPC key:` and `Device:`, then stays running until Ctrl+C.
-
-If the script does not print both values, or if `npm run mock` reports port `4028` already in use, follow
-[miner troubleshooting][miner-troubleshooting].
+An unreachable miner doesn't fail at load time: the Worker reports the device online and the failure surfaces as
+`ERR_MINER_UNREACHABLE` inside the telemetry channel or command response that touched the network. If the Worker
+doesn't come up, or a mock port is already in use, follow [miner troubleshooting][miner-troubleshooting].
 
 ## Next steps
 
@@ -220,11 +220,11 @@ If the script does not print both values, or if `npm run mock` reports port `402
 [deployment-topologies]: ../../concepts/deployment-topologies.md
 <!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
-[avalon-contract]: ../../../backend/workers/miners/avalon/plugin/mdk-contract.json
-<!-- docs@tether.io: avalon-contract → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/plugin/mdk-contract.json -->
+[avalon-contract]: ../../../backend/workers/miners/avalon/mdk-contract.json
+<!-- docs@tether.io: avalon-contract → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/mdk-contract.json -->
+
+[worker-runtime-v2]: ../../../backend/core/mdk-worker/lib/worker-runtime-v2.js
+<!-- docs@tether.io: worker-runtime-v2 → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/lib/worker-runtime-v2.js -->
 
 [miner-troubleshooting]: troubleshooting.md
 <!-- docs@tether.io: miner-troubleshooting → guides/miners/troubleshooting -->
-
-[provisioning-rules]: ../security/index.md#provisioning-a-device
-<!-- docs@tether.io: provisioning-rules → guides/security#provisioning-a-device -->

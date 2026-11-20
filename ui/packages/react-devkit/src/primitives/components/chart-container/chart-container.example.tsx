@@ -16,18 +16,7 @@ const LEGEND_DATA = [
 ]
 
 const MockChart = () => (
-  <div
-    style={{
-      height: 160,
-      background: 'var(--mdk-color-surface-secondary, #1a1a2e)',
-      borderRadius: 4,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: 'var(--mdk-color-text-secondary, #888)',
-      fontSize: 13,
-    }}
-  >
+  <div className="mdk-example-tall mdk-example-center mdk-example-surface mdk-example-caption">
     Chart content
   </div>
 )
@@ -36,7 +25,7 @@ export const ChartContainerExample = () => {
   const [range, setRange] = useState('24h')
 
   return (
-    <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-xl">
       {/* Basic with title only */}
       <ChartContainer title="Simple Chart">
         <MockChart />

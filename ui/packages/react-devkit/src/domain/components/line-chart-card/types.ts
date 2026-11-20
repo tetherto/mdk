@@ -70,7 +70,10 @@ export type TimelineOption = {
   value: string
   /** Range-selector button text */
   label: string
-  /** Not forwarded to the range selector; currently has no effect */
+  /**
+   * Renders the option greyed out and unselectable — a range the current data source cannot
+   * serve, say. Honoured by both the card's range selector and `TimelineSelector`
+   */
   disabled?: boolean
 }
 

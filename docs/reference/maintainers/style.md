@@ -8,10 +8,19 @@ Context: globs: docs/**/*.md, **/README.md, backend/**/docs/**/*.md, ui/**/docs/
 # Style
 
 - US English
+- Serial comma before the last item of a list: "Kernel, Workers, and Gateway", not "Kernel, Workers and Gateway". Vale flags
+  most misses with `Google.OxfordComma` (`.vale.ini`); a list of longer phrases can slip past it.
 - Sentence case headings (first word and proper nouns only)
 - Proper nouns for MDK components, capitalize in prose (plurals too): Gateway, Worker, Worker Plugin, Kernel
 - Present tense, direct voice (e.g. "This page walks through…", not "This page will walk through…")
+- No archeology: describe current behavior only, as if the software always worked this way. No "used to", "was
+  renamed from", "previously fell back to", "as of vX.Y" or other before/after framing in prose, tables or
+  admonitions. Change history belongs in `CHANGELOG.md`.
 - Code identifiers in backticks (package names, file names, function names, etc.)
+- Name a CLI command in full, binary included, even in passing: `mdk create app`, not `create app`. Readers copy what is in
+  backticks, and a bare subcommand fails with `command not found`. Arguments named on their own stay bare (`kernel` as an
+  `mdk run` target, `--strict`).
+- In a code block that runs the CLI another way (`node "$CLI" create app`), comments match that block's invocation.
 - Title lives in frontmatter only; don't repeat it as an H2
 - Restrict line length to ~150 chars (context is prose; tables are an exception)
 - Bullet lists: single-sentence bullet no stop (e.g. `- Avalon` not `- Avalon.`); compound/multi-sentence bullet, stop after every sentence including the last
@@ -55,19 +64,22 @@ errors, fields, safety/annotation values). If yes, use a table; leave genuine na
   centralized error reference drifts from the source that throws it). Canonical columns: `Code | Fires when | Fix` —
   no separate `Meaning` column; state the general condition and, if there's more than one specific trigger, enumerate
   them in the `Fires when` cell rather than splitting into a fourth column.
+- Errors an HTTP caller receives on any app route are the exception: they are
+  [declared once and generated](single-source-of-truth.md#http-api-references), never tabled by hand.
+- API surfaces: a public API surface is documented from its declaration, in the owning package's reference, and generated
+  where a structured source exists, such as the [HTTP API references](single-source-of-truth.md#http-api-references). The prose
+  that describes an operation lives in the declaration (a route's `description`), where review checks it against the code. Guides
+  link to the owning reference rather than copying its table, and skills route to the same source.
 - Behavior mappings (an input value or declared field mapped to the resulting behavior, e.g. a route's `safety`
   value mapped to its MCP tool annotations): a table with the input in the first column, the resulting behavior in
   the last.
-- Describe current behavior only, present tense, as if the software always worked this way. No "used to", "was
-  guessed from", "previously fell back to", or other before/after framing in a table or its surrounding prose — that
-  belongs in `CHANGELOG.md`, not here.
 - Verify every row against the actual source (the function/config it describes) before writing it, and again after
   any later style-only edit to the table (a prose-to-table conversion can silently merge or drop a distinct case).
 
 ## Tables sizing
 
 Favor the ease of the person reading tables by aligning as many columns as possible to fit to a standard
-screen size. Where rows cant be accommodated due to their length, allow the overflow:
+screen size. Where rows can't be accommodated due to their length, allow the overflow:
 1. Compute each cell's width (content + 1 space padding each side).
 2. Find the width of the largest, readable column — call it the natural width.
 3. Pad the header, separator, and every cell that's close to/under the natural width up to that width (full alignment).
@@ -86,6 +98,22 @@ screen size. Where rows cant be accommodated due to their length, allow the over
 
 Box-drawing tree (`├──`, `│`, `└──`), root name first, nested dirs indented, inline `#` comment
 per entry. See `backend/core/gateway/README.md`'s `## Directory layout` for the reference shape.
+
+## Samples that another file owns
+
+A sample `package.json`, config file or command snippet often restates a file this repo already owns: a CLI
+template, a generated manifest, another package's reference. The owning file is the single source of truth, so a
+page carries only the part it teaches and links the owner for the rest.
+
+- Show the fields, flags or rows the page itself adds, and link the owning file from the sentence that introduces
+  the sample (a reference-style definition with its port signal on a page that ports)
+- Never restate a pinned version, a dependency list or a generated table another file carries. A copy drifts the
+  moment the owner changes, and a reader cannot tell which one is current
+- When a copy has drifted, remove the duplication rather than syncing the values. Syncing re-drifts at the next
+  release, so the page keeps its delta and the owner keeps the rest
+- A deliberate superset is fine when the page says what it adds and to what. [Build a third-party
+  Worker](../../guides/workers/build-a-worker.md) adds a lint and test setup over the `mdk create worker`
+  template manifest, and shows only that
 
 ## Code blocks
 

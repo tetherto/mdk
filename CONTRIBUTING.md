@@ -52,6 +52,18 @@ Publishing makes an integration available to install; catalogue listings are mai
 Include setup requirements, supported capabilities, configuration, permissions, and release information in your package's README.
 The [CLI installation reference][integration-add-package] explains how operators add packages from npm or GitHub to their stack.
 
+### Listing criteria
+
+Maintainers review a listing request against checks you can run yourself, in your own CI.
+
+| Integration    | Criterion                                                  | What it covers                                                     |
+| -------------- | ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| Worker         | `mdk validate worker --path <dir> --smoke` exits `0`       | [Contract and mock-device checks][integration-worker-checks]       |
+| App            | `mdk validate app --path <dir> --smoke --strict` exits `0` | [Manifest, permission, and route checks][integration-add-package]  |
+
+The criteria cover conformance only. A listing is not a security review of the package: an operator reviews a third-party Worker or
+app before installing it, and the [`mdk-worker-security` and `mdk-app-security` skills][integration-skill-suite] support that review.
+
 ### List a Worker
 
 Request a listing in the [supported Workers catalogue][integration-workers] by [opening an issue][integration-issues] with a link to your Worker contract,
@@ -81,8 +93,8 @@ including UI source such as [`ui/packages/ui-foundation/src/store/`][ui-foundati
 - **Keep per-domain ignores in that domain's own `.gitignore`** ([`ui/.gitignore`][ui-gitignore], the per-package backend `.gitignore`s),
 not the root. Things like `dist`, `.turbo`, and `build` belong to a domain.
 - **Lint/format/type config is domain-owned, not shared at the root.** [`ui/`][ui-readme] ships its own [`.oxlintrc.json`][ui-oxlint] /
-[`tsconfig.base.json`][ui-tsconfig] / `.prettierrc`; backend uses `standard`. Do not add a root-level lint/tsconfig/prettier
-that would apply across domains.
+[`tsconfig.base.json`][ui-tsconfig] / `.prettierrc`; backend uses `@bitfinex/lint-js` (`bfx-lint-js`), whose ruleset ships
+with the dependency and needs no config file. Do not add a root-level lint/tsconfig/prettier that would apply across domains.
 - **A genuinely shared convention is fine if it applies identically to every domain** - e.g. committing
 `config/*.json.example` while ignoring the generated `config/*.json`. Note it as shared so the intent is clear.
 
@@ -149,6 +161,10 @@ npm run test        # run tests
 npm run lint        # run linters
 npm run typecheck   # check types
 ```
+
+> [!IMPORTANT]
+> Integration tests can fail with `CHANNEL_CLOSED` on macOS when endpoint-security or
+> traffic-inspecting network tools are running. Run them on Linux or in CI.
 
 Select checks according to the affected packages and behavior. Documentation-only changes need the
 [documentation checks][docs-checks] rather than the full application test suite.
@@ -313,7 +329,8 @@ flowchart TB
 
 ## Code standards
 
-MDK uses **StandardJS** style to keep the codebase consistent and easy to review across repositories.
+Backend JavaScript follows the `@bitfinex/lint-js` ruleset (`bfx-lint-js`, run by `npm run lint`) to keep the codebase consistent
+and easy to review across repositories.
 
 Key rules:
 
@@ -330,6 +347,9 @@ MDK follows **Semantic Versioning**:
 - **MAJOR** (`1.x.x`): breaking changes
 - **MINOR** (`x.1.x`): new backward-compatible features
 - **PATCH** (`x.x.1`): backward-compatible bug fixes
+
+The [versioning and deprecation policy](docs/reference/versioning.md) defines which interfaces this covers and how a deprecation
+is announced and removed. A change that deprecates an interface follows it.
 
 When the MDK team provides a release, they are cut from a `release/<version>` branch, verified in CI,
 promoted to the public repo, then tagged. For the full release process and checklist, see [RELEASING.md][releasing].
@@ -370,6 +390,12 @@ Happy contributing, and thanks for helping improve MDK! 🚀
 
 [integration-add-package]: packages/cli/README.md#adding-and-validating-apps-and-workers
 <!-- docs@tether.io: integration-add-package → https://github.com/tetherto/mdk/blob/main/packages/cli/README.md#adding-and-validating-apps-and-workers -->
+
+[integration-worker-checks]: docs/guides/workers/test-a-worker.md#check-the-package
+<!-- docs@tether.io: integration-worker-checks → guides/workers/test-a-worker#check-the-package -->
+
+[integration-skill-suite]: packages/mdk-skill/README.md
+<!-- docs@tether.io: integration-skill-suite → https://github.com/tetherto/mdk/blob/main/packages/mdk-skill/README.md -->
 
 [integration-workers]: backend/workers/docs/supported-workers.md
 <!-- docs@tether.io: integration-workers → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/supported-workers.md -->

@@ -27,8 +27,7 @@ export type UseTokenPollingOptions = {
  *
  * The hook only schedules. Which endpoint gets called, how often, what counts as
  * the session ending, and where the new token is stored are all the provider's
- * decisions — this file no longer names `POST /auth/token` or the Gateway's
- * 401/500 convention. A provider without `refresh` (`noAuth`, or a backend with
+ * decisions. A provider without `refresh` (`noAuth`, or a backend with
  * non-expiring keys) makes the hook a no-op, so it stays safe to mount
  * unconditionally.
  *
@@ -36,14 +35,10 @@ export type UseTokenPollingOptions = {
  * up a token the moment `bootstrap` writes one.
  *
  * @remarks
- * The refresh endpoint a given `AuthProvider` calls (e.g. `gatewayRedirectAuth`'s
- * `POST /auth/token`) is not served by the three built-in plugins (`telemetry`,
- * `site-hashrate`, `site-monitor`). A `/auth/token` route ships in
- * `@tetherto/mdk-plugin-auth`, but see
- * [the bundled auth plugin](https://github.com/tetherto/mdk/blob/main/backend/core/plugins/README.md#the-bundled-auth-plugin)
- * for why it throws rather than runs. Add your own
- * [Gateway plugin](https://docs.tether.io/mdk/guides/gateway/plugins) for
- * this route instead.
+ * The provider decides which endpoint a refresh calls, so the provider has to
+ * match its backend: against an MDK stack, that is `passwordAuth`.
+ * [Choosing an auth provider](https://github.com/tetherto/mdk/blob/main/ui/packages/react-adapter/README.md#authentication)
+ * covers each one and the backend it expects.
  *
  * @category auth
  */

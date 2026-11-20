@@ -7,8 +7,8 @@ docs@tether_slug: guides/gateway
 ## Overview
 
 The Gateway is an HTTP router for apps: it reads each app's route table, forwards every request to that app's own runtime
-process over HRPC, and runs no app code itself. Each app builds its own [`@tetherto/mdk-client`][mdk-client-readme] inside its
-runtime. These guides cover how to run the Gateway and how to build, publish and install the apps it serves.
+process over HRPC, and runs no app code itself. Each app has its own [`@tetherto/mdk-client`][mdk-client-readme], signed in as the
+app's service account. These guides cover how to run the Gateway and how to build, publish and install the apps it serves.
 
 > [!NOTE]
 > An AI agent reaches MDK over MCP, not the Gateway's HTTP surface directly. MCP is served by a standalone

@@ -44,6 +44,8 @@ export type DialogContentProps = {
    * @default true
    */
   closeOnEscape?: boolean
+  /** Additional class for the overlay behind the dialog */
+  overlayClassName?: string
 } & DialogHeaderProps
 
 /**
@@ -85,6 +87,7 @@ const DialogHeader = ({
         <DialogClose asChild>
           <Button
             icon={<Cross2Icon />}
+            aria-label="Close"
             onClick={onClose}
             variant="secondary"
             className="mdk-dialog__header__close"
@@ -151,6 +154,7 @@ const DialogContent = forwardRef<
       bare,
       closeOnClickOutside = true,
       closeOnEscape = true,
+      overlayClassName,
       onInteractOutside,
       onEscapeKeyDown,
       ...props
@@ -179,7 +183,7 @@ const DialogContent = forwardRef<
 
     return (
       <DialogPortal>
-        <DialogOverlay />
+        <DialogOverlay className={overlayClassName} />
         <DialogPrimitive.Content
           ref={ref}
           className={cn('mdk-dialog__content', className)}

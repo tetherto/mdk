@@ -15,16 +15,18 @@ const { createTestAuth } = require('../../lib/testing')
 // reach node{1,2,3}.hyperdht.org over UDP, so they pass only on a runner with
 // outbound UDP and are slowed by every real round trip. `useTestnet` stands up
 // an isolated loopback testnet for a test and records its bootstrap here, which
-// `dhtNode` and `hrpcListener` then apply. Call it in any test that opens a DHT.
+// `dhtNode` and `hrpcListener` then apply, bound to loopback like the testnet.
+// Call it in any test that opens a DHT.
+const LOOPBACK = '127.0.0.1'
 let bootstrap = null
 async function useTestnet (t) {
-  const net = await createTestnet(3, t.teardown)
+  const net = await createTestnet(4, t.teardown)
   bootstrap = net.bootstrap
   t.teardown(() => { bootstrap = null })
   return bootstrap
 }
-const dhtNode = (opts = {}) => new DHT({ bootstrap, ...opts })
-const hrpcListener = (opts) => new HRPCListener({ bootstrap, ...opts })
+const dhtNode = (opts = {}) => new DHT({ bootstrap, host: LOOPBACK, ...opts })
+const hrpcListener = (opts) => new HRPCListener({ bootstrap, dhtHost: LOOPBACK, ...opts })
 
 // A listener with a test issuer and policy; `auth.token()` mints an access token for envelope.auth.
 async function authed (t, opts, authOpts) {

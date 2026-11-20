@@ -207,7 +207,9 @@ const buildLegendLabels = (chart: Chart): LegendLabelItem[] => {
   const datasets = chart.data.datasets ?? []
   return datasets.map((dataset, i) => {
     const meta = chart.getDatasetMeta(i)
-    const isHidden = meta.hidden === true
+    // As Chart.js decides visibility: a legend click sets `meta.hidden`, until then the
+    // dataset's own `hidden` applies
+    const isHidden = typeof meta.hidden === 'boolean' ? meta.hidden : dataset.hidden === true
 
     const strokeStyleRaw = dataset.borderColor ?? dataset.backgroundColor ?? '#888'
     const strokeStyle = typeof strokeStyleRaw === 'string' ? strokeStyleRaw : '#888'
@@ -565,6 +567,9 @@ export const buildBarChartOptions = ({
           usePointStyle: false,
           boxWidth: 12,
           color: CHART_COLORS.legendLabel,
+          // Without it these options replace defaultChartOptions' legend labels, and Chart.js's
+          // own strike through hidden series and fill swatches in full colour
+          generateLabels: buildLegendLabels,
         },
       },
       tooltip: tooltipConfig

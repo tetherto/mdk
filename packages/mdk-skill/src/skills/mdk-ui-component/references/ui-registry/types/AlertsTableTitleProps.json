@@ -1,0 +1,1 @@
+{"name":"AlertsTableTitleProps","path":"src/domain/components/alerts/alerts-table-title/alerts-table-title.tsx","kind":"type","description":"","public":true,"definition":"{ /** Section heading */ title: ReactNode /** Optional subtitle or count badge */ subtitle?: ReactNode /** Additional CSS class */ className?: string }"}

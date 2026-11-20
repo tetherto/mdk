@@ -63,6 +63,7 @@ const Loader = forwardRef<HTMLDivElement, LoaderProps>(
           <span
             key={index}
             className={cn('mdk-loader__dot', `mdk-loader__dot--${color}`)}
+            // oxlint-disable-next-line react/forbid-dom-props -- dot size and stagger derived from the size prop and index
             style={{
               width: `${size}px`,
               height: `${size}px`,

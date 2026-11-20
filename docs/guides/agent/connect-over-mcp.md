@@ -112,6 +112,10 @@ async function mcpHeaders () {
 }
 ```
 
+> [!TIP]
+> MDK's agent needs none of this code: `mdk-agent --mcp-credential` and `createAgent({ mcp: { credential } })`
+> [sign the agent in and renew its token][agent-mcp-signin] for you.
+
 </Step>
 
 <Step>
@@ -150,7 +154,7 @@ header needs a fresh token every 10 minutes; one that runs your code can use the
 
 | Symptom                           | Cause                                                | Fix                                                     |
 | --------------------------------- | ---------------------------------------------------- | ------------------------------------------------------- |
-| `401` from `/mcp`                 | No token, or an expired one                          | Send `authorization: Bearer <token>` with a fresh token |
+| `401` from `/mcp`                 | No token, an expired one, or one from another stack  | Send `authorization: Bearer <token>` with a fresh token from this stack |
 | `tools/list` returns no tools, and a call answers `Tool ops_summary not found` | No rule grants the agent any route | Bind it in `spec.rbac`, then run `npx mdk rbac apply` |
 | `ERR_AUTH_FORBIDDEN: operator-agent may not get ops/api/ops/summary` from the Gateway | The agent's rules don't cover that resource and verb | Widen the rule's `resources` or `verbs` |
 | `ERR_APP_RUNTIME_UNAVAILABLE`     | The app isn't running                                | Start the stack with `npm run dev`                      |
@@ -171,3 +175,6 @@ header needs a fresh token every 10 minutes; one that runs your code can use the
 
 [gateway-deployment]: gateway-deployment.md
 <!-- docs@tether.io: gateway-deployment → guides/agent/gateway-deployment -->
+
+[agent-mcp-signin]: ../../../backend/core/agent/README.md#sign-in-to-an-mcp-server-that-checks-agents
+<!-- docs@tether.io: agent-mcp-signin → https://github.com/tetherto/mdk/blob/main/backend/core/agent/README.md#sign-in-to-an-mcp-server-that-checks-agents -->

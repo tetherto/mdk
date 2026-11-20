@@ -27,7 +27,11 @@ export const TimelineLegend = memo(({ datasets }: TimelineLegendProps) => {
     <div className="mdk-timeline-chart__legend">
       {uniqueLabels.map(([label, color]) => (
         <div key={label} className="mdk-timeline-chart__legend-item">
-          <span className="mdk-timeline-chart__legend-color" style={{ backgroundColor: color }} />
+          <span
+            className="mdk-timeline-chart__legend-color"
+            // oxlint-disable-next-line react/forbid-dom-props -- per-label colour from the timeline data
+            style={{ backgroundColor: color }}
+          />
           <span className="mdk-timeline-chart__legend-label">{label}</span>
         </div>
       ))}

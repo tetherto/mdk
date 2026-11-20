@@ -4,6 +4,7 @@ const crypto = require('crypto')
 const debug = require('debug')('mdk:kernel:hrpc')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
+const { dhtPortOpts } = require('../dht-port')
 const { serialize, deserialize } = require('../protocol/envelope')
 const { routeEnvelope } = require('./envelope-router')
 const { parseAllowlist, normalizeKey } = require('./caller-auth')
@@ -49,6 +50,7 @@ class HRPCListener {
     this._dht = new DHT({
       keyPair: DHT.keyPair(seedDht),
       bootstrap: this.bootstrap,
+      ...dhtPortOpts(this.bootstrap),
       ...(this.dhtHost ? { host: this.dhtHost } : {})
     })
     this._rpc = new HyperswarmRPC({ dht: this._dht, seed: seedRpc })

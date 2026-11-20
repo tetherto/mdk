@@ -73,6 +73,7 @@ export const getAlertsTableColumns = ({
 
       return (
         <span
+          // oxlint-disable-next-line react/forbid-dom-props -- severity colour, falling back to the raw severity value
           style={{
             color: SEVERITY_COLORS[severity as keyof typeof SEVERITY_COLORS] || severity,
           }}

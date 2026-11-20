@@ -19,8 +19,9 @@ license: Apache-2.0
 MDK UI is composition only. A Gateway route serves the data, a hook fetches it and shapes it into a view, a
 presentational component renders the view with `@tetherto/mdk-react-devkit`, and a thin page wires them together.
 This skill builds that chain in either place MDK UI lives. It never invents a component or a prop: every devkit
-component and its props come from [`references/ui-registry.json`](./references/ui-registry.json), and every helper or
-hook (`buildBarChartOptions`, `usePeriod`) from the installed package's type declarations (`dist/*.d.ts`).
+component and its props come from the registry in [`references/ui-registry/`](./references/ui-registry/index.json), and
+every helper or hook (`buildBarChartOptions`, `usePeriod`) from the installed package's type declarations
+(`dist/*.d.ts`).
 
 Import everything from the `@tetherto/mdk-react-devkit` root, whatever a registry entry's `path` says: the root
 re-exports both the primitives and the domain layer, so the specifier never depends on which one a component lives in.
@@ -165,8 +166,9 @@ export const ThingPanel = ({ view }: { view: ThingView }) => {
 }
 ```
 
-Pick components from the registry: `indexes.componentsByName` gives the entry, and its `props` are the only props
-that exist. Prefer entries with `tier: "agent-ready"`.
+Pick components from the registry. [`index.json`](./references/ui-registry/index.json) lists every component by
+category, and `components/<Name>.json` beside it is that component's entry: its `props` are the only props that exist.
+Read only the entries you use, not the whole folder. Prefer entries with `tier: "agent-ready"`.
 
 | Need                                          | Component                                  |
 | --------------------------------------------- | ------------------------------------------ |
@@ -226,7 +228,7 @@ In a dashboard, add the page under `src/pages/`, wrap it in `PageLayout`, and ap
 | Call `fetch` in a component, or a bare `fetch` anywhere      | A hook, with `mdkFetch` in the data layer (a bare `fetch` sends no token)          |
 | Hardcode `/apps/<name>/...`                                  | `useMdkApp().apiUrl('/api/...')`                                                   |
 | Return `{ data, isLoading, error }` from a hook              | A view union from `toQueryView`                                                    |
-| Guess a prop                                                 | Its entry in [`references/ui-registry.json`](./references/ui-registry.json)        |
+| Guess a prop                                                 | Its entry, `references/ui-registry/components/<Name>.json`                         |
 | Import `@tetherto/mdk-react-devkit/<path>` in an app         | The package root: the dashboard shares only root specifiers with apps              |
 | Bundle React or the MDK packages into an app                 | Keep `MDK_APP_SHARED_MODULES` external in `ui-src/vite.config.ts`                  |
 | Import Ant Design, MUI or another UI kit                     | `@tetherto/mdk-react-devkit`                                                       |
@@ -238,7 +240,7 @@ In a dashboard, add the page under `src/pages/`, wrap it in `PageLayout`, and ap
 
 - [ ] Every request goes through `mdkFetch`, and every app URL through `useMdkApp().apiUrl`.
 - [ ] Every hook returns a view union, and every component renders each of its states.
-- [ ] Every devkit component and prop exists in [`references/ui-registry.json`](./references/ui-registry.json).
+- [ ] Every devkit component and prop exists in its entry under [`references/ui-registry/`](./references/ui-registry/index.json).
 - [ ] Devkit imports in an app or dashboard use the package root.
 - [ ] An app's `defineMdkApp` `id` equals `id` in `mdk-app.yaml`, and `ui/` is rebuilt and committed.
 - [ ] The page was opened in a running dashboard, with data and with the runtime stopped, or, for a standalone

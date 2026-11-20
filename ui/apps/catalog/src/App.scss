@@ -163,6 +163,10 @@
       @include flex_column;
 
       gap: 2rem;
+
+      &--tight {
+        gap: var(--mdk-spacing-xl);
+      }
     }
 
     // Tight vertical / wrapping horizontal stacks for demo content. The stack
@@ -181,6 +185,180 @@
 
       gap: 1rem;
       align-items: center;
+    }
+
+    // Wrapping row of demoed components with a 2rem gutter -- the default
+    // layout for a page's examples. Modifiers cover the alignments in use.
+    &__showcase {
+      @include flex_wrap;
+
+      align-items: center;
+      gap: var(--mdk-spacing-2xl);
+
+      &--start {
+        align-items: flex-start;
+      }
+
+      &--stretch {
+        align-items: stretch;
+      }
+
+      &--between {
+        justify-content: space-between;
+      }
+    }
+
+    &__showcase-item--wide {
+      width: 320px;
+    }
+
+    // A row of buttons, wrapping when the page is narrow
+    &__button-row {
+      @include flex_wrap;
+
+      gap: var(--mdk-spacing-sm);
+    }
+
+    // A control beside its label or value, vertically centred
+    &__control-row {
+      display: flex;
+      align-items: center;
+      gap: var(--mdk-spacing-sm);
+
+      &--loose {
+        gap: var(--mdk-spacing-md);
+      }
+    }
+
+    // Loaders of one kind side by side
+    &__loader-row {
+      display: flex;
+      gap: var(--mdk-spacing-lg);
+
+      &--flush {
+        gap: 0;
+      }
+    }
+
+    // Single-column grid of full-width demo cards
+    &__stack-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--mdk-spacing-2xl);
+
+      &--narrow {
+        max-width: 600px;
+      }
+
+      &--2-col {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    // Vertical spacing helpers (spacing tokens)
+    &__mt-sm {
+      margin-top: var(--mdk-spacing-sm);
+    }
+
+    &__mt-md {
+      margin-top: var(--mdk-spacing-md);
+    }
+
+    &__mt-xl {
+      margin-top: var(--mdk-spacing-xl);
+    }
+
+    &__mt-2xl {
+      margin-top: var(--mdk-spacing-2xl);
+    }
+
+    &__mb-sm {
+      margin-bottom: var(--mdk-spacing-sm);
+    }
+
+    &__mb-md {
+      margin-bottom: var(--mdk-spacing-md);
+    }
+
+    &__mb-lg {
+      margin-bottom: var(--mdk-spacing-lg);
+    }
+
+    // Secondary-coloured intro paragraph under a page title
+    &__intro {
+      color: var(--mdk-color-text-secondary);
+      margin-bottom: var(--mdk-spacing-xl);
+    }
+
+    &__text-primary {
+      color: var(--mdk-color-primary);
+    }
+
+    &__text-success {
+      color: var(--mdk-color-green);
+    }
+
+    // Thin bordered box around a demoed component, at a fixed width
+    &__frame {
+      border: 1px solid var(--mdk-color-white-transparent);
+      padding: var(--mdk-spacing-lg);
+      width: 280px;
+
+      &--sm {
+        width: 200px;
+      }
+
+      &--lg {
+        width: 320px;
+      }
+    }
+
+    // Tile grid for list-style demo content (e.g. paginated items)
+    &__tile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--mdk-spacing-lg);
+      margin-bottom: var(--mdk-spacing-xl);
+    }
+
+    &__tile {
+      padding: var(--mdk-spacing-lg);
+      background: var(--mdk-color-white-4);
+      border: 1px solid var(--mdk-color-white-transparent);
+      border-radius: 8px;
+    }
+
+    // Spinner variants row: 2rem gutter and outer margin (4rem when wide)
+    &__spinner-row {
+      display: flex;
+      gap: var(--mdk-spacing-2xl);
+      margin: var(--mdk-spacing-2xl);
+
+      &--wide {
+        gap: calc(var(--mdk-spacing-2xl) * 2);
+      }
+    }
+
+    // Inline radio / checkbox + label pair
+    &__inline-option {
+      @include flex_align;
+
+      gap: 0.375rem;
+    }
+
+    &__error-fallback {
+      color: var(--mdk-color-brick-red);
+      padding: var(--mdk-spacing-md);
+      border: 1px solid var(--mdk-color-brick-red);
+    }
+
+    &__tag-input-demo {
+      max-width: 400px;
+      margin-bottom: var(--mdk-spacing-xl);
+    }
+
+    &__truncate-demo {
+      width: 300px;
     }
 
     // Padded placeholder content inside a demoed card
@@ -295,6 +473,23 @@
           font-weight: 600;
           margin: 0;
         }
+      }
+
+      // Fixed column counts; declared after the media queries so they win.
+      &--2-col {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      &--3-col {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      &--4-col {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      &--gap-xl {
+        gap: var(--mdk-spacing-xl);
       }
     }
 
@@ -421,6 +616,10 @@
 
       &--baseline {
         align-items: baseline;
+      }
+
+      &--spacious {
+        gap: 5rem;
       }
     }
 
@@ -621,5 +820,340 @@
 
   .cascader-section {
     margin-bottom: 3rem;
+
+    &__field {
+      width: 30%;
+    }
+  }
+
+  // DataTable demo
+  .demo-table-cell--end {
+    text-align: end;
+  }
+
+  .demo-table-actions {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+  }
+
+  // Popover demo content (rendered in a portal, so no `.demo-section` ancestor)
+  .popover-demo {
+    &__body {
+      padding: var(--mdk-spacing-sm);
+    }
+
+    &__controls {
+      display: flex;
+      flex-direction: column;
+      gap: var(--mdk-spacing-md);
+    }
+
+    &__control-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    &__actions {
+      display: flex;
+      gap: var(--mdk-spacing-sm);
+      margin-top: var(--mdk-spacing-lg);
+    }
+
+    &__title {
+      margin: 0 0 var(--mdk-spacing-sm);
+
+      &--accent {
+        margin-bottom: var(--mdk-spacing-md);
+        color: var(--mdk-color-primary);
+      }
+    }
+
+    &__text {
+      margin: 0;
+      font-size: 14px;
+      opacity: 0.9;
+
+      &--sm {
+        font-size: 13px;
+      }
+    }
+
+    &__panel {
+      width: 300px;
+
+      &--wide {
+        width: 350px;
+      }
+    }
+
+    &__heading {
+      margin: 0 0 var(--mdk-spacing-lg);
+      color: var(--mdk-color-primary);
+      font-size: 16px;
+    }
+
+    &__specs {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: var(--mdk-spacing-sm);
+      font-size: 13px;
+    }
+
+    &__spec-label {
+      opacity: 0.7;
+    }
+
+    &__spec-value {
+      font-weight: 500;
+    }
+
+    &__full-width {
+      width: 100%;
+    }
+
+    &__grow {
+      flex: 1;
+    }
+  }
+
+  // Tooltip demo content (portaled)
+  .tooltip-demo {
+    &__content {
+      max-width: 200px;
+
+      &--md {
+        max-width: 250px;
+      }
+
+      &--lg {
+        max-width: 300px;
+      }
+    }
+
+    &__heading {
+      font-weight: 600;
+      margin-bottom: var(--mdk-spacing-xs);
+    }
+
+    &__details {
+      font-size: 11px;
+    }
+  }
+
+  // Date pickers demo
+  .date-pickers-demo {
+    &__report {
+      padding: 20px;
+      background: var(--mdk-color-surface);
+      border: 1px solid var(--mdk-color-white-transparent);
+      border-radius: 4px;
+    }
+
+    &__report-title {
+      margin: 0 0 var(--mdk-spacing-lg);
+      color: var(--mdk-color-primary);
+    }
+
+    &__toolbar {
+      @include flex_wrap;
+
+      align-items: flex-end;
+      gap: var(--mdk-spacing-lg);
+      margin-bottom: var(--mdk-spacing-lg);
+    }
+
+    &__field {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    &__field-label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: var(--mdk-spacing-sm);
+      opacity: 0.7;
+    }
+
+    &__summary {
+      margin-top: var(--mdk-spacing-lg);
+      padding: var(--mdk-spacing-md);
+      background: var(--mdk-color-obsidian);
+      border: 1px solid var(--mdk-color-white-transparent);
+    }
+
+    &__summary-body {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    &__summary-row {
+      @include flex_between;
+
+      &:not(:last-child) {
+        margin-bottom: var(--mdk-spacing-sm);
+      }
+    }
+  }
+
+  // Scoped under the page wrapper so they beat
+  // `.demo-section__date-pickers section p { margin: 0 }`.
+  .demo-section__date-pickers {
+    .demo-section__label {
+      margin-bottom: 0.5rem;
+    }
+
+    .date-pickers-demo__selected {
+      margin-top: var(--mdk-spacing-sm);
+      font-size: 12px;
+    }
+  }
+
+  // Logs card demo
+  .logs-demo {
+    &__row {
+      display: flex;
+      gap: 20px;
+      margin-top: var(--mdk-spacing-lg);
+
+      &--start {
+        align-items: flex-start;
+      }
+    }
+
+    &__label {
+      margin-bottom: var(--mdk-spacing-sm);
+      color: var(--mdk-color-white);
+    }
+
+    &__frame {
+      margin-top: var(--mdk-spacing-lg);
+      max-width: 600px;
+
+      &--sm {
+        max-width: 400px;
+      }
+
+      &--md {
+        max-width: 500px;
+      }
+    }
+  }
+
+  // Sidebar demo
+  .sidebar-demo {
+    &__column {
+      flex: 1;
+      min-width: 360px;
+
+      &--narrow {
+        min-width: 260px;
+      }
+    }
+
+    &__frame {
+      display: flex;
+      height: 420px;
+      overflow: hidden;
+      border: 1px solid var(--mdk-color-white-transparent);
+      border-radius: 4px;
+    }
+
+    &__content {
+      @include flex_center;
+
+      flex: 1;
+      padding: 20px;
+      color: #666;
+    }
+
+    &__status {
+      text-align: center;
+    }
+
+    &__status-text {
+      font-size: 14px;
+    }
+  }
+
+  // Mining icons gallery
+  .mining-icons {
+    &__toolbar {
+      @include flex_align;
+
+      gap: var(--mdk-spacing-lg);
+      margin-bottom: var(--mdk-spacing-xl);
+    }
+
+    &__control {
+      font-size: 14px;
+    }
+
+    &__select {
+      margin-left: var(--mdk-spacing-sm);
+      padding: var(--mdk-spacing-xs) var(--mdk-spacing-sm);
+      background: #333;
+      color: var(--mdk-color-white);
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+
+    &__color-input {
+      margin-left: var(--mdk-spacing-sm);
+      vertical-align: middle;
+    }
+
+    &__color-value {
+      margin-left: var(--mdk-spacing-xs);
+      opacity: 0.6;
+    }
+
+    &__category-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: var(--mdk-spacing-md);
+      opacity: 0.8;
+    }
+
+    &__grid {
+      @include flex_wrap;
+
+      gap: var(--mdk-spacing-md);
+      margin-bottom: var(--mdk-spacing-xl);
+    }
+
+    &__sizes {
+      display: flex;
+      align-items: end;
+      gap: var(--mdk-spacing-xl);
+      margin-bottom: var(--mdk-spacing-xl);
+    }
+
+    &__cell {
+      @include flex_column;
+
+      align-items: center;
+      gap: var(--mdk-spacing-sm);
+      padding: var(--mdk-spacing-md);
+      border-radius: 8px;
+      background: var(--mdk-color-white-4);
+      min-width: 100px;
+
+      &--auto {
+        min-width: auto;
+      }
+    }
+
+    &__name {
+      font-size: 10px;
+      opacity: 0.6;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    &__tag {
+      font-size: 9px;
+      opacity: 0.4;
+    }
   }
 }

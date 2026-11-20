@@ -45,10 +45,24 @@ class DHTListener {
     this._dht = null
     this._ownsDht = false
     this._kernelId = 'kernel:kernel:default'
-    // rpcKey → Promise<boolean> for the registration attempt on that key. A
-    // resolved `true` entry is a registered worker and stays; a failed attempt
-    // removes itself, so the next offer of the same key retries.
+    // rpcKey → Promise of the registration outcome for that key. A registered
+    // worker's entry stays; a failed attempt removes itself, so the next offer
+    // of the same key retries.
     this._discoveredPeers = new Map()
+    // rpcKey → the binding conflict last reported for it, so a key that local
+    // discovery re-offers every few seconds is reported once, not each time.
+    this._conflicts = new Map()
+    this._onConflict = opts.onConflict || null
+    // workerId holding a binding → rpcKeys it refused, retried by
+    // retryRefusedBy() when that holder registers or releases the binding. A
+    // Worker `mdk run` hosts is offered once, so nothing else would retry it.
+    this._refusedBy = new Map()
+    this._onAdmitted = opts.onAdmitted || null
+    // Same dedupe for a peer the Kernel cannot reach at all. Separate from
+    // _conflicts: one is a worker that answered and was refused, the other a
+    // worker that never answered, and they have different causes.
+    this._unreachable = new Map()
+    this._onUnreachable = opts.onUnreachable || null
     this._workerKeys = new Set((opts.workerKeys || []).map(normalizeKey))
     this.allowAnyWorker = opts.allowAnyWorker === true
   }
@@ -123,6 +137,8 @@ class DHTListener {
       this._swarm = null
     }
     this._discoveredPeers.clear()
+    this._conflicts.clear()
+    this._refusedBy.clear()
     debug('DHT listener stopped')
   }
 
@@ -190,10 +206,13 @@ class DHTListener {
    * their key directly — callers hand it in here. Idempotent: a key already
    * discovered starts no second attempt.
    *
-   * Resolves true once the worker is Ready, false when this attempt did not get
-   * it there. Callers that retry — local discovery rescans the keys dir every
-   * few seconds, and one attempt can outlive several scans — need that to tell
-   * a worker still starting up from one that is never going to arrive.
+   * Resolves `{ registered: true, workerId }` once the worker is Ready, or
+   * `{ registered: false, error, ... }` when this attempt did not get it there.
+   * Callers that retry — local discovery rescans the keys dir every few
+   * seconds, and one attempt can outlive several scans — need that to tell a
+   * worker still starting up from one that is never going to arrive. A registry
+   * binding conflict (see WorkerRegistry.register) is also passed to
+   * opts.onConflict.
    */
   discoverWorker (rpcKey) {
     return this._onWorkerKeyReceived(rpcKey)
@@ -213,9 +232,9 @@ class DHTListener {
     // Forget a failed key so the next offer retries it; keep a registered one.
     // The cleanup runs in `.then` rather than inside `_register` so it cannot
     // fire before the map entry below exists.
-    const attempt = this._register(rpcKey).then((registered) => {
-      if (!registered) this._discoveredPeers.delete(rpcKey)
-      return registered
+    const attempt = this._register(rpcKey).then((outcome) => {
+      if (!outcome.registered) this._discoveredPeers.delete(rpcKey)
+      return outcome
     })
     this._discoveredPeers.set(rpcKey, attempt)
     return attempt
@@ -225,36 +244,86 @@ class DHTListener {
     const peer = `${rpcKey.slice(0, 16)}...`
     try {
       const channel = this.workerChannel.connect({ rpcKey })
-      if (!channel) return false
+      if (!channel) return this._reportUnreachable(rpcKey, 'ERR_CHANNEL_NOT_CONNECTED')
 
       const identity = await this._pullIdentity(channel, peer)
-      if (!identity) return false
+      if (!identity) return this._reportUnreachable(rpcKey, 'ERR_WORKER_IDENTITY_UNAVAILABLE')
 
-      const registered = await this.registry.register({
+      const outcome = await this.registry.register({
         workerId: identity.workerId,
         deviceIds: identity.devices.map(d => d.deviceId),
         rpcKey,
         channel
       })
-      if (!registered) {
+      if (!outcome.registered) {
         await this.workerChannel.disconnect(channel)
-        return false
+        this._reportConflict(rpcKey, outcome)
+        return outcome
       }
+      const wasRefused = this._conflicts.delete(rpcKey)
+      this._unreachable.delete(rpcKey)
 
       const contract = await this._pullCapabilities(channel)
       if (!contract || !this._validateContract(contract)) {
         debug(`invalid contract from ${identity.workerId}`)
         await this.registry.terminate(identity.workerId)
-        return false
+        return { registered: false, error: 'ERR_WORKER_CONTRACT_INVALID', workerId: identity.workerId }
       }
 
       await this.registry.setReady(identity.workerId, contract)
       debug(`worker registered: ${identity.workerId} (${identity.devices.length} devices)`)
-      return true
+      if (wasRefused && this._onAdmitted) this._onAdmitted({ workerId: identity.workerId, rpcKey })
+      // It may have come back without a device another Worker was refused for,
+      // or still with it, which turns an ownerPending refusal into a real one.
+      this.retryRefusedBy(identity.workerId)
+      return { registered: true, workerId: identity.workerId }
     } catch (err) {
       debug(`peer registration failed: ${err.message}`)
-      return false
+      return { registered: false, error: 'ERR_WORKER_REGISTRATION_FAILED' }
     }
+  }
+
+  /**
+   * Offer again every key a binding held by `holderId` refused: the owner of
+   * a device (ERR_WORKER_DEVICE_CONFLICT) or the workerId itself
+   * (ERR_WORKER_KEY_CONFLICT). Each goes through the full registration again
+   * and is refused again, now with a real conflict, if the binding still holds.
+   */
+  retryRefusedBy (holderId) {
+    const keys = this._refusedBy.get(holderId)
+    if (!keys) return
+    this._refusedBy.delete(holderId)
+    for (const rpcKey of keys) this._onWorkerKeyReceived(rpcKey)
+  }
+
+  _reportConflict (rpcKey, outcome) {
+    const holderId = outcome.ownerId || outcome.workerId
+    if (!this._refusedBy.has(holderId)) this._refusedBy.set(holderId, new Set())
+    this._refusedBy.get(holderId).add(rpcKey)
+
+    const { registered, ...conflict } = outcome
+    const id = JSON.stringify(conflict)
+    if (this._conflicts.get(rpcKey) === id) return
+    this._conflicts.set(rpcKey, id)
+    if (this._onConflict) this._onConflict({ ...conflict, rpcKey })
+  }
+
+  /**
+   * A peer that never answered: the channel would not open, or identity.request
+   * went unanswered. Usually the two sides are on different DHTs — a Worker
+   * hosted outside `mdk run` that was not given the stack's `bootstrap` keeps
+   * joining the public one — and nothing else reports it, because a Worker
+   * registering over local discovery has no caller waiting on the outcome.
+   * Returns the outcome so `_register` can hand it straight back.
+   */
+  _reportUnreachable (rpcKey, error) {
+    const outcome = { registered: false, error }
+    debug(`peer unreachable: ${rpcKey.slice(0, 16)}... (${error})`)
+    if (this._unreachable.get(rpcKey) !== error) {
+      this._unreachable.set(rpcKey, error)
+      if (this._onUnreachable) this._onUnreachable({ error, rpcKey })
+    }
+    return outcome
   }
 
   /**

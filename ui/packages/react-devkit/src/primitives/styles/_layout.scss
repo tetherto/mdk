@@ -7,18 +7,14 @@
 // into a consumer stylesheet by hand and then drifts: `examples/mvp-site`
 // restated the Select's height as a literal `42px` for exactly this reason.
 
-// Control heights are the *outer* box. There is no global
-// `box-sizing: border-box`, so a trigger's `min-height` sizes its content box
-// and the 1px border sits outside it — a consumer matching `min-height` alone
-// lands 2px short.
-$control-border-width: 1px;
-$control-content-height-lg: 40px;
-$control-content-height-md: 32px;
-$control-content-height-sm: 24px;
-
-$control-height-lg: $control-content-height-lg + 2 * $control-border-width;
-$control-height-md: $control-content-height-md + 2 * $control-border-width;
-$control-height-sm: $control-content-height-sm + 2 * $control-border-width;
+// Control heights are the *outer* box, border included: the Select trigger
+// (like the date range button, Button and CurrencyToggler) is
+// `box-sizing: border-box`, so its `min-height` is the whole trigger. lg is the
+// filter-bar height, `--mdk-control-height`, so a Select lines up with the
+// controls beside it.
+$control-height-lg: 40px;
+$control-height-md: 34px;
+$control-height-sm: 26px;
 
 @layer base {
   :root {
@@ -32,7 +28,7 @@ $control-height-sm: $control-content-height-sm + 2 * $control-border-width;
     --mdk-spacing-2xl: 32px;
 
     /* Control heights, outer box. Match one of these to sit a custom control
-       on the same baseline as a Select, Input or MultiSelect of that size. */
+       on the same baseline as a Select of that size. */
     --mdk-control-height-lg: #{$control-height-lg};
     --mdk-control-height-md: #{$control-height-md};
     --mdk-control-height-sm: #{$control-height-sm};

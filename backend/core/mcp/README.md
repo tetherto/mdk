@@ -56,7 +56,9 @@ This server gets its tools from two independent sources, merged into one tool se
 2. **An app's route table** — its `mdk-plugin.json` manifest, read directly off disk and converted into MCP tools
    ([`lib/from-gateway-plugin.js`](./lib/from-gateway-plugin.js), `apps` below). Each call is forwarded over HRPC to the app's
    runtime, exactly as the Gateway forwards an HTTP request, so an app's routes become agent-callable tools without the
-   Gateway knowing anything about MCP and without a second copy of the app.
+   Gateway knowing anything about MCP and without a second copy of the app. A tool's description is the route's `description`,
+   or the app's when the route has none, and its arguments are the route's `http.parameters` and `http.requestBody`. A route
+   in the flat form, with `method` and `path` at its top level, serves over HTTP but yields a tool with no declared arguments.
 
 The intended further extension is **runtime tool derivation** from each registered Worker's `mdk-contract.json` — so a new
 device type would give an agent new tools with no MCP server code change. That path is not wired up today: neither of the
@@ -82,7 +84,7 @@ It resolves to the `http.Server`. Call `close()` on it to stop.
 | -------- | -------- | -------- | ---------------------------------------------------------------------------------- |
 | `root`   | Required | `string` | Working directory for this server instance; with `apps`, it keeps the seed of the key app runtimes see under `identity/`. Throws `ERR_INVALID_MCP_ROOT` if falsy |
 | `port`   | Required | `number` | Port to listen on (`127.0.0.1` only). Throws `ERR_INVALID_MCP_PORT` if falsy       |
-| `config` | Optional | `object` | `{ kernelKey, kernelBootstrap, kernelDhtHost }` (or any other config a tool needs). Frozen and handed to every native plugin directory as the `config` in its context — the server builds no Kernel client of its own; each tool plugin builds its own [`@tetherto/mdk-client`](../client/README.md) from it. `kernelBootstrap` and `kernelDhtHost` also set the DHT app runtimes are reached on, and `appTimeoutMs` (default `60000`) bounds each app call, as in the Gateway |
+| `config` | Optional | `object` | `{ kernelKey, kernelBootstrap, kernelDhtHost }` (or any other config a tool needs). Frozen and handed to every native plugin directory as the `config` in its context. Each tool plugin builds its own [`@tetherto/mdk-client`](../client/README.md) from it, and the server builds one of its own only when it is given `credential` and `config.kernelKey` with neither `authority` nor an in-process `kernel`, to read the Kernel's signing keys and policy. `kernelBootstrap` and `kernelDhtHost` also set the DHT that app runtimes and that client are reached on, and `appTimeoutMs` (default `60000`) bounds each app call, as in the [Gateway](../gateway/README.md#app-forwarding). |
 | `pluginDirs` | Optional | `string[]` | Directories to load [native `mcp-plugin.json` tools](#plugin-format) from. Empty/omitted starts a server with no tools from this source |
 | `apps` | Optional | `{ name: string, appDir: string, keyFile: string }[]` | The apps whose routes become tools, in the shape the Gateway's `apps` takes: each app's route table (`mdk-plugin.json` under `appDir`) is converted into MCP tools via [`lib/from-gateway-plugin.js`](./lib/from-gateway-plugin.js), and every call is forwarded to the runtime whose key `keyFile` holds (re-read on each call). No app code is loaded here. A call to an app whose runtime is not up returns `ERR_APP_RUNTIME_UNAVAILABLE` |
 | `options` | Optional | `object` | Server-side security and lifecycle options, kept apart from `config` so plugins never see them. See the table below |
@@ -202,6 +204,7 @@ problem; the [error codes](#errors) name each.
 | `ERR_INVALID_MCP_PORT` | `createMcpServer` is called with no port (`port` falsy)              | Pass a valid port as `port` |
 | `ERR_INVALID_MCP_APP` | An `apps` entry is not `{ name, appDir, keyFile }`, e.g. a 0.10 `gatewayPluginDirs` path | Pass each app as `{ name, appDir, keyFile }` |
 | `ERR_INVALID_MCP_TOKEN` | `options.token` is set but is not a non-empty string | Pass a non-empty token, or omit it |
+| `ERR_AUTH_UNAUTHORIZED` | With an authority, a route tool's handler runs with no verified identity. `createMcpServer()` answers a request without a valid token `401` before any tool runs, so only a host that calls the handler directly meets this code. | Call the tool through the server with an access token |
 | `ERR_AUTH_FORBIDDEN` | With an authority, a tool call no `spec.rbac` rule allows the agent, e.g. an instance outside its `resourceNames` (tool result, not a throw) | Bind the agent to a role that allows the route |
 | `ERR_MCP_APP_NAME_REQUIRED` | Route tools are generated with an authority but no app name | Pass each app as `{ name, appDir, keyFile }` |
 | `ERR_MCP_STATIC_IDENTITY_UNSUPPORTED` | `options.token` or `options.identity` is set together with an authority | Drop them: each agent signs in with its own service account |
@@ -225,7 +228,7 @@ tools stay withheld there.
 
 ## Testing
 
-`npm test` runs `standard` lint, unit tests ([`tests/unit/`](./tests/unit/)), and integration tests
+`npm test` runs `bfx-lint-js` lint, unit tests ([`tests/unit/`](./tests/unit/)), and integration tests
 ([`tests/integration/`](./tests/integration/)) — the latter cover
 schema enforcement, multi-plugin-dir merging, error handling, the opt-in shutdown handlers, the Host/Origin/token checks, write
 and auth gating, and output framing.

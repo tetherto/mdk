@@ -17,7 +17,9 @@ const { brandSlug } = require('@tetherto/mdk-rbac')
  *
  * Recovery: Rebuilt from Hyperbee on restart; detects failed reconnects. Only
  * { workerId, deviceIds, rpcKey, registeredAt } is persisted, so recover()
- * synthesises state DISCOVERED and channel null.
+ * synthesises state DISCOVERED and channel null; the contract persisted at
+ * setReady gives back deviceFamily and brand, so the Worker keeps its RBAC
+ * name and its worker.list row while it is not yet routable.
  */
 class WorkerRegistry {
   constructor (opts) {
@@ -28,15 +30,23 @@ class WorkerRegistry {
     this._deviceIndex = new Map()
     // In-memory index: workerId → { state, deviceIds, channel, rpcKey }
     this._workerIndex = new Map()
+    // Called with a workerId whose bindings shrank outside a registration:
+    // terminate() released the id and its devices, or syncDeviceIds() dropped
+    // devices. Discovery retries the Workers those bindings refused.
+    this._onRelease = opts.onRelease || null
   }
 
   async recover () {
     for await (const node of this.store.createReadStream()) {
       const worker = JSON.parse(node.value.toString())
+      const stored = await this.capabilityStore.get(worker.workerId)
+      const contract = stored ? JSON.parse(stored.value.toString()) : null
       this._workerIndex.set(worker.workerId, {
         ...worker,
         state: REGISTRY_STATES.DISCOVERED,
-        channel: null
+        channel: null,
+        deviceFamily: contract?.metadata?.deviceFamily || null,
+        brand: contract?.metadata?.brand || null
       })
       if (worker.deviceIds) {
         for (const deviceId of worker.deviceIds) {
@@ -47,24 +57,36 @@ class WorkerRegistry {
     debug(`recovered ${this._workerIndex.size} workers from store`)
   }
 
+  /**
+   * Resolves `{ registered: true }`, or `{ registered: false, error, ... }`
+   * when a persisted binding refuses the Worker as a whole:
+   * - ERR_WORKER_KEY_CONFLICT: a workerId is bound to the first RPC key it
+   *   registered with; a different key claiming it is an impersonation attempt.
+   * - ERR_WORKER_DEVICE_CONFLICT `{ deviceId, ownerId, ownerPending? }`: a
+   *   deviceId is bound to the first workerId that registered it.
+   *   `ownerPending` means the owner's claim was loaded by recover() and the
+   *   owner has not registered this run: it may still come back without the
+   *   device.
+   * Both bindings survive restarts and a Worker going offline. worker.terminate
+   * of the bound workerId releases both; the owner itself releases a device by
+   * no longer listing it (here, or in syncDeviceIds).
+   */
   async register (opts) {
     const { workerId, deviceIds, rpcKey, channel } = opts
 
-    // A workerId is bound to the first RPC key it registered with (persisted,
-    // so the binding survives restarts). A different key claiming the same
-    // workerId is an impersonation attempt until an admin terminates the old
-    // registration (worker.terminate).
     const existingWorker = this._workerIndex.get(workerId)
     if (existingWorker && existingWorker.rpcKey && rpcKey && existingWorker.rpcKey !== rpcKey) {
       debug(`workerId conflict: ${workerId} is bound to ${String(existingWorker.rpcKey).slice(0, 16)}..., rejecting ${String(rpcKey).slice(0, 16)}...`)
-      return false
+      return { registered: false, error: 'ERR_WORKER_KEY_CONFLICT', workerId }
     }
 
     for (const deviceId of deviceIds) {
       const existing = this._deviceIndex.get(deviceId)
       if (existing && existing.workerId !== workerId) {
         debug(`deviceId conflict: ${deviceId} already owned by ${existing.workerId}`)
-        return false
+        const conflict = { registered: false, error: 'ERR_WORKER_DEVICE_CONFLICT', workerId, deviceId, ownerId: existing.workerId }
+        if (this._workerIndex.get(existing.workerId).state === REGISTRY_STATES.DISCOVERED) conflict.ownerPending = true
+        return conflict
       }
     }
 
@@ -84,13 +106,20 @@ class WorkerRegistry {
       registeredAt: workerEntry.registeredAt
     })))
 
+    // A Worker coming back (typically one recover() loaded) releases the
+    // devices it no longer lists, as syncDeviceIds does; otherwise they stay
+    // bound to it and refuse whichever Worker took them over.
+    const kept = new Set(deviceIds)
+    const dropped = existingWorker ? (existingWorker.deviceIds || []).filter(id => !kept.has(id)) : []
+
     this._workerIndex.set(workerId, workerEntry)
+    for (const deviceId of dropped) this._unmapDevice(deviceId, workerId)
     for (const deviceId of deviceIds) {
       this._deviceIndex.set(deviceId, { workerId, channel })
     }
 
     debug(`worker registered: ${workerId} (${deviceIds.length} devices)`)
-    return true
+    return { registered: true }
   }
 
   async setReady (workerId, contract) {
@@ -99,6 +128,9 @@ class WorkerRegistry {
 
     worker.state = REGISTRY_STATES.READY
     worker.capabilities = contract.capabilities || {}
+    // A Worker that sweeps its own devices (the collector in mdk-worker) is
+    // left out of the scheduled live pull: it would poll each device twice.
+    worker.pollsTelemetry = Number.isInteger(contract.telemetryPollIntervalMs)
     worker.deviceFamily = contract.metadata?.deviceFamily || null
     worker.brand = contract.metadata?.brand || null
 
@@ -124,6 +156,7 @@ class WorkerRegistry {
     await this.capabilityStore.del(workerId)
     this._workerIndex.delete(workerId)
     debug(`worker terminated: ${workerId}`)
+    if (this._onRelease) this._onRelease(workerId)
   }
 
   /**
@@ -146,9 +179,11 @@ class WorkerRegistry {
     if (oldSet.size === newSet.size && newDeviceIds.every(id => oldSet.has(id))) return
 
     // Remove obsolete device mappings
+    let released = false
     for (const id of oldDeviceIds) {
       if (!newSet.has(id)) {
         this._unmapDevice(id, workerId)
+        released = true
       }
     }
 
@@ -174,6 +209,7 @@ class WorkerRegistry {
     })))
 
     debug(`synced device IDs for ${workerId}: ${newDeviceIds.length} devices`)
+    if (released && this._onRelease) this._onRelease(workerId)
   }
 
   // Only drop a device mapping this worker owns: a stale or hostile worker
@@ -242,7 +278,9 @@ class WorkerRegistry {
         deviceIds: worker.deviceIds,
         state: worker.state,
         healthState: worker.healthState || 'UNKNOWN',
-        rpcKey: worker.rpcKey
+        rpcKey: worker.rpcKey,
+        deviceFamily: worker.deviceFamily || null,
+        brand: worker.brand || null
       })
     }
     return workers

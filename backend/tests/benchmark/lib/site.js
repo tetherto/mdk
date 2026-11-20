@@ -12,6 +12,7 @@ const path = require('path')
 const fs = require('fs')
 const debug = require('debug')('mdk:benchmark:site')
 const { getKernel, startGateway } = require('@tetherto/mdk-core')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 const { createAppRuntime } = require('@tetherto/mdk-app-runtime')
 const { createMdkClient } = require('@tetherto/mdk-client')
 const { remoteAuthority } = require('@tetherto/mdk-gateway/workers/lib/authority')
@@ -20,7 +21,7 @@ const {
   publishTrustedKey, callerKeyPair
 } = require('@tetherto/mdk-core/lib/local-discovery')
 const { generateCredential, gatewayTokenRequest, ServiceAccountTokenSource } = require('@tetherto/mdk-identity')
-const { WORKER_REGISTRY, ALERT_INDUCTION, ALLOW_DUPLICATE_IPS, MOCK_PORT_RANGE, HOST, DISCOVERY, ROOT, KERNEL_DEFAULTS, WORKER_CONF_DEFAULTS, MINER_DEVICE_TIMEOUT_MS, GATEWAY_PLUGIN_DIR, GATEWAY_DEFAULTS } = require('./constants')
+const { WORKER_REGISTRY, MOCK_PORT_RANGE, HOST, DISCOVERY, ROOT, KERNEL_DEFAULTS, WORKER_CONF_DEFAULTS, MINER_DEVICE_TIMEOUT_MS, GATEWAY_PLUGIN_DIR, GATEWAY_DEFAULTS } = require('./constants')
 
 const benchmarkDir = path.join(__dirname, '..')
 const config = require(path.join(benchmarkDir, 'config', 'benchmark.config.json'))
@@ -286,52 +287,36 @@ function workerStoreDir (root, workerId) {
   return storeDir
 }
 
-// `conf.thing` carries WORKER_CONF_DEFAULTS (lib/constants.js) so the
-// worker actually boots on the cadence/timeout knobs the report claims —
-// createWorkerInfra merges this over its own (slower, production-sized)
-// THING_CONF_DEFAULTS, so without passing it explicitly here the worker
-// would run on package defaults while every "Configured ... interval" row
-// and headroomRatio kept assuming WORKER_CONF_DEFAULTS was actually in
-// effect. Alert thresholds are folded into the same `thing` object (see
-// ALERT_INDUCTION in lib/constants.js): without them AlertsService never
-// evaluates anything, so the alerts path would stay permanently unmeasured
-// rather than just soak-bound like everything else that needs a real wait.
-async function bootWorker ({ workerId, type, model, kernel, kernelTopic, root, mode = DISCOVERY, devices }) {
-  const { startWorker } = WORKER_REGISTRY[type]
-  const induction = ALERT_INDUCTION[type]
-  const deviceType = induction ? `miner-${induction.devicePrefix}-${model}` : null
-  const handle = await startWorker({
+// Hosts one Worker package on WorkerRuntimeV2 with the plan's device list.
+// The runtime's poll interval is set to WORKER_CONF_DEFAULTS.collectSnapsItvMs
+// so the worker actually samples at the cadence every "Configured ... interval"
+// row and headroomRatio in the report assume; `conf.timeout` is the real
+// per-device RPC timeout the Thing base class otherwise defaults to 10000 ms
+// (MINER_DEVICE_TIMEOUT_MS, the number that bounds a live pullTelemetry() /
+// sendCommand() against a hung device; processes/run-process.js's
+// device-outage drill uses the same constant for its analytical worst case).
+// Device ids are the plan's serial numbers; `info` is what aggregate reads
+// label a device by.
+async function bootWorker ({ workerId, type, kernel, kernelTopic, root, mode = DISCOVERY, devices }) {
+  const { pkgDir } = WORKER_REGISTRY[type]
+  const runtime = new WorkerRuntimeV2(pkgDir, {
     workerId,
     allowedKeys: await workerTrust({ kernel, root }),
-    model,
     storeDir: workerStoreDir(root, workerId),
-    conf: {
-      allowDuplicateIPs: ALLOW_DUPLICATE_IPS,
-      thing: {
-        ...WORKER_CONF_DEFAULTS,
-        // thing.miner always carries at least `timeout` — two reasons it
-        // can never be left out entirely. First, a guard: AlertsService's
-        // base pool-mismatch checks read ctx.thingConf.pools where
-        // ctx.thingConf is this same thing.miner sub-object; left undefined,
-        // that access throws inside the checked block and gets swallowed as
-        // a fake "alert" (the exact TypeError message as its description).
-        // Second, `timeout` is the real per-device RPC timeout mdk-core's
-        // Thing base class falls back to 10000ms for when unset (see
-        // MINER_DEVICE_TIMEOUT_MS in lib/constants.js) — the number that
-        // actually bounds a live pullTelemetry()/sendCommand() call to a
-        // hung device, so it's set explicitly rather than left to that
-        // implicit fallback, and processes/run-process.js's device-outage
-        // drill uses the same constant for its analytical worst case.
-        miner: { timeout: MINER_DEVICE_TIMEOUT_MS },
-        ...(induction ? { alerts: { [deviceType]: induction.alerts } } : {})
-      }
-    },
     kernelTopic: (!kernel && mode !== 'local') ? kernelTopic : null,
-    seedDevices: devices
+    config: {
+      telemetryPollIntervalMs: WORKER_CONF_DEFAULTS.collectSnapsItvMs,
+      conf: { timeout: MINER_DEVICE_TIMEOUT_MS }
+    },
+    devices: devices.map((d) => ({ deviceId: d.info.serialNum, config: { ...d.opts }, info: d.info })),
+    // The zero-device baseline profile (run-process.js) boots a worker with no devices.
+    allowEmptyDevices: true
   })
+  await runtime.start()
+  const handle = { runtime, stop: () => runtime.stop() }
 
   await registerWorker(handle, workerId, { kernel, root, mode })
-  debug('worker %s (%s/%s) up: %d devices', workerId, type, model, handle.services.provisioning.listDeviceIds().length)
+  debug('worker %s (%s) up: %d devices', workerId, type, devices.length)
   return handle
 }
 

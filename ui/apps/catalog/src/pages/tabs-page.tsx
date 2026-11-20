@@ -120,7 +120,7 @@ export const TabsPage = (): JSX.Element => {
       </div>
 
       {/* Example 3: Tabs with LazyTabWrapper */}
-      <div className="demo-section__tabs" style={{ marginTop: '2rem' }}>
+      <div className="demo-section__tabs demo-section__mt-2xl">
         <h3 className="demo-section__subtitle">Tabs with Lazy Loading</h3>
         <Tabs defaultValue="tab1">
           <TabsList>

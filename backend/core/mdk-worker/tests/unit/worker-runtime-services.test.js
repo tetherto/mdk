@@ -40,10 +40,11 @@ function createServicesStub () {
       listDeviceIds: () => ['SIM-001', 'SIM-002'],
       listDevices: (req) => {
         calls.push(['listDevices', req])
-        return [
+        const all = [
           { id: 'SIM-001', code: 'SIM-0001', type: 'miner-sim', tags: ['t-miner'], info: { container: 'c1', pos: '1' }, comments: [], opts: { address: '127.0.0.1', port: 1 } },
           { id: 'SIM-002', code: 'SIM-0002', type: 'miner-sim', tags: ['t-miner'], info: { container: 'c1', pos: '2' }, comments: [], opts: { address: '127.0.0.1', port: 2 } }
         ]
+        return req.query && req.query.id ? all.filter((dev) => dev.id === req.query.id) : all
       }
     },
     snaps: {
@@ -201,6 +202,19 @@ test('legacy list query returns provisioned things with snapshots', async (t) =>
   // without status: true the snapshot is omitted
   const bare = await runtime.handleRequest(telemetry({ type: 'list' }))
   t.is(bare.payload.things[0].last, undefined)
+})
+
+test('a device-addressed list returns the addressed device only', async (t) => {
+  const services = createServicesStub()
+  const runtime = await createRuntime(services)
+
+  const res = await runtime.handleRequest(telemetry({ type: 'list', status: true, limit: 100, query: { id: 'SIM-002' } }, 'SIM-001'))
+  t.alike(res.payload.things.map((thg) => thg.id), ['SIM-001'], 'SIM-002 is not listed through SIM-001, whatever the query says')
+  t.is(res.payload.things[0].last.snap.stats.status, 'mining', 'the snapshot enrichment still applies')
+  t.alike(services.calls[0], ['listDevices', { status: true, query: { id: 'SIM-001' }, offset: 0, limit: 1 }])
+
+  const unknown = await runtime.handleRequest(telemetry({ type: 'list' }, 'ghost'))
+  t.alike(unknown.payload.things, [], 'an addressed device the store does not hold lists nothing')
 })
 
 test('count and config queries answer the adapter-era shapes', async (t) => {
@@ -388,6 +402,40 @@ test('the envelope deviceId wins over a same-named key in params', async (t) => 
 
   await runtime.handleRequest(telemetry({ type: 'logs_multi', key: 'thing-5m', deviceIds: ['SIM-002'], thingId: 'SIM-001' }))
   t.is(services.calls[4][1].thingId, 'SIM-002', 'logs_multi: the per-device id wins over params.thingId')
+})
+
+test('a device-addressed logs_multi reads the addressed device only', async (t) => {
+  const services = createServicesStub()
+  const runtime = await createRuntime(services)
+
+  const res = await runtime.handleRequest(telemetry({ type: 'logs_multi', key: 'thing-5m', deviceIds: ['SIM-002'] }, 'SIM-001'))
+  t.is(res.payload.logs.length, 1, 'one device read')
+  t.alike(services.calls.map((c) => c[1].thingId), ['SIM-001'], 'SIM-002 is not read through SIM-001')
+
+  services.calls.length = 0
+  await runtime.handleRequest(telemetry({ type: 'logs_multi', key: 'thing-5m', deviceIds: ['SIM-001', 'SIM-002'] }, 'SIM-002'))
+  t.alike(services.calls.map((c) => c[1].thingId), ['SIM-002'], 'a list naming the addressed device too still reads only that device')
+
+  services.calls.length = 0
+  await runtime.handleRequest(telemetry({ type: 'logs_multi', key: 'thing-5m', deviceIds: 'SIM-002' }, 'SIM-001'))
+  t.alike(services.calls.map((c) => c[1].thingId), ['SIM-001'], 'the list is not even validated: the address decides')
+})
+
+test('a device-addressed stats read aggregates the addressed device only', async (t) => {
+  const services = createServicesStub()
+  const runtime = await createRuntime(services)
+
+  await runtime.handleRequest(telemetry({ type: 'stats', deviceIds: ['SIM-001', 'SIM-002'] }, 'SIM-001'))
+  t.alike(services.calls[0], ['aggrStats', { deviceIds: ['SIM-001'], opts: {} }], 'SIM-002 is left out of a read addressed to SIM-001')
+
+  await runtime.handleRequest(telemetry({ type: 'stats', deviceIds: ['SIM-002'] }, 'SIM-001'))
+  t.alike(services.calls[1][1].deviceIds, ['SIM-001'], 'a list naming only another device still reads the addressed one')
+
+  await runtime.handleRequest(telemetry({ type: 'stats' }, 'SIM-001'))
+  t.alike(services.calls[2][1].deviceIds, ['SIM-001'], 'without a list the addressed device is read, not the whole Worker')
+
+  await runtime.handleRequest(telemetry({ type: 'stats' }))
+  t.is(services.calls[3][1].deviceIds, undefined, 'a Worker-scoped read without a list still aggregates every device')
 })
 
 test('device id lists are type-checked and capped', async (t) => {

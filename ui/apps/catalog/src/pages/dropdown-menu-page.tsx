@@ -32,7 +32,7 @@ export const DropdownMenuPage = (): JSX.Element => {
     <section className="demo-section">
       <h2 className="demo-section__title">Dropdown Menu</h2>
 
-      <h3 style={{ marginBottom: '1rem' }}>Basic</h3>
+      <h3 className="demo-section__mb-lg">Basic</h3>
       <div className="demo-section__select-grid">
         <section>
           <h3>Small - Basic</h3>
@@ -65,7 +65,7 @@ export const DropdownMenuPage = (): JSX.Element => {
         </section>
       </div>
 
-      <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>With Icons</h3>
+      <h3 className="demo-section__mt-2xl demo-section__mb-lg">With Icons</h3>
       <div className="demo-section__select-grid">
         <section>
           <h3>Small - With Icons</h3>
@@ -110,7 +110,7 @@ export const DropdownMenuPage = (): JSX.Element => {
         </section>
       </div>
 
-      <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>With Search</h3>
+      <h3 className="demo-section__mt-2xl demo-section__mb-lg">With Search</h3>
       <div className="demo-section__select-grid">
         <section>
           <h3>Small - With Search</h3>
@@ -134,7 +134,7 @@ export const DropdownMenuPage = (): JSX.Element => {
         </section>
       </div>
 
-      <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Multiple Select</h3>
+      <h3 className="demo-section__mt-2xl demo-section__mb-lg">Multiple Select</h3>
       <div className="demo-section__select-grid">
         <section>
           <h3>Small - Multiple Select</h3>

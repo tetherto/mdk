@@ -46,7 +46,11 @@ export const AlarmRow = ({ data, onNavigate }: AlarmRowProps) => {
   }
 
   return (
-    <div className="mdk-alarm-row" style={{ '--mdk-alarm-color': color } as CSSProperties}>
+    <div
+      className="mdk-alarm-row"
+      // oxlint-disable-next-line react/forbid-dom-props -- severity colour passed as a custom property; the rule lives in alarm-row.scss
+      style={{ '--mdk-alarm-color': color } as CSSProperties}
+    >
       <div className="mdk-alarm-row__container" onClick={handleClick}>
         <div className="mdk-alarm-row__title-row">
           {ALERT_ICON_MAP[status]}

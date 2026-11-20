@@ -73,6 +73,45 @@ describe('Alert', () => {
     )
   })
 
+  describe('role', () => {
+    it('is an assertive live region by default', () => {
+      const { container } = render(<Alert title="Connection lost" />)
+
+      expect(container.querySelector('.mdk-alert')).toHaveAttribute('aria-live', 'assertive')
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+
+    it('announces politely when role is "status"', () => {
+      const { container } = render(<Alert role="status" title="3 apps could not be loaded" />)
+
+      expect(container.querySelector('.mdk-alert')).toHaveAttribute('aria-live', 'polite')
+      expect(screen.getByRole('status')).toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+
+    it('renders no live region when role is "none"', () => {
+      const { container } = render(<Alert role="none" title="Maintenance window tonight" banner />)
+
+      const wrapper = container.querySelector('.mdk-alert')
+      expect(wrapper).not.toHaveAttribute('role')
+      expect(wrapper).not.toHaveAttribute('aria-live')
+    })
+
+    it('still renders the content when role is "none"', () => {
+      render(<Alert role="none" title="Maintenance window tonight" description="01:00–03:00 UTC" />)
+
+      expect(screen.getByText('Maintenance window tonight')).toBeInTheDocument()
+      expect(screen.getByText('01:00–03:00 UTC')).toBeInTheDocument()
+    })
+
+    it('lets an explicit aria-live override the one derived from the role', () => {
+      const { container } = render(<Alert aria-live="polite" title="Firmware ready" />)
+
+      expect(container.querySelector('.mdk-alert')).toHaveAttribute('aria-live', 'polite')
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+  })
+
   describe('title', () => {
     it('renders the title text', () => {
       render(<Alert title="Success Text" />)

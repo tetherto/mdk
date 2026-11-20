@@ -96,6 +96,10 @@ If outbound access or network-interface inspection is blocked, startup may stop 
 A machine with no outbound access runs the [local and air-gapped profile][private-dht] instead: a private bootstrap on `127.0.0.1`
 that every component joins.
 
+A stack started by `mdk run` reports this itself: a Worker the Kernel could not reach over the DHT is
+printed as `! worker <name> not registered with the Kernel`, followed once per run by what to check.
+The [local and air-gapped profile][private-dht] has the setting it names.
+
 Check:
 
 - The machine has outbound network access.

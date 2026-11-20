@@ -41,7 +41,7 @@ Where they live inside the shape above:
 - `troubleshooting` is an array of conditional remediation strings at the health level (`capabilities.health.troubleshooting`), each entry a vendor-validated *if X then Y* runbook step.
 - `errors` is its own top-level map under `capabilities` (`capabilities.errors.<E_CODE>`), shown in the shape above; each value is the sentence the agent surfaces to the user when that code is reported.
 
-See [`backend/workers/miners/avalon/plugin/mdk-contract.json`](../../../backend/workers/miners/avalon/plugin/mdk-contract.json) for a complete worked example with all four populated.
+See [`backend/workers/miners/avalon/mdk-contract.json`](../../../backend/workers/miners/avalon/mdk-contract.json) for a complete worked example with all four populated.
 
 ### Core
 

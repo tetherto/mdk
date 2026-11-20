@@ -392,6 +392,20 @@ test('schemas - validatePayload command.cancel.response', (t) => {
   )
 })
 
+test('schemas - validatePayload action.push, push-batch and vote need no authPerms', (t) => {
+  const payloads = [
+    ['action.push', { action: 'reboot', voter: 'v', query: {}, params: [] }],
+    ['action.push-batch', { batchActionsPayload: [], voter: 'v' }],
+    ['action.vote', { id: 1, voter: 'v', approve: true }]
+  ]
+  for (const [action, payload] of payloads) {
+    t.ok(validatePayload(action, payload).valid, action)
+    // An older client still sends the field; it is ignored, not refused.
+    t.ok(validatePayload(action, { ...payload, authPerms: ['miner:w'] }).valid, `${action} with a stray authPerms`)
+    t.is(validatePayload(action, { ...payload, voter: undefined }).error, 'ERR_PAYLOAD_VOTER_REQUIRED', `${action} still needs a voter`)
+  }
+})
+
 test('envelope - validate() accepts new command lifecycle actions', (t) => {
   for (const action of [
     ACTIONS.COMMAND_STATUS,

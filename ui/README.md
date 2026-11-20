@@ -8,7 +8,7 @@
 > [`AGENTS.md`](AGENTS.md) — its "Start here" section is the ordered
 > reading path (architecture tour, package layout, and the export contract).
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/tetherto/mdk/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../LICENSE)
 
 ## Table of contents
 
@@ -280,7 +280,7 @@ For details:
 
 ## License
 
-Apache 2.0, see [LICENSE](https://github.com/tetherto/mdk/blob/main/LICENSE)
+Apache 2.0, see [LICENSE](../LICENSE)
 for details.
 
 ## Acknowledgments

@@ -1,7 +1,6 @@
 import { cn, COLOR, FALLBACK } from '@primitives'
 import type { CSSProperties, ReactElement } from 'react'
 
-import { getMetricCardValueColor } from './metric-card-utils'
 import type { MetricCardProps } from './props'
 
 export { getMetricCardValueColor } from './metric-card-utils'
@@ -31,6 +30,7 @@ export const MetricCard = ({
   return (
     <div
       className={cn('mdk-metric-card', noMinWidth && 'mdk-metric-card--no-min-width', className)}
+      // oxlint-disable-next-line react/forbid-dom-props -- consumer-supplied bgColor, passed as a custom property
       style={
         {
           '--mdk-metric-card-bg': bgColor ?? COLOR.BLACK_ALPHA_05,
@@ -39,8 +39,12 @@ export const MetricCard = ({
     >
       <div className="mdk-metric-card__label">{label}</div>
       <div
-        className={cn('mdk-metric-card__value', isValueMedium && 'mdk-metric-card__value--medium')}
-        style={{ color: getMetricCardValueColor({ isHighlighted, isTransparentColor }) }}
+        className={cn(
+          'mdk-metric-card__value',
+          isValueMedium && 'mdk-metric-card__value--medium',
+          isHighlighted && 'mdk-metric-card__value--highlighted',
+          !isHighlighted && isTransparentColor && 'mdk-metric-card__value--transparent',
+        )}
       >
         {displayValue}
         {displayValue !== FALLBACK && unit ? ` ${unit}` : null}

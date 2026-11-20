@@ -44,6 +44,7 @@ export const TimelineBar = memo(
       <SimpleTooltip content={tooltipContent} side="top">
         <div
           className="mdk-timeline-chart__bar"
+          // oxlint-disable-next-line react/forbid-dom-props -- bar position, width and colour computed from the data
           style={{
             left: `${leftPercent}%`,
             width: `${widthPercent}%`,

@@ -11,6 +11,7 @@ const mockClient = vi.hoisted(() => ({
   getStatus: vi.fn(),
   getRbac: vi.fn(),
   applyRbac: vi.fn(),
+  getJwks: vi.fn().mockResolvedValue({ keys: [] }),
 }));
 const createMdkClientMock = vi.hoisted(() => vi.fn(() => mockClient));
 
@@ -34,6 +35,7 @@ const { applyStackRbac, showStackRbac } = await import('../../src/lib/rbac-kerne
 const { kernelKeyFile } = await import('../../src/lib/runtime.js');
 const { rbacVersion } = await import('../../src/lib/rbac.js');
 const { StackSpecError } = await import('../../src/lib/spec.js');
+const { sessionFile } = await import('../../src/lib/session.js');
 
 afterEach(() => {
   cleanupTmpDirs();
@@ -66,7 +68,7 @@ describe('applyStackRbac', () => {
       kernelKey: 'ab'.repeat(32),
       kernelCredential: { name: 'mdk-cli', privateKey: expect.stringContaining('PRIVATE KEY') },
     }));
-    expect(mockClient.connect).toHaveBeenCalledWith({ warmup: true });
+    expect(mockClient.connect).toHaveBeenCalledWith({ warmup: true, warmupTimeoutMs: 5000 });
     expect(mockClient.close).toHaveBeenCalled();
   });
 
@@ -87,6 +89,23 @@ describe('applyStackRbac', () => {
       message: 'the Kernel refused the policy and kept the one in force: ERR_RBAC_POLICY_INVALID: 1 problem(s)',
       errors: ['x'],
     });
+  });
+
+  it('tells a refused sign-in or permission apart from a refused policy', async () => {
+    mockClient.applyRbac.mockRejectedValue(new Error('ERR_KERNEL_ACTION_FORBIDDEN: viewer may not write policy'));
+    const forbidden = await applyStackRbac(project());
+    expect(forbidden).toEqual({
+      ok: false,
+      local,
+      kernel: 'up',
+      accessRefused: true,
+      message: 'spec.rbac was not applied: ERR_KERNEL_ACTION_FORBIDDEN: viewer may not write policy',
+    });
+    mockClient.applyRbac.mockRejectedValue(new Error('ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.'));
+    expect(await applyStackRbac(project())).toMatchObject({ ok: false, accessRefused: true, message: expect.stringMatching(/^spec\.rbac was not applied: ERR_CLI_SESSION_EXPIRED/) });
+
+    mockClient.applyRbac.mockResolvedValue({ error: 'ERR_RBAC_POLICY_INVALID: 1 problem(s)\n  - x', errors: ['x'] });
+    expect(await applyStackRbac(project())).not.toHaveProperty('accessRefused');
   });
 
   it('reports a Kernel that is not running, or not reachable', async () => {
@@ -123,12 +142,52 @@ describe('showStackRbac', () => {
     expect((await showStackRbac(project())).inSync).toBe(false);
 
     mockClient.getRbac.mockResolvedValue({ record: null });
-    expect(await showStackRbac(project())).toMatchObject({ applied: null, inSync: false });
+    const empty = await showStackRbac(project());
+    expect(empty).toMatchObject({ applied: null, inSync: false });
+    expect(empty).not.toHaveProperty('refused');
   });
 
   it('reports a refusal and a Kernel that is down', async () => {
     mockClient.getRbac.mockRejectedValue(new Error('ERR_KERNEL_ACTION_FORBIDDEN: mdk-cli may not read policy'));
-    expect(await showStackRbac(project())).toMatchObject({ kernel: 'up', applied: null, message: expect.stringMatching(/FORBIDDEN/) });
+    expect(await showStackRbac(project())).toMatchObject({ kernel: 'up', applied: null, refused: true, message: expect.stringMatching(/FORBIDDEN/) });
+    mockClient.getRbac.mockRejectedValue(new Error('ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.'));
+    expect(await showStackRbac(project())).toMatchObject({ kernel: 'up', applied: null, inSync: false, refused: true, message: expect.stringMatching(/^ERR_CLI_SESSION_EXPIRED/) });
     expect(await showStackRbac(project(RBAC_YAML, false))).toMatchObject({ kernel: 'down', inSync: false });
+    expect(await showStackRbac(project(RBAC_YAML, false))).not.toHaveProperty('refused');
+  });
+
+  it('confirms the Kernel answers before reporting a session refusal, which the CLI raises without sending anything', async () => {
+    const expired = new Error('ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.');
+    mockClient.getRbac.mockRejectedValue(expired);
+    // A cold connection can outlast the first ping.
+    mockClient.getJwks.mockRejectedValueOnce(new Error('ERR_MDK_REQUEST_TIMEOUT'));
+    expect(await showStackRbac(project())).toMatchObject({ kernel: 'up', refused: true, message: expired.message });
+    expect(mockClient.getJwks).toHaveBeenCalledTimes(2);
+
+    mockClient.getJwks.mockClear();
+    for (let i = 0; i < 3; i++) mockClient.getJwks.mockRejectedValueOnce(new Error('ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED\nstack'));
+    const down = await showStackRbac(project());
+    expect(down).toMatchObject({ kernel: 'down', message: 'Kernel unreachable (ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED)' });
+    expect(down).not.toHaveProperty('refused');
+    expect(mockClient.getJwks).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not ping on the Kernel's own refusal: it answered", async () => {
+    mockClient.getRbac.mockRejectedValue(new Error('ERR_KERNEL_ACTION_FORBIDDEN: viewer may not read policy'));
+    expect(await showStackRbac(project())).toMatchObject({ kernel: 'up', refused: true });
+    expect(mockClient.getJwks).not.toHaveBeenCalled();
+  });
+
+  it('pings with the service account when the session file cannot be read', async () => {
+    const dir = project();
+    writeFileSync(sessionFile(dir), '{ not json');
+    const shown = await showStackRbac(dir);
+    expect(shown).toMatchObject({ kernel: 'up', refused: true, message: expect.stringMatching(/^ERR_CLI_SESSION_INVALID/) });
+    expect(createMdkClientMock).toHaveBeenCalledWith(expect.objectContaining({ kernelCredential: expect.objectContaining({ name: 'mdk-cli' }) }));
+    expect(mockClient.getRbac).not.toHaveBeenCalled();
+    expect(mockClient.close).toHaveBeenCalled();
+
+    for (let i = 0; i < 3; i++) mockClient.getJwks.mockRejectedValueOnce(new Error('ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED'));
+    expect(await showStackRbac(dir)).toMatchObject({ kernel: 'down', message: 'Kernel unreachable (ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED)' });
   });
 });

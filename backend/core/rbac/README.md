@@ -72,6 +72,13 @@ lets a caller name the voter of an action (an app voting for the user it authent
 caller. `commands: read` reads the Kernel's write-command log (`command.log`), which records every `command.request`
 attempt, refused ones included.
 
+`workers: read` governs one thing: the Worker's RPC public key on a `worker.list` row. `workers: list` returns the
+rows; the Kernel adds `rpcKey` to a row only for a caller whose rules allow `workers: read` on that Worker, and omits
+the field otherwise. A Worker whose contract has given the Kernel no `metadata.deviceFamily` and `metadata.brand` has
+no `family/brand/worker` name, so a rule scoped by `resourceNames` does not cover it; that includes every Worker that
+has not reached `READY` once. A Worker that did reach `READY` before a Kernel restart keeps its name, and its key, while
+it is back in `DISCOVERED` and not yet routable.
+
 A verb applies only to its own domain. So `viewer` with `resources: ["*"]` and `verbs: [get, list]` reads every route and no device.
 The validator rejects a rule whose verb fits none of its resources. `KERNEL_ACTIONS` maps every HRPC action the Kernel accepts from a
 caller to one of these checks; an action missing from it is refused. The sign-in actions (`auth.*`, listed in
@@ -99,6 +106,8 @@ loaded or applied.
 `validateAppPermissions` reports the same problems against the manifest's own paths, for `mdk validate app`, and `permissionsDigest`
 lets a later install tell a changed request from a role the operator narrowed.
 
+## Errors
+
 | Code                                | Fires when                                                                   | Fix                                                        |
 | ----------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | `ERR_RBAC_POLICY_INVALID`           | `spec.rbac` breaks a rule; `err.errors` lists each problem with its path     | Fix each listed path in `mdk.yaml`                         |
@@ -107,6 +116,17 @@ lets a later install tell a changed request from a role the operator narrowed.
 | `ERR_RBAC_APP_NAME_RESERVED`        | An app name equals a Kernel resource                                         | Rename the app                                             |
 | `ERR_RBAC_NAME_INVALID`             | A device or worker name segment is empty or holds `/` or `*`                 | Pass plain name segments to `deviceName` / `workerName`    |
 | `ERR_RBAC_STORE_BEE_REQUIRED`       | `PolicyStore` is built without a Hyperbee                                    | Pass `{ bee }`                                             |
+
+### Deny reasons
+
+`evaluate()` never throws. A request it does not allow returns `{ allowed: false, reason }` with one of these codes. The Gateway
+and the MCP server record the reason in their decision log and answer the caller with `ERR_AUTH_FORBIDDEN`.
+
+| Code                                | Fires when                                                                   | Fix                                                        |
+| ----------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `ERR_RBAC_IDENTITY_INVALID`         | The identity is missing, its `kind` is neither `user` nor `serviceaccount`, or its `sub` is empty or holds `*` | Pass the claims of a verified token                        |
+| `ERR_RBAC_REQUEST_INVALID`          | The request is missing, its `resource` or `resourceName` is empty or holds `*`, whitespace, or an empty path segment, or its `verb` is not one the resource takes | Build the request with `kernelRequest()` or `routeRequest()` |
+| `ERR_RBAC_NO_MATCHING_RULE`         | No role bound to the identity has a rule that covers the resource, the verb, and the instance | Bind the identity to a role with a rule for the request    |
 
 ## Next steps
 

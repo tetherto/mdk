@@ -64,6 +64,7 @@
               },
               "type": { "type": "string", "enum": ["number", "string", "boolean", "object", "array"] },
               "handler": { "type": "string", "description": "CommonJS handler path relative to the Worker Plugin directory. Removed from the contract published to Kernel." },
+              "path": { "type": "string", "description": "Dotted keypath (a.b.c, boards.0.temp) into the handler's return value that holds this metric. Lets one handler serve several metrics: the runtime calls each distinct handler once per sweep and extracts each metric by its path. Segments are identifiers or array indices; no brackets. Absent: the handler's return value is the metric value." },
               "description": { "type": "string", "description": "Human and AI readable metric description. Should include semantic boundaries (e.g., 'If 0, device is booting')." }
             }
           }
@@ -154,6 +155,30 @@
           "additionalProperties": { "type": "string" }
         }
       }
+    },
+    "telemetryPollIntervalMs": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Interval at which WorkerRuntime polls every device's telemetry handlers and stores the result. An operator overrides it per worker instance in mdk.yaml spec.workers[].config. Absent: the runtime does not poll or store."
+    },
+    "aggregateCacheTtlMs": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How long WorkerRuntime serves a repeated aggregate query from memory. Floored to one poll interval at runtime. Overridable in mdk.yaml spec.workers[].config."
+    },
+    "telemetryRetention": {
+      "type": "object",
+      "description": "Retention for the stored telemetry series. rawMs and rollupIntervalMs must not exceed keepMs (ERR_CONTRACT_RETENTION_INVALID). Overridable in mdk.yaml spec.workers[].config.",
+      "additionalProperties": false,
+      "properties": {
+        "rawMs": { "type": "integer", "minimum": 1, "description": "Keep points at poll resolution for this long." },
+        "rollupIntervalMs": { "type": "integer", "minimum": 1, "description": "Bucket size older points are rolled up into." },
+        "keepMs": { "type": "integer", "minimum": 1, "description": "Delete points older than this." }
+      }
+    },
+    "telemetryArchive": {
+      "type": "boolean",
+      "description": "Keep the raw points retention rolls up: each rolled bucket is appended to NDJSON day files under the host's telemetryArchiveDir before it is deleted, listed by the archive query type and loaded back with the restoreTelemetry command. Default false. Overridable in mdk.yaml spec.workers[].config."
     }
   }
 }

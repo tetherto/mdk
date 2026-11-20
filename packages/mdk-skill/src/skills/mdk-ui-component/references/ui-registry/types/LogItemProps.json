@@ -1,0 +1,1 @@
+{"name":"LogItemProps","path":"src/primitives/components/logs/types.ts","kind":"type","description":"","public":true,"definition":"{ data: LogData onLogClicked?: (uuid: string) => void }"}

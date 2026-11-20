@@ -1,0 +1,49 @@
+{
+  "name": "@tetherto/mdk-stats",
+  "version": "0.14.0",
+  "description": "MDK telemetry aggregation ops: composable sum/avg/group/concat operations the Worker Runtime aggregates with, the Kernel merges Worker results with, and mdk-core's StatsService and stats templates use",
+  "main": "index.js",
+  "keywords": [
+    "tether",
+    "mdk",
+    "stats",
+    "telemetry"
+  ],
+  "author": "Tether",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "lint": "bfx-lint-js .",
+    "lint:fix": "bfx-lint-js . --fix",
+    "test": "npm run lint && npm run test:unit",
+    "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js",
+    "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
+  },
+  "devDependencies": {
+    "brittle": "3.18.0",
+    "@bitfinex/lint-js": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/mdk.git",
+    "directory": "backend/core/stats"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "index.js",
+    "utils.js",
+    "ops/",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./utils": "./utils.js",
+    "./ops": "./ops/index.js",
+    "./package.json": "./package.json"
+  }
+}

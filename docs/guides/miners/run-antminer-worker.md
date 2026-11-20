@@ -54,6 +54,7 @@ main().catch((err) => { console.error(err); process.exit(1) })
 `config/devices.json` and points the adapter's devices at them. Read `startAntminerMocks` alongside
 `bootAntminerWorker` in that example's `backend/site.js` for the full wiring. `cd examples/mvp-site && npm run
 setup:example && npm start` boots the whole stack — Kernel, mocks, and the Antminer Worker included.
+It needs [the Starter site's prerequisites][mvp-site-prereqs], PM2 included.
 
 </details>
 
@@ -140,7 +141,7 @@ Device `config` fields the plugin reads:
 | `timeout` | No | Per-request timeout in milliseconds. Defaults to `10000` |
 | `type` | No | Device type tag such as `miner-am-s21xp_hyd`. Resolves the rated J/TH reported in `snap` |
 | `nominalEfficiencyWThs` | No | Overrides the nominal efficiency table for `snap` |
-| `conf` | No | Configured pools (`conf.pools`, max 3), timeouts and size limits |
+| `conf` | No | Configured pools (`conf.pools`, max 3), timeouts, and size limits |
 
 > [!WARNING]
 > Make sure each miner's IP is reachable from the machine or container running the Worker before registering.
@@ -190,6 +191,9 @@ already in use, follow [miner troubleshooting][miner-troubleshooting].
 
 [mvp-site-adapter]: ../../../examples/mvp-site/backend/antminer-adapter.js
 <!-- docs@tether.io: mvp-site-adapter → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/backend/antminer-adapter.js -->
+
+[mvp-site-prereqs]: ../../../examples/mvp-site/README.md#prerequisites
+<!-- docs@tether.io: mvp-site-prereqs → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/README.md#prerequisites -->
 
 [install-pattern]: ../../../backend/workers/docs/install-pattern.md
 <!-- docs@tether.io: install-pattern → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->

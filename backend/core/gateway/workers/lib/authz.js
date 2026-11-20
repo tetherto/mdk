@@ -4,10 +4,11 @@ const { routeAccess, routeRequest, IDENTITY_KIND } = require('@tetherto/mdk-rbac
 
 // Per-route access control at the Gateway, against the spec.rbac in force:
 //
-//   onRequest   the bearer token is verified, or the request answers 401
-//               (after the Host check and rate limit, so failed attempts are
-//               throttled too; before the body is read). A user's token is
-//               kept as req._actorToken for the forward (plugin-adapter.js)
+//   preParsing  the bearer token is verified, or the request answers 401
+//               (after the Host check and rate limit, both onRequest hooks, so
+//               failed attempts are throttled too; before the body is read).
+//               A user's token is kept as req._actorToken for the forward
+//               (plugin-adapter.js)
 //   preValidation  the identity is evaluated as the route's resource and verb,
 //               with its instance name from the declared param, query or body
 //               field, or the request answers 403. The body is parsed by now,
@@ -32,7 +33,7 @@ function _error (statusCode, message) {
  * @param {object} app - `{ name }`, the app the route belongs to
  * @param {object} route - the route table entry
  * @param {object} authority - see authority.js
- * @returns {{ onRequest: Function, preValidation: Function, access: object }}
+ * @returns {{ preParsing: Function, preValidation: Function, access: object }}
  */
 function createRouteAuthz (app, route, authority) {
   const access = routeAccess(app.name, route)
@@ -42,7 +43,7 @@ function createRouteAuthz (app, route, authority) {
     req.log.info({ authz: { ...base, ...entry } }, 'authz')
   }
 
-  async function onRequest (req, rep) {
+  async function preParsing (req, rep) {
     const token = _bearer(req.headers.authorization)
     if (!token) {
       log(req, { decision: 'unauthenticated', reason: 'no-token' })
@@ -83,7 +84,7 @@ function createRouteAuthz (app, route, authority) {
     }
   }
 
-  return { onRequest, preValidation, access }
+  return { preParsing, preValidation, access }
 }
 
 module.exports = { createRouteAuthz }

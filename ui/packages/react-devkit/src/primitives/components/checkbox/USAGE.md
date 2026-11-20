@@ -15,7 +15,7 @@ and border-radius variants. Indeterminate state via `checked="indeterminate"`.
 | `disabled` | Optional | `boolean` | `false` | Disable the input |
 | `indicatorClassName` | Optional | `string` | - | Custom className for the indicator element |
 | `onCheckedChange` | Optional | `(((checked: CheckedState) => void) & ((checked: CheckedState) => void))` | - | Callback when the checked state changes |
-| `radius` | Optional | `"small" \| "none" \| "medium" \| "large" \| "full"` | `"none"` | Border radius variant |
+| `radius` | Optional | `"none" \| "small" \| "medium" \| "large" \| "full"` | `"none"` | Border radius variant |
 | `size` | Optional | `"sm" \| "md" \| "lg" \| "xs"` | `"md"` | Size variant of the checkbox |
 <!-- END GENERATED: props -->
 

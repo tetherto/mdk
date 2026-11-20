@@ -1,0 +1,1 @@
+{"name":"DialogHeaderProps","path":"src/primitives/components/dialog/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** * Applies `mdk-dialog__header--bare` to the header * @default false */ bare?: boolean /** Shows an ✕ close button in the header */ closable?: boolean /** Fired when the ✕ button is clicked */ onClose?: VoidFunction }"}

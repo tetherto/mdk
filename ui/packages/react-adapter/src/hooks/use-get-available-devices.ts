@@ -32,7 +32,7 @@ export type UseGetAvailableDevicesOptions = {
  * @remarks
  * The `/auth/list-things` endpoint is illustrative. MDK does not ship a built-in
  * endpoint for it — create your own via a
- * [Gateway plugin](https://docs.tether.io/mdk/guides/gateway/plugins) matching
+ * [Gateway app](https://github.com/tetherto/mdk/blob/main/docs/guides/gateway/apps.md) matching
  * your Worker/business logic. No reference implementation of `/auth/list-things`
  * ships in this repo.
  *

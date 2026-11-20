@@ -24,6 +24,16 @@ const { startServices, GENERATED_MARKER } = require('../../services')
 
 const repoRoot = path.join(__dirname, '..', '..', '..', '..', '..')
 
+// miner-avalon is a WorkerRuntimeV2 family, so it needs a device list.
+const AVALON_WK = {
+  kind: 'worker',
+  name: 'wk',
+  worker: 'miner-avalon',
+  type: 'A1346',
+  rack: 'r1',
+  devices: [{ id: 'av-1', opts: { address: '127.0.0.1', port: 4028 } }]
+}
+
 // A tmp site dir nested under the real repo root so the generated mdk/ entry
 // resolves @tetherto/* packages through the workspace node_modules.
 function useTmpSiteDir (t) {
@@ -50,7 +60,7 @@ test('startServices dispatches to pm2, writes ecosystem.config.js, does not auto
     repoRoot,
     services: [
       { kind: 'gateway', name: 'gw', port: 3000 },
-      { kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }
+      { ...AVALON_WK }
     ]
   })
 
@@ -80,7 +90,7 @@ test('startServices pm2 autostarts when shouldAutoStart is set', async (t) => {
     runtime: 'pm2',
     repoRoot,
     shouldAutoStart: true,
-    services: [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+    services: [{ ...AVALON_WK }]
   })
 
   t.is(execCalls.length, 1)
@@ -98,7 +108,7 @@ test('startServices dispatches to docker, writes docker-compose.generated.yml', 
     image: 'mdk:latest',
     services: [
       { kind: 'gateway', name: 'gw', port: 3000 },
-      { kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }
+      { ...AVALON_WK }
     ]
   })
 
@@ -122,7 +132,7 @@ test('startServices docker autostarts when shouldAutoStart is set', async (t) =>
     repoRoot,
     image: 'mdk:latest',
     shouldAutoStart: true,
-    services: [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+    services: [{ ...AVALON_WK }]
   })
 
   t.is(execCalls.length, 1)
@@ -154,7 +164,7 @@ test('startServices removes stale generated legacy pm2-bootstrap.js files only',
   await startServices({
     runtime: 'pm2',
     repoRoot,
-    services: [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+    services: [{ ...AVALON_WK }]
   })
 
   t.absent(fs.existsSync(path.join(siteDir, 'mdk', 'pm2-bootstrap.js')), 'stale root legacy file removed')
@@ -177,7 +187,7 @@ test('startServices docker binds gateway ports to loopback unless a host is set'
 
 test('startServices refuses to overwrite user files in the site dir', async (t) => {
   const siteDir = useTmpSiteDir(t)
-  const services = [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+  const services = [{ ...AVALON_WK }]
 
   fs.writeFileSync(path.join(siteDir, 'ecosystem.config.js'), 'module.exports = { mine: true }\n')
   await t.exception(startServices({ runtime: 'pm2', repoRoot, services }), /ERR_MDK_GENERATED_FILE_CONFLICT/)
@@ -195,7 +205,7 @@ test('startServices refuses to overwrite user files in the site dir', async (t) 
 
 test('startServices requires an explicit repoRoot and never searches for one', async (t) => {
   useTmpSiteDir(t)
-  const services = [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+  const services = [{ ...AVALON_WK }]
   await t.exception(startServices({ runtime: 'pm2', services }), /ERR_MDK_REPO_ROOT_REQUIRED/)
   await t.exception(startServices({ runtime: 'docker', image: 'mdk:latest', services }), /ERR_MDK_REPO_ROOT_REQUIRED/)
   await t.exception(startServices({ runtime: 'pm2', repoRoot: '', services }), /ERR_MDK_REPO_ROOT_REQUIRED/)
@@ -210,7 +220,7 @@ test('startServices pm2 dht profile - loopback bootstrap app and env on every pr
     dht: {},
     services: [
       { kind: 'gateway', name: 'gw', port: 3000 },
-      { kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }
+      { ...AVALON_WK }
     ]
   })
 
@@ -233,7 +243,7 @@ test('startServices pm2 dht profile - an existing LAN list and interface, no gen
     runtime: 'pm2',
     repoRoot,
     dht: { bootstrap: ['10.0.0.5:49737'], host: '10.0.0.7' },
-    services: [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+    services: [{ ...AVALON_WK }]
   })
 
   const { apps } = require(path.join(siteDir, 'ecosystem.config.js'))
@@ -249,7 +259,7 @@ test('startServices pm2 dht profile - a LAN list without a host binds every inte
     runtime: 'pm2',
     repoRoot,
     dht: { bootstrap: ['10.0.0.5:49737'] },
-    services: [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+    services: [{ ...AVALON_WK }]
   })
 
   const { apps } = require(path.join(siteDir, 'ecosystem.config.js'))
@@ -259,7 +269,7 @@ test('startServices pm2 dht profile - a LAN list without a host binds every inte
 
 test('startServices dht profile refuses public bootstrap nodes and bad hosts', async (t) => {
   useTmpSiteDir(t)
-  const services = [{ kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }]
+  const services = [{ ...AVALON_WK }]
   await t.exception(startServices({ runtime: 'pm2', repoRoot, services, dht: { bootstrap: ['node1.hyperdht.org:49737'] } }), /ERR_MDK_DHT_BOOTSTRAP_PUBLIC/)
   await t.exception(startServices({ runtime: 'pm2', repoRoot, services, dht: { host: 'localhost' } }), /ERR_MDK_DHT_HOST_INVALID/)
   await t.exception(startServices({ runtime: 'pm2', repoRoot, services, dht: { host: '127.0.0.1', bootstrap: ['10.0.0.5:49737'] } }), /ERR_MDK_DHT_HOST_UNREACHABLE/)
@@ -276,7 +286,7 @@ test('startServices docker dht profile - private network, fixed addresses, boots
     dht: { internal: true },
     services: [
       { kind: 'gateway', name: 'gw', port: 3000 },
-      { kind: 'worker', name: 'wk', worker: 'miner-avalon', type: 'A1346', rack: 'r1' }
+      { ...AVALON_WK }
     ]
   })
   const yaml = fs.readFileSync(file, 'utf8')
@@ -291,4 +301,113 @@ test('startServices docker dht profile - private network, fixed addresses, boots
   t.ok(/networks:\n {2}mdk-dht:\n {4}driver: bridge\n {4}internal: true\n {4}ipam:\n {6}config:\n {8}- subnet: 172\.31\.249\.0\/24/.test(yaml), 'internal network declared')
   t.ok(/ {2}gw:[\s\S]*? {6}default: \{\}/.test(yaml), 'gateway also on the default network to publish its port')
   t.absent(/hyperdht\.org/.test(yaml))
+})
+
+const { WORKER_BOOTS, parseWorkerDevices, parseWorkerEnv } = require('../../utils/service-bootstrap')
+
+// Every WorkerRuntimeV2 family, as a startServices Worker entry with devices.
+const V2_SERVICES = Object.entries(WORKER_BOOTS)
+  .filter(([, spec]) => spec.runtime === 'v2')
+  .map(([worker, spec], i) => ({
+    kind: 'worker',
+    name: `v2-${i}`,
+    worker,
+    ...(spec.pool ? {} : { type: Object.keys(spec.models)[0] }),
+    rack: 'r1',
+    devices: [{ id: `${spec.prefix}-1`, opts: { address: '127.0.0.1', port: 1000 + i, password: 'device-secret' } }],
+    env: { API_SECRET: 'worker-secret' }
+  }))
+
+test('startServices pm2 points every V2 Worker at a devices file it boots with', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+  t.ok(V2_SERVICES.length >= 5, 'covers every migrated family')
+
+  await startServices({ runtime: 'pm2', repoRoot, services: V2_SERVICES })
+
+  const ecosystem = fs.readFileSync(path.join(siteDir, 'ecosystem.config.js'), 'utf8')
+  t.absent(ecosystem.includes('device-secret'), 'device credentials stay out of ecosystem.config.js')
+  t.absent(ecosystem.includes('worker-secret'), 'worker env stays out of ecosystem.config.js')
+
+  const { apps } = require(path.join(siteDir, 'ecosystem.config.js'))
+  for (const svc of V2_SERVICES) {
+    const { env } = apps.find((a) => a.name === `mdk-${svc.name}`)
+    t.is(env.MDK_WORKER_DEVICES_FILE, path.join(siteDir, 'mdk-workers', `${svc.name}.devices.json`), `${svc.worker}: devices file set`)
+    t.alike(parseWorkerDevices(env), [{ deviceId: svc.devices[0].id, config: svc.devices[0].opts }], `${svc.worker}: boots with its devices`)
+    t.alike(parseWorkerEnv(env), svc.env, `${svc.worker}: boots with its worker env`)
+    if (process.platform !== 'win32') {
+      t.is(fs.statSync(env.MDK_WORKER_DEVICES_FILE).mode & 0o777, 0o600, `${svc.worker}: devices file is owner-only`)
+      t.is(fs.statSync(env.MDK_WORKER_ENV_FILE).mode & 0o777, 0o600, `${svc.worker}: env file is owner-only`)
+    }
+  }
+})
+
+test('startServices docker points every V2 Worker at its devices file inside the container', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+
+  const { file } = await startServices({ runtime: 'docker', repoRoot, image: 'mdk:latest', services: V2_SERVICES })
+
+  const yaml = fs.readFileSync(file, 'utf8')
+  t.absent(yaml.includes('device-secret'), 'device credentials stay out of the compose file')
+  t.absent(yaml.includes('worker-secret'), 'worker env stays out of the compose file')
+
+  const containerSite = path.posix.join('/app/repo', path.relative(repoRoot, siteDir).split(path.sep).join('/'))
+  for (const svc of V2_SERVICES) {
+    const inContainer = `${containerSite}/mdk-workers/${svc.name}.devices.json`
+    t.ok(yaml.includes(`MDK_WORKER_DEVICES_FILE: ${inContainer}`), `${svc.worker}: container path set`)
+    t.ok(yaml.includes(`MDK_WORKER_ENV_FILE: ${containerSite}/mdk-workers/${svc.name}.env.json`), `${svc.worker}: env file set`)
+    const onHost = path.join(siteDir, 'mdk-workers', `${svc.name}.devices.json`)
+    t.alike(parseWorkerDevices({ MDK_WORKER_DEVICES_FILE: onHost }), [{ deviceId: svc.devices[0].id, config: svc.devices[0].opts }])
+  }
+})
+
+test('startServices refuses a V2 Worker without devices before writing anything', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+  for (const svc of V2_SERVICES) {
+    const { devices, ...noDevices } = svc
+    await t.exception(startServices({ runtime: 'pm2', repoRoot, services: [noDevices] }), /ERR_MDK_WORKER_DEVICES_REQUIRED/, `${svc.worker}: pm2`)
+    await t.exception(startServices({ runtime: 'docker', image: 'mdk:latest', repoRoot, services: [{ ...noDevices, devices: [] }] }), /ERR_MDK_WORKER_DEVICES_REQUIRED/, `${svc.worker}: docker`)
+  }
+  t.absent(fs.existsSync(path.join(siteDir, 'ecosystem.config.js')), 'no ecosystem written')
+  t.absent(fs.existsSync(path.join(siteDir, 'docker-compose.generated.yml')), 'no compose file written')
+  t.absent(fs.existsSync(path.join(siteDir, 'mdk')), 'no mdk/ entry written')
+})
+
+test('startServices validates Worker devices, env and names', async (t) => {
+  useTmpSiteDir(t)
+  const run = (svc) => startServices({ runtime: 'pm2', repoRoot, services: [{ ...AVALON_WK, ...svc }] })
+  await t.exception(run({ devices: [{ opts: {} }] }), /ERR_MDK_WORKER_DEVICES_INVALID: device 0 has no id/)
+  await t.exception(run({ env: ['x'] }), /ERR_MDK_WORKER_ENV_INVALID/)
+  await t.exception(run({ env: null }), /ERR_MDK_WORKER_ENV_INVALID/)
+  await t.exception(run({ name: '../escape' }), /ERR_MDK_SERVICE_NAME_INVALID/)
+  await t.exception(
+    startServices({ runtime: 'pm2', repoRoot, services: [{ kind: 'worker', name: 'ant', worker: 'container-antspace', type: 'HK3', rack: 'r1', devices: [{ id: 'a' }] }] }),
+    /ERR_MDK_WORKER_DEVICES_UNSUPPORTED/,
+    'a v1 Worker refuses devices instead of ignoring them'
+  )
+})
+
+test('startServices v1 Workers need no devices and get no devices file', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+  await startServices({ runtime: 'pm2', repoRoot, services: [{ kind: 'worker', name: 'ant', worker: 'container-antspace', type: 'HK3', rack: 'r1' }] })
+  const { apps } = require(path.join(siteDir, 'ecosystem.config.js'))
+  t.absent('MDK_WORKER_DEVICES_FILE' in apps[0].env)
+  t.absent(fs.existsSync(path.join(siteDir, 'mdk-workers')))
+})
+
+test('startServices drops a stale generated env file when env is removed', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+  const envFile = path.join(siteDir, 'mdk-workers', 'wk.env.json')
+  await startServices({ runtime: 'pm2', repoRoot, services: [{ ...AVALON_WK, env: { A: '1' } }] })
+  t.ok(fs.existsSync(envFile))
+  await startServices({ runtime: 'pm2', repoRoot, services: [{ ...AVALON_WK }] })
+  t.absent(fs.existsSync(envFile), 'removed')
+  const content = fs.readFileSync(path.join(siteDir, 'ecosystem.config.js'), 'utf8')
+  t.absent(content.includes('MDK_WORKER_ENV_FILE'))
+})
+
+test('startServices refuses to overwrite a hand-written devices file', async (t) => {
+  const siteDir = useTmpSiteDir(t)
+  fs.mkdirSync(path.join(siteDir, 'mdk-workers'))
+  fs.writeFileSync(path.join(siteDir, 'mdk-workers', 'wk.devices.json'), '[{"id":"mine"}]')
+  await t.exception(startServices({ runtime: 'pm2', repoRoot, services: [{ ...AVALON_WK }] }), /ERR_MDK_GENERATED_FILE_CONFLICT/)
 })

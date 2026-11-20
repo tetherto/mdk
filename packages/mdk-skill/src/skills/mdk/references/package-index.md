@@ -8,7 +8,7 @@ failure. Paths are relative to the monorepo root.
 
 | Package                 | Folder                                                             | What it is                                                |
 | ----------------------- | ------------------------------------------------------------------ | --------------------------------------------------------- |
-| `@tetherto/mdk-core`    | [`backend/core/mdk`](../../../../../../backend/core/mdk/README.md) | Umbrella boot glue (`getKernel`, `startGateway`, `waitForDiscovery`, default topic file helpers, `libStats` aggregation ops); no generic `startWorker`, each Worker package ships its own boot function |
+| `@tetherto/mdk-core`    | [`backend/core/mdk`](../../../../../../backend/core/mdk/README.md) | Umbrella boot glue (`getKernel`, `startGateway`, `waitForDiscovery`, default topic file helpers, `libStats`, a re-export of `@tetherto/mdk-stats`); no generic `startWorker`, each Worker package ships its own boot function |
 | `@tetherto/mdk-kernel`  | [`backend/core/kernel`](../../../../../../backend/core/kernel/README.md) | The Kernel: protocol layer + 8 orchestration modules |
 | `@tetherto/mdk-worker`  | [`backend/core/mdk-worker`](../../../../../../backend/core/mdk-worker/index.js) | Worker Runtime: `WorkerRuntime`, `loadPlugin`, contract schema |
 | `@tetherto/mdk-gateway` | [`backend/core/gateway`](../../../../../../backend/core/gateway/README.md) | HTTP Gateway in front of the Kernel                |
@@ -30,7 +30,13 @@ failure. Paths are relative to the monorepo root.
 | `@tetherto/mdk-worker-f2pool`   | [`backend/workers/minerpools/f2pool`](../../../../../../backend/workers/minerpools/f2pool/README.md) | Pool HTTP API        |
 | `@tetherto/mdk-worker-mock` | [`backend/workers/mock`](../../../../../../backend/workers/mock/README.md) | Shared device-mock framework (BaseMock, category mocks, transports) |
 
-Whatsminer support is the external [`whatsminer-mdk-worker`](https://github.com/whatsminer/whatsminer-mdk-worker) contract plugin (CGMiner JSON over TCP, AES-encrypted), hosted directly on `WorkerRuntimeV2` via a thin per-deployment adapter (see `examples/mvp-site/backend/whatsminer-adapter.js`). Antminer support is likewise the external [`antminer-mdk-worker`](https://github.com/bitmain-official/antminer-mdk-worker) contract plugin (HTTP CGI, Digest auth), hosted the same way (see `examples/mvp-site/backend/antminer-adapter.js`). Ocean pool support is likewise the external [`ocean-mdk-worker`](https://github.com/OCEAN-xyz/mdk-wrk-minerpool-ocean) contract plugin (Ocean HTTP API, optional DATUM gateway), hosted the same way (see `examples/mvp-site/backend/ocean-adapter.js`).
+Whatsminer support is the external [`whatsminer-mdk-worker`](https://github.com/whatsminer/whatsminer-mdk-worker) contract plugin
+(CGMiner JSON over TCP, AES-encrypted), hosted directly on `WorkerRuntimeV2` via a thin per-deployment adapter
+([`whatsminer-adapter.js`](../../../../../../examples/mvp-site/backend/whatsminer-adapter.js)). Antminer support is likewise the external
+[`antminer-mdk-worker`](https://github.com/bitmain-official/antminer-mdk-worker) contract plugin (HTTP CGI, Digest auth), hosted the same
+way ([`antminer-adapter.js`](../../../../../../examples/mvp-site/backend/antminer-adapter.js)). Ocean pool support is likewise the external
+[`ocean-mdk-worker`](https://github.com/OCEAN-xyz/mdk-wrk-minerpool-ocean) contract plugin (Ocean HTTP API, optional DATUM gateway), hosted
+the same way ([`ocean-adapter.js`](../../../../../../examples/mvp-site/backend/ocean-adapter.js)).
 
 Generated Worker docs: [`backend/workers/docs/supported-workers.md`](../../../../../../backend/workers/docs/supported-workers.md) and
 [`backend/workers/docs/catalogue.json`](../../../../../../backend/workers/docs/catalogue.json) (from

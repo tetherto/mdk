@@ -1,0 +1,1 @@
+{"name":"Popover","path":"src/primitives/components/popover/index.tsx","description":"Popover Root - Container for a single popover","tier":"agent-ready","public":true,"category":"overlays","domainContext":"generic","props":[],"examples":["src/primitives/components/popover/popover.example.tsx"],"usageDoc":"src/primitives/components/popover/USAGE.md"}

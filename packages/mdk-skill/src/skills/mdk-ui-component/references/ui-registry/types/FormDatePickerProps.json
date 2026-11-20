@@ -1,0 +1,1 @@
+{"name":"FormDatePickerProps","path":"src/primitives/components/form/form-fields.tsx","kind":"type","description":"","public":true,"definition":"BaseFormFieldProps<TFieldValues, TName> & { datePickerProps?: Omit<React.ComponentProps<typeof DatePicker>, 'selected' | 'onSelect'> }"}

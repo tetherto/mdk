@@ -74,7 +74,30 @@ Payload shape: `{ query: { type, ...params } }`, `deviceId` in the envelope.
 - `type: 'metrics'` (default) — runs **every** declared telemetry handler for
   the addressed device: `{ deviceId, metrics: { <name>: value, … }, timestamp }`.
   With no `deviceId`, returns `{ devices: [{ deviceId, metrics|error }…] }`.
-- `type: 'list'` — `{ devices: [{ deviceId, status }] }` (no device needed).
+- `type: 'list'` — `{ devices: [{ deviceId, status }] }` with no `deviceId`; a
+  Worker on the store services answers `{ things }` instead, and addressed to a
+  device lists that device only. Through the Kernel, any type sent with
+  `query.workers` and no `deviceId` runs on each listed Worker and comes back
+  per Worker, `{ workers: { [workerId]: payload }, errors? }`
+  (`mdkClient.pullWorkerQuery`); `snapshot` and `aggregate` are merged instead.
+- `type: 'snapshot'` — the stored series of a Worker whose contract declares
+  `telemetryPollIntervalMs`, no device call: with no `deviceId`,
+  `{ devices: { [deviceId]: { metrics } }, snapshotTs }` (latest point per
+  device; `metrics`, `from`, `to`, `granularity` narrow it). Through the Kernel
+  with `query.workers: [workerId…]` the answers of several Workers are merged
+  (`mdkClient.pullSnapshot`). `ERR_TELEMETRY_STORE_DISABLED` when the Worker
+  does not poll.
+- `type: 'aggregate'` — `{ ops: { [name]: result }, deviceCount }`, an op spec
+  (`{ op, src?, group?, filter? }` over `metrics.<name>`, `info.<label>` or
+  `deviceId`) run on the Worker over the latest stored point of every device;
+  the Kernel merges partials across `query.workers` (`mdkClient.pullAggregate`).
+- `type: 'archive'`: `{ deviceId, days: [{ day, bytes }] }`, the NDJSON day
+  files a Worker whose config sets `telemetryArchive` holds for that device.
+  Device-scoped: `ERR_DEVICE_ID_REQUIRED` without a `deviceId`,
+  `ERR_TELEMETRY_ARCHIVE_DISABLED` when the archive is off. The matching
+  write is the published `restoreTelemetry` command (`{ from, to }`), which
+  puts a range back into the series at full resolution; a range older than
+  `keepMs` is refused with `ERR_TELEMETRY_RESTORE_RANGE`.
 - `type: '<channel>'` — any single declared telemetry name, with the rest of
   `query` passed to the handler as params:
   `{ query: { type: 'history', limit: 3 } }` → `{ name, value }`.

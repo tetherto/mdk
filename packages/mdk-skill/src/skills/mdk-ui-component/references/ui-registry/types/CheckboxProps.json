@@ -1,0 +1,1 @@
+{"name":"CheckboxProps","path":"src/primitives/components/checkbox/index.tsx","kind":"type","description":"","public":true,"definition":"{ // Key controlled-state props re-declared from the Radix root so they surface in // the generated docs (types reuse Radix's via indexed access — cannot drift). /** Controlled checked state */ checked?: CheckboxRootProps['checked'] /** Un…"}

@@ -11,11 +11,13 @@ the Gateway, Kernel, and Workers, but each layer owns a different responsibility
 Use this page to understand which layer receives a request, which layer validates it, and when a write becomes a command.
 
 > [!NOTE]
-> For package-level APIs and configuration, use the [Gateway README][gateway-readme], [Kernel README][kernel-readme], and [Worker README][worker-readme].
+> For package-level APIs and configuration, use the [Gateway README][gateway-readme], [Kernel README][kernel-readme], and
+> [Worker README][worker-readme].
 
 ## Responsibility boundaries
 
-**Gateway** owns the consumer-facing surface: it routes HTTP to the apps its stack declares, each in its own runtime process. It also owns sign-in, serving the
+**Gateway** owns the consumer-facing surface: it routes HTTP to the apps its stack declares, each in its own runtime process. It also owns
+sign-in, serving the
 Kernel's token issuer over `/auth/*` and checking [every app route][app-auth] against `spec.rbac`. Browser UIs enter MDK
 through the Gateway (they do not talk to Kernel directly). Agents can also reach MDK over MCP, a standalone
 [`@tetherto/mdk-mcp`][mcp-readme] process that derives tools from an app's routes.
@@ -84,13 +86,46 @@ against [the rules `spec.rbac` grants them][app-auth].
 
 Reads usually start in [an app controller][write-a-controller], pass through [the app's own `mdkClient`][client-in-app], and reach
 [Kernel][kernel-readme] as queries against the registry, capabilities, telemetry, or state. Kernel routes Worker-owned reads down to the
-relevant Worker and returns the result to the Gateway. Kernel-side storage is not where a series comes from: a controller that wants a
-historical or aggregated series fans that same `mdkClient` out across every registered Worker and reads it from the Worker's own persisted
-tail-log. An app does have a writable directory of its own, the `data/` subdirectory of its runtime's `storeDir`, reaching controllers as
-`config.dataDir`.
+relevant Worker and returns the result to the Gateway. An app does have a writable directory of its own, the `data/` subdirectory of its
+runtime's `storeDir`, reaching controllers as `config.dataDir`.
 
 > [!NOTE]
 > For app controller mechanics, use the [app authoring guide][app-authoring].
+
+### Fleet reads
+
+A question about the whole site, total hashrate across every miner say, is one request rather than one request per Worker. The caller names
+the Workers it wants and Kernel does the fan-out: it asks each of them, collects the answers, and returns a single result. A Worker that is
+unreachable or refuses the read is reported alongside that result rather than failing the call, so an unreachable Worker costs you its own
+devices and not the whole answer.
+
+Kernel stores none of this. It is a router and a merge point, and every reading still comes from the Worker that owns the device, out of
+[the series a polling Worker keeps][worker-telemetry-collector]. A Worker that does not poll holds no store: it answers
+`ERR_TELEMETRY_STORE_DISABLED` and is reported under `errors`. That leaves a choice of what to ask for:
+
+| What you want            | Call            | What comes back                                                            |
+| ------------------------ | --------------- | -------------------------------------------------------------------------- |
+| The readings themselves  | `pullSnapshot`  | Each device's stored readings, for a moment or across a range              |
+| One number for the fleet | `pullAggregate` | The merged result per operation, and how many devices had a stored reading |
+
+Reach for `pullSnapshot` when you are charting the readings, listing them, or computing something the aggregation operations cannot
+express. Reach for `pullAggregate` when the answer is a single total or average: each Worker computes over its own devices and Kernel folds
+the partial answers, so a reducing op such as `sum` or `avg` sends a running total rather than the readings behind it. `arr_concat`
+returns the readings themselves, and `group` and `group_multiple_stats` return one value per group key, which is per device only when the
+group is `deviceId`.
+
+> [!NOTE]
+> One `pullAggregate` call over every Worker returns the fleet's overall average: each Worker contributes a running accumulator, Kernel folds
+> them, and the division happens once, so every device counts once wherever it lives. A simple average of per-Worker or per-group averages
+> answers a different question, one where a Worker holding three devices weighs as much as one holding three hundred. Compose that
+> deliberately. For a grouping a device carries as an `info` label, a container say, take the per-group figures from a `group_avg` op and mean
+> those. Weighting each Worker equally needs the other route, reading each Worker on its own, because a Worker is not a source an op can group
+> on. Nothing in the answer says which of the two you asked for, so pick the one the question needs.
+> `deviceCount` is the number of devices whose latest stored point holds a reading, not how many fed a given operation, so it is not a
+> weighting to lean on.
+
+[The client's fleet reads][fleet-reads] define both calls and their return shapes, and [reading hardware data in a
+controller][app-fleet-reads] works a fleet read through end to end.
 
 ### Direct commands
 
@@ -124,11 +159,11 @@ flowchart TB
 
 An app a stack declares may put an HTTP actions surface in front of this. The Gateway checks the user's token against the route's
 `spec.rbac` rule and forwards the request to the app's own runtime process; the app then calls Kernel as its own service account
-(`app:<name>`), carrying the signed-in user's token beside its own, so Kernel allows the call only where `spec.rbac` grants both. Kernel owns [`ActionManager`][action-manager], [`ActionCaller`][action-caller], and the target
+(`app:<name>`), carrying the signed-in user's token beside its own, so Kernel allows the call only where `spec.rbac` grants both. Kernel
+owns [`ActionManager`][action-manager], [`ActionCaller`][action-caller], and the target
 checks at the protocol layer: a push needs
 `actions: write` and `devices: write` on every device it resolves to, and a vote needs `actions: vote` and `devices: write`
-on every device of the stored action. For a caller with a token, the `authPerms` a payload carries are ignored; they only
-apply to in-process calls. Workers answer
+on every device of the stored action. Workers answer
 `write.calls.request` while Kernel resolves candidate writes, then execute the final `command.request` after the configured vote
 thresholds are met.
 
@@ -141,7 +176,8 @@ device of the Worker for a Worker-scoped command, before Kernel checks the comma
 capabilities. Every attempt, refused ones included, goes to the write-command log.
 
 > [!NOTE]
-> For implementation steps, use the [write-actions how-to][write-actions-how-to]. For React hook names and exports, use the [React adapter README][react-adapter-readme].
+> For implementation steps, use the [write-actions how-to][write-actions-how-to]. For React hook names and exports, use the
+> [React adapter README][react-adapter-readme].
 
 ## End-to-end scenarios
 
@@ -183,7 +219,8 @@ sequenceDiagram
     AI-->>User: "wm002 was overheating and has been rebooted."
 ```
 
-The Gateway hosts no MCP itself: the MCP server here is a standalone [`@tetherto/mdk-mcp`][mcp-readme] process that derives its tools from an app's routes, and the path below the MCP server is the same as for a direct HTTP call.
+The Gateway hosts no MCP itself: the MCP server here is a standalone [`@tetherto/mdk-mcp`][mcp-readme] process that derives its tools from
+an app's routes, and the path below the MCP server is the same as for a direct HTTP call.
 
 ### Human UI scenario
 
@@ -292,6 +329,15 @@ The write-action flow is reachable from two different layers depending on where 
 
 [client-readme]: ../../backend/core/client/README.md
 <!-- docs@tether.io: client-readme → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md -->
+
+[fleet-reads]: ../../backend/core/client/README.md#client-methods
+<!-- docs@tether.io: fleet-reads → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md#client-methods -->
+
+[worker-telemetry-collector]: ../../backend/core/mdk-worker/README.md#telemetry-collector
+<!-- docs@tether.io: worker-telemetry-collector → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#telemetry-collector -->
+
+[app-fleet-reads]: ../guides/gateway/apps.md#read-hardware-data
+<!-- docs@tether.io: app-fleet-reads → guides/gateway/apps#read-hardware-data -->
 
 [hrpc-glossary]: ../reference/glossary.md#hyperswarm-rpc
 

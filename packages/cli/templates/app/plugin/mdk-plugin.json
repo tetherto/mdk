@@ -1,4 +1,5 @@
 {
+  "routeTableVersion": "1",
   "name": "__PLUGIN_NAME__",
   "version": "0.1.0",
   "description": "MDK app — HTTP endpoints that aggregate worker telemetry.",

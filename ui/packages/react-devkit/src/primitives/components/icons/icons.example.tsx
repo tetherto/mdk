@@ -13,18 +13,18 @@ import {
 } from '@tetherto/mdk-react-devkit'
 
 const IconRow = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>{children}</div>
+  <div className="mdk-example-row">{children}</div>
 )
 
 const IconSample = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+  <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-sm">
     {children}
-    <span style={{ fontSize: 11, color: 'var(--mdk-color-text-secondary, #888)' }}>{label}</span>
+    <span className="mdk-example-caption mdk-example-caption--sm">{label}</span>
   </div>
 )
 
 export const IconsExample = () => (
-  <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+  <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-xl">
     {/* Default size (24px) */}
     <IconRow>
       <IconSample label="DashboardNavIcon">

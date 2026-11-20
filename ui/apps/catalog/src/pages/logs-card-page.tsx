@@ -40,17 +40,17 @@ export const LogsCardPage = (): JSX.Element => {
     <section className="demo-section">
       <h2 className="demo-section__title">Logs Card</h2>
 
-      <div className="demo-section__column" style={{ gap: '2rem' }}>
+      <div className="demo-section__column">
         {/* LogActivityIcon */}
         <div>
           <h3>LogActivityIcon</h3>
-          <div style={{ display: 'flex', gap: '20px', marginTop: '1rem' }}>
+          <div className="logs-demo__row">
             <div>
-              <p style={{ marginBottom: '0.5rem', color: 'var(--mdk-color-white)' }}>Completed</p>
+              <p className="logs-demo__label">Completed</p>
               <LogActivityIcon status={ACTIVITY_LOG_STATUS.COMPLETED} />
             </div>
             <div>
-              <p style={{ marginBottom: '0.5rem', color: 'var(--mdk-color-white)' }}>Pending</p>
+              <p className="logs-demo__label">Pending</p>
               <LogActivityIcon status={ACTIVITY_LOG_STATUS.PENDING} />
             </div>
           </div>
@@ -59,37 +59,25 @@ export const LogsCardPage = (): JSX.Element => {
         {/* LogDot */}
         <div>
           <h3>LogDot</h3>
-          <div
-            style={{ display: 'flex', gap: '20px', marginTop: '1rem', alignItems: 'flex-start' }}
-          >
+          <div className="logs-demo__row logs-demo__row--start">
             <div>
-              <p style={{ marginBottom: '0.5rem', color: 'var(--mdk-color-white)' }}>
-                Activity - Completed
-              </p>
+              <p className="logs-demo__label">Activity - Completed</p>
               <LogDot type={LOG_TYPES.ACTIVITY} status={ACTIVITY_LOG_STATUS.COMPLETED} />
             </div>
             <div>
-              <p style={{ marginBottom: '0.5rem', color: 'var(--mdk-color-white)' }}>
-                Activity - Pending
-              </p>
+              <p className="logs-demo__label">Activity - Pending</p>
               <LogDot type={LOG_TYPES.ACTIVITY} status={ACTIVITY_LOG_STATUS.PENDING} />
             </div>
             <div>
-              <p style={{ marginBottom: '0.5rem', color: 'var(--mdk-color-white)' }}>
-                Incidents - Critical
-              </p>
+              <p className="logs-demo__label">Incidents - Critical</p>
               <LogDot type={LOG_TYPES.INCIDENTS} status="Critical" />
             </div>
             <div>
-              <p style={{ marginBottom: '0.5rem', color: 'var(--mdk-color-white)' }}>
-                Incidents - High
-              </p>
+              <p className="logs-demo__label">Incidents - High</p>
               <LogDot type={LOG_TYPES.INCIDENTS} status="High" />
             </div>
             <div>
-              <p style={{ marginBottom: '0.5rem', color: 'var(--mdk-color-white)' }}>
-                Incidents - Medium
-              </p>
+              <p className="logs-demo__label">Incidents - Medium</p>
               <LogDot type={LOG_TYPES.INCIDENTS} status="Medium" />
             </div>
           </div>
@@ -98,7 +86,7 @@ export const LogsCardPage = (): JSX.Element => {
         {/* LogItem */}
         <div>
           <h3>LogItem</h3>
-          <div style={{ marginTop: '1rem', maxWidth: '400px' }}>
+          <div className="logs-demo__frame logs-demo__frame--sm">
             <LogItem
               data={{
                 status: ACTIVITY_LOG_STATUS.COMPLETED,
@@ -115,7 +103,7 @@ export const LogsCardPage = (): JSX.Element => {
         {/* LogRow */}
         <div>
           <h3>LogRow</h3>
-          <div style={{ marginTop: '1rem', maxWidth: '500px' }}>
+          <div className="logs-demo__frame logs-demo__frame--md">
             <LogRow log={sampleLogs[0]!} onLogClicked={() => {}} type={LOG_TYPES.ACTIVITY} />
           </div>
         </div>
@@ -123,7 +111,7 @@ export const LogsCardPage = (): JSX.Element => {
         {/* LogsCard - Activity Logs */}
         <div>
           <h3>LogsCard (Activity Logs Without Pagination)</h3>
-          <div style={{ marginTop: '1rem', maxWidth: '600px' }}>
+          <div className="logs-demo__frame">
             <LogsCard
               type={LOG_TYPES.ACTIVITY}
               logsData={sampleLogs}
@@ -136,7 +124,7 @@ export const LogsCardPage = (): JSX.Element => {
         {/* LogsCard - Activity Logs */}
         <div>
           <h3>LogsCard (With Pagination)</h3>
-          <div style={{ marginTop: '1rem', maxWidth: '600px' }}>
+          <div className="logs-demo__frame">
             <LogsCard
               type={LOG_TYPES.ACTIVITY}
               logsData={[...sampleLogs, ...sampleLogs, ...sampleLogs]}
@@ -155,7 +143,7 @@ export const LogsCardPage = (): JSX.Element => {
         {/* LogsCard - Loading State */}
         <div>
           <h3>LogsCard (Loading State)</h3>
-          <div style={{ marginTop: '1rem', maxWidth: '600px' }}>
+          <div className="logs-demo__frame">
             <LogsCard type={LOG_TYPES.ACTIVITY} label="Loading Logs" isLoading />
           </div>
         </div>
@@ -163,7 +151,7 @@ export const LogsCardPage = (): JSX.Element => {
         {/* LogsCard - Empty State */}
         <div>
           <h3>LogsCard (Empty State)</h3>
-          <div style={{ marginTop: '1rem', maxWidth: '600px' }}>
+          <div className="logs-demo__frame">
             <LogsCard
               type={LOG_TYPES.INCIDENTS}
               logsData={[]}

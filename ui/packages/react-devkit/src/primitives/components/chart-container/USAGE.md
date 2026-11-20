@@ -48,7 +48,7 @@ A layout wrapper for charts that provides a title/header row, interactive legend
 | Field | Status | Type / Options | Default | Description |
 |------|--------|----------------|---------|-------------|
 | `onChange` | Required | `(value: string) => void` | - | Fires when user picks a range |
-| `options` | Required | `RangeSelectorOption[]` | - | `{ label, value }` items |
+| `options` | Required | `RangeSelectorOption[]` | - | `{ label, value, disabled? }` items |
 | `value` | Required | `string` | - | Currently selected value |
 | `buttonClassName` | Optional | `string` | - | Additional class for each option button |
 | `className` | Optional | `string` | - | Additional class for the selector |

@@ -85,7 +85,7 @@ function discoverWorkerKeys (kernel, dir, { rescanMs = 4000, warnAfterMs = 60000
     if (!key) return
     const workerId = file.slice(0, -'.key'.length)
     Promise.resolve(kernel.dhtListener.discoverWorker(key))
-      .then((registered) => settle(workerId, key, registered))
+      .then((outcome) => settle(workerId, key, outcome.registered))
       .catch((e) => {
         debug('discover %s failed: %s', file, e.message)
         settle(workerId, key, false)

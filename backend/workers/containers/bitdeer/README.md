@@ -82,15 +82,19 @@ The broker confines every client to a single registered container:
 | Publish to a command topic                             | Refused, and the client is disconnected                                     |
 | Subscribe to a wildcard, `$SYS`, or another container's topic | Refused with SUBACK `128`                                            |
 | Use a `containerId` that is not a registered device    | Refused                                                                     |
+| Use a `containerId` another open anonymous connection holds | Refused: a telemetry publish disconnects the client, a subscribe gets SUBACK `128` |
 | Publish a payload that is not valid JSON               | Dropped and logged under the `debug` namespace                              |
 
 With `mqttCredentials`, a client's login decides its container. Without it, the broker accepts anonymous clients and binds
-each connection to the first container it publishes or subscribes as.
+each connection to the first container it publishes or subscribes as, unless another open connection already holds that
+container. The container is free again once that connection closes.
 
 > [!WARNING]
-> Without `mqttCredentials`, any host that reaches the broker port can still connect as a registered container that has
-> not connected yet and send that container's telemetry. Set `mqttCredentials`, bind `mqttHost` to the container network
-> interface, and use `mqttTls` where the containers support MQTTS.
+> Without `mqttCredentials`, any host that reaches the broker port can connect as any registered container that has no
+> open connection, such as one that is offline or restarting, then send that container's telemetry and receive its
+> commands. Set `mqttCredentials`, bind `mqttHost` to the container network
+> interface, and use `mqttTls` where the containers support MQTTS. An anonymous broker on a non-loopback address logs a
+> warning at startup.
 
 ## Telemetry
 
@@ -100,6 +104,10 @@ each connection to the first container it publishes or subscribes as.
 | `temperature`     | °C   | Container ambient temperature   |
 | `tank_status`     | —    | Cooling tank operational status |
 | `exhaust_status`  | —    | Exhaust fan system status       |
+
+The Worker Runtime polls every field above every 60 s (`telemetryPollIntervalMs` in `mdk-contract.json`) and stores the series,
+so a fleet read through `mdkClient.pullSnapshot()` or `mdkClient.pullAggregate()` costs no device call. An operator overrides the
+interval per instance in `mdk.yaml` under `spec.workers[].config` (`null` turns polling off).
 
 ## Commands
 
@@ -151,6 +159,8 @@ bdMock.createServer({ port: 10883, host: '127.0.0.1', type: 'd40_m56', id: 'C024
 | --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------ |
 | `ERR_DEVICE_CONFIG_INVALID` | A device is connected without `config.containerId` or `config.server` | Provide both `containerId` and `server` in the device config |
 | `ERR_MODEL_INVALID`         | The `model` is not a supported Bitdeer model          | Use one of the [supported Bitdeer models](#supported-models) |
+| `ERR_MQTT_AUTH_FAILED`      | With `mqttCredentials` set, a device connects to the broker with a username and password that match no entry | Give the container the credentials registered for it         |
+| `ERR_MQTT_PUBLISH_DENIED`   | A broker client publishes to a command topic, to the telemetry of a container another connection holds, or to a topic under another container's prefix | Publish only the container's own telemetry topics            |
 | `ERR_MQTT_CREDENTIALS_INVALID` | `opts.mqttCredentials` is not an object of `{ username, password }` entries with non-empty strings and unique usernames | Give every container a non-empty `username` and `password`, and use each username once |
 | `ERR_OFFLINE`               | A read or snapshot (not a command) targets a device that is not online | Wait for the device to reconnect before retrying             |
 | `ERR_STORE_DIR_REQUIRED`    | The boot function is called without `opts.storeDir`   | Pass a `storeDir` path to the boot function                  |

@@ -2,6 +2,7 @@
 title: Run MDK on a private HyperDHT
 description: The local and air-gapped profile, with private HyperDHT bootstrap nodes, an explicit bind interface and no public hyperdht.org traffic
 docs@tether_slug: guides/deployment/private-dht
+lastReviewedAt: "0.14.0"
 ---
 
 ## Overview
@@ -56,8 +57,11 @@ clients each start a DHT node, and one process left on the defaults joins the pu
 | Client                    | `createMdkClient({ kernelBootstrap, kernelDhtHost })`, or `hrpc: { bootstrap, dhtHost }` | Not applicable    |
 
 `startGateway({ bootstrap, dhtHost })` covers all three DHT nodes the Gateway starts: its net facility (the key the Kernel and Workers
-admit), its Kernel client and its app runtime client. Bootstrap lists that name a public `*.hyperdht.org` node are refused with
-`ERR_MDK_DHT_BOOTSTRAP_PUBLIC`.
+admit), its Kernel client and its app runtime client. A bootstrap list that names a public `*.hyperdht.org` node is
+refused: `startServices()`, `dhtFromProject()` and `dhtFromEnv()` (which reads `MDK_DHT_BOOTSTRAP`) throw
+`ERR_MDK_DHT_BOOTSTRAP_PUBLIC`, and `mdk run` stops with an error naming the `spec.network.dht.bootstrap` entry. A list
+passed straight to any other programmatic option, such as `getKernel()`, `startGateway()`, a Worker boot function,
+`WorkerRuntime`, `createAppRuntime()` or `createMdkClient()`, is not checked, so pass only your own bootstrap nodes there.
 
 ## Run the profile
 
@@ -68,20 +72,40 @@ Each subsection is an alternative; pick the one that matches how the stack runs.
 Start the bootstrap first and hand its list to every component:
 
 ```js
-const { startDhtBootstrap, getKernel, startGateway } = require('@tetherto/mdk-core')
-const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
+const path = require('path')
+const { startDhtBootstrap, getKernel, startGateway, onShutdown, shutdown } = require('@tetherto/mdk-core')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
-const storeDir = '/var/lib/mdk/avalon-1'
-const net = await startDhtBootstrap({ host: '127.0.0.1', port: 49737 })
-const dht = { bootstrap: net.bootstrap, dhtHost: '127.0.0.1' }
+const main = async () => {
+  const storeDir = '/var/lib/mdk/avalon-1'
+  const net = await startDhtBootstrap({ host: '127.0.0.1', port: 49737 })
+  const dht = { bootstrap: net.bootstrap, dhtHost: '127.0.0.1' }
 
-const kernel = await getKernel({ hrpc: dht, discovery: { mode: 'local' } })
-const worker = await startAvalonWorker({ workerId: 'avalon-1', model: 'a1346', storeDir, allowedKeys: [kernel.getClientPublicKey()], ...dht })
-await kernel.registerWorker(worker.runtime.getPublicKey())
-const gateway = await startGateway({ kernel, ...dht })
+  const kernel = await getKernel({ hrpc: dht, discovery: { mode: 'local' } })
+  const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-avalon/package.json')), {
+    workerId: 'avalon-1',
+    storeDir,
+    allowedKeys: [kernel.getClientPublicKey()],
+    devices: [{ deviceId: 'AV-001', config: { address: '192.168.1.30', port: 4028, password: 'admin' } }],
+    ...dht
+  })
+  await runtime.start()
+  await kernel.registerWorker(runtime.getPublicKey())
+  kernel._cleanup.push(() => runtime.stop())
+  await startGateway({ kernel, ...dht })
+
+  onShutdown(async () => {
+    await shutdown(kernel) // the Gateway, then the Worker, then the Kernel
+    await net.close()
+  })
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
 
-Close the bootstrap with `net.close()` after every component has stopped.
+Ctrl+C stops every component, then closes the bootstrap with `net.close()`, so the bootstrap outlives every DHT node
+that joined it. The [signal handler][signal-handling] force-exits after three seconds: a Worker still waiting on an
+unreachable device can hold its `stop()` past that, and the process then exits before `net.close()` runs.
 
 ### B. `mdk run`
 
@@ -95,7 +119,7 @@ spec:
       port: 49737       # UDP port of the generated bootstrap
 ```
 
-The process that runs the Kernel (`mdk run`, or `mdk run kernel` in a split stack) also runs the bootstrap and stops it after the
+The process that runs the Kernel (`mdk run` or `mdk run kernel`) also runs the bootstrap and stops it after the
 Kernel. Every other target (`gateway`, `mcp`, `worker <name>`, `app <name>`) and every CLI command that calls the Kernel joins
 `host:port`. To join a bootstrap you already run elsewhere, list it and no bootstrap is started. Set `host` to this machine's
 LAN address, or leave it unset to bind every interface. A loopback `host` with a non-loopback bootstrap is refused, because a
@@ -109,6 +133,33 @@ spec:
       bootstrap:
         - 10.20.0.5:49737
 ```
+
+Without `spec.network.dht` the stack joins the public DHT. Where outbound UDP to it is blocked, the Kernel, apps and Gateway
+still start, but no Worker registers: `mdk run` prints `! worker <name> not registered with the Kernel
+(ERR_WORKER_IDENTITY_UNAVAILABLE)`, then a hint naming the public DHT and this setting.
+
+#### A component you host yourself
+
+A process that starts a component without reading `mdk.yaml` — for example, a Worker you start yourself alongside `mdk run` —
+has to be told the same settings, or it joins the public DHT while the rest of the stack is on the private one. The symptom is
+narrow and quiet: that one Worker's devices never appear, and every other component is healthy. The process that runs the
+Kernel (`mdk run` or `mdk run kernel`) reports it as
+`warning: the Kernel could not reach the worker at <key prefix>… (ERR_WORKER_IDENTITY_UNAVAILABLE)`.
+
+Rather than copying the values into a second config, read the ones the stack resolved. The process that runs the Kernel
+(`mdk run` or `mdk run kernel`) publishes them to `<projectDir>/.mdk/network.json`, and mdk-core reads that back into a
+[programmatic Worker boot](#a-programmatic-one-machine):
+
+```js
+const { dhtFromProject } = require('@tetherto/mdk-core')
+
+// `{}` on the public DHT, so this is safe to spread either way.
+const runtime = new WorkerRuntimeV2(pkgDir, { workerId, storeDir, devices, allowedKeys, ...dhtFromProject(projectDir) })
+```
+
+Start the Kernel before the Worker: the file is written when the Kernel starts, and a host that reads it earlier gets `{}` and
+joins the public DHT. `dhtFromProject` throws on a file it cannot trust — unreadable, unparseable, not an object, a malformed
+or public bootstrap entry, a `dhtHost` that is not an IP address — rather than falling back to the public network.
 
 ### C. PM2 with `startServices`
 
@@ -184,3 +235,6 @@ discovery mode and for the Gateway: sockets bound to `127.0.0.1`, and routing ta
 
 [integration-tests]: ../../../backend/core/mdk/tests/integration/private-dht.test.js
 <!-- docs@tether.io: integration-tests → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/tests/integration/private-dht.test.js -->
+
+[signal-handling]: ../gateway/teardown.md#custom-signal-handling-with-onshutdown
+<!-- docs@tether.io: signal-handling → guides/gateway/teardown#custom-signal-handling-with-onshutdown -->

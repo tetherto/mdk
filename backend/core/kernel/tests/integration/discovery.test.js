@@ -13,6 +13,8 @@ const { WorkerChannel } = require('../../lib/transport/worker-channel')
 const { ACTIONS } = require('../../lib/protocol/actions')
 const { serialize, deserialize, buildResponse } = require('../../lib/protocol/envelope')
 
+const LOOPBACK = '127.0.0.1'
+
 function createMockStore () {
   const data = new Map()
   return {
@@ -27,8 +29,7 @@ function createMockStore () {
 }
 
 test('discovery - DHTListener discovers worker and registers it', async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
-  const bootstrap = testnet.bootstrap
+  const testnet = await createTestnet(4, t.teardown)
   const topic = crypto.randomBytes(32)
 
   const contract = {
@@ -49,7 +50,8 @@ test('discovery - DHTListener discovers worker and registers it', async (t) => {
 
   // ─── Worker side ────────────────────────────────────────────────
   // 1. Start an RPC server
-  const workerRpc = new HyperswarmRPC({ bootstrap })
+  const workerDht = testnet.createNode()
+  const workerRpc = new HyperswarmRPC({ keyPair: workerDht.defaultKeyPair, dht: workerDht })
   const workerServer = workerRpc.createServer()
 
   workerServer.respond('mdk', async (reqBuf) => {
@@ -77,7 +79,7 @@ test('discovery - DHTListener discovers worker and registers it', async (t) => {
   const workerRpcKey = workerServer.publicKey
 
   // 2. Join swarm and send RPC key to connecting Kernel
-  const workerSwarm = new Hyperswarm({ bootstrap })
+  const workerSwarm = new Hyperswarm({ dht: testnet.createNode() })
   workerSwarm.join(topic, { server: true, client: false })
   await workerSwarm.flush()
 
@@ -94,7 +96,8 @@ test('discovery - DHTListener discovers worker and registers it', async (t) => {
   })
 
   // ─── Kernel side ───────────────────────────────────────────────────
-  const orkRpc = new HyperswarmRPC({ bootstrap })
+  const orkDht = testnet.createNode()
+  const orkRpc = new HyperswarmRPC({ keyPair: orkDht.defaultKeyPair, dht: orkDht })
   const workerChannel = new WorkerChannel({ timeout: 10000, rpc: orkRpc })
   const registry = new WorkerRegistry({
     store: createMockStore(),
@@ -106,7 +109,7 @@ test('discovery - DHTListener discovers worker and registers it', async (t) => {
     registry,
     workerChannel,
     workerKeys: [workerRpcKey],
-    swarmOpts: { bootstrap }
+    swarmOpts: { dht: testnet.createNode() }
   })
 
   t.teardown(async () => {
@@ -141,19 +144,20 @@ test('discovery - DHTListener discovers worker and registers it', async (t) => {
 })
 
 test('discovery - real runtime announces and listener registers (kernel joins first)', async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const bootstrap = testnet.bootstrap
   const topic = crypto.randomBytes(32)
 
   // Kernel side joins FIRST (client querying). The worker announces afterwards, so
   // the Kernel connects during the worker's join window — the timing that left the
   // worker's connection without a key before the fix.
-  const orkRpc = new HyperswarmRPC({ bootstrap })
+  const orkDht = testnet.createNode()
+  const orkRpc = new HyperswarmRPC({ keyPair: orkDht.defaultKeyPair, dht: orkDht })
   const workerChannel = new WorkerChannel({ timeout: 10000, rpc: orkRpc })
   const registry = new WorkerRegistry({ store: createMockStore(), capabilityStore: createMockStore() })
   // The worker's key is unknown until it boots, after the listener: this test
   // is about join timing, so admit any topic peer.
-  const listener = new DHTListener({ topic: topic.toString('hex'), registry, workerChannel, allowAnyWorker: true, swarmOpts: { bootstrap } })
+  const listener = new DHTListener({ topic: topic.toString('hex'), registry, workerChannel, allowAnyWorker: true, swarmOpts: { dht: testnet.createNode() } })
   await listener.start()
 
   // Real WorkerRuntime — exercises _joinDiscoveryTopic (handler-before-join,
@@ -162,6 +166,7 @@ test('discovery - real runtime announces and listener registers (kernel joins fi
     workerId: 'wm-rack-1',
     kernelTopic: topic.toString('hex'),
     bootstrap,
+    dhtHost: LOOPBACK,
     allowedKeys: [orkRpc.defaultKeyPair.publicKey],
     devices: [
       { deviceId: 'd1', config: { hashrate: 100, power: 3000 } },
@@ -211,7 +216,7 @@ test('discovery - duplicate peer prevention', async (t) => {
   const listener = new DHTListener({
     topic: 'test',
     registry: {
-      async register () { registerCount++; return true },
+      async register () { registerCount++; return { registered: true } },
       async setReady () {}
     },
     workerChannel: {
@@ -264,13 +269,175 @@ test('discovery - malformed capability reply terminates the half-registered work
   t.is(registry.resolveWorkerForDevice('d'), null)
 })
 
+test('discovery - a registration that throws answers a fixed code, not the message', async (t) => {
+  const { registry, listener } = fakeChannelListener({ identity: { workerId: 'w', devices: [{ deviceId: 'd' }] }, contract: GOOD_CONTRACT })
+  registry.register = async () => { throw new Error('Cannot read properties of undefined') }
+  t.alike(await listener._onWorkerKeyReceived('aa'.repeat(32)), { registered: false, error: 'ERR_WORKER_REGISTRATION_FAILED' })
+})
+
 test('discovery - a second key cannot take over a registered workerId', async (t) => {
   const { registry, listener } = fakeChannelListener({ identity: { workerId: 'w', devices: [{ deviceId: 'd' }] }, contract: GOOD_CONTRACT })
-  await listener._onWorkerKeyReceived('aa'.repeat(32))
-  await listener._onWorkerKeyReceived('bb'.repeat(32))
+  t.alike(await listener._onWorkerKeyReceived('aa'.repeat(32)), { registered: true, workerId: 'w' })
+  t.alike(await listener._onWorkerKeyReceived('bb'.repeat(32)), { registered: false, error: 'ERR_WORKER_KEY_CONFLICT', workerId: 'w' })
   const workers = registry.listWorkers()
   t.is(workers.length, 1)
   t.is(workers[0].rpcKey, 'aa'.repeat(32), 'still bound to the first key')
+})
+
+test('discovery - a device bound to another worker refuses the claimant, reported once per key', async (t) => {
+  const registry = new WorkerRegistry({ store: createMockStore(), capabilityStore: createMockStore() })
+  await registry.register({ workerId: 'rig-a', deviceIds: ['d1'], rpcKey: 'aa'.repeat(32), channel: null })
+  const conflicts = []
+  let disconnects = 0
+  const listener = new DHTListener({
+    topic: null,
+    registry,
+    onConflict: (c) => conflicts.push(c),
+    workerChannel: {
+      connect: () => ({}),
+      disconnect: async () => { disconnects++ },
+      send: async (_ch, env) => env.action === ACTIONS.IDENTITY_REQUEST
+        ? buildResponse(env, ACTIONS.IDENTITY_RESPONSE, { workerId: 'rig-b', devices: [{ deviceId: 'd1' }, { deviceId: 'd2' }] }, 'rig-b')
+        : buildResponse(env, ACTIONS.CAPABILITY_RESPONSE, { contract: GOOD_CONTRACT }, 'rig-b')
+    }
+  })
+
+  const outcome = await listener.discoverWorker('bb'.repeat(32))
+  t.alike(outcome, { registered: false, error: 'ERR_WORKER_DEVICE_CONFLICT', workerId: 'rig-b', deviceId: 'd1', ownerId: 'rig-a' })
+  t.is(disconnects, 1)
+  // Local discovery re-offers the key on every rescan.
+  await listener.discoverWorker('bb'.repeat(32))
+  t.alike(conflicts, [{ error: 'ERR_WORKER_DEVICE_CONFLICT', workerId: 'rig-b', deviceId: 'd1', ownerId: 'rig-a', rpcKey: 'bb'.repeat(32) }])
+
+  await registry.terminate('rig-a')
+  t.alike(await listener.discoverWorker('bb'.repeat(32)), { registered: true, workerId: 'rig-b' })
+  t.is(registry.resolveWorkerForDevice('d1').workerId, 'rig-b')
+})
+
+const KEY_A = 'aa'.repeat(32)
+const KEY_B = 'bb'.repeat(32)
+
+// `identities` maps an rpcKey to the identity that Worker answers with. The
+// registry is recovered from a store where rig-a owns d1 and d2, the state a
+// Kernel restart leaves behind, and its releases are wired to the listener the
+// way the Kernel wires them.
+async function recoveredBindingListener (identities) {
+  const store = createMockStore()
+  const before = new WorkerRegistry({ store, capabilityStore: createMockStore() })
+  await before.register({ workerId: 'rig-a', deviceIds: ['d1', 'd2'], rpcKey: KEY_A, channel: null })
+
+  const events = { conflicts: [], admitted: [] }
+  let listener = null
+  const registry = new WorkerRegistry({ store, capabilityStore: createMockStore(), onRelease: (id) => listener.retryRefusedBy(id) })
+  await registry.recover()
+  listener = new DHTListener({
+    topic: null,
+    registry,
+    onConflict: (c) => events.conflicts.push(c),
+    onAdmitted: (a) => events.admitted.push(a),
+    workerChannel: {
+      connect: ({ rpcKey }) => ({ rpcKey }),
+      disconnect: async () => {},
+      send: async (ch, env) => env.action === ACTIONS.IDENTITY_REQUEST
+        ? buildResponse(env, ACTIONS.IDENTITY_RESPONSE, identities[ch.rpcKey], 'w')
+        : buildResponse(env, ACTIONS.CAPABILITY_RESPONSE, { contract: GOOD_CONTRACT }, 'w')
+    }
+  })
+  // A retry runs in the background; the attempt it starts is the key's entry.
+  const settled = (rpcKey) => listener._discoveredPeers.get(rpcKey) || { registered: false }
+  return { registry, listener, events, settled }
+}
+
+test('discovery - a Worker refused for a device its recovered owner dropped gets in once the owner registers', async (t) => {
+  const { registry, listener, events, settled } = await recoveredBindingListener({
+    [KEY_A]: { workerId: 'rig-a', devices: [{ deviceId: 'd1' }] },
+    [KEY_B]: { workerId: 'rig-b', devices: [{ deviceId: 'd2' }] }
+  })
+
+  // `mdk run` registers in mdk.yaml order, once: rig-b first, against rig-a's stored claim.
+  t.alike(await listener.discoverWorker(KEY_B), { registered: false, error: 'ERR_WORKER_DEVICE_CONFLICT', workerId: 'rig-b', deviceId: 'd2', ownerId: 'rig-a', ownerPending: true })
+  t.alike(events.conflicts, [{ error: 'ERR_WORKER_DEVICE_CONFLICT', workerId: 'rig-b', deviceId: 'd2', ownerId: 'rig-a', ownerPending: true, rpcKey: KEY_B }])
+
+  t.alike(await listener.discoverWorker(KEY_A), { registered: true, workerId: 'rig-a' })
+  t.alike(await settled(KEY_B), { registered: true, workerId: 'rig-b' }, 'retried without being offered again')
+  t.is(registry.resolveWorkerForDevice('d2').workerId, 'rig-b')
+  t.alike(events.admitted, [{ workerId: 'rig-b', rpcKey: KEY_B }])
+  t.is(events.conflicts.length, 1)
+})
+
+test('discovery - an owner that comes back still listing the device turns the pending refusal into a real one', async (t) => {
+  const { listener, events, settled } = await recoveredBindingListener({
+    [KEY_A]: { workerId: 'rig-a', devices: [{ deviceId: 'd1' }, { deviceId: 'd2' }] },
+    [KEY_B]: { workerId: 'rig-b', devices: [{ deviceId: 'd2' }] }
+  })
+
+  await listener.discoverWorker(KEY_B)
+  await listener.discoverWorker(KEY_A)
+  t.is((await settled(KEY_B)).registered, false)
+  t.alike(events.conflicts.map(c => c.ownerPending), [true, undefined], 'reported again, now as a conflict with a live owner')
+  t.alike(events.admitted, [])
+
+  // Offering it again changes nothing, and says nothing.
+  await listener.discoverWorker(KEY_B)
+  t.is(events.conflicts.length, 2)
+})
+
+test('discovery - terminating the owner admits the Worker it refused without another offer', async (t) => {
+  const { registry, listener, events, settled } = await recoveredBindingListener({
+    [KEY_B]: { workerId: 'rig-b', devices: [{ deviceId: 'd2' }] }
+  })
+
+  await listener.discoverWorker(KEY_B)
+  // rig-a was renamed and never comes back: the operator runs worker.terminate.
+  await registry.terminate('rig-a')
+  t.alike(await settled(KEY_B), { registered: true, workerId: 'rig-b' })
+  t.alike(events.admitted, [{ workerId: 'rig-b', rpcKey: KEY_B }])
+})
+
+test('discovery - a peer that never answers is reported once per key, and again after it recovers', async (t) => {
+  const registry = new WorkerRegistry({ store: createMockStore(), capabilityStore: createMockStore() })
+  const unreachable = []
+  let answers = false
+  const listener = new DHTListener({
+    topic: null,
+    registry,
+    onUnreachable: (u) => unreachable.push(u),
+    workerChannel: {
+      connect: () => ({}),
+      disconnect: async () => {},
+      // A Worker on another DHT is dialled but never replies: the request times
+      // out and _pullIdentity returns nothing.
+      send: async (_ch, env) => answers
+        ? (env.action === ACTIONS.IDENTITY_REQUEST
+            ? buildResponse(env, ACTIONS.IDENTITY_RESPONSE, { workerId: 'satec', devices: [{ deviceId: 'd1' }] }, 'satec')
+            : buildResponse(env, ACTIONS.CAPABILITY_RESPONSE, { contract: GOOD_CONTRACT }, 'satec'))
+        : null
+    }
+  })
+
+  const key = 'cc'.repeat(32)
+  t.alike(await listener.discoverWorker(key), { registered: false, error: 'ERR_WORKER_IDENTITY_UNAVAILABLE' })
+  // Local discovery re-offers the key on every rescan; the operator hears once.
+  await listener.discoverWorker(key)
+  t.alike(unreachable, [{ error: 'ERR_WORKER_IDENTITY_UNAVAILABLE', rpcKey: key }])
+
+  answers = true
+  t.alike(await listener.discoverWorker(key), { registered: true, workerId: 'satec' })
+  t.is(unreachable.length, 1, 'a worker that came back is not reported again')
+})
+
+test('discovery - a channel that will not open is reported as unreachable', async (t) => {
+  const registry = new WorkerRegistry({ store: createMockStore(), capabilityStore: createMockStore() })
+  const unreachable = []
+  const listener = new DHTListener({
+    topic: null,
+    registry,
+    onUnreachable: (u) => unreachable.push(u),
+    workerChannel: { connect: () => null, disconnect: async () => {}, send: async () => null }
+  })
+
+  t.alike(await listener.discoverWorker('dd'.repeat(32)), { registered: false, error: 'ERR_CHANNEL_NOT_CONNECTED' })
+  t.alike(unreachable, [{ error: 'ERR_CHANNEL_NOT_CONNECTED', rpcKey: 'dd'.repeat(32) }])
 })
 
 test('discovery - workerKeys allowlist drops unknown topic peers', async (t) => {
@@ -328,11 +495,11 @@ test('discovery - directly handed keys (registerWorker / local discovery) skip t
 
 test('discovery - discoverWorker reports whether the worker reached Ready', async (t) => {
   const good = fakeChannelListener({ identity: { workerId: 'w', devices: [{ deviceId: 'd' }] }, contract: GOOD_CONTRACT })
-  t.is(await good.listener.discoverWorker('aa'.repeat(32)), true, 'registered')
-  t.is(await good.listener.discoverWorker('aa'.repeat(32)), true, 'a re-offer of a registered key still reports registered')
+  t.alike(await good.listener.discoverWorker('aa'.repeat(32)), { registered: true, workerId: 'w' }, 'registered')
+  t.alike(await good.listener.discoverWorker('aa'.repeat(32)), { registered: true, workerId: 'w' }, 'a re-offer of a registered key still reports registered')
 
   const bad = fakeChannelListener({ identity: { workerId: 'w', devices: [{ id: 'no-deviceId' }] }, contract: GOOD_CONTRACT })
-  t.is(await bad.listener.discoverWorker('bb'.repeat(32)), false, 'malformed identity is reported, not swallowed')
+  t.alike(await bad.listener.discoverWorker('bb'.repeat(32)), { registered: false, error: 'ERR_WORKER_IDENTITY_UNAVAILABLE' }, 'malformed identity is reported, not swallowed')
   t.is(bad.listener._discoveredPeers.has('bb'.repeat(32)), false, 'and the key is dropped so the next offer retries')
 })
 
@@ -345,10 +512,11 @@ test('discovery - an offer during an in-flight attempt resolves to that attempt'
   const blocked = new Promise((resolve) => { release = resolve })
   const { listener } = fakeChannelListener({ identity: { workerId: 'w', devices: [{ deviceId: 'd' }] }, contract: GOOD_CONTRACT })
   listener.workerChannel.connect = () => { throw new Error('CHANNEL_CLOSED: channel closed') }
-  listener._register = async () => { await blocked; return false }
+  listener._register = async () => { await blocked; return { registered: false, error: 'ERR_CHANNEL_NOT_CONNECTED' } }
 
   const first = listener.discoverWorker('cc'.repeat(32))
   const second = listener.discoverWorker('cc'.repeat(32))
   release()
-  t.alike(await Promise.all([first, second]), [false, false], 'both see the failure')
+  const failed = { registered: false, error: 'ERR_CHANNEL_NOT_CONNECTED' }
+  t.alike(await Promise.all([first, second]), [failed, failed], 'both see the failure')
 })

@@ -3,6 +3,7 @@ import { stringify as toYaml } from 'yaml';
 import { examples } from '../lib/help.js';
 import { addAgent, listAccounts, removeAgent, rotateAccount, serviceAccountToken, type AccountChange } from '../lib/identity-kernel.js';
 import { theme, tick } from '../lib/theme.js';
+import { failureText } from '../lib/flags.js';
 
 function fail(message: string): void {
   process.stderr.write(`${theme.warn('error')}: ${message}\n`);
@@ -13,7 +14,7 @@ async function guarded(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
   } catch (error) {
-    fail(error instanceof Error ? error.message : String(error));
+    fail(failureText(error));
   }
 }
 
@@ -71,7 +72,7 @@ export function registerSa(program: Command): void {
     .action((name: string, o: { dir: string }) =>
       guarded(async () => {
         const change = await removeAgent(o.dir, name);
-        if (!change.removed && !change.registered) return fail(`No service account named "${name}".`);
+        if (!change.removed) return fail(`No service account named "${name}".`);
         process.stdout.write(`${tick} Removed ${theme.label(name)}\n${registration(change)}`);
       }),
     );
@@ -103,6 +104,7 @@ export function registerSa(program: Command): void {
     .action((o: { dir: string }, cmd: Command) =>
       guarded(async () => {
         const res = await listAccounts(o.dir);
+        if (res.refused) process.exitCode = 1;
         const output = String(cmd.optsWithGlobals().output ?? 'table');
         if (output === 'json') return void process.stdout.write(`${JSON.stringify(res, null, 2)}\n`);
         if (output === 'yaml') return void process.stdout.write(toYaml(res));
@@ -113,6 +115,7 @@ export function registerSa(program: Command): void {
           process.stdout.write(`  ${r.name.padEnd(28)} ${r.kind.padEnd(6)} ${r.local ? 'local' : theme.warn('no local credential')}  ${state}\n`);
         }
         if (res.kernel === 'down') process.stdout.write(`  ${theme.muted(`kernel down: ${res.message ?? ''}`)}\n`);
+        if (res.refused) process.stdout.write(`  ${theme.warn('registrations not checked')}: ${res.message}\n`);
       }),
     );
 }

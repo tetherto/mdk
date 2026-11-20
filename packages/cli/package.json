@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-cli",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "MDK command-line tool: onboard, scaffold, run and inspect an MDK stack.",
   "type": "module",
   "bin": {
@@ -14,7 +14,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run clean && tsc -p tsconfig.json && chmod +x dist/index.js",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
@@ -24,20 +24,20 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:e2e:stack": "vitest run --config vitest.e2e.config.ts tests/e2e/stack.e2e.ts tests/e2e/split.e2e.ts",
     "test:e2e:scaffold": "vitest run --config vitest.e2e.config.ts tests/e2e/scaffold.e2e.ts",
-    "prepack": "npm run clean && npm run build"
+    "prepack": "npm run build"
   },
   "license": "Apache-2.0",
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@tetherto/mdk-app-runtime": "^0.13.1",
-    "@tetherto/mdk-client": "^0.13.1",
-    "@tetherto/mdk-core": "^0.13.1",
-    "@tetherto/mdk-gateway": "^0.13.1",
-    "@tetherto/mdk-identity": "^0.13.1",
-    "@tetherto/mdk-mcp": "^0.13.1",
-    "@tetherto/mdk-rbac": "^0.13.1",
-    "@tetherto/mdk-skill": "^0.13.1",
-    "@tetherto/mdk-worker": "^0.13.1",
+    "@tetherto/mdk-app-runtime": "^0.14.0",
+    "@tetherto/mdk-client": "^0.14.0",
+    "@tetherto/mdk-core": "^0.14.0",
+    "@tetherto/mdk-gateway": "^0.14.0",
+    "@tetherto/mdk-identity": "^0.14.0",
+    "@tetherto/mdk-mcp": "^0.14.0",
+    "@tetherto/mdk-rbac": "^0.14.0",
+    "@tetherto/mdk-skill": "^0.14.0",
+    "@tetherto/mdk-worker": "^0.14.0",
     "commander": "^15.0.0",
     "degit": "^3.6.6",
     "picocolors": "^1.1.1",

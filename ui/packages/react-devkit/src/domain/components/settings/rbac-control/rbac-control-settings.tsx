@@ -158,6 +158,7 @@ export const RBACControlSettings = ({
                 <div className="mdk-settings-rbac__table-cell">
                   <span
                     className="mdk-settings-rbac__role-badge"
+                    // oxlint-disable-next-line react/forbid-dom-props -- role colours from the role config
                     style={{ color, backgroundColor: bgColor }}
                   >
                     {formatRoleLabel(user.role)}

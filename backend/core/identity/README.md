@@ -134,12 +134,44 @@ are stored as SHA-256 digests, and signing keys are stored as private JWKs in th
 | `ERR_IDENTITY_REFRESH_REVOKED`      | The session was revoked (logout, reuse, password or key change, deletion)                    | Sign in again                                         |
 | `ERR_IDENTITY_REFRESH_EXPIRED`      | The refresh token or its session expired                                                     | Sign in again                                         |
 | `ERR_IDENTITY_REFRESH_BINDING`      | A bound session is refreshed from another transport key                                      | Refresh from the caller that signed in                |
-| `ERR_IDENTITY_TOKEN_REVOKED`        | An access token's subject was deleted, or changed (password, disabled, groups, email, key) after it was issued | Refresh, or sign in again |
-| `ERR_IDENTITY_TOKEN_*`              | An access token fails verification: `MALFORMED`, `ALG`, `SIGNATURE`, `KEY_UNKNOWN`, `EXPIRED`, `NOT_YET_VALID`, `ISSUER`, `AUDIENCE`, `CLAIMS`, `TYPE` or `BINDING` | Get a new token from the issuer |
+| `ERR_IDENTITY_NOT_READY`            | The issuer is asked for a token before `ready()` has loaded or created its signing key       | Await `ready()` before issuing tokens                  |
 | `ERR_IDENTITY_PASSWORD_WEAK`        | A password is under 12 or over 1024 characters                                               | Use a longer passphrase                               |
 | `ERR_IDENTITY_USER_NAME_INVALID`    | A user name is empty, too long, or has characters outside `A-Z a-z 0-9 . _ @ + -`            | Rename the user                                       |
 | `ERR_IDENTITY_SA_NAME_INVALID`      | A service account is neither `app:<name>` nor a lowercase agent name                         | Rename the account                                    |
 | `ERR_IDENTITY_KEY_INVALID`          | A public key is not 32-byte hex Ed25519, or a JWK is not Ed25519                             | Pass the credential's public key                      |
+| `ERR_IDENTITY_EMAIL_INVALID`        | A user's `email` is set and is not a `name@host` string                                      | Pass a valid address, or leave `email` unset          |
+| `ERR_IDENTITY_GROUPS_INVALID`       | A user's `groups` is not an array of names of up to 128 characters that start with a letter or digit and hold only `A-Z a-z 0-9 . _ @ : + -` | Rename the groups                                     |
+| `ERR_IDENTITY_USER_INVALID`         | A user's `disabled` is set and is not a boolean                                              | Pass `true` or `false`                                |
+| `ERR_IDENTITY_SA_LIST_INVALID`      | `syncServiceAccounts()` is called with a value that is not an array                          | Pass an array of `{ name, publicKey }`                |
+| `ERR_IDENTITY_STORE_BEE_REQUIRED`   | `TokenIssuer` is built without a Hyperbee                                                    | Pass `{ bee }`                                        |
+| `ERR_IDENTITY_JWKS_REQUIRED`        | `createVerifier()` is called without `jwks`                                                  | Pass the issuer's key set, or a function that returns it |
+| `ERR_IDENTITY_REQUEST_REQUIRED`     | `ServiceAccountTokenSource` is built without a `request` function                            | Pass `request`, such as `gatewayTokenRequest(baseUrl)` |
+| `ERR_IDENTITY_NO_REPLY`             | A token source's `request` resolves with no reply                                            | Check the transport behind `request`                  |
+| `ERR_IDENTITY_ACTION_UNSUPPORTED`   | `gatewayTokenRequest()` is asked for an action other than `auth.token` or `auth.refresh`     | Use it only as a token source's `request`             |
+| `ERR_IDENTITY_HTTP_<status>`        | The Gateway refuses a sign-in with a body that has no `message` string; `<status>` is the HTTP status | Check the Gateway URL and that it serves `/auth/token` |
+
+### Access token verification
+
+An access token that fails a check is refused with one of these codes. `verifyJwt()` throws most of them. The verifier from
+`createVerifier()` adds `ERR_IDENTITY_TOKEN_BINDING` and the `kind` and `sub` conditions of `ERR_IDENTITY_TOKEN_CLAIMS`, and only
+the issuer's own `verify()` throws `ERR_IDENTITY_TOKEN_REVOKED`. A Gateway or MCP server answers `401` and records the code as the
+`reason` of its [authorization decision](../gateway/README.md#security-model), so the code reaches the operator's log, not the
+HTTP caller. An assertion that fails the same checks is reported as `ERR_IDENTITY_ASSERTION_INVALID`, with the code as its detail.
+
+| Code                                | Fires when                                                                                   | Fix                                                   |
+| ----------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `ERR_IDENTITY_TOKEN_MALFORMED`      | The token is not a string, is empty or over 8192 characters, lacks three base64url segments, or has a header or payload that is not a JSON object | Send the access token as issued                       |
+| `ERR_IDENTITY_TOKEN_ALG`            | The header's `alg` is not `EdDSA`                                                            | Use a token from this stack's issuer                  |
+| `ERR_IDENTITY_TOKEN_TYPE`           | `verifyJwt()` is called with `typ` and the header's `typ` differs                            | Present a token of the type the verifier expects      |
+| `ERR_IDENTITY_TOKEN_KEY_UNKNOWN`    | The key set has no key with the header's `kid`                                               | Get a new token from the issuer                       |
+| `ERR_IDENTITY_TOKEN_SIGNATURE`      | The signature does not verify against the key                                                | Get a new token from the issuer                       |
+| `ERR_IDENTITY_TOKEN_CLAIMS`         | `exp` is not an integer, an `iat` that is present is not an integer or is more than `clockSkewSec` seconds in the future, `kind` is neither `user` nor `serviceaccount`, or `sub` is empty. With `maxLifetimeSec`, `iat` is missing or the lifetime is longer. | Get a new token from the issuer                       |
+| `ERR_IDENTITY_TOKEN_EXPIRED`        | `exp` is `clockSkewSec` (30 by default) or more seconds in the past                          | Refresh, or sign in again                             |
+| `ERR_IDENTITY_TOKEN_NOT_YET_VALID`  | An `nbf` that is present is not an integer, or is more than `clockSkewSec` seconds in the future | Check the clocks of the issuer and the verifier       |
+| `ERR_IDENTITY_TOKEN_ISSUER`         | `iss` is not the expected `issuer` (`mdk` by default)                                        | Use a token from this stack's issuer                  |
+| `ERR_IDENTITY_TOKEN_AUDIENCE`       | `aud` does not hold the expected `audience` (`mdk` by default)                               | Use a token issued for this audience                  |
+| `ERR_IDENTITY_TOKEN_BINDING`        | The token is bound to an HRPC caller (`cnf.hrpc`) and is presented from another key, or with none | Present the token from the caller that signed in      |
+| `ERR_IDENTITY_TOKEN_REVOKED`        | An access token's subject was deleted, or changed (password, disabled, groups, email, key) after it was issued | Refresh, or sign in again                             |
 
 ## Next steps
 

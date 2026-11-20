@@ -1,6 +1,6 @@
 # MDK
 
-[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.13.1)
+[![Release](https://img.shields.io/github/v/release/tetherto/mdk?display_name=tag&style=flat-square)](https://github.com/tetherto/mdk/releases/tag/v0.14.0)
 [![CI](https://img.shields.io/github/actions/workflow/status/tetherto/mdk/ci.yml?branch=main&label=CI&style=flat-square&logo=github)](https://github.com/tetherto/mdk/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/tetherto/mdk/actions/workflows/github-code-scanning/codeql)
 [![Documentation](https://img.shields.io/badge/docs-mdk.tether.io-2ea44f?style=flat-square)](https://docs.mdk.tether.io)
@@ -43,7 +43,7 @@ To go from a mock miner, to an app with its own HTTP route and a working dashboa
 
 [Workers adapt devices](backend/workers/README.md#how-workers-fit-into-mdk) to the Kernel. The Kernel coordinates capabilities
 declared by any Worker. Apps use the [Node.js client to query the Kernel](docs/concepts/control-plane.md#read-requests) and
-[implement business logic](docs/guides/gateway/apps.md#22-write-a-controller) in their own runtimes;
+[implement business logic](docs/guides/gateway/apps.md#22-write-a-controller) in their own runtime;
 the Gateway [exposes their HTTP routes](docs/guides/gateway/apps.md#declare-and-mount-it) (Gateway and app contracts remain separate).
 [Dashboards use HTTP](docs/concepts/control-plane.md#connection-direction), and agents can connect through the
 [standalone MCP server](backend/core/mcp/README.md#ai-agents-and-the-mcp-server).
@@ -60,9 +60,9 @@ MDK remains agnostic. This is why the table lists compatible formats you can ado
 | Surface      | Owning reference                               | Compatible standard or surface                        |
 | ------------ | ---------------------------------------------- | ----------------------------------------------------- |
 | CLI          | [Commands and options](docs/reference/tooling/cli.md) | [`mdk --help`](docs/reference/tooling/cli.md#global-flags) |
-| Apps         | [App routes and packaging](docs/guides/gateway/apps.md) | OpenAPI 3.1 for HTTP (compatible/not shipped) |
-| Gateway      | [HTTP entry point and authentication](backend/core/gateway/README.md) | OpenAPI 3.1 for built-in HTTP (compatible/not shipped) |
-| Kernel and Workers | [Protocol actions](docs/reference/protocol/messages.md) | AsyncAPI or JSON (compatible/not shipped) |
+| Apps         | [App routes and packaging](docs/guides/gateway/apps.md) | [JSON Schema](backend/core/app-runtime/mdk-plugin.schema.json) for the route table; each app may generate its own [OpenAPI 3.1](docs/reference/gateway-http-routes.md#example-apps) document from it |
+| Gateway      | [HTTP entry point and authentication](backend/core/gateway/README.md) | [OpenAPI 3.1](docs/reference/gateway-http-routes.md) for built-in HTTP, generated |
+| Kernel and Workers | [Message envelope](docs/reference/protocol/messages.md) | AsyncAPI or JSON (compatible/not shipped) |
 | Worker capabilities | [Device contracts](backend/workers/README.md) | [JSON Schema](backend/core/mdk-worker/mdk-contract.schema.json) |
 | Node.js SDK  | [Client API](backend/core/client/README.md)     | TypeDoc or API Extractor (compatible/not shipped) |
 | MCP          | [Agent tools](backend/core/mcp/README.md)       | [`tools/list`](backend/core/mcp/README.md#tool-exposure)|
@@ -84,6 +84,7 @@ Working on MDK itself? Follow the [contribution guide](CONTRIBUTING.md#developme
   - [Register a Worker](CONTRIBUTING.md#list-a-worker): connect your hardware or software with MDK
   - [Register an app](CONTRIBUTING.md#list-an-app): drive MDK traffic to your app
 - Get help: [report a problem](https://github.com/tetherto/mdk/issues)
-- [Track changes](CHANGELOG.md)
+- [Track changes](CHANGELOG.md), and the [versioning and deprecation policy](docs/reference/versioning.md) for what
+  counts as a breaking change from `1.0.0` and how long a deprecated interface stays supported
 
 Released under the [Apache 2.0 license](LICENSE). Built with contributions from the Mining Operations team.

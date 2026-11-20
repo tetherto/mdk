@@ -11,17 +11,20 @@ or data feed with MDK by shipping a [Worker plugin package][build-a-worker].
 
 Worker packages are the contract between the hardware and the Kernel, before relying on such a contract you will want to
 test its integration. To seed devices and register with Kernel, host the package on `WorkerRuntimeV2` in a Node.js host process by
-pointing it at the Worker plugin package's directory (see [Build a third-party Worker][build-a-worker]). The host module
-may live in the Worker plugin package itself; a second npm package is **not required**. A separate host directory is
-recommended when independent plugin publication and plugin-only tests are useful:
+pointing it at the Worker plugin package's directory (see [Build a third-party Worker][build-a-worker]). This guide keeps
+the host scripts in a directory beside the package, which keeps plugin publication and plugin-only tests independent:
 
 ```text
-your-worker-host/
+your-worker-repo/               # the Worker plugin package
+  mdk-contract.json
+  mock/server.js
+your-worker-host/               # host scripts, not a second npm package
   index.js                      # host module: WorkerRuntimeV2, devices, lifecycle
   run-live.js                   # live Kernel registration and compatibility check
 ```
 
-`your-worker-host/` is a directory holding one host module, not a standalone npm package.
+To keep the host scripts inside the package instead, put them in a subdirectory such as `host/`, set `WORKER_DIR` to the
+package root (`path.resolve(__dirname, "..")`), and require the mock from there (`require("../mock/server")`).
 
 ## Prerequisites
 
@@ -49,8 +52,10 @@ The first command reads `package.json` and `mdk-contract.json` without running a
 against its schema, that names are unique, that number params have valid `min`/`max` bounds, and that every handler
 file exists and compiles.
 
-`--smoke` also calls every handler against the package's bundled mock. `setup()` in `smoke.config.js` at the package
-root starts the mock and returns these fields:
+`--smoke` also calls every handler against the package's bundled mock, and needs a device spec: a `smoke.config.js` at the
+package root, or one passed with [`--smoke-config`][cli-validate]. `mdk create worker` writes a `smoke.config.js` beside the
+mock. A hand-built package copies [the scaffold's smoke config][smoke-config-template] and adapts `setup()` to its own mock.
+`setup()` starts the mock and returns these fields:
 
 | Field              | Purpose                                                                                                     |
 | ------------------ | ----------------------------------------------------------------------------------------------------------- |
@@ -80,8 +85,13 @@ exempt:
 Install the packages this guide hosts and calls:
 
 ```bash
-npm install @tetherto/mdk-worker@0.13 @tetherto/mdk-core@0.13 @tetherto/mdk-client@0.13 @tetherto/mdk-identity@0.13
+npm install @tetherto/mdk-worker @tetherto/mdk-core @tetherto/mdk-client @tetherto/mdk-identity
 ```
+
+> [!TIP]
+> This installs the newest published release of each package. To test against a specific release, give every package the
+> same version and [pin it exactly][versioning-before-1] with `--save-exact`, for example
+> `npm install --save-exact @tetherto/mdk-worker@0.14.0`. Without `--save-exact`, npm saves a `^` range.
 
 `@tetherto/mdk-worker` ships `WorkerRuntimeV2`. `@tetherto/mdk-core` ships `getKernel`, `startGateway` and
 `waitForDiscovery`, used to [register with a live Kernel](#register-directly-with-a-live-kernel), and exposes the local
@@ -95,7 +105,7 @@ client [signs in with](#give-the-host-script-an-identity).
 
 ### Write the host module
 
-`host/index.js`:
+`your-worker-host/index.js`:
 
 ```js
 "use strict";
@@ -105,11 +115,12 @@ const { WorkerRuntimeV2 } = require("@tetherto/mdk-worker");
 
 const WORKER_DIR = path.resolve(__dirname, "../your-worker-repo");
 
-async function startVendorWorker({ workerId, kernelTopic, allowedKeys, seedDevices }) {
+async function startVendorWorker({ workerId, kernelTopic, allowedKeys, seedDevices, storeDir }) {
   const runtime = new WorkerRuntimeV2(WORKER_DIR, {
     workerId,
     kernelTopic: kernelTopic || null,
     allowedKeys,
+    storeDir,
     devices: (seedDevices || []).map((d) => ({
       deviceId: d.id,
       config: d.opts,
@@ -136,8 +147,10 @@ Worker RPC is **fail-closed**: the runtime answers only the public keys in `allo
 key to allow is the Kernel's **client** key, `kernel.getClientPublicKey()`, the one it dials Workers with. Each of the
 next three steps gets that key a different way; see [Trust and admission][trust-and-admission] for the full model.
 
-Without a `store`, `WorkerRuntimeV2` generates a new RPC keypair on restart. Pass a process-owned store if deployment
-requires stable identity. The host process also owns persistence, sampling loops, retries, secrets, and shutdown.
+Without a `storeDir` (or `store`), `WorkerRuntimeV2` generates a new RPC keypair on restart, and a Worker whose
+contract sets `telemetryPollIntervalMs` throws `ERR_TELEMETRY_STORE_REQUIRED`. The steps in this guide each pass a `storeDir`
+under a per-run temporary directory, so every run starts with a new key. A deployment keeps the Worker's identity by reusing
+the same `storeDir` across restarts. The host process also owns persistence, sampling loops, retries, secrets, and shutdown.
 
 `WorkerRuntimeV2` also exposes two read accessors for the host process: `getPublicKey()` returns the runtime's RPC
 public key (used to register with Kernel, shown in the next step), and `getDeviceContext(deviceId)` returns a frozen
@@ -154,7 +167,7 @@ process that needs to act on a live device drives it the same way a Gateway requ
 ### Register directly with a live Kernel
 
 When Kernel and the Worker host share a process, register the runtime's public key directly. The following
-host script (save it next to your worker as e.g. `host/run-live.js`) proves that Kernel accepted the Worker, that it
+host script (save it as `your-worker-host/run-live.js`) proves that Kernel accepted the Worker, that it
 reached `READY`, and that telemetry traverses the real client → Kernel → Worker path. It also does what every caller of
 a Kernel does: it signs in as a service account that the policy binds to a role, so the Kernel
 [accepts its requests](#give-the-host-script-an-identity):
@@ -240,6 +253,7 @@ async function main() {
     });
     worker = await startVendorWorker({
       workerId: "vendor-demo",
+      storeDir: path.join(ROOT, "worker"),
       allowedKeys: [kernel.getClientPublicKey()],
       seedDevices: [
         { id: "vendor-0", opts: { host: "127.0.0.1", port: 9001 } },
@@ -357,7 +371,8 @@ The Kernel checks `telemetry.pull` as `devices: read` on the target device, and 
 > [!TIP]
 > A throwaway test can skip the policy: `grantTestAdmin(kernel)` from `@tetherto/mdk-kernel/testing` registers a
 > `test-admin` account bound to every resource and verb, and returns the `{ name, privateKey }` to pass as
-> `kernelCredential`. Run `npm install @tetherto/mdk-kernel@0.13` first: the install line above does not list that package.
+> `kernelCredential`. Run `npm install @tetherto/mdk-kernel` first, at the same version as the other packages: the install
+> line does not list it.
 
 > [!WARNING]
 > `grantTestAdmin` replaces whatever policy the Kernel already had: only other subjects already bound to `test-admin`
@@ -408,6 +423,7 @@ async function main() {
     const trustDir = trustedKeysDir(ROOT);
     worker = await startVendorWorker({
       workerId: "vendor-demo",
+      storeDir: path.join(ROOT, "worker"),
       allowedKeys: [await waitForKernelKey(trustDir)],
       seedDevices: [
         { id: "vendor-0", opts: { host: "127.0.0.1", port: 9001 } },
@@ -451,9 +467,10 @@ retried on a later scan.
 This check stops at `READY`. A client that reads telemetry from a separate process is admitted through the same
 trusted-keys dir and [signs in](#give-the-host-script-an-identity) with its own credential, as in the live-Kernel step.
 
-Pass a `storeDir` to `WorkerRuntimeV2` if you restart Workers. The published key is only stable across restarts when
-the runtime has a store to persist its seeds in (see [Write the host module](#write-the-host-module)); without one, every
-restart looks like a new peer to Kernel and stale `.key` files accumulate.
+Pass a `storeDir` to `WorkerRuntimeV2`, at the same path every time, if you restart Workers. The published key is only
+stable across restarts when the runtime finds its saved seeds there (see [Write the host module](#write-the-host-module)).
+With no store, or a new directory each run as in these examples, every restart looks like a new peer to Kernel, and the
+key file is rewritten under the same name with a new key.
 
 > [!IMPORTANT]
 > Every process must resolve the same filesystem path, so this mode only covers one machine. Workers on separate
@@ -495,6 +512,7 @@ async function main() {
     kernel = await getKernel({ root: ROOT, topic });
     worker = await startVendorWorker({
       workerId: "vendor-demo",
+      storeDir: path.join(ROOT, "worker"),
       kernelTopic: topic,
       // On separate hosts, copy this hex key to the Worker host's config.
       allowedKeys: [kernel.getClientPublicKey().toString("hex")],
@@ -555,7 +573,7 @@ topics enable rendezvous; they are not authentication secrets or command-authori
 of throwing `ERR_DEVICES_REQUIRED`, then takes `registerThing` writes (a built-in command, see
 [Worker Runtime store services][worker-runtime-store]) that persist new device configs to the store. Those writes
 only take effect once the host is stopped and restarted with the provisioned set — there is no hot-add. It is off by
-default; every shipped miner Worker in this monorepo sets it to `true` in its boot function.
+default; the Antspace, Bitdeer and Seneca Workers, the ones still on `WorkerRuntime` v1, set it to `true` in their boot function.
 
 ### Startup and discovery
 
@@ -615,6 +633,15 @@ See the end-user experience of controlling and monitoring your device via the Wo
 
 ## Links
 
+[smoke-config-template]: ../../../packages/cli/templates/worker/smoke.config.js
+<!-- docs@tether.io: smoke-config-template → https://github.com/tetherto/mdk/blob/main/packages/cli/templates/worker/smoke.config.js -->
+
+[cli-validate]: ../../reference/tooling/cli.md#mdk-validate-app-name-and-mdk-validate-worker-name
+<!-- docs@tether.io: cli-validate → reference/tooling/cli#mdk-validate-app-name-and-mdk-validate-worker-name -->
+
+[versioning-before-1]: ../../reference/versioning.md#before-10
+<!-- docs@tether.io: versioning-before-1 → reference/versioning#before-10 -->
+
 [cli-install]: ../cli/install.md
 <!-- docs@tether.io: cli-install → guides/cli/run-with-npm -->
 
@@ -638,7 +665,7 @@ See the end-user experience of controlling and monitoring your device via the Wo
 <!-- docs@tether.io: discovery-model → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/architecture.md#discovery-model -->
 
 [security-boundaries]: ../../concepts/security-boundaries.md
-<!-- docs@tether.io: security-boundaries → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#security-model -->
+<!-- docs@tether.io: security-boundaries → concepts/security-boundaries -->
 
 [trust-and-admission]: ../../../backend/core/mdk/README.md#trust-and-admission
 <!-- docs@tether.io: trust-and-admission → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md#trust-and-admission -->

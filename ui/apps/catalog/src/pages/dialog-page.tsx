@@ -16,14 +16,7 @@ const ControlledDialog = lazy(() =>
 )
 
 const SectionLoader = (): JSX.Element => (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '200px',
-    }}
-  >
+  <div className="demo-section-loader">
     <Spinner />
   </div>
 )

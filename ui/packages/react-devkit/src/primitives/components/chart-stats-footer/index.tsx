@@ -65,6 +65,7 @@ export const ChartStatsFooter = ({
                       'mdk-chart-stats-footer__stats-row',
                       statsPerColumn === 1 && 'mdk-chart-stats-footer__stats-row--full-width',
                     )}
+                    // oxlint-disable-next-line react/forbid-dom-props -- flex basis derived from the statsPerColumn prop
                     style={{ flex: 1 / statsPerColumn }}
                   >
                     <div className="mdk-chart-stats-footer__stat-label">{item.label}</div>
@@ -90,8 +91,4 @@ export const ChartStatsFooter = ({
 
 ChartStatsFooter.displayName = 'ChartStatsFooter'
 
-export type {
-  ChartStatsFooterItem,
-  ChartStatsFooterProps,
-  SecondaryLabel,
-} from './types'
+export type { ChartStatsFooterItem, ChartStatsFooterProps, SecondaryLabel } from './types'

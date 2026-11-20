@@ -14,7 +14,7 @@ your own device's protocol.
 ## Layout
 
 ```
-mdk-contract.json     # capability manifest (telemetry channels + commands)
+mdk-contract.json     # capability manifest (telemetry channels + commands, telemetryPollIntervalMs)
 src/client.js         # your device "vendor SDK" — binds to this device once, per instance
 src/telemetry/*.js    # telemetry handlers (metrics read live from the device)
 src/commands/*.js     # command handlers (reboot, set-power-mode, ...)
@@ -52,8 +52,9 @@ mdk run worker __WORKER_NAME__     # boots the worker (+ its mocks with mock: tr
 ```
 
 With `mock: true` the CLI starts one simulator from [`mock/server.js`](./mock/server.js) per device
-so the worker talks to a simulator instead of hardware. Drop `mock` (or set it
-`false`) and point `opts.host`/`opts.port` at real devices for production.
+so the worker talks to a simulator instead of hardware. A package whose simulator lives
+elsewhere names it instead, as a path inside the package: `mock: mock/cgi-server.js`. Drop
+`mock` (or set it `false`) and point `opts.host`/`opts.port` at real devices for production.
 
 ## Check it
 

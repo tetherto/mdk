@@ -1,4 +1,5 @@
 {
+  "routeTableVersion": "1",
   "name": "@tetherto/mdk-benchmark-plugin-fleet-summary",
   "version": "0.6.0",
   "description": "Benchmark harness Gateway plugin: aggregates hashrate and power across every registered device via the MDK protocol client. Device-family agnostic — reads only hashrate_avg/power, fields every worker type in this harness's WORKER_REGISTRY exposes.",

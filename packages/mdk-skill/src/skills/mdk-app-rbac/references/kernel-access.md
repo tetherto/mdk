@@ -28,10 +28,11 @@ action, and the Kernel evaluates that action as one resource and verb for each i
 
 | Client method            | Kernel action           | Needs                | Instance checked                       |
 | ------------------------ | ----------------------- | -------------------- | -------------------------------------- |
-| `listWorkers()`          | `worker.list`           | `workers: list`      | none                                   |
+| `listWorkers()`          | `worker.list`           | `workers: list`, plus `workers: read` for a row's `rpcKey` | the worker, for `rpcKey` only |
 | `terminateWorker(id)`    | `worker.terminate`      | `workers: delete`    | the worker                             |
 | `getCapabilities(id)`    | `device.capabilities`   | `devices: read`      | the device                             |
 | `pullTelemetry(id, q)`   | `telemetry.pull`        | `devices: read`      | the device                             |
+| `pullSnapshot({ workers })`, `pullAggregate({ workers, ops })`, `pullWorkerQuery({ workers, type })` | `telemetry.pull` | `devices: read` | every device of each listed Worker |
 | `pullState(id)`          | `state.pull`            | `devices: read`      | the device                             |
 | `getCommandStatus(cid)`  | `command.status`        | `devices: read`      | the command's target device(s)         |
 | `sendCommand(id, c, p)`  | `command.request`       | `devices: write`     | the device, or every device of a worker-scoped command |
@@ -45,7 +46,16 @@ action, and the Kernel evaluates that action as one resource and verb for each i
 | `upsertUser`, `deleteUser`, `upsertServiceAccount`, `deleteServiceAccount`, `rotateSigningKey` | `identity.*` | `identities: write` | none |
 
 Helpers that first ask the Kernel for the fleet need `workers: list` as well: `getStatus`, `waitForWorkers`,
-`waitForDevice`, `getWorkerKey`.
+`waitForDevice`, `getWorkerKey`. `getWorkerKey` needs `workers: read` on the Worker too, or `worker.list` leaves its RPC
+key out. It is a registry lookup for correlating a `workerId` with the key the Kernel bound it to, not a way to reach
+the Worker; its `null` covers both an unknown Worker and one the caller may not read.
+
+The device check on `telemetry.pull` is made on the device the call addresses, and the Worker answers for that
+device: `logs` on the per-device `thing-5m` log, `logs_multi`, `historical_logs`, `list`, `stats` and `thing_config`
+return the addressed device's records only; `count`, `config`, `settings` and `ext_data` are Worker-level facts; a
+`stat-*` log is the per-tag aggregate over every device carrying the tag, so a rule narrowed with `resourceNames`
+bounds which devices the app may address, not whose figures that total holds. To read a Worker's records, call
+`pullWorkerQuery({ workers, type, ...params })`, checked on every device of each listed Worker.
 
 ## Provisioning a device
 
@@ -58,7 +68,10 @@ the registry already knows, so a `devices: write` rule narrowed with `resourceNa
 not: the device is not in the registry yet, so it resolves to no instance name, and a rule scoped to instances never
 matches a request that names none. An app that registers devices needs an unscoped `devices: write` rule,
 which grants write access to every device the policy covers, so request it only where registration is genuinely part
-of the app.
+of the app. This is a current limitation: the Kernel knows the target Worker at push time, so a rule scoped to a
+Worker (`family/brand/worker`) can follow later; a rule scoped to a device id never can, because the id does not exist
+until the Worker has registered the device. Only a Worker on the `WorkerRuntime` store services serves `registerThing`;
+a `WorkerRuntimeV2` device list is fixed when it starts.
 
 `scripts/derive-permissions.mjs` does not yet model this: it maps `pushAction` to `actions: write` alone, and advises
 scoping every derived `devices` rule with `resourceNames`. For a provisioning app, add the `devices: write` rule by

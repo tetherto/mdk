@@ -1,0 +1,1 @@
+{"name":"PoolDetailsCardProps","path":"src/domain/components/pool-details-card/index.tsx","kind":"type","description":"","public":true,"definition":"PoolDetailsCardPartialProps & { /** Detail rows to render */ details: PoolDetailItem[] }"}

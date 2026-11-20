@@ -8,7 +8,7 @@ const crypto = require('crypto')
 const { loadPlugin } = require('../../../workers/lib/plugin-loader')
 const { EventEmitter } = require('events')
 const { Readable, Writable } = require('stream')
-const { buildFastifyRoutes, errorResponse, resolveAppTimeout } = require('../../../workers/lib/plugin-adapter')
+const { buildFastifyRoutes, errorResponse, resolveAppTimeout, resolveStreamBufferBytes } = require('../../../workers/lib/plugin-adapter')
 
 const FIXTURES_DIR = path.join(os.tmpdir(), 'mdk-plugin-loader-test-' + Date.now())
 
@@ -524,6 +524,15 @@ test('resolveAppTimeout - defaults, accepts digit strings, and fails the boot on
   }
 })
 
+test('resolveStreamBufferBytes - unset leaves the client default, accepts digit strings, and fails the boot on anything else', (t) => {
+  t.is(resolveStreamBufferBytes({}), undefined, 'the runtime client applies its own 16 MiB')
+  t.is(resolveStreamBufferBytes({ maxStreamBufferBytes: 4194304 }), 4194304)
+  t.is(resolveStreamBufferBytes({ maxStreamBufferBytes: '4194304' }), 4194304)
+  for (const bad of ['16MiB', -1, 0, 1.5, true]) {
+    t.exception(() => resolveStreamBufferBytes({ maxStreamBufferBytes: bad }), /ERR_GATEWAY_STREAM_BUFFER_INVALID/, String(bad))
+  }
+})
+
 test('loadPlugin - rejects a non-boolean auth flag', (t) => {
   const dir = path.join(FIXTURES_DIR, 'auth-string')
   writeFixture(dir, {
@@ -594,6 +603,42 @@ test('buildFastifyRoutes - stream route tears the socket down on a mid-stream fa
   t.is(raw.chunks.length, 1, 'no error body after headers were sent')
   t.ok(raw.destroyed, 'socket was torn down, not left hanging')
   t.pass()
+})
+
+function midStreamFailure (err) {
+  return streamApp(async () => {
+    const stream = new Readable({ read () {} })
+    stream.push('event: token\n\n')
+    setImmediate(() => stream.destroy(err))
+    return { statusCode: 200, headers: {}, stream }
+  })
+}
+
+function warnLog () {
+  const warned = []
+  return { warned, log: { warn: (obj, msg) => warned.push([obj, msg]), error () {}, info () {}, debug () {} } }
+}
+
+test('buildFastifyRoutes - a stream that overflows its buffer is logged at warn with the app and route', async (t) => {
+  const overflow = Object.assign(new Error('ERR_APP_STREAM_OVERFLOW: test.stream buffered more than 16 bytes'), { code: 'ERR_APP_STREAM_OVERFLOW', statusCode: 502 })
+  const routes = midStreamFailure(overflow)
+  const { warned, log } = warnLog()
+  const raw = makeRawRes()
+  raw.on('error', () => {})
+  await routes[0].handler({ params: {}, query: {}, body: {}, headers: {}, _info: {}, log }, { raw, hijack () {} })
+
+  t.is(warned.length, 1)
+  t.alike(warned[0][0], { app: 'p', routeId: 'test.stream', code: 'ERR_APP_STREAM_OVERFLOW' })
+  t.ok(raw.destroyed, 'the truncated response is still torn down')
+})
+
+test('buildFastifyRoutes - any other mid-stream end (a client leaving) is not logged at warn', async (t) => {
+  const routes = midStreamFailure(Object.assign(new Error('Premature close'), { code: 'ERR_STREAM_PREMATURE_CLOSE' }))
+  const { warned, log } = warnLog()
+  const raw = makeRawRes()
+  raw.on('error', () => {})
+  await routes[0].handler({ params: {}, query: {}, body: {}, headers: {}, _info: {}, log }, { raw, hijack () {} })
+  t.is(warned.length, 0)
 })
 
 test('errorResponse - forwards ERR_* and Fastify 4xx messages, masks and logs the rest', (t) => {

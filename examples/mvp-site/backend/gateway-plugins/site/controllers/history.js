@@ -9,18 +9,35 @@ const ONE_HOUR_MS = 60 * 60 * 1000
 //   temperature   — Seneca sensor tail-log (snap.stats.temp_c)
 //   hashrate      — pool stats-history (telemetry.pull 'ext_data' key 'stats-history',
 //                   or the `stats_history` channel on contract-only pool workers),
-//                   the pool worker's persisted stats series.
+//                   the pool worker's persisted stats series
 //   site-hashrate — miner tail-logs (snap.stats.hashrate_mhs), summed across
-//                   all miners; MH/s.
+//                   all miners
 //
+// The unit each one is read and returned in. Every metric answers from two
+// places — an early return for no devices, and the series itself — so stating
+// it once here is what keeps the two in step. Values are passed through in the
+// unit the worker stored them in, never rescaled: `hashrate` is the H/s every
+// pool contract declares, `site-hashrate` the MH/s of snap.stats.hashrate_mhs.
+// Also the list of metrics this route serves (see ERR_UNKNOWN_METRIC below),
+// so a metric cannot be added without saying what it is measured in.
+//
+// A Map rather than an object: the keys are the `metric` query values the
+// route's schema declares, which are kebab-case and so cannot all be written
+// as identifiers, and a Map answers for its own entries only — an object would
+// have to screen out the Object.prototype names a query string can also send.
+const UNITS = new Map([
+  ['hashrate', 'H/s'],
+  ['site-hashrate', 'MH/s'],
+  ['power', 'W'],
+  ['temperature', '°C']
+])
+
 // Read as the signed-in user, so they see only the devices their roles let them read.
 // `ctx` is a test-only seam — see utils.js requestClient.
 module.exports = async (req, ctx) => {
   const mdkClient = requestClient(req, ctx)
   const metric = (req.query && req.query.metric) || 'hashrate'
-  if (metric !== 'hashrate' && metric !== 'power' && metric !== 'temperature' && metric !== 'site-hashrate') {
-    throw new Error('ERR_UNKNOWN_METRIC')
-  }
+  if (!UNITS.has(metric)) throw new Error('ERR_UNKNOWN_METRIC')
 
   const now = Date.now()
   const end = Number(req.query && req.query.end) || now
@@ -31,7 +48,7 @@ module.exports = async (req, ctx) => {
 
   if (metric === 'power') {
     const siteMeters = (byFamily['power-meter'] || []).filter((t) => t.info && t.info.pos === 'site')
-    if (!siteMeters.length) return { metric, unit: 'W', log: [] }
+    if (!siteMeters.length) return { metric, unit: UNITS.get(metric), log: [] }
 
     const deviceId = req.query && req.query.deviceId
     const meters = deviceId && deviceId !== 'site-aggregate'
@@ -58,7 +75,7 @@ module.exports = async (req, ctx) => {
       .sort((a, b) => a.ts - b.ts)
     return {
       metric,
-      unit: 'W',
+      unit: UNITS.get(metric),
       deviceId: deviceId && deviceId !== 'site-aggregate' ? deviceId : 'site-aggregate',
       log
     }
@@ -66,7 +83,7 @@ module.exports = async (req, ctx) => {
 
   if (metric === 'temperature') {
     const sensors = byFamily.sensor || []
-    if (!sensors.length) return { metric, unit: '°C', log: [] }
+    if (!sensors.length) return { metric, unit: UNITS.get(metric), log: [] }
 
     const deviceId = req.query && req.query.deviceId
     const selected = deviceId && deviceId !== 'site-aggregate'
@@ -99,7 +116,7 @@ module.exports = async (req, ctx) => {
       .sort((a, b) => a.ts - b.ts)
     return {
       metric,
-      unit: '°C',
+      unit: UNITS.get(metric),
       deviceId: deviceId && deviceId !== 'site-aggregate' ? deviceId : 'site-aggregate',
       log
     }
@@ -107,7 +124,7 @@ module.exports = async (req, ctx) => {
 
   if (metric === 'site-hashrate') {
     const miners = byFamily.miner || []
-    if (!miners.length) return { metric, unit: 'MH/s', log: [] }
+    if (!miners.length) return { metric, unit: UNITS.get(metric), log: [] }
 
     const deviceId = req.query && req.query.deviceId
     const selected = deviceId && deviceId !== 'site-aggregate'
@@ -148,14 +165,14 @@ module.exports = async (req, ctx) => {
 
     return {
       metric,
-      unit: 'MH/s',
+      unit: UNITS.get(metric),
       deviceId: deviceId && deviceId !== 'site-aggregate' ? deviceId : 'site-aggregate',
       log
     }
   }
 
   // hashrate
-  if (!pools.length) return { metric, unit: 'TH/s', log: [] }
+  if (!pools.length) return { metric, unit: UNITS.get(metric), log: [] }
 
   const deviceId = req.query && req.query.deviceId
   const selectedPools = deviceId
@@ -178,7 +195,7 @@ module.exports = async (req, ctx) => {
     .sort((a, b) => a.ts - b.ts)
   return {
     metric,
-    unit: 'TH/s',
+    unit: UNITS.get(metric),
     deviceId: deviceId || 'site-aggregate',
     log
   }

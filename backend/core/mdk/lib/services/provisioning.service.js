@@ -136,7 +136,8 @@ class DeviceProvisioningService {
   buildRuntimeDevices () {
     return Object.values(this._devices).map((dev) => ({
       deviceId: dev.id,
-      config: { ...dev.opts, type: dev.type }
+      config: { ...dev.opts, type: dev.type },
+      info: { ...dev.info }
     }))
   }
 

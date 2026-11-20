@@ -11,6 +11,7 @@ const mockClient = vi.hoisted(() => ({
   connect: vi.fn(),
   close: vi.fn().mockResolvedValue(undefined),
   getStatus: vi.fn(),
+  getJwks: vi.fn().mockResolvedValue({ keys: [] }),
 }));
 const createMdkClientMock = vi.hoisted(() => vi.fn(() => mockClient));
 
@@ -46,7 +47,8 @@ vi.mock('../../src/lib/spec.js', async (importOriginal) => {
 
 const { collectStatus } = await import('../../src/lib/status.js');
 const { kernelKeyFile, trustedKeysDir } = await import('../../src/lib/runtime.js');
-const { appChildFile, runLockFile } = await import('../../src/lib/run-lock.js');
+const { appChildFile, runLockFile, writeAppChildFile } = await import('../../src/lib/run-lock.js');
+const { sessionFile } = await import('../../src/lib/session.js');
 // The unpatched loader, for the one test that checks the real client.
 const realRequire = (await vi.importActual<typeof import('node:module')>('node:module')).createRequire(import.meta.url);
 
@@ -244,6 +246,8 @@ describe('collectStatus', () => {
     // The Kernel is fail-closed: the probe dials with a CLI key it publishes for the Kernel to admit.
     expect(readFileSync(join(trustedKeysDir(dir), 'cli.pub'), 'utf8')).toBe(config.kernelKeyPair.publicKey.toString('hex'));
     expect(report.stack.kernel.state).toBe('up');
+    expect(report.stack.kernel).not.toHaveProperty('refused');
+    expect(report.stack.workers.checked).toBe(true);
     expect(report.stack.workers.declared).toBe(2);
     expect(report.stack.workers.registered).toBe(2);
     expect(report.stack.workers.totalDevices).toBe(5);
@@ -268,7 +272,71 @@ describe('collectStatus', () => {
     const report = await collectStatus(dir);
     expect(report.stack.kernel.state).toBe('down');
     expect(report.stack.kernel.error).toBe('handshake failed');
+    expect(report.stack.workers.checked).toBe(false);
+    expect(mockClient.getJwks).not.toHaveBeenCalled();
     expect(mockClient.close).toHaveBeenCalled();
+  });
+
+  it('reports a Kernel that refused the session or permission as up, with its registry unchecked and the stack degraded', async () => {
+    const dir = makeTmpDir();
+    writeSpec(dir, 'kind: Stack\napiVersion: mdk/v1\nspec:\n  gateway:\n    port: 3847\n');
+    mkdirSync(join(dir, '.mdk'), { recursive: true });
+    writeFileSync(kernelKeyFile(dir), 'deadbeef', 'utf8');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
+    mockClient.connect.mockResolvedValue(undefined);
+
+    for (const [error, pings] of [
+      // Refused by the CLI before anything was sent: a ping, retried once past a cold-connection timeout, proves the Kernel up.
+      ['ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.', 2],
+      // Refused by the Kernel itself: it answered, so no ping.
+      ['ERR_KERNEL_ACTION_FORBIDDEN: viewer may not list workers', 0],
+    ] as const) {
+      mockClient.getJwks.mockClear();
+      mockClient.getStatus.mockRejectedValueOnce(new Error(error));
+      if (pings) mockClient.getJwks.mockRejectedValueOnce(new Error('ERR_MDK_REQUEST_TIMEOUT'));
+      const report = await collectStatus(dir);
+      expect(mockClient.getJwks).toHaveBeenCalledTimes(pings);
+      expect(report.stack.kernel).toMatchObject({ state: 'up', key: 'deadbeef', error, refused: true });
+      expect(report.stack.workers).toMatchObject({ checked: false, declared: 0, registered: 0 });
+      // Nothing else is wrong, but nothing past the Kernel was checked.
+      expect(report.health).toBe('degraded');
+      expect(report.ok).toBe(false);
+    }
+    expect(mockClient.close).toHaveBeenCalledTimes(2);
+  });
+
+  it('pings with the service account when the session file cannot be read', async () => {
+    const dir = makeTmpDir();
+    writeSpec(dir, 'kind: Stack\napiVersion: mdk/v1\nspec:\n  gateway:\n    port: 3847\n');
+    mkdirSync(join(dir, '.mdk'), { recursive: true });
+    writeFileSync(kernelKeyFile(dir), 'deadbeef', 'utf8');
+    writeFileSync(sessionFile(dir), '{ not json', 'utf8');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
+
+    const report = await collectStatus(dir);
+    expect(report.stack.kernel).toMatchObject({ state: 'up', refused: true, error: expect.stringMatching(/^ERR_CLI_SESSION_INVALID/) });
+    expect(createMdkClientMock).toHaveBeenCalledWith(expect.objectContaining({ kernelCredential: expect.objectContaining({ name: 'mdk-cli' }) }));
+    expect(mockClient.getStatus).not.toHaveBeenCalled();
+    expect(mockClient.close).toHaveBeenCalled();
+
+    for (let i = 0; i < 3; i++) mockClient.getJwks.mockRejectedValueOnce(new Error('ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED'));
+    expect((await collectStatus(dir)).stack.kernel).toMatchObject({ state: 'down', error: 'ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED' });
+  });
+
+  it('reports the Kernel down with the ping error when a refusal meets a Kernel that does not answer', async () => {
+    const dir = makeTmpDir();
+    writeSpec(dir, 'kind: Stack\napiVersion: mdk/v1\nspec:\n  gateway:\n    port: 3847\n');
+    mkdirSync(join(dir, '.mdk'), { recursive: true });
+    writeFileSync(kernelKeyFile(dir), 'deadbeef', 'utf8');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
+    mockClient.connect.mockResolvedValue(undefined);
+    mockClient.getStatus.mockRejectedValueOnce(new Error('ERR_CLI_SESSION_EXPIRED: the session ran out.'));
+    for (let i = 0; i < 3; i++) mockClient.getJwks.mockRejectedValueOnce(new Error('ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED'));
+
+    const report = await collectStatus(dir);
+    expect(report.stack.kernel).toEqual({ state: 'down', keyFile: kernelKeyFile(dir), key: 'deadbeef', error: 'ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED' });
+    expect(mockClient.getJwks).toHaveBeenCalledTimes(3);
+    expect(report.health).toBe('down');
   });
 
   it('stringifies non-Error throws from the gateway probe and the kernel connect call, and swallows a close() rejection', async () => {
@@ -395,12 +463,19 @@ describe('collectStatus', () => {
     expect(report.stack.apps.running).toBe(2);
     expect(report.health).toBe('healthy');
 
-    // Under `mdk run` the lock names the supervisor; the child file names the runtime.
-    writeFileSync(appChildFile(dir, 'ops'), String(process.pid));
+    // Under `mdk run` the lock names the supervisor; the child file names the runtime and that supervisor.
+    writeAppChildFile(dir, 'ops', process.pid, process.ppid);
     report = await collectStatus(dir);
     expect(report.stack.apps.items[0], 'the runtime pid, not the supervisor').toMatchObject({ running: true, pid: process.pid });
 
-    writeFileSync(appChildFile(dir, 'ops'), '999999999');
+    // A child file an earlier run left (another supervisor, or the old pid-only format) says nothing about this one.
+    for (const stale of ['999999999 999999998', '999999999']) {
+      writeFileSync(appChildFile(dir, 'ops'), stale);
+      report = await collectStatus(dir);
+      expect(report.stack.apps.items[0], `stale child file "${stale}"`).toMatchObject({ running: true, pid: process.ppid });
+    }
+
+    writeAppChildFile(dir, 'ops', 999999999, process.ppid);
     report = await collectStatus(dir);
     expect(report.stack.apps.items[0], 'a crashed runtime waiting to restart is not running').toMatchObject({ running: false, pid: null });
     expect(report.health).toBe('degraded');

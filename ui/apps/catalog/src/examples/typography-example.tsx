@@ -75,11 +75,7 @@ export const TypographyExample = (): React.ReactElement => {
         {/* Truncate */}
         <section>
           <h3 className="demo-section__typography--title">Truncate</h3>
-          <div
-            style={{
-              width: '300px',
-            }}
-          >
+          <div className="demo-section__truncate-demo">
             <Typography truncate>
               This is a very long text that will be truncated with an ellipsis when it exceeds the
               container width

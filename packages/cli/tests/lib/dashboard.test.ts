@@ -3,11 +3,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
+import type { InstallResult } from '../../src/lib/npm.js';
 
-const installDepsMock = vi.hoisted(() => vi.fn(() => ({ ok: true })));
+const installDepsMock = vi.hoisted(() => vi.fn((): InstallResult => ({ ok: true })));
 vi.mock('../../src/lib/npm.js', () => ({ installDeps: installDepsMock, npmBin: () => 'npm' }));
 
 class FakeChild extends EventEmitter {
+  stdout = new EventEmitter();
   exitCode: number | null = null;
   signalCode: string | null = null;
   kill = vi.fn((_signal?: string) => {
@@ -23,6 +25,7 @@ vi.mock('node:child_process', () => ({ spawn: spawnMock }));
 const {
   createDashboard,
   dashboardNameFromStack,
+  dashboardNames,
   findDashboardDir,
   rewriteDocLinks,
   runDashboard,
@@ -113,20 +116,155 @@ describe('findDashboardDir', () => {
     writeFileSync(join(noDev, 'package.json'), '{ not json');
     expect(findDashboardDir(dir)).toBeNull();
   });
+
+  // A project can hold more than one dashboard (`mdk create dashboard ui2`),
+  // so a named request is `apps/<name>` or nothing — never a neighbour.
+  it('selects apps/<name> when given a name, over the canonical dashboard', () => {
+    const dir = makeTmpDir();
+    for (const name of ['dashboard', 'ui2']) {
+      const appPath = join(dir, 'apps', name);
+      mkdirSync(appPath, { recursive: true });
+      writeFileSync(join(appPath, 'package.json'), JSON.stringify({ scripts: { dev: 'vite' } }));
+    }
+    expect(findDashboardDir(dir, 'ui2')).toBe(join(dir, 'apps', 'ui2'));
+    expect(findDashboardDir(dir, 'dashboard')).toBe(join(dir, 'apps', 'dashboard'));
+  });
+
+  it('returns null for a named dashboard that does not exist, rather than falling back', () => {
+    const dir = makeTmpDir();
+    const appPath = join(dir, 'apps', 'dashboard');
+    mkdirSync(appPath, { recursive: true });
+    writeFileSync(join(appPath, 'package.json'), JSON.stringify({ scripts: { dev: 'vite' } }));
+    expect(findDashboardDir(dir, 'nope')).toBeNull();
+  });
+
+  it('returns null for a named app with no dev script', () => {
+    const dir = makeTmpDir();
+    const appPath = join(dir, 'apps', 'plain-app');
+    mkdirSync(appPath, { recursive: true });
+    writeFileSync(join(appPath, 'package.json'), JSON.stringify({ scripts: { 'dev:ui': 'vite build --watch' } }));
+    expect(findDashboardDir(dir, 'plain-app')).toBeNull();
+  });
+
+  // The command validates the name first; this is the backstop behind it.
+  it('refuses a name that would escape apps/', () => {
+    const dir = makeTmpDir();
+    const appPath = join(dir, 'apps', 'dashboard');
+    mkdirSync(appPath, { recursive: true });
+    writeFileSync(join(appPath, 'package.json'), JSON.stringify({ scripts: { dev: 'vite' } }));
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ scripts: { dev: 'vite' } }));
+    for (const name of ['..', '../..', join('..', '..'), '']) {
+      expect(findDashboardDir(dir, name)).toBeNull();
+    }
+  });
+});
+
+describe('dashboardNames', () => {
+  it('lists every app with a dev script, sorted, and nothing else', () => {
+    const dir = makeTmpDir();
+    const write = (name: string, scripts: Record<string, string>) => {
+      const appPath = join(dir, 'apps', name);
+      mkdirSync(appPath, { recursive: true });
+      writeFileSync(join(appPath, 'package.json'), JSON.stringify({ scripts }));
+    };
+    write('ui2', { dev: 'vite' });
+    write('dashboard', { dev: 'vite' });
+    // A scaffolded app declares `dev:ui`, not `dev` — it is not a dashboard.
+    write('ops-center', { 'dev:ui': 'npm --prefix ui-src run dev' });
+    expect(dashboardNames(dir)).toEqual(['dashboard', 'ui2']);
+  });
+
+  it('is empty when there is no apps/ directory', () => {
+    expect(dashboardNames(makeTmpDir())).toEqual([]);
+  });
 });
 
 describe('runDashboard', () => {
-  it('resolves once the child process spawns, and stops it with SIGTERM', async () => {
+  const listening = (child: FakeChild): boolean =>
+    child.stdout.emit('data', Buffer.from('  ➜  Local:   http://localhost:3030/\n'));
+
+  it('resolves once the dev server prints its URL, and stops it with SIGTERM', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     const child = new FakeChild();
     spawnMock.mockReturnValue(child);
 
-    const promise = runDashboard('/some/dir');
+    let resolved = false;
+    const promise = runDashboard('/some/dir').then((handle) => ((resolved = true), handle));
     child.emit('spawn');
+    child.stdout.emit('data', Buffer.from('> vite\n'));
+    await Promise.resolve();
+    expect(resolved, 'not before the dev server is up').toBe(false);
+    listening(child);
     const handle = await promise;
 
     expect(spawnMock).toHaveBeenCalledWith('npm', ['run', 'dev'], expect.objectContaining({ cwd: '/some/dir' }));
+    expect(stdout.mock.calls.join(''), "the dev server's output is passed on").toContain('> vite');
     await handle.stop();
     expect(child.kill).toHaveBeenCalledWith('SIGTERM');
+    expect(await Promise.race([handle.crashed, Promise.resolve('none')]), 'a stop is not a crash').toBe('none');
+    stdout.mockRestore();
+  });
+
+  it('sees a URL split across stdout chunks', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const child = new FakeChild();
+    spawnMock.mockReturnValue(child);
+    const promise = runDashboard('/some/dir');
+    child.stdout.emit('data', Buffer.from('  ➜  Local:   http:'));
+    child.stdout.emit('data', Buffer.from('//localhost:3030/\n'));
+    await expect(promise).resolves.toMatchObject({ process: child });
+    stdout.mockRestore();
+  });
+
+  it("waits for Vite's Local: line, not just any URL, and reads it through colour codes", async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const child = new FakeChild();
+    spawnMock.mockReturnValue(child);
+    let resolved = false;
+    const promise = runDashboard('/some/dir').then((handle) => ((resolved = true), handle));
+    child.stdout.emit('data', Buffer.from('Docs: https://docs.example.com\n'));
+    await Promise.resolve();
+    expect(resolved, 'a banner URL is not the dev server listening').toBe(false);
+    child.stdout.emit('data', Buffer.from('  \x1b[32m➜\x1b[39m  \x1b[1mLocal\x1b[22m:   \x1b[36mhttp://localhost:\x1b[1m3030\x1b[22m/\x1b[39m\n'));
+    await expect(promise).resolves.toMatchObject({ process: child });
+    stdout.mockRestore();
+  });
+
+  it('counts a dev server that never prints the Local: line as up after 30s, with a warning', async () => {
+    vi.useFakeTimers();
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      const child = new FakeChild();
+      spawnMock.mockReturnValue(child);
+      const promise = runDashboard('/some/dir');
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(promise).resolves.toMatchObject({ process: child });
+      expect(stderr.mock.calls.join('')).toContain('printed no Local: URL within 30s');
+    } finally {
+      stderr.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects when the dev server exits before it is up', async () => {
+    const child = new FakeChild();
+    spawnMock.mockReturnValue(child);
+    const promise = runDashboard('/some/dir');
+    child.emit('spawn');
+    child.emit('exit', 127, null);
+    await expect(promise).rejects.toThrow('The dashboard dev server exited with code 127 before it started.');
+  });
+
+  it('reports a dev server that exits after it is up through crashed', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const child = new FakeChild();
+    spawnMock.mockReturnValue(child);
+    const promise = runDashboard('/some/dir');
+    listening(child);
+    const handle = await promise;
+    child.emit('exit', null, 'SIGKILL');
+    await expect(handle.crashed).resolves.toBe('signal SIGKILL');
+    stdout.mockRestore();
   });
 
   it('hands the installed apps to the dev server in MDK_DASHBOARD_APPS', async () => {
@@ -136,9 +274,11 @@ describe('runDashboard', () => {
       { name: 'sentinel', id: 'io.tether.sentinel', version: '0.1.0', displayName: 'Sentinel', apiBase: '/apps/sentinel', dir: '/a' },
     ];
 
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     const promise = runDashboard('/some/dir', apps);
-    child.emit('spawn');
+    listening(child);
     await promise;
+    stdout.mockRestore();
 
     const { env } = spawnMock.mock.calls.at(-1)![2] as { env: NodeJS.ProcessEnv };
     expect(JSON.parse(env.MDK_DASHBOARD_APPS!)).toEqual(apps);
@@ -147,9 +287,11 @@ describe('runDashboard', () => {
   it('resolves stop() immediately when the child already exited', async () => {
     const child = new FakeChild();
     spawnMock.mockReturnValue(child);
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     const promise = runDashboard('/some/dir');
-    child.emit('spawn');
+    listening(child);
     const handle = await promise;
+    stdout.mockRestore();
 
     Object.defineProperty(child, 'exitCode', { value: 0 });
     await handle.stop();
@@ -255,6 +397,47 @@ describe('createDashboard (monorepo template)', () => {
     const result = await createDashboard({ name: 'demo-dashboard', parentDir });
     expect(result.ok).toBe(true);
     expect(result.installWarning).toBe('npm exploded');
+  });
+
+  it('retries a failed npm install with --legacy-peer-deps', async () => {
+    // npm 11.0 to 11.5 crash on the template's nested optional peers ("reading 'edgesOut'").
+    installDepsMock.mockReturnValueOnce({ ok: false, message: 'npm install exited with code 1.', exitCode: 1 });
+    const parentDir = makeTmpDir();
+    const result = await createDashboard({ name: 'demo-dashboard', parentDir });
+
+    expect(installDepsMock).toHaveBeenNthCalledWith(1, result.appPath, true);
+    expect(installDepsMock).toHaveBeenNthCalledWith(2, result.appPath, true, ['--legacy-peer-deps']);
+    expect(result.ok).toBe(true);
+    expect(result.installRetried).toBe(true);
+    expect(result.installWarning).toBeUndefined();
+  });
+
+  it('warns with an npm upgrade hint when the retry fails too', async () => {
+    installDepsMock
+      .mockReturnValueOnce({ ok: false, message: 'npm install exited with code 1.', exitCode: 1 })
+      .mockReturnValueOnce({ ok: false, message: 'npm install exited with code 1.', exitCode: 1 });
+    const result = await createDashboard({ name: 'demo-dashboard', parentDir: makeTmpDir() });
+
+    expect(installDepsMock).toHaveBeenCalledTimes(2);
+    expect(result.ok).toBe(true);
+    expect(result.installRetried).toBe(true);
+    expect(result.installWarning).toMatch(/exited with code 1\. .*npm 11\.6 or newer/);
+  });
+
+  it('does not retry when npm never started', async () => {
+    installDepsMock.mockReturnValueOnce({ ok: false, message: 'npm was not found on PATH' });
+    const result = await createDashboard({ name: 'demo-dashboard', parentDir: makeTmpDir() });
+
+    expect(installDepsMock).toHaveBeenCalledTimes(1);
+    expect(result.installRetried).toBeUndefined();
+    expect(result.installWarning).toBe('npm was not found on PATH');
+  });
+
+  it('does not retry a skipped install', async () => {
+    const result = await createDashboard({ name: 'demo-dashboard', parentDir: makeTmpDir(), install: false });
+    expect(installDepsMock).toHaveBeenCalledTimes(1);
+    expect(installDepsMock).toHaveBeenCalledWith(result.appPath, false);
+    expect(result.installRetried).toBeUndefined();
   });
 
   it('overwrites an existing target with force', async () => {

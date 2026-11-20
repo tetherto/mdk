@@ -6,8 +6,8 @@ shape is [`mdk-contract.schema.json`](../../../../../../backend/core/mdk-worker/
 [`../scripts/validate-contract.mjs`](../scripts/validate-contract.mjs); this file covers the semantics the schema
 can't express. Real contracts to imitate:
 [`packages/cli/templates/worker/mdk-contract.json`](../../../../../cli/templates/worker/mdk-contract.json) (minimal scaffold / skill
-template), [`backend/workers/miners/avalon/plugin/mdk-contract.json`](../../../../../../backend/workers/miners/avalon/plugin/mdk-contract.json)
-(full-featured; older `plugin/` layout),
+template), [`backend/workers/miners/avalon/mdk-contract.json`](../../../../../../backend/workers/miners/avalon/mdk-contract.json)
+(full-featured, with commands),
 [`backend/workers/temperature/seneca/plugin/mdk-contract.json`](../../../../../../backend/workers/temperature/seneca/plugin/mdk-contract.json) (read-only
 sensor; older `plugin/` layout).
 
@@ -64,6 +64,38 @@ One entry per channel:
   to the schema). Dimensionless counters declare `count`.
 - `description` must carry semantic boundaries an agent can reason over:
   sentinel values, staleness, validity ranges.
+- `path` (optional) is a dotted keypath (`minerData.hashrate`, `boards.0.temp`)
+  into the handler's return value. Entries that share a `handler` are served by
+  one call per sweep; each takes its own value by `path`. Without `path` the
+  return value is the metric.
+
+## Telemetry polling (optional)
+
+Root-level keys turn on the runtime's telemetry collector, which sweeps every
+device on an interval, stores the results, and answers fleet reads
+(`snapshot`, `aggregate`) with no device call:
+
+```json
+{
+  "telemetryPollIntervalMs": 60000,
+  "aggregateCacheTtlMs": 60000,
+  "telemetryRetention": { "rawMs": 86400000, "rollupIntervalMs": 300000, "keepMs": 2592000000 }
+}
+```
+
+- `telemetryPollIntervalMs` is the vendor default the device tolerates; an
+  operator overrides it per instance in `mdk.yaml` `spec.workers[].config`
+  (`null` turns polling off). Without it the Worker never polls or stores.
+- `telemetryRetention` bounds the store: `rawMs` and `rollupIntervalMs` must
+  not exceed `keepMs` (`ERR_CONTRACT_RETENTION_INVALID`). The defaults shown
+  apply when omitted.
+- `aggregateCacheTtlMs` is how long an identical `aggregate` query is answered
+  from memory while no sweep stores a point. It is floored at one poll
+  interval, which is also the default.
+- `telemetryArchive: true` appends each rolled bucket to NDJSON day files
+  before its raw points are deleted, and publishes the `restoreTelemetry`
+  command. Default `false`.
+- Every metric is readable live through `metrics` regardless.
 
 ## `capabilities.commands`
 

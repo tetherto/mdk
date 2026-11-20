@@ -121,15 +121,16 @@ test('records survive a restart (fresh service over the same store)', async (t) 
 
   const svc1 = new DeviceProvisioningService({ db: db.sub('things'), deviceType: 'miner-wm-m30sp' })
   await svc1.init()
-  await svc1.registerThing({ id: 'dev-1', opts: OPTS })
+  await svc1.registerThing({ id: 'dev-1', opts: OPTS, info: { container: 'c1' } })
 
   const svc2 = new DeviceProvisioningService({ db: db.sub('things'), deviceType: 'miner-wm-m30sp' })
   await svc2.init()
   t.alike(svc2.listDeviceIds(), ['dev-1'])
-  t.alike(svc2.buildRuntimeDevices(), [{
-    deviceId: 'dev-1',
-    config: { ...OPTS, type: 'miner-wm-m30sp' }
-  }])
+  const [runtimeDevice] = svc2.buildRuntimeDevices()
+  t.is(runtimeDevice.deviceId, 'dev-1')
+  t.alike(runtimeDevice.config, { ...OPTS, type: 'miner-wm-m30sp' })
+  t.is(runtimeDevice.info.container, 'c1', 'the thing info rides along as the runtime device info block')
+  t.ok(runtimeDevice.info.createdAt, 'with the timestamps registerThing stamped on it')
 })
 
 test('comment collaborators: loadThing/saveThing/checkThingExists', async (t) => {

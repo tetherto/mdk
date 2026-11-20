@@ -11,5 +11,6 @@
   "ttl": 300,
   "site": "SITE_NAME",
   "rpcTimeout": 15000,
-  "appTimeoutMs": 60000
+  "appTimeoutMs": 60000,
+  "maxStreamBufferBytes": 16777216
 }

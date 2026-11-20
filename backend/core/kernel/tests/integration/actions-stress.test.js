@@ -15,6 +15,8 @@ const actionsPlugin = require('../fixtures/actions-plugin')
 const { ACTIONS, MESSAGE_TYPES } = require('../../lib/protocol/actions')
 const { build: buildEnvelope, serialize, deserialize } = require('../../lib/protocol/envelope')
 
+const LOOPBACK = '127.0.0.1'
+
 // reqVotes returned by getWriteCalls per action name
 const ACTION_REQ_VOTES = {
   reboot: 1,
@@ -131,20 +133,19 @@ async function requestKernel (clientRpc, orkPublicKey, action, payload) {
   return deserialize(resBuf)
 }
 
-async function pushAction (clientRpc, orkPublicKey, { query, action, params, voter, authPerms }) {
+async function pushAction (clientRpc, orkPublicKey, { query, action, params, voter }) {
   const result = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_PUSH, {
-    query, action, params, voter, authPerms
+    query, action, params, voter
   })
   if (!result.id) throw new Error(`ERR_ACTION_PUSH_FAILED: ${JSON.stringify(result.errors)}`)
   return result.id
 }
 
-async function voteAction (clientRpc, orkPublicKey, { id, voter, authPerms }) {
+async function voteAction (clientRpc, orkPublicKey, { id, voter }) {
   return requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id,
     voter,
-    approve: true,
-    authPerms
+    approve: true
   })
 }
 
@@ -175,7 +176,7 @@ function waitForNCommandsDone (kernel, n, timeoutMs) {
 // ─── Shared fixture ─────────────────────────────────────────────────────────
 
 async function setupStressFixture (t) {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const bootstrap = testnet.bootstrap
   const topic = crypto.randomBytes(32)
   const tmpDir = createTmpDir(t)
@@ -187,6 +188,7 @@ async function setupStressFixture (t) {
         workerId,
         kernelTopic: topic.toString('hex'),
         bootstrap,
+        dhtHost: LOOPBACK,
         // the worker boots before the Kernel exists, so its client key is unknown
         allowAll: true,
         devices: fleet.devices,
@@ -201,7 +203,7 @@ async function setupStressFixture (t) {
   const kernel = createKernel({
     db: path.join(tmpDir, 'store'),
     root: tmpDir,
-    listeners: { hrpc: { bootstrap } },
+    listeners: { hrpc: { bootstrap, dhtHost: LOOPBACK } },
     // Topic admission is fail-closed: admit the workers booted above.
     discovery: { topic: topic.toString('hex'), workerKeys: fleets.map((f) => f.rpcKey) },
     actions: { actionIntvlMs: ACTION_EXEC_INTERVAL_MS },
@@ -215,7 +217,8 @@ async function setupStressFixture (t) {
   await waitForNReadyWorkers(kernel.registry, WORKER_CONFIGS.length)
 
   const orkPublicKey = kernel.getPublicKey()
-  const clientRpc = new HyperswarmRPC({ bootstrap })
+  const clientDht = testnet.createNode()
+  const clientRpc = new HyperswarmRPC({ keyPair: clientDht.defaultKeyPair, dht: clientDht })
   kernel.allowKey(clientRpc.defaultKeyPair.publicKey)
   clientRpc.mdkToken = await grantTestToken(kernel)
   t.teardown(async () => clientRpc.destroy())
@@ -245,8 +248,7 @@ test(`stress: 1 kernel — ${WORKER_CONFIGS.length} workers — ${DEVICES_PER_WO
         query: { id: deviceId },
         action: 'reboot',
         params: [],
-        voter: 'stress-voter-1',
-        authPerms: ['miner:w']
+        voter: 'stress-voter-1'
       })
     )
   )
@@ -260,8 +262,7 @@ test(`stress: 1 kernel — ${WORKER_CONFIGS.length} workers — ${DEVICES_PER_WO
         query: {},
         action: 'updateThing',
         params: [{ workerId, id: deviceId, info: { location: 'stress-round-2' } }],
-        voter: 'stress-voter-1',
-        authPerms: ['miner:w']
+        voter: 'stress-voter-1'
       })
     )
   )
@@ -276,13 +277,12 @@ test(`stress: 1 kernel — ${WORKER_CONFIGS.length} workers — ${DEVICES_PER_WO
         query: { id: deviceId },
         action: 'powerCycle',
         params: [],
-        voter: 'stress-voter-1',
-        authPerms: ['miner:w']
+        voter: 'stress-voter-1'
       })
     )
   )
   await Promise.all(
-    round3Ids.map(id => voteAction(clientRpc, orkPublicKey, { id, voter: 'stress-voter-2', authPerms: ['miner:w'] }))
+    round3Ids.map(id => voteAction(clientRpc, orkPublicKey, { id, voter: 'stress-voter-2' }))
   )
   await t.execution(() => round3Done, `Round 3: ${allTargets.length} concurrent powerCycle (2 votes) actions complete`)
 
@@ -295,16 +295,15 @@ test(`stress: 1 kernel — ${WORKER_CONFIGS.length} workers — ${DEVICES_PER_WO
         query: { id: deviceId },
         action: 'factoryReset',
         params: [],
-        voter: 'stress-voter-1',
-        authPerms: ['miner:w']
+        voter: 'stress-voter-1'
       })
     )
   )
   await Promise.all(
-    round4Ids.map(id => voteAction(clientRpc, orkPublicKey, { id, voter: 'stress-voter-2', authPerms: ['miner:w'] }))
+    round4Ids.map(id => voteAction(clientRpc, orkPublicKey, { id, voter: 'stress-voter-2' }))
   )
   await Promise.all(
-    round4Ids.map(id => voteAction(clientRpc, orkPublicKey, { id, voter: 'stress-voter-3', authPerms: ['miner:w'] }))
+    round4Ids.map(id => voteAction(clientRpc, orkPublicKey, { id, voter: 'stress-voter-3' }))
   )
   await t.execution(() => round4Done, `Round 4: ${allTargets.length} concurrent factoryReset (3 votes) actions complete`)
 })

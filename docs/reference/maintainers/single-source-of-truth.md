@@ -122,6 +122,8 @@ The UI packages ship machine-readable manifests under `dist/` (`registry.json`, 
 
 **These are build artifacts, not source files.** `ui/packages/*/dist/` is gitignored: manifests are generated on every `npm run build` and never committed. They **are** included in the published npm packages, so consumers get manifests that match the installed version.
 
+That holds for this repo, which tracks no copy of them. It does not hold for the docs site, which reads them out of a local checkout of this repo where nothing rebuilds them on its own: a manifest left over from an earlier build goes on being published until someone regenerates. `npm run regenerate-docs` is what refreshes them here — see [the per-target commands](#regenerating). A correction made in component source reaches the docs site only once these are rebuilt there; until then the site publishes the manifest it has, and a reference marked agent-ready can carry a fact the source no longer supports.
+
 **Source of truth:**
 
 - `registry.json`: props and metadata read from JSDoc tags (`@tier`, `@category`, `@domain`, `@kernelCapability`) and types in component source. For agent-ready components the registry also records a pointer to the co-located `USAGE.md` and `*.example.tsx` files (referenced as docs, not read for prop facts). See the export contract at [`ui/packages/react-devkit/AGENT_READY.md`](../../../ui/packages/react-devkit/AGENT_READY.md).
@@ -130,9 +132,9 @@ The UI packages ship machine-readable manifests under `dist/` (`registry.json`, 
 
 ### PR workflow
 
-When a PR changes component source (JSDoc tags, props, `USAGE.md`), the `dist/` manifests update on the next `npm run build`, locally or in CI. **Do not commit `dist/*.json` files.** They are gitignored to avoid merge conflicts and drift: CI rebuilds them on every run, and published packages include the build output.
+When a PR changes component source (JSDoc tags, props, `USAGE.md`), the `dist/` manifests update on the next `npm run build`, locally or in CI. **Do not commit `dist/*.json` files.** They are gitignored to avoid merge conflicts and drift: CI rebuilds them on every run, and published packages include the build output. Neither of those reaches the docs site's checkout, which is the consumer that can go stale; run `npm run regenerate-docs` there.
 
-The skill's committed `ui-registry.json` copy is the exception: a generation target whose regeneration and freshness gate live with the others under [Generation scripts](#generation-scripts) (the [component reference target](#component-reference-in-the-mdk-ui-component-skill), checked by [freshness in CI](#freshness-in-ci)).
+The skill's committed `ui-registry/` copy is the exception: a generation target whose regeneration and freshness gate live with the others under [Generation scripts](#generation-scripts) (the [component reference target](#component-reference-in-the-mdk-ui-component-skill), checked by [freshness in CI](#freshness-in-ci)).
 
 To regenerate **and** verify the agent-ready contract holds:
 
@@ -163,7 +165,7 @@ Generated docs are a **checked projection of the facts that ship**, not a second
 
 Change a fact once at its source (a prop type, option, default, or JSDoc description; a Worker contract) and every projection follows on the next regeneration. Forget, and CI names the exact drift before it merges. The `check:usage-proptables` gate stops new hand-authored props tables from becoming competing sources of truth: existing debt is baselined, removals are allowed, additions or swaps fail.
 
-[`docs/scripts/regenerate-docs.mjs`](../../scripts/regenerate-docs.mjs) runs every generator; its `TARGETS` list is the authoritative inventory. It orchestrates only, calling each generator where it lives, so engineering keeps ownership of the generation logic. Exit codes: `0` every checked projection is current, `3` committed generated files are stale, `1` generation itself broke. Keep them blocking wherever stale generated content could merge.
+[`docs/scripts/regenerate-docs.mjs`](../../scripts/regenerate-docs.mjs) runs every generator; its `TARGETS` list is the authoritative inventory. It orchestrates only, calling each generator where it lives — a generator sits beside what it reads, which is a question about placement, not about who maintains it. Exit codes: `0` every checked projection is current, `3` committed generated files are stale, `1` generation itself broke or a target could not run. Keep them blocking wherever stale generated content could merge.
 
 ### Regenerating
 
@@ -183,8 +185,19 @@ When one thing has changed, run that generator on its own. Each has its own comm
 |---|---|---|
 | Supported Workers | `npm run generate:catalogue` | repo root |
 | Package reference | `npm run generate:package-catalog` | repo root |
+| Gateway and app HTTP API references, route-table field reference | `npm run generate:api-reference` | repo root |
 | Component reference in the skill | `npm run generate:ui-registry` | repo root |
 | Props sections in devkit `USAGE.md` files | `npm run generate:usage-proptables` | repo root |
+
+A full run also refreshes targets that are not in that list, because they are not pages committed here: the `dist/` manifests the docs site reads out of this checkout. They come out of the devkit build the component reference generator already runs, so they have no command of their own.
+
+| Build artifact, read out of this checkout | Refreshed by | Run from |
+|---|---|---|
+| `ui/packages/react-devkit/dist/registry.json` | `npm run regenerate-docs` | repo root |
+| `ui/packages/react-adapter/dist/hooks.json` | `npm run regenerate-docs` | repo root |
+| `ui/packages/ui-foundation/dist/stores.json` | `npm run regenerate-docs` | repo root |
+
+None of these is committed, so `--check` has nothing to diff them against and does not report on them. Regenerating is the only way to be sure they are current.
 
 Each Markdown target repeats its command in a `DO NOT EDIT` header, which travels with the page a person is looking at. The component reference is minified JSON and cannot carry a comment, so its command is recorded in [`packages/mdk-skill/README.md`](../../../packages/mdk-skill/README.md) and `sources.map.json` instead. The `USAGE.md` props sections carry theirs in the `BEGIN GENERATED` marker; everything between the markers is generator-owned, and hand-authored prop notes live outside them under a `… Props detail` heading.
 
@@ -199,7 +212,17 @@ Report mode regenerates into the working tree, diffs the result against the last
 Behaviors to know:
 
 - Report mode declines to run when a generated file already carries uncommitted edits, because it cannot tell a stale page from work in progress. Commit or stash first.
-- The component reference and the `USAGE.md` props sections need [`ui/`](../../../ui/README.md)'s dependencies installed. Without them those targets are skipped (named in the output) and the rest still run. The skip is reported, not fatal. Run [`npm run setup:ui`](../../../README.md) to cover the component reference too.
+- The component reference and the `USAGE.md` props sections need [`ui/`](../../../ui/README.md)'s dependencies installed. Without them the run fails and names those targets. Run [`npm run setup`](../../../CONTRIBUTING.md#development-environment-setup) to install them, or `--allow-skip` to proceed without.
+
+**What a passing `--check` covers.** Every committed target, because a target that cannot run fails the run and is named. A green `--check` therefore means what it says, in CI and at a terminal alike — the exit code is the whole verdict, with no output left to read for a caveat.
+
+A target can only fail this way when `ui/`'s dependencies are missing, which [`npm run setup`](../../../CONTRIBUTING.md#development-environment-setup) installs. To accept partial coverage anyway, mid-setup:
+
+```bash
+npm run regenerate-docs -- --check --allow-skip
+```
+
+That reports the skip, carries on, and exits `0` on what it could check. The `dist/` manifests above sit outside `--check` either way: nothing commits them, so there is nothing to compare them against.
 
 ### Supported Workers catalogue
 
@@ -212,7 +235,7 @@ Generates the Supported Workers tables from Worker contract files, split by main
 
 **Output:** [`backend/workers/docs/supported-workers.md`](../../../backend/workers/docs/supported-workers.md) and its machine-readable twin [`backend/workers/docs/catalogue.json`](../../../backend/workers/docs/catalogue.json).
 
-**Generator:** [`backend/workers/scripts/generate-catalogue.js`](../../../backend/workers/scripts/generate-catalogue.js), owned by engineering and runnable on its own with `npm run generate:catalogue` from the repo root.
+**Generator:** [`backend/workers/scripts/generate-catalogue.js`](../../../backend/workers/scripts/generate-catalogue.js), runnable on its own with `npm run generate:catalogue` from the repo root. It lives beside the contracts it reads rather than under `docs/scripts/`, and it calls engineering's schema validator — but it is maintained with the other generators that feed docs pages.
 
 Fetching a partner's contract:
 
@@ -243,7 +266,7 @@ Reported gaps land in:
 - `catalogue.json`'s `conformanceGaps` array, each entry tagged `source: "external"` or `source: "in-repo"`
 - a "Contract conformance" section at the bottom of the generated Markdown, naming exactly what to check: network connectivity, or the `repoUrl`/`ref`/`contractPath` fields in `external-workers.json`
 
-The generator runs only from a pull request that touches a file in this repo, so a partner-side change never triggers it. The nightly `External contract check` workflow (`.github/workflows/external-contract-check.yml`) closes that gap: it re-fetches every pinned contract via `npm run check:external-contracts` ([`docs/scripts/check-external-contracts.mjs`](../../scripts/check-external-contracts.mjs)) and opens or refreshes an `external-contract`-labelled issue on breakage (unreachable, private, GC'd SHA, schema violation). A reachable-but-stale pin, behind the partner's latest change, is a tracked follow-up, not a failure.
+The generator runs only from a pull request that touches a file in this repo, so a partner-side change never triggers it. The nightly `External contract check` workflow (`.github/workflows/external-contract-check.yml`) closes that gap: it re-fetches every pinned contract via `npm run check:external-contracts` ([`docs/scripts/check-external-contracts.mjs`](../../scripts/check-external-contracts.mjs)) and refreshes its `external-contract` [tracking issue](linters.md#tracking-issues) on breakage (unreachable, private, GC'd SHA, schema violation). A reachable-but-stale pin, behind the partner's latest change, is a tracked follow-up, not a failure.
 The same nightly also checks that each `repoUrl` itself still resolves, since the generator reads only the raw contract file. Whether
 the registry covers every Worker `examples/mvp-site` pins, at the same commit, is checked on every pull request by
 `test/external-workers-registry.test.mjs`.
@@ -276,23 +299,90 @@ Every column is inferred, so no `package.json` carries metadata for this page:
 - Purpose for every other package: its `package.json` `description`
 - Availability: `workspace` when the package is `"private": true`, otherwise `publishable`
 - Link: the package's `README.md`, or its `package.json` when there is no README
-
-Samples and demos (`backend/workers/samples/`) are skipped by a list in the generator. Add to that list when a new sample or demo should stay off
-the page.
+- Link ref: the ref the link already has on the page, or `main` for a package the page does not list yet.
+  [`release:bump` pins it](linters.md#public-urls-into-this-repo), so a package added after a release is never linked at a tag that lacks it
 
 The generator writes nothing and exits non-zero when a listed package has no description, shares its name with another, or has a contract that cannot be parsed. Schema conformance is not checked here; the [Supported Workers catalogue](#supported-workers-catalogue) already validates every contract.
 
+### HTTP API references
+
+Documents the Gateway's own routes and each configured app's routes from the declarations the runtime registers from, so no route,
+method, path or parameter on these pages is typed by hand. The route-table field reference comes from the schema that validates the
+route tables.
+
+**Source:** the route objects `createAuthRoutes` returns in
+[`backend/core/gateway/workers/lib/auth-routes.js`](../../../backend/core/gateway/workers/lib/auth-routes.js), each app's
+`mdk-plugin.json` listed in [`docs/api-reference.config.json`](../../api-reference.config.json) under the name and mount a stack gives
+it, and [`backend/core/app-runtime/mdk-plugin.schema.json`](../../../backend/core/app-runtime/mdk-plugin.schema.json)
+
+**Output:** `http-api.md` and `openapi.json` (OpenAPI 3.1) for the [Gateway](../../../backend/core/gateway/docs/http-api.md) and for
+each configured app, such as the [mvp-site example](../../../examples/mvp-site/backend/gateway-plugins/site/docs/http-api.md), and the
+[route-table field reference](../../../backend/core/app-runtime/docs/route-table-fields.md)
+
+**Generator:** [`docs/scripts/generate-api-reference.mjs`](../../scripts/generate-api-reference.mjs), runnable on its own with
+`npm run generate:api-reference` from the repo root. The conversion and rendering are exports of `@tetherto/mdk-app-runtime`, which an
+app in its own repository calls the same way
+
+Nothing on these pages is inferred. Purpose is the declared `description` (a Gateway route's `schema.description`), Responses and
+Errors are the declared responses (a Gateway route's `schema.responses`, OpenAPI's field, which Fastify ignores), Access is the
+`spec.rbac` requirement `routeAccess` resolves for the route the loader normalizes, and anything a declaration does not state shows as
+"Not declared" and is listed under the page's declaration gaps. Fix a gap in the declaration, then regenerate. The generator copies a
+description as written, so code names in it go in backticks. A release bump regenerates these pages, because the
+Gateway's OpenAPI document carries the Gateway package version.
+
+The errors an HTTP caller receives on any app route are generated. The Gateway's
+[`workers/lib/shared-responses.js`](../../../backend/core/gateway/workers/lib/shared-responses.js) declares them once, in request
+order: each stage's fixed codes with their statuses, and a rule for each answer that carries no fixed code, such as Fastify's body
+parsing errors or the codes a controller relays from the Kernel client. The Gateway owns the declaration because it answers every
+one of them over HTTP; app runtime's converter adds none.
+The generator calls `addSharedResponses` on every app's document, adds the stages a sign-in route meets to the Gateway's, and every
+page lists them by stage. Nothing at runtime reads the declaration: the hooks keep their own literals, and the Gateway's unit tests
+raise each code through the code that answers it, app runtime's client included, and check its declared status. The
+[Gateway's HTTP reference](../../../backend/core/gateway/docs/http-api.md#errors-on-every-app-route) is the one page prose links
+for them.
+
+To change what every app route answers:
+
+1. Edit the entry in [`workers/lib/shared-responses.js`](../../../backend/core/gateway/workers/lib/shared-responses.js), keeping
+   the list in request order.
+2. Add or update the case that raises the code: a stage the Gateway answers in its
+   [shared responses test](../../../backend/core/gateway/tests/unit/lib/shared-responses.test.js), a forwarding code or the
+   controller rule in its [forwarding test](../../../backend/core/gateway/tests/unit/lib/shared-responses-forwarding.test.js).
+   The forwarding test fails on a code app runtime's protocol adds until the code is declared, or listed there with the reason no
+   HTTP caller receives it.
+3. Run `npm run generate:api-reference` from the repo root.
+
+Never write one of these codes or its status into a hand-written table. Link the Gateway's section from the sentence that needs it.
+
+Every other error table stays hand-maintained in its owning package. Each `ERR_*` code is thrown as a string where it fires, the
+error-documentation policy forbids scraping those strings into a table, and a startup or client-library error is not an HTTP
+response, so OpenAPI is no home for it. The nightly table-reference check confirms that each code cited alone in a table's first
+cell still appears in that package's source:
+
+| Table | Owning package | Disposition |
+| --- | --- | --- |
+| [App runtime errors](../../../backend/core/app-runtime/README.md#errors) | `@tetherto/mdk-app-runtime` | Startup and client-library errors hand-maintained; the errors an HTTP caller receives link the generated Gateway section |
+| [Route table load errors](../../../backend/core/app-runtime/README.md#route-table-load-errors) | `@tetherto/mdk-app-runtime` | Hand-maintained, deferred; moved here from the Gateway README, since app-runtime's loader throws every code in it |
+| [Gateway errors](../../../backend/core/gateway/README.md#errors) | `@tetherto/mdk-gateway` | Links the generated errors every app route can answer and the route table load errors; its own boot errors are named in prose |
+| [MCP server errors](../../../backend/core/mcp/README.md#errors) | `@tetherto/mdk-mcp` | Hand-maintained, deferred until codes are declared |
+
+The sign-in routes declare their own errors, which are HTTP responses too: each route object declares OpenAPI `responses`, built
+from the status map in `auth-routes.js` that the handlers answer with, and the Gateway page's Errors section is generated from them.
+A Gateway unit test raises every declared code and checks it arrives with its declared status. An app route table declares a code's
+status the same way, in `x-mdk-errors` on the response for that status ([`x-mdk-errors`](../../../backend/core/app-runtime/docs/route-table-fields.md#fields));
+a code listed only in `errors` shows its status as "Not declared".
+
 ### Component reference in the mdk-ui-component skill
 
-Keeps the component data shipped inside the `mdk-ui-component` skill in step with the devkit. The skill directs coding agents to this file for component props, so a stale copy tells an agent to pass props that no longer exist.
+Keeps the component data shipped inside the `mdk-ui-component` skill in step with the devkit. The skill directs coding agents to these files for component props, so a stale copy tells an agent to pass props that no longer exist.
 
 **Source:** `ui/packages/react-devkit/dist/registry.json`, itself generated from JSDoc tags, `USAGE.md` files and examples in the devkit's source
 
-**Output:** [`packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry.json`](../../../packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry.json)
+**Output:** [`packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry/`](../../../packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry/index.json): an `index.json` of component names by category, hook names and type names, plus one file per component, hook and type under `components/`, `hooks/` and `types/`
 
-**Generator:** [`docs/scripts/sync-ui-registry.mjs`](../../scripts/sync-ui-registry.mjs), which rebuilds the devkit registry and copies it verbatim
+**Generator:** [`docs/scripts/sync-ui-registry.mjs`](../../scripts/sync-ui-registry.mjs), which rebuilds the devkit registry and splits it, with the layout in [`docs/scripts/lib/ui-registry-split.mjs`](../../scripts/lib/ui-registry-split.mjs)
 
-The copy is verbatim on purpose. Trimming it to what the skill reads today would create a second shape to keep in step with the devkit's registry schema.
+The split keeps an agent from reading the whole registry, about 290 KB, to look up one component. Each entry is copied verbatim on purpose: trimming entries to what the skill reads today would create a second shape to keep in step with the devkit's registry schema. The registry's `indexes` are not copied, since `index.json` carries the categories and each entry carries the fields the other indexes are built from.
 
 Regenerate through `npm run regenerate-docs` or `npm run generate:ui-registry` from the repo root, never the devkit's `build:registry` alone: both route through turbo so the devkit's type dependencies build first, while the bare script on an unbuilt checkout resolves those imports to `any` and writes a registry that silently will not match a built tree.
 
@@ -319,7 +409,7 @@ carries the usual `DO NOT EDIT` header for its generated regions.
 
 ### Freshness in CI
 
-`.github/workflows/docs-freshness.yml` runs `regenerate-docs --check` on every pull request. The job is a required status check, and a required check that never reports leaves the pull request unmergeable, so the workflow has no path filter: a change that touches neither the sources nor the generated pages still gets a quick, passing run. It installs the UI workspace and treats a skipped target as a failure, since there a skip means the install broke rather than that someone is working light. It **blocks** the pull request whenever any generated page is stale — a stale page ships facts the sources no longer support — and lists every stale path in the job summary. When a source change requires regenerated output, run `npm run regenerate-docs` from the repo root and commit the deterministic result in the same pull request. A generator that crashes, or any target skipped in CI, also blocks, because then the run did not verify every page.
+`.github/workflows/docs-freshness.yml` runs `regenerate-docs --check` on every pull request. The job is a required status check, and a required check that never reports leaves the pull request unmergeable, so the workflow has no path filter: a change that touches neither the sources nor the generated pages still gets a quick, passing run. It installs the UI workspace, and a target that cannot run fails the job on the tool's own exit code. It **blocks** the pull request whenever any generated page is stale — a stale page ships facts the sources no longer support — and lists every stale path in the job summary. When a source change requires regenerated output, run `npm run regenerate-docs` from the repo root and commit the deterministic result in the same pull request. A generator that crashes, or any target skipped in CI, also blocks, because then the run did not verify every page.
 
 ## Next steps
 

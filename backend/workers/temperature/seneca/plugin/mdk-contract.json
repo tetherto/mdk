@@ -1,5 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/tetherto/mdk/main/backend/core/mdk-worker/mdk-contract.schema.json",
+  "telemetryPollIntervalMs": 30000,
   "metadata": {
     "provider": "seneca",
     "deviceFamily": "sensor",

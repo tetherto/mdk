@@ -8,9 +8,9 @@ one published from its own repository.
 Every Worker carries one `mdk-contract.json`, validated against
 [`mdk-contract.schema.json`](../../core/mdk-worker/mdk-contract.schema.json) in the Worker runtime package. A standalone
 Worker Plugin package, the shape `mdk create worker` scaffolds and `mdk add worker` installs, keeps it at the package root
-beside `package.json`; the in-repo Workers are self-booting packages that keep their plugin, contract included, under
-`plugin/`. It is the only machine-readable contract in the backend: the runtime loads it, the Kernel enforces it, and the
-catalogue reads it.
+beside `package.json`, as the in-repo miner, powermeter and pool Workers do; the in-repo container and sensor Workers are
+self-booting packages that keep their plugin, contract included, under `plugin/`. It is the only machine-readable
+contract in the backend: the runtime loads it, the Kernel enforces it, and the catalogue reads it.
 
 | Key | Holds |
 | --- | --- |
@@ -24,7 +24,7 @@ catalogue reads it.
 
 Every `handler` names a file that must exist; the loader fails without it. Every `number` command parameter declares `min`
 and `max`; the Kernel enforces bounds only when declared (`ERR_PARAM_RANGE`).
-[`miners/avalon/plugin/mdk-contract.json`](../miners/avalon/plugin/mdk-contract.json) is a complete in-repo example.
+[`miners/avalon/mdk-contract.json`](../miners/avalon/mdk-contract.json) is a complete in-repo example.
 
 ## What the catalogue reads
 

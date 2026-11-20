@@ -40,7 +40,7 @@ describe('label', () => {
   it('renders children correctly', () => {
     render(
       <Label>
-        Required <span style={{ color: 'red' }}>*</span>
+        Required <span className="required-mark">*</span>
       </Label>,
     )
     expect(screen.getByText('Required')).toBeInTheDocument()

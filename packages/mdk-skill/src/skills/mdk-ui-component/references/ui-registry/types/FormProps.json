@@ -1,0 +1,1 @@
+{"name":"FormProps","path":"src/primitives/components/form/index.tsx","kind":"type","description":"Form wrapper that provides react-hook-form context to child components","public":true,"definition":"Omit< ComponentProps<'form'>, 'children' > & { form: UseFormReturn<TFieldValues> children: ReactNode }"}

@@ -1,7 +1,8 @@
 # `DatePicker` & `DateRangePicker`
 
 Single-date and range-date pickers built on `react-day-picker`. The range
-picker includes presets and a modal-style popover with Clear / Apply actions.
+picker opens a centered modal over a blurred overlay, with presets and Clear / Apply actions.
+Closing it with ✕, Escape or the overlay discards the draft.
 
 <!-- BEGIN GENERATED: props — do not edit; npm run generate:usage-proptables (source: component JSDoc/types via registry.json) -->
 ## Props
@@ -62,3 +63,17 @@ picker includes presets and a modal-style popover with Clear / Apply actions.
 type DateRange = { from: Date | undefined; to?: Date | undefined };
 type PresetItem = { label: string; value: DateRange };
 ```
+
+## Notes
+
+- Every month is drawn six weeks high (`fixedWeeks`), so the calendar keeps one height from month to month. Pass
+  `fixedWeeks={false}` to draw only a month's own weeks.
+- `DatePicker` opens on the month of `selected`
+- The default presets (`showPresets` without `presets`) are whole days ending today: "Last 7 Days" is today and the six
+  days before it
+- `DateRangePicker` opens on the months of `selected.from`, and moves to a preset's months when the preset is clicked.
+  Pass `defaultMonth` to open somewhere else, or `month` / `onMonthChange` to control the month yourself.
+- `modalClassName` styles the dialog panel. The overlay behind it carries `mdk-date-picker__overlay`, which adds the
+  blur.
+- The trigger button uses the shared `--mdk-control-height`, `--mdk-control-bg` and `--mdk-control-border` tokens, so
+  it lines up with a `Select` or `CurrencyToggler` beside it

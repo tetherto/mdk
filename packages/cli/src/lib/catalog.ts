@@ -50,8 +50,12 @@ export interface CatalogWorker extends CatalogEntry {
    * so it has to satisfy both at once.
    */
   deviceOpts?: Record<string, unknown>;
-  /** Boot a device simulator from `<pkg>/mock/server.js`, so no hardware is needed. */
-  mock?: boolean;
+  /**
+   * Boot a device simulator so no hardware is needed: `true` for the
+   * conventional `<pkg>/mock/server.js`, or the path of the mock module inside
+   * the package when it ships under another name (`mock/cgi-server.js`).
+   */
+  mock?: boolean | string;
 }
 
 /**

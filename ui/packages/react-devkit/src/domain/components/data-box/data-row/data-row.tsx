@@ -46,6 +46,7 @@ export const DataRow = ({
   return (
     <div
       className={`mdk-data-row ${isHighlighted ? 'mdk-data-row--highlighted' : ''} ${flash ? 'mdk-data-row--flash' : ''}`}
+      // oxlint-disable-next-line react/forbid-dom-props -- color is a runtime prop
       style={color ? { color } : undefined}
     >
       <span className="mdk-data-row__label">{label}</span>

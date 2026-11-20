@@ -22,7 +22,7 @@ module.exports = function (ctx = {}) {
   active_power.active_power_total_w = active_power.active_power_a_w + active_power.active_power_b_w + active_power.active_power_c_w
 
   const buffer3 = Buffer.alloc(4096 * 4)
-  let state = {
+  const state = {
     ...active_power,
     current_a_a: 5.134268283843994,
     current_b_a: 5.299433708190918,
@@ -73,6 +73,7 @@ module.exports = function (ctx = {}) {
     connection.on('read-holding-registers', (request, reply) => {
       const address = request.request.address
       const quantity = request.request.quantity
+      encode()
       let bufferStart = 0
       let buffer
       if (address >= 2999 && address < 3999) {
@@ -88,22 +89,9 @@ module.exports = function (ctx = {}) {
     })
   }
 
-  const getInitialState = () => {
-    // Dynamically update active_power
-    const active_power = {
-      active_power_a_w: phasePowerKw(ctx),
-      active_power_b_w: phasePowerKw(ctx),
-      active_power_c_w: phasePowerKw(ctx)
-    }
-    active_power.active_power_total_w = active_power.active_power_a_w + active_power.active_power_b_w + active_power.active_power_c_w
-
-    // Update state with new active power values
-    state = {
-      ...state,
-      ...active_power
-    }
-
-    // write data from state to buffer3
+  // Registers are encoded on every read, not once at start, so a value edited
+  // while the mock runs (state.active_power_total_w = …) reaches the next poll.
+  function encode () {
     buffer3.writeFloatBE(state.current_a_a, 0)
     buffer3.writeFloatBE(state.current_b_a, 4)
     buffer3.writeFloatBE(state.current_c_a, 8)
@@ -151,12 +139,9 @@ module.exports = function (ctx = {}) {
     buffer3.writeFloatBE(state.displacement_power_factor_c, 180)
     buffer3.writeFloatBE(state.displacement_power_factor_total, 184)
     buffer3.writeFloatBE(state.frequency_hz, 220)
-
-    return state
   }
 
-  // Preserve the initial state for the reset
-  const initialState = JSON.parse(JSON.stringify(getInitialState()))
+  const initialState = { ...state }
 
   function cleanup () {
     Object.assign(state, initialState)

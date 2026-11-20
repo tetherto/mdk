@@ -1,0 +1,1 @@
+{"name":"FormDescription","path":"src/primitives/components/form/index.tsx","description":"Optional helper text displayed below the input","tier":"agent-ready","public":true,"category":"forms","domainContext":"generic","props":[],"examples":["src/primitives/components/form/form.example.tsx"],"usageDoc":"src/primitives/components/form/USAGE.md"}

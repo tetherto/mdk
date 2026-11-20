@@ -22,7 +22,7 @@ workers:
     package: "@tetherto/mdk-worker-avalon"
     path: backend/workers/miners/avalon
     usage: backend/workers/miners/avalon/USAGE.md
-    contract: backend/workers/miners/avalon/plugin/mdk-contract.json
+    contract: backend/workers/miners/avalon/mdk-contract.json
     variants:
       - manager: AV_A1346
         rack-type: miner-av-a1346

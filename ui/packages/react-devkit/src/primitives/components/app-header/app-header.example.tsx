@@ -6,6 +6,6 @@ import { AppHeader } from './app-header'
  */
 export const AppHeaderExample = (): React.ReactNode => (
   <AppHeader start={<strong>MDK</strong>} actions={<button type="button">Sign out</button>}>
-    <div style={{ padding: '0 1rem', alignSelf: 'center' }}>Header content</div>
+    <div className="mdk-example-header-content">Header content</div>
   </AppHeader>
 )

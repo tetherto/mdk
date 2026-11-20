@@ -1,4 +1,4 @@
-import type { DateRange } from '@primitives'
+import type { DateRange, PresetItem } from '@primitives'
 import {
   Button,
   cn,
@@ -15,9 +15,11 @@ import {
   CUSTOM_PERIOD,
   GRANULARITIES,
   GRANULARITY_LABELS,
+  granularityDisabledReason,
   PERIOD_PRESETS,
   zonedDayOf,
 } from '@tetherto/mdk-ui-foundation'
+import type { RollingPresetId } from '@tetherto/mdk-ui-foundation'
 import { format } from 'date-fns/format'
 import type { ReactNode } from 'react'
 import './period-control.scss'
@@ -45,6 +47,33 @@ const toPickerDate = (day: string): Date => {
 }
 const fromPickerDate = (date: Date): string => format(date, 'yyyy-MM-dd')
 
+const DAY = 24 * 60 * 60 * 1000
+
+// `YYYY-MM-DD` moved by whole days; calendar arithmetic, so no timezone is involved.
+const shiftDay = (day: string, days: number): string => {
+  const [y = 1970, m = 1, d = 1] = day.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10)
+}
+
+// The `days` whole days ending `today`: "Last 7 days" is today and the six days before it.
+const daysEnding = (today: string, days: number): { from: string; to: string } => ({
+  from: shiftDay(today, 1 - days),
+  to: today,
+})
+
+// Rolling presets counted in days. A rolling range ends now, so it touches one more calendar
+// day than it is long; the picker shows it as that many whole days ending today instead.
+const DAY_PRESETS: ReadonlySet<RollingPresetId> = new Set(['7d', '30d', '90d', '12m'])
+
+// The picker's presets. Those with a `preset` are the Period select's own, and applying one
+// sets that rolling preset rather than a custom range, so the two controls agree.
+const PICKER_PRESETS: ReadonlyArray<{ days: number; preset?: RollingPresetId }> = [
+  { days: 7, preset: '7d' },
+  { days: 14 },
+  { days: 30, preset: '30d' },
+  { days: 90, preset: '90d' },
+]
+
 const Group = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="mdk-period-control__group" role="group" aria-label={label}>
     <span className="mdk-period-control__label">{label}</span>
@@ -70,10 +99,12 @@ export const PeriodControl = ({
   className,
 }: PeriodControlProps) => {
   const { period, query } = state
-  const selected: DateRange = {
-    from: toPickerDate(zonedDayOf(query.start, timezone)),
-    to: toPickerDate(zonedDayOf(query.end - 1, timezone)),
-  }
+  const lastDay = zonedDayOf(query.end - 1, timezone)
+  const shown =
+    period.preset !== CUSTOM_PERIOD && DAY_PRESETS.has(period.preset)
+      ? daysEnding(lastDay, Math.round((query.end - query.start) / DAY))
+      : { from: zonedDayOf(query.start, timezone), to: lastDay }
+  const selected: DateRange = { from: toPickerDate(shown.from), to: toPickerDate(shown.to) }
 
   const onPreset = (value: string) => {
     const preset = PERIOD_PRESETS.find((p) => p.id === value)
@@ -83,9 +114,24 @@ export const PeriodControl = ({
     const granularity = state.allowed.find((g) => g === value)
     if (granularity) state.setGranularity(granularity)
   }
+  const today = zonedDayOf(Date.now(), timezone)
+  const presetRanges = PICKER_PRESETS.map(({ days, preset }) => ({
+    days,
+    preset,
+    ...daysEnding(today, days),
+  }))
+  const pickerPresets: PresetItem[] = presetRanges.map(({ days, from, to }) => ({
+    label: `Last ${days} days`,
+    value: { from: toPickerDate(from), to: toPickerDate(to) },
+  }))
+
   const onRange = (range: DateRange | undefined) => {
     if (range?.from && range.to) {
-      state.setCustom(fromPickerDate(range.from), fromPickerDate(range.to))
+      const from = fromPickerDate(range.from)
+      const to = fromPickerDate(range.to)
+      const rolling = presetRanges.find((r) => r.preset && r.from === from && r.to === to)
+      if (rolling?.preset) state.setPreset(rolling.preset)
+      else state.setCustom(from, to)
     }
   }
 
@@ -107,7 +153,7 @@ export const PeriodControl = ({
             </SelectItem>
           </SelectContent>
         </Select>
-        <DateRangePicker selected={selected} showPresets={false} onSelect={onRange} />
+        <DateRangePicker selected={selected} presets={pickerPresets} onSelect={onRange} />
       </Group>
       {showGranularity && (
         <Group label="Buckets">
@@ -119,6 +165,7 @@ export const PeriodControl = ({
               value: g,
               label: GRANULARITY_LABELS[g],
               disabled: !state.allowed.includes(g),
+              disabledReason: granularityDisabledReason(g, query.end - query.start),
             }))}
           />
         </Group>

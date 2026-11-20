@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-mcp",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "MDK MCP Server",
   "main": "server.js",
   "keywords": [
@@ -12,8 +12,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "lint": "standard",
-    "lint:fix": "standard --fix",
+    "lint": "bfx-lint-js .",
+    "lint:fix": "bfx-lint-js . --fix",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
     "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js",
     "test:integration": "NODE_ENV=test brittle tests/integration/*.test.js",
@@ -21,21 +21,21 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
-    "@tetherto/mdk-app-runtime": "^0.13.1",
-    "@tetherto/mdk-client": "^0.13.1",
-    "@tetherto/mdk-rbac": "^0.13.1",
-    "@tetherto/mdk-gateway": "^0.13.1",
-    "@tetherto/mdk-worker": "^0.13.1",
+    "@tetherto/mdk-app-runtime": "^0.14.0",
+    "@tetherto/mdk-client": "^0.14.0",
+    "@tetherto/mdk-rbac": "^0.14.0",
+    "@tetherto/mdk-gateway": "^0.14.0",
+    "@tetherto/mdk-worker": "^0.14.0",
     "async": "3.2.6",
-    "debug": "4.4.1",
-    "zod": "^4.0.0",
+    "debug": "4.4.3",
+    "zod": "^4.6.6",
     "hono": "^4.12.34",
     "@hono/node-server": "^2.0.12"
   },
   "devDependencies": {
     "brittle": "3.18.0",
     "hyperdht": "6.34.1",
-    "standard": "17.1.0"
+    "@bitfinex/lint-js": "^1.0.0"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,1 @@
+{"name":"LogsCardProps","path":"src/primitives/components/logs/types.ts","kind":"type","description":"","public":true,"definition":"Partial<{ /** Log type (`'Incidents'` or `'Activity'`); controls the `LogDot` appearance */ type: string /** Card header label */ label: string /** * Applies dark card theme * @default false */ isDark: boolean /** * Shows skeleton rows whi…"}

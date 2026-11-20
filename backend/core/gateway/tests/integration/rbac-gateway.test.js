@@ -15,6 +15,8 @@ const { createAssertion, ServiceAccountTokenSource, gatewayTokenRequest } = requ
 const { localAuthority } = require('../../workers/lib/authority')
 const { ECHO_APP, tmpDir, capturingLogger } = require('../fixtures/helpers')
 
+const LOOPBACK = '127.0.0.1'
+
 const PASSWORD = 'correct horse battery'
 const POLICY = {
   roles: [
@@ -42,7 +44,7 @@ function freePort () {
 }
 
 test('gateway enforces spec.rbac on every app route', { timeout: 120000 }, async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const dir = tmpDir(t)
   const port = await freePort()
   const keyFile = (name) => path.join(dir, 'run', `${name}.key`)
@@ -60,12 +62,13 @@ test('gateway enforces spec.rbac on every app route', { timeout: 120000 }, async
     port,
     root: path.join(dir, 'gateway'),
     bootstrap: testnet.bootstrap,
+    dhtHost: LOOPBACK,
     apps: [{ name: 'echo', appDir: ECHO_APP, keyFile: keyFile('echo') }],
     gatewayKeyFile,
     authority: localAuthority(auth)
   })
   t.teardown(() => new Promise((resolve) => hnd.stop(resolve)))
-  const runtime = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, keyFile: keyFile('echo'), allowedKeyFiles: [gatewayKeyFile], logger: capturingLogger() })
+  const runtime = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, dhtHost: LOOPBACK, keyFile: keyFile('echo'), allowedKeyFiles: [gatewayKeyFile], logger: capturingLogger() })
   await runtime.start()
   t.teardown(() => runtime.stop())
 

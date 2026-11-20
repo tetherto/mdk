@@ -79,6 +79,8 @@ export interface MdkClient {
   refreshToken(refreshToken: string, opts?: CallOpts): Reply<IssuedTokens & { tokenType: string }>;
   logout(refreshToken: string, opts?: CallOpts): Reply<{ revoked: boolean }>;
   serviceAccountToken(assertion: string, bind?: { bind?: boolean }, opts?: CallOpts): Reply<IssuedTokens & { tokenType: string }>;
+  /** The issuer's public keys. A sign-in action: it carries no token, so it answers whatever the session holds. */
+  getJwks(opts?: CallOpts): Reply<unknown>;
 }
 interface MdkClientModule {
   /** Reads the Kernel key from `config.kernelKey`; without one every call fails with ERR_MDK_CLIENT_UNAVAILABLE. */
@@ -127,7 +129,67 @@ export function cliKernelClient(projectDir: string, kernelKey: string, { asServi
   return mdk.createMdkClient({ kernelKey, kernelKeyPair, kernelCredential, ...dht });
 }
 
+// Bounds each warmup try: a Kernel that stopped leaves its key file behind, and
+// a DHT lookup for it can otherwise take the transport's full 30 s, three times.
+const WARMUP_TIMEOUT_MS = 5000;
+
 const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+// Refusals of the caller, not of what it asked: the Kernel denied the call or token, or the CLI's session cannot sign it.
+const ACCESS_REFUSAL = /^(ERR_KERNEL_(ACTION_FORBIDDEN|TOKEN_REQUIRED|TOKEN_INVALID)|ERR_CLI_SESSION_(EXPIRED|INVALID))\b/;
+// The CLI's own refusals: raised before anything is sent, so they say nothing about the Kernel.
+const SESSION_REFUSAL = /^ERR_CLI_SESSION_(EXPIRED|INVALID)\b/;
+
+/** An error message refusing the caller: the Kernel denied the call or token, or the CLI's session cannot sign it. */
+export function isCallerRefusal(text: string): boolean {
+  return ACCESS_REFUSAL.test(text);
+}
+
+/** An error message from the CLI's own session check, raised before anything is sent. */
+export function isSessionRefusal(text: string): boolean {
+  return SESSION_REFUSAL.test(text);
+}
+
+// As many tries as the client's own warmup. Nothing has warmed the connection when a session refusal sends the ping,
+// and a cold first call (a DHT lookup) can outlast status's 3 s timeout; later tries ride the connection it opened.
+// A stopped Kernel therefore costs up to three timeouts before the CLI says down.
+const PING_TRIES = 3;
+
+/**
+ * Asks the Kernel for its token issuer's public keys, a sign-in action that
+ * carries no token, so it answers whatever the CLI's session or permissions.
+ */
+export async function pingKernel(client: MdkClient, timeoutMs: number): Promise<{ up: true } | { down: string }> {
+  let reason = '';
+  for (let i = 0; i < PING_TRIES; i++) {
+    try {
+      await client.getJwks({ timeout: timeoutMs });
+      return { up: true };
+    } catch (error) {
+      reason = message(error);
+    }
+  }
+  return { down: reason };
+}
+
+/**
+ * Pings with the service account's client, for a session that cannot build one (an unreadable session file).
+ * The ping carries no token, so nothing is signed. Throws when that client cannot be built.
+ */
+export async function pingAsService(projectDir: string, kernelKey: string, timeoutMs: number): Promise<{ up: true } | { down: string }> {
+  const probe = cliKernelClient(projectDir, kernelKey, { asService: true });
+  try {
+    return await pingKernel(probe, timeoutMs);
+  } finally {
+    await probe.close().catch(() => {});
+  }
+}
+
+/** A session refusal as a reply when the Kernel answered the ping, so a stopped Kernel still reads as down. */
+function refusalIfUp<T>(ping: { up: true } | { down: string }, refusal: string): { value: T } | { down: string } {
+  if ('down' in ping) return { down: `Kernel unreachable (${ping.down.split('\n')[0]})` };
+  return { value: { error: refusal } as T };
+}
 
 /**
  * Runs `fn` against the project's running Kernel, or returns why it is not
@@ -141,21 +203,33 @@ export async function withKernelClient<T>(
   const keyFile = kernelKeyFile(projectDir);
   if (!existsSync(keyFile)) return { down: `no Kernel key at ${keyFile}; start it with \`mdk run\`` };
 
-  let client: MdkClient;
+  let key: string;
   try {
-    client = cliKernelClient(projectDir, readFileSync(keyFile, 'utf8').trim(), opts);
+    key = readFileSync(keyFile, 'utf8').trim();
   } catch (error) {
-    // A session file that cannot be read is a refusal to act, not a Kernel that is down.
-    if (/^ERR_CLI_SESSION_INVALID\b/.test(message(error))) return { value: { error: message(error) } as T };
     return { down: message(error) };
   }
+  let client: MdkClient;
   try {
-    await client.connect({ warmup: true });
+    client = cliKernelClient(projectDir, key, opts);
+  } catch (error) {
+    const text = message(error);
+    if (!isSessionRefusal(text)) return { down: text };
+    // A session file that cannot be read is a refusal to act.
+    try {
+      return refusalIfUp<T>(await pingAsService(projectDir, key, WARMUP_TIMEOUT_MS), text);
+    } catch {
+      return { value: { error: text } as T };
+    }
+  }
+  try {
+    await client.connect({ warmup: true, warmupTimeoutMs: WARMUP_TIMEOUT_MS });
     return { value: await fn(client) };
   } catch (error) {
-    // The client throws authorization refusals: the Kernel answered, and said no.
+    // The client throws authorization refusals: the Kernel answered, and said no. A session refusal went nowhere.
     const text = message(error);
-    if (/^(ERR_KERNEL_(ACTION_FORBIDDEN|TOKEN_REQUIRED|TOKEN_INVALID)|ERR_CLI_SESSION_(EXPIRED|INVALID))\b/.test(text)) return { value: { error: text } as T };
+    if (isSessionRefusal(text)) return refusalIfUp<T>(await pingKernel(client, WARMUP_TIMEOUT_MS), text);
+    if (isCallerRefusal(text)) return { value: { error: text } as T };
     return { down: `Kernel unreachable (${text.split('\n')[0]})` };
   } finally {
     await client.close().catch(() => {});
@@ -164,4 +238,9 @@ export async function withKernelClient<T>(
 
 export function isRefusal(reply: unknown): reply is KernelRefusal {
   return reply !== null && typeof reply === 'object' && typeof (reply as KernelRefusal).error === 'string';
+}
+
+/** A refusal of the caller's sign-in or permission, which withKernelClient hands back as a reply. */
+export function isAccessRefusal(reply: unknown): reply is KernelRefusal {
+  return isRefusal(reply) && isCallerRefusal(reply.error);
 }

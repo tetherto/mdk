@@ -82,7 +82,8 @@ function _containerOf (topic, names, containerIds) {
  *
  * Every client is bound to one container: by its credentials when
  * `credentials` is set, otherwise to the first registered container whose
- * telemetry it publishes or command topic it subscribes to. A client may
+ * telemetry it publishes or command topic it subscribes to, unless another
+ * open connection is already bound to it. A client may
  * subscribe only to that container's command topics (exact topics, no
  * wildcards, no $SYS). Publishing a command topic, or any topic under another
  * container's prefix, disconnects it; other unknown topics are accepted and
@@ -95,12 +96,23 @@ function _containerOf (topic, names, containerIds) {
 function secureBroker (aedes, { containerIds, credentials, telemetryTopics, commandTopics }) {
   const entries = credentials ? Object.entries(credentials) : []
   const containers = new WeakMap()
+  // containerId -> the anonymous connection bound to it, until that connection closes.
+  const owners = new Map()
 
   function bind (client, containerId) {
     if (!client || !containerId) return false
-    if (!containers.has(client)) containers.set(client, containerId)
+    if (!containers.has(client)) {
+      if (owners.has(containerId)) return false
+      containers.set(client, containerId)
+      owners.set(containerId, client)
+    }
     return containers.get(client) === containerId
   }
+
+  aedes.on('clientDisconnect', (client) => {
+    const containerId = containers.get(client)
+    if (owners.get(containerId) === client) owners.delete(containerId)
+  })
 
   aedes.authenticate = (client, username, password, cb) => {
     if (!entries.length) return cb(null, true)

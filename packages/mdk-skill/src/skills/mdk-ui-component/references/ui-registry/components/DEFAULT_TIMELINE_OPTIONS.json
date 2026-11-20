@@ -1,0 +1,1 @@
+{"name":"DEFAULT_TIMELINE_OPTIONS","path":"src/domain/components/dashboard/timeline-selector/timeline-options.ts","description":"Canonical short-form intervals for the dashboard timeline selector","tier":"advanced","public":true,"category":"dashboard","domainContext":"generic","props":[]}

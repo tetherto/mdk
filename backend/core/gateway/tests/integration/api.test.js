@@ -66,7 +66,7 @@ test('Api', { timeout: 90000 }, async (main) => {
   // given a bootstrap (see resolveDhtOpts in workers/http.node.wrk.js), which
   // on a host without outbound UDP means it never reaches 'started' and the
   // helper's 10s timer fires. Keep it on an isolated loopback testnet.
-  const testnet = await createTestnet(3, main.teardown)
+  const testnet = await createTestnet(4, main.teardown)
 
   const startWorker = async () => {
     worker = createWorker({

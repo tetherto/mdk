@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { validateApp } from './app-package.js';
@@ -40,6 +40,8 @@ export interface AddPackageResult {
   packageName?: string;
   /** npm ran, so package.json lists the dependency. */
   installed?: boolean;
+  /** A GitHub source: the commit the lockfile resolved, now recorded in package.json too. */
+  commit?: string;
   /** What `mdk.yaml` references: the package name, plus the subpath if any. */
   reference?: string;
   instanceName?: string;
@@ -83,6 +85,67 @@ function installedName(before: Record<string, string>, after: Record<string, str
 const ADD_INSTALL_ARGS = ['--ignore-scripts', '--save-exact'];
 
 const MANIFESTS = ['package.json', 'package-lock.json'];
+
+/** A git dependency's resolved URL ends in its full commit SHA. */
+const RESOLVED_SHA = /#([0-9a-f]{40})$/;
+
+/** Re-serializes `value` the way `original` was laid out: its indent (spaces or tab) and trailing newline. */
+function asWritten(original: string, value: unknown): string {
+  const indent = /^([ \t]+)"/m.exec(original)?.[1] ?? 2;
+  return `${JSON.stringify(value, null, indent)}${original.endsWith('\n') ? '\n' : ''}`;
+}
+
+/**
+ * npm records a git dependency as the bare spec (`github:owner/repo`, or with the
+ * branch or tag given), so package.json would follow whatever that ref points at
+ * next; only the lockfile pins the commit. Writes that commit into the spec, in
+ * package.json and in the lockfile's root entry, so the two stay in sync for
+ * `npm ci`, keeping each file's own indent. Returns the commit, or undefined when
+ * the lockfile has none to copy. If either write fails, both files are put back
+ * as npm left them (bare spec, still consistent), and undefined is returned.
+ */
+function pinGitCommit(dir: string, name: string): string | undefined {
+  const pkgFile = join(dir, 'package.json');
+  const lockFile = join(dir, 'package-lock.json');
+  let pkgText: string;
+  let lockText: string;
+  let pkg: { dependencies?: Record<string, string> };
+  let lock: { packages?: Record<string, { resolved?: string; dependencies?: Record<string, string> }> };
+  try {
+    pkgText = readFileSync(pkgFile, 'utf8');
+    lockText = readFileSync(lockFile, 'utf8');
+    pkg = JSON.parse(pkgText) as typeof pkg;
+    lock = JSON.parse(lockText) as typeof lock;
+  } catch {
+    return undefined;
+  }
+
+  const sha = RESOLVED_SHA.exec(lock.packages?.[`node_modules/${name}`]?.resolved ?? '')?.[1];
+  const spec = pkg.dependencies?.[name];
+  if (!sha || !spec?.startsWith('github:')) return undefined;
+
+  const pinned = `${spec.split('#')[0]}#${sha}`;
+  if (pinned === spec) return sha;
+  pkg.dependencies![name] = pinned;
+  const root = lock.packages?.[''];
+  if (root?.dependencies?.[name] !== undefined) root.dependencies[name] = pinned;
+
+  try {
+    writeFileSync(pkgFile, asWritten(pkgText, pkg), 'utf8');
+    writeFileSync(lockFile, asWritten(lockText, lock), 'utf8');
+    return sha;
+  } catch {
+    // Half-written, package.json and the lockfile would disagree and `npm ci` stop.
+    for (const [file, text] of [[pkgFile, pkgText], [lockFile, lockText]] as const) {
+      try {
+        writeFileSync(file, text, 'utf8');
+      } catch {
+        // Nothing more to do: the add itself stands either way.
+      }
+    }
+    return undefined;
+  }
+}
 
 type Snapshot = Array<[string, string | null]>;
 
@@ -181,6 +244,8 @@ export function addPackage(opts: AddPackageOptions): AddPackageResult {
     });
   }
 
+  const commit = install && source.kind === 'github' ? pinGitCommit(opts.dir, packageName) : undefined;
+
   const instanceName = toAppName(opts.name?.trim() || shortName(source.subpath ?? packageName));
   if (app) {
     // A re-add without --name updates the app already running this package;
@@ -233,12 +298,13 @@ export function addPackage(opts: AddPackageOptions): AddPackageResult {
       instanceName: appName,
       stackFile,
       installed: install,
+      commit,
       grant: { action: plan.action, role: plan.roleName, serviceAccount: plan.serviceAccount, written },
       credential,
     };
   }
 
-  const mock = existsSync(join(packageDir, 'mock', 'server.js'));
+  const mock = detectMockModule(packageDir);
   const { update } = addWorkerToStackFile(opts.dir, instanceName, reference, { mock });
   if (update === 'name-taken') {
     return refuse(
@@ -247,5 +313,19 @@ export function addPackage(opts: AddPackageOptions): AddPackageResult {
       { packageName, reference, instanceName, stackFile: update },
     );
   }
-  return { ok: true, packageName, reference, instanceName, stackFile: update, needsDeviceOpts: !mock, installed: install };
+  return { ok: true, packageName, reference, instanceName, stackFile: update, needsDeviceOpts: !mock, installed: install, commit };
+}
+
+/**
+ * What `config.mock` should say for a worker package: `true` for the
+ * conventional `mock/server.js`, the module's path when the package ships its
+ * simulator under one other `*server*.js` name (`mock/cgi-server.js`), and
+ * `false` when there is nothing `mdk run` could start.
+ */
+export function detectMockModule(packageDir: string): boolean | string {
+  const dir = join(packageDir, 'mock');
+  if (existsSync(join(dir, 'server.js'))) return true;
+  if (!existsSync(dir)) return false;
+  const servers = readdirSync(dir).filter((f) => /server[\w.-]*\.js$/.test(f));
+  return servers.length === 1 ? `mock/${servers[0]!}` : false;
 }

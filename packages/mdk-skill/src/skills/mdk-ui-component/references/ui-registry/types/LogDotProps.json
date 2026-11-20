@@ -1,0 +1,1 @@
+{"name":"LogDotProps","path":"src/primitives/components/logs/types.ts","kind":"type","description":"","public":true,"definition":"{ /** `'Incidents'` renders a colored circle; `'Activity'` renders an activity icon */ type: string /** Severity string for color mapping */ status: string }"}

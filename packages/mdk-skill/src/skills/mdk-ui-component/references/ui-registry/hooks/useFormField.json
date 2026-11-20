@@ -1,0 +1,1 @@
+{"name":"useFormField","path":"src/primitives/components/form/index.tsx","description":"Read-only context hook for form field children — returns the field's id, error state, and ARIA attributes","tier":"agent-ready","public":true,"signature":"() => UseFormFieldReturn","category":"forms","domainContext":"generic"}

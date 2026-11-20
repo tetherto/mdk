@@ -20,10 +20,10 @@ export const ErrorBoundaryPage = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">Error Boundary</h2>
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      <div className="demo-section__showcase demo-section__showcase--start">
         <section>
           <h3>withErrorBoundary HOC</h3>
-          <p style={{ fontSize: '13px', opacity: 0.7, marginBottom: '12px' }}>
+          <p className="demo-section__label">
             Click the button 3 times to trigger the error boundary
           </p>
           <SafeBuggyCounter />
@@ -33,7 +33,7 @@ export const ErrorBoundaryPage = (): JSX.Element => {
           <h3>ErrorBoundary wrapper with custom fallback</h3>
           <ErrorBoundary
             fallback={
-              <div style={{ color: '#ff3b30', padding: '12px', border: '1px solid #ff3b30' }}>
+              <div className="demo-section__error-fallback">
                 Custom fallback UI - error was caught!
               </div>
             }

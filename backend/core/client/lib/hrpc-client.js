@@ -4,6 +4,7 @@ const debug = require('debug')('mdk:client:hrpc')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
 const { serialize, deserialize } = require('@tetherto/mdk-kernel/protocol/envelope')
+const { dhtPortOpts } = require('@tetherto/mdk-kernel/dht')
 
 // Default per-request timeout. protomux-rpc has none, so without it an
 // unresponsive peer would hang the caller (and pin its DHT connection) forever.
@@ -52,6 +53,7 @@ class HRPCClient {
       if (keyPair) dhtOpts.keyPair = keyPair
       else if (this._seed) dhtOpts.keyPair = DHT.keyPair(this._seed)
       if (this._bootstrap) dhtOpts.bootstrap = this._bootstrap
+      Object.assign(dhtOpts, dhtPortOpts(this._bootstrap))
       if (this._dhtHost) dhtOpts.host = this._dhtHost
       this._dht = new DHT(dhtOpts)
       this._rpc = new HyperswarmRPC({ dht: this._dht })

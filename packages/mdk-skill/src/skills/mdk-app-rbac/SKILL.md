@@ -91,8 +91,8 @@ permissions:
 | Situation                                              | Command                                                        |
 | ------------------------------------------------------ | -------------------------------------------------------------- |
 | New app, or `spec.rbac` has no `app-<name>` role yet   | `mdk rbac init` (also binds the CLI and Gateway accounts)      |
-| The app's request changed since it was granted         | `mdk add app <package> --accept-permissions` (or `--keep-permissions` to keep an operator-narrowed role) |
-| A scaffolded (path-linked) app whose request changed   | Remove the `app-<name>` role and binding from `spec.rbac`, then `mdk rbac init` |
+| The app's request changed since it was granted         | `mdk add app <package> --accept-permissions` (or `--keep-permissions` to keep an operator-narrowed role); a scaffolded app keeps its `file:` link |
+| The same, for an app `spec.apps` lists by path         | Remove the `app-<name>` role and binding from `spec.rbac`, then `mdk rbac init`; `mdk add` takes no path |
 | Policy in force on a running Kernel                    | `mdk rbac apply`, or restart `mdk run`                         |
 
 Then check both halves at once: `mdk validate app <name>` fails when `permissions` is missing or invalid, when
@@ -114,5 +114,5 @@ allows.
 * [ ] `devices` and `workers` rules carry `resourceNames` when the app serves one family or one Worker.
 * [ ] Administrative resources (`policy`, `identities`, `workers: delete`) are granted only on purpose, and documented.
 * [ ] Routes using `req.mdk` have a matching rule for the operator's role.
-* [ ] `mdk validate app <name>` passes after `mdk rbac init` (or `mdk add app ... --accept-permissions`).
+* [ ] `mdk validate app <name>` passes after the [grant command for the app's situation](#step-4-get-the-grant-into-mdkyaml).
 * [ ] A Gateway rule binds the intended users or agents to `<app>/*`.

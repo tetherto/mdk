@@ -52,7 +52,8 @@ spec:
   apps: []
 ```
 
-`mdk onboard` writes the same file interactively; this tutorial keeps it to the fields it uses.
+`mdk onboard` writes the same file interactively; this tutorial keeps it to the fields it uses. The
+[stack file reference][mdk-yaml] maps every block under `spec` to the page that teaches it.
 
 </Step>
 
@@ -106,9 +107,10 @@ Expected output:
 ```
 
 > [!IMPORTANT]
-> If `mdk run` reports every component ready but `mdk user add` answers `Kernel unreachable`, the machine has no outbound UDP
-> to the DHT bootstrap nodes: the components booted, but the CLI cannot reach the Kernel from a second terminal. Open the
-> network as the prerequisites describe, or run the stack on the [local and air-gapped profile][private-dht].
+> If `mdk run` warns that the Kernel could not reach the Worker, and `mdk user add` answers `Kernel unreachable`, the machine has
+> no outbound UDP to the DHT bootstrap nodes: the Kernel and Gateway started, but no Worker registered and the CLI cannot reach
+> the Kernel from a second terminal. Open the network as the prerequisites describe, or add the `spec.network.dht` block the
+> warning prints to run the stack on the [local and air-gapped profile][private-dht].
 
 A `workerCount` of `0` means the Worker has not registered yet; call again after a few seconds. That JSON came from a route the
 Gateway did not have until the stack declared an app that serves it.
@@ -119,7 +121,7 @@ Gateway did not have until the stack declared an app that serves it.
 
 ### Read the files that produced it
 
-The parts of the app this tutorial exercises are a manifest, a route table and a controller. The scaffold also ships a starter
+The parts of the app this tutorial exercises are a manifest, a route table, and a controller. The scaffold also ships a starter
 UI, which no step here opens:
 
 ```text
@@ -153,8 +155,8 @@ The generated file also catches `ERR_MDK_CLIENT_UNAVAILABLE` and answers `kernel
 callable while the Kernel is still booting.
 
 `mdkClient`, built once for the app in `plugin/lib/client.js` from `require('@tetherto/mdk-gateway/plugin')`, is the same
-protocol client used everywhere else in MDK. **Aggregation lives here, in the app.** Workers are structurally single-device,
-so a Worker can only ever answer for one device; combining them into a fleet view is the app's job.
+protocol client used everywhere else in MDK. **Aggregation lives here, in the app.** A Worker answers only for the devices it manages,
+so combining Workers into a fleet view is the app's job.
 
 > [!NOTE]
 > The route answered because `--admin` bound `ops@example.com` to a role holding wildcards. Every app route is checked against `spec.rbac`:
@@ -228,3 +230,6 @@ cd .. && rm -rf fleet-demo
 
 [private-dht]: ../guides/deployment/private-dht.md
 <!-- docs@tether.io: private-dht → guides/deployment/private-dht -->
+
+[mdk-yaml]: ../reference/mdk-yaml.md
+<!-- docs@tether.io: mdk-yaml → reference/mdk-yaml -->

@@ -1,0 +1,1 @@
+{"name":"HeatmapProps","path":"src/primitives/components/heatmap/types.ts","kind":"type","description":"","public":true,"definition":"{ /** Rows of cells (row-major). Rows may be ragged. */ data: HeatmapCell[][] /** * Range floor (maps to the first gradient stop); auto-derived from the finite values when omitted. * @default auto */ min?: number /** * Range ceiling (maps…"}

@@ -46,11 +46,15 @@ The default starting point for every new Worker is `assets/worker-template/`
 — a complete minimal Worker Plugin (contract + client + handlers + mock) with
 no assumptions about your device category.
 
-Do **not** model a new Worker on the MDK monorepo's shipped device families
-(Whatsminer, Antminer, ABB, Seneca, …) by default — those still use the older
-`plugin/` layout and are tightly coupled to the mining use cases they were
-built for. Only when the user **explicitly asks** to follow the existing MDK
-Worker families and their structure (e.g. contributing a Worker into this
+The template is the model to follow because it is the package
+`mdk create worker` scaffolds (copied from
+[`packages/cli/templates/worker/`](../../../../cli/templates/worker/README.md)), in the
+directory-loaded shape `mdk run` hosts together with its mock. Do **not** model
+a new Worker on the MDK monorepo's shipped device families by default: each is
+built around its own mining use case, and some use the module-exporting
+`plugin/` layout (for example, Antspace), which neither the template nor
+`mdk create worker` produces. Only when the user **explicitly asks** to follow
+the existing MDK Worker families and their structure (e.g. contributing a Worker into this
 monorepo, or deliberately mirroring a shipped family's protocol handling)
 should you read [`references/device-families.md`](./references/device-families.md)
 and copy from the named family instead.

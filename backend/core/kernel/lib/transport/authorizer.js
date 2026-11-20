@@ -18,8 +18,9 @@ const { identityFromClaims } = require('@tetherto/mdk-identity')
  *      spec.rbac in force; both must be allowed. Each is evaluated as the
  *      action's resource and verb (KERNEL_ACTIONS) for each instance it touches:
  *      a device as family/brand/worker/device, a worker as family/brand/worker.
- *      A command scoped to a worker or rack is checked for every device the
- *      worker owns; a command referenced by id is checked against its target.
+ *      A command scoped to a worker or rack, or a telemetry read listing
+ *      workers, is checked for every device each worker owns; a command
+ *      referenced by id is checked against its target.
  *
  * Anything that cannot be resolved (an unknown device, a worker not ready yet)
  * is evaluated without an instance name, so a rule scoped by resourceNames
@@ -56,7 +57,12 @@ class KernelAuthorizer extends EventEmitter {
 
   _workerName (workerId) {
     const parts = workerId && this.registry.nameParts?.(workerId)
-    return parts ? workerName(parts) : undefined
+    if (!parts) return undefined
+    try {
+      return workerName(parts)
+    } catch {
+      return undefined
+    }
   }
 
   /** Every device a worker owns, by name; [undefined] when it owns none or is unknown. */
@@ -70,6 +76,9 @@ class KernelAuthorizer extends EventEmitter {
     switch (spec.name) {
       case 'device':
         if (envelope.action === 'command.request' && (p.scope === 'worker' || p.scope === 'rack')) return this._workerDevices(p.workerId)
+        if (envelope.action === 'telemetry.pull' && !envelope.deviceId && Array.isArray(p.query && p.query.workers)) {
+          return p.query.workers.flatMap((workerId) => this._workerDevices(workerId))
+        }
         return [this._deviceName(envelope.deviceId)]
       case 'command': {
         const state = this.stateMachine && p.commandId ? await this.stateMachine.getState(p.commandId) : null
@@ -186,6 +195,14 @@ class KernelAuthorizer extends EventEmitter {
   canWriteDevice (identity, deviceId, actor) {
     const resourceName = this._deviceName(deviceId)
     const request = { resource: 'devices', verb: 'write', ...(resourceName ? { resourceName } : {}) }
+    const policy = this.rbac.current()
+    return policy.allows(identity, request) && (!actor || policy.allows(actor, request))
+  }
+
+  /** Whether `identity` (and the operator it acts for, if any) may read the worker, its RPC key included. */
+  canReadWorker (identity, workerId, actor) {
+    const resourceName = this._workerName(workerId)
+    const request = { resource: 'workers', verb: 'read', ...(resourceName ? { resourceName } : {}) }
     const policy = this.rbac.current()
     return policy.allows(identity, request) && (!actor || policy.allows(actor, request))
   }

@@ -104,7 +104,12 @@ export const GaugeChart = forwardRef<HTMLDivElement, GaugeChartProps>(
     ref,
   ) => {
     return (
-      <div ref={ref} className={cn('mdk-gauge-chart', className)} style={{ height, maxWidth }}>
+      <div
+        ref={ref}
+        className={cn('mdk-gauge-chart', className)}
+        // oxlint-disable-next-line react/forbid-dom-props -- height and maxWidth are runtime props
+        style={{ height, maxWidth }}
+      >
         <GaugeSvg
           id={id}
           percent={percent}

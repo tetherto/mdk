@@ -13,7 +13,7 @@ const { startServices } = require('./services')
 const {
   keysDir, discoverWorkerKeys, trustedKeysDir, publishTrustedKey, admitTrustedKeys, KERNEL_KEY_NAME
 } = require('./lib/local-discovery')
-const { startDhtBootstrap, dhtFromEnv, parseBootstrap, parseDhtHost, resolveDhtHost } = require('./lib/dht-bootstrap')
+const { startDhtBootstrap, dhtFromEnv, dhtFromProject, parseBootstrap, parseDhtHost, resolveDhtHost } = require('./lib/dht-bootstrap')
 
 const defaultRoot = path.join(os.homedir(), '.mdk')
 
@@ -155,8 +155,12 @@ function _writeConfigWithOverride (examplePath, destPath, overrides) {
  * @param {boolean} [opts.handleSignals] - Install SIGINT/SIGTERM handlers that drain kernel._cleanup,
  *                                       stop the Kernel and call process.exit(0). Default false
  *                                       (library use): stop it yourself with shutdown(kernel).
+ * @param {number}  [opts.shutdownForceMs] - With handleSignals: ms the signal handler allows for
+ *                                       draining kernel._cleanup and stopping the Kernel before it
+ *                                       force-exits with code 1. Default 3000 (onShutdown's forceMs)
  */
 async function getKernel (opts = {}) {
+  if (opts.shutdownForceMs !== undefined) _checkForceMs(opts.shutdownForceMs, 'shutdownForceMs')
   const root = opts.root || defaultRoot
   const storeDir = opts.storeDir || path.join(root, MDK_STORE, 'kernel-db')
   _ensureDirs(storeDir)
@@ -227,7 +231,7 @@ async function getKernel (opts = {}) {
   // shutdown(kernel)). Standalone processes opt in with handleSignals.
   // Same path as an explicit shutdown(kernel), so a process that also calls
   // shutdown(kernel) itself drains _cleanup once, not twice.
-  if (opts.handleSignals === true) onShutdown(() => shutdown(kernel))
+  if (opts.handleSignals === true) onShutdown(() => shutdown(kernel), { forceMs: opts.shutdownForceMs })
 
   return kernel
 }
@@ -326,7 +330,9 @@ function _normalizeApps (apps = []) {
  *                                         Routes without `auth: true` stay open.
  * @param {string[]} [opts.allowedHosts] - Extra Host header values to serve (`name` or `name:port`);
  *                                         loopback on `port` is always allowed. `['*']` disables the check.
- * @param {*}       [opts.trustProxy]    - Fastify trustProxy (default: false)
+ * @param {*}       [opts.trustProxy]    - Fastify trustProxy: the proxy's address, CIDR or a list of them (default: false).
+ *                                         true lets a client set its own IP and is warned about at boot;
+ *                                         a hop count is refused (ERR_GATEWAY_TRUST_PROXY_INVALID).
  * @param {number}  [opts.bodyLimit]     - Max request body in bytes (default: 1048576)
  * @param {object|false} [opts.rateLimit] - @fastify/rate-limit options (default: 300 per minute per IP);
  *                                          false disables
@@ -340,12 +346,16 @@ function _normalizeApps (apps = []) {
  * @param {boolean} [opts.handleSignals] - Standalone gateway (no opts.kernel) only: install
  *                                         SIGINT/SIGTERM handlers that stop it and call
  *                                         process.exit(0). Default false — use shutdown(hnd).
+ * @param {number}  [opts.shutdownForceMs] - With handleSignals: ms the signal handler allows for
+ *                                         stopping the Gateway before it force-exits with code 1.
+ *                                         Default 3000 (onShutdown's forceMs)
  * @returns {Promise<object>}  WrkServerHttp instance (already started)
  */
 async function startGateway (opts = {}) {
   if (opts.extraPluginDirs !== undefined) {
     throw new Error('ERR_GATEWAY_EXTRA_PLUGIN_DIRS_UNSUPPORTED: extraPluginDirs is not supported; run each app with @tetherto/mdk-app-runtime and pass it in apps: [{ name, appDir, keyFile, mount? }]')
   }
+  if (opts.shutdownForceMs !== undefined) _checkForceMs(opts.shutdownForceMs, 'shutdownForceMs')
   const apps = _normalizeApps(opts.apps)
   const kernelKey = _resolveKernelKey(opts)
   const root = opts.root || path.join(defaultRoot, 'gateway')
@@ -434,7 +444,7 @@ async function startGateway (opts = {}) {
   } else if (!opts.kernel && opts.handleSignals === true) {
     // Standalone gateway that opted in: own SIGINT/SIGTERM. Otherwise the
     // caller stops it via shutdown(hnd) / hnd.stop().
-    onShutdown(() => new Promise((resolve) => hnd.stop(resolve)))
+    onShutdown(() => new Promise((resolve) => hnd.stop(resolve)), { forceMs: opts.shutdownForceMs })
   }
 
   return hnd
@@ -493,19 +503,54 @@ async function waitForDiscovery (kernel, opts = {}) {
   return kernel.registry.listWorkers()
 }
 
-// Run cleanupFn once on the first of `signals`, then exit. The unref'd force
-// timer bounds a hung cleanup. Idempotent; returns the handler so tests can
-// invoke or removeListener it.
-function onShutdown (cleanupFn, { signals = ['SIGINT', 'SIGTERM'], forceMs = 3000 } = {}) {
-  let ran = false
-  const handler = async () => {
-    if (ran) return
-    ran = true
-    const force = setTimeout(() => process.exit(0), forceMs).unref()
-    try { await cleanupFn() } catch (err) { debug('shutdown cleanup error: %s', err && err.message) }
+// Every onShutdown in the process shares one shutdown: the first signal runs
+// each registered cleanup once, last-registered first (as _drainCleanup does),
+// then exits 0. The unref'd force timer, the longest registered forceMs, bounds
+// a hung cleanup and exits 1, so a supervisor sees the cut-off cleanup. Returns the handler so tests can invoke it; removing it from
+// every one of its signals cancels its cleanup.
+const _shutdownSteps = []
+let _shutdownRun = null
+
+const _attached = (step) => step.signals.some(sig => process.listeners(sig).includes(step.handler))
+
+function _runShutdown (invoked) {
+  if (_shutdownRun) return _shutdownRun
+  // Node detaches a once listener just before calling it, so the handler the
+  // signal invoked is kept by identity; the others are still attached.
+  const steps = _shutdownSteps.splice(0).filter(s => s.handler === invoked || _attached(s))
+  const forceMs = Math.max(0, ...steps.map(s => s.forceMs))
+  const force = setTimeout(() => {
+    debug('shutdown cleanup still running after %dms; forcing exit', forceMs)
+    process.exit(1)
+  }, forceMs).unref()
+  _shutdownRun = _drainCleanup(steps.map(s => s.cleanupFn)).then(() => {
     clearTimeout(force)
+    // process.exit never returns outside tests, which stub it; clearing the
+    // latch lets the next test run a shutdown of its own.
+    _shutdownRun = null
     process.exit(0)
+  })
+  return _shutdownRun
+}
+
+// setTimeout replaces a non-number delay, or one above MAX_TIMEOUT_MS (about
+// 24.8 days), with 1 ms, which would force-exit almost as soon as the signal
+// arrives, so such a forceMs is rejected up front.
+const MAX_TIMEOUT_MS = 2 ** 31 - 1
+
+function _checkForceMs (value, name) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > MAX_TIMEOUT_MS) {
+    throw new Error(`ERR_SHUTDOWN_FORCE_MS_INVALID: ${name} must be a number of ms from 0 to ${MAX_TIMEOUT_MS}, got ${typeof value === 'string' ? JSON.stringify(value) : String(value)}`)
   }
+}
+
+function onShutdown (cleanupFn, { signals = ['SIGINT', 'SIGTERM'], forceMs = 3000 } = {}) {
+  _checkForceMs(forceMs, 'forceMs')
+  // A removed handler's step would otherwise keep its cleanup, and whatever it
+  // closes over, alive until shutdown.
+  for (let i = _shutdownSteps.length - 1; i >= 0; i--) if (!_attached(_shutdownSteps[i])) _shutdownSteps.splice(i, 1)
+  const handler = () => _runShutdown(handler)
+  _shutdownSteps.push({ cleanupFn, forceMs, signals, handler })
   for (const sig of signals) process.once(sig, handler)
   return handler
 }
@@ -556,6 +601,7 @@ module.exports = {
   // Private HyperDHT network (local / air-gapped profile)
   startDhtBootstrap,
   dhtFromEnv,
+  dhtFromProject,
   parseBootstrap,
   parseDhtHost,
   resolveDhtHost,
@@ -582,6 +628,6 @@ module.exports = {
     stats: require('./lib/templates/stats')
   },
   // Telemetry aggregation ops (applyStats/tallyStats, groupBy, getVal)
-  libStats: require('./lib/stats'),
+  libStats: require('@tetherto/mdk-stats'),
   utils: require('./lib/utils')
 }

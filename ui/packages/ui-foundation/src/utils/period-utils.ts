@@ -159,16 +159,45 @@ export const periodRange = (
 }
 
 /**
- * The granularities that make sense for a range of `ms`: hourly up to a month,
- * daily up to three years, weekly from two weeks, monthly from two months.
+ * The range, in days, each granularity fits: hourly up to a month, daily up to three years,
+ * weekly from two weeks, monthly from two months. `minLabel` / `maxLabel` word a limit for
+ * the disabled option's tooltip when "N days" would read badly; otherwise it says `${days} days`.
+ */
+export const GRANULARITY_LIMITS: Record<
+  Granularity,
+  { minDays?: number; maxDays?: number; minLabel?: string; maxLabel?: string }
+> = {
+  hour: { maxDays: 31 },
+  day: { maxDays: 3 * 366, maxLabel: '3 years' },
+  week: { minDays: 14 },
+  month: { minDays: 60 },
+}
+
+/**
+ * Why `granularity` doesn't fit a range of `ms`, for a disabled option's tooltip, e.g.
+ * "Hourly buckets need a period of 31 days or less". `undefined` when it fits.
  *
  * @category utils
  */
-export const allowedGranularities = (ms: number): Granularity[] => {
-  const allowed: Granularity[] = []
-  if (ms <= 31 * DAY) allowed.push('hour')
-  if (ms <= 3 * 366 * DAY) allowed.push('day')
-  if (ms >= 14 * DAY) allowed.push('week')
-  if (ms >= 60 * DAY) allowed.push('month')
-  return allowed
+export const granularityDisabledReason = (
+  granularity: Granularity,
+  ms: number,
+): string | undefined => {
+  const { minDays, maxDays, minLabel, maxLabel } = GRANULARITY_LIMITS[granularity]
+  const label = GRANULARITY_LABELS[granularity]
+  if (maxDays !== undefined && ms > maxDays * DAY) {
+    return `${label} buckets need a period of ${maxLabel ?? `${maxDays} days`} or less`
+  }
+  if (minDays !== undefined && ms < minDays * DAY) {
+    return `${label} buckets need a period of ${minLabel ?? `${minDays} days`} or more`
+  }
+  return undefined
 }
+
+/**
+ * The granularities that make sense for a range of `ms`, finest first; see `GRANULARITY_LIMITS`.
+ *
+ * @category utils
+ */
+export const allowedGranularities = (ms: number): Granularity[] =>
+  GRANULARITIES.filter((g) => granularityDisabledReason(g, ms) === undefined)

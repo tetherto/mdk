@@ -145,6 +145,31 @@ test('anonymous client cannot switch to another container', async (t) => {
   t.alike(await collect(), [], 'spoofed telemetry for another container dropped')
 })
 
+test('anonymous client cannot claim a container another connection holds', async (t) => {
+  const { aedes, port } = await startBroker(t)
+  const owner = await connect(t, port)
+  t.is(await subscribe(owner, `${CID}PDUOperate`), 0, 'first connection binds the container')
+
+  const collect = delivered(aedes, [`${CID}RunningInfo`])
+  const intruder = await connect(t, port)
+  const closed = new Promise((resolve) => intruder.once('close', resolve))
+  t.is(await subscribe(intruder, `${CID}PDUOperate`), 128, 'second connection cannot subscribe to its commands')
+  intruder.publish(`${CID}RunningInfo`, '{}')
+  await closed
+  t.alike(await collect(), [], 'its telemetry for the held container is dropped and it is disconnected')
+})
+
+test('a container is free again once its connection closes', async (t) => {
+  const { port } = await startBroker(t)
+  const first = await connect(t, port)
+  t.is(await subscribe(first, `${CID}PDUOperate`), 0, 'first connection binds the container')
+  await new Promise((resolve) => first.end(resolve))
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const next = await connect(t, port)
+  t.is(await subscribe(next, `${CID}PDUOperate`), 0, 'a later connection can bind it')
+})
+
 test('credentials: login required and bound to its container', async (t) => {
   const credentials = { [CID]: { username: 'd40-1', password: 's3cret' } }
   const { aedes, port } = await startBroker(t, { credentials })

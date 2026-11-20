@@ -1,0 +1,1 @@
+{"name":"AccordionContent","path":"src/primitives/components/accordion/index.tsx","description":"Accordion Content component (collapsible content area)","tier":"agent-ready","public":true,"category":"layout","domainContext":"generic","props":[],"examples":["src/primitives/components/accordion/accordion.example.tsx"],"usageDoc":"src/primitives/components/accordion/USAGE.md"}

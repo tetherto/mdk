@@ -44,7 +44,7 @@ const fetchTemplateMock = vi.hoisted(() =>
 );
 vi.mock('../../src/lib/fetch-template.js', () => ({ fetchTemplate: fetchTemplateMock }));
 
-const { createDashboard } = await import('../../src/lib/dashboard.js');
+const { createDashboard, defaultTemplateRef } = await import('../../src/lib/dashboard.js');
 
 afterEach(() => {
   cleanupTmpDirs();
@@ -84,6 +84,20 @@ describe('createDashboard (standalone / GitHub template)', () => {
   it('suggests --ref main when the release ref cannot be fetched', async () => {
     fetchTemplateMock.mockRejectedValueOnce(new Error('could not find commit hash'));
     const result = await createDashboard({ name: 'demo-dashboard', parentDir: makeTmpDir() });
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/If v\d+\.\d+\.\d+\S* is not published yet, retry with --ref main\./);
+  });
+
+  // `create dashboard` declares defaultTemplateRef() as the --ref commander
+  // default, so the release tag always reaches createDashboard as an explicit
+  // ref — the hint has to survive that, not just an absent one.
+  it('suggests --ref main when the release tag is passed explicitly, as the CLI does', async () => {
+    fetchTemplateMock.mockRejectedValueOnce(new Error('could not find commit hash'));
+    const result = await createDashboard({
+      name: 'demo-dashboard',
+      parentDir: makeTmpDir(),
+      ref: defaultTemplateRef(),
+    });
     expect(result.ok).toBe(false);
     expect(result.message).toMatch(/If v\d+\.\d+\.\d+\S* is not published yet, retry with --ref main\./);
   });

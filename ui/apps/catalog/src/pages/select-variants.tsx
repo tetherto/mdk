@@ -23,10 +23,7 @@ type SelectorRowProps = {
 const SelectorRow = ({ disabled = false }: SelectorRowProps) => (
   <>
     <h2 className="demo-section__title">{disabled ? 'Sizes — disabled' : 'Sizes'}</h2>
-    <div
-      className="demo-section__select-grid"
-      style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}
-    >
+    <div className="demo-section__select-grid demo-section__select-grid--3-col demo-section__select-grid--gap-xl">
       <section>
         <h3>Big Selector</h3>
         <Select disabled={disabled}>
@@ -82,13 +79,10 @@ const SelectorRow = ({ disabled = false }: SelectorRowProps) => (
       </section>
     </div>
 
-    <h2 className="demo-section__title" style={{ marginTop: 24 }}>
+    <h2 className="demo-section__title demo-section__mt-xl">
       {disabled ? 'Colors — disabled' : 'Colors'}
     </h2>
-    <div
-      className="demo-section__select-grid"
-      style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}
-    >
+    <div className="demo-section__select-grid demo-section__select-grid--4-col demo-section__select-grid--gap-xl">
       <section>
         <h3>Colored (Orange)</h3>
         <Select disabled={disabled}>
@@ -167,10 +161,10 @@ const SelectorRow = ({ disabled = false }: SelectorRowProps) => (
 /** Trigger sizes and the colored variant, enabled and disabled; rendered on the Select page. */
 export const SelectVariants = (): JSX.Element => (
   <>
-    <div style={{ marginTop: 24 }}>
+    <div className="demo-section__mt-xl">
       <SelectorRow />
     </div>
-    <div style={{ marginTop: 24 }}>
+    <div className="demo-section__mt-xl">
       <SelectorRow disabled />
     </div>
   </>

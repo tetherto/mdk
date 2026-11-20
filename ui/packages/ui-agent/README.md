@@ -41,6 +41,10 @@ spec:
         agent: { provider: { kind: qvac, model: qwen3-4b, baseURL: http://127.0.0.1:11500/v1 }, mcp: { url: http://127.0.0.1:3101/mcp } }
 ```
 
+Port `3101` is the [`mvp-site` example](../../../examples/mvp-site/README.md)'s MCP tool server, which checks no token. Against
+`mdk run mcp`, creating a session answers `503 ERR_AGENT_UNAVAILABLE` until you
+[give the agent a service account](../../../docs/guides/agent/gateway-deployment.md#give-the-agent-a-service-account).
+
 > [!IMPORTANT]
 > The panel calls `/agent/sessions…` at the Gateway root. The Gateway serves an app under `/apps/<name>` unless its entry sets
 > `mount`, so without `mount: /` every call answers `404`. `mdk onboard` writes `mount: /` for this app.

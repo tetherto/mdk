@@ -21,8 +21,8 @@ This section explains the terms you need to familiarize yourself with, using an 
 | **App** | A publishable package serving HTTP routes and, optionally, dashboard UI: an [`mdk-app.yaml`][app-manifest] manifest, an app route table with its controllers, and a `ui/` module. Installed into a stack with `mdk add app` and declared under `spec.apps` | [`examples/mvp-site/backend/gateway-plugins/site/mdk-app.yaml`][mvp-site-app] |
 | **App route table** | The declarative `mdk-plugin.json` inside an app: its routes, their handlers, and their HTTP methods and paths, read by the app runtime to mount them and by the Gateway to know where to forward | [`examples/mvp-site/backend/gateway-plugins/site/mdk-plugin.json`][mvp-site-app-manifest] |
 | **Worker** | A device-family translator. Speaks the MDK Protocol upward to Kernel and the vendor's native API downward to one device family (one miner brand, one container type, one pool API). | [`backend/workers/`][worker-readme] |
-| **Worker Plugin** | The executable device integration: [`mdk-contract.json`][contract-schema] plus its handler files, loaded from a package directory by `WorkerRuntimeV2` | [`backend/workers/miners/avalon/plugin/index.js`][avalon-plugin] |
-| **Worker contract** | The declarative [`mdk-contract.json`][contract-schema] alone, as read, validated, published, rendered, or queried | [`backend/workers/miners/avalon/plugin/mdk-contract.json`][avalon-contract] |
+| **Worker Plugin** | The executable device integration: [`mdk-contract.json`][contract-schema] plus its handler files, loaded from a package directory by `WorkerRuntimeV2` | [`backend/workers/miners/avalon/src/device.js`][avalon-plugin] |
+| **Worker contract** | The declarative [`mdk-contract.json`][contract-schema] alone, as read, validated, published, rendered, or queried | [`backend/workers/miners/avalon/mdk-contract.json`][avalon-contract] |
 | **Contract version** | The `contractVersion` stamp at the top of a [`mdk-contract.json`][contract-schema]. A stamped contract is held to the v1 requirements as errors, canonical units and numeric parameter bounds among them; an unstamped one reports those gaps as warnings unless strict mode is requested | [contract validation][contract-validation] |
 | **Driver class** | The JavaScript class a Worker exports, one per device family (for example `AvalonMiner`), not one per model. Drives every device that Worker registers. | [`backend/workers/miners/avalon/lib/avalon.miner.js`][avalon-worker] |
 | **Thing** | Deprecated: one registered device instance on the legacy [store services surface][worker-runtime-store]. Created by sending a `registerThing` command to the Worker's provisioning service, not by calling a driver-class method directly. Identified by a generated `deviceId`. A `WorkerRuntimeV2` Worker has no Things: its device list is fixed at construction. | [`backend/core/mdk/lib/services/provisioning.service.js`][provisioning-service] |
@@ -135,7 +135,7 @@ contacts its bootstrap nodes, so a same-host deployment needs that outbound reac
   - Gateway implementation details, including HTTP routing and how apps are served: [`backend/core/gateway/README.md`][gateway-package]
   - Building your own Worker for a new device family: [the build walkthrough][build-a-worker]
   - The install and run pattern every shipped Worker package follows: [`backend/workers/docs/install-pattern.md`][worker-install]
-  - Per-device contract details (telemetry units, command shapes, error codes): those live in each Worker's `mdk-contract.json`, e.g. [`backend/workers/miners/avalon/plugin/mdk-contract.json`][avalon-contract]
+  - Per-device contract details (telemetry units, command shapes, error codes): those live in each Worker's `mdk-contract.json`, e.g. [`backend/workers/miners/avalon/mdk-contract.json`][avalon-contract]
 
 ## Links
 
@@ -175,8 +175,8 @@ contacts its bootstrap nodes, so a same-host deployment needs that outbound reac
 [mvp-site-app-manifest]: ../../examples/mvp-site/backend/gateway-plugins/site/mdk-plugin.json
 <!-- docs@tether.io: mvp-site-app-manifest → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/backend/gateway-plugins/site/mdk-plugin.json -->
 
-[avalon-plugin]: ../../backend/workers/miners/avalon/plugin/index.js
-<!-- docs@tether.io: avalon-plugin → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/plugin/index.js -->
+[avalon-plugin]: ../../backend/workers/miners/avalon/src/device.js
+<!-- docs@tether.io: avalon-plugin → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/src/device.js -->
 
 [contract-schema]: ../../backend/core/mdk-worker/mdk-contract.schema.json
 <!-- docs@tether.io: contract-schema → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/mdk-contract.schema.json -->
@@ -193,8 +193,8 @@ contacts its bootstrap nodes, so a same-host deployment needs that outbound reac
 [worker-discovery]: ../../backend/workers/docs/architecture.md#discovery-model
 <!-- docs@tether.io: worker-discovery → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/architecture.md#discovery-model -->
 
-[avalon-contract]: ../../backend/workers/miners/avalon/plugin/mdk-contract.json
-<!-- docs@tether.io: avalon-contract → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/plugin/mdk-contract.json -->
+[avalon-contract]: ../../backend/workers/miners/avalon/mdk-contract.json
+<!-- docs@tether.io: avalon-contract → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/mdk-contract.json -->
 
 [hrpc-repo]: https://github.com/holepunchto/rpc
 <!-- docs@tether.io: external link — preserve URL -->

@@ -14,6 +14,8 @@ const { startGateway } = require('@tetherto/mdk-core')
 // The Gateway's own copy of the app runtime's echo app: that package does not ship its tests.
 const { ECHO_APP, tmpDir, capturingLogger } = require('../fixtures/helpers')
 
+const LOOPBACK = '127.0.0.1'
+
 function freePort () {
   return new Promise((resolve, reject) => {
     const srv = net.createServer()
@@ -26,7 +28,7 @@ function freePort () {
 }
 
 test('gateway forwards to app runtimes over HRPC', { timeout: 120000 }, async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const dir = tmpDir(t)
   const port = await freePort()
   const keyFile = (name) => path.join(dir, 'run', `${name}.key`)
@@ -40,7 +42,7 @@ test('gateway forwards to app runtimes over HRPC', { timeout: 120000 }, async (t
     return { status: res.status, headers: res.headers, body, text }
   }
   const startRuntime = async (name, allowedKeyFiles) => {
-    const runtime = createAppRuntime({ name, appDir: ECHO_APP, bootstrap: testnet.bootstrap, keyFile: keyFile(name), allowedKeyFiles, logger: capturingLogger() })
+    const runtime = createAppRuntime({ name, appDir: ECHO_APP, bootstrap: testnet.bootstrap, dhtHost: LOOPBACK, keyFile: keyFile(name), allowedKeyFiles, logger: capturingLogger() })
     await runtime.start()
     t.teardown(() => runtime.stop())
     return runtime
@@ -52,6 +54,7 @@ test('gateway forwards to app runtimes over HRPC', { timeout: 120000 }, async (t
     port,
     root: path.join(dir, 'gateway'),
     bootstrap: testnet.bootstrap,
+    dhtHost: LOOPBACK,
     apps: ['echo', 'denied'].map((name) => ({ name, appDir: ECHO_APP, keyFile: keyFile(name) })),
     gatewayKeyFile,
     authVerifier: async (req) => ({

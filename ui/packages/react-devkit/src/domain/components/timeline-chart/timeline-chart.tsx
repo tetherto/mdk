@@ -62,7 +62,11 @@ export const TimelineChart = memo(
     const isEmpty = !isLoading && chartData.labels.length === 0
 
     return (
-      <div className="mdk-timeline-chart" style={height ? { height } : undefined}>
+      <div
+        className="mdk-timeline-chart"
+        // oxlint-disable-next-line react/forbid-dom-props -- height is a runtime prop
+        style={height ? { height } : undefined}
+      >
         <ChartContainer
           title={title}
           loading={isLoading}

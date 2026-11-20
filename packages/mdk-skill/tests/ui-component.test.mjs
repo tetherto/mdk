@@ -10,6 +10,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { readSplitRegistry } from '../../../docs/scripts/lib/ui-registry-split.mjs'
+
 const PKG_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const REPO_ROOT = path.resolve(PKG_DIR, '..', '..')
 const SKILL_DIR = path.join(PKG_DIR, 'src', 'skills', 'mdk-ui-component')
@@ -50,9 +52,16 @@ const docs = walk(SKILL_DIR)
   .filter((f) => f.endsWith('.md'))
   .map((file) => ({ file, rel: path.relative(SKILL_DIR, file), text: fs.readFileSync(file, 'utf8') }))
 
-const registry = readJson(path.join(SKILL_DIR, 'references', 'ui-registry.json'))
-const registryComponents = new Map(registry.components.map((c) => [c.name, c]))
-const registryNames = new Set([...registry.components, ...registry.hooks, ...registry.types].map((e) => e.name))
+// The registry is split: index.json names every entry, and each entry is its own file under components/, hooks/ or types/.
+// Read through the same layout module the sync writes it with, so the layout is defined once.
+const REGISTRY_DIR = path.join(SKILL_DIR, 'references', 'ui-registry')
+const {
+  index: registryIndex,
+  components: registryComponents,
+  hooks: registryHooks,
+  types: registryTypes
+} = readSplitRegistry(REGISTRY_DIR)
+const registryNames = new Set([...registryComponents.keys(), ...registryHooks.keys(), ...registryTypes.keys()])
 
 const surfaces = Object.fromEntries(
   Object.entries(API_SURFACES).map(([pkg, file]) => [
@@ -181,6 +190,21 @@ describe('mdk-ui-component skill', () => {
         .map(({ from }) => `${rel}: ${from}`)
     )
     assert.deepEqual(wrong, [])
+  })
+
+  it('ships a registry whose index and entry files agree', () => {
+    const indexed = {
+      components: Object.values(registryIndex.componentsByCategory).flat(),
+      hooks: registryIndex.hooks,
+      types: registryIndex.types
+    }
+    const onDisk = { components: registryComponents, hooks: registryHooks, types: registryTypes }
+    for (const kind of Object.keys(onDisk)) {
+      assert.deepEqual([...indexed[kind]].sort(), [...onDisk[kind].keys()].sort(), `${kind}: index.json and ${kind}/ list different entries`)
+      for (const [file, entry] of onDisk[kind]) assert.equal(entry.name, file, `${kind}/${file}.json holds the entry ${entry.name}`)
+    }
+    assert.ok(registryComponents.size > 0, 'the registry has components')
+    assert.ok(!fs.existsSync(path.join(SKILL_DIR, 'references', 'ui-registry.json')), 'the single-file registry the split replaced is gone')
   })
 
   it('passes devkit components only the props the registry lists', () => {

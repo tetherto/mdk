@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { Command } from 'commander';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProcessExitSignal, cleanupTmpDirs, makeTmpDir, mockProcessExit } from '../helpers.js';
@@ -12,6 +12,7 @@ const runAppMock = vi.hoisted(() => vi.fn());
 const superviseAppMock = vi.hoisted(() => vi.fn());
 const assertGatewayPortFreeMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const declaredMockPortsMock = vi.hoisted(() => vi.fn(() => []));
+const releaseUnreachableReportsMock = vi.hoisted(() => vi.fn());
 vi.mock('../../src/lib/runtime.js', async (importOriginal) => ({
   // The policy check is pure and runs before any boot: the real one.
   policyRefusal: (await importOriginal<typeof import('../../src/lib/runtime.js')>()).policyRefusal,
@@ -23,14 +24,17 @@ vi.mock('../../src/lib/runtime.js', async (importOriginal) => ({
   superviseApp: superviseAppMock,
   assertGatewayPortFree: assertGatewayPortFreeMock,
   declaredMockPorts: declaredMockPortsMock,
+  releaseUnreachableReports: releaseUnreachableReportsMock,
   // mdk run dashboard resolves spec.apps packages; local paths are enough here.
   resolvePackageDir: (projectDir: string, pkg: string) => `${projectDir}/${pkg}`,
 }));
 
 const findDashboardDirMock = vi.hoisted(() => vi.fn());
+const dashboardNamesMock = vi.hoisted(() => vi.fn(() => [] as string[]));
 const runDashboardMock = vi.hoisted(() => vi.fn());
 vi.mock('../../src/lib/dashboard.js', () => ({
   findDashboardDir: findDashboardDirMock,
+  dashboardNames: dashboardNamesMock,
   runDashboard: runDashboardMock,
 }));
 
@@ -85,6 +89,9 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/** A dashboard dev server that stays up: `crashed` never settles. */
+const dashboardHandle = (stop: unknown = vi.fn()) => ({ crashed: new Promise<string>(() => {}), stop });
+
 describe('mdk run', () => {
   it('dies when --detach is passed', async () => {
     const program = buildProgram();
@@ -128,7 +135,7 @@ describe('mdk run', () => {
     writeSpec(dir, SPEC_BASE);
     await program.parseAsync(['node', 'mdk', 'run', '--dir', dir]);
 
-    expect(runKernelMock).toHaveBeenCalledWith(dir, expect.objectContaining({ kind: 'Stack' }));
+    expect(runKernelMock).toHaveBeenCalledWith(dir, expect.objectContaining({ kind: 'Stack' }), { holdUnreachable: true });
     expect(runGatewayMock).toHaveBeenCalled();
   });
 
@@ -144,7 +151,7 @@ describe('mdk run', () => {
     writeSpec(dir, SPEC_WITH_WORKER);
     await program.parseAsync(['node', 'mdk', 'run', '--dir', dir]);
 
-    expect(runKernelMock).toHaveBeenCalledWith(dir, expect.objectContaining({ kind: 'Stack' }));
+    expect(runKernelMock).toHaveBeenCalledWith(dir, expect.objectContaining({ kind: 'Stack' }), { holdUnreachable: true });
     expect(runWorkerMock).toHaveBeenCalled();
     expect(runGatewayMock).toHaveBeenCalled();
     expect(installShutdownMock).toHaveBeenCalled();
@@ -166,7 +173,8 @@ describe('mdk run', () => {
     await program.parseAsync(['node', 'mdk', 'run', '--dir', dir]);
 
     expect(superviseAppMock).toHaveBeenCalledWith(dir, expect.objectContaining({ name: 'demo' }), kernel, undefined, expect.objectContaining({ kind: 'Stack' }));
-    const order = [runWorkerMock, superviseAppMock, runGatewayMock].map((m) => m.mock.invocationCallOrder[0]);
+    expect(releaseUnreachableReportsMock).toHaveBeenCalledWith(kernel);
+    const order = [runWorkerMock, releaseUnreachableReportsMock, superviseAppMock, runGatewayMock].map((m) => m.mock.invocationCallOrder[0]);
     expect(order).toEqual([...order].sort((a, b) => a - b));
     const components = installShutdownMock.mock.calls[0][0];
     expect(components.map((c: { label: string }) => c.label)).toEqual(['gateway', 'app demo', 'worker a', 'kernel']);
@@ -191,6 +199,19 @@ describe('mdk run', () => {
     const components = installShutdownMock.mock.calls[0][0];
     const gateway = components.find((c: { label: string }) => c.label === 'gateway');
     await expect(gateway.stop()).resolves.toBeUndefined();
+  });
+
+  it('prints the held unreachable reports even when a worker fails to boot', async () => {
+    const program = buildProgram();
+    mockProcessExit();
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const kernel = { stop: vi.fn() };
+    runKernelMock.mockResolvedValue(kernel);
+    runWorkerMock.mockRejectedValue(new Error('boom'));
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_WITH_WORKER);
+    await expect(program.parseAsync(['node', 'mdk', 'run', '--dir', dir])).rejects.toThrow(ProcessExitSignal);
+    expect(releaseUnreachableReportsMock).toHaveBeenCalledWith(kernel);
   });
 
   it('refuses to boot a Kernel on a policy that binds nobody, naming the fix', async () => {
@@ -226,6 +247,29 @@ describe('mdk run', () => {
     await program.parseAsync(['node', 'mdk', 'run', 'kernel', '--dir', dir]);
     expect(runKernelMock).toHaveBeenCalledWith(dir, expect.objectContaining({ kind: 'Stack' }));
     expect(runGatewayMock).not.toHaveBeenCalled();
+  });
+
+  it('warns when Node is older than MDK supports, and still runs', async () => {
+    const version = vi.spyOn(process.versions, 'node', 'get').mockReturnValue('22.1.0');
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    runKernelMock.mockResolvedValue({ stop: vi.fn() });
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_BASE);
+    await buildProgram().parseAsync(['node', 'mdk', 'run', 'kernel', '--dir', dir]);
+    expect(stderr.mock.calls.join('')).toMatch(/Node 22\.1\.0 is too old; MDK needs Node >= 24, so the stack may fail to start/);
+    expect(runKernelMock).toHaveBeenCalled();
+    version.mockRestore();
+  });
+
+  it('does not warn on a supported Node', async () => {
+    const version = vi.spyOn(process.versions, 'node', 'get').mockReturnValue('24.0.0');
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    runKernelMock.mockResolvedValue({ stop: vi.fn() });
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_BASE);
+    await buildProgram().parseAsync(['node', 'mdk', 'run', 'kernel', '--dir', dir]);
+    expect(stderr.mock.calls.join('')).not.toMatch(/too old/);
+    version.mockRestore();
   });
 
   it('runs target "gateway" standalone', async () => {
@@ -324,7 +368,7 @@ describe('mdk run', () => {
     runMcpMock.mockResolvedValue({ stop: stops.mcp });
     runWorkerMock.mockResolvedValue({ stop: stops.worker });
     findDashboardDirMock.mockReturnValue('/proj/apps/dashboard');
-    runDashboardMock.mockResolvedValue({ stop: stops.dashboard });
+    runDashboardMock.mockResolvedValue(dashboardHandle(stops.dashboard));
     const dir = makeTmpDir();
     writeSpec(dir, SPEC_WITH_WORKER);
 
@@ -384,7 +428,7 @@ describe('mdk run', () => {
     expect(stderr.mock.calls.join('')).toContain('boom');
   });
 
-  it.each([['kernel'], ['gateway'], ['mcp'], ['dashboard'], ['all']])(
+  it.each([['kernel'], ['gateway'], ['mcp'], ['all']])(
     '`run %s <name>` refuses the name instead of ignoring it',
     async (target) => {
       mockProcessExit();
@@ -464,7 +508,7 @@ describe('mdk run', () => {
     const program = buildProgram();
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     findDashboardDirMock.mockReturnValue('/proj/apps/dashboard');
-    runDashboardMock.mockResolvedValue({ stop: vi.fn() });
+    runDashboardMock.mockResolvedValue(dashboardHandle());
     const dir = makeTmpDir();
     writeSpec(dir, SPEC_BASE);
     await program.parseAsync(['node', 'mdk', 'run', 'dashboard', '--dir', dir]);
@@ -474,11 +518,94 @@ describe('mdk run', () => {
     expect(components.map((c: { label: string }) => c.label)).toEqual(['dashboard']);
   });
 
+  it('exits 1 when the dashboard dev server exits after it started', async () => {
+    const program = buildProgram();
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as typeof process.exit);
+    findDashboardDirMock.mockReturnValue('/proj/apps/dashboard');
+    runDashboardMock.mockResolvedValue({ crashed: Promise.resolve('code 1'), stop: vi.fn() });
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_BASE);
+    await program.parseAsync(['node', 'mdk', 'run', 'dashboard', '--dir', dir]);
+    await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(1));
+    expect(stderr.mock.calls.join('')).toContain('error: The dashboard dev server exited with code 1.');
+    exit.mockRestore();
+  });
+
+  // A project can hold more than one dashboard (`mdk create dashboard ui2`),
+  // so the target takes a name like worker and app do.
+  it('runs the dashboard the name selects', async () => {
+    const program = buildProgram();
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    findDashboardDirMock.mockReturnValue('/proj/apps/ui2');
+    runDashboardMock.mockResolvedValue(dashboardHandle());
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_BASE);
+
+    await program.parseAsync(['node', 'mdk', 'run', 'dashboard', 'ui2', '--dir', dir]);
+    expect(findDashboardDirMock).toHaveBeenCalledWith(dir, 'ui2');
+    expect(runDashboardMock).toHaveBeenCalledWith('/proj/apps/ui2', []);
+  });
+
+  it('says which dashboard it picked, named or not', async () => {
+    runDashboardMock.mockResolvedValue(dashboardHandle());
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_BASE);
+
+    for (const [args, picked] of [
+      [['ui2'], join(dir, 'apps', 'ui2')],
+      // No name: the fallback scan chose this one, which used to go unsaid.
+      [[], join(dir, 'apps', 'zzz-custom')],
+    ] as Array<[string[], string]>) {
+      const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      findDashboardDirMock.mockReturnValue(picked);
+      await buildProgram().parseAsync(['node', 'mdk', 'run', 'dashboard', ...args, '--dir', dir]);
+      expect(stderr.mock.calls.join('')).toContain(`Dashboard: ${join('apps', basename(picked))}`);
+      stderr.mockRestore();
+    }
+  });
+
+  it('refuses an unknown dashboard name, listing the ones the project has', async () => {
+    const program = buildProgram();
+    mockProcessExit();
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    findDashboardDirMock.mockReturnValue(null);
+    dashboardNamesMock.mockReturnValue(['dashboard', 'ui2']);
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_BASE);
+
+    await expect(
+      program.parseAsync(['node', 'mdk', 'run', 'dashboard', 'nope', '--dir', dir]),
+    ).rejects.toThrow(ProcessExitSignal);
+    const out = stderr.mock.calls.join('');
+    expect(out).toContain(`No dashboard named "nope" under ${join(dir, 'apps')}.`);
+    expect(out).toContain('Known dashboards: dashboard, ui2.');
+    expect(out).toContain('mdk create dashboard nope');
+    expect(runDashboardMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses a dashboard name that is not a valid path segment, before any lookup', async () => {
+    const dir = makeTmpDir();
+    writeSpec(dir, SPEC_BASE);
+
+    for (const name of ['../../etc', 'Ops UI', '.hidden']) {
+      const program = buildProgram();
+      mockProcessExit();
+      const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+      await expect(
+        program.parseAsync(['node', 'mdk', 'run', 'dashboard', name, '--dir', dir]),
+      ).rejects.toThrow(ProcessExitSignal);
+      expect(stderr.mock.calls.join('')).toContain(`Invalid dashboard name "${name}".`);
+      expect(findDashboardDirMock).not.toHaveBeenCalled();
+      stderr.mockRestore();
+    }
+  });
+
   it("hands the dashboard the stack's installed apps, read from mdk.yaml, with each app's mount", async () => {
     const program = buildProgram();
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     findDashboardDirMock.mockReturnValue('/proj/apps/dashboard');
-    runDashboardMock.mockResolvedValue({ stop: vi.fn() });
+    runDashboardMock.mockResolvedValue(dashboardHandle());
     const dir = makeTmpDir();
     for (const app of ['sentinel', 'ops']) {
       mkdirSync(join(dir, 'apps', app), { recursive: true });

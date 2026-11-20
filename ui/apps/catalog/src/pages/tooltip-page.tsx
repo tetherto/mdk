@@ -16,7 +16,7 @@ export const TooltipPage = (): JSX.Element => (
     <div className="demo-section__tooltip">
       <section>
         <h3>Simple Tooltip (Convenient Wrapper)</h3>
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="demo-section__showcase">
           <SimpleTooltip content="This is a helpful tooltip">
             <Button variant="primary">Hover me (top)</Button>
           </SimpleTooltip>
@@ -35,16 +35,16 @@ export const TooltipPage = (): JSX.Element => (
         </div>
       </section>
 
-      <section style={{ marginTop: '2rem' }}>
+      <section className="demo-section__mt-2xl">
         <h3>Compound Components (Full Control)</h3>
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="demo-section__showcase">
           <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="primary">Fast tooltip (100ms)</Button>
               </TooltipTrigger>
               <TooltipContent>
-                <div style={{ maxWidth: '200px' }}>
+                <div className="tooltip-demo__content">
                   This tooltip appears quickly with a 100ms delay
                 </div>
               </TooltipContent>
@@ -57,7 +57,7 @@ export const TooltipPage = (): JSX.Element => (
                 <Button variant="secondary">Slow tooltip (500ms)</Button>
               </TooltipTrigger>
               <TooltipContent side="right" showArrow={false}>
-                <div style={{ maxWidth: '250px' }}>
+                <div className="tooltip-demo__content tooltip-demo__content--md">
                   <strong>No Arrow</strong>
                   <br />
                   This tooltip has a longer delay and no arrow
@@ -68,17 +68,17 @@ export const TooltipPage = (): JSX.Element => (
         </div>
       </section>
 
-      <section style={{ marginTop: '2rem' }}>
+      <section className="demo-section__mt-2xl">
         <h3>Rich Content Tooltips</h3>
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="demo-section__showcase">
           <SimpleTooltip
             content={
-              <div style={{ maxWidth: '300px' }}>
-                <strong style={{ color: '#f7931a' }}>Mining Status</strong>
-                <div style={{ marginTop: '8px', fontSize: '11px' }}>
-                  <div>Hashrate: 100 ${UNITS.HASHRATE_TH_S}</div>
-                  <div>Temperature: 65${UNITS.TEMPERATURE_C}</div>
-                  <div>Power: 3250${UNITS.POWER_W}</div>
+              <div className="tooltip-demo__content tooltip-demo__content--lg">
+                <strong className="demo-section__text-primary">Mining Status</strong>
+                <div className="tooltip-demo__details demo-section__mt-sm">
+                  <div>Hashrate: 100 {UNITS.HASHRATE_TH_S}</div>
+                  <div>Temperature: 65{UNITS.TEMPERATURE_C}</div>
+                  <div>Power: 3250{UNITS.POWER_W}</div>
                 </div>
               </div>
             }
@@ -89,8 +89,8 @@ export const TooltipPage = (): JSX.Element => (
           <SimpleTooltip
             content={
               <div>
-                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Long Text Example</div>
-                <div style={{ fontSize: '11px' }}>
+                <div className="tooltip-demo__heading">Long Text Example</div>
+                <div className="tooltip-demo__details">
                   This tooltip demonstrates word wrapping for longer content. The text will
                   automatically wrap within the maximum width constraint.
                 </div>

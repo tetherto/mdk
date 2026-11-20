@@ -1,0 +1,1 @@
+{"name":"LogRowProps","path":"src/primitives/components/logs/types.ts","kind":"type","description":"","public":true,"definition":"{ /** Log entry data */ log: LogData /** Log type (controls dot appearance) */ type: string /** Inline style for the row container */ style?: CSSProperties /** Click handler */ onLogClicked?: (uuid: string) => void }"}

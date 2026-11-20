@@ -1,7 +1,22 @@
 'use strict'
 
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
 const test = require('brittle')
-const { parseBootstrap, parseDhtHost, resolveDhtHost, dhtFromEnv } = require('../../lib/dht-bootstrap')
+const { parseBootstrap, parseDhtHost, resolveDhtHost, dhtFromEnv, dhtFromProject, PROJECT_NETWORK_FILE } = require('../../lib/dht-bootstrap')
+
+// A project dir holding `.mdk/network.json` with `content` (omit for none).
+function projectWithNetwork (t, content) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdk-dht-'))
+  t.teardown(() => fs.rmSync(dir, { recursive: true, force: true }))
+  if (content !== undefined) {
+    const file = path.join(dir, PROJECT_NETWORK_FILE)
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, content)
+  }
+  return dir
+}
 
 test('parseBootstrap - arrays, objects and the comma-separated env form', (t) => {
   t.is(parseBootstrap(undefined), null)
@@ -42,4 +57,25 @@ test('dhtFromEnv - only the keys that are set', (t) => {
   t.alike(dhtFromEnv({}), {})
   t.alike(dhtFromEnv({ MDK_DHT_BOOTSTRAP: '127.0.0.1:49737', MDK_DHT_HOST: '127.0.0.1' }), { bootstrap: ['127.0.0.1:49737'], dhtHost: '127.0.0.1' })
   t.alike(dhtFromEnv({ MDK_DHT_HOST: '10.0.0.7' }), { dhtHost: '10.0.0.7' })
+})
+
+test('dhtFromProject - the resolved settings mdk run published, or {} for the public DHT', (t) => {
+  t.alike(
+    dhtFromProject(projectWithNetwork(t, '{"bootstrap":["127.0.0.1:49737"],"dhtHost":"127.0.0.1"}')),
+    { bootstrap: ['127.0.0.1:49737'], dhtHost: '127.0.0.1' }
+  )
+  // A stack on the public DHT writes `{}`; a stack never run writes nothing.
+  // Both mean "join the public network", so neither is an error.
+  t.alike(dhtFromProject(projectWithNetwork(t, '{}')), {})
+  t.alike(dhtFromProject(projectWithNetwork(t)), {})
+  t.alike(dhtFromProject(projectWithNetwork(t, '{"bootstrap":["10.0.0.5:49737"]}')), { bootstrap: ['10.0.0.5:49737'] })
+})
+
+test('dhtFromProject - a file it cannot trust throws instead of joining the public DHT', (t) => {
+  t.exception(() => dhtFromProject(projectWithNetwork(t, 'not json')), /ERR_MDK_NETWORK_FILE_INVALID/)
+  t.exception(() => dhtFromProject(projectWithNetwork(t, '["127.0.0.1:49737"]')), /ERR_MDK_NETWORK_FILE_INVALID/)
+  t.exception(() => dhtFromProject(projectWithNetwork(t, '{"bootstrap":["127.0.0.1"]}')), /ERR_MDK_DHT_BOOTSTRAP_INVALID/)
+  t.exception(() => dhtFromProject(projectWithNetwork(t, '{"bootstrap":["node1.hyperdht.org:49737"]}')), /ERR_MDK_DHT_BOOTSTRAP_PUBLIC/)
+  t.exception(() => dhtFromProject(projectWithNetwork(t, '{"dhtHost":"localhost"}')), /ERR_MDK_DHT_HOST_INVALID/)
+  t.exception(() => dhtFromProject(''), /ERR_MDK_PROJECT_DIR_REQUIRED/)
 })

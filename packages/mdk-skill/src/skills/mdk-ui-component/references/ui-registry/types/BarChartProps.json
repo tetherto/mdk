@@ -1,0 +1,1 @@
+{"name":"BarChartProps","path":"src/primitives/components/bar-chart/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** Chart data - required, provided by parent. Use `as any` for mixed bar+line datasets. */ data: any /** Chart.js options - merged with defaults */ options?: ChartJS<'bar'>['options'] /** * Stack bars on top of each other * @default fal…"}

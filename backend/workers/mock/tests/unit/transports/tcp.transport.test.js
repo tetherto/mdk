@@ -73,3 +73,22 @@ test('does not register a close listener when onClose is not a function', async 
   t.execution(() => transport.close())
   t.pass()
 })
+
+test('close() destroys open client connections so the server fully closes', async (t) => {
+  const transport = new TcpTransport(makeMock(), { onData: () => {} })
+  transport.listen('127.0.0.1', 0)
+  await new Promise((resolve) => transport.server.once('listening', resolve))
+
+  const port = transport.server.address().port
+  const client = net.connect(port, '127.0.0.1')
+  await new Promise((resolve) => client.once('connect', resolve))
+  await new Promise((resolve) => setTimeout(resolve, 20))
+  t.is(transport.sockets.size, 1)
+
+  const closed = new Promise((resolve) => transport.server.once('close', resolve))
+  const clientClosed = new Promise((resolve) => client.once('close', resolve))
+  transport.close()
+  await Promise.all([closed, clientClosed])
+  t.is(transport.sockets.size, 0)
+  t.is(transport.listening, false)
+})

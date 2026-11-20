@@ -259,7 +259,12 @@ export const BarChart = forwardRef<HTMLDivElement, BarChartProps>(
     }, [data, isHorizontal])
 
     return (
-      <div ref={ref} className={cn('mdk-bar-chart', className)} style={{ height }}>
+      <div
+        ref={ref}
+        className={cn('mdk-bar-chart', className)}
+        // oxlint-disable-next-line react/forbid-dom-props -- height is a runtime prop
+        style={{ height }}
+      >
         <Suspense fallback={null}>
           <BarCanvas data={chartData} options={mergedOptions} showDataLabels={showDataLabels} />
         </Suspense>

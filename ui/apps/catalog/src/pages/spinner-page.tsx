@@ -6,18 +6,10 @@ export const SpinnerPage = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">Spinner</h2>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '2rem',
-        }}
-      >
+      <div className="demo-section__showcase demo-section__showcase--between">
         <div className="demo-item">
           <p className="demo-label">Basic Spinner (slow)</p>
-          <div style={{ display: 'flex', gap: '2rem', margin: '2rem' }}>
+          <div className="demo-section__spinner-row">
             <Spinner speed="slow" />
             <Spinner speed="slow" type="circle" />
           </div>
@@ -25,7 +17,7 @@ export const SpinnerPage = (): JSX.Element => {
 
         <div className="demo-item">
           <p className="demo-label">With Label</p>
-          <div style={{ display: 'flex', gap: '2rem', margin: '2rem' }}>
+          <div className="demo-section__spinner-row">
             <Spinner speed="slow" label="Loading data..." />
             <Spinner speed="slow" color="secondary" type="circle" label="Loading data..." />
           </div>
@@ -33,7 +25,7 @@ export const SpinnerPage = (): JSX.Element => {
 
         <div className="demo-item">
           <p className="demo-label">Size Variants</p>
-          <div style={{ display: 'flex', gap: '4rem', margin: '2rem' }}>
+          <div className="demo-section__spinner-row demo-section__spinner-row--wide">
             <Spinner size="sm" />
             <Spinner size="sm" type="circle" />
             <Spinner size="md" />
@@ -45,7 +37,7 @@ export const SpinnerPage = (): JSX.Element => {
 
         <div className="demo-item">
           <p className="demo-label">Speed Variants</p>
-          <div style={{ display: 'flex', gap: '4rem', margin: '2rem' }}>
+          <div className="demo-section__spinner-row demo-section__spinner-row--wide">
             <div className="text-center">
               <Spinner speed="slow" />
               <p className="text-sm text-gray-400 mt-2">Slow</p>

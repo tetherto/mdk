@@ -4,7 +4,7 @@ const crypto = require('crypto')
 const { validatePolicy } = require('./validate')
 const { isKernelResource, isReservedName, KERNEL_RESOURCES } = require('./vocabulary')
 
-// What `mdk app add` writes into spec.rbac for an app: a role holding exactly
+// What `mdk add app` writes into spec.rbac for an app: a role holding exactly
 // the Kernel access its mdk-app.yaml `permissions` request, and a binding of
 // that role to the app's own service account. An app may only request Kernel
 // resources; who may call its routes is the operator's to set.

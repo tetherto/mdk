@@ -1,0 +1,1 @@
+{"name":"AreaChartProps","path":"src/primitives/components/area-chart/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** Chart data - required, provided by parent */ data: ChartJS<'line'>['data'] /** Chart.js options - merged with defaults */ options?: ChartJS<'line'>['options'] /** Custom HTML tooltip configuration. When provided, replaces the default…"}

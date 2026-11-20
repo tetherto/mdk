@@ -99,13 +99,7 @@
     "worker": {
       "id": "satec-powermeter-worker",
       "model": "pm180",
-      "allowDuplicateIPs": true,
-      "thing": {
-        "collectSnapsItvMs": 5000,
-        "storeSnapItvMs": 5000,
-        "collectSnapTimeoutMs": 15000,
-        "logKeepCount": 5
-      }
+      "collectSnapsItvMs": 5000
     },
     "mocks": {
       "portBase": 15020

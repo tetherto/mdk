@@ -1,0 +1,1 @@
+{"name":"LoaderProps","path":"src/primitives/components/loader/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** * Size of each dot in pixels * @default 10 */ size?: number /** * Number of dots to display * @default 5 */ count?: 3 | 5 | 7 /** * Color variant of the loader * @default 'orange' */ color?: 'red' | 'gray' | 'blue' | 'amber' | 'orang…"}

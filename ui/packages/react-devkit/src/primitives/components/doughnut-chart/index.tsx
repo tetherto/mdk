@@ -16,6 +16,7 @@ import {
   useState,
 } from 'react'
 import { formatPercentShare } from '../../utils/number'
+import { drawnSliceValues } from './doughnut-chart.utils'
 
 // chart.js + react-chartjs-2 are code-split into a lazy chunk so importing this
 // component does not pull the chart engine into a consumer's initial bundle.
@@ -66,6 +67,13 @@ export type DoughnutChartProps = {
    *  the percentage display if needed.
    */
   tooltip?: ChartTooltipConfig
+  /**
+   * Smallest angle, in degrees, a visible non-zero slice is drawn with, so a tiny share (e.g. 0.5%)
+   * stays visible. Only the drawing changes: the legend and tooltip keep the true values and
+   * percentages. `0` draws every slice to scale
+   * @default 0
+   */
+  minSliceAngle?: number
   /** Formats slice values in the built-in legend and default tooltip (default: raw number). */
   formatValue?: (value: number) => string
   /** Additional class for the root element */
@@ -101,6 +109,7 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
       legendPosition = 'top',
       tooltip: tooltipConfig,
       formatValue,
+      minSliceAngle = 0,
       className,
     },
     ref,
@@ -126,7 +135,11 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
         labels: data.map((d) => d.label),
         datasets: [
           {
-            data: data.map((d) => d.value),
+            data: drawnSliceValues(
+              data.map((d) => d.value),
+              minSliceAngle,
+              hiddenItems,
+            ),
             backgroundColor: colors,
             hoverBackgroundColor: colors,
             cutout,
@@ -135,12 +148,23 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
           },
         ],
       }),
-      [data, colors, cutout, borderWidth],
+      [data, colors, cutout, borderWidth, minSliceAngle, hiddenItems],
     )
 
     const mergedOptions = useMemo((): ChartJS<'doughnut'>['options'] => {
+      // The chart may draw a slice larger than it is (`minSliceAngle`), so tooltips read the true
+      // value by index rather than the drawn one Chart.js passes
+      const trueValue = (index: number, drawn: number): number => data[index]?.value ?? drawn
       const tooltipPlugin = tooltipConfig
-        ? buildChartTooltip(tooltipConfig)
+        ? buildChartTooltip({
+            ...tooltipConfig,
+            valueFormatter: (v, item) => {
+              const value = trueValue(item.dataIndex, v)
+              return tooltipConfig.valueFormatter
+                ? tooltipConfig.valueFormatter(value, item)
+                : String(value)
+            },
+          })
         : {
             backgroundColor: '#17130F',
             titleFont: { size: 10 },
@@ -148,7 +172,7 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
             callbacks: {
               title: () => '',
               label: (ctx: TooltipItem<'doughnut'>) => {
-                const v = ctx.parsed ?? 0
+                const v = trueValue(ctx.dataIndex, ctx.parsed ?? 0)
                 const pct = formatPercentShare(v, total)
                 const suffix = unit ? ` ${unit}` : ''
                 return [`${ctx.label}`, `${formatDisplayValue(v)}${suffix} (${pct}%)`]
@@ -171,7 +195,7 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
         return { ...base, ...options }
       }
       return base
-    }, [total, unit, options, tooltipConfig, formatDisplayValue])
+    }, [data, total, unit, options, tooltipConfig, formatDisplayValue])
 
     const onToggleItem = useCallback((index: number) => {
       const chart = chartRef.current
@@ -201,6 +225,7 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
             >
               <span
                 className="mdk-doughnut-chart__legend-color"
+                // oxlint-disable-next-line react/forbid-dom-props -- per-series colour from the chart data
                 style={{
                   borderColor: colors[i],
                   backgroundColor: colorWithAlpha(colors[i] ?? '#888', 0.2),
@@ -221,7 +246,11 @@ export const DoughnutChart = forwardRef<HTMLDivElement, DoughnutChartProps>(
     )
 
     const chartEl = (
-      <div className="mdk-doughnut-chart__chart" style={{ height, maxWidth: height }}>
+      <div
+        className="mdk-doughnut-chart__chart"
+        // oxlint-disable-next-line react/forbid-dom-props -- height is a runtime prop
+        style={{ height, maxWidth: height }}
+      >
         <Suspense fallback={null}>
           <DoughnutCanvas ref={chartRef} data={chartData} options={mergedOptions} />
         </Suspense>

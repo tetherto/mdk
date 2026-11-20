@@ -1,5 +1,5 @@
 import { Option, type Command } from 'commander';
-import { resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 import { examples } from '../lib/help.js';
 import { StackSpecError, loadStackSpec } from '../lib/spec.js';
 import type { StackSpec } from '../lib/spec.js';
@@ -7,6 +7,7 @@ import {
   assertGatewayPortFree,
   declaredMockPorts,
   policyRefusal,
+  releaseUnreachableReports,
   runApp,
   runGateway,
   runKernel,
@@ -15,16 +16,26 @@ import {
   superviseApp,
   type GatewayHandle,
 } from '../lib/runtime.js';
-import { findDashboardDir, runDashboard } from '../lib/dashboard.js';
+import { dashboardNames, findDashboardDir, runDashboard } from '../lib/dashboard.js';
+import { isValidName } from '../lib/names.js';
+import { DIRS } from '../lib/project.js';
 import { describeDashboardApps } from '../lib/dashboard-apps.js';
 import { installShutdown, type Stoppable } from '../lib/shutdown.js';
 import { acquireRunLocks, type RunComponent } from '../lib/run-lock.js';
 import { theme } from '../lib/theme.js';
+import { nodeVersionWarning } from '../lib/detect.js';
+import { failureText } from '../lib/flags.js';
 
 type RunTarget = 'all' | 'kernel' | 'gateway' | 'mcp' | 'worker' | 'app' | 'dashboard';
 const TARGETS: RunTarget[] = ['all', 'kernel', 'gateway', 'mcp', 'worker', 'app', 'dashboard'];
 /** Targets that take a `[name]`; the rest refuse one rather than ignore it. */
-const NAMED_TARGETS: RunTarget[] = ['worker', 'app'];
+const NAMED_TARGETS: RunTarget[] = ['worker', 'app', 'dashboard'];
+
+/** "a, b and c" — so the refusal below always names the current NAMED_TARGETS. */
+function andList(items: readonly string[]): string {
+  if (items.length < 2) return items.join('');
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
 
 interface RunOptions {
   dir: string;
@@ -60,16 +71,22 @@ async function runAll(dir: string, spec: StackSpec): Promise<Stoppable[]> {
   // for a failure that was knowable in the first millisecond.
   await assertGatewayPortFree(spec.spec.gateway.port);
 
-  const kernel = await runKernel(dir, spec);
+  // The Kernel can dial a key file left by an earlier `mdk run worker` before
+  // that Worker starts below; its warnings wait until the Workers are up.
+  const kernel = await runKernel(dir, spec, { holdUnreachable: true });
 
   // Each worker avoids the ports its not-yet-booted neighbours asked for; the
   // ones already booted are detected as bound, so this covers the whole set.
   const declared = spec.spec.workers;
   const workers: Stoppable[] = [];
-  for (const [i, w] of declared.entries()) {
-    const reservedPorts = new Set(declared.slice(i + 1).flatMap(declaredMockPorts));
-    const handle = await runWorker(dir, w, kernel, { reservedPorts, spec });
-    workers.push({ label: `worker ${w.name}`, stop: () => handle.stop() });
+  try {
+    for (const [i, w] of declared.entries()) {
+      const reservedPorts = new Set(declared.slice(i + 1).flatMap(declaredMockPorts));
+      const handle = await runWorker(dir, w, kernel, { reservedPorts, spec });
+      workers.push({ label: `worker ${w.name}`, stop: () => handle.stop() });
+    }
+  } finally {
+    releaseUnreachableReports(kernel);
   }
 
   const apps: Stoppable[] = [];
@@ -184,12 +201,25 @@ async function runTarget(
       }
 
       case 'dashboard': {
-        const dashboardDir = findDashboardDir(dir);
+        const dashboardDir = findDashboardDir(dir, name);
         if (!dashboardDir) {
+          if (name !== undefined) {
+            const known = dashboardNames(dir).join(', ') || '(none)';
+            die(
+              `No dashboard named "${name}" under ${resolve(dir, DIRS.apps)}. Known dashboards: ${known}. ` +
+                `Scaffold it with ${theme.cmd(`mdk create dashboard ${name}`)}`,
+            );
+          }
           die(
             `No dashboard app found under ${resolve(dir)}. Scaffold one first: ${theme.cmd('mdk create dashboard')}`,
           );
         }
+        // A project can hold several dashboards, and with no name one of them
+        // is picked by convention — so say which, rather than leave the user to
+        // guess from the dev server's output.
+        process.stderr.write(
+          `${theme.muted('Dashboard:')} ${relative(resolve(dir), dashboardDir) || dashboardDir}\n`,
+        );
         // Installed apps are found here, from mdk.yaml, and handed to the
         // dashboard: it serves their UIs itself, so no Gateway is involved.
         const apps = describeDashboardApps(dir, spec.spec.apps ?? []);
@@ -200,11 +230,12 @@ async function runTarget(
         process.stderr.write(
           `\n${theme.ok('Dashboard running.')} ${theme.muted('Press Ctrl+C to stop.')}\n`,
         );
+        void handle.crashed.then((how) => die(`The dashboard dev server exited with ${how}.`));
         return [{ label: 'dashboard', stop: () => handle.stop() }];
       }
     }
   } catch (error) {
-    die(error instanceof Error ? error.message : String(error));
+    die(failureText(error));
   }
 }
 
@@ -213,7 +244,7 @@ export function registerRun(program: Command): void {
   program
     .command('run')
     .argument('[target]', `What to start: ${TARGETS.join(' | ')} (default: all)`)
-    .argument('[name]', 'The worker or app to start (worker and app targets only)')
+    .argument('[name]', `The worker, app or dashboard to start (${andList(NAMED_TARGETS)} targets only)`)
     .summary('Start the stack, or one component of it')
     .description(
       'Start the Kernel, workers, app runtimes and Gateway from mdk.yaml (target all), or one component. ' +
@@ -224,7 +255,14 @@ export function registerRun(program: Command): void {
     .option('--allow-write', 'mcp: expose write tools (hidden by default; or set spec.mcp.allowWrite)', false)
     .addHelpText(
       'after',
-      examples('mdk run', 'mdk run kernel', 'mdk run worker rig', 'mdk run app ops-center', 'mdk run gateway --dir ./my-stack'),
+      examples(
+        'mdk run',
+        'mdk run kernel',
+        'mdk run worker rig',
+        'mdk run app ops-center',
+        'mdk run dashboard ops-ui',
+        'mdk run gateway --dir ./my-stack',
+      ),
     )
     .action(async (target: string | undefined, name: string | undefined, opts: RunOptions) => {
       if (opts.detach) {
@@ -237,8 +275,19 @@ export function registerRun(program: Command): void {
 
       const resolvedTarget = (target as RunTarget | undefined) ?? 'all';
       if (name !== undefined && !NAMED_TARGETS.includes(resolvedTarget)) {
-        die(`\`mdk run ${resolvedTarget}\` takes no name (got "${name}"); only worker and app do.`);
+        die(`\`mdk run ${resolvedTarget}\` takes no name (got "${name}"); only ${andList(NAMED_TARGETS)} do.`);
       }
+      // A dashboard name becomes a path segment under apps/ (unlike a worker or
+      // app name, which is looked up in mdk.yaml), so it is checked here,
+      // before it can reach a join.
+      if (resolvedTarget === 'dashboard' && name !== undefined && !isValidName(name)) {
+        die(`Invalid dashboard name "${name}". Use lowercase letters, digits, '.', '_' or '-'.`);
+      }
+
+      // The runtime packages declare `engines.node >=24`; say so up front rather
+      // than through an obscure crash in a component once it is booting.
+      const nodeWarning = nodeVersionWarning('the stack may fail to start');
+      if (nodeWarning) process.stderr.write(`${theme.warn('warning')}: ${nodeWarning}\n`);
 
       const spec = loadSpecOrDie(opts.dir);
 

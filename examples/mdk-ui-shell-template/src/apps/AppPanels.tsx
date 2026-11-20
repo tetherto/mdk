@@ -17,6 +17,9 @@ export const AppPanels = ({ slot }: { slot: MdkAppPanelSlot }) => {
       {failures.length > 0 && (
         <CoreAlert
           className="mdk-ui-shell-app-panels__notice"
+          // Mounted with the slot on every page that has panels, so announce it politely
+          // rather than interrupting the screen reader on each navigation.
+          role="status"
           type="warning"
           showIcon
           title={`${failures.length} installed app${failures.length === 1 ? '' : 's'} could not be loaded`}

@@ -4,7 +4,7 @@
 
 The monorepo builds on contracts that already ship:
 
-- **Workers** ship [`mdk-contract.json`](../../../backend/workers/miners/avalon/plugin/mdk-contract.json) per package,
+- **Workers** ship [`mdk-contract.json`](../../../backend/workers/miners/avalon/mdk-contract.json) per package,
 validated against [`mdk-contract.schema.json`](../../../backend/core/mdk-worker/mdk-contract.schema.json), vendored in this repo.
 The contract carries metadata, telemetry, commands, health, and errors — programmatic contract + AI reasoning context in one file.
 - **UI** components carry JSDoc tags (`@tier`, `@category`, `@domain`, `@kernelCapability`); the registry generator (`ui/packages/react-devkit/scripts/generate-registry.mts`)
@@ -82,7 +82,7 @@ default is just an entry in `metadata.modelsSupported[]`.
 
 ## QA gates
 
-Suggested CI checks that would make the IA self-enforcing. **Most are not wired today** (`check:agent-ready` is the exception) **and none are prerequisites for the BE or FE port.** Engineering decides whether to adopt each remaining gate per-team; for any gate not adopted, docs maintainers absorb the upkeep manually (each section below names the fallback). The constraint surface stays in [`mdk-contract.schema.json`](../../../backend/core/mdk-worker/mdk-contract.schema.json) for Workers and the UI registry generator for components, whether or not these gates land.
+Suggested CI checks that would make the IA self-enforcing. **Most are not wired today** (`check:agent-ready` and `check:plugin-manifest` are the exceptions) **and none are prerequisites for the BE or FE port.** Engineering decides whether to adopt each remaining gate per-team; for any gate not adopted, docs maintainers absorb the upkeep manually (each section below names the fallback). The constraint surface stays in [`mdk-contract.schema.json`](../../../backend/core/mdk-worker/mdk-contract.schema.json) for Workers and the UI registry generator for components, whether or not these gates land.
 
 ### `check:contract`
 
@@ -140,6 +140,8 @@ internal-only). Without this gate, a new slug added without a comment is silentl
 
 **Ownership:** this gate is docs-side and has no engineering dependency — docs maintainers can wire it whenever there's appetite for the work.
 
+What a routing comment *points at* is already checked: `npm run link-check` resolves every `docs@tether.io: … → https://github.com/tetherto/mdk/blob/main/<path>` against the local tree and [fails on a path or fragment that does not exist](linters.md#routing-comments). This gate is about the comment being *present*, which that check does not cover.
+
 ### `check:integrations-fresh`
 
 > Implemented. [`backend/workers/scripts/generate-catalogue.js`](../../../backend/workers/scripts/generate-catalogue.js)
@@ -175,21 +177,31 @@ stay under [`maintainers/`](./README.md) and never graduate to user-facing `docs
 
 ### `check:plugin-manifest`
 
-There is no `mdk-plugin.schema.json` today. The manifest format is enforced imperatively by `_validateManifest` in
-[`backend/core/app-runtime/lib/plugin-loader.js`](../../../backend/core/app-runtime/lib/plugin-loader.js) and documented
-by example (the shipping manifests) and by the loader rather than as a generated field table.
+Validates every tracked `mdk-plugin.json` against [`mdk-plugin.schema.json`](../../../backend/core/app-runtime/mdk-plugin.schema.json),
+the route-table schema the app runtime owns and publishes. Wired as the **🛣️ Route-table schema** job in
+[`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml), which also checks that the copy bundled into the `mdk-app-routes`
+skill is byte-identical to the source. Run it locally with `npm run check:plugin-manifest`.
 
-A machine-readable schema would enable:
+The schema has the Worker contract's tiers: its base rules reject only what `_validateManifest` in
+[`backend/core/app-runtime/lib/plugin-loader.js`](../../../backend/core/app-runtime/lib/plugin-loader.js) rejects, so it never narrows
+what the loader accepts, and its rules for the OpenAPI-shaped form are errors only in a table that declares `routeTableVersion`.
+The loader stays the authoritative validator at startup, and keeps the rules the schema cannot express.
 
-1. **Generated field-table docs**: the manifest format section in the [Gateway apps guide](../../guides/gateway/apps.md)
-   could be generated from the schema the same way route tables are generated from manifests
-2. **Well-formedness validation (`check:plugin-manifest`)**: a CI gate that validates every `mdk-plugin.json` in the repo against
-   the schema, catching malformed manifests before they reach the loader at startup
+The schema drives:
 
-This is a docs-maintainer recommendation, not currently on the engineering roadmap. Until the schema exists, the manifest format
-remains documented by example and the loader is the authoritative validator.
+1. **Generated field-table docs**: the [route-table field reference](../../../backend/core/app-runtime/docs/route-table-fields.md),
+   which the [Gateway apps guide](../../guides/gateway/apps.md) links to instead of describing the fields by example
+2. **Generated HTTP references**: `npm run generate:api-reference`, registered in
+   [`regenerate-docs.mjs`](../../scripts/regenerate-docs.mjs), writes `http-api.md` and `openapi.json` for:
+   - the Gateway, from the route objects it registers;
+   - each app listed in [`docs/api-reference.config.json`](../../api-reference.config.json). Today that is only the mvp-site
+     example's `site` app.
 
-**If not adopted:** docs maintainers keep the manifest format section in the README in step with `_validateManifest` manually.
+   Apps are built outside this repository, and this repository does not document them. A builder may generate a reference for
+   their app in its own repository: every app declares its routes in a route table, the declaration the Gateway registers them
+   from, so app-runtime's `routeTableToOpenApi` and `renderReference` can convert it. The page is only as complete as the table:
+   a route without the OpenAPI-shaped `http` form, or without a description, shows "Not declared". An undescribed operation is
+   listed in its page's declaration gaps, and `mdk validate app` warns about it per route
 
 ### `check:tutorial-commands-fresh`
 
@@ -200,7 +212,7 @@ hardcoding a command list again — the mechanism (diff a CI-run `--help` output
 
 ### Combined effect
 
-Wired, each gate closes one drift path, named in its section above: contracts parse against the schema (`check:contract`), UI exports carry their JSDoc and prose (`check:agent-ready`), the overlay tracks what ships (`check:facets-fresh`), cross-references carry port hints (`check:port-signals`), the integration catalogue tracks shipping Workers (`check:integrations-fresh`), every `mdk-plugin.json` is well-formed (`check:plugin-manifest`), and tutorial command lists track the source (`check:tutorial-commands-fresh`).
+Wired, each gate closes one drift path, named in its section above: contracts parse against the schema (`check:contract`), UI exports carry their JSDoc and prose (`check:agent-ready`), the overlay tracks what ships (`check:facets-fresh`), cross-references carry port hints (`check:port-signals`), the integration catalogue tracks shipping Workers (`check:integrations-fresh`), every `mdk-plugin.json` conforms to the route-table schema (`check:plugin-manifest`), and tutorial command lists track the source (`check:tutorial-commands-fresh`).
 
 Unwired, maintainers chase that drift by hand: the IA still describes the shape, only enforcement is missing. The constraint surface stays in the schema and JSDoc validator; the docs layer stays an overlay, never a gatekeeper.
 

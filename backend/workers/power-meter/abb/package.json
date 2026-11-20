@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker-abb",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "private": true,
   "description": "PowerMeter ABB",
   "keywords": [
@@ -12,8 +12,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "lint": "standard",
-    "lint:fix": "standard --fix",
+    "lint": "bfx-lint-js .",
+    "lint:fix": "bfx-lint-js . --fix",
     "mock": "node mock/server.js --type",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
     "test:unit": "brittle tests/unit/*.js",
@@ -26,10 +26,10 @@
     "@tetherto/svc-facs-modbus": "^0.1.1"
   },
   "devDependencies": {
-    "brittle": "3.16.3",
-    "debug": "4.4.1",
+    "brittle": "3.18.0",
+    "debug": "4.4.3",
     "modbus-stream": "0.46.0",
-    "standard": "17.1.2",
+    "@bitfinex/lint-js": "^1.0.0",
     "uuid": "14.0.0",
     "yargs": "17.7.2"
   },

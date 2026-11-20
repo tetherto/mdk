@@ -22,7 +22,9 @@ talking to Kernel: device commands, status queries and telemetry pulls. Use
 Provision devices on a running Worker (`registerThing`, `updateThing`, `forgetThings`) through the Kernel's governed
 [write actions](#write-action-methods): `pushAction` with the Worker's `workerId` in `params[0]`. Read a device's history
 (`logs`, `historical_logs`) with [`pullTelemetry`](#pulltelemetrydeviceid-querytype--promiseobject), which the Kernel routes to
-the Worker that owns the device.
+the Worker that owns the device and which answers for that device; read a Worker's own records (its thing list, a `stat-*`
+series) with [`pullWorkerQuery`](#pullworkerquery-workers-type-params---promise-workers-errors-), which the Kernel checks
+on every device of the Worker.
 
 > [!CAUTION]
 > Provisioning actions and history query types belong to the deprecated
@@ -81,8 +83,8 @@ failed connect resets the memo so the next request retries. `connect()` is optio
 tears the connection down and lets a later call reconnect. There is no background reconnect loop and no backoff timer:
 recovery is always driven by the next caller-initiated request.
 
-| Argument | Status | Type | Default | Description |
-|--------|--------|------|---------|-------------|
+| Argument               | Status                              | Type               | Default | Description |
+|------------------------|-------------------------------------|--------------------|---------|-------------|
 | `config.kernelKey` | Required unless `opts.transport` is set | `string \| Buffer` | None | The Kernel listener's public key |
 | `config.kernelKeyPair` | Optional | `{ publicKey, secretKey } \| () => keyPair` | None | DHT keypair the client dials with, so the [Kernel allowlist](../kernel/README.md#transports) can name it; without it the caller key is random per process |
 | `config.kernelBootstrap` | Optional | `array` | None | HyperDHT bootstrap list for the client's DHT node (a [private DHT](../../../docs/guides/deployment/private-dht.md)) |
@@ -118,8 +120,8 @@ but the caller owns the lifecycle — call `connect()` before the first request.
 lifecycle control (an up-front warmup, a test transport) rather than [`createMdkClient`](#createmdkclientconfig-opts--auto-connecting-client)'s
 ambient-config, auto-connecting form.
 
-| Option | Status | Type | Default | Description |
-|--------|--------|------|---------|-------------|
+| Option      | Status                                  | Type     | Default | Description          |
+|-------------|-----------------------------------------|----------|---------|----------------------|
 | `opts.hrpc` | Required unless `opts.transport` is set | `object` | None | HRPC transport opts: `{ key, keyPair?, seed?, bootstrap?, dhtHost?, timeout?, dht?, rpc? }`. `dhtHost` is the interface the client's DHT node binds. `key` is the Kernel listener public key (hex string or Buffer). `keyPair` (a DHT keypair or a function returning one) pins the identity the client dials with, so the Kernel allowlist can name it. `timeout` is the default per-request timeout in ms (`30000`) |
 | `opts.transport` | Required unless `opts.hrpc` is set | `object` | None | Pre-built transport (`{ connect, close, request }`). Test seam — satisfies the `hrpc` requirement instead. |
 
@@ -133,11 +135,12 @@ Open the connection to Kernel. Required before any other method on a `createRawM
 client; optional on a `createMdkClient` client, which connects itself on first use — call it
 explicitly only for an up-front warmup.
 
-| Option | Status | Type | Default | Description |
-|--------|--------|------|---------|-------------|
-| `warmup` | Optional | `boolean` | `false` | Issue a best-effort `listWorkers()` after connecting to absorb the first-request DHT-route flake, so the first *real* request (including commands) is stable. Never throws — a failed warmup is swallowed. |
+| Option          | Status   | Type      | Default | Description                                    |
+|-----------------|----------|-----------|---------|------------------------------------------------|
+| `warmup`        | Optional | `boolean` | `false` | Issue a best-effort `listWorkers()` after connecting to absorb the first-request DHT-route flake, so the first *real* request (including commands) is stable. Never throws — a failed warmup is swallowed, so a `connect()` to a Kernel that is not running still resolves, having spent the warmup budget below. |
 | `warmupRetries` | Optional | `number` | `3` | Warmup attempts |
 | `warmupDelayMs` | Optional | `number` | `600` | Delay between warmup attempts |
+| `warmupTimeoutMs` | Optional | `number` | transport timeout (30 s) | Bounds each warmup attempt, so a Kernel that is not running costs about `warmupRetries` times this, plus the delays |
 
 `connect()` with no arguments behaves exactly as before (resolves once the transport connects; issues no request).
 
@@ -152,22 +155,26 @@ Returns a stable, shaped result for tooling.
 
 ```js
 const { workers, totalDevices } = await client.getStatus()
-// workers: [{ workerId, state, healthState, deviceIds, deviceCount, rpcKey }]
+// workers: [{ workerId, state, healthState, deviceIds, deviceCount, rpcKey, deviceFamily, brand }]
 ```
 
-| Option | Status | Type | Default | Description |
-|--------|--------|------|---------|-------------|
-| `retries` | Optional | `number` | `3` | Attempts before giving up |
-| `retryDelayMs` | Optional | `number` | `600` | Delay between attempts |
-| `timeoutMs` | Optional | `number` | `8000` | Per-attempt timeout; rejects with `ERR_MDK_STATUS_TIMEOUT` |
+| Option      | Status   | Type     | Default | Description               |
+|-------------|----------|----------|---------|---------------------------|
+| `retries`   | Optional | `number` | `3`     | Attempts before giving up |
+| `retryDelayMs` | Optional | `number` | `600` | Delay between attempts   |
+| `timeoutMs` | Optional | `number` | `8000`  | Per-attempt timeout; rejects with `ERR_MDK_STATUS_TIMEOUT` |
 
 #### `listWorkers()` → `Promise<{ workers }>`
 
-Raw `WORKER_LIST` response from the Kernel registry. Prefer `getStatus()` for the shaped, retry-wrapped form.
+Raw `WORKER_LIST` response from the Kernel registry. Prefer `getStatus()` for the shaped, retry-wrapped form. A row carries
+`rpcKey` only when the caller may `workers: read` that Worker. `deviceFamily` and `brand` are the Worker contract's
+`metadata.deviceFamily` and `metadata.brand` as declared (`miner`, `Whatsminer`), `null` until the Worker has reached `READY`
+once; they classify a Worker without addressing one of its devices, and `brandSlug(brand)` from `@tetherto/mdk-rbac` is the
+brand segment of its RBAC name.
 
 ```js
 const { workers } = await client.listWorkers()
-// workers: [{ workerId, state, deviceIds, healthState, rpcKey }]
+// workers: [{ workerId, state, deviceIds, healthState, rpcKey, deviceFamily, brand }]
 ```
 
 #### `waitForWorkers(opts?)` → `Promise<worker[]>`
@@ -175,8 +182,8 @@ const { workers } = await client.listWorkers()
 Poll `getStatus()` until `count` Workers are READY, then resolve the matching Workers. Out-of-process readiness wait for callers holding
 only the Kernel key (the in-process equivalent is `@tetherto/mdk-core`'s `waitForDiscovery`). Throws `ERR_MDK_WAIT_WORKERS_TIMEOUT` on timeout.
 
-| Option | Status | Type | Default | Description |
-|--------|--------|------|---------|-------------|
+| Option  | Status   | Type     | Default | Description |
+|---------|----------|----------|---------|-------------|
 | `count` | Optional | `number` | `1` | Number of READY Workers to wait for |
 | `requireDevices` | Optional | `boolean` | `true` | Only count Workers with ≥1 device |
 | `timeoutMs` | Optional | `number` | `30000` | Overall timeout |
@@ -187,11 +194,11 @@ only the Kernel key (the in-process equivalent is `@tetherto/mdk-core`'s `waitFo
 Poll until `deviceId` appears in the Kernel registry (optionally under a specific `workerId`). Used after provisioning to confirm the device synced.
 Throws `ERR_MDK_WAIT_DEVICE_TIMEOUT` on timeout.
 
-| Option | Status | Type | Default | Description |
-|--------|--------|------|---------|-------------|
-| `workerId` | Optional | `string` | `null` | Restrict the match to this Worker |
-| `timeoutMs` | Optional | `number` | `30000` | Overall timeout |
-| `intervalMs` | Optional | `number` | `1000` | Poll interval |
+| Option       | Status   | Type     | Default | Description                       |
+|--------------|----------|----------|---------|-----------------------------------|
+| `workerId`   | Optional | `string` | `null`  | Restrict the match to this Worker |
+| `timeoutMs`  | Optional | `number` | `30000` | Overall timeout                   |
+| `intervalMs` | Optional | `number` | `1000`  | Poll interval                     |
 
 #### `getCapabilities(deviceId)` → `Promise<{ capabilities }>`
 
@@ -199,28 +206,138 @@ Fetch the `mdk-contract.json` capabilities for a device as declared by its Worke
 
 #### `pullTelemetry(deviceId, queryType?)` → `Promise<object>`
 
-Pull telemetry from the Worker managing the given device. `queryType` defaults to `'metrics'`, and may be a string or a full query
-object (`{ type, key, tag, start, end, limit, ... }`).
+Pull telemetry from the Worker managing the given device. `queryType` defaults to `'metrics'`, and may be
+a string or a full query object (`{ type, key, tag, start, end, limit, ... }`).
 
 Available query types:
 
-| Type | Returns |
-|------|---------|
-| `metrics` | Live hashrate, power, temperature, fan speeds |
-| `list` | All registered devices |
-| `count` | Device count |
-| `logs` | Recent log entries |
-| `logs_multi` | Logs for multiple devices |
-| `historical_logs` | Historical log query |
-| `settings` | Worker settings |
-| `config` | Worker config |
-| `thing_config` | Individual device config |
-| `stats` | Aggregated statistics |
-| `ext_data` | Extended device data |
+| Type          | Returns                                       |
+|---------------|-----------------------------------------------|
+| `metrics`     | Live hashrate, power, temperature, fan speeds |
+| `snapshot`    | The latest stored point for the device, or a series with `from`/`to`/`granularity` (polling Workers only) |
+| `aggregate`   | An op spec run over the device's latest stored point (polling Workers only) |
+| `list`        | Device entries                                |
+| `count`       | Device count                                  |
+| `logs`        | Recent log entries                            |
+| `logs_multi`  | Log entries for one or more devices           |
+| `historical_logs` | Historical log entries                    |
+| `settings`    | Worker settings                               |
+| `config`      | Worker config                                 |
+| `thing_config` | Individual device config                     |
+| `stats`       | Aggregated statistics                         |
+| `ext_data`    | Pool Worker extended data                     |
+
+The types from `list` on are served by the Worker's [store services](../mdk-worker/README.md#store-services), where it
+runs them; those services set what a read addressed to one device returns and where it reaches past that device. Use
+[`pullWorkerQuery`](#pullworkerquery-workers-type-params---promise-workers-errors-) to read across a Worker's devices.
+
+A reply is the Worker's payload, or `{ error }` when the Kernel has nothing to read: `ERR_DEVICE_NOT_FOUND` (no Worker owns
+the device), `ERR_WORKER_NOT_ROUTABLE` (its Worker has not reconnected since the Kernel started) or `ERR_WORKER_UNREACHABLE`
+(the Worker did not answer in the Kernel's time). A Worker that answers but cannot read the device replies
+`{ deviceId, error, timestamp }`. None of these throw, so check `res.error` before the field you expect. A Worker that hangs
+usually shows as `ERR_MDK_REQUEST_TIMEOUT` thrown by the client, whose own timeout runs out first. The Kernel's
+[per-device reads](../kernel/README.md#per-device-reads) list every case.
+
+#### `pullSnapshot({ workers, metrics?, from?, to?, granularity? })` → `Promise<{ devices, snapshotTs, errors? }>`
+
+Read the stored telemetry of every listed Worker in one Kernel round-trip, with no device call. Kernel fans the query out
+to `workers` and merges `devices` by `deviceId`; `snapshotTs` is the newest point returned. A Worker that could not
+answer is reported under `errors[workerId]` while the others are still returned ([fleet-read errors](#fleet-read-errors)).
+Only Workers that poll (`telemetryPollIntervalMs` in the contract or in `mdk.yaml` config) hold a store; the
+rest answer `ERR_TELEMETRY_STORE_DISABLED: snapshot` under `errors`.
+
+```js
+const { workers } = await client.listWorkers()
+const snap = await client.pullSnapshot({ workers: workers.map((w) => w.workerId), metrics: ['hashrate_rt'] })
+// snap.devices['wm-001'].metrics.hashrate_rt.value, snap.devices['wm-001'].ts, snap.snapshotTs
+
+const series = await client.pullSnapshot({ workers: ['wm-rack-1'], metrics: ['hashrate_rt'], granularity: '1m', from: Date.now() - 3600000 })
+// series.devices['wm-001'].metrics.hashrate_rt.points: [{ ts, value }, ...], one reading per minute
+```
+
+| Field     | Required | Type       | Description                                           |
+|-----------|----------|------------|-------------------------------------------------------|
+| `workers` | Yes      | `string[]` | Worker ids to read; `ERR_WORKERS_REQUIRED` when empty |
+| `metrics` | No       | `string[]` | Metric names to return; all when omitted |
+| `from`    | No       | `number`   | Start of a range (ms); switches each metric from `{ value }` to `{ points }` |
+| `to`      | No       | `number`   | End of the range (ms), default now |
+| `granularity` | No       | `string \| number` | One reading per step (`'5s'`, `'1m'`, `'1h'`, `'1d'` or ms), the stored reading nearest to each step |
+
+A point the Worker's retention rolled up carries `n`, the readings it stands for; raw points have no `n`. A Worker
+whose config sets `telemetryArchive: true` keeps the raw points it rolled up: `pullTelemetry(deviceId, { type: 'archive' })`
+lists its day files and `sendCommand(deviceId, 'restoreTelemetry', { from, to })` puts a range back at full resolution,
+after which a ranged `pullSnapshot` returns it raw again (see the
+[Worker Runtime's archive](../mdk-worker/README.md#archive)).
+
+#### `pullAggregate({ workers, ops })` → `Promise<{ ops, deviceCount, errors? }>`
+
+Run an op spec over the latest stored point of every device on the listed Workers and get one result per op. Each
+Worker validates the spec against its own contract and computes a partial; Kernel merges the partials and tallies, so
+an `avg` is the fleet average, not an average of averages. `ops` is keyed by result name:
+`{ op, src?, group?, filter?: { src, eq }, srcs?, objOps?, nestedOps? }`, where `src` and `group` are
+`metrics.<declared name>`, `info.<label>` (the device's `info` block from `mdk.yaml` `config.devices[].info`, such as
+`info.container`) or `deviceId`. `deviceCount` is the number of devices whose stored
+point holds a reading; a Worker whose partial is missing or malformed is reported under `errors` as
+`ERR_AGGREGATE_PARTIAL_MISSING` or `ERR_AGGREGATE_PARTIAL_INVALID` and left out, as is one that could not answer
+([fleet-read errors](#fleet-read-errors)), and when no Worker answered `ops` is `{}` rather than a tally of nothing. Both reads need `devices` `read` on every device of
+the listed Workers. The ops and the types each accepts are listed in the
+[Worker Runtime's telemetry collector](../mdk-worker/README.md#telemetry-collector).
+
+```js
+const agg = await client.pullAggregate({
+  workers: workers.map((w) => w.workerId),
+  ops: {
+    hashrate_total: { op: 'sum', src: 'metrics.hashrate_rt' },
+    hashrate_avg: { op: 'avg', src: 'metrics.hashrate_rt' },
+    mining: { op: 'cnt', filter: { src: 'metrics.status', eq: 'mining' } },
+    by_status: { op: 'group_sum', src: 'metrics.power', group: 'metrics.status' }
+  }
+})
+// agg.ops.hashrate_total, agg.ops.by_status.mining, agg.deviceCount
+```
+
+#### `pullWorkerQuery({ workers, type, ...params })` → `Promise<{ workers, errors? }>`
+
+Run one query on each listed Worker with no device addressed, and get each Worker's answer as it returned it:
+`{ workers: { [workerId]: payload }, errors? }`. This is how an app reads a Worker's own records rather than one
+device's: the store builtins of a Worker on the [Worker Runtime's store services](../mdk-worker/README.md#store-services)
+(`list` with `status`, `count`, `logs` on a `stat-*` key, `historical_logs`, `stats`, `settings`, `ext_data`), which
+addressed to a device answer for that device only. The Kernel checks `devices` `read` on every device of each listed
+Worker, as for `pullSnapshot`; a Worker with no devices resolves to no device name, so only an unscoped rule covers
+it. A Worker that could not answer is under `errors` with its code while the others are still returned
+([fleet-read errors](#fleet-read-errors)). `snapshot` and `aggregate` are merged instead: use `pullSnapshot` and `pullAggregate`.
+
+```js
+const { workers: things, errors } = await client.pullWorkerQuery({ workers: ['container-a'], type: 'list', status: true, limit: 200 })
+// things['container-a'].things: [{ id, code, type, tags, info, comments, address, port, last }], errors?.['container-a']
+
+const history = await client.pullWorkerQuery({ workers: ['container-a'], type: 'logs', key: 'stat-1D', tag: 't-container', start, end })
+// history.workers['container-a'].logs: the Worker's retained series, readable with no device to address
+```
+
+#### Fleet-read errors
+
+`pullSnapshot`, `pullAggregate` and `pullWorkerQuery` share one fan-out in the Kernel's
+[`TelemetryCollector`](../kernel/README.md#telemetrycollector), so they report a Worker that could not answer the same way:
+under `errors`, keyed by Worker ID, while the other Workers' data still comes back. `errors` is omitted when there are no
+per-Worker errors; a Worker that answers with a refusal, or with no payload at all, counts as one. What else counts is per
+method: `pullAggregate` reports a missing or malformed partial, while `pullSnapshot` skips an answer with no `devices`
+without an error, so an absent `errors` does not prove every Worker contributed. Per-Worker failures the Kernel detects
+come back under `errors` and never make the call throw. The request as a whole can still reject, on an authorization
+refusal (`ERR_KERNEL_ACTION_FORBIDDEN`, `ERR_KERNEL_TOKEN_*`) or the client's own timeout, and a malformed call answers a
+top-level `{ error }` (`ERR_WORKERS_REQUIRED`, `ERR_AGGREGATE_SPEC_INVALID`) with no `errors` at all.
+
+The codes are the Kernel's: its [error table](../kernel/README.md#errors) lists each with its fix, and its
+[`TelemetryCollector`](../kernel/README.md#telemetrycollector) section says which Worker states a fleet read skips and how a
+Worker's own refusal, as a bare `{ error }` reply or an `error` in its payload, is kept as the Worker wrote it.
+
+A Worker that hangs usually shows as `ERR_MDK_REQUEST_TIMEOUT` thrown by the client, whose own timeout runs out first.
+`pullAggregate` adds its partial checks, listed with the method.
 
 #### `pullState(deviceId)` → `Promise<object>`
 
-Fetch a snapshot of the Worker's state machine status for the given device.
+Fetch a snapshot of the Worker's state machine status for the given device. Failures answer `{ error }` as
+[`pullTelemetry`](#pulltelemetrydeviceid-querytype--promiseobject) does.
 
 #### `sendCommand(deviceId, command, params?)` → `Promise<object>`
 
@@ -237,11 +354,11 @@ await client.sendCommand('wm-001', 'setupPools', {
 
 **Return value:** the Kernel's acceptance, not the command's outcome. Read the outcome with `getCommandStatus`.
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `commandId` | `string` | Correlation ID generated by Kernel. Pass it to `getCommandStatus`. |
-| `status` | `string` | `'QUEUED'` when Kernel accepted the command, `'REJECTED'` when it did not |
-| `error` | `string` | Why the command was rejected (present when `status` is `'REJECTED'`): an undeclared command (`ERR_COMMAND_NOT_IN_CAPABILITIES`) or params that break the contract's rules (`ERR_PARAM_*`) |
+| Field       | Type     | Description                                                              |
+| ----------- | -------- | ------------------------------------------------------------------------ |
+| `commandId` | `string` | Correlation ID generated by Kernel. Pass it to `getCommandStatus`        |
+| `status`    | `string` | `'QUEUED'` when Kernel accepted the command, `'REJECTED'` when it did not |
+| `error`     | `string` | Why the command was rejected (present when `status` is `'REJECTED'`): an undeclared command (`ERR_COMMAND_NOT_IN_CAPABILITIES`) or params that break the contract's rules (`ERR_PARAM_*`)         |
 
 ```js
 const res = await client.sendCommand('wm-001', 'setPowerMode', { mode: 'low' })
@@ -253,11 +370,11 @@ const res = await client.sendCommand('wm-001', 'setPowerMode', { mode: 'low' })
 
 Read a command's state from Kernel while it runs and for `kernel.commandResultTtlMs` (default 24 h) after it settles.
 
-| Field | Type | Description |
-| --- | --- | --- |
+| Field    | Type     | Description                                                                 |
+| -------- | -------- | --------------------------------------------------------------------------- |
 | `status` | `string` | `QUEUED`, `DISPATCHED`, `EXECUTING`, `SUCCESS`, `FAILED` or `TIMEOUT` (sent, outcome unconfirmed) |
 | `result` | `object \| null` | The Worker's result on `SUCCESS` |
-| `error` | `string \| null` | Why it failed or timed out |
+| `error`  | `string \| null` | Why it failed or timed out |
 | `verification` | `object \| null` | Device-state readback: `{ state, telemetry, expected, observed, at }`, `state` one of `PENDING`, `VERIFIED`, `UNVERIFIED`, `NOT_DECLARED` |
 
 `SUCCESS` means the Worker's handler returned; only `verification.state === 'VERIFIED'` means telemetry shows the device in the requested
@@ -284,8 +401,11 @@ const { entries } = await client.getCommandLog({ limit: 20 })
 #### `getWorkerKey(workerId)` → `Promise<string | null>`
 
 Resolve a Worker's RPC public key (hex) from the Kernel registry (the Kernel learned it via discovery), or `null` if the Worker isn't
-registered. This is a registry lookup for identifying and correlating Workers. It is not a way to reach one: the client has no
-Worker-direct path, and every device call goes through the Kernel.
+registered or the caller may not `workers: read` it. This is a registry lookup for identifying and correlating Workers: matching a
+`workerId` against the key the Kernel [bound it to](../kernel/README.md#worker-bindings) when a registration is refused with
+`ERR_WORKER_KEY_CONFLICT`, or against a `discovery.workerKeys` allowlist entry. It is not a way to reach one: the client has no
+Worker-direct path, and every device call goes through the Kernel. The `null` does not say which case applies; `listWorkers()`
+does, since a Worker the caller may not read is still listed, without its `rpcKey`.
 
 #### `terminateWorker(workerId)` → `Promise<object>`
 
@@ -306,13 +426,13 @@ Apply `spec.rbac` (`null` for no policy, which denies everything). Resolves `{ c
 These call the Kernel's [token issuer](../identity/README.md). Each sign-in resolves
 `{ tokenType, accessToken, expiresIn, refreshToken, refreshExpiresIn }`, or `{ error }` with an `ERR_IDENTITY_*` code.
 
-| Method                                    | Sends          | Does                                                                                   |
-| ----------------------------------------- | -------------- | -------------------------------------------------------------------------------------- |
-| `login(username, password)`               | `auth.login`   | Password sign-in for a user                                                            |
-| `refreshToken(refreshToken)`              | `auth.refresh` | Trades a refresh token for new tokens; the old one is used up                          |
-| `serviceAccountToken(assertion, { bind })` | `auth.token`  | Service-account sign-in; tokens bind to this client's key unless `bind: false`         |
-| `logout(refreshToken)`                    | `auth.logout`  | Ends the session: `{ revoked }`                                                        |
-| `getJwks()`                               | `auth.jwks`    | The issuer's public keys for verifying access tokens: `{ keys }`                       |
+| Method                      | Sends          | Does                                               |
+| --------------------------- | -------------- | -------------------------------------------------- |
+| `login(username, password)` | `auth.login`   | Password sign-in for a user                        |
+| `refreshToken(refreshToken)` | `auth.refresh` | Trades a refresh token for new tokens; the old one is used up |
+| `serviceAccountToken(assertion, { bind })` | `auth.token`  | Service-account sign-in; tokens bind to this client's key unless `bind: false`  |
+| `logout(refreshToken)`     | `auth.logout`  | Ends the session: `{ revoked }`                     |
+| `getJwks()`                | `auth.jwks`    | The issuer's public keys for verifying access tokens: `{ keys }` |
 
 ### Identity administration methods
 
@@ -338,11 +458,12 @@ layer — the caller is responsible for its own access control.
 
 #### `pushAction(opts)` → `Promise<object>`
 
-Stage a single write action for approval. `opts`: `{ query, action, params, voter, authPerms, batchActionUID }`.
+Stage a single write action for approval. `opts`: `{ query, action, params, voter, batchActionUID }`. Kernel checks the caller's
+`spec.rbac` rules on every device the push resolves to.
 
 #### `pushActionsBatch(opts)` → `Promise<object>`
 
-Stage a batch of write actions in one envelope. `opts`: `{ batchActionsPayload, voter, authPerms, batchActionUID, suffix }`.
+Stage a batch of write actions in one envelope. `opts`: `{ batchActionsPayload, voter, batchActionUID, suffix }`.
 
 #### `getAction({ id, type })` → `Promise<object>`
 
@@ -358,8 +479,8 @@ Query staged actions with MongoDB-style filter expressions. `opts`: `{ queries, 
 
 #### `voteAction(opts)` → `Promise<1>`
 
-Cast an approve or reject vote on a staged action. `opts`: `{ id, voter, approve, authPerms }`. Kernel checks the required
-device-family permissions (`miner:w`, `container:w`, etc.) from `authPerms` before recording the vote.
+Cast an approve or reject vote on a staged action. `opts`: `{ id, voter, approve }`. Kernel checks the voter's `devices: write` rule on
+every device of the stored action before recording the vote.
 
 #### `cancelActionsBatch(opts)` → `Promise<object[]>`
 
@@ -367,8 +488,12 @@ Cancel one or more staged actions by ids. `opts`: `{ ids, voter }`.
 
 ## Errors
 
-| Code | Fires when | Fix |
-| --- | --- | --- |
+These are the codes the client raises itself. A code in a reply's `error` or `errors`, or a Kernel refusal the client throws
+(such as `ERR_KERNEL_ACTION_FORBIDDEN`), comes from the [Kernel](../kernel/README.md#errors) or the
+[Worker Runtime](../mdk-worker/README.md#errors).
+
+| Code                         | Fires when                          | Fix                          |
+| ---------------------------- | ----------------------------------- | ---------------------------- |
 | `ERR_MDK_CLIENT_UNAVAILABLE` | `createMdkClient`'s `config.kernelKey` is missing, connecting failed, or a request could not reach the Kernel | Supply `config.kernelKey` (or `opts.transport`), or check Kernel connectivity |
 | `ERR_MDK_CLIENT_TRANSPORT_REQUIRED` | `createRawMdkClient` called with neither `opts.hrpc` nor `opts.transport` | Pass one of them |
 | `ERR_MDK_CLIENT_HRPC_KEY_REQUIRED` | `createRawMdkClient({ hrpc: {...} })` called without `hrpc.key` | Pass the Kernel's public key as `hrpc.key` |
@@ -391,11 +516,13 @@ options argument:
 ```js
 await mdkClient.listWorkers({ timeout: 5000 })
 await mdkClient.sendCommand('wm-001', 'reboot', {}, { timeout: 60000 })
-await mdkClient.pushAction({ query, action, params, voter, authPerms }, { timeout: 10000 })
+await mdkClient.pushAction({ query, action, params, voter }, { timeout: 10000 })
 ```
 
 A request that runs out of time rejects with `ERR_MDK_REQUEST_TIMEOUT`. `getStatus({ timeoutMs })` passes its
-per-attempt timeout to the request as well.
+per-attempt timeout to the request as well. A client that signs in with a credential first waits for its access token,
+also for at most `timeout`: a sign-in in progress is shared by every request that needs it, so it keeps the default
+timeout, and a request with a shorter one stops waiting on it without cancelling it.
 
 ## Transport details
 
@@ -418,15 +545,16 @@ the device state back. These command records are separate from the transport: HR
 
 ## Use in an app
 
-Every app builds its own client from its own context, once per app, in a `lib/client.js` every
-controller in the app requires, as the shipped [`demo` app](https://github.com/tetherto/mdk-app-demo/blob/main/lib/client.js) does:
+An app does not build a client. Its [app runtime](../app-runtime/README.md) builds one, signed in as the app's service
+account (`app:<name>`), and hands it to every controller as `config.mdkClient`; Kernel fields are stripped from the app's
+config, so `createMdkClient(config)` inside an app has no `kernelKey` and fails every call. The scaffold's `lib/client.js`
+re-exports the runtime's client, and every controller in the app requires that module:
 
 ```js
-// lib/client.js
-const { createMdkClient } = require('@tetherto/mdk-client')
+// plugin/lib/client.js
 const { config } = require('@tetherto/mdk-gateway/plugin')
 
-module.exports = createMdkClient(config, { errorCode: 'ERR_KERNEL_CLIENT_NOT_CONNECTED' })
+module.exports = config.mdkClient
 ```
 
 For a custom Gateway or a standalone tool talking to Kernel outside a plugin, `@tetherto/mdk-client` is the package to use. Every
@@ -490,7 +618,7 @@ client/
 ## Next steps
 
 - [Run Kernel and the Gateway](../../../docs/guides/gateway/run.md) — Kernel must be running before `client.connect()` can succeed
-- [Understand how an app builds its own `mdk-client` and what the Gateway adds around it](../gateway/README.md#extend-the-gateway)
+- [Understand how an app's runtime hands it a `mdk-client` and what the Gateway adds around it](../gateway/README.md#extend-the-gateway)
 - [Understand the MDK Protocol and Kernel's role as the kernel](../../../docs/concepts/architecture.md)
 - [MVP site example](../../../examples/mvp-site/README.md) — see `createMdkClient` used end-to-end with Kernel and Workers
 - [`startGateway()` option reference](../mdk/README.md) — if you are wiring `mdk-client` into a custom Gateway

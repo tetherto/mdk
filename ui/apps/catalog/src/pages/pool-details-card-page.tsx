@@ -17,7 +17,7 @@ export const PoolDetailsCardPage = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">Pool Details Card</h2>
-      <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: '1fr', maxWidth: '600px' }}>
+      <div className="demo-section__stack-grid demo-section__stack-grid--narrow">
         <section>
           <h3>With Label</h3>
           <PoolDetailsCard label="Pool Information" details={mockPoolDetails} />

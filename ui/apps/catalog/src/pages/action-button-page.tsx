@@ -24,7 +24,7 @@ export const ActionButtonPage = (): JSX.Element => {
                     The restart feature will temporarily stop all running services. This may take a
                     few minutes to complete.
                   </p>
-                  <p style={{ marginTop: '0.75rem' }}>
+                  <p className="demo-section__mt-md">
                     Please ensure all pending tasks are saved before proceeding. Any unsaved changes
                     will be lost. This action requires confirmation.
                   </p>

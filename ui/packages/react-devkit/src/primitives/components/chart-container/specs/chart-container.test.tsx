@@ -27,9 +27,13 @@ vi.mock('@primitives/components/radio', () => ({
   RadioGroup: vi.fn(({ children }: { children: React.ReactNode }) => (
     <div data-testid="radio-group">{children}</div>
   )),
-  RadioCard: vi.fn(({ label, onClick }: { label: string; onClick: () => void }) => (
-    <button onClick={onClick}>{label}</button>
-  )),
+  RadioCard: vi.fn(
+    ({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) => (
+      <button onClick={onClick} disabled={disabled}>
+        {label}
+      </button>
+    ),
+  ),
 }))
 
 const defaultProps = {
@@ -132,6 +136,31 @@ describe('ChartContainer', () => {
       fireEvent.click(screen.getByText('1 H'))
 
       expect(onChange).toHaveBeenCalledWith('1h')
+    })
+
+    it("disables the option's button when the option is disabled", () => {
+      render(
+        <ChartContainer
+          {...defaultProps}
+          rangeSelector={{
+            ...rangeSelector,
+            options: [
+              { label: '5 Min', value: '5m' },
+              { label: '1 H', value: '1h', disabled: true },
+            ],
+          }}
+        />,
+      )
+
+      expect(screen.getByText('1 H')).toBeDisabled()
+      expect(screen.getByText('5 Min')).toBeEnabled()
+    })
+
+    it('leaves options enabled when none declares disabled', () => {
+      render(<ChartContainer {...defaultProps} rangeSelector={rangeSelector} />)
+
+      expect(screen.getByText('5 Min')).toBeEnabled()
+      expect(screen.getByText('1 H')).toBeEnabled()
     })
 
     it('does not render range selector when options is empty', () => {

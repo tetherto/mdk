@@ -79,8 +79,7 @@ test('action envelopes - validateFull accepts action.push payload', (t) => {
       query: { tags: { $in: ['miner'] } },
       action: 'reboot',
       params: [],
-      voter: 'user@example.com',
-      authPerms: ['miner:w']
+      voter: 'user@example.com'
     }
   })
 
@@ -102,8 +101,7 @@ test('action manager - pushAction returns errors when no write calls', async (t)
     query: { id: 'dev-1' },
     action: 'reboot',
     params: [],
-    voter: 'user@example.com',
-    authPerms: ['miner:w']
+    voter: 'user@example.com'
   })
 
   t.is(result.id, null)
@@ -119,7 +117,6 @@ test('action manager - pushAction submits action when calls exist', async (t) =>
     action: 'reboot',
     params: [{ mode: 'high' }],
     voter: 'user@example.com',
-    authPerms: ['miner:w'],
     batchActionUID: 'batch-1'
   })
 
@@ -135,7 +132,7 @@ test('action manager - pushAction submits action when calls exist', async (t) =>
 test('action manager - pushActionsBatch rejects invalid payload', async (t) => {
   const { manager } = createManager()
   await t.exception(
-    () => manager.pushActionsBatch({ batchActionsPayload: null, voter: 'user@example.com', authPerms: [] }),
+    () => manager.pushActionsBatch({ batchActionsPayload: null, voter: 'user@example.com' }),
     /ERR_PAYLOAD_INVALID/
   )
 })
@@ -148,7 +145,6 @@ test('action manager - pushActionsBatch applies shared batch metadata', async (t
       { query: { id: 'dev-2' }, action: 'reboot', params: [] }
     ],
     voter: 'user@example.com',
-    authPerms: ['miner:w'],
     batchActionUID: 'repair',
     suffix: 'site-a'
   })
@@ -186,35 +182,7 @@ test('action manager - getActionsBatch returns first matching lifecycle type', a
   t.is(results[1].type, 'voting')
 })
 
-test('action manager - voteAction checks required permissions', async (t) => {
-  const { manager } = createManager({
-    actionApprover: {
-      getAction: async () => ({
-        data: { payload: [[], {}, ['miner', 'container']] }
-      }),
-      voteAction: async () => {}
-    }
-  })
-
-  await t.exception(async () => {
-    await manager.voteAction({
-      id: 1,
-      voter: 'user@example.com',
-      approve: true,
-      authPerms: ['miner:r']
-    })
-  }, /ERR_ACTION_DENIED/)
-
-  const voted = await manager.voteAction({
-    id: 1,
-    voter: 'user@example.com',
-    approve: true,
-    authPerms: ['miner:w', 'container:w']
-  })
-  t.is(voted, 1)
-})
-
-test('action manager - with a device rule, a vote is checked against the stored targets, not authPerms', async (t) => {
+test('action manager - with a device rule, a vote is checked against the stored targets', async (t) => {
   const votes = []
   const { manager } = createManager({
     actionApprover: {
@@ -224,35 +192,36 @@ test('action manager - with a device rule, a vote is checked against the stored 
       voteAction: async (v) => { votes.push(v) }
     }
   })
-  const req = { id: 1, voter: 'app:ops', approve: true, authPerms: ['miner:w'] }
+  const req = { id: 1, voter: 'app:ops', approve: true }
 
   await t.exception(
     () => manager.voteAction(req, { canWrite: (id) => id === 'dev-1' }),
     /ERR_KERNEL_ACTION_FORBIDDEN: may not write dev-2/,
-    'self-asserted miner:w does not approve a device spec.rbac refuses'
+    'a device spec.rbac refuses blocks the vote'
   )
   t.is(votes.length, 0, 'the refused vote is not recorded')
 
-  t.is(await manager.voteAction({ ...req, authPerms: [] }, { canWrite: () => true }), 1, 'authPerms are not needed')
+  t.is(await manager.voteAction(req, { canWrite: () => true }), 1)
   t.is(votes.length, 1)
 })
 
-test('action manager - with a device rule, a push asks every family whatever authPerms says', async (t) => {
-  let asked
-  const { manager } = createManager({
-    actionCaller: {
-      getWriteCalls: async (_q, _a, _p, permissions) => {
-        asked = permissions
-        return { targets: { 'worker-1': { reqVotes: 1, calls: [{ id: 'dev-1' }] } }, requiredPerms: ['miner'] }
-      }
+test('action manager - in-process push and vote are not checked', async (t) => {
+  const votes = []
+  const { manager, pushed } = createManager({
+    actionApprover: {
+      getAction: async () => ({
+        data: { payload: [[], { 'worker-1': { calls: [{ id: 'dev-1' }] } }, ['miner']] }
+      }),
+      voteAction: async (v) => { votes.push(v) }
     }
   })
-  const req = { query: { id: 'dev-1' }, action: 'reboot', params: [], voter: 'app:ops', authPerms: ['miner:w'] }
 
-  await manager.pushAction(req, { canWrite: () => true })
-  t.is(asked, null, 'spec.rbac decides, on the calls that come back')
-  await manager.pushAction(req)
-  t.alike(asked, ['miner:w'], 'in-process: authPerms still pick the families')
+  const res = await manager.pushAction({ query: { id: 'dev-1' }, action: 'reboot', params: [], voter: 'v' })
+  t.is(res.id, 42)
+  t.is(pushed.length, 1)
+
+  t.is(await manager.voteAction({ id: 1, voter: 'v', approve: true }), 1)
+  t.is(votes.length, 1)
 })
 
 test('action manager - queryActions validates query list', async (t) => {
@@ -344,8 +313,7 @@ test('action manager - pushAction rejects when getWriteCalls returns no targets'
     query: { id: 'missing' },
     action: 'reboot',
     params: [],
-    voter: 'user@example.com',
-    authPerms: ['miner:w']
+    voter: 'user@example.com'
   })
 
   t.is(result.id, null)
@@ -370,8 +338,7 @@ test('action manager - pushAction succeeds with partial worker failures', async 
     query: { tags: { $in: ['rack-a'] } },
     action: 'reboot',
     params: [],
-    voter: 'user@example.com',
-    authPerms: ['miner:w']
+    voter: 'user@example.com'
   })
 
   t.is(result.id, 42, 'creates action when at least one worker has calls')
@@ -397,8 +364,7 @@ test('action manager - pushAction uses highest reqVotes across workers', async (
     query: { id: { $in: ['dev-1', 'dev-2'] } },
     action: 'reboot',
     params: [],
-    voter: 'user@example.com',
-    authPerms: ['miner:w']
+    voter: 'user@example.com'
   })
 
   t.is(pushed[0].reqVotesPos, 5, 'uses max reqVotes across workers')
@@ -417,8 +383,7 @@ test('action manager - pushAction propagates getWriteCalls failures', async (t) 
       query: null,
       action: 'reboot',
       params: [],
-      voter: 'user@example.com',
-      authPerms: ['miner:w']
+      voter: 'user@example.com'
     }),
     /ERR_QUERY_INVALID/
   )
@@ -436,8 +401,7 @@ test('action manager - pushAction propagates approver failures', async (t) => {
       query: { id: 'dev-1' },
       action: 'reboot',
       params: [],
-      voter: 'user@example.com',
-      authPerms: ['miner:w']
+      voter: 'user@example.com'
     }),
     /ERR_ACTION_STORE_FAILED/
   )
@@ -447,8 +411,7 @@ test('action manager - pushActionsBatch returns empty array for empty payload', 
   const { manager } = createManager()
   const results = await manager.pushActionsBatch({
     batchActionsPayload: [],
-    voter: 'user@example.com',
-    authPerms: ['miner:w']
+    voter: 'user@example.com'
   })
   t.alike(results, [])
 })
@@ -457,11 +420,11 @@ test('action manager - pushActionsBatch rejects non-array payload shapes', async
   const { manager } = createManager()
 
   await t.exception(
-    () => manager.pushActionsBatch({ batchActionsPayload: {}, voter: 'u', authPerms: [] }),
+    () => manager.pushActionsBatch({ batchActionsPayload: {}, voter: 'u' }),
     /ERR_PAYLOAD_INVALID/
   )
   await t.exception(
-    () => manager.pushActionsBatch({ batchActionsPayload: 'bad', voter: 'u', authPerms: [] }),
+    () => manager.pushActionsBatch({ batchActionsPayload: 'bad', voter: 'u' }),
     /ERR_PAYLOAD_INVALID/
   )
 })
@@ -488,8 +451,7 @@ test('action manager - pushActionsBatch returns mixed success and failure entrie
       { query: { id: 'dev-1' }, action: 'reboot', params: [] },
       { query: { id: 'missing' }, action: 'reboot', params: [] }
     ],
-    voter: 'user@example.com',
-    authPerms: ['miner:w']
+    voter: 'user@example.com'
   })
 
   t.is(results.length, 2)
@@ -503,8 +465,7 @@ test('action manager - pushActionsBatch omits batchActionUID when not provided',
 
   await manager.pushActionsBatch({
     batchActionsPayload: [{ query: { id: 'dev-1' }, action: 'reboot', params: [] }],
-    voter: 'user@example.com',
-    authPerms: ['miner:w']
+    voter: 'user@example.com'
   })
 
   t.is(pushed.length, 1)
@@ -546,67 +507,6 @@ test('action manager - getActionsBatch returns only resolvable ids', async (t) =
   t.ok(calls >= 4, 'still probes lifecycle types for missing ids')
 })
 
-test('action manager - voteAction rejects empty authPerms', async (t) => {
-  const { manager } = createManager({
-    actionApprover: {
-      getAction: async () => ({
-        data: { payload: [[], {}, ['miner']] }
-      })
-    }
-  })
-
-  await t.exception(
-    () => manager.voteAction({
-      id: 1,
-      voter: 'user@example.com',
-      approve: true,
-      authPerms: []
-    }),
-    /ERR_ACTION_DENIED/
-  )
-})
-
-test('action manager - voteAction rejects null authPerms', async (t) => {
-  const { manager } = createManager({
-    actionApprover: {
-      getAction: async () => ({
-        data: { payload: [[], {}, ['miner']] }
-      })
-    }
-  })
-
-  try {
-    await manager.voteAction({
-      id: 1,
-      voter: 'user@example.com',
-      approve: true,
-      authPerms: null
-    })
-    t.fail('null authPerms should throw')
-  } catch (err) {
-    t.ok(err instanceof TypeError, 'null authPerms causes TypeError')
-  }
-})
-
-test('action manager - voteAction allows vote when action has no required perms', async (t) => {
-  const { manager } = createManager({
-    actionApprover: {
-      getAction: async () => ({
-        data: { payload: [[], {}, []] }
-      }),
-      voteAction: async () => {}
-    }
-  })
-
-  const voted = await manager.voteAction({
-    id: 1,
-    voter: 'user@example.com',
-    approve: true,
-    authPerms: []
-  })
-  t.is(voted, 1, 'empty requiredBaseTypePerms does not block vote')
-})
-
 test('action manager - voteAction propagates missing action errors', async (t) => {
   const { manager } = createManager({
     actionApprover: {
@@ -618,8 +518,7 @@ test('action manager - voteAction propagates missing action errors', async (t) =
     await manager.voteAction({
       id: 999,
       voter: 'user@example.com',
-      approve: true,
-      authPerms: ['miner']
+      approve: true
     })
   }, /ERR_ACTION_ID_NOT_FOUND/)
 })
@@ -792,13 +691,13 @@ test('action manager - a push reaching a device the caller may not write is refu
       })
     }
   })
-  const req = { query: {}, action: 'reboot', params: [], voter: 'v', authPerms: [] }
+  const req = { query: {}, action: 'reboot', params: [], voter: 'v' }
   const refused = await manager.pushAction(req, { canWrite: (id) => id === 'dev-1' })
   t.alike(refused, { id: null, errors: ['ERR_KERNEL_ACTION_FORBIDDEN: may not write dev-2'] })
   t.is(pushed.length, 0)
 
   const ok = await manager.pushAction(req, { canWrite: () => true })
   t.is(ok.id, 42)
-  const batch = await manager.pushActionsBatch({ batchActionsPayload: [req], voter: 'v', authPerms: [] }, { canWrite: () => false })
+  const batch = await manager.pushActionsBatch({ batchActionsPayload: [req], voter: 'v' }, { canWrite: () => false })
   t.is(batch[0].id, null, 'the rule carries into batches')
 })

@@ -11,6 +11,7 @@ type TableHeaderProps<I> = {
   table: Table<I>
 }
 
+// Keep in step with $sort-icon-size in styles.scss, which reserves this width.
 const SORT_ICON_SIZE = 24
 
 export const TableHeader = <I = unknown,>({ table }: TableHeaderProps<I>): JSX.Element => {
@@ -18,35 +19,36 @@ export const TableHeader = <I = unknown,>({ table }: TableHeaderProps<I>): JSX.E
     const align = header.column.columnDef.meta?.align
 
     return (
-    <th
-      colSpan={header.colSpan}
-      style={{ width: header.getSize() }}
-      className={cn(
-        {
-          sortable: header.column.getCanSort(),
-          sorted: !!header.column.getIsSorted(),
-        },
-        getTableCellAlignClassName(align),
-      )}
-      onClick={header.column.getToggleSortingHandler()}
-    >
-      <div className="mdk-table-header-content">
-        <span
-          className={cn('mdk-table-header-subject', {
-            'mdk-table-header-subject-checkbox': header.column.id === columnIds.rowSelection,
-          })}
-        >
-          {flexRender(header.column.columnDef.header, header.getContext())}
-        </span>
+      <th
+        colSpan={header.colSpan}
+        // oxlint-disable-next-line react/forbid-dom-props -- column width from the table's computed column sizes
+        style={{ width: header.getSize() }}
+        className={cn(
+          {
+            sortable: header.column.getCanSort(),
+            sorted: !!header.column.getIsSorted(),
+          },
+          getTableCellAlignClassName(align),
+        )}
+        onClick={header.column.getToggleSortingHandler()}
+      >
+        <div className="mdk-table-header-content">
+          <span
+            className={cn('mdk-table-header-subject', {
+              'mdk-table-header-subject-checkbox': header.column.id === columnIds.rowSelection,
+            })}
+          >
+            {flexRender(header.column.columnDef.header, header.getContext())}
+          </span>
 
-        <span className="mdk-table-header-sort" style={{ minWidth: SORT_ICON_SIZE }}>
-          {{
-            asc: <TriangleUpIcon height={SORT_ICON_SIZE} width={SORT_ICON_SIZE} />,
-            desc: <TriangleDownIcon height={SORT_ICON_SIZE} width={SORT_ICON_SIZE} />,
-          }[header.column.getIsSorted() as string] ?? null}
-        </span>
-      </div>
-    </th>
+          <span className="mdk-table-header-sort">
+            {{
+              asc: <TriangleUpIcon height={SORT_ICON_SIZE} width={SORT_ICON_SIZE} />,
+              desc: <TriangleDownIcon height={SORT_ICON_SIZE} width={SORT_ICON_SIZE} />,
+            }[header.column.getIsSorted() as string] ?? null}
+          </span>
+        </div>
+      </th>
     )
   }
 

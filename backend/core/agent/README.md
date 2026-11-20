@@ -59,6 +59,9 @@ serving the model and starting the demo fleet the command above assumes, plus th
 | `--max-steps` | Optional | `number`   | From the capability | Override the step budget                           |
 | `--max-output-tokens` | Optional | `number` | From the capability | Override the token budget                    |
 | `--mcp-url`   | Optional | `string`   | None      | MCP tool server; omit for plain grounded chat, no tools      |
+| `--mcp-credential` | Optional | `string` | None | Service-account credential file `mdk sa add` wrote; signs the agent in to `--mcp-url` (needs `--gateway-url`) |
+| `--gateway-url` | Optional | `string` | None     | The Gateway the credential signs in at (`POST /auth/token`)  |
+| `--mcp-token` | Optional | `string`   | None      | A fixed access token, read only if `MDK_AGENT_MCP_TOKEN` isn't set |
 | `--eval`      | Optional | `boolean`  | Off       | Run the eval battery instead of the REPL (needs `--mcp-url`) |
 | `--reps`      | Optional | `number`   | `1`       | Repetitions per question; 3+ exposes unstable routing        |
 | `--only`      | Optional | `string`   | All       | Restrict the run to case ids containing this string          |
@@ -160,6 +163,36 @@ returned — which is how "does it hallucinate" becomes a number rather than an 
 Point `--mcp-url` at any MCP server that exposes MDK-style tools, or omit it entirely for a
 plain grounded chat against the model with no fleet access.
 
+### Sign in to an MCP server that checks agents
+
+`mdk run mcp` checks every agent against `spec.rbac` and answers `401` to a request without an access token. Give the
+agent [its own service account and a role](../../../docs/guides/agent/connect-over-mcp.md), then point it at the credential and the stack's Gateway:
+
+```sh
+node bin/mdk-agent.js --mcp-url http://127.0.0.1:3947/mcp \
+  --mcp-credential <project>/.mdk/credentials/agents/operator-agent.json --gateway-url http://127.0.0.1:3847
+```
+
+The agent signs in at the Gateway, sends its access token on every MCP request, and renews it before it expires. When the
+MCP server answers `401` to its token, the agent signs in again and sends the request once more.
+
+For a quick test, `MDK_AGENT_MCP_TOKEN=$(npx mdk sa token operator-agent)` sends a fixed token instead. It lasts 10 minutes by default,
+and a `401` against it is final: the agent doesn't renew it or retry.
+
+`createAgent` takes the same settings under `mcp`:
+
+| Field                  | Status   | Type     | Description                                                                          |
+| ---------------------- | -------- | -------- | ------------------------------------------------------------------------------------ |
+| `url`                  | Required | `string` | Streamable HTTP endpoint, e.g. `http://127.0.0.1:3947/mcp`                           |
+| `credential.file`      | Optional | `string` | Credential file `mdk sa add` wrote, relative to the working directory                |
+| `credential.gatewayUrl` | Optional | `string` | Gateway the account signs in at, e.g. `http://127.0.0.1:3847`; required with `credential` |
+| `token`                | Optional | `string` | A fixed access token, for a short test; not with `credential`                       |
+
+> [!NOTE]
+> The CLI keeps the default `strictToolGating`, so it lists the tools `mdk run mcp` generates from app routes but
+> skips them as not agent-enabled. The [agent app on the Gateway](../../../docs/guides/agent/gateway-deployment.md) admits them with
+> `strictToolGating: false`.
+
 ## Reclaiming the KV cache
 
 From 0.9.0 `qvac serve` caches each conversation's attention state to
@@ -221,7 +254,7 @@ store** behind an interface a Redis or SQL implementation can satisfy.
 ```js
 const agent = await createAgent({
   provider,          // required: QVAC or hosted provider
-  mcp,               // optional: { url } of Streamable HTTP MCP server
+  mcp,               // optional: { url, credential?: { file, gatewayUrl } } or { url, token? } of a Streamable HTTP MCP server
   charter,           // optional: custom standing instructions (alias: system)
   charterVersion,    // optional: version stamp (default 'v2', or 'custom' for overrides)
   strictToolGating,  // optional: small-model gating; default true (false admits standard MCP tools)

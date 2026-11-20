@@ -14,6 +14,7 @@ A Chart.js doughnut chart with a custom HTML legend, slice toggle, and percentag
 | `formatValue` | Optional | `((value: number) => string)` | - | Formats slice values in the built-in legend and default tooltip (default: raw number) |
 | `height` | Optional | `number` | `260` | Chart height in pixels |
 | `legendPosition` | Optional | `"left" \| "right" \| "top" \| "bottom"` | `"top"` | Where to place the legend relative to the chart (default: 'top') |
+| `minSliceAngle` | Optional | `number` | `0` | Smallest angle, in degrees, a visible non-zero slice is drawn with, so a tiny share (e.g. 0.5%) stays visible. Only the drawing changes: the legend and tooltip keep the true values and percentages. `0` draws every slice to scale |
 | `options` | Optional | `object` | - | Chart.js options – merged with defaults |
 | `tooltip` | Optional | `ChartTooltipConfig` | - | Custom HTML tooltip configuration. When provided, replaces the default doughnut tooltip (which shows label, value with unit, and percentage). Use `valueFormatter` to replicate the percentage display if needed |
 | `unit` | Optional | `string` | `""` | Unit suffix appended to values in tooltips and legends |
@@ -53,3 +54,6 @@ import { DoughnutChart } from "@tetherto/mdk-react-devkit"
 
 - Clicking a legend item toggles the corresponding slice on the chart and dims the legend button
 - When the `data` reference changes (labels change), all hidden states reset automatically
+- A slice that is a tiny share of the total (e.g. fees at 0.5% of revenue) can be too thin to see. Set `minSliceAngle`
+  (e.g. `10`) to draw it at least that many degrees wide; the legend and tooltip keep the true values. A smaller
+  `borderWidth` also helps, since the border is drawn over each slice

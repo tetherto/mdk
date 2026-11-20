@@ -4,6 +4,7 @@ const { HRPCClient } = require('./lib/hrpc-client')
 const { build } = require('@tetherto/mdk-kernel/protocol/envelope')
 const { ACTIONS, MESSAGE_TYPES } = require('@tetherto/mdk-kernel/protocol/actions')
 const { ServiceAccountTokenSource } = require('@tetherto/mdk-identity')
+const { dhtPortOpts } = require('@tetherto/mdk-kernel/dht')
 
 /**
  * createRawMdkClient
@@ -61,12 +62,12 @@ function createRawMdkClient (opts) {
   async function request (action, payload, deviceId, callOpts, actor) {
     if (action.startsWith('auth.')) return _raiseRefusal(await send(action, payload, deviceId, callOpts))
     if (!tokenSource) return _raiseRefusal(await send(action, payload, deviceId, callOpts, null, actor))
-    let res = await send(action, payload, deviceId, callOpts, await tokenSource.getToken(), actor)
+    let res = await send(action, payload, deviceId, callOpts, await _token(tokenSource, callOpts), actor)
     // Refused before the action ran (expired, rotated key), so a retry is safe.
     // An invalid actor token is the operator's to renew: it is not retried.
     if (res && typeof res.error === 'string' && res.error.startsWith('ERR_KERNEL_TOKEN_INVALID')) {
       tokenSource.reset()
-      res = await send(action, payload, deviceId, callOpts, await tokenSource.getToken(), actor)
+      res = await send(action, payload, deviceId, callOpts, await _token(tokenSource, callOpts), actor)
     }
     return _raiseRefusal(res)
   }
@@ -74,12 +75,13 @@ function createRawMdkClient (opts) {
   const client = {
     // Opt-in warmup issues a best-effort listWorkers() after connecting so the
     // first real request is stable. Never throws — commands must not be retried.
-    async connect ({ warmup = false, warmupRetries = 3, warmupDelayMs = 600 } = {}) {
+    // `warmupTimeoutMs` bounds each try (default: the transport's timeout).
+    async connect ({ warmup = false, warmupRetries = 3, warmupDelayMs = 600, warmupTimeoutMs } = {}) {
       await transport.connect()
       if (!warmup) return
       for (let i = 0; i < warmupRetries; i++) {
         try {
-          await client.listWorkers()
+          await client.listWorkers(warmupTimeoutMs !== undefined ? { timeout: warmupTimeoutMs } : undefined)
           return
         } catch (err) {
           if (i === warmupRetries - 1) return
@@ -107,7 +109,9 @@ function createRawMdkClient (opts) {
               healthState: w.healthState,
               deviceIds: w.deviceIds || [],
               deviceCount: (w.deviceIds || []).length,
-              rpcKey: w.rpcKey
+              rpcKey: w.rpcKey,
+              deviceFamily: w.deviceFamily ?? null,
+              brand: w.brand ?? null
             })),
             totalDevices: workers.reduce((n, w) => n + ((w.deviceIds || []).length), 0)
           }
@@ -188,6 +192,42 @@ function _kernelActions (request) {
         ? { type: 'metrics', ...query }
         : { type: query || 'metrics' }
       return request(ACTIONS.TELEMETRY_PULL, { query: q }, deviceId, callOpts)
+    },
+
+    /**
+     * pullSnapshot({ workers, metrics?, from?, to?, granularity? }) → the listed workers'
+     * stored telemetry, no device round-trip: `{ devices: { [deviceId]: { metrics } }, snapshotTs, errors? }`.
+     * With `from`, each metric carries `points` instead of a single `value`; `errors` maps a
+     * failed worker to its error while the others are still returned.
+     */
+    pullSnapshot (query, callOpts) {
+      return request(ACTIONS.TELEMETRY_PULL, { query: { ...query, type: 'snapshot' } }, null, callOpts)
+    },
+
+    /**
+     * pullAggregate({ workers, ops }) → one result per op over the listed Workers' stored
+     * telemetry: `{ ops: { [name]: result }, deviceCount, errors? }`. `ops` is
+     * `{ name: { op, src?, group?, filter?: { src, eq }, srcs?, objOps?, nestedOps? } }` with sources
+     * `metrics.<name>`, `info.<keypath>` (the device's label block) or `deviceId`, never the device's `config`
+     * block, which holds connection details. An op the Kernel cannot fold refuses the whole call; each Worker
+     * then validates the ops against its contract's declared metric types, so a Worker whose metrics cannot
+     * answer the spec lands in `errors` while the others are still merged. Each Worker returns accumulators,
+     * never raw points; the Kernel folds them.
+     */
+    pullAggregate (query, callOpts) {
+      return request(ACTIONS.TELEMETRY_PULL, { query: { ...query, type: 'aggregate' } }, null, callOpts)
+    },
+
+    /**
+     * pullWorkerQuery({ workers, type, ...params }) → the query run on each listed worker with no
+     * device addressed, answered per worker as the Worker returned it:
+     * `{ workers: { [workerId]: payload }, errors? }`. For a Worker's store builtins (`list`, `count`,
+     * `logs` on a `stat-*` key, `historical_logs`, `stats`, `settings`, `ext_data`). The Kernel checks
+     * `devices: read` on every device of each listed worker; `snapshot` and `aggregate` are merged
+     * instead, as pullSnapshot / pullAggregate answer them.
+     */
+    pullWorkerQuery ({ workers, type, ...params } = {}, callOpts) {
+      return request(ACTIONS.TELEMETRY_PULL, { query: { ...params, workers, type } }, null, callOpts)
     },
 
     pullState (deviceId, callOpts) {
@@ -287,12 +327,12 @@ function _kernelActions (request) {
       return request(ACTIONS.IDENTITY_KEYS_ROTATE, {}, null, callOpts)
     },
 
-    pushAction ({ query, action, params, voter, authPerms, batchActionUID }, callOpts) {
-      return request(ACTIONS.ACTION_PUSH, { query, action, params, voter, authPerms, batchActionUID }, null, callOpts)
+    pushAction ({ query, action, params, voter, batchActionUID }, callOpts) {
+      return request(ACTIONS.ACTION_PUSH, { query, action, params, voter, batchActionUID }, null, callOpts)
     },
 
-    pushActionsBatch ({ batchActionsPayload, voter, authPerms, batchActionUID, suffix }, callOpts) {
-      return request(ACTIONS.ACTION_PUSH_BATCH, { batchActionsPayload, voter, authPerms, batchActionUID, suffix }, null, callOpts)
+    pushActionsBatch ({ batchActionsPayload, voter, batchActionUID, suffix }, callOpts) {
+      return request(ACTIONS.ACTION_PUSH_BATCH, { batchActionsPayload, voter, batchActionUID, suffix }, null, callOpts)
     },
 
     getAction ({ id, type }, callOpts) {
@@ -307,8 +347,8 @@ function _kernelActions (request) {
       return request(ACTIONS.ACTION_QUERY, { queries, suffix, groupBatch }, null, callOpts)
     },
 
-    voteAction ({ id, voter, approve, authPerms }, callOpts) {
-      return request(ACTIONS.ACTION_VOTE, { id, voter, approve, authPerms }, null, callOpts)
+    voteAction ({ id, voter, approve }, callOpts) {
+      return request(ACTIONS.ACTION_VOTE, { id, voter, approve }, null, callOpts)
     },
 
     cancelActionsBatch ({ ids, voter }, callOpts) {
@@ -454,6 +494,13 @@ function _sleep (ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+// A renewal is shared by every request waiting on it, so it keeps the transport's
+// timeout; each request waits on it only as long as its own `timeout` allows.
+function _token (tokenSource, callOpts) {
+  const token = tokenSource.getToken()
+  return callOpts && callOpts.timeout !== undefined ? _withTimeout(token, callOpts.timeout, 'ERR_MDK_REQUEST_TIMEOUT') : token
+}
+
 function _withTimeout (promise, ms, errCode) {
   let timer
   const timeout = new Promise((_resolve, reject) => {
@@ -462,4 +509,4 @@ function _withTimeout (promise, ms, errCode) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
-module.exports = { createMdkClient, createRawMdkClient }
+module.exports = { createMdkClient, createRawMdkClient, dhtPortOpts }

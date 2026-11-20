@@ -33,12 +33,30 @@ function _pick (name, conf, ctx) {
   return undefined
 }
 
-// Off unless set. Anything Fastify accepts passes through (a hop count, an
-// address list); only the CLI's 'true'/'false' strings are turned into booleans.
+// Off unless set. Give the proxy's address, CIDR or a list of them (array or
+// comma-separated string): the client IP is then the X-Forwarded-For entry that
+// proxy appended. A function decides per address. true trusts every hop, so the
+// client IP is the left-most entry, which the client writes: it can pick its own
+// IP for the rate limit (and its own X-Forwarded-Host and -Proto). true is
+// accepted, for a proxy that overwrites X-Forwarded-For, but warned about at
+// boot (trustProxyWarning). The CLI's 'true'/'false' strings become booleans.
+// A hop count is refused: Fastify 5 treats a number as trusting no proxy, so
+// every client would share the proxy's IP and its rate-limit bucket. A digit
+// string (the CLI's --trust-proxy 1) is a hop count too, not an address.
 function _trustProxy (value) {
   if (value === undefined || value === null || value === 'false') return false
   if (value === 'true') return true
+  if (typeof value === 'number' || (typeof value === 'string' && /^\s*\d+\s*$/.test(value))) {
+    throw new Error(`ERR_GATEWAY_TRUST_PROXY_INVALID: a hop count (${String(value).trim()}) trusts no proxy in Fastify 5; give the proxy's address or CIDR (e.g. "10.0.0.1" or "10.0.0.0/8")`)
+  }
   return value
+}
+
+// The boot warning for a trustProxy that lets a client choose its own IP, or
+// null. Logged beside the warnings for a disabled rate limit, helmet or Host check.
+function trustProxyWarning (trustProxy) {
+  if (trustProxy !== true) return null
+  return 'trustProxy is true: a client can set its own IP (and so its rate-limit bucket) with X-Forwarded-For; set it to the proxy\'s address or CIDR instead'
 }
 
 // There is no built-in verifier: the loopback one that made every local caller
@@ -180,6 +198,7 @@ module.exports = {
   DEFAULT_HELMET,
   OVERWRITE_CACHE_PERM,
   resolveSecurityOptions,
+  trustProxyWarning,
   buildHostAllowlist,
   isHostAllowed,
   createHostCheck,

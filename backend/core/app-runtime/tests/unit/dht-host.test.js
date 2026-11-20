@@ -10,7 +10,7 @@ const { createAppRuntime } = require('../../lib/runtime')
 const { ECHO_APP, tmpDir, identityFor, capturingLogger, startEcho, connectClient } = require('../fixtures/helpers')
 
 test('dhtHost - runtime and client bind loopback, keys unchanged, calls still flow', { timeout: 60000 }, async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const caller = identityFor()
   const storeDir = path.join(tmpDir(t), 'store')
 

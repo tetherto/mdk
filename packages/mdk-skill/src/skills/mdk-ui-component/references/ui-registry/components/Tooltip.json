@@ -1,0 +1,1 @@
+{"name":"Tooltip","path":"src/primitives/components/tooltip/index.tsx","description":"Tooltip Root - Container for a single tooltip","tier":"agent-ready","public":true,"category":"overlays","domainContext":"generic","props":[],"examples":["src/primitives/components/tooltip/tooltip.example.tsx"],"usageDoc":"src/primitives/components/tooltip/USAGE.md"}

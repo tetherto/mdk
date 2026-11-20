@@ -89,6 +89,12 @@ export const autoscaleProvider =
 
     let { minValue, maxValue } = res.priceRange
 
+    // Read before padding: this is the series' own minimum, so `>= 0` means every value in
+    // it is. The provider is attached per series and the price scale is the union of their
+    // ranges, so a sibling series that really does go negative still takes the axis below
+    // zero.
+    const nonNegative = minValue >= 0
+
     if (minValue === maxValue) {
       const padding = Number.isInteger(minValue)
         ? SCALE_PADDING_FACTOR_FOR_INT
@@ -106,6 +112,17 @@ export const autoscaleProvider =
       const base = magnitude > 0 ? magnitude * padding : SCALE_MIN_PADDING
       minValue -= base
       maxValue += base
+    }
+
+    // A quantity that cannot go negative must not get a negative axis. Only the
+    // flat-at-zero fallback above can produce one — a proportional band is a
+    // fraction of the value and so never crosses it — and that series is
+    // exactly the one `beginAtZero` promises to start at 0, which it cannot do
+    // on its own: `Math.min(0, -1.2)` is still -1.2. What is left is the half
+    // of the band above the reading, which draws the flat zero on the axis
+    // floor — where `beginAtZero` puts a zero point on any other chart too.
+    if (nonNegative) {
+      minValue = Math.max(0, minValue)
     }
 
     if (beginAtZero) {

@@ -16,6 +16,7 @@ const { createMcpServer } = require('../../server')
 const FIXTURES = path.join(path.dirname(require.resolve('@tetherto/mdk-app-runtime/package.json')), 'tests', 'fixtures')
 const ECHO_APP = path.join(FIXTURES, 'echo-app')
 const { tmpDir, capturingLogger } = require(path.join(FIXTURES, 'helpers'))
+const LOOPBACK = '127.0.0.1'
 
 let nextPort = 41830
 
@@ -75,14 +76,14 @@ function writeMixedApp (dir) {
 }
 
 test('createMcpServer - forwards app tool calls to the app runtime and loads no app code', { timeout: 120000 }, async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const dir = tmpDir(t)
   const appKeyFile = path.join(dir, 'run', 'echo.key')
   const mcpKeyFile = path.join(dir, 'run', 'mcp.key')
   const identity = { user: { userId: 'mcp-agent' } }
 
   const port = nextPort++
-  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap }, [],
+  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap, kernelDhtHost: LOOPBACK }, [],
     [{ name: 'echo', appDir: ECHO_APP, keyFile: appKeyFile }],
     { allowWrite: true, identity, keyFile: mcpKeyFile })
   const mcp = await connectClient(t, port)
@@ -98,7 +99,7 @@ test('createMcpServer - forwards app tool calls to the app runtime and loads no 
 
   t.alike(await call(mcp, 'whoami'), { isError: true, text: 'ERR_APP_RUNTIME_UNAVAILABLE: echo', body: null }, 'a call before the runtime is up fails cleanly')
 
-  const runtime = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, keyFile: appKeyFile, allowedKeyFiles: [mcpKeyFile], logger: capturingLogger() })
+  const runtime = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, dhtHost: LOOPBACK, keyFile: appKeyFile, allowedKeyFiles: [mcpKeyFile], logger: capturingLogger() })
   await runtime.start()
   t.teardown(() => runtime.stop())
 
@@ -113,16 +114,16 @@ test('createMcpServer - forwards app tool calls to the app runtime and loads no 
 })
 
 test('createMcpServer - a runtime that does not allow-list the MCP key refuses its calls', { timeout: 120000 }, async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const dir = tmpDir(t)
   const appKeyFile = path.join(dir, 'run', 'echo.key')
 
-  const runtime = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, keyFile: appKeyFile, allowedKeyFiles: [], logger: capturingLogger() })
+  const runtime = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, dhtHost: LOOPBACK, keyFile: appKeyFile, allowedKeyFiles: [], logger: capturingLogger() })
   await runtime.start()
   t.teardown(() => runtime.stop())
 
   const port = nextPort++
-  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap }, [],
+  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap, kernelDhtHost: LOOPBACK }, [],
     [{ name: 'echo', appDir: ECHO_APP, keyFile: appKeyFile }], { allowWrite: true, keyFile: path.join(dir, 'run', 'mcp.key') })
   const mcp = await connectClient(t, port)
 
@@ -176,7 +177,7 @@ test('createMcpServer - a malformed appTimeoutMs fails the boot, as in the Gatew
 })
 
 test('createMcpServer - app write/unstated, auth and stream routes are withheld by default', async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const dir = tmpDir(t)
   const app = { name: 'mixed', appDir: writeMixedApp(path.join(dir, 'mixed')), keyFile: path.join(dir, 'mixed.key') }
 
@@ -186,7 +187,7 @@ test('createMcpServer - app write/unstated, auth and stream routes are withheld 
   t.teardown(() => { console.warn = originalWarn })
 
   const port = nextPort++
-  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap }, [], [app])
+  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap, kernelDhtHost: LOOPBACK }, [], [app])
   const mcp = await connectClient(t, port)
 
   const { tools } = await mcp.listTools()
@@ -196,12 +197,12 @@ test('createMcpServer - app write/unstated, auth and stream routes are withheld 
 })
 
 test('createMcpServer - allowWrite + identity expose write and auth routes', async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const dir = tmpDir(t)
   const app = { name: 'mixed', appDir: writeMixedApp(path.join(dir, 'mixed')), keyFile: path.join(dir, 'mixed.key') }
 
   const port = nextPort++
-  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap }, [], [app],
+  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap, kernelDhtHost: LOOPBACK }, [], [app],
     { allowWrite: true, identity: { user: { userId: 'mcp-agent' } } })
   const mcp = await connectClient(t, port)
 
@@ -210,7 +211,7 @@ test('createMcpServer - allowWrite + identity expose write and auth routes', asy
 })
 
 test('createMcpServer - an auth route whose permissions the identity lacks is withheld, as the Gateway verifier would refuse it', async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const dir = tmpDir(t)
   const appDir = path.join(dir, 'perms')
   const route = (id, extra) => ({ id, description: id, http: { method: 'POST', path: `/${id}` }, handler: './controllers/whoami.js', auth: true, ...extra })
@@ -233,7 +234,7 @@ test('createMcpServer - an auth route whose permissions the identity lacks is wi
   t.teardown(() => { console.warn = originalWarn })
 
   const port = nextPort++
-  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap }, [], [app],
+  await startServer(t, path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap, kernelDhtHost: LOOPBACK }, [], [app],
     { allowWrite: true, identity: { user: { userId: 'mcp-agent' }, perms: ['read'] } })
   const mcp = await connectClient(t, port)
 

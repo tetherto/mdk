@@ -27,6 +27,9 @@
 
 // Upper bound on caller-supplied device id lists (logs_multi, stats): each
 // id costs a store walk, so an unbounded list is a cheap way to pin the worker.
+// A list is honored on Worker-scoped requests only: a request addressed to a
+// device reads that device, whatever the list names (the `_addressed` rule),
+// since the Kernel authorized the caller for the addressed device alone.
 const MAX_DEVICE_IDS = 1000
 
 const TELEMETRY_BUILTINS = {
@@ -45,9 +48,9 @@ const TELEMETRY_BUILTINS = {
   logs_multi: {
     service: 'logHistory',
     handle: async (services, deviceId, params, rt) => {
-      const deviceIds = params.deviceIds !== undefined
-        ? _deviceIdList(params.deviceIds)
-        : (deviceId ? [deviceId] : rt.deviceIds)
+      const deviceIds = deviceId
+        ? [deviceId]
+        : (params.deviceIds !== undefined ? _deviceIdList(params.deviceIds) : rt.deviceIds)
       const allLogs = []
       for (const id of deviceIds) {
         try {
@@ -75,11 +78,11 @@ const TELEMETRY_BUILTINS = {
   list: {
     service: 'provisioning',
     handle: async (services, deviceId, params, rt) => {
-      const devices = services.provisioning.listDevices({
-        ...params,
-        offset: params.offset ?? 0,
-        limit: params.limit ?? 100
-      })
+      // Addressed to a device, the list is that device: the caller's query and
+      // paging would otherwise reach the Worker's other records.
+      const devices = services.provisioning.listDevices(deviceId
+        ? { ...params, query: { id: deviceId }, offset: 0, limit: 1 }
+        : { ...params, offset: params.offset ?? 0, limit: params.limit ?? 100 })
       const things = devices.map((dev) => ({
         id: dev.id,
         code: dev.code,
@@ -111,7 +114,7 @@ const TELEMETRY_BUILTINS = {
     service: 'stats',
     handle: async (services, deviceId, params) => ({
       stats: await services.stats.aggrStats(
-        params.deviceIds === undefined ? undefined : _deviceIdList(params.deviceIds),
+        deviceId ? [deviceId] : (params.deviceIds === undefined ? undefined : _deviceIdList(params.deviceIds)),
         params.opts || {}
       )
     })

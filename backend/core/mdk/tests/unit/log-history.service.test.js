@@ -6,7 +6,8 @@ const LogHistoryService = require('../../lib/services/log-history.service')
 const { createTestStore, createTestBee } = require('../helpers/store')
 
 const DEVICES = {
-  'dev-1': { id: 'dev-1', info: { container: 'c1' }, tags: ['t-miner'], type: 'miner-wm', code: 'WM-0001' }
+  'dev-1': { id: 'dev-1', info: { container: 'c1' }, tags: ['t-miner'], type: 'miner-wm', code: 'WM-0001' },
+  'dev-2': { id: 'dev-2', info: { container: 'c1' }, tags: ['t-miner'], type: 'miner-wm', code: 'WM-0002' }
 }
 
 async function createServices (t, conf = { logKeepCount: 3 }) {
@@ -168,6 +169,36 @@ test('getHistoricalLogs alerts flattens grouped alert entries', async (t) => {
   t.is(res[0].name, 'overheat')
   t.is(res[0].thing.id, 'dev-1')
   t.is(res[0].thingId, undefined, 'thingId replaced by thing')
+})
+
+test('getHistoricalLogs scoped to a device returns that device\'s entries only, limit counted after the filter', async (t) => {
+  const { logs, history } = await createServices(t)
+
+  const now = Date.now()
+  await logs.saveLogData('thing-alerts', now, {
+    'uuid-1': { name: 'overheat', createdAt: now, uuid: 'uuid-1', thingId: 'dev-1' },
+    'uuid-2': { name: 'offline', createdAt: now, uuid: 'uuid-2', thingId: 'dev-2' },
+    'uuid-3': { name: 'fan', createdAt: now, uuid: 'uuid-3', thingId: 'dev-2' }
+  }, 0, true)
+  await logs.saveLogData('thing-history-log', now, [
+    { ts: now, changes: { 'info.pos': { oldValue: '1', newValue: '2' } }, id: 'dev-1' },
+    { ts: now, changes: { 'info.pos': { oldValue: '3', newValue: '4' } }, id: 'dev-2' }
+  ], 0, true)
+
+  const alerts = await history.getHistoricalLogs({ logType: 'alerts', limit: 10, thingId: 'dev-2' })
+  t.alike(alerts.map((a) => a.name), ['offline', 'fan'])
+  t.ok(alerts.every((a) => a.thing.id === 'dev-2'), 'no dev-1 alert through dev-2')
+  const one = await history.getHistoricalLogs({ logType: 'alerts', limit: 1, thingId: 'dev-2' })
+  t.is(one.length, 1, 'the limit applies to the device\'s own entries')
+  t.is(one[0].thing.id, 'dev-2')
+
+  const info = await history.getHistoricalLogs({ logType: 'info', thingId: 'dev-1' })
+  t.is(info.length, 1)
+  t.is(info[0].thing.id, 'dev-1')
+  t.alike(info[0].changes, { 'info.pos': { oldValue: '1', newValue: '2' } })
+
+  t.is((await history.getHistoricalLogs({ logType: 'alerts', limit: 10 })).length, 3, 'Worker-scoped: every device')
+  t.is((await history.getHistoricalLogs({ logType: 'info' })).length, 2)
 })
 
 test('constructor applies defaults for optional collaborators', (t) => {

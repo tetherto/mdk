@@ -141,7 +141,9 @@ export function regenerateLock(dir, cwd = REPO_ROOT) {
 
 export function registryStatus(name) {
   // 200 published, 404 not published. Anything else is surfaced to the caller as-is.
-  return fetch(`https://registry.npmjs.org/${name.replace('/', '%2F')}`, {
+  // Encode the whole name as one path segment (`@scope/pkg` -> `@scope%2Fpkg`); the registry wants a literal `@`.
+  const segment = encodeURIComponent(name).replace(/^%40/, '@')
+  return fetch(`https://registry.npmjs.org/${segment}`, {
     method: 'HEAD',
     signal: AbortSignal.timeout(15_000),
   }).then((r) => r.status)

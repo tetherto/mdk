@@ -8,12 +8,12 @@ const LRU = require('lru')
 const TetherWrkBase = require('@tetherto/tether-wrk-base/workers/base.wrk.tether')
 const createLogger = require('debug')
 const debug = createLogger('store:aggr')
-const { createRuntimeClient, getOrCreateSeed, resolvePluginDir } = require('@tetherto/mdk-app-runtime')
+const { createRuntimeClient, getOrCreateSeed, resolvePluginDir, dhtPortOpts } = require('@tetherto/mdk-app-runtime')
 const { loadPlugin } = require('@tetherto/mdk-app-runtime/lib/plugin-loader')
-const { buildFastifyRoutes, errorResponse, resolveAppTimeout } = require('./lib/plugin-adapter')
+const { buildFastifyRoutes, errorResponse, resolveAppTimeout, resolveStreamBufferBytes } = require('./lib/plugin-adapter')
 const { createAuthRoutes } = require('./lib/auth-routes')
 const { fastifyLoggerOptions, gatewayLogger } = require('./lib/logger')
-const { resolveSecurityOptions, buildHostAllowlist, createHostCheck } = require('./lib/security')
+const { resolveSecurityOptions, trustProxyWarning, buildHostAllowlist, createHostCheck } = require('./lib/security')
 const { resolveStoreDir } = require('./lib/utils')
 
 // Publishes the key app runtimes allow-list. The directory is private to this
@@ -41,7 +41,7 @@ function resolveDhtOpts (ctx) {
   const out = {}
   if (Array.isArray(bootstrap)) out.bootstrap = bootstrap
   if (ctx.kernelDhtHost) out.host = String(ctx.kernelDhtHost)
-  return out
+  return Object.assign(out, dhtPortOpts(out.bootstrap))
 }
 
 class WrkServerHttp extends TetherWrkBase {
@@ -84,6 +84,7 @@ class WrkServerHttp extends TetherWrkBase {
     // Validated up front so a bad option fails the boot, not the first request.
     this._security = resolveSecurityOptions(this.conf, this.ctx)
     resolveAppTimeout(this.conf)
+    this._maxStreamBufferBytes = resolveStreamBufferBytes(this.conf)
 
     for (const [label, maxAge] of [['10s', 10000], ['15s', 15000], ['30s', 30000], ['1m', 60000], ['15m', 60000 * 15]]) {
       this[`lru_${label}`] = new LRU({ max: 10000, maxAge })
@@ -133,6 +134,8 @@ class WrkServerHttp extends TetherWrkBase {
         else log.warn('security headers (helmet) are disabled')
         if (security.rateLimit) httpd.addPlugin([require('@fastify/rate-limit'), security.rateLimit])
         else log.warn('rate limiting is disabled')
+        const proxyWarning = trustProxyWarning(security.trustProxy)
+        if (proxyWarning) log.warn(proxyWarning)
 
         const hostAllowlist = buildHostAllowlist(security.allowedHosts, {
           port: String(this.ctx.port),
@@ -155,7 +158,12 @@ class WrkServerHttp extends TetherWrkBase {
         if (this._apps.length || this.ctx.gatewayKeyFile) {
           // One stable key, across restarts, for every app runtime to allow-list.
           const seed = getOrCreateSeed(path.join(this.ctx.root, 'identity', 'seedRuntimeClient'))
-          this._runtimeClient = createRuntimeClient({ seed, bootstrap: this._dhtOpts.bootstrap, dhtHost: this._dhtOpts.host })
+          this._runtimeClient = createRuntimeClient({
+            seed,
+            bootstrap: this._dhtOpts.bootstrap,
+            dhtHost: this._dhtOpts.host,
+            maxStreamBufferBytes: this._maxStreamBufferBytes
+          })
           await this._runtimeClient.connect()
         }
 
@@ -163,6 +171,13 @@ class WrkServerHttp extends TetherWrkBase {
           buildFastifyRoutes(app, this._runtimeClient, this, { authority, authVerifier: security.authVerifier }).forEach(r => {
             httpd.addRoute(r)
           })
+        }
+
+        // A route's `permissions` are input to an authVerifier only; under
+        // spec.rbac they gate nothing, which an author would otherwise not see.
+        if (authority) {
+          const ignored = this._apps.flatMap(a => a.routes.filter(r => r.permissions !== undefined).map(r => `${a.name}/${r.id}`))
+          if (ignored.length) log.warn(`spec.rbac ignores route permissions: ${ignored.length} route(s) set them and they gate nothing (${ignored.join(', ')}); declare verb or resourceName and grant the route in spec.rbac`)
         }
 
         if (!authority && !security.authVerifier) {

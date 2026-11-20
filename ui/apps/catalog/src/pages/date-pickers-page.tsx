@@ -50,34 +50,23 @@ export const DatePickersPage = (): JSX.Element => {
 
         <section>
           <h3>Single Date Picker</h3>
-          <div
-            style={{
-              display: 'flex',
-              gap: '2rem',
-              alignItems: 'flex-start',
-              flexWrap: 'wrap',
-            }}
-          >
+          <div className="demo-section__showcase demo-section__showcase--start">
             <div>
-              <p style={{ marginBottom: '12px', fontSize: '13px', opacity: 0.8 }}>
-                Basic date picker
-              </p>
+              <p className="demo-section__label">Basic date picker</p>
               <DatePicker
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 placeholder="Pick a date"
               />
               {selectedDate && (
-                <p style={{ marginTop: '8px', fontSize: '12px' }}>
+                <p className="date-pickers-demo__selected">
                   Selected: {selectedDate.toLocaleDateString()}
                 </p>
               )}
             </div>
 
             <div>
-              <p style={{ marginBottom: '12px', fontSize: '13px', opacity: 0.8 }}>
-                Disabled picker
-              </p>
+              <p className="demo-section__label">Disabled picker</p>
               <DatePicker
                 selected={selectedDate}
                 onSelect={setSelectedDate}
@@ -87,9 +76,7 @@ export const DatePickersPage = (): JSX.Element => {
             </div>
 
             <div>
-              <p style={{ marginBottom: '12px', fontSize: '13px', opacity: 0.8 }}>
-                Custom format (dd MMM yyyy)
-              </p>
+              <p className="demo-section__label">Custom format (dd MMM yyyy)</p>
               <DatePicker
                 selected={selectedDate}
                 onSelect={setSelectedDate}
@@ -100,20 +87,11 @@ export const DatePickersPage = (): JSX.Element => {
           </div>
         </section>
 
-        <section style={{ marginTop: '2rem' }}>
+        <section className="demo-section__mt-2xl">
           <h3>Date Range Picker</h3>
-          <div
-            style={{
-              display: 'flex',
-              gap: '2rem',
-              alignItems: 'flex-start',
-              flexWrap: 'wrap',
-            }}
-          >
+          <div className="demo-section__showcase demo-section__showcase--start">
             <div>
-              <p style={{ marginBottom: '12px', fontSize: '13px', opacity: 0.8 }}>
-                With presets (Last 7/14/30/90 days)
-              </p>
+              <p className="demo-section__label">With presets (Last 7/14/30/90 days)</p>
               <DateRangePicker
                 selected={selectedRange}
                 onSelect={setSelectedRange}
@@ -128,9 +106,7 @@ export const DatePickersPage = (): JSX.Element => {
             </div>
 
             <div>
-              <p style={{ marginBottom: '12px', fontSize: '13px', opacity: 0.8 }}>
-                Without presets
-              </p>
+              <p className="demo-section__label">Without presets</p>
               <DateRangePicker
                 selected={selectedRange}
                 onSelect={setSelectedRange}
@@ -140,9 +116,7 @@ export const DatePickersPage = (): JSX.Element => {
             </div>
 
             <div>
-              <p style={{ marginBottom: '12px', fontSize: '13px', opacity: 0.8 }}>
-                Allow future dates
-              </p>
+              <p className="demo-section__label">Allow future dates</p>
               <DateRangePicker
                 selected={selectedRange}
                 onSelect={setSelectedRange}
@@ -153,37 +127,13 @@ export const DatePickersPage = (): JSX.Element => {
           </div>
         </section>
 
-        <section style={{ marginTop: '2rem' }}>
+        <section className="demo-section__mt-2xl">
           <h3>Mining Operations Example</h3>
-          <div
-            style={{
-              padding: '20px',
-              background: '#0f0f0f',
-              border: '1px solid #ffffff1a',
-              borderRadius: '4px',
-            }}
-          >
-            <h4 style={{ margin: '0 0 16px 0', color: '#f7931a' }}>Revenue Report</h4>
-            <div
-              style={{
-                display: 'flex',
-                gap: '16px',
-                flexWrap: 'wrap',
-                marginBottom: '16px',
-                alignItems: 'flex-end',
-              }}
-            >
-              <div style={{ flex: '1', minWidth: '200px' }}>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '12px',
-                    marginBottom: '8px',
-                    opacity: 0.7,
-                  }}
-                >
-                  Select Report Period
-                </label>
+          <div className="date-pickers-demo__report">
+            <h4 className="date-pickers-demo__report-title">Revenue Report</h4>
+            <div className="date-pickers-demo__toolbar">
+              <div className="date-pickers-demo__field">
+                <label className="date-pickers-demo__field-label">Select Report Period</label>
                 <DateRangePicker
                   selected={selectedRange}
                   onSelect={setSelectedRange}
@@ -197,43 +147,24 @@ export const DatePickersPage = (): JSX.Element => {
               ) : null}
             </div>
             {hasFullRange && rangeStart && rangeEnd ? (
-              <div
-                style={{
-                  marginTop: '16px',
-                  padding: '12px',
-                  background: '#161514',
-                  border: '1px solid #ffffff1a',
-                }}
-              >
-                <div style={{ fontSize: '13px', opacity: 0.9 }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '8px',
-                    }}
-                  >
+              <div className="date-pickers-demo__summary">
+                <div className="date-pickers-demo__summary-body">
+                  <div className="date-pickers-demo__summary-row">
                     <span>Duration:</span>
-                    <span style={{ color: '#72f59e' }}>
+                    <span className="demo-section__text-success">
                       {Math.floor(
                         (rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24),
                       )}{' '}
                       days
                     </span>
                   </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '8px',
-                    }}
-                  >
+                  <div className="date-pickers-demo__summary-row">
                     <span>Est. Hashrate:</span>
-                    <span style={{ color: '#f7931a' }}>1.2 ${UNITS.HASHRATE_PH_S}</span>
+                    <span className="demo-section__text-primary">1.2 {UNITS.HASHRATE_PH_S}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div className="date-pickers-demo__summary-row">
                     <span>Est. Revenue:</span>
-                    <span style={{ color: '#f7931a' }}>0.45 {CURRENCY.BTC_LABEL}</span>
+                    <span className="demo-section__text-primary">0.45 {CURRENCY.BTC_LABEL}</span>
                   </div>
                 </div>
               </div>

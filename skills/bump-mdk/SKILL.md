@@ -24,11 +24,9 @@ node scripts/release/bump.mjs <version> [--dry-run] [--skip-registry] [--offline
 node scripts/release/check.mjs [<version>] [--offline]
 ```
 
-`bump.mjs` sets every `version`, rewrites every internal `@tetherto/mdk-*` `^X` pin in all four
-dependency fields (`devDependencies` included), moves the release-line `mdk-app.yaml` files, the
-README release links and the link-check skip list, regenerates every lockfile and the UI registry,
-then runs `check.mjs`. `check.mjs` is the version, pin, app, private-flag and lock-drift checks in
-one command; it exits 1 on any problem. Neither command commits, tags or publishes.
+What `bump.mjs` changes is the release-bump step in
+[`RELEASING.md`](../../RELEASING.md#prepare-private-repo). `check.mjs` is the version, pin, app,
+private-flag and lock-drift checks in one command; it exits 1 on any problem. Neither command commits, tags or publishes.
 
 Use the manual procedure below when the scripts cannot run, or to understand what they did. A
 package that must stay off the line (the vendored `mdk-crypto-lib`) is listed, with a reason, in

@@ -58,37 +58,30 @@ test('action caller - getWriteCalls rejects invalid input', async (t) => {
   const { caller } = createCaller()
 
   await t.exception(
-    () => caller.getWriteCalls(null, 'reboot', [], ['miner:w']),
+    () => caller.getWriteCalls(null, 'reboot', []),
     /ERR_QUERY_INVALID/
   )
   await t.exception(
-    () => caller.getWriteCalls({ id: 'dev-1' }, '', [], ['miner:w']),
+    () => caller.getWriteCalls({ id: 'dev-1' }, '', []),
     /ERR_ACTION_INVALID/
   )
   await t.exception(
-    () => caller.getWriteCalls({ id: 'dev-1' }, 'reboot', {}, ['miner:w']),
+    () => caller.getWriteCalls({ id: 'dev-1' }, 'reboot', {}),
     /ERR_PARAMS_INVALID/
   )
 })
 
-test('action caller - getWriteCalls skips workers without write permission', async (t) => {
+test('action caller - getWriteCalls asks every worker with a device family', async (t) => {
   const { caller, sent } = createCaller({
-    workers: [{ workerId: 'miner-worker', deviceFamily: 'miner', channel: { id: 'ch-1' } }]
+    workers: [
+      { workerId: 'miner-worker', deviceFamily: 'miner', channel: { id: 'ch-1' } },
+      { workerId: 'container-worker', deviceFamily: 'container', channel: { id: 'ch-2' } },
+      { workerId: 'no-family', channel: { id: 'ch-3' } }
+    ]
   })
 
-  const result = await caller.getWriteCalls(
-    { id: 'dev-1' },
-    'reboot',
-    [],
-    ['container:w']
-  )
-
-  t.is(sent.length, 0)
-  t.alike(result.targets, {})
-
-  // null: a caller spec.rbac checks per device; every family is asked.
-  await caller.getWriteCalls({ id: 'dev-1' }, 'reboot', [], null)
-  t.is(sent.length, 1, 'null permissions ask the miner worker too')
+  await caller.getWriteCalls({ id: 'dev-1' }, 'reboot', [])
+  t.is(sent.length, 2, 'a worker without a device family is skipped')
 })
 
 test('action caller - getWriteCalls skips workers without a channel', async (t) => {
@@ -99,15 +92,14 @@ test('action caller - getWriteCalls skips workers without a channel', async (t) 
   const result = await caller.getWriteCalls(
     { id: 'dev-1' },
     'reboot',
-    [],
-    ['miner:w']
+    []
   )
 
   t.is(sent.length, 0)
   t.alike(result.targets, {})
 })
 
-test('action caller - getWriteCalls contacts ready workers with write permission', async (t) => {
+test('action caller - getWriteCalls contacts ready workers', async (t) => {
   const { caller, sent } = createCaller({
     workers: [{ workerId: 'miner-worker', deviceFamily: 'miner', channel: { id: 'ch-1' }, deviceIds: ['dev-1'] }]
   })
@@ -115,8 +107,7 @@ test('action caller - getWriteCalls contacts ready workers with write permission
   const result = await caller.getWriteCalls(
     { id: 'dev-1' },
     'reboot',
-    [],
-    ['miner:w']
+    []
   )
 
   t.is(sent.length, 1)
@@ -133,8 +124,7 @@ test('action caller - getWriteCalls resolves write calls from ready workers', as
   const result = await caller.getWriteCalls(
     { tags: { $in: ['rack-a'] } },
     'reboot',
-    [{ mode: 'high' }],
-    ['miner:w']
+    [{ mode: 'high' }]
   )
 
   t.is(sent.length, 1)
@@ -159,24 +149,21 @@ test('action caller - getWriteCalls records rack validation errors per worker', 
   const missingWorkerId = await caller.getWriteCalls(
     {},
     WORKER_WRITE_ACTION_TYPES.REGISTER_THING,
-    [{}],
-    ['thing:w']
+    [{}]
   )
   t.is(missingWorkerId.targets['rack-1'].error, 'ERR_ACTION_INVALID_MISSING_WORKER_ID')
 
   const missingId = await caller.getWriteCalls(
     {},
     WORKER_WRITE_ACTION_TYPES.UPDATE_THING,
-    [{ workerId: 'rack-1' }],
-    ['thing:w']
+    [{ workerId: 'rack-1' }]
   )
   t.is(missingId.targets['rack-1'].error, 'ERR_ACTION_INVALID_MISSING_ID')
 
   const missingQueryId = await caller.getWriteCalls(
     {},
     WORKER_WRITE_ACTION_TYPES.FORGET_THINGS,
-    [{ workerId: 'rack-1', query: {} }],
-    ['thing:w']
+    [{ workerId: 'rack-1', query: {} }]
   )
   t.is(missingQueryId.targets['rack-1'].error, 'ERR_ACTION_INVALID_QUERY_ID')
 })
@@ -192,8 +179,7 @@ test('action caller - getWriteCalls scopes rack actions to matching worker', asy
   await caller.getWriteCalls(
     {},
     WORKER_WRITE_ACTION_TYPES.UPDATE_THING,
-    [{ workerId: 'rack-1', id: 'thing-1' }],
-    ['thing:w']
+    [{ workerId: 'rack-1', id: 'thing-1' }]
   )
 
   t.is(sent.length, 1)
@@ -297,7 +283,7 @@ test('action caller - getWriteCalls keeps only calls for devices the responding 
     }
   })
 
-  const { targets } = await caller.getWriteCalls({}, 'reboot', [], ['miner:w'])
+  const { targets } = await caller.getWriteCalls({}, 'reboot', [])
   t.alike(targets.evil.calls, [{ id: 'evil-1', tags: ['t'] }], 'foreign, unknown and duplicate ids dropped; extra fields stripped')
 
   const onlyForeign = createCaller({
@@ -307,7 +293,7 @@ test('action caller - getWriteCalls keeps only calls for devices the responding 
     ],
     response: { payload: { reqVotes: 1, calls: [{ id: 'victim-1', tags: [] }] } }
   })
-  const res = await onlyForeign.caller.getWriteCalls({}, 'reboot', [], ['miner:w'])
+  const res = await onlyForeign.caller.getWriteCalls({}, 'reboot', [])
   t.alike(res.targets.evil.calls, [])
   t.is(res.targets.evil.error, 'ERR_WRITE_CALLS_NOT_OWNED')
   t.alike(res.requiredPerms, [])
@@ -319,7 +305,7 @@ test('action caller - getWriteCalls keeps only the requested rack id for rack ac
     response: { payload: { reqVotes: 1, calls: [{ id: 'other-thing', tags: [] }, { id: 'thing-1', tags: [] }] } }
   })
 
-  const { targets } = await caller.getWriteCalls({}, WORKER_WRITE_ACTION_TYPES.UPDATE_THING, [{ workerId: 'rack-1', id: 'thing-1' }], ['thing:w'])
+  const { targets } = await caller.getWriteCalls({}, WORKER_WRITE_ACTION_TYPES.UPDATE_THING, [{ workerId: 'rack-1', id: 'thing-1' }])
   t.alike(targets['rack-1'].calls, [{ id: 'thing-1', tags: [] }])
 })
 
@@ -340,7 +326,7 @@ test('action caller - getWriteCalls rejects malformed write.calls responses', as
       workers: [{ workerId: 'w', deviceFamily: 'miner', channel: { id: 'ch' }, deviceIds: ['dev-1'] }],
       response: { payload }
     })
-    const { targets, requiredPerms } = await caller.getWriteCalls({}, 'reboot', [], ['miner:w'])
+    const { targets, requiredPerms } = await caller.getWriteCalls({}, 'reboot', [])
     t.alike(targets.w.calls, [], `rejected: ${JSON.stringify(payload).slice(0, 60)}`)
     t.ok(/^ERR_PAYLOAD_/.test(targets.w.error))
     t.is(targets.w.reqVotes, 1)

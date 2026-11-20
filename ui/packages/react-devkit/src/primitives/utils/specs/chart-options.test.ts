@@ -403,6 +403,14 @@ describe('buildBarChartOptions', () => {
     expect((options.plugins as any).legend.align).toBe('center')
   })
 
+  it('keeps the devkit legend labels, so hidden series dim instead of striking through', () => {
+    const options = buildBarChartOptions()
+
+    expect((options.plugins as any).legend.labels.generateLabels).toBe(
+      defaultChartOptions.plugins.legend.labels.generateLabels,
+    )
+  })
+
   it('uses custom y-axis formatter in tooltip', () => {
     const formatter = (v: number) => `$${v}`
     const options = buildBarChartOptions({ yTicksFormatter: formatter })
@@ -532,6 +540,19 @@ describe('defaultChartOptions – buildLegendLabels', () => {
     expect(labels).toHaveLength(1)
     // fontColor should be dimmed (opacity 0.7 * 0.3 = 0.21)
     expect(labels[0]?.fontColor).toContain('rgba(255, 255, 255,')
+    expect(labels[0]?.fontColor).not.toBe('rgba(255, 255, 255, 0.7)')
+  })
+
+  it('dims a dataset that starts hidden, before any legend click sets its meta', () => {
+    const mockChart = {
+      data: {
+        datasets: [{ label: 'Starts hidden', borderColor: '#0000FF', hidden: true }],
+      },
+      getDatasetMeta: vi.fn().mockReturnValue({ hidden: null }),
+    }
+
+    const labels = generateLabels(mockChart as any)
+
     expect(labels[0]?.fontColor).not.toBe('rgba(255, 255, 255, 0.7)')
   })
 

@@ -1,0 +1,1 @@
+{"name":"LogActivityIconProps","path":"src/primitives/components/logs/types.ts","kind":"type","description":"","public":true,"definition":"{ status: string }"}

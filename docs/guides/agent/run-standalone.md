@@ -1,7 +1,8 @@
 ---
 title: Run the agent as a standalone CLI
-description: Serve a model, boot the demo fleet, and talk to the operator agent from the terminal
+description: Boot the demo fleet, serve a model, and talk to the operator agent from the terminal
 docs@tether_slug: guides/agent/run-standalone
+lastReviewedAt: "0.14.0"
 ---
 
 ## Overview
@@ -18,10 +19,45 @@ This is one of [two ways to run the agent][agent-guides-index].
 - GPU:
   - **macOS:** Metal
   - **Linux and Windows:** Requires **Vulkan 1.4+**. On macOS and Linux, a missing GPU backend falls back to CPU (slower but functional). On Windows, the native runtime requires Vulkan 1.4+ even for CPU inference and fails outright if missing or on an older version. Verify with `vulkaninfo --summary` before running.
-- Dependencies installed — see [the agent's prerequisites][agent-prereqs]: a single root `npm install`, not one run inside the package
+- The MDK repository cloned, with dependencies installed by a single `npm install` at its root, not one run inside the
+  package ([the agent's prerequisites][agent-prereqs] explain why):
+
+  ```bash
+  git clone https://github.com/tetherto/mdk.git
+  cd mdk
+  npm install
+  ```
 - Language model: this guide uses [QVAC](https://qvac.tether.io/) serving an OpenAI-compatible API on port `11500`
+- For the optional demo fleet: PM2 installed globally (`npm install -g pm2`, once per machine)
 
 <Steps>
+
+<Step>
+
+### Optional: Start the demo fleet
+
+If you already have an MCP tool server, skip this and point the agent at its URL when you
+[start the agent](#start-the-agent-and-ask).
+
+Start the fleet before the model server. On its first run, QVAC downloads the model over a DHT that takes UDP port `49737`
+by default, the port the fleet's private DHT bootstrap needs. Started after the fleet, QVAC uses another port; started
+first, it breaks the fleet's tools (see [troubleshooting](#troubleshooting)).
+
+Navigate to `examples/mvp-site` in your `mdk` clone and boot the [MVP site example][mvp-site-example]. It brings up a
+simulated fleet (miners, a powermeter, pools) under PM2 and exposes the MDK tools over MCP on port `3101`:
+
+```bash
+cd <path-to>/mdk/examples/mvp-site
+npm run setup         # first time only. NOT npm install: examples/mvp-site is a root workspace member,
+                      # and this also builds the UI toolkit and installs its own nested ui/ app.
+                      # It starts by writing config/devices.json and config/site.deploy.json
+npm start             # kernel + workers + gateway + MCP server on :3101, under PM2
+```
+
+`npm start` returns once PM2 has the processes; PM2 keeps them running in the background. Check them with `pm2 list`,
+and stop the fleet with `npm run stop:pm2` when you're done.
+
+</Step>
 
 <Step>
 
@@ -30,7 +66,7 @@ This is one of [two ways to run the agent][agent-guides-index].
 The agent needs a language model listening locally. Already have a QVAC server running elsewhere?
 Skip this step, then add `--base-url <its-url>` when you [start the agent](#start-the-agent-and-ask).
 
-#### 1.1 Install the QVAC CLI
+#### 2.1 Install the QVAC CLI
 
 QVAC installs into a separate directory to keep the repository's dependencies and lockfile clean:
 
@@ -41,7 +77,7 @@ npm i @qvac/cli@^0.12.0                                       # ~6 GB of prebuil
 ```
 
 <details>
-<summary>Why install @qvac/cli outside this package?</summary>
+<summary>Why install <code>@qvac/cli</code> outside this package?</summary>
 
 `@qvac/cli` is an optional peer dependency because the agent only needs it to *serve* a model, not
 to talk to one. Installing its ~6 GB into this tree perturbs a `package-lock.json` that CI
@@ -51,7 +87,7 @@ keeps the lockfile clean.
 </details>
 
 > [!TIP]
-> **Optional: Free ~2.5 to 3.4 GB of disk space**
+> **Optional: Free ~2.5 to 4.4 GB of disk space**
 > `@qvac/cli` bundles native binaries for multiple operating systems and architectures. If disk space is tight, remove the platforms you do not need:
 >
 > - **macOS:**
@@ -68,15 +104,17 @@ keeps the lockfile clean.
 >   ```
 > *(Note: This is disk relief rather than a permanent fix: running `npm install` again will restore them.)*
 
-#### 1.2 Copy the model configuration
+#### 2.2 Copy the model configuration
 
-From the repository root, copy the pre-configured model definition ([`qvac.config.json`][qvac-config]) into your runtime directory:
+Return to the root of your `mdk` clone, then copy the pre-configured model definition ([`qvac.config.json`][qvac-config])
+into your runtime directory:
 
 ```bash
+cd <path-to>/mdk
 cp backend/core/agent/qvac-runtime/qvac.config.json ~/qvac-runtime/
 ```
 
-#### 1.3 Start the model server
+#### 2.3 Start the model server
 
 Confirm your host capabilities and start the server:
 
@@ -86,7 +124,7 @@ npx qvac doctor                                               # confirms GPU bac
 # --config pins the model: Qwen3-4B, 4-bit quantized, 16k context
 npx qvac serve openai \
   --config qvac.config.json \
-  --port 11500 --verbose --no-cancel-load-on-disconnect       # --verbose: load + GPU offload; wait until listening on 11500
+  --port 11500 --verbose --no-cancel-load-on-disconnect       # --verbose: download and load steps; wait until listening on 11500
 ```
 
 > [!IMPORTANT]
@@ -101,46 +139,32 @@ If this doesn't work first try, see [troubleshooting](#troubleshooting).
 
 <Step>
 
-### Optional: Start the demo fleet
-
-If you already have an MCP tool server, skip this and point the agent at its URL in the [next step](#start-the-agent-and-ask).
-
-From the repository root, boot the [MVP site example][mvp-site-example]. It brings up a simulated fleet (miners, a
-powermeter, a pool) under PM2 and exposes the MDK tools over MCP on port `3101`:
-
-```bash
-cd examples/mvp-site
-npm run setup         # first time only. NOT npm install: examples/mvp-site is a root workspace member,
-                      # and this also builds the UI toolkit and installs its own nested ui/ app
-npm run setup:config  # first time only: writes config/devices.json and config/site.deploy.json
-npm start             # kernel + workers + gateway + MCP server on :3101, under PM2
-```
-
-Leave it running.
-
-</Step>
-
-<Step>
-
 ### Start the agent and ask
 
-In a third terminal, navigate to `backend/core/agent` from the repository root and start the CLI, pointing it at the model (port `11500`) and the MCP tool server (port `3101`):
+In another terminal, navigate to `backend/core/agent` in your `mdk` clone and start the CLI, pointing it at the model
+(port `11500`) and the MCP tool server (the demo fleet's is on port `3101`; if you skipped it, use your own server's URL
+in `--mcp-url`):
 
 ```bash
-cd backend/core/agent
+cd <path-to>/mdk/backend/core/agent
 node bin/mdk-agent.js --model qwen3-4b --base-url http://127.0.0.1:11500/v1 --mcp-url http://127.0.0.1:3101/mcp
 ```
+
+> [!NOTE]
+> The demo fleet's MCP tool server checks no token. A stack's `mdk run mcp` checks every agent against `spec.rbac`: give
+> the agent [its own service account][connect-over-mcp], then add `--mcp-credential <project>/.mdk/credentials/agents/<name>.json`
+> and `--gateway-url` with the stack's Gateway, which the [agent's flags][agent-core-readme] cover.
 
 You may now query the site in plain language, for example:
 
 ```text
 you › how many miners are on the site?
   → tool   count_devices({"family":"miner","state":"all"})
-  ← data   { "summary": "30 miners.", "count": 30 }
-  ▌ There are 30 miners on the site.
+  ← data   { "summary": "10 miners.", "count": 10, … }
+  ▌ 10 miners.
 
 you › list the devices that are not ready
-you › reboot antminer-3          ← a write: the agent stops and asks you to approve
+you › reboot AM-003              ← a write: the agent stops and asks you to approve
 ```
 
 REPL commands: `/about` (what this is) · `/tools` · `/info` · `/new` · `/exit`.
@@ -150,6 +174,11 @@ REPL commands: `/about` (what this is) · `/tools` · `/info` · `/new` · `/exi
 </Steps>
 
 ## Troubleshooting
+
+### The CLI exits with `the MCP server at <url> answered 401`
+
+The MCP server checks agents against `spec.rbac`, and the agent sent no access token, or one it refused. Start the CLI with
+`--mcp-credential` and `--gateway-url`, pointing at the credential `mdk sa add` wrote and the Gateway of the same stack.
 
 ### `npx qvac` fails with a 404
 
@@ -169,7 +198,7 @@ request. `--no-cancel-load-on-disconnect` fixes it. Models declared `preload: tr
 ### The first run looks stalled, or the server "never starts"
 
 The first run fetches ~2.5 GB peer-to-peer. The log says `registry://s3/…`, but the transfer is
-actually Hyperswarm (a DHT plus UDP hole-punching), at roughly ~110 MB/min, so ~25 minutes. There's
+actually Hyperswarm (a DHT plus UDP hole-punching), and takes anywhere from a few minutes to ~25 minutes depending on the network. There's
 no HTTP fallback, so a network that blocks UDP stalls it, and since `preload: true` means the port
 doesn't open until the model is resident, a stalled download presents as a dead server, not a
 failed fetch. Three things help:
@@ -177,16 +206,44 @@ failed fetch. Three things help:
 1. Copy `qvac.config.json` and set `preload: false`. The port opens in ~5 s and a stalled fetch
    surfaces as a `503` on the first request instead of a server that looks dead. Switch back once
    `~/.qvac/models` holds the weights.
-2. Always pass `--verbose`; without it there's no progress output at all.
+2. Always pass `--verbose`: it logs when the download starts and completes. There's no progress bar, so watch the size of
+   `~/.qvac` to see that the download is moving.
 3. Bypass the registry entirely: `serve.models` accepts an explicit `{ "src", "type" }` entry, and
    `*ModelSrc` fields accept URLs and filesystem paths, so a GGUF fetched by hand over HTTPS, or
    copied from a machine that already has one, works. This is the path for a locked-down site.
 
 ### Disk usage is larger than expected
 
-Budget ~6 GB for the CLI, ~2.5 GB for the model weights, and a KV cache that grows over time.
+Budget ~6 GB for the CLI, ~5 GB for the model (~2.5 GB of weights in `~/.qvac/models`, plus a second copy the registry
+keeps in `~/.qvac/registry-corestore`), and a KV cache in `~/.qvac/kv-cache` that grows over time.
 Of the CLI's ~6 GB, ~4.6 GB consists of native prebuilt binaries across multiple platforms and architectures.
-Deleting the foreign prebuilds reclaims ~2.5 to 3.4 GB safely — see [Free foreign prebuilds in Step 1.1](#11-install-the-qvac-cli) for the commands.
+Deleting the foreign prebuilds reclaims ~2.5 to 4.4 GB safely — see [Free foreign prebuilds in Step 2.1](#21-install-the-qvac-cli) for the commands.
+
+### Every tool call returns `ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED`
+
+On its first run, `qvac serve` joins a DHT to download the model, on UDP port `49737` by default, and keeps the port after
+the download completes. The demo fleet's private DHT bootstrap uses the same port, so when QVAC starts first, the fleet's
+`dht-bootstrap` process can't bind it and keeps restarting. This guide [starts the fleet first](#optional-start-the-demo-fleet)
+to avoid this. `npm start` still reports success and `pm2 list` shows the rest of the fleet online, but `dht-bootstrap` sits
+in `waiting restart` (or `errored`) with its restart count (`↺`) climbing, and every tool call fails.
+
+To confirm, run `lsof -nP -iUDP:49737`: a `bare` process holding the port is QVAC's worker.
+
+Once the model has finished downloading (the server logs `listening on http://127.0.0.1:11500`):
+
+1. Stop `qvac serve` with `Ctrl+C` in its terminal.
+2. Restart the demo fleet from `examples/mvp-site`:
+
+   ```bash
+   npm run stop:pm2 && npm start
+   ```
+
+   Do this even if `dht-bootstrap` comes back online by itself once QVAC stops: the tools still fail until the fleet
+   restarts.
+
+3. Start `qvac serve` again with the [same command](#23-start-the-model-server). With the weights cached, it loads in
+   seconds and doesn't join the DHT.
+4. In the agent CLI, start a fresh conversation with `/new` and repeat your question.
 
 ### The fleet has fewer devices than expected
 
@@ -210,6 +267,9 @@ seed) sticks around. Run `npm run stop:pm2`, then clear `examples/mvp-site/.site
 
 [agent-prereqs]: ../../../backend/core/agent/README.md#prerequisites
 <!-- docs@tether.io: agent-prereqs → https://github.com/tetherto/mdk/blob/main/backend/core/agent/README.md#prerequisites -->
+
+[connect-over-mcp]: connect-over-mcp.md
+<!-- docs@tether.io: connect-over-mcp → guides/agent/connect-over-mcp -->
 
 [agent-guides-index]: index.md
 <!-- docs@tether.io: agent-guides-index → guides/agent -->

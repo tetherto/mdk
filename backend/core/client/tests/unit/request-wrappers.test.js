@@ -61,7 +61,6 @@ test('pushActionsBatch - ACTION_PUSH_BATCH forwards batch payload fields', async
   const args = {
     batchActionsPayload: [{ action: 'reboot' }],
     voter: 'v1',
-    authPerms: ['admin'],
     batchActionUID: 'batch-1',
     suffix: 'sfx'
   }
@@ -90,7 +89,7 @@ test('queryActions - ACTION_QUERY forwards queries, suffix and groupBatch', asyn
 })
 
 test('voteAction - ACTION_VOTE forwards vote fields', async (t) => {
-  const args = { id: 'a1', voter: 'v1', approve: true, authPerms: ['admin'] }
+  const args = { id: 'a1', voter: 'v1', approve: true }
   const env = await sent(t, (c) => c.voteAction(args))
   t.is(env.action, ACTIONS.ACTION_VOTE)
   t.alike(env.payload, args)
@@ -117,6 +116,25 @@ test('pullTelemetry - string query becomes { type }', async (t) => {
 test('pullTelemetry - no query defaults to metrics', async (t) => {
   const env = await sent(t, (c) => c.pullTelemetry('d1'))
   t.alike(env.payload, { query: { type: 'metrics' } })
+})
+
+test('pullSnapshot - worker-level TELEMETRY_PULL with no deviceId', async (t) => {
+  const env = await sent(t, (c) => c.pullSnapshot({ workers: ['w1', 'w2'], metrics: ['hashrate_rt'] }))
+  t.is(env.action, ACTIONS.TELEMETRY_PULL)
+  t.is(env.deviceId, null)
+  t.alike(env.payload, { query: { type: 'snapshot', workers: ['w1', 'w2'], metrics: ['hashrate_rt'] } })
+})
+
+test('pullSnapshot - forwards the range and granularity', async (t) => {
+  const env = await sent(t, (c) => c.pullSnapshot({ workers: ['w1'], metrics: ['power'], from: 1000, to: 2000, granularity: '1m' }))
+  t.alike(env.payload, { query: { type: 'snapshot', workers: ['w1'], metrics: ['power'], from: 1000, to: 2000, granularity: '1m' } })
+})
+
+test('pullSnapshot - the query type cannot be overridden and no argument still names the type', async (t) => {
+  const snap = await sent(t, (c) => c.pullSnapshot({ workers: ['w1'], type: 'metrics' }))
+  t.is(snap.payload.query.type, 'snapshot')
+  const bare = await sent(t, (c) => c.pullSnapshot())
+  t.alike(bare.payload, { query: { type: 'snapshot' } }, 'the Kernel answers ERR_WORKERS_REQUIRED instead of a silent null')
 })
 
 test('getCommandLog - COMMAND_LOG forwards the window and limit', async (t) => {
@@ -217,4 +235,30 @@ test('rotateSigningKey - IDENTITY_KEYS_ROTATE with an empty payload', async (t) 
   const env = await sent(t, (c) => c.rotateSigningKey())
   t.is(env.action, ACTIONS.IDENTITY_KEYS_ROTATE)
   t.alike(env.payload, {})
+})
+
+test('pullAggregate - worker-level TELEMETRY_PULL with no deviceId, carrying the ops spec', async (t) => {
+  const ops = { total: { op: 'sum', src: 'metrics.hashrate' }, byModel: { op: 'group_sum', src: 'metrics.hashrate', group: 'device.model' } }
+  const env = await sent(t, (c) => c.pullAggregate({ workers: ['w1', 'w2'], ops }))
+  t.is(env.action, ACTIONS.TELEMETRY_PULL)
+  t.is(env.type, MESSAGE_TYPES.REQUEST)
+  t.is(env.deviceId, null)
+  t.alike(env.payload, { query: { type: 'aggregate', workers: ['w1', 'w2'], ops } })
+})
+
+test('pullWorkerQuery - worker-level TELEMETRY_PULL with no deviceId, carrying the type and params', async (t) => {
+  const env = await sent(t, (c) => c.pullWorkerQuery({ workers: ['w1', 'w2'], type: 'list', status: true, limit: 50 }))
+  t.is(env.action, ACTIONS.TELEMETRY_PULL)
+  t.is(env.deviceId, null)
+  t.alike(env.payload, { query: { status: true, limit: 50, workers: ['w1', 'w2'], type: 'list' } })
+
+  const bare = await sent(t, (c) => c.pullWorkerQuery())
+  t.alike(bare.payload, { query: { workers: undefined, type: undefined } }, 'the Kernel answers ERR_WORKERS_REQUIRED, never a device pull')
+})
+
+test('pullAggregate - the query type cannot be overridden and no argument still names the type', async (t) => {
+  const agg = await sent(t, (c) => c.pullAggregate({ workers: ['w1'], ops: { n: { op: 'cnt' } }, type: 'snapshot' }))
+  t.is(agg.payload.query.type, 'aggregate')
+  const bare = await sent(t, (c) => c.pullAggregate())
+  t.alike(bare.payload, { query: { type: 'aggregate' } }, 'the Kernel answers ERR_WORKERS_REQUIRED instead of a silent null')
 })

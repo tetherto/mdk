@@ -12,12 +12,15 @@ const APP_NAME = path.basename(path.join(__dirname, '..'))
 const MINER_ACTIONS = Object.freeze({ command: 'site.miner-command', pools: 'site.miner-pools' })
 
 // The brand a miner's Kernel name carries (its worker contract's metadata.brand,
-// as a slug). The Kernel registry does not hand it out, so it is read from the
+// as a slug), from the Worker's worker.list row. A row without one (a Worker not
+// yet READY, a contract without metadata, an older Kernel) falls back to the
 // device type the worker assigns, else the workerId, as the UI does
 // (ui/src/utils.ts minerFamily). SealMiners report no device type.
 const BRANDS = Object.freeze({ 'miner-wm': 'whatsminer', 'miner-am': 'antminer', 'miner-av': 'avalon' })
 const WORKER_BRANDS = Object.freeze(['whatsminer', 'antminer', 'sealminer', 'avalon'])
-const minerBrand = (thg) => {
+const minerBrand = (thg, worker) => {
+  const declared = worker && worker.brand && brandSlug(worker.brand)
+  if (declared) return declared
   const type = Object.keys(BRANDS).find((prefix) => (thg.type || '').startsWith(prefix))
   if (type) return BRANDS[type]
   const workerId = String(thg.workerId || '').toLowerCase()
@@ -55,9 +58,9 @@ module.exports = async (req, ctx) => {
 
   const miners = Object.fromEntries(Object.keys(MINER_ACTIONS).map((action) => [action, []]))
   if (Object.values(MINER_ACTIONS).some((id) => routes[id])) {
-    const { byFamily } = await loadSite(mdkClient)
+    const { workers, byFamily } = await loadSite(mdkClient)
     for (const thg of byFamily.miner || []) {
-      const brand = minerBrand(thg)
+      const brand = minerBrand(thg, workers.find((w) => w.workerId === thg.workerId))
       const resourceName = brand ? deviceName({ family: 'miner', brand: brandSlug(brand), worker: thg.workerId, device: thg.id }) : undefined
       const writable = allows({ resource: 'devices', verb: 'write', ...(resourceName ? { resourceName } : {}) })
       for (const [action, routeId] of Object.entries(MINER_ACTIONS)) {

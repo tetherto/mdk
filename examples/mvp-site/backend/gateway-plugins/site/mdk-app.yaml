@@ -1,5 +1,5 @@
 id: io.tether.example.mvp-site
-version: 0.13.1
+version: 0.14.0
 displayName: MVP Site
 description: "MVP-site example app: aggregates the site (miners, a powermeter, a mining pool) via the MDK protocol client."
 # The Kernel access the site app's account (app:site) gets: list workers, read

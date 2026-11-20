@@ -81,6 +81,16 @@ export type AlertProps = {
    * @default 'info'
    */
   type?: AlertType
+  /**
+   * ARIA role for the wrapper, which decides whether screen readers announce it.
+   * `'alert'` is an assertive live region — it interrupts whatever the reader is saying.
+   * Right for a message that appears in response to something the user just did, wrong for
+   * a banner that is simply part of the page: that one is re-announced on every mount, so it
+   * interrupts on every navigation. `'status'` announces politely; `'none'` renders no live
+   * region at all (the attribute is omitted).
+   * @default 'alert'
+   */
+  role?: 'alert' | 'status' | 'none'
   /** Main message */
   title?: React.ReactNode
   /** Secondary/detail content shown below the title */
@@ -116,6 +126,10 @@ export type AlertProps = {
  * Inline alert banner with type-based icon, optional description, dismissible
  * close button, and trailing action slot.
  *
+ * Announced assertively by default, which suits a message that appears in
+ * response to something the user just did. A banner that is simply part of the
+ * page should pass `role` to say so — see the prop's docs.
+ *
  * @category feedback
  *
  * @example
@@ -129,6 +143,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
   (
     {
       type = 'info',
+      role = 'alert',
       title,
       description,
       showIcon = false,
@@ -155,7 +170,8 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
     return (
       <div
         ref={ref}
-        role="alert"
+        role={role === 'none' ? undefined : role}
+        aria-live={role === 'none' ? undefined : role === 'status' ? 'polite' : 'assertive'}
         className={cn(
           'mdk-alert',
           `mdk-alert--${type}`,
@@ -163,6 +179,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
           description && 'mdk-alert--with-description',
           className,
         )}
+        // oxlint-disable-next-line react/forbid-dom-props -- forwards the consumer's style prop
         style={style}
         {...props}
       >

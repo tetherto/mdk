@@ -1,12 +1,7 @@
 import type { JSX } from 'react'
 
 import { Button } from '@tetherto/mdk-react-devkit/primitives'
-import {
-  useAuth,
-  useDevices,
-  useNotifications,
-  useTimezone,
-} from '@tetherto/mdk-react-adapter'
+import { useAuth, useDevices, useNotifications, useTimezone } from '@tetherto/mdk-react-adapter'
 
 import { DemoBlock } from '../../components/demo-block'
 import { DemoPageHeader } from '../../components/demo-page-header'
@@ -22,7 +17,7 @@ const AuthDemo = (): JSX.Element => {
         <strong>permissions:</strong>{' '}
         <code>{permissions ? JSON.stringify(permissions) : '(null)'}</code>
       </p>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div className="demo-section__button-row">
         <Button onClick={() => setToken(`tok_${Date.now()}`)}>Set token</Button>
         <Button onClick={() => setPermissions({ superAdmin: true, write: true })}>
           Set permissions
@@ -42,7 +37,7 @@ const NotificationsDemo = (): JSX.Element => {
       <p>
         <strong>count:</strong> <code>{count}</code>
       </p>
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div className="demo-section__button-row">
         <Button onClick={increment}>Increment</Button>
         <Button onClick={decrement}>Decrement</Button>
         <Button variant="secondary" onClick={reset}>
@@ -60,7 +55,7 @@ const TimezoneDemo = (): JSX.Element => {
       <p>
         <strong>timezone:</strong> <code>{timezone}</code>
       </p>
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div className="demo-section__button-row">
         <Button onClick={() => setTimezone('UTC')}>UTC</Button>
         <Button onClick={() => setTimezone('America/New_York')}>America/New_York</Button>
         <Button onClick={() => setTimezone('Asia/Bangkok')}>Asia/Bangkok</Button>
@@ -76,7 +71,7 @@ const DevicesDemo = (): JSX.Element => {
       <p>
         <strong>selectedDevices:</strong> <code>{selectedDevices.length}</code> selected
       </p>
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div className="demo-section__button-row">
         <Button
           onClick={() =>
             setSelectedDevices([
@@ -95,7 +90,6 @@ const DevicesDemo = (): JSX.Element => {
     </div>
   )
 }
-
 
 export const HooksDemoPage = (): JSX.Element => {
   return (

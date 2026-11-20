@@ -75,7 +75,7 @@ mdk create app <app-name>
 
 Scaffolds and registers in one step (manifest rules: [`mdk-create-app`](../mdk-create-app/SKILL.md)):
 
-```
+```text
 apps/<app-name>/
 ├── package.json          # name: <app-name> (or @org/<app-name> with --org)
 ├── mdk-app.yaml          # id, version (= package.json), displayName, permissions, config defaults
@@ -93,12 +93,22 @@ skip with `--no-install`) and appends it under `mdk.yaml` →
 
 ### 3. Author `mdk-plugin.json`
 
+Keep `"routeTableVersion": "1"` at the top of the table (`mdk create app` writes it). With it, `mdk validate app` and CI
+report the schema's OpenAPI-shaped rules as errors; without it, as warnings. Do not set it to the MDK release.
+
 Every route needs:
 
-- `id` — stable dotted id (`<domain>.<metric>`, e.g. `fleet.summary`)
-- `handler` — relative path to the controller
-- `http.method` + `http.path` — the UI will `fetch` this path
-- `http.responses.200.content.application/json.schema` — real response shape
+- `id` — stable dotted id (`<domain>.<metric>`, e.g. `fleet.summary`), required by the schema
+- `handler` — relative path to the controller, required by the schema
+- `http.method` + `http.path` — the UI will `fetch` this path. The loader requires a method and a path, from `http` or, in the
+  flat form, the route's top level; write them in `http`
+
+Write these too: the MCP tool and the Gateway's request validation read them. If you generate an HTTP reference for your app
+(`routeTableToOpenApi` and `renderReference` from `@tetherto/mdk-app-runtime`, run in your own repository), it is built from them;
+anything left out shows as "Not declared".
+
+- `http.responses.200.content.application/json.schema` — real response shape, and one response per error status naming its
+  codes in `x-mdk-errors`
 - `description`, `constraints`, `examples`, `errors`, `safety`
 
 Path convention: `/api/<domain>/<resource>` (e.g. `/api/fleet/summary`). The Gateway serves it under
@@ -124,17 +134,21 @@ module.exports = async function myRoute (req) {
   // mdkClient methods return the bare payload — never read `.payload`
   const workersResp = await mdkClient.listWorkers()
   const workers = (workersResp && workersResp.workers) || []
-  // … filter devices, pullTelemetry, shape response …
+  // … pullSnapshot / pullAggregate over the workers, shape response …
   return { /* matches mdk-plugin.json schema */ }
 }
 ```
 
-Typical [fan-out pattern](./references/controller-patterns.md):
+Typical [fleet-read pattern](./references/controller-patterns.md):
 
-1. `listWorkers()` → collect `deviceIds`.
-2. `getCapabilities(deviceId)` → keep devices matching the contract fingerprint.
-3. `pullTelemetry(deviceId, 'metrics')` → read `metrics.<channel>`.
+1. `listWorkers()` → the `workerId`s to read (skip `TERMINATED` / `DEAD`).
+2. `pullSnapshot({ workers, metrics })` → the latest stored reading per device in one call, no
+   device round-trip; or `pullAggregate({ workers, ops })` when the route only needs the number.
+3. A Worker under `errors` with `ERR_TELEMETRY_STORE_DISABLED` does not poll: fall back to
+   `pullTelemetry(deviceId, 'metrics')` for its devices only.
 4. Return a UI-friendly object (`unit`, totals, per-device rows).
+
+Never start a polling loop in an app: the Workers already poll on `telemetryPollIntervalMs`.
 
 ### 5. Register in `mdk.yaml`
 
@@ -158,7 +172,9 @@ Wiring and boot order details live in [`mdk-deployment`](../mdk-deployment/SKILL
 
 With the stack up, sign in for an access token and send it on the request. No app route is open: without a
 token the Gateway answers `401 ERR_AUTH_UNAUTHORIZED`, and without a `spec.rbac` rule over `<app>/<path>` for the
-signed-in user it answers `403 ERR_AUTH_FORBIDDEN`. `mdk user add <name> --admin` gives a first operator a rule
+signed-in user it answers `403 ERR_AUTH_FORBIDDEN`. The Gateway reference lists
+[every error an app route can answer](../../../../../backend/core/gateway/docs/http-api.md#errors-on-every-app-route).
+`mdk user add <name> --admin` gives a first operator a rule
 to sign in with.
 
 ```bash
@@ -196,9 +212,10 @@ Only then build UI against it.
 
 ## References
 
-- [`references/plugin-authoring.md`](./references/plugin-authoring.md): `mdk-plugin.json` fields + a fully populated route example
-- [`references/controller-patterns.md`](./references/controller-patterns.md): list / filter / `pullTelemetry` patterns
+- [`references/plugin-authoring.md`](./references/plugin-authoring.md): `mdk-plugin.json` authoring guidance + a fully populated route example
+- [`mdk-plugin.schema.json`](../../../../../backend/core/app-runtime/mdk-plugin.schema.json) (bundled as `references/mdk-plugin.schema.json`): every route-table field and when it is checked
+- [`references/controller-patterns.md`](./references/controller-patterns.md): `pullSnapshot` / `pullAggregate` fleet reads, the live fallback, single-device reads
 - [`../mdk/references/protocol.md`](../mdk/references/protocol.md): envelope / action set
 - Shipped app repositories: [`mdk-app-demo`](https://github.com/tetherto/mdk-app-demo) (read-only
   fan-out) and [`mdk-app-agent`](https://github.com/tetherto/mdk-app-agent) (auth + stream routes);
-  [`supported-apps.md`](https://github.com/tetherto/mdk/blob/main/docs/reference/supported-apps.md#availability) says how to install them
+  [`supported-apps.md`](../../../../../docs/reference/supported-apps.md#availability) says how to install them

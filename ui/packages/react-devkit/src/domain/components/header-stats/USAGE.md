@@ -38,6 +38,7 @@ passes the numbers in.
 | `fractionDigits` | Optional | `number` | `3` | Decimal places shown for both values — defaults to `3` |
 | `icon` | Optional | `React.ReactNode` | - | Icon shown next to the stat |
 | `poolPhs` | Optional | `number` | - | Pool-side aggregate hashrate in PH/s |
+| `showPool` | Optional | `boolean` | - | Whether to render the pool row. Defaults to `true` only when `poolPhs` is passed, so a site with no upstream pool shows no empty `Pool —` row. Pass it explicitly to hold the row's space while the pool number loads, or to drop the row despite having one |
 | `unit` | Optional | `string` | `PH/s` | Hashrate unit label — defaults to `PH/s` |
 
 ### `HeaderMinersBox` props
@@ -54,6 +55,7 @@ passes the numbers in.
 | `poolMismatch` | Optional | `number` | - | Optional pool-side mismatch count (red) |
 | `poolOnline` | Optional | `number` | - | Optional pool-side online count (green) |
 | `poolTotal` | Optional | `number` | - | Optional pool-side meta — total miners as reported by upstream pools |
+| `showPool` | Optional | `boolean` | - | Whether to render the pool counts on the second row. Defaults to `true` only when one of `poolTotal` / `poolOnline` / `poolMismatch` is passed, so a site with no upstream pool shows no empty `Pool (—) — —`. Pass it explicitly to hold the counts' space while they load, or to drop them despite having a pool. The row's `online / total` ratio is app-side and always rendered |
 | `total` | Optional | `number` | - | Total miners across the site (denominator of the `158 / 2,188` ratio) |
 
 ### `HeaderStatsBar` props
@@ -97,6 +99,12 @@ const Header = ({ summary }: { summary?: SiteSummary }) => (
 ## Notes
 
 - Undefined numbers render as `—`. Loading state is the empty state
+- The pool row on `HeaderMinersBox` / `HeaderHashrateBox` only renders when a
+  pool prop is passed, so a site with no upstream pool shows no `Pool —`.
+  `showPool` overrides that in both directions — pass it to hold the row's
+  space while the pool numbers load, or `showPool={false}` to drop the row
+  even though the values are there. The miners box's `online / total` ratio is
+  app-side and always rendered
 - The icon slot on each box is optional — pass a 16/20px SVG
 - Styles use cascade layer `mdk`; consumer styles in `app` win without
   specificity tricks

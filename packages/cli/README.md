@@ -2,7 +2,7 @@
 
 The `mdk` command-line tool. Built with Commander.js and `@clack/prompts`; the implemented commands are:
 `mdk onboard` (a guided wizard that detects the environment, asks the setup
-questions and writes `mdk.yaml`), `mdk create` (`worker`, `app`, `dashboard`
+questions and writes [`mdk.yaml`](../../docs/reference/mdk-yaml.md)), `mdk create` (`worker`, `app`, `dashboard`
 — each self-registering in the spec), `mdk add` (`app`, `worker` from npm or
 GitHub), `mdk validate` (`app`, `worker`), `mdk run` (boots the stack from the
 spec), `mdk status` (environment + component health) and `mdk skill add`
@@ -19,7 +19,7 @@ for interactive wizard steps
 
 ## Project layout
 
-`onboard` and `create` emit one role-grouped layout, so a path in `mdk.yaml` says
+`mdk onboard` and `mdk create` emit one role-grouped layout, so a path in `mdk.yaml` says
 what it is:
 
 ```text
@@ -34,7 +34,7 @@ apps/dashboard/    the UI dashboard (mdk create dashboard)
 
 Workers and apps are linked from the root manifest by relative `file:`
 dependencies because the runtime resolves them out of the project's
-`node_modules` — so `create worker` and `create app` run `npm install` **at the
+`node_modules` — so `mdk create worker` and `mdk create app` run `npm install` **at the
 project root**, not in the package. The dashboard is deliberately not linked: it
 links the MDK UI packages by `file:` path, and hoisting its React through the root
 alongside those links invites a duplicate-React bug, so it installs in place.
@@ -44,7 +44,8 @@ alongside those links invites a duplicate-React bug, so it installs in place.
 find each other by: `kernel.key` (read by the Gateway, apps and the MCP server),
 `keys/` (written by Workers, watched by the Kernel), `gateway.key` (the key app
 runtimes accept), `trusted-keys/` (every caller's key, admitted by the Kernel
-and Workers) and `run/` (one lock per running Kernel, Worker and app). Delete
+and Workers), `run/` (one lock per running Kernel, Worker and app) and
+`network.json` (the DHT settings the Kernel process resolved, for a component you host yourself). Delete
 the whole directory to reset a stack.
 
 ## Develop
@@ -91,8 +92,8 @@ CLI=/path/to/mdk/packages/cli/dist/index.js
 
 # Install the MDK Developer Skill (via the @tetherto/mdk-skill entry point)
 node "$CLI" skill add --client all --dir .
-ls .cursor/skills .claude/skills   # mdk, mdk-app-rbac, mdk-app-routes, mdk-create-app, mdk-deployment, mdk-publish-security,
-                                   # mdk-site-sizing, mdk-ui-component, mdk-worker
+ls .cursor/skills .claude/skills   # mdk, mdk-app-rbac, mdk-app-routes, mdk-app-security, mdk-create-app, mdk-deployment,
+                                   # mdk-publish-security, mdk-site-sizing, mdk-ui-component, mdk-worker, mdk-worker-security
 
 # Scaffold the MDK UI shell into apps/my-dashboard. Pass a name here: with no name, create reads
 # the stack name from mdk.yaml, which only `onboard` (below) writes
@@ -147,13 +148,19 @@ spec:
         devices:
           - id: v3-0
             opts: { host: 127.0.0.1, port: 18080, serial: WM3-DEMO-0, hashrateThs: 200, powerW: 3500 }
+            info: { rack: rack-1 }     # labels aggregate reads group and filter on
           - id: v3-1
             opts: { host: 127.0.0.1, port: 18081, serial: WM3-DEMO-1, hashrateThs: 180, powerW: 3300 }
+            info: { rack: rack-2 }
 ```
 
 `config.devices[].opts` is the plugin's own per-device config (opaque to the CLI).
-With `mock: true` the CLI starts one simulator from `<package>/mock/server.js` per
-device so the Worker talks to a mock instead of hardware.
+`config.devices[].info` is optional: an object of labels, such as `rack` or `container`, that
+[aggregate reads group and filter on](../../backend/core/mdk-worker/README.md#telemetry-collector) as `info.<key>`. The
+plugin never sees it.
+With `mock: true` the CLI starts one simulator from `<package>/mock/server.js` per device so the Worker
+talks to a mock instead of hardware. Set `mock` to a module path inside the package
+(`mock: mock/cgi-server.js`) when the simulator is named differently.
 
 #### Apps
 
@@ -168,10 +175,10 @@ each by its subpath (`package: "@your-org/apps/ops"`):
 spec:
   apps:
     - name: agent
-      package: "@tetherto/mdk-app-agent"           # the UI calls it at /agent
+      package: "@tetherto/mdk-app-agent"           # installed from GitHub: mdk add app github:tetherto/mdk-app-agent; the UI calls it at /agent
       mount: /                                        # serve at the root, not /apps/agent
     - name: demo
-      package: "@tetherto/mdk-app-demo"            # an installed npm name
+      package: "@tetherto/mdk-app-demo"            # installed from GitHub: mdk add app github:tetherto/mdk-app-demo
     - name: site
       package: ./apps/site                            # or a local path
       config:
@@ -196,7 +203,7 @@ a simulator under `mock/`) — it lands under `workers/<name>`, ready to referen
 node "$CLI" create worker demo-miner --dir /tmp/mdk-try   # → /tmp/mdk-try/workers/demo-miner
 ```
 
-`create worker` also writes the new Worker into the project's `mdk.yaml` under
+`mdk create worker` also writes the new Worker into the project's `mdk.yaml` under
 `spec.workers` (with a `mock: true` seed device) so it is runnable right away;
 pass `--no-stack-entry` to skip and print the snippet instead. It leaves an
 existing same-named entry untouched.
@@ -225,6 +232,13 @@ store, so the second takes over the first one's network key and the first goes
 unreachable. A lock left behind by a process that is gone is taken over. The
 Gateway and the MCP server are covered by their port check instead.
 
+`mdk run` does not pass over a Worker the Kernel refuses. In place of its ready line it prints
+`! worker <name> not registered with the Kernel (<error>)`; where the refused Worker registered from
+another process, the Kernel's own run warns instead. Both bindings the Kernel
+refuses on — a device bound to the first Worker that registered it, and a Worker name bound to a key —
+are persisted and outlive a restart, so the message names the binding and the `worker.terminate`
+action (`client.terminateWorker('<id>')`) that releases it.
+
 #### Private HyperDHT (local or air-gapped)
 
 Every component talks HRPC over HyperDHT, which joins the public `*.hyperdht.org` bootstrap by default. Add
@@ -243,12 +257,23 @@ Without `bootstrap`, the process that runs the Kernel (`mdk run` or `mdk run ker
 and stops it after the Kernel. The other targets and every command that calls the Kernel (`mdk status`, `mdk user`, `mdk rbac`)
 join it. A bootstrap list that names a public HyperDHT node is refused. The
 [local and air-gapped profile](../../docs/guides/deployment/private-dht.md) covers PM2, Docker and isolated LANs.
+Where outbound UDP to the public bootstrap is blocked, the Kernel, apps and Gateway still start and no
+Worker registers. The process that runs the Kernel (`mdk run` or `mdk run kernel`) warns about each Worker it could not
+reach, including one hosted in another process (`the Kernel could not reach the worker at …`). It adds a hint once per
+run: on the public DHT it names the blocked UDP and this setting, and on a private one it names the bootstrap a Worker
+started outside `mdk run` has to join. That process writes the resolved settings to `.mdk/network.json`, which
+[`dhtFromProject`](../../backend/core/mdk/README.md#dhtfromprojectprojectdir---bootstrap-dhthost-) reads for a Worker you
+host yourself.
 
 ### Run the dashboard
 
-`mdk run dashboard` starts the scaffolded UI shell's dev server
-(`npm run dev` under `apps/dashboard`, or the first `apps/*` app with a `dev`
-script if the dashboard was created with a custom `--name`). Unlike the Kernel,
+`mdk run dashboard [name]` starts the scaffolded UI shell's dev server
+(`npm run dev`). `[name]` is the directory the dashboard was scaffolded under:
+`mdk create dashboard ops-ui` creates `apps/ops-ui`, so
+`mdk run dashboard ops-ui` runs it, and a name the project does not have is
+refused with the list of dashboards it holds. With no name it runs
+`apps/dashboard`, or else the first `apps/*` app with a `dev` script, and
+prints the one it chose. Unlike the Kernel,
 Gateway and Workers — all booted in-process — the dashboard is a separate
 Vite/React app with its own dependency tree (kept out of the project's npm
 workspaces so its React is never hoisted alongside anyone else's, see
@@ -273,7 +298,10 @@ failure before anything boots.
 Every `create` command installs dependencies by default (`--no-install` to skip):
 a Worker or app installs from the project root, so npm links it through its `file:`
 dependency, while the dashboard installs in place. If the project has no root
-[`package.json`](./package.json) yet, `create worker` and `create app` write one.
+[`package.json`](./package.json) yet, `mdk create worker` and `mdk create app` write one.
+When npm fails a dashboard install, it is retried once with `--legacy-peer-deps` and the retry is
+reported; a second failure is a warning naming npm's exit code, with the scaffold left in place to
+`npm install` by hand.
 
 ```bash
 node "$CLI" run --dir /tmp/mdk-try                      # everything together: kernel + workers + apps + gateway
@@ -284,7 +312,7 @@ node "$CLI" run worker demo-miner --dir /tmp/mdk-try    # just the worker (+ its
 
 `mdk run mcp` boots a standalone [`@tetherto/mdk-mcp`](../../backend/core/mcp/README.md)
 server — a separate process from the Gateway, which has no MCP code of its own.
-It requires `mdk.yaml` exactly like every other `run` target, and reads the same
+It requires `mdk.yaml` exactly like every other `mdk run` target, and reads the same
 `spec.apps` the Gateway serves: each declared app's
 `mdk-plugin.json` contract is converted into MCP tools with no separate tool
 authoring. Like the Gateway, it runs no app code: each tool call is forwarded to
@@ -292,7 +320,7 @@ the app's runtime, so an app's tools answer once `mdk run` has started it
 (until then a call returns `ERR_APP_RUNTIME_UNAVAILABLE`). Like `dashboard`,
 `mcp` is never part of the default `all` target — it's always started
 explicitly, and needs the Kernel already reachable (an in-process handle isn't
-available to a standalone `run mcp`, so start the Kernel first: `mdk run kernel`).
+available to a standalone `mdk run mcp`, so start the Kernel first: `mdk run kernel`).
 
 ```bash
 node "$CLI" run --dir /tmp/mdk-try           # first, in its own terminal
@@ -310,8 +338,6 @@ spec:
     port: 3100   # optional — defaults to gateway.port + 100
     allowWrite: false        # optional — same as `mdk run mcp --allow-write`
     allowTools: [demo.summary]  # optional — expose only these tool ids (write tools included)
-    token: ${MDK_MCP_TOKEN}  # optional — require `Authorization: Bearer <token>` on /mcp; `mdk run mcp` fails if the variable is unset
-    identity: { user: agent }   # optional — needed to expose `auth: true` Gateway routes
 ```
 
 Tools that are not declared read-only (`"safety": "read-only"` on the route, as the
@@ -349,14 +375,14 @@ Exit codes make it scriptable (`mdk status && deploy…`):
 | `1`       | `collectStatus` throws while gathering the report, an unexpected error | Check the printed error message and the project directory (`--dir`) |
 | `2`       | `--output` names a format outside `table`/`json`/`yaml`                | Pass one of `table`, `json`, `yaml` |
 | `4`       | An environment precondition fails: old Node, a missing or invalid `mdk.yaml`, or a declared package that doesn't resolve | Fix the precondition the report names |
-| `5`       | The stack isn't fully up: Kernel or Gateway unreachable, a declared Worker not registered/serving, or a declared app not running | Check the component the report marks unhealthy |
+| `5`       | The stack isn't fully up: Kernel or Gateway unreachable, a declared Worker not registered/serving, or a declared app not running; or the Kernel is up but the session ran out or the account may not list Workers, so they were not checked | Check the component the report marks unhealthy; for a refusal, `mdk login` again or bind the account to a role that may list Workers |
 
 Notes:
 
-- `skill add` resolves `@tetherto/mdk-skill` through node/npm (no path walking),
+- `mdk skill add` resolves `@tetherto/mdk-skill` through node/npm (no path walking),
 assembling on demand inside the monorepo and copying the bundled skills once
 published
-- `create dashboard` (and the onboarding UI step) scaffold the MDK UI shell from
+- `mdk create dashboard` (and the onboarding UI step) scaffold the MDK UI shell from
 [`examples/mdk-ui-shell-template`](../../examples/mdk-ui-shell-template/README.md) (a real, runnable
 Vite app that doubles as the template). **Inside the monorepo** it copies that template locally (no network)
 and rewrites the template's `file:` MDK deps to absolute links into the
@@ -375,7 +401,7 @@ port. Passing a name puts the app in `apps/<name>` instead.
 | `--no-install` | Optional | `boolean` | `false` | Skip the post-scaffold dependency install       |
 
 - The scaffolded dashboard is a normal Vite app: `npm run build` inside it
-produces a `dist/` you serve however you serve static assets. `create dashboard`
+produces a `dist/` you serve however you serve static assets. `mdk create dashboard`
 only sets `VITE_GATEWAY_URL`/`VITE_OAUTH_BASE_URL` for local dev against this
 stack — update `apps/dashboard/.env` before building for any other target.
 - Reset a scratch run with `rm -rf /tmp/mdk-try`
@@ -409,16 +435,18 @@ mdk validate worker rig --json
 mdk validate app --path . --smoke --strict --json   # a partner's app repo in CI
 ```
 
-`mdk add` runs `npm install --ignore-scripts --save-exact <source>` in the project (so npm records the
-exact version in `package.json`, and no install script of an unchecked package runs), checks the installed
-package with the same rules as `mdk validate`, and only then adds it under `spec.apps` / `spec.workers` in
-`mdk.yaml`, keeping the file's comments and formatting. A refused package leaves `mdk.yaml` untouched and
-puts `package.json` and the lockfile back, so it neither stays installed nor replaces a version an app
-already runs. Adding the same package again updates it under the name it already has; giving it another
-`--name` adds it as a second app. A
-GitHub source has to be installed (no `--no-install`), because its package name is only known after
-npm has fetched it. A worker without a bundled mock is added without `mock: true`; fill in its
-`config.devices[].opts`.
+`mdk add` runs `npm install --ignore-scripts --save-exact <source>` in the project (so npm records the exact version in
+`package.json`, and no install script of an unchecked package runs; for a GitHub source, `mdk add` then writes the
+commit the lockfile resolved into the dependency spec in `package.json` and into the lockfile's root entry,
+`github:<owner>/<repo>#<sha>`), checks the installed package with the same
+rules as `mdk validate`, and only then adds it under `spec.apps` / `spec.workers` in `mdk.yaml`, keeping the file's
+comments and formatting. A refused package leaves `mdk.yaml` untouched and puts `package.json` and the lockfile back, so
+it neither stays installed nor replaces a version an app already runs. Adding the same package again updates it under
+the name it already has; giving it another `--name` adds it as a second app. A GitHub source has to be installed (no
+`--no-install`), because its package name is only known after npm has fetched it. A Worker whose package ships `mock/server.js` is added with
+`mock: true`; one that ships its simulator under another single `mock/*server*.js` name is added with that
+path, and one with no bundled mock is added without `mock`, so fill in `config.devices[].opts` with the
+address of your hardware.
 
 An app runs as its own service account, `app:<name>`, which `mdk add app` records on its `spec.apps` entry, with a new credential in
 `.mdk/credentials/apps/<name>.json` that stays in this instance and never ships in the package. Install also writes a role
@@ -442,7 +470,13 @@ rules must name Kernel resources (`devices`, `workers`, `commands`, `actions`, `
 and `permissions` must be there (`[]` when the app makes no Kernel call). An app named in `mdk.yaml` is also checked against
 `spec.rbac`: a policy that binds nobody, no `app-<name>` role, a role that differs from what the manifest requests, or no binding
 for `app:<name>` each fail the check with the command that fixes it, since the Kernel would refuse the app's calls.
-Unknown `mdk-app.yaml` keys are reported, so a typo does not pass silently. `mdk validate worker` checks `package.json`
+The route table is then checked against the [route-table schema](../../backend/core/app-runtime/docs/route-table-fields.md): its
+rules for the OpenAPI-shaped form are warnings, or errors in a table that declares `routeTableVersion`, and a route without a
+`description` gets a warning, since an HTTP reference generated from the table would show its purpose as "Not declared". `--strict` turns these
+warnings into errors, as it does every warning.
+Unknown `mdk-app.yaml` keys are reported, so a typo does not pass silently. It warns, without failing, about a route
+that sets `permissions` (`spec.rbac` never reads them) and about a request body schema that would lose a JSON `null` to
+the Gateway's [type coercion](../../backend/core/gateway/README.md#request-forwarding). `mdk validate worker` checks `package.json`
 and the `mdk-contract.json` Worker Plugin contract: at least one telemetry entry or command, command `params` as lists,
 and handlers resolved on disk and compiling. Nothing is run, so a module that throws when loaded only shows when the
 component starts. Both exit 1 on any error.
@@ -458,7 +492,8 @@ contract without a `contractVersion` stamp reports as warnings become errors ins
 to them, and the [contract validation reference](../../backend/core/mdk-worker/README.md#contract-validation) covers
 which requirements sit at that tier.
 
-`mdk validate app --path <dir>` is the same partner-CI check for an app, and its exit code is the listing gate. `--smoke`
+`mdk validate app --path <dir>` is the same partner-CI check for an app. The [listing criteria](../../CONTRIBUTING.md#listing-criteria)
+name the flags a Worker or app has to pass with before it is listed. For an app, `--smoke`
 loads the app's routes and `main` through the app runtime's own loader and calls every route against an in-memory
 Kernel that serves a mock fleet and grants the app exactly its `mdk-app.yaml` `permissions`, as `mdk add app` would.
 No Kernel, Gateway or DHT runs. `--strict` turns every warning into an error, including install scripts in
@@ -495,7 +530,8 @@ mdk rbac show -o json   # compare spec.rbac with the policy the Kernel enforces
 ```
 
 The Kernel applies `spec.rbac` each time `mdk run` starts it. `mdk rbac apply` switches a running Kernel to an edited policy at once;
-if the Kernel refuses it, the policy in force stays. Both commands exit 1 when the Kernel is down or refuses.
+if the Kernel refuses it, the policy in force stays. Both commands exit 1 when the Kernel is down, or the policy could not be applied or read
+(a refused policy, an account without the permission, or an expired session).
 
 ## Users and service accounts
 
@@ -524,8 +560,8 @@ Passwords come from a prompt typed twice or from `--password-stdin`, never from 
 | `mdk user list`                           | Lists users, with `-o json \| yaml`                                                        |
 | `mdk sa add <agent>`                      | Creates an agent credential in `.mdk/credentials/agents/` and registers it with a running Kernel |
 | `mdk sa rotate <name>`                    | Replaces an app's or agent's key; the old key's sessions end                               |
-| `mdk sa remove <agent>`                   | Deletes an agent's credential and registration                                             |
-| `mdk sa list`                             | Lists credentials here against what the running Kernel registered                          |
+| `mdk sa remove <agent>`                   | Deletes an agent's credential and registration; fails for a name that has neither          |
+| `mdk sa list`                             | Lists credentials here against what the running Kernel registered; exits `1` when the registrations could not be read |
 | `mdk sa token <name>`                     | Prints a short-lived access token for an agent's HTTP client (`-o json` adds the refresh token) |
 
 Every `mdk run` registers exactly the stack's apps and this instance's agents with the Kernel, creating a missing app credential, so
@@ -559,12 +595,27 @@ The session lives in `.mdk/session.json` (0600) and is renewed as it is used. Wh
 and `mdk rbac` act as the user, with what `spec.rbac` binds the user to; an expired session is an error, never a quiet return
 to `mdk-cli`.
 
-`mdk run` and `mdk run kernel` refuse to start when `spec.rbac` binds no user and no group, and its bound subjects include nobody
-who may write the policy, as after `mdk create app` on a stack with no admin yet: that Kernel would refuse the policy
-`mdk rbac init` hands it, so `mdk rbac init` comes first. A policy that binds a user keeps `policy: write` optional, so that stack
-boots and policy changes go through `mdk.yaml` and a restart. They warn at start when `mdk-cli` has no binding, or when an app
-has none. A role you edited is left alone by `mdk rbac init`. When a running Kernel refuses the new policy because its policy in
-force does not let `mdk-cli` apply one, restarting the Kernel applies `mdk.yaml` at boot.
+`mdk run` and `mdk run kernel` refuse to start when `spec.rbac` binds no user and no group, and its bound subjects
+include nobody who may write the policy, as after `mdk create app` on a stack with no admin yet: that Kernel would
+refuse the policy `mdk rbac init` hands it, so `mdk rbac init` comes first. A policy that binds a user keeps
+`policy: write` optional, so that stack boots and policy changes go through `mdk.yaml` and a restart. They warn at start
+when `mdk-cli` has no binding, or when an app has none, except an app whose `mdk-app.yaml` declares `permissions: []`:
+it gets no binding, by design. A role you edited is left alone by `mdk rbac init`. When a running Kernel refuses the new
+policy because its policy in force does not let `mdk-cli` apply one, restarting the Kernel applies `mdk.yaml` at boot.
+
+## Errors
+
+The CLI raises these codes itself. A code from the Kernel, a Worker, or an app is listed in the README of the package that throws it.
+
+| Code                           | Fires when                                                                                       | Fix                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `ERR_CLI_SESSION_INVALID`      | `.mdk/session.json` exists but is not valid JSON, or lacks a session field                       | Sign in again with `mdk login`, or remove it with `mdk logout` |
+| `ERR_CLI_SESSION_EXPIRED`      | A command that acts as the signed-in user finds no session, a refresh token past its expiry, or a refresh the issuer refuses | Sign in again with `mdk login`                             |
+| `ERR_SMOKE_NO_CONFIG`          | A Worker smoke run has no `--smoke-config` and the Worker directory has no `smoke.config.js`     | Add `smoke.config.js`, or pass `--smoke-config`            |
+| `ERR_SMOKE_CONFIG_INVALID`     | An app's `smoke.config.js` has a `workers` list of the wrong shape, or a device name the Kernel's naming rules refuse | Fix the field the message names                            |
+| `ERR_SMOKE_TIMEOUT`            | A handler, route, `main`, `onReady` callback, or `teardown()` does not settle within `--timeout` | Fix the step the message names, or raise `--timeout`       |
+| `ERR_SMOKE_ACTION_UNSUPPORTED` | An app under `--smoke` calls a Kernel action the mock Kernel does not serve, such as a sign-in action | Keep that call out of the routes `--smoke` exercises       |
+| `ERR_TELEMETRY_UNKNOWN`        | An app under `--smoke` pulls a telemetry type its mock device does not define                    | Add the type to the device's `telemetry` in `smoke.config.js` |
 
 ## Command surface
 
@@ -572,7 +623,7 @@ force does not let `mdk-cli` apply one, restarting the Kernel applies `mdk.yaml`
 | ---------------- | --------------------------------------------------------------------------------------------------------- |
 | Set up           | `mdk onboard`                                                                                             |
 | Build            | `mdk create worker <name>`, `mdk create app <name>`, `mdk create dashboard [name]`, `mdk add app <source>`, `mdk add worker <source>`, `mdk validate app <name>`, `mdk validate worker <name>` |
-| Run              | `mdk run [target] [name]` (target: `all`\|`kernel`\|`gateway`\|`mcp`\|`worker <name>`\|`app <name>`\|`dashboard`), `mdk status` |
+| Run              | `mdk run [target] [name]` (target: `all`\|`kernel`\|`gateway`\|`mcp`\|`worker <name>`\|`app <name>`\|`dashboard [name]`), `mdk status` |
 | Auth             | `mdk rbac init`, `mdk rbac apply`, `mdk rbac show`, `mdk user …`, `mdk serviceaccount …`, `mdk login`, `mdk logout`, `mdk whoami` |
 | Agent enablement | `mdk skill add`                                                                                           |
 | Meta             | `mdk version`                                                                                             |
@@ -582,8 +633,8 @@ Global flags:
 | Flag                 | Status   | Type      | Default | Description                                        |
 | -------------------- | -------- | --------- | ------- | -------------------------------------------------- |
 | `-o, --output <fmt>` | Optional | `string`  | `table` | Output format for data: `table`, `json`, or `yaml` |
-| `-v, --verbose`      | Optional | `boolean` | `false` | Increase log detail                                |
-| `--debug`            | Optional | `boolean` | `false` | Print stack traces for unexpected failures         |
+| `-v, --verbose`      | Optional | `boolean` | `false` | Turn on the MDK components' debug logs, by setting `DEBUG=mdk:*` unless `DEBUG` is already set |
+| `--debug`            | Optional | `boolean` | `false` | Print the stack trace of an unexpected failure     |
 | `--version`          | Optional | `boolean` | `false` | Print the CLI version and exit                     |
 | `-h, --help`         | Optional | `boolean` | `false` | Print usage help and exit                          |
 

@@ -21,9 +21,12 @@ Build mining apps and operate your site with the `mdk` CLI. Start with a working
 | Task | Owning guide or reference |
 | ---- | ------------------------- |
 | Scaffold, validate, run, and inspect a stack | [CLI reference](reference/tooling/cli.md) |
+| Declare a stack and find the page for each block | [Stack file reference](reference/mdk-yaml.md) |
+| How versions are numbered and how long deprecated interfaces stay supported | [Versioning and deprecation policy](reference/versioning.md) |
 | Create the first operator and sign in | [First operator](guides/security/create-the-first-operator.md) |
 | Package an app and declare its HTTP routes | [App development](guides/gateway/apps.md) |
 | Configure and operate the HTTP entry point | [Gateway guides](guides/gateway/index.md) |
+| Look up a Gateway route and its errors | [Gateway HTTP routes](reference/gateway-http-routes.md) |
 | Query devices or issue commands from Node.js | [Client API](../backend/core/client/README.md) |
 | Compose UI components and hooks | [UI toolkit](../ui/README.md) |
 | Test and publish a hardware integration | [Worker testing](guides/workers/test-a-worker.md) and [supported Workers](../backend/workers/docs/supported-workers.md) |

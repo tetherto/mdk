@@ -10,9 +10,7 @@ export const InputFieldStates = (): JSX.Element => {
 
   return (
     <>
-      <h2 className="demo-section__title" style={{ marginTop: 24 }}>
-        Labels, values and validation
-      </h2>
+      <h2 className="demo-section__title demo-section__mt-xl">Labels, values and validation</h2>
       <div className="demo-section__select-grid demo-section__input-grid">
         <section>
           <h3>Default</h3>

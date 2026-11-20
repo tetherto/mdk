@@ -12,9 +12,7 @@ import type { JSX } from 'react'
 export const WidgetTopRowPage = (): JSX.Element => (
   <section className="demo-section">
     <h2 className="demo-section__title">Widget Top Row</h2>
-    <div
-      style={{ display: 'grid', gap: '2rem', gridTemplateColumns: '1fr 1fr', maxWidth: '600px' }}
-    >
+    <div className="demo-section__stack-grid demo-section__stack-grid--2-col demo-section__stack-grid--narrow">
       <section>
         <h3>With All Types of Alarms & Power label</h3>
         <br />

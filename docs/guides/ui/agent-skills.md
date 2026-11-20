@@ -76,12 +76,14 @@ which may also hold your team's own committed skills:
 .claude/skills/mdk/
 .claude/skills/mdk-app-rbac/
 .claude/skills/mdk-app-routes/
+.claude/skills/mdk-app-security/
 .claude/skills/mdk-create-app/
 .claude/skills/mdk-deployment/
 .claude/skills/mdk-publish-security/
 .claude/skills/mdk-site-sizing/
 .claude/skills/mdk-ui-component/
 .claude/skills/mdk-worker/
+.claude/skills/mdk-worker-security/
 ```
 
 Repeat for `.cursor/skills/` if you install there. `.claude/skills/mdk*/` is a shorter alternative, but it also hides

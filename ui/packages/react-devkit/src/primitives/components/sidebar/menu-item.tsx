@@ -209,6 +209,7 @@ export const MenuItemInternal = ({
         createPortal(
           <div
             className="mdk-sidebar__overlay"
+            // oxlint-disable-next-line react/forbid-dom-props -- overlay position measured from the trigger at runtime
             style={overlayPos}
             onMouseEnter={overlayMouseEnter}
             onMouseLeave={overlayMouseLeave}

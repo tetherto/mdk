@@ -122,7 +122,7 @@ export default defineConfig({
           name: 'primitives-dom',
           pool: 'threads',
           environment: 'happy-dom',
-          setupFiles: ['./src/primitives/test-utils/setup-tests.ts'],
+          setupFiles: ['../../vitest.setup.base.ts', './src/primitives/test-utils/setup-tests.ts'],
           include: ['src/primitives/**/*.{test,spec}.{ts,tsx}'],
           exclude: ['node_modules', 'dist', 'build', '.next', 'coverage', '**/*.d.ts'],
           maxWorkers: process.env.CI ? 4 : undefined,
@@ -139,7 +139,7 @@ export default defineConfig({
           name: 'domain-dom',
           pool: 'threads',
           environment: 'happy-dom',
-          setupFiles: ['./src/test-utils/setup-tests.ts'],
+          setupFiles: ['../../vitest.setup.base.ts', './src/test-utils/setup-tests.ts'],
           include: ['src/domain/**/*.{test,spec}.{ts,tsx}'],
           exclude: [
             'node_modules',

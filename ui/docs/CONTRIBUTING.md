@@ -161,7 +161,13 @@ These are enforced architectural decisions — please follow them:
   [`docs/STYLING.md`](./STYLING.md).
 - **No inline styles** in components. Use BEM class names
   (`mdk-<block>__<element>--<modifier>`) and override with
-  `@layer app` in consuming apps.
+  `@layer app` in consuming apps. The `react/forbid-dom-props` lint rule rejects a
+  `style` prop on a DOM element across `ui/` and in the shell template. A value that
+  can only be set at runtime, such as a measured position or a color from data, stays
+  inline with `// oxlint-disable-next-line react/forbid-dom-props -- <reason>`. A
+  `--mdk-*` custom property set inline is still a `style` prop and needs the same
+  disable. For a spacing or a control height, use the layout tokens in
+  [`STYLING.md`](./STYLING.md#design-tokens).
 
 ### Tracking tech debt
 
@@ -267,10 +273,11 @@ the targets in `vitest.config.js` as packages mature.
 | Thresholds blow up after a refactor | Adjust them in the package's `vitest.config.js` if the drop is intentional, otherwise add the missing test. |
 | Tests pass locally, fail on CI | `rm -rf node_modules && npm ci`; verify Node version matches. |
 | Vitest sees stale source | `turbo clean && npm run build && npm run test:coverage`. |
+| `localStorage` is `undefined` in a DOM test | Node 25 and later define a global `localStorage` that shadows the test DOM's. In the package's `vitest.config.js`, set `execArgv: testExecArgv` from [`ui/vitest.config.base.ts`](../vitest.config.base.ts) and list [`ui/vitest.setup.base.ts`](../vitest.setup.base.ts) first in `setupFiles`. |
 
 ## Documentation guidelines
 
-When you change behaviour, update the matching docs:
+When you change behavior, update the matching docs:
 
 - [`README.md`](../README.md) — top-level summary.
 - [`AGENTS.md`](../AGENTS.md) — repo-level guide for AI agents: manifests,
@@ -384,7 +391,7 @@ npm run fullcheck
 The gate compares against a baseline — new violations fail the build.
 See [`packages/react-devkit/AGENT_READY.md`](../packages/react-devkit/AGENT_READY.md)
 for the full contract, allowed values for `@tier` / `@category` / `@domain` /
-`@kernelCapability`, paste-ready templates, and the error catalogue.
+`@kernelCapability`, paste-ready templates, and the error catalog.
 
 ## Pull request guidelines
 
@@ -424,7 +431,7 @@ Closes #123
 1. CI must be green: `security`, then parallel `quality` (lint, typecheck,
    format, **`check:agent-ready`**), `test`, `coverage`, `build`, then `summary`.
 2. At least one maintainer reviews the change.
-3. The reviewer pulls the branch locally if behaviour changes UI.
+3. The reviewer pulls the branch locally if behavior changes UI.
 4. Maintainer approves and merges with squash.
 
 ## Publishing

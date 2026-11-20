@@ -13,6 +13,7 @@ import { registerSa } from './commands/sa.js';
 import { registerSession } from './commands/session.js';
 import { registerSkill } from './commands/agent.js';
 import { registerVersion } from './commands/meta.js';
+import { applyGlobalFlags } from './lib/flags.js';
 
 /** The help heading each top-level command is listed under. */
 const HELP_GROUPS: Record<string, string> = {
@@ -49,7 +50,8 @@ export function buildProgram(): Command {
     .option('-o, --output <fmt>', 'Output format for data: table | json | yaml', 'table')
     .option('-v, --verbose', 'Increase log detail', false)
     .option('--debug', 'Print stack traces for unexpected failures', false)
-    .showHelpAfterError();
+    .showHelpAfterError()
+    .hook('preAction', () => applyGlobalFlags(program.opts()));
 
   registerOnboard(program);
   registerCreate(program);

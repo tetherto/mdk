@@ -1,5 +1,5 @@
-import { cn, HEATMAP_GRADIENT } from "../../utils"
-import type { HeatmapLegendProps } from "./types"
+import { cn, HEATMAP_GRADIENT } from '../../utils'
+import type { HeatmapLegendProps } from './types'
 
 const formatBound = (bound: number | string, unit?: string): string =>
   unit ? `${bound} ${unit}` : String(bound)
@@ -24,12 +24,16 @@ export const HeatmapLegend = ({
   colors = HEATMAP_GRADIENT,
   className,
 }: HeatmapLegendProps) => {
-  const gradient = `linear-gradient(to right, ${colors.join(", ")})`
+  const gradient = `linear-gradient(to right, ${colors.join(', ')})`
 
   return (
-    <div className={cn("mdk-heatmap-legend", className)}>
+    <div className={cn('mdk-heatmap-legend', className)}>
       {label !== undefined && <div className="mdk-heatmap-legend__label">{label}</div>}
-      <div className="mdk-heatmap-legend__bar" style={{ background: gradient }} />
+      <div
+        className="mdk-heatmap-legend__bar"
+        // oxlint-disable-next-line react/forbid-dom-props -- gradient built from the colour-scale prop
+        style={{ background: gradient }}
+      />
       <div className="mdk-heatmap-legend__scale">
         <span>{formatBound(min, unit)}</span>
         <span>{formatBound(max, unit)}</span>
@@ -38,4 +42,4 @@ export const HeatmapLegend = ({
   )
 }
 
-HeatmapLegend.displayName = "HeatmapLegend"
+HeatmapLegend.displayName = 'HeatmapLegend'

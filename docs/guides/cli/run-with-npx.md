@@ -2,13 +2,13 @@
 title: Run the CLI with npx
 description: "[⏱️ ~2 min] Run one `mdk` command from the registry without installing it"
 docs@tether_slug: guides/cli/run-with-npx
-lastReviewedAt: "0.13.1"
+lastReviewedAt: "0.14.0"
 ---
 
 ## TL;DR
 
-- `npx --yes @tetherto/mdk-cli@0.13 <command>` runs one `mdk` command with nothing installed on your PATH
-- Pin an exact version in CI so every run executes the same build, for example `npx --yes @tetherto/mdk-cli@0.13.0 status`
+- `npx --yes @tetherto/mdk-cli <command>` runs one `mdk` command with nothing installed on your PATH
+- Pin an exact version in CI so every run executes the same build, for example `npx --yes @tetherto/mdk-cli@0.14.0 status`
 - The authorization gate still applies: a stack runs `mdk rbac init` before its first `mdk run`, however the CLI was started
 
 ## Overview
@@ -34,12 +34,17 @@ The first run downloads the CLI and the MDK runtime it bundles. Later runs of th
 Try `mdk status` to check your environment:
 
 ```bash
-npx --yes @tetherto/mdk-cli@0.13 status
+npx --yes @tetherto/mdk-cli status
 ```
 
-`@0.13` resolves to the newest published `0.13.x` release, the line these docs describe. `@latest` would follow every
-new release instead, including ones these steps were not written for. `--yes` skips the install prompt that
-`npx` shows before fetching a package it has not seen; npm assumes it when standard input is not a terminal.
+`--yes` skips the install prompt that `npx` shows before fetching a package it has not seen; npm assumes it when standard
+input is not a terminal.
+
+> [!TIP]
+> Without a version, `npx` runs the newest published release, unless the project has `@tetherto/mdk-cli` installed. When
+> `mdk onboard` or `mdk create` creates the project's `package.json`, it lists the CLI in `devDependencies`, so `npx`
+> runs that installed copy. Neither adds or updates the CLI dependency in an existing `package.json`. To run a specific
+> release either way, add its version after the package name, for example `npx --yes @tetherto/mdk-cli@0.14.0 status`.
 
 Commands that write into a project, such as `mdk onboard`, `mdk create` and `mdk skill add`, run from the directory you are
 working in; the rest take `--dir <path>` to point at a project elsewhere. Only `mdk --version` and `mdk version` are global.
@@ -49,7 +54,7 @@ working in; the rest take `--dir <path>` to point at a project elsewhere. Only `
 When the binary name matters, for example in a script that calls `mdk` by name, use the package form:
 
 ```bash
-npx --yes -p @tetherto/mdk-cli@0.13 mdk --version
+npx --yes -p @tetherto/mdk-cli mdk --version
 ```
 
 ## Use it in CI
@@ -58,12 +63,22 @@ Pin an exact version. A tag such as `@latest` or a caret range can resolve to a 
 runners can execute different builds from the same workflow line; an exact version forces one build everywhere. The repo's
 own [link checker][linkinator-pin] is pinned for the same reason.
 
-Replace `<version>` with the exact published CLI version your workflow uses:
+Replace `<version>` with the exact published CLI version your workflow uses, for example `0.14.0`:
 
 ```bash
 npx --yes @tetherto/mdk-cli@<version> validate worker rig
 npx --yes @tetherto/mdk-cli@<version> status
 ```
+
+In a Worker or app package's own repository, check the package directory with `--path`:
+
+```bash
+npx --yes @tetherto/mdk-cli@<version> validate worker --path .
+npx --yes @tetherto/mdk-cli@<version> validate app --path .
+```
+
+A listing request is reviewed against the [listing criteria][listing-criteria], which add flags to these commands; run each one as the
+criteria give it.
 
 - Cache `~/.npm` between jobs so later runs skip the download
 - Pass `--prefer-online` when a run must re-check the registry rather than trust the cache
@@ -76,13 +91,13 @@ npx --yes @tetherto/mdk-cli@<version> status
 `mdk`, each step from the project directory or with `--dir`:
 
 ```bash
-npx --yes @tetherto/mdk-cli@0.13 onboard       # interactive: writes mdk.yaml
-npx --yes @tetherto/mdk-cli@0.13 rbac init     # edits mdk.yaml in place: binds the CLI to admin, grants each app its permissions
-npx --yes @tetherto/mdk-cli@0.13 run
+npx --yes @tetherto/mdk-cli onboard       # interactive: writes mdk.yaml
+npx --yes @tetherto/mdk-cli rbac init     # edits mdk.yaml in place: binds the CLI to admin, grants each app its permissions
+npx --yes @tetherto/mdk-cli run
 ```
 
 Then, from a second terminal, [create the first operator][first-operator] the same way:
-`npx --yes @tetherto/mdk-cli@0.13 user add <name> --admin`. The [site security blueprint][site-security] covers what
+`npx --yes @tetherto/mdk-cli user add <name> --admin`. The [site security blueprint][site-security] covers what
 `spec.rbac` holds and how to go beyond the starter policy.
 
 ## Troubleshooting
@@ -117,7 +132,7 @@ from Git or a backup to recover the project's configuration.
 For a new project, run onboarding from the project directory:
 
 ```bash
-npx --yes @tetherto/mdk-cli@0.13 onboard
+npx --yes @tetherto/mdk-cli onboard
 ```
 
 Onboarding interactively creates `mdk.yaml` and `package.json`. It creates a new configuration; it does not recover a deleted one.
@@ -136,8 +151,8 @@ Run `mdk rbac init` first, then `mdk run`.
 Initialize the policy, then start the stack from the project directory:
 
 ```bash
-npx --yes @tetherto/mdk-cli@0.13 rbac init
-npx --yes @tetherto/mdk-cli@0.13 run
+npx --yes @tetherto/mdk-cli rbac init
+npx --yes @tetherto/mdk-cli run
 ```
 
 ### Onboarding exits without creating a project
@@ -148,6 +163,13 @@ npx --yes @tetherto/mdk-cli@0.13 run
 
 `mdk create dashboard` fetches its template from GitHub at the tag matching the CLI version. Check that `git` is on your PATH
 and that you can reach GitHub. A named dashboard lands in `apps/<name>`.
+
+### Dashboard dependencies fail to install
+
+On npm 11.0 to 11.5 the first `npm install` in the dashboard crashes on peer resolution.
+`mdk create dashboard` retries with `--legacy-peer-deps` and prints that it did, so the npm error above
+that line can be ignored. If the retry fails too, the command reports npm's exit code and leaves the
+scaffold in place: upgrade to npm 11.6 or newer and run `npm install` in `apps/dashboard`.
 
 ### npm offers an upgrade to npm 12
 
@@ -160,6 +182,9 @@ Stay on npm 11 to avoid [npm 12 restrictions on Git dependencies][npm-version]. 
 - [Explore CLI commands and flags][cli-reference]: the full command surface
 
 ## Links
+
+[listing-criteria]: ../../../CONTRIBUTING.md#listing-criteria
+<!-- docs@tether.io: listing-criteria → support/community/contributing#listing-criteria -->
 
 [cli-install]: install.md
 <!-- docs@tether.io: cli-install → guides/cli/run-with-npm -->

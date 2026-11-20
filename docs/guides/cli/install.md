@@ -2,13 +2,13 @@
 title: Install the CLI
 description: "[⏱️ ~3 min] Get `mdk` installed and verified from npm"
 docs@tether_slug: guides/cli/run-with-npm
-lastReviewedAt: "0.13.1"
+lastReviewedAt: "0.14.0"
 ---
 
 ## TL;DR
 
 - Operate the stack from your terminal
-- Install `mdk` on your PATH with `npm install -g @tetherto/mdk-cli@0.13`
+- Install `mdk` on your PATH with `npm install -g @tetherto/mdk-cli`
 - Confirm it with `mdk --version`
 
 ## Overview
@@ -38,14 +38,14 @@ Install the published CLI from npm. A source checkout is only needed to work on 
 #### A. Install from npm
 
 ```bash
-npm install -g @tetherto/mdk-cli@0.13
+npm install -g @tetherto/mdk-cli
 ```
 
-`@0.13` installs the newest `0.13.x` release, the line these docs describe, so a later major or minor release can't change
-the commands under you. Name an exact version, such as `@0.13.0`, to pin one build.
-
 > [!TIP]
-> `npx @tetherto/mdk-cli@0.13 <command>` [runs a single command without installing anything globally][run-with-npx], which
+> This installs the newest published release. To install a specific release, add its version after the package name, for
+> example `npm install -g @tetherto/mdk-cli@0.14.0`, and follow the docs for that release.
+>
+> `npx @tetherto/mdk-cli <command>` [runs a single command without installing anything globally][run-with-npx], which
 > suits CI and one-off scaffolding.
 
 #### B. Install from a source checkout
@@ -59,11 +59,10 @@ npm install && cd packages/cli && npm run build && npm link
 ```
 
 The last line runs from the repository root, `mdk/`. `npm install` there installs every workspace, which the CLI's
-sibling packages need, and the line can be run again from `mdk/` after a `git pull` or a tag checkout. When switching
-tags after a build, run `npm run clean` in `packages/cli` first, since neither install nor build empties `dist/`.
+sibling packages need, and the line can be run again from `mdk/` after a `git pull` or a tag checkout.
 
 To pin a tagged release, pick a tag from [mdk tags][mdk-tags] and check it out before installing, for example
-`git checkout -b local/v0.12.1 v0.12.1`.
+`git checkout -b local/v0.14.0 v0.14.0`.
 
 </Step>
 
@@ -106,11 +105,12 @@ The [CLI's command surface][cli-reference] documents the full flag reference.
 ## Update
 
 ```bash
-npm install -g @tetherto/mdk-cli@0.13
+npm install -g @tetherto/mdk-cli
 ```
 
-This picks up the newest `0.13.x` patch. To move to a newer release line, install it by version, for example
-`@tetherto/mdk-cli@0.14`, with the docs for that release.
+> [!TIP]
+> This replaces the installed CLI with the newest published release. To move to a specific release, install it by version,
+> for example `npm install -g @tetherto/mdk-cli@0.14.0`, and follow the docs for that release.
 
 ### Update a source checkout
 
@@ -122,17 +122,17 @@ On `main`, pull the latest commits:
 
 ```bash
 git pull
-npm install && npm --workspace packages/cli run clean && npm --workspace packages/cli run build
+npm install && npm --workspace packages/cli run build
 ```
 
-On a pinned tag, such as a `local/v0.12.1` branch, `git pull` fails with `There is no tracking information for the current
+On a pinned tag, such as a `local/v0.13.1` branch, `git pull` fails with `There is no tracking information for the current
 branch`, since a branch created from a tag tracks no remote branch. Fetch the tags and check out the new one instead, for
-example `v0.13.0`:
+example `v0.14.0`:
 
 ```bash
 git fetch --tags
-git checkout -b local/v0.13.0 v0.13.0
-npm install && npm --workspace packages/cli run clean && npm --workspace packages/cli run build
+git checkout -b local/v0.14.0 v0.14.0
+npm install && npm --workspace packages/cli run build
 ```
 
 The earlier `npm link` still points at `packages/cli`, so `mdk --version` reports the new version without linking again.

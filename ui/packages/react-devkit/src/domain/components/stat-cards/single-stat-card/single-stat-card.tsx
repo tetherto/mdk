@@ -122,6 +122,7 @@ export const SingleStatCard = ({
         isLongValue && 'mdk-single-stat-card--long-value',
         className,
       )}
+      // oxlint-disable-next-line react/forbid-dom-props -- consumer-supplied color, passed as a custom property
       style={color === 'inherit' ? undefined : ({ '--stat-color': color } as React.CSSProperties)}
     >
       {variant === 'primary' || variant === 'compact' ? (

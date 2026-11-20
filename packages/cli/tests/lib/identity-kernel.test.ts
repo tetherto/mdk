@@ -16,6 +16,7 @@ const mockClient = vi.hoisted(() => ({
   deleteServiceAccount: vi.fn(),
   listServiceAccounts: vi.fn(),
   serviceAccountToken: vi.fn(),
+  getJwks: vi.fn().mockResolvedValue({ keys: [] }),
 }));
 vi.mock('node:module', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:module')>();
@@ -112,6 +113,7 @@ describe('users', () => {
 
   it('passwd, disable, list and remove go to the Kernel', async () => {
     const dir = project();
+    mockClient.listUsers.mockResolvedValue({ users: [USER] });
     mockClient.upsertUser.mockResolvedValue({ created: false, user: USER });
     await ik.setPassword(dir, 'ankit', PASSWORD);
     expect(mockClient.upsertUser).toHaveBeenLastCalledWith({ name: 'ankit', password: PASSWORD }, expect.anything());
@@ -121,6 +123,34 @@ describe('users', () => {
     expect((await ik.listUsers(dir)).value).toEqual({ users: [USER] });
     mockClient.deleteUser.mockResolvedValue({ deleted: true });
     expect((await ik.removeUser(dir, 'ankit')).value).toEqual({ deleted: true });
+  });
+  it('refuses passwd, disable and enable for a user the Kernel does not have, and writes nothing', async () => {
+    const dir = project();
+    mockClient.listUsers.mockResolvedValue({ users: [USER] });
+    for (const res of [
+      await ik.setDisabled(dir, 'ghost-user', true),
+      await ik.setDisabled(dir, 'ghost-user', false),
+      await ik.setPassword(dir, 'ghost-user', PASSWORD),
+    ]) {
+      expect(res).toEqual({ ok: false, message: 'No user named "ghost-user".' });
+    }
+    expect(mockClient.upsertUser).not.toHaveBeenCalled();
+
+  });
+
+  it('keeps the plain update for a caller that may write users but not list them', async () => {
+    const dir = project();
+    // The client throws the Kernel's refusals.
+    mockClient.listUsers.mockRejectedValue(new Error('ERR_KERNEL_ACTION_FORBIDDEN: writer may not read identities'));
+    mockClient.upsertUser.mockResolvedValue({ created: false, user: USER });
+    expect(await ik.setDisabled(dir, 'ankit', true)).toEqual({ ok: true, value: { created: false, user: USER } });
+    expect(mockClient.upsertUser).toHaveBeenLastCalledWith({ name: 'ankit', disabled: true }, expect.anything());
+
+    mockClient.upsertUser.mockRejectedValue(new Error('ERR_KERNEL_ACTION_FORBIDDEN: viewer may not write identities'));
+    expect(await ik.setDisabled(dir, 'ankit', true)).toEqual({
+      ok: false,
+      message: 'the Kernel refused: ERR_KERNEL_ACTION_FORBIDDEN: viewer may not write identities',
+    });
   });
 });
 
@@ -157,6 +187,10 @@ describe('service accounts', () => {
     expect(await ik.removeAgent(dir, 'operator-agent')).toMatchObject({ removed: true, registered: true });
     await expect(ik.removeAgent(dir, 'app:ops-center')).rejects.toThrow(/belongs to an app/);
     expect(await ik.removeAgent(project(false), 'ghost')).toMatchObject({ removed: false, registered: false });
+    mockClient.deleteServiceAccount.mockResolvedValue({ deleted: false });
+    expect(await ik.removeAgent(dir, 'nobody'), 'neither local nor registered').toMatchObject({ removed: false, registered: true });
+    mockClient.deleteServiceAccount.mockResolvedValue({ deleted: true });
+    expect(await ik.removeAgent(dir, 'remote-agent'), 'registered, no local credential').toMatchObject({ removed: true, registered: true });
     mockClient.deleteServiceAccount.mockResolvedValue({ error: 'ERR_X' });
     expect(await ik.removeAgent(dir, 'operator-agent')).toMatchObject({ removed: false, message: 'the Kernel refused: ERR_X' });
   });
@@ -182,8 +216,25 @@ describe('service accounts', () => {
     });
     const down = await ik.listAccounts(project(false));
     expect(down).toMatchObject({ kernel: 'down', rows: [] });
-    mockClient.listServiceAccounts.mockRejectedValue(new Error('ERR_KERNEL_ACTION_FORBIDDEN: mdk-cli may not read identities'));
-    expect(await ik.listAccounts(dir)).toMatchObject({ kernel: 'down', message: 'ERR_KERNEL_ACTION_FORBIDDEN: mdk-cli may not read identities' });
+  });
+
+  it('marks registrations unchecked, not the Kernel down, when it refuses the listing or the session ran out', async () => {
+    const dir = project();
+    createAgentCredential(dir, 'operator-agent');
+    mockClient.listServiceAccounts.mockRejectedValue(new Error('ERR_KERNEL_ACTION_FORBIDDEN: viewer may not read identities'));
+    expect(await ik.listAccounts(dir)).toEqual({
+      kernel: 'up',
+      refused: true,
+      message: 'ERR_KERNEL_ACTION_FORBIDDEN: viewer may not read identities',
+      rows: [{ name: 'operator-agent', kind: 'agent', local: true, registered: null, stale: false }],
+    });
+    mockClient.listServiceAccounts.mockRejectedValue(new Error('ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.'));
+    expect(await ik.listAccounts(dir)).toMatchObject({ kernel: 'up', refused: true, message: expect.stringMatching(/^ERR_CLI_SESSION_EXPIRED/) });
+
+    for (let i = 0; i < 3; i++) mockClient.getJwks.mockRejectedValueOnce(new Error('ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED'));
+    const down = await ik.listAccounts(dir);
+    expect(down).toMatchObject({ kernel: 'down', message: 'Kernel unreachable (ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED)' });
+    expect(down).not.toHaveProperty('refused');
   });
 });
 

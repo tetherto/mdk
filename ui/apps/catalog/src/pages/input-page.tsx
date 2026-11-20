@@ -13,10 +13,7 @@ type InputRowProps = {
 const InputRow = ({ state, idSuffix, disabled = false }: InputRowProps) => (
   <>
     <h2 className="demo-section__title">{state}</h2>
-    <div
-      className="demo-section__select-grid demo-section__input-grid"
-      style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}
-    >
+    <div className="demo-section__select-grid demo-section__select-grid--2-col demo-section__input-grid">
       <section>
         <h3>Default</h3>
         <Input placeholder="Input Big" id={`input-big-${idSuffix}`} disabled={disabled} />
@@ -67,7 +64,7 @@ export const InputPage = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">TagInput</h2>
-      <div style={{ maxWidth: 400, marginBottom: '24px' }}>
+      <div className="demo-section__tag-input-demo">
         <TagInput
           value={tags}
           onTagsChange={setTags}
@@ -76,7 +73,7 @@ export const InputPage = (): JSX.Element => {
         />
       </div>
       <InputRow state="Input - Default" idSuffix="default" />
-      <div style={{ marginTop: 24 }}>
+      <div className="demo-section__mt-xl">
         <InputRow state="Input - Disabled" idSuffix="disabled" disabled />
       </div>
       <InputFieldStates />

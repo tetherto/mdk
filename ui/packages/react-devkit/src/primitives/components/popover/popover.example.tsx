@@ -10,9 +10,9 @@ export const PopoverExample = () => {
         <Button>Filters</Button>
       </PopoverTrigger>
       <PopoverContent side="bottom" align="start" showArrow showClose>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 220 }}>
+        <div className="mdk-example-col mdk-example-col--gap-sm mdk-example-min-width">
           <strong>Filter by</strong>
-          <p style={{ margin: 0 }}>Place your filter form here.</p>
+          <p className="mdk-example-flush">Place your filter form here.</p>
         </div>
       </PopoverContent>
     </Popover>

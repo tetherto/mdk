@@ -7,13 +7,14 @@ import {
   isRetryableAgentError,
 } from './error-text'
 import { ERR_STREAM_IDLE } from './sse'
+import { AGENT_NAME } from '../branding'
 import { AGENT_ERROR } from './transport'
 
 describe('describeAgentError', () => {
   it('turns a producer code into a sentence', () => {
     // The reducer stores whatever the `error` event carried, which is a bare code.
     expect(describeAgentError(AGENT_ERROR.UNAVAILABLE)).toBe(
-      'The agent is not configured on this gateway.',
+      `${AGENT_NAME} is not configured on this gateway.`,
     )
     expect(describeAgentError(ERR_STREAM_IDLE)).toMatch(/stopped responding/)
   })
@@ -34,6 +35,12 @@ describe('describeAgentError', () => {
 })
 
 describe('describeAgentError — synthesised status codes', () => {
+  it('says the agent app is missing when the gateway never heard of the route', () => {
+    // A stack with no agent app 404s the agent routes, which toApiError turns
+    // into ROUTES_NOT_MOUNTED rather than a bare status.
+    expect(describeAgentError(AGENT_ERROR.ROUTES_NOT_MOUNTED)).toMatch(/no agent app installed/)
+  })
+
   it('points at the sign-in when the token was refused', () => {
     expect(describeAgentError('ERR_AGENT_HTTP_401')).toMatch(/session expired/i)
     expect(describeAgentError('ERR_AGENT_HTTP_403')).toMatch(/session expired/i)

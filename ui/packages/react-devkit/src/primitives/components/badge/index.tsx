@@ -203,6 +203,7 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
           !hasChildren && 'mdk-badge--standalone',
           className,
         )}
+        // oxlint-disable-next-line react/forbid-dom-props -- offset is a runtime prop
         style={{
           ...(shouldApplyOffset && {
             transform: `translate(calc(50% + ${offset[0]}px), calc(-50% + ${offset[1]}px))`,

@@ -31,5 +31,8 @@ export const AlertExample = () => (
       showIcon
       closable
     />
+    {/* Part of the page rather than a response to an action, so it is not a live region —
+        without `role` a screen reader would re-announce it on every navigation. */}
+    <CoreAlert type="info" title="Maintenance window tonight" banner role="none" />
   </div>
 )

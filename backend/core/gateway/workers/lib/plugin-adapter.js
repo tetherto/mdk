@@ -59,6 +59,21 @@ function resolveAppTimeout (conf = {}) {
   return ms
 }
 
+// Most bytes of one stream route's body the Gateway holds unread for a slow
+// HTTP client before it ends the stream with ERR_APP_STREAM_OVERFLOW (common.json
+// `maxStreamBufferBytes`). Unset is undefined, which leaves the runtime client's
+// own default (16 MiB). Each slow stream may hold this much, so raising it
+// raises the Gateway's worst-case memory.
+function resolveStreamBufferBytes (conf = {}) {
+  let bytes = conf.maxStreamBufferBytes
+  if (bytes === undefined || bytes === null) return undefined
+  if (typeof bytes === 'string' && /^\d+$/.test(bytes)) bytes = Number(bytes)
+  if (!Number.isInteger(bytes) || bytes <= 0) {
+    throw new Error('ERR_GATEWAY_STREAM_BUFFER_INVALID: maxStreamBufferBytes must be a positive integer (bytes)')
+  }
+  return bytes
+}
+
 // Re-read on every request, so a runtime may start, or restart under a new
 // key, after the Gateway. Until it has published a key its routes answer 503.
 async function _runtimeKey (app) {
@@ -102,9 +117,10 @@ async function _forward (client, app, route, method, req, timeoutMs, signal) {
 //
 // opts.authority (see authority.js): every route of the app needs a bearer
 // token and a spec.rbac rule for its resource and verb (authz.js), checked
-// before body validation, the cache and the forward; `auth` on a route no
-// longer matters. The verified identity reaches the app runtime as
-// the call's `identity`, and a user's token as its `actor`.
+// after the Host check and rate limit (so failed tokens are throttled too) and
+// before body validation, the cache and the forward; `auth` and `permissions`
+// on a route no longer matter. The verified identity reaches the app runtime
+// as the call's `identity`, and a user's token as its `actor`.
 //
 // Without an authority, the older opts.authVerifier: async (request, route) =>
 // identity | false. Every `auth: true` route gets a route-level preParsing hook
@@ -130,7 +146,7 @@ function buildFastifyRoutes (app, client, ctx, opts = {}) {
 
     if (opts.authority) {
       const authz = createRouteAuthz(app, route, opts.authority)
-      fastifyRoute.onRequest = authz.onRequest
+      fastifyRoute.preParsing = authz.preParsing
       fastifyRoute.preValidation = authz.preValidation
     } else if (route.auth === true) {
       fastifyRoute.preParsing = createAuthHook(opts.authVerifier || null, Object.freeze({
@@ -152,7 +168,13 @@ function buildFastifyRoutes (app, client, ctx, opts = {}) {
         rep.hijack()
         const raw = rep.raw
         try {
-          await pipeToResponse(await _forward(client, app, route, 'stream', req, timeoutMs, signal), raw)
+          const aborted = await pipeToResponse(await _forward(client, app, route, 'stream', req, timeoutMs, signal), raw)
+          // The head (a 200) is already sent, so the HTTP client sees only a
+          // truncated body; the hijacked reply gets no Fastify completion line.
+          // A client that disconnects takes this path too and is not logged.
+          if (aborted && aborted.code === 'ERR_APP_STREAM_OVERFLOW') {
+            req.log?.warn({ app: app.name, routeId: route.id, code: aborted.code }, 'stream response truncated: the HTTP client read too slowly')
+          }
         } catch (err) {
           if (!raw.headersSent) {
             const body = errorResponse(err, req.log)
@@ -199,4 +221,4 @@ function buildFastifyRoutes (app, client, ctx, opts = {}) {
   })
 }
 
-module.exports = { buildFastifyRoutes, errorResponse, resolveAppTimeout, runtimeKey: _runtimeKey }
+module.exports = { buildFastifyRoutes, errorResponse, resolveAppTimeout, resolveStreamBufferBytes, runtimeKey: _runtimeKey }

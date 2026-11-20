@@ -6,6 +6,7 @@ const debug = require('debug')('mdk:app:client')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
 const protocol = require('./protocol')
+const { dhtPortOpts } = require('@tetherto/mdk-client')
 
 const { METHODS, STREAM_MESSAGES: MSG, ERR } = protocol
 
@@ -87,11 +88,13 @@ function createRuntimeClient (opts = {}) {
   async function connect () {
     if (rpc) return
     if (opts.rpc) { rpc = opts.rpc; return }
+    const portOpts = dhtPortOpts(opts.bootstrap)
     let dht = opts.dht
     if (!dht && opts.dhtHost) {
-      dht = ownDht = new DHT({ keyPair, host: opts.dhtHost, ...(opts.bootstrap ? { bootstrap: opts.bootstrap } : {}) })
+      dht = ownDht = new DHT({ keyPair, host: opts.dhtHost, ...(opts.bootstrap ? { bootstrap: opts.bootstrap } : {}), ...portOpts })
     }
-    rpc = new HyperswarmRPC({ keyPair, dht, bootstrap: opts.bootstrap, poolLinger: poolLingerMs })
+    // With `dht` set HyperswarmRPC uses that node and ignores bootstrap and port.
+    rpc = new HyperswarmRPC({ keyPair, dht, bootstrap: opts.bootstrap, poolLinger: poolLingerMs, ...portOpts })
   }
 
   function acquire (key) {
@@ -296,14 +299,16 @@ function createRuntimeClient (opts = {}) {
 
 // Writes the head of a stream() result, pipes its body and cleans up if either
 // side goes away. Resolves (never rejects) once the response finished or was
-// torn down.
+// torn down: with the error that tore it down (ERR_APP_STREAM_OVERFLOW, a
+// client that disconnected, ...), or undefined when the body completed. The
+// head is already sent by then, so the caller can only log it.
 function pipeToResponse (streamResult, raw) {
   raw.writeHead(streamResult.statusCode, streamResult.headers)
   if (typeof raw.flushHeaders === 'function') raw.flushHeaders()
   return new Promise((resolve) => {
     pipeline(streamResult.stream, raw, (err) => {
       if (err) debug('stream aborted: %s', err.message)
-      resolve()
+      resolve(err || undefined)
     })
   })
 }

@@ -19,6 +19,7 @@ const { spawn } = require('child_process')
 const createTestnet = require('hyperdht/testnet')
 
 const FIXTURES = path.join(__dirname, '..', 'fixtures')
+const LOOPBACK = '127.0.0.1'
 
 function spawnFixture (name, topic, storeDir, extraArgs = []) {
   const child = spawn('node', [path.join(FIXTURES, name), '--topic', topic, '--store', storeDir, ...extraArgs], {
@@ -53,12 +54,12 @@ test('dht topic discovery - separately-spawned kernel + worker register over sha
   // with no key handoff. Which DHT carries them is incidental, so run it on a
   // loopback testnet rather than the public network: the children reach it over
   // loopback, and the test no longer needs outbound UDP.
-  const testnet = await createTestnet(3, t.teardown)
-  const bootstrap = ['--bootstrap', testnet.bootstrap.map((n) => `${n.host}:${n.port}`).join(',')]
+  const testnet = await createTestnet(4, t.teardown)
+  const dht = ['--bootstrap', testnet.bootstrap.map((n) => `${n.host}:${n.port}`).join(','), '--host', LOOPBACK]
 
   // Kernel joins first (client querying); worker joins after (server announcing),
   // so the Kernel connects during the worker's join window — the failure timing.
-  const kernel = spawnFixture('repro-kernel.js', topic, orkStore, bootstrap)
+  const kernel = spawnFixture('repro-kernel.js', topic, orkStore, dht)
   t.teardown(() => new Promise((resolve) => {
     let pending = 2
     const done = () => {
@@ -77,7 +78,7 @@ test('dht topic discovery - separately-spawned kernel + worker register over sha
 
   const clientKey = (kernel._out.match(/REPRO_KERNEL_STARTED client=([0-9a-f]{64})/) || [])[1]
   t.ok(clientKey, 'Kernel published its client key')
-  const worker = spawnFixture('repro-worker.js', topic, workerStore, ['--allow', clientKey, ...bootstrap])
+  const worker = spawnFixture('repro-worker.js', topic, workerStore, ['--allow', clientKey, ...dht])
   const workerReady = await waitFor(worker, 'REPRO_WORKER_READY', 15000)
   t.ok(workerReady, 'worker process announced on the topic')
 

@@ -23,6 +23,7 @@ export const createIcon = (
           viewBox={viewBox}
           fill="none"
           aria-hidden="true"
+          // oxlint-disable-next-line react/forbid-dom-props -- forwards the consumer's style prop
           style={style}
           {...rest}
         >

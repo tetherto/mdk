@@ -46,33 +46,40 @@ or same-process discovery][discovery-model], then initiates all MDK Protocol cal
 
 Each Worker has:
 
-- **A [Worker Plugin](#1-worker-plugin)**, e.g. [`avalon/plugin/index.js`][avalon-plugin-index]. A plain object
-`{ contract, dir, connect, disconnect? }` — no base class, no subclassing
-- **A [`WorkerRuntime`](#2-workerruntime)**, the shared runtime that hosts the plugin's devices and exposes them through the MDK Protocol over HRPC
+- **A [Worker Plugin](#1-worker-plugin)**, e.g. the Avalon package: [`mdk-contract.json`][avalon-contract] at the
+package root plus the handler files under `src/`, loaded by directory
+- **A [`WorkerRuntimeV2`](#2-workerruntimev2)**, the shared runtime that hosts the plugin's devices and exposes them through the MDK Protocol over HRPC
 - **A [`mdk-contract.json`](#3-mdk-contractjson)**, e.g. the [Avalon contract][avalon-contract], the engineering
 source of truth. Declares every telemetry field
 (name, unit, type) and every command (name, params)
-- **A [mock server][mdk-e2e-server]**, a local HTTP server with canned responses for hardware-free development
+- **A [mock server][mdk-e2e-server]**, a local server with canned responses for hardware-free development
 
 ### 1. Worker plugin
 
-The plugin is the object `WorkerRuntime` is constructed with — the contract, the plugin's own directory, and a
-`connect` function that turns one device's config into the `device` object every handler sees. There is no
-base class and no subclassing; a plugin package can be built and tested with zero dependency on `WorkerRuntime`.
-Every telemetry/command handler is invoked as `(ctx, params)`, where `ctx = { deviceId, device, config, services }`.
+The plugin is a package directory: the contract and the handler files it names. Each handler is a plain `(params)`
+function; it reaches its device through the ambient `@tetherto/mdk-worker/device` module (`{ id, opts, env, config }`),
+which the runtime loads once per device into a private module registry. There is no base class, no `connect()` and
+nothing to `require()`; a plugin package can be built and tested with zero dependency on the runtime.
 
 ```text
 miners/avalon/
-  plugin/
-    index.js               # the Worker Plugin: { contract, dir, connect, disconnect }
-    mdk-contract.json
-    boot.js                # startAvalonWorker(opts) — constructs WorkerRuntime
-  lib/avalon.miner.js       # the device driver plugin.connect() returns
+  mdk-contract.json        # telemetry, commands, health, errors; names the handlers
+  src/
+    device.js              # builds this device's AvalonMiner from the ambient device module
+    telemetry/*.js         # one (params) handler per metric field
+    commands/*.js          # one (params) handler per write action
+  lib/avalon.miner.js      # the device driver src/device.js constructs
+  mock/server.js           # the simulator `mdk run` starts with `mock: true`
+  smoke.config.js          # device spec for `mdk validate worker --smoke`
 ```
 
-### 2. `WorkerRuntime`
+The Antspace, Bitdeer and Seneca Workers still ship the older module-exporting shape (`plugin/index.js` with
+`connect()`, booted by `plugin/boot.js` on `WorkerRuntime` v1); the [store services surface][worker-runtime-store]
+describes what that shape adds and why it is deprecated.
 
-[`WorkerRuntime`][mdk-worker-runtime] hosts every device behind one HRPC channel to Kernel. It:
+### 2. `WorkerRuntimeV2`
+
+[`WorkerRuntimeV2`][worker-runtime-v2] hosts every device behind one HRPC channel to Kernel. It:
 - Starts a Hyperswarm RPC server and responds to every MDK Protocol action
 - Provides the RPC public key (`getPublicKey()`) that the host process registers or publishes according to the selected discovery mode
 - Dispatches incoming MDK Protocol actions to the plugin's per-device handlers, wrapping results into the protocol envelope itself
@@ -102,37 +109,49 @@ capabilities to derive available operations dynamically. (Agent MCP tools are no
 
 ## Start a Worker
 
-Each Worker package ships its own boot function that constructs `WorkerRuntime` internally — there is no single
-generic `startWorker()` entry point:
+`mdk run` hosts any directory-loaded Worker package declared under `spec.workers` in `mdk.yaml`, starting one mock
+per device when `config.mock` is set (`true` for `mock/server.js`, or the path of the mock module the package ships):
+
+```yaml
+spec:
+  workers:
+    - name: avalon
+      package: '@tetherto/mdk-worker-avalon'
+      config:
+        mock: true
+        devices:
+          - id: AV-001
+            opts: { address: 127.0.0.1, port: 14030, password: admin }
+```
+
+In your own Node.js process, point `WorkerRuntimeV2` at the package directory with the same device list:
 
 ```js
+const path = require('path')
 const { getKernel } = require('@tetherto/mdk-core')
-const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
 const kernel = await getKernel()
 
-const worker = await startAvalonWorker({
+const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-avalon/package.json')), {
   workerId: 'avalon-rack-1',
-  model: 'a1346',
   storeDir: './store/avalon-rack-1',
   allowedKeys: [kernel.getClientPublicKey()],
-  seedDevices: [{
-    info: { serialNum: 'AV-001' },
-    opts: { address: '192.168.1.10', port: 4028, password: 'admin' }
-  }]
+  devices: [{ deviceId: 'AV-001', config: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
 })
-await kernel.registerWorker(worker.runtime.getPublicKey())
+await runtime.start()
+await kernel.registerWorker(runtime.getPublicKey())
 ```
 
 `allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
 (`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
 
-`seedDevices` only seeds a fresh, empty `storeDir`; add a device to an already-running Worker with the
-`registerThing` command instead (see each package's own `USAGE.md`, e.g. [`miners/avalon/USAGE.md`][avalon-usage]).
+The device list is fixed at construction: adding or removing a device is a config edit and a restart. Each package's
+own `README.md` (and `USAGE.md`, e.g. [`miners/avalon/USAGE.md`][avalon-usage]) documents its device options.
 
 > [!CAUTION]
-> `registerThing`, `ctx.services` and the `createWorkerInfra` wiring in each in-repo `boot.js` are the deprecated
-> [store services surface][worker-runtime-store]. They keep working for the in-repo Workers; a new Worker on
+> `registerThing`, `ctx.services` and the `createWorkerInfra` wiring in the Antspace, Bitdeer and Seneca `boot.js`
+> are the deprecated [store services surface][worker-runtime-store]. They keep working for those Workers; a Worker on
 > [`WorkerRuntimeV2`][worker-runtime-v2] doesn't use them.
 
 The `registerWorker()` call above is the same-process shape. Separate processes on one machine, or Workers on other
@@ -146,11 +165,6 @@ compares the three, and [Test a new Worker][test-a-worker] has a runnable host s
 2. Scaffold the package directory with `mdk create worker`.
 3. Author `mdk-contract.json` following [`mdk-contract.schema.json`][contract-schema].
 4. The Worker instance boots, connects to devices, and publishes or registers its RPC public key through the selected discovery mode — Kernel handles the rest.
-
-> [!WARNING]
-> The miner Workers in [Worker architecture](#worker-architecture) (Avalon) are v1 examples, not
-> recommended templates for a new plugin; they still construct `WorkerRuntime` v1 directly via the
-> `{ contract, dir, connect, disconnect? }` shape, which remains supported. `WorkerRuntimeV2` is the model for new hardware.
 
 ## Testing
 
@@ -213,11 +227,8 @@ also run just its own mock on its default port, e.g. `cd miners/avalon && npm ru
 [test-a-worker]: ../../docs/guides/workers/test-a-worker.md
 <!-- docs@tether.io: test-a-worker → guides/workers/test-a-worker -->
 
-[avalon-plugin-index]: ./miners/avalon/plugin/index.js
-<!-- docs@tether.io: avalon-plugin-index → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/plugin/index.js -->
-
-[avalon-contract]: ./miners/avalon/plugin/mdk-contract.json
-<!-- docs@tether.io: avalon-contract → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/plugin/mdk-contract.json -->
+[avalon-contract]: ./miners/avalon/mdk-contract.json
+<!-- docs@tether.io: avalon-contract → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/mdk-contract.json -->
 
 [mdk-e2e-server]: ./miners/avalon/mock/server.js
 <!-- docs@tether.io: mdk-e2e-server → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/mock/server.js -->
@@ -228,9 +239,6 @@ also run just its own mock on its default port, e.g. `cd miners/avalon && npm ru
 
 [worker-runtime-store]: ../core/mdk-worker/README.md#store-services
 <!-- docs@tether.io: worker-runtime-store → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#store-services -->
-
-[mdk-worker-runtime]: ../core/mdk-worker/lib/worker-runtime.js
-<!-- docs@tether.io: mdk-worker-runtime → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/lib/worker-runtime.js -->
 
 [contract-schema]: ../core/mdk-worker/mdk-contract.schema.json
 <!-- docs@tether.io: contract-schema → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/mdk-contract.schema.json -->

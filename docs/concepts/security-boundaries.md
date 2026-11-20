@@ -114,7 +114,7 @@ worker, for a worker or rack scope) and validated the command and params against
 each attempt, refused ones included, with the caller's subject and the roles `spec.rbac` binds to it (for an app acting for an
 operator, the operator, and the app as `via`); reading it with `command.log` needs `commands: read`. Approval-gated writes check `devices: write` on every device a push resolves to, and each vote against the
 stored action's target devices with the voter's own rule. For a token caller, the voter is the operator it acts for, else its own identity
-unless a rule grants `actions: delegate`, and self-asserted `authPerms` in the payload are ignored.
+unless a rule grants `actions: delegate`.
 
 What stays with the handler:
 

@@ -30,22 +30,20 @@ All meters use **Modbus TCP**.
 ## Quickstart
 
 ```js
+const path = require('path')
 const { getKernel } = require('@tetherto/mdk-core')
-const { startAbbWorker } = require('@tetherto/mdk-worker-abb')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
 const kernel = await getKernel()
 
-const worker = await startAbbWorker({
+const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-abb/package.json')), {
   workerId: 'abb-rack-1',
-  model: 'b23',
   storeDir: './store/abb-rack-1',
   allowedKeys: [kernel.getClientPublicKey()],
-  seedDevices: [{
-    info: { serialNum: 'ABB-A', container: 'container-A' },
-    opts: { address: '192.168.1.150', port: 502, unitId: 1 }
-  }]
+  devices: [{ deviceId: 'ABB-A', config: { address: '192.168.1.150', port: 502, unitId: 1, model: 'b23' } }]
 })
-await kernel.registerWorker(worker.runtime.getPublicKey())
+await runtime.start()
+await kernel.registerWorker(runtime.getPublicKey())
 ```
 
 `allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it

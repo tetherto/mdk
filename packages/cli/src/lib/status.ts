@@ -2,7 +2,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { detectEnvironment, NODE_MIN_MAJOR } from './detect.js';
 import { StackSpecError, loadStackSpec, STACK_FILE, type StackSpec } from './spec.js';
-import { cliKernelClient, type KernelStatus, type MdkClient } from './kernel-client.js';
+import {
+  cliKernelClient,
+  isCallerRefusal,
+  isSessionRefusal,
+  pingAsService,
+  pingKernel,
+  type KernelStatus,
+  type MdkClient,
+} from './kernel-client.js';
 import { kernelKeyFile, resolvePackageDir } from './runtime.js';
 import { appChildPid, isAlive, lockHolder } from './run-lock.js';
 
@@ -67,9 +75,18 @@ export interface AppReport {
 }
 
 export interface StackReport {
-  kernel: { state: ComponentState; keyFile: string; key: string | null; error: string | null };
+  kernel: {
+    state: ComponentState;
+    keyFile: string;
+    key: string | null;
+    error: string | null;
+    /** Up, but the CLI's sign-in or permission was refused (`error` says why), so its registry was not read. */
+    refused?: true;
+  };
   gateway: { state: ComponentState; url: string | null; error: string | null };
   workers: {
+    /** The Kernel's registry was read; when false, `registered` and each item's state are unknown, not absent. */
+    checked: boolean;
     declared: number;
     registered: number;
     totalDevices: number;
@@ -156,30 +173,38 @@ async function probeKernel(
     };
   }
 
+  const down = (error: string) => ({ kernel: { state: 'down' as const, keyFile, key, error }, status: null });
+  // Up, but the CLI's session or permission was refused, so the registry was not read.
+  const refused = (error: string) => ({ kernel: { state: 'up' as const, keyFile, key, error, refused: true as const }, status: null });
+
   let client: MdkClient;
   try {
     client = cliKernelClient(projectDir, key);
   } catch (error) {
-    return {
-      kernel: { state: 'down', keyFile, key, error: error instanceof Error ? error.message : String(error) },
-      status: null,
-    };
+    const text = error instanceof Error ? error.message : String(error);
+    if (!isSessionRefusal(text)) return down(text);
+    // An unreadable session file is refused before anything is sent: only a ping tells a running Kernel from a stopped one.
+    try {
+      const ping = await pingAsService(projectDir, key, KERNEL_TIMEOUT_MS);
+      return 'down' in ping ? down(ping.down) : refused(text);
+    } catch {
+      return down(text);
+    }
   }
   try {
     // A newly published key is admitted once the Kernel's trusted-keys watcher sees it.
-    await client.connect({ warmup: true });
+    await client.connect({ warmup: true, warmupTimeoutMs: KERNEL_TIMEOUT_MS });
     const status = await client.getStatus({ retries: 1, timeoutMs: KERNEL_TIMEOUT_MS });
     return { kernel: { state: 'up', keyFile, key, error: null }, status };
   } catch (error) {
-    return {
-      kernel: {
-        state: 'down',
-        keyFile,
-        key,
-        error: error instanceof Error ? error.message : String(error),
-      },
-      status: null,
-    };
+    const text = error instanceof Error ? error.message : String(error);
+    if (isSessionRefusal(text)) {
+      // Refused before anything was sent, as above.
+      const ping = await pingKernel(client, KERNEL_TIMEOUT_MS);
+      return 'down' in ping ? down(ping.down) : refused(text);
+    }
+    // The Kernel itself refused: it answered, so it is up.
+    return isCallerRefusal(text) ? refused(text) : down(text);
   } finally {
     await client.close().catch(() => {});
   }
@@ -217,6 +242,7 @@ function buildWorkers(spec: StackSpec | null, status: KernelStatus | null): Stac
   }
 
   return {
+    checked: status !== null,
     declared: declared.length,
     registered: registered.size,
     totalDevices: status?.totalDevices ?? 0,
@@ -238,7 +264,7 @@ function installedVersion(dir: string, pkg: string): string | null {
 function buildApps(dir: string, spec: StackSpec | null): StackReport['apps'] {
   const items = (spec?.spec.apps ?? []).map((a): AppReport => {
     const holder = lockHolder(dir, { kind: 'app', name: a.name });
-    const child = holder === null ? undefined : appChildPid(dir, a.name);
+    const child = holder === null ? undefined : appChildPid(dir, a.name, holder);
     const pid = child === undefined ? holder : isAlive(child) ? child : null;
     return {
       name: a.name,
@@ -320,7 +346,7 @@ export async function collectStatus(projectDir: string): Promise<StatusReport> {
   let health: Health;
   if (kernel.state === 'down') {
     health = 'down';
-  } else if (gateway.state === 'down' || !workers.items.every(workerServing) || apps.running < apps.declared) {
+  } else if (kernel.refused || gateway.state === 'down' || !workers.items.every(workerServing) || apps.running < apps.declared) {
     health = 'degraded';
   } else {
     health = 'healthy';

@@ -1,0 +1,1 @@
+{"name":"InputProps","path":"src/primitives/components/input/index.tsx","kind":"type","description":"","public":true,"definition":"Omit<ComponentProps<'input'>, 'prefix' | 'size'> & { /** * Optional label displayed above the input */ label?: string /** * HTML id for the input. Required when using label for accessibility. * @default auto-generated */ id?: string /** *…"}

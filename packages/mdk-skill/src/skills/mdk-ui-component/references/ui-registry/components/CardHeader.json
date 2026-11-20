@@ -1,0 +1,1 @@
+{"name":"CardHeader","path":"src/primitives/components/card/index.tsx","description":"Top region of a `<Card>` that groups the title, optional subtitle, and an action slot","tier":"agent-ready","public":true,"category":"layout","domainContext":"generic","props":[],"examples":["src/primitives/components/card/card.example.tsx"],"usageDoc":"src/primitives/components/card/USAGE.md"}

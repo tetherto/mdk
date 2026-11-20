@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events';
 import { createServer } from 'node:net';
 import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -93,6 +94,19 @@ describe('resolveProjectPackageDir', () => {
     );
   });
 
+  // Neither catalog app is on npm, so `npm install <name>` 404s: point at the
+  // repository the catalog installs it from instead.
+  it('names the catalog source for a catalog app that is not installed', () => {
+    const dir = makeTmpDir();
+    let error: Error | undefined;
+    try {
+      runtime.resolveProjectPackageDir(dir, '@tetherto/mdk-app-agent');
+    } catch (e) {
+      error = e as Error;
+    }
+    expect(error?.message).toMatch(/npm install github:tetherto\/mdk-app-agent$/);
+  });
+
   it('says `npm install` for a package package.json declares but node_modules lacks', () => {
     const dir = makeTmpDir();
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ dependencies: { 'ops-center': 'file:./apps/ops-center' } }));
@@ -185,7 +199,50 @@ describe('declaredMockPorts', () => {
   });
 });
 
+describe('workerConflictMessage', () => {
+  it('names the bound key conflict and how to release it', () => {
+    const msg = runtime.workerConflictMessage({ error: 'ERR_WORKER_KEY_CONFLICT', workerId: 'rig' });
+    expect(msg).toMatch(/refused worker "rig": that name is bound to another worker key/);
+    expect(msg).toContain("client.terminateWorker('rig')");
+  });
+
+  it('falls back to the error code', () => {
+    expect(runtime.workerConflictMessage({ error: 'ERR_OTHER', workerId: 'rig' })).toBe('the Kernel refused worker "rig" (ERR_OTHER).');
+  });
+
+  it('says a refusal against an owner from an earlier run is retried when the owner registers', () => {
+    const msg = runtime.workerConflictMessage({ error: 'ERR_WORKER_DEVICE_CONFLICT', workerId: 'rig-b', deviceId: 'd1', ownerId: 'rig-a', ownerPending: true });
+    expect(msg).toMatch(/refused worker "rig-b" for now: device "d1" is still bound to worker "rig-a" from an earlier run/);
+    expect(msg).toContain('"rig-b" is retried when "rig-a" registers');
+    expect(msg).toContain("client.terminateWorker('rig-a')");
+  });
+});
+
+describe('workerUnreachableHint', () => {
+  it('names the public DHT and the private-bootstrap fix when the stack has no spec.network.dht', () => {
+    const hint = runtime.workerUnreachableHint('ERR_WORKER_IDENTITY_UNAVAILABLE', {});
+    expect(hint).toMatch(/joins the public DHT/);
+    expect(hint).toContain('network: { dht: { host: 127.0.0.1, port: 49737 } }');
+    expect(runtime.workerUnreachableHint('ERR_CHANNEL_NOT_CONNECTED', {})).toBe(hint);
+  });
+
+  it("names the stack's own bootstrap on a private DHT", () => {
+    const hint = runtime.workerUnreachableHint('ERR_WORKER_IDENTITY_UNAVAILABLE', {
+      bootstrap: ['127.0.0.1:49737'],
+      dhtHost: '127.0.0.1',
+    });
+    expect(hint).toMatch(/stack's DHT \(127\.0\.0\.1:49737\)/);
+    expect(hint).not.toMatch(/public DHT/);
+  });
+
+  it('says nothing for a Worker the Kernel reached and refused', () => {
+    expect(runtime.workerUnreachableHint('ERR_WORKER_KEY_CONFLICT', {})).toBeUndefined();
+    expect(runtime.workerUnreachableHint('ERR_WORKER_CONTRACT_INVALID', {})).toBeUndefined();
+  });
+});
+
 describe('policyWarnings', () => {
+  const { permissionsDigest } = require('@tetherto/mdk-rbac') as { permissionsDigest: (permissions: unknown[]) => string };
   const bind = (...names: string[]) => ({ roles: [{ name: 'r', rules: [{ resources: ['*'], verbs: ['*'] }] }], bindings: [{ role: 'r', subjects: names.map((name) => ({ kind: 'ServiceAccount' as const, name })) }] });
   const app = { name: 'ops', package: 'p', config: {} };
 
@@ -225,6 +282,17 @@ describe('policyWarnings', () => {
     expect(runtime.policyWarnings(baseSpec({ apps: [app], rbac: bind('mdk-cli', 'mdk-gateway', 'mdk-mcp', 'app:ops') }))).toEqual([]);
   });
 
+  // An app requesting `permissions: []` (mdk-app-agent) gets no binding from
+  // `mdk rbac init`, so a warning for it could never clear.
+  it('does not warn about an app granted no permissions', () => {
+    const rbac = bind('mdk-cli', 'mdk-gateway', 'mdk-mcp');
+    const noAccess = { name: 'agent', package: 'p', config: {}, permissionsDigest: permissionsDigest([]) };
+    expect(runtime.policyWarnings(baseSpec({ apps: [noAccess], rbac }))).toEqual([]);
+    // One that requested permissions but has no binding still warns.
+    const someAccess = { ...noAccess, permissionsDigest: permissionsDigest([{ resources: ['workers'], verbs: ['list'] }]) };
+    expect(runtime.policyWarnings(baseSpec({ apps: [someAccess], rbac }))).toEqual([expect.stringMatching(/app agent has no binding/)]);
+  });
+
   it('runKernel prints them', async () => {
     mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn() });
     const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
@@ -234,6 +302,28 @@ describe('policyWarnings', () => {
 });
 
 describe('runKernel', () => {
+  it('prints a worker the Kernel refuses for a binding conflict', async () => {
+    const kernel = new EventEmitter();
+    mockCore.getKernel.mockResolvedValue(Object.assign(kernel, { _cleanup: [], stop: vi.fn() }));
+    const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    await runtime.runKernel(makeTmpDir());
+
+    kernel.emit('worker-rejected', { error: 'ERR_WORKER_DEVICE_CONFLICT', workerId: 'rig-b', deviceId: 'd1', ownerId: 'rig-a', rpcKey: 'ab' });
+    const line = String(write.mock.calls.at(-1)?.[0]);
+    expect(line).toMatch(/warning.*refused worker "rig-b": device "d1" is bound to worker "rig-a"/);
+    expect(line).toContain("client.terminateWorker('rig-a')");
+  });
+
+  it('prints a refused worker the Kernel admits once its binding is released', async () => {
+    const kernel = new EventEmitter();
+    mockCore.getKernel.mockResolvedValue(Object.assign(kernel, { _cleanup: [], stop: vi.fn() }));
+    const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    await runtime.runKernel(makeTmpDir());
+
+    kernel.emit('worker-admitted', { workerId: 'rig-b', rpcKey: 'ab' });
+    expect(String(write.mock.calls.at(-1)?.[0])).toMatch(/worker.*rig-b.*registered: the binding that refused it was released/);
+  });
+
   it('boots the kernel with local discovery and logs its key', async () => {
     const fakeKernel = { getPublicKey: () => Buffer.from('ab', 'hex'), _cleanup: [], stop: vi.fn() };
     mockCore.getKernel.mockResolvedValue(fakeKernel);
@@ -358,6 +448,41 @@ describe('private DHT (spec.network.dht)', () => {
     await runtime.runKernel(makeTmpDir(), baseSpec());
     expect(mockCore.startDhtBootstrap).not.toHaveBeenCalled();
     expect(mockCore.getKernel.mock.lastCall?.[0]).not.toHaveProperty('hrpc');
+  });
+
+  it('runKernel publishes the resolved settings for a Worker hosted outside mdk run', async () => {
+    mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn() });
+    mockCore.startDhtBootstrap.mockResolvedValue({ bootstrap: ['127.0.0.1:49737'], close: vi.fn() });
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    const dir = makeTmpDir();
+    await runtime.runKernel(dir, dhtSpec({}));
+    expect(JSON.parse(readFileSync(runtime.networkFile(dir), 'utf8'))).toEqual({
+      bootstrap: ['127.0.0.1:49737'],
+      dhtHost: '127.0.0.1',
+    });
+
+    // Moved back to the public DHT: the stale bootstrap must not survive, or a
+    // Worker reading the file keeps dialling a bootstrap nothing is serving.
+    await runtime.runKernel(dir, baseSpec());
+    expect(JSON.parse(readFileSync(runtime.networkFile(dir), 'utf8'))).toEqual({});
+  });
+
+  it('runKernel hints at the stack bootstrap when the Kernel cannot reach a Worker it does not host', async () => {
+    const handlers: Record<string, (payload: unknown) => void> = {};
+    const on = vi.fn((event: string, handler: (payload: unknown) => void) => { handlers[event] = handler; });
+    mockCore.getKernel.mockResolvedValue({ _cleanup: [], stop: vi.fn(), on });
+    mockCore.startDhtBootstrap.mockResolvedValue({ bootstrap: ['127.0.0.1:49737'], close: vi.fn() });
+    const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    await runtime.runKernel(makeTmpDir(), dhtSpec({}));
+    write.mockClear();
+    handlers['worker-unreachable']?.({ error: 'ERR_WORKER_IDENTITY_UNAVAILABLE', rpcKey: 'ab'.repeat(32) });
+
+    const out = write.mock.calls.map((c) => String(c[0])).join('');
+    expect(out).toMatch(/could not reach the worker at abababababababab/);
+    expect(out).toMatch(/stack's DHT \(127\.0\.0\.1:49737\)/);
+    expect(out).toMatch(/dhtFromProject/);
   });
 });
 
@@ -731,7 +856,11 @@ describe('runMcp', () => {
  * `mdk-contract.json` at its root and no `index.js`/module exports at all —
  * `require(dir)` must never be attempted against this fixture.
  */
-function writeContractWorkerFixture(dir: string, name: string, opts: { mock?: boolean } = {}): string {
+function writeContractWorkerFixture(
+  dir: string,
+  name: string,
+  opts: { mock?: boolean; mockFile?: string; stopMethod?: 'exit' | 'close' | 'stop' } = {},
+): string {
   const pkgDir = join(dir, 'workers', name);
   mkdirSync(join(pkgDir, 'src'), { recursive: true });
   writeFileSync(
@@ -746,17 +875,20 @@ function writeContractWorkerFixture(dir: string, name: string, opts: { mock?: bo
     'utf8',
   );
   writeFileSync(join(pkgDir, 'src', 'status.js'), 'module.exports = async () => ({ ok: true });\n', 'utf8');
-  if (opts.mock) {
-    mkdirSync(join(pkgDir, 'mock'), { recursive: true });
+  if (opts.mock || opts.mockFile) {
+    const file = join(pkgDir, opts.mockFile ?? join('mock', 'server.js'));
+    mkdirSync(dirname(file), { recursive: true });
+    // The handle records which stop method ran so a test can assert on it.
+    const stop = opts.stopMethod ?? 'exit';
     writeFileSync(
-      join(pkgDir, 'mock', 'server.js'),
+      file,
       [
         'const net = require("node:net");',
         'module.exports = {',
         '  createServer(opts) {',
         '    const server = net.createServer();',
         '    server.listen(opts.port, opts.host || "127.0.0.1");',
-        '    return { server, exit() { server.close(); } };',
+        `    return { server, ${stop}() { globalThis.__mockStopped = "${stop}"; server.close(); } };`,
         '  },',
         '};',
         '',
@@ -786,7 +918,11 @@ describe('runWorker', () => {
       name: 'a',
       package: './workers/a',
       port: 0,
-      config: { mock: true, devices: [{ id: 'a-0', opts: { host: '127.0.0.1', port: 22010 } }] },
+      config: {
+        mock: true,
+        devices: [{ id: 'a-0', opts: { host: '127.0.0.1', port: 22010 }, info: { container: 'c1' } }],
+        telemetryPollIntervalMs: 5000,
+      },
       env: { TOKEN: 'abc123' },
     };
 
@@ -797,7 +933,14 @@ describe('runWorker', () => {
     expect(ctorDir).toBe(join(dir, 'workers', 'a'));
     expect(ctorOpts.workerId).toBe('a');
     expect(ctorOpts.env).toEqual({ TOKEN: 'abc123' });
+    const [device] = ctorOpts.devices as Array<{ deviceId: string; config: Record<string, unknown>; info: Record<string, unknown> }>;
+    expect(device.deviceId).toBe('a-0');
+    expect(device.info).toEqual({ container: 'c1' });
+    expect(device.config).toMatchObject({ host: '127.0.0.1', port: 22010 });
+    expect(ctorOpts.config).toBe(worker.config);
     expect(ctorOpts.storeDir).toBe(join(dir, '.mdk', 'workers', 'a', 'identity'));
+    expect(ctorOpts.telemetryStoreDir).toBe(join(dir, '.mdk', 'workers', 'a', 'telemetry'));
+    expect(ctorOpts.telemetryArchiveDir).toBe(join(dir, '.mdk', 'workers', 'a', 'telemetry-archive'));
     await handle.stop();
   });
 
@@ -900,6 +1043,65 @@ describe('runWorker', () => {
     await expect(runtime.runWorker(dir, worker)).rejects.toThrow(/has no mock\/server\.js/);
   });
 
+  it('names the module config.mock asked for when it is missing', async () => {
+    const dir = makeTmpDir();
+    writeContractWorkerFixture(dir, 'a');
+    const worker: WorkerInstance = {
+      name: 'a',
+      package: './workers/a',
+      port: 0,
+      config: { mock: 'mock/cgi-server.js', devices: [{ id: 'a-0', opts: { port: 18081 } }] },
+    };
+    await expect(runtime.runWorker(dir, worker)).rejects.toThrow(/has no mock\/cgi-server\.js/);
+  });
+
+  it('refuses a config.mock path that leaves the worker package', async () => {
+    const dir = makeTmpDir();
+    writeContractWorkerFixture(dir, 'a');
+    const worker: WorkerInstance = {
+      name: 'a',
+      package: './workers/a',
+      port: 0,
+      config: { mock: '../outside.js', devices: [{ id: 'a-0', opts: { port: 18082 } }] },
+    };
+    await expect(runtime.runWorker(dir, worker)).rejects.toThrow(/inside the worker package/);
+    writeContractWorkerFixture(dir, 'b', { mock: true });
+    const dirMock: WorkerInstance = { ...worker, name: 'b', package: './workers/b', config: { mock: 'mock', devices: [{ id: 'b-0', opts: { port: 18083 } }] } };
+    await expect(runtime.runWorker(dir, dirMock)).rejects.toThrow(/is not a file/);
+    expect(runtime.resolveMockModule('/pkg', true)).toBe(join('/pkg', 'mock', 'server.js'));
+    expect(runtime.resolveMockModule('/pkg', 'mock/api-v3-server.js')).toBe(join('/pkg', 'mock', 'api-v3-server.js'));
+    expect(() => runtime.resolveMockModule('/pkg', '/etc/passwd')).toThrow(/inside the worker package/);
+  });
+
+  it('boots the mock module config.mock names and stops it through close()', async () => {
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    mockWorkerRuntimeV2Ctor.mockImplementation(function () {
+      return {
+        start: vi.fn().mockResolvedValue(undefined),
+        stop: vi.fn().mockResolvedValue(undefined),
+        getPublicKey: () => Buffer.from('abcd', 'hex'),
+      };
+    });
+    mockLocalDiscovery.readTrustedKeys.mockReturnValueOnce([{ name: 'kernel', key: TEST_KERNEL_CLIENT_KEY }]);
+
+    const dir = makeTmpDir();
+    // The partner-maintained Antminer/Whatsminer shape: another file name, close() not exit().
+    writeContractWorkerFixture(dir, 'a', { mockFile: join('mock', 'cgi-server.js'), stopMethod: 'close' });
+    const worker: WorkerInstance = {
+      name: 'a',
+      package: './workers/a',
+      port: 0,
+      config: { mock: 'mock/cgi-server.js', devices: [{ id: 'a-0', opts: { host: '127.0.0.1', port: 22003 } }] },
+    };
+    delete (globalThis as { __mockStopped?: string }).__mockStopped;
+    const handle = await runtime.runWorker(dir, worker);
+    expect(handle.mocks).toHaveLength(1);
+    expect(handle.mocks[0]!.server!.listening).toBe(true);
+    await handle.stop();
+    expect((globalThis as { __mockStopped?: string }).__mockStopped).toBe('close');
+    expect(handle.mocks[0]!.server!.listening).toBe(false);
+  });
+
   it('boots a mock device, registers with an in-process kernel, and stops cleanly', async () => {
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     mockWorkerRuntimeV2Ctor.mockImplementation(function () {
@@ -937,6 +1139,67 @@ describe('runWorker', () => {
     // The Kernel's own shutdown takes the worker down with it.
     await kernel._cleanup[0]!();
     expect(workerStop).toHaveBeenCalledTimes(1);
+    await handle.stop();
+  });
+
+  it('says a worker the in-process Kernel refused is not registered, not ready', async () => {
+    const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    mockWorkerRuntimeV2Ctor.mockImplementation(function () {
+      return { start: vi.fn().mockResolvedValue(undefined), stop: vi.fn().mockResolvedValue(undefined), getPublicKey: () => Buffer.from('abcd', 'hex') };
+    });
+    const dir = makeTmpDir();
+    writeContractWorkerFixture(dir, 'a');
+    const worker: WorkerInstance = { name: 'a', package: './workers/a', port: 0, config: { devices: [{ id: 'a-0' }] } };
+    const kernel = {
+      registerWorker: vi.fn().mockResolvedValue({ registered: false, error: 'ERR_WORKER_DEVICE_CONFLICT', workerId: 'a' }),
+      getClientPublicKey: () => Buffer.from('ff'.repeat(32), 'hex'),
+      _cleanup: [] as Array<() => unknown>,
+    };
+
+    const handle = await runtime.runWorker(dir, worker, kernel as never);
+    const lines = write.mock.calls.map((c) => String(c[0]));
+    expect(lines.some((l) => /worker.*a.*not registered with the Kernel \(ERR_WORKER_DEVICE_CONFLICT\)/.test(l))).toBe(true);
+    expect(lines.some((l) => /worker.*\ba\b.* ready /.test(l))).toBe(false);
+    expect(kernel._cleanup, 'the worker still stops with the Kernel').toHaveLength(1);
+    await handle.stop();
+  });
+
+  it('holds the Kernel unreachable reports while a stack boots, and drops those for Workers it hosts', async () => {
+    const write = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const hosted = 'ab'.repeat(32);
+    const handlers: Record<string, (payload: unknown) => void> = {};
+    const kernel = {
+      on: vi.fn((event: string, handler: (payload: unknown) => void) => { handlers[event] = handler; }),
+      registerWorker: vi.fn().mockResolvedValue({ registered: true, workerId: 'a' }),
+      getClientPublicKey: () => Buffer.from('ff'.repeat(32), 'hex'),
+      _cleanup: [] as Array<() => unknown>,
+      stop: vi.fn(),
+    };
+    mockCore.getKernel.mockResolvedValue(kernel);
+    mockWorkerRuntimeV2Ctor.mockImplementation(function () {
+      return { start: vi.fn().mockResolvedValue(undefined), stop: vi.fn().mockResolvedValue(undefined), getPublicKey: () => Buffer.from(hosted, 'hex') };
+    });
+    const dir = makeTmpDir();
+    writeContractWorkerFixture(dir, 'a');
+    const worker: WorkerInstance = { name: 'a', package: './workers/a', port: 0, config: { devices: [{ id: 'a-0' }] } };
+    const unreachable = (rpcKey: string) => handlers['worker-unreachable']?.({ error: 'ERR_WORKER_IDENTITY_UNAVAILABLE', rpcKey });
+    const warnings = () => write.mock.calls.map((c) => String(c[0])).filter((l) => l.includes('could not reach the worker'));
+
+    await runtime.runKernel(dir, baseSpec(), { holdUnreachable: true });
+    // The hosted Worker's key from a file an earlier `mdk run worker` left, dialled before it is up.
+    unreachable(hosted);
+    unreachable('cd'.repeat(32));
+    expect(warnings(), 'nothing printed while the Workers boot').toEqual([]);
+
+    const handle = await runtime.runWorker(dir, worker, kernel as never);
+    runtime.releaseUnreachableReports(kernel as never);
+    expect(warnings()).toHaveLength(1);
+    expect(warnings()[0]).toMatch(/at cdcdcdcdcdcdcdcd/);
+
+    unreachable(hosted);
+    unreachable('ef'.repeat(32));
+    expect(warnings(), 'once released: a hosted key is still dropped, any other prints at once').toHaveLength(2);
+    expect(warnings()[1]).toMatch(/at efefefefefefefef/);
     await handle.stop();
   });
 
@@ -1129,6 +1392,7 @@ describe('app runtimes', () => {
     }
     const launches = readFileSync(join(dir, '.mdk', 'apps', 'demo', 'store', 'launches'), 'utf8');
     expect(launches.trim().split('\n').map((c) => realpathSync(c))).toEqual([realpathSync(dir), realpathSync(dir)]);
+    expect(existsSync(join(dir, '.mdk', 'run', 'app-demo.child')), 'stop() removes the child file').toBe(false);
   });
 
   it.each([

@@ -2,6 +2,7 @@
 
 const { validateFull: validateEnvelope } = require('../protocol/envelope')
 const { ACTIONS } = require('../protocol/actions')
+const { WORKER_QUERY_TYPES } = require('../modules/telemetry-collector')
 
 // Approval identity. An app acting for an operator (a verified `actor` token)
 // votes as that operator. Otherwise a caller granted `actions: delegate` (an app
@@ -84,15 +85,19 @@ async function routeEnvelope (envelope, deps, caller) {
       return dispatcher.cancel(envelope.payload && envelope.payload.commandId)
     case ACTIONS.COMMAND_LOG:
       return dispatcher.getLog(envelope.payload)
-    case ACTIONS.TELEMETRY_PULL:
-      return telemetryCollector.pull(
-        envelope.deviceId,
-        envelope.payload && envelope.payload.query
-      )
+    case ACTIONS.TELEMETRY_PULL: {
+      const query = envelope.payload && envelope.payload.query
+      // A Worker-scoped read: a merged type, or any type naming the workers to ask.
+      if (!envelope.deviceId && query && (WORKER_QUERY_TYPES.has(query.type) || Array.isArray(query.workers))) return telemetryCollector.pullWorkers(query)
+      return telemetryCollector.pull(envelope.deviceId, query)
+    }
     case ACTIONS.STATE_PULL:
       return telemetryCollector.pullState(envelope.deviceId)
-    case ACTIONS.WORKER_LIST:
-      return { workers: registry.listWorkers() }
+    case ACTIONS.WORKER_LIST: {
+      const workers = registry.listWorkers()
+      if (!caller) return { workers }
+      return { workers: workers.map(({ rpcKey, ...w }) => auth && auth.authorizer.canReadWorker(auth.identity, w.workerId, auth.actor) ? { ...w, rpcKey } : w) }
+    }
     case ACTIONS.DEVICE_CAPABILITIES:
       return { capabilities: registry.getCapabilities(envelope.deviceId) }
     case ACTIONS.WORKER_TERMINATE: {

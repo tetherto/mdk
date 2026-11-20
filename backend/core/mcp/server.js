@@ -353,6 +353,7 @@ function _resolveAuthority (opts, conf) {
         kernelKey: conf.kernelKey,
         ...(conf.kernelKeyPair ? { kernelKeyPair: conf.kernelKeyPair } : {}),
         ...(conf.kernelBootstrap ? { kernelBootstrap: conf.kernelBootstrap } : {}),
+        ...(conf.kernelDhtHost ? { kernelDhtHost: conf.kernelDhtHost } : {}),
         kernelCredential: opts.credential
       })
     })

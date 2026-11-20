@@ -107,17 +107,37 @@ describe('mdk rbac show', () => {
     expect(process.exitCode).toBeUndefined();
   });
 
-  it('shows a Kernel with no policy, a refusal, and a Kernel that is down', async () => {
+  it('shows a Kernel with no policy, and a Kernel that is down', async () => {
     const io = capture();
     showMock.mockResolvedValueOnce({ local, kernel: 'up', applied: null, inSync: false });
     await run('rbac', 'show');
     expect(io.out()).toMatch(/no policy applied \(denies everything\)/);
-    showMock.mockResolvedValueOnce({ local, kernel: 'up', applied: null, inSync: false, message: 'ERR_KERNEL_ACTION_FORBIDDEN' });
-    await run('rbac', 'show');
-    expect(io.out()).toMatch(/ERR_KERNEL_ACTION_FORBIDDEN/);
+    expect(io.out()).toMatch(/differs/);
+    expect(process.exitCode).toBeUndefined();
     showMock.mockResolvedValueOnce({ local, kernel: 'down', applied: null, inSync: false, message: 'no Kernel key' });
     await run('rbac', 'show');
     expect(io.out()).toMatch(/down.*no Kernel key/);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it.each([
+    'ERR_KERNEL_ACTION_FORBIDDEN: viewer may not read policy',
+    'ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.',
+  ])('exits 1 without comparing on %s', async (message) => {
+    const io = capture();
+    showMock.mockResolvedValueOnce({ local, kernel: 'up', applied: null, inSync: false, refused: true, message });
+    await run('rbac', 'show');
+    expect(io.out()).toContain(message);
+    expect(io.out()).not.toMatch(/differs|in sync/);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it('prints a refusal as json and still exits 1', async () => {
+    const io = capture();
+    const result = { local, kernel: 'up', applied: null, inSync: false, refused: true, message: 'ERR_KERNEL_ACTION_FORBIDDEN' };
+    showMock.mockResolvedValueOnce(result);
+    await run('-o', 'json', 'rbac', 'show');
+    expect(JSON.parse(io.out())).toEqual(result);
     expect(process.exitCode).toBe(1);
   });
 });
@@ -164,5 +184,21 @@ describe('mdk rbac init', () => {
     await run('rbac', 'init');
     expect(io.out()).toMatch(/no Kernel key; it applies it when it next starts\.\n/);
     expect(process.exitCode).toBe(1);
+  });
+  it('prints a refused sign-in as is, without the restart advice', async () => {
+    const io = capture();
+    const message = 'spec.rbac was not applied: ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.';
+    initMock.mockResolvedValueOnce({
+      cli: { roleCreated: false, bound: false },
+      gateway: { roleCreated: false, bound: false },
+      mcp: { roleCreated: false, bound: false },
+      apps: [],
+      applied: { ok: false, kernel: 'up', accessRefused: true, message },
+    });
+    await run('rbac', 'init');
+    expect(io.out()).toContain(`policy ${message}\n`);
+    expect(io.out()).not.toMatch(/Restart the Kernel/);
+    // Unlike show: init has written mdk.yaml, which the Kernel applies when it next starts.
+    expect(process.exitCode).toBeUndefined();
   });
 });

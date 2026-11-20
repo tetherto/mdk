@@ -9,17 +9,17 @@ export const CurrencyTogglerPage = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">Currency Toggler</h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="demo-section__column demo-section__column--tight">
         <div>
-          <p style={{ marginBottom: '0.5rem', fontSize: '13px', opacity: 0.7 }}>USD / BTC</p>
+          <p className="demo-section__label">USD / BTC</p>
           <CurrencyToggler currencies={['USD', 'BTC']} value={currency1} onChange={setCurrency1} />
         </div>
         <div>
-          <p style={{ marginBottom: '0.5rem', fontSize: '13px', opacity: 0.7 }}>BTC / SAT</p>
+          <p className="demo-section__label">BTC / SAT</p>
           <CurrencyToggler currencies={['BTC', 'SAT']} value={currency2} onChange={setCurrency2} />
         </div>
         <div>
-          <p style={{ marginBottom: '0.5rem', fontSize: '13px', opacity: 0.7 }}>With Disabled</p>
+          <p className="demo-section__label">With Disabled</p>
           <CurrencyToggler
             currencies={[
               { value: 'Active', label: 'Active' },

@@ -51,9 +51,9 @@ per device via `connect()`, answers the `'mdk'` HRPC method by dispatching
 envelopes to handlers, and announces itself on the Kernel's DHT topic. One
 runtime hosts N same-type devices; a device whose `connect()` fails is held
 `offline` (requests return `ERR_DEVICE_UNAVAILABLE`) without affecting
-siblings. This is the shape every currently shipped device family
-(`backend/workers/miners/*`, `power-meter/*`, `containers/*`, `minerpools/*`,
-`temperature/*`) still uses.
+siblings. Some shipped Workers use this shape, for example Antspace
+(`backend/workers/containers/antspace`); others are directory-loaded, for
+example Avalon (`backend/workers/miners/avalon`).
 
 A directory-loaded Worker package ships no module of its own: just
 `mdk-contract.json` at its root plus the handler files it declares under

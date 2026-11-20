@@ -4,7 +4,7 @@
 import { ChartStatsFooter } from '@tetherto/mdk-react-devkit'
 
 export const ChartStatsFooterExample = () => (
-  <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+  <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-xl">
     {/* Min/Max/Avg only */}
     <ChartStatsFooter minMaxAvg={{ min: '10 TH/s', avg: '55 TH/s', max: '100 TH/s' }} />
 

@@ -29,6 +29,7 @@ Availability says how you get a package:
 | [`@tetherto/mdk-kernel`][mdk-kernel] | MDK Kernel - Orchestration Kernel | `publishable` |
 | [`@tetherto/mdk-mcp`][mdk-mcp] | MDK MCP Server | `publishable` |
 | [`@tetherto/mdk-rbac`][mdk-rbac] | MDK RBAC policy library — validates spec.rbac from mdk.yaml and evaluates callers at the Gateway, MCP server and Kernel | `publishable` |
+| [`@tetherto/mdk-stats`][mdk-stats] | MDK telemetry aggregation ops: composable sum/avg/group/concat operations the Worker Runtime aggregates with, the Kernel merges Worker results with, and mdk-core's StatsService and stats templates use | `publishable` |
 | [`@tetherto/mdk-worker`][mdk-worker] | MDK Worker Runtime — hosts a Worker Plugin's devices behind one HRPC channel to the Kernel | `publishable` |
 
 ## Extensions
@@ -102,76 +103,79 @@ Availability says how you get a package:
 <!-- docs@tether.io: build-a-worker → guides/workers/build-a-worker -->
 
 [mdk-agent]: ../../backend/core/agent/README.md
-<!-- docs@tether.io: mdk-agent → https://github.com/tetherto/mdk/blob/main/backend/core/agent/README.md -->
+<!-- docs@tether.io: mdk-agent → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/agent/README.md -->
 
 [mdk-app-runtime]: ../../backend/core/app-runtime/README.md
-<!-- docs@tether.io: mdk-app-runtime → https://github.com/tetherto/mdk/blob/main/backend/core/app-runtime/README.md -->
+<!-- docs@tether.io: mdk-app-runtime → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/app-runtime/README.md -->
 
 [mdk-client]: ../../backend/core/client/README.md
-<!-- docs@tether.io: mdk-client → https://github.com/tetherto/mdk/blob/main/backend/core/client/README.md -->
+<!-- docs@tether.io: mdk-client → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/client/README.md -->
 
 [mdk-core]: ../../backend/core/mdk/README.md
-<!-- docs@tether.io: mdk-core → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md -->
+<!-- docs@tether.io: mdk-core → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/mdk/README.md -->
 
 [mdk-gateway]: ../../backend/core/gateway/README.md
-<!-- docs@tether.io: mdk-gateway → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md -->
+<!-- docs@tether.io: mdk-gateway → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/gateway/README.md -->
 
 [mdk-identity]: ../../backend/core/identity/README.md
-<!-- docs@tether.io: mdk-identity → https://github.com/tetherto/mdk/blob/main/backend/core/identity/README.md -->
+<!-- docs@tether.io: mdk-identity → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/identity/README.md -->
 
 [mdk-kernel]: ../../backend/core/kernel/README.md
-<!-- docs@tether.io: mdk-kernel → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md -->
+<!-- docs@tether.io: mdk-kernel → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/kernel/README.md -->
 
 [mdk-mcp]: ../../backend/core/mcp/README.md
-<!-- docs@tether.io: mdk-mcp → https://github.com/tetherto/mdk/blob/main/backend/core/mcp/README.md -->
+<!-- docs@tether.io: mdk-mcp → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/mcp/README.md -->
 
 [mdk-rbac]: ../../backend/core/rbac/README.md
-<!-- docs@tether.io: mdk-rbac → https://github.com/tetherto/mdk/blob/main/backend/core/rbac/README.md -->
+<!-- docs@tether.io: mdk-rbac → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/rbac/README.md -->
+
+[mdk-stats]: ../../backend/core/stats/README.md
+<!-- docs@tether.io: mdk-stats → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/stats/README.md -->
 
 [mdk-worker]: ../../backend/core/mdk-worker/README.md
-<!-- docs@tether.io: mdk-worker → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md -->
+<!-- docs@tether.io: mdk-worker → https://github.com/tetherto/mdk/blob/v0.14.0/backend/core/mdk-worker/README.md -->
 
 [mdk-worker-avalon]: ../../backend/workers/miners/avalon/README.md
-<!-- docs@tether.io: mdk-worker-avalon → https://github.com/tetherto/mdk/blob/main/backend/workers/miners/avalon/README.md -->
+<!-- docs@tether.io: mdk-worker-avalon → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/miners/avalon/README.md -->
 
 [mdk-worker-antspace]: ../../backend/workers/containers/antspace/README.md
-<!-- docs@tether.io: mdk-worker-antspace → https://github.com/tetherto/mdk/blob/main/backend/workers/containers/antspace/README.md -->
+<!-- docs@tether.io: mdk-worker-antspace → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/containers/antspace/README.md -->
 
 [mdk-worker-bitdeer]: ../../backend/workers/containers/bitdeer/README.md
-<!-- docs@tether.io: mdk-worker-bitdeer → https://github.com/tetherto/mdk/blob/main/backend/workers/containers/bitdeer/README.md -->
+<!-- docs@tether.io: mdk-worker-bitdeer → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/containers/bitdeer/README.md -->
 
 [mdk-worker-abb]: ../../backend/workers/power-meter/abb/README.md
-<!-- docs@tether.io: mdk-worker-abb → https://github.com/tetherto/mdk/blob/main/backend/workers/power-meter/abb/README.md -->
+<!-- docs@tether.io: mdk-worker-abb → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/power-meter/abb/README.md -->
 
 [mdk-worker-satec]: ../../backend/workers/power-meter/satec/README.md
-<!-- docs@tether.io: mdk-worker-satec → https://github.com/tetherto/mdk/blob/main/backend/workers/power-meter/satec/README.md -->
+<!-- docs@tether.io: mdk-worker-satec → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/power-meter/satec/README.md -->
 
 [mdk-worker-schneider]: ../../backend/workers/power-meter/schneider/README.md
-<!-- docs@tether.io: mdk-worker-schneider → https://github.com/tetherto/mdk/blob/main/backend/workers/power-meter/schneider/README.md -->
+<!-- docs@tether.io: mdk-worker-schneider → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/power-meter/schneider/README.md -->
 
 [mdk-worker-seneca]: ../../backend/workers/temperature/seneca/README.md
-<!-- docs@tether.io: mdk-worker-seneca → https://github.com/tetherto/mdk/blob/main/backend/workers/temperature/seneca/README.md -->
+<!-- docs@tether.io: mdk-worker-seneca → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/temperature/seneca/README.md -->
 
 [mdk-worker-f2pool]: ../../backend/workers/minerpools/f2pool/README.md
-<!-- docs@tether.io: mdk-worker-f2pool → https://github.com/tetherto/mdk/blob/main/backend/workers/minerpools/f2pool/README.md -->
+<!-- docs@tether.io: mdk-worker-f2pool → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/minerpools/f2pool/README.md -->
 
 [mdk-worker-mock]: ../../backend/workers/mock/README.md
-<!-- docs@tether.io: mdk-worker-mock → https://github.com/tetherto/mdk/blob/main/backend/workers/mock/README.md -->
+<!-- docs@tether.io: mdk-worker-mock → https://github.com/tetherto/mdk/blob/v0.14.0/backend/workers/mock/README.md -->
 
 [mdk-react-adapter]: ../../ui/packages/react-adapter/README.md
-<!-- docs@tether.io: mdk-react-adapter → https://github.com/tetherto/mdk/blob/main/ui/packages/react-adapter/README.md -->
+<!-- docs@tether.io: mdk-react-adapter → https://github.com/tetherto/mdk/blob/v0.14.0/ui/packages/react-adapter/README.md -->
 
 [mdk-react-devkit]: ../../ui/packages/react-devkit/README.md
-<!-- docs@tether.io: mdk-react-devkit → https://github.com/tetherto/mdk/blob/main/ui/packages/react-devkit/README.md -->
+<!-- docs@tether.io: mdk-react-devkit → https://github.com/tetherto/mdk/blob/v0.14.0/ui/packages/react-devkit/README.md -->
 
 [mdk-ui-agent]: ../../ui/packages/ui-agent/README.md
-<!-- docs@tether.io: mdk-ui-agent → https://github.com/tetherto/mdk/blob/main/ui/packages/ui-agent/README.md -->
+<!-- docs@tether.io: mdk-ui-agent → https://github.com/tetherto/mdk/blob/v0.14.0/ui/packages/ui-agent/README.md -->
 
 [mdk-ui-foundation]: ../../ui/packages/ui-foundation/README.md
-<!-- docs@tether.io: mdk-ui-foundation → https://github.com/tetherto/mdk/blob/main/ui/packages/ui-foundation/README.md -->
+<!-- docs@tether.io: mdk-ui-foundation → https://github.com/tetherto/mdk/blob/v0.14.0/ui/packages/ui-foundation/README.md -->
 
 [mdk-cli]: ../../packages/cli/README.md
-<!-- docs@tether.io: mdk-cli → https://github.com/tetherto/mdk/blob/main/packages/cli/README.md -->
+<!-- docs@tether.io: mdk-cli → https://github.com/tetherto/mdk/blob/v0.14.0/packages/cli/README.md -->
 
 [mdk-skill]: ../../packages/mdk-skill/README.md
-<!-- docs@tether.io: mdk-skill → https://github.com/tetherto/mdk/blob/main/packages/mdk-skill/README.md -->
+<!-- docs@tether.io: mdk-skill → https://github.com/tetherto/mdk/blob/v0.14.0/packages/mdk-skill/README.md -->

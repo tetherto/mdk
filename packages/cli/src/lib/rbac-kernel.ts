@@ -1,4 +1,4 @@
-import { isRefusal, withKernelClient, type RbacRecord } from './kernel-client.js';
+import { isAccessRefusal, isRefusal, withKernelClient, type RbacRecord } from './kernel-client.js';
 import { rbacVersion } from './rbac.js';
 import { loadStackSpec } from './spec.js';
 
@@ -30,6 +30,11 @@ export interface RbacApplyResult {
   message?: string;
   /** The Kernel's validation problems, when it refused the policy. */
   errors?: string[];
+  /**
+   * The caller's sign-in or permission was refused, so the policy was never judged. Narrower than show's
+   * `refused`: apply has a second kind of refusal (the policy itself), which keeps today's message and `errors`.
+   */
+  accessRefused?: true;
 }
 
 export interface RbacShowResult {
@@ -37,7 +42,13 @@ export interface RbacShowResult {
   kernel: 'up' | 'down';
   /** What the Kernel enforces; null when it never had a policy applied. */
   applied: RbacRecord | null;
+  /** False whenever nothing was compared: the Kernel is down or `refused` is set. */
   inSync: boolean;
+  /**
+   * The Kernel answered but did not hand over its policy (`message` says why), so nothing was compared. Any
+   * refusal counts: show has no policy of its own to be refused, unlike apply's `accessRefused`.
+   */
+  refused?: true;
   message?: string;
 }
 
@@ -54,6 +65,7 @@ export async function applyStackRbac(projectDir: string): Promise<RbacApplyResul
     return { ok: false, local, kernel: 'down', message: `${res.down}. spec.rbac is valid; the Kernel applies it when it next starts.` };
   }
   const reply = res.value;
+  if (isAccessRefusal(reply)) return { ok: false, local, kernel: 'up', accessRefused: true, message: `spec.rbac was not applied: ${reply.error}` };
   if (isRefusal(reply)) {
     return { ok: false, local, kernel: 'up', message: `the Kernel refused the policy and kept the one in force: ${reply.error.split('\n')[0]}`, errors: reply.errors };
   }
@@ -72,7 +84,7 @@ export async function showStackRbac(projectDir: string): Promise<RbacShowResult>
 
   const res = await withKernelClient(projectDir, (client) => client.getRbac({ timeout: KERNEL_TIMEOUT_MS }));
   if ('down' in res) return { local, kernel: 'down', applied: null, inSync: false, message: res.down };
-  if (isRefusal(res.value)) return { local, kernel: 'up', applied: null, inSync: false, message: res.value.error };
+  if (isRefusal(res.value)) return { local, kernel: 'up', applied: null, inSync: false, refused: true, message: res.value.error };
 
   const applied = res.value.record;
   return { local, kernel: 'up', applied, inSync: applied?.version === local.version };

@@ -1,0 +1,1 @@
+{"name":"RadioGroupProps","path":"src/primitives/components/radio/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** * Layout orientation * @default 'vertical' */ orientation?: 'horizontal' | 'vertical' /** * Remove gap between radio items * @default false */ noGap?: boolean /** * Custom className for the group */ className?: string } & ComponentPr…"}

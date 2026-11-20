@@ -77,15 +77,82 @@ test('resolveWorkerBoot throws for an unknown worker key', (t) => {
 test('resolveWorkerBoot throws when the resolved package has no matching factory export', (t) => {
   const loaded = []
   const load = (name) => { loaded.push(name); return {} }
-  t.exception(() => resolveWorkerBoot('miner-avalon', load), /ERR_MDK_WORKER_EXPORT: startAvalonWorker/)
-  t.alike(loaded, ['@tetherto/mdk-worker-avalon'])
+  t.exception(() => resolveWorkerBoot('container-antspace', load), /ERR_MDK_WORKER_EXPORT: startAntspaceWorker/)
+  t.alike(loaded, ['@tetherto/mdk-worker-antspace'])
 })
 
 test('resolveWorkerBoot returns the spec and factory when the package exports it', (t) => {
-  const load = () => ({ startAvalonWorker: () => 'ok' })
-  const { spec, factory } = resolveWorkerBoot('miner-avalon', load)
-  t.is(spec, WORKER_BOOTS['miner-avalon'])
+  const load = () => ({ startAntspaceWorker: () => 'ok' })
+  const { spec, factory } = resolveWorkerBoot('container-antspace', load)
+  t.is(spec, WORKER_BOOTS['container-antspace'])
   t.is(factory(), 'ok')
+})
+
+test('resolveWorkerBoot hosts a directory-loaded package on WorkerRuntimeV2 with the given devices', async (t) => {
+  const ctor = []
+  const load = (name) => {
+    t.is(name, '@tetherto/mdk-worker')
+    return {
+      WorkerRuntimeV2: class {
+        constructor (dir, opts) { ctor.push({ dir, opts }) }
+        async start () { this.started = true }
+        async stop () { this.stopped = true }
+      }
+    }
+  }
+  load.resolve = (request) => `/pkgs/${request}`
+  const { spec, factory } = resolveWorkerBoot('miner-avalon', load)
+  t.is(spec.runtime, 'v2')
+  const devices = [{ deviceId: 'AV-1', config: { address: '10.0.0.5', port: 4028, password: 'x' } }]
+  const handle = await factory({ workerId: 'avalon-a1346-r1', storeDir: '/data', model: 'a1346', allowedKeys: ['k'], devices, env: { A: '1' } })
+  t.is(ctor[0].dir, '/pkgs/@tetherto/mdk-worker-avalon')
+  t.alike(ctor[0].opts.devices, devices)
+  t.alike(ctor[0].opts.config, { model: 'a1346' })
+  t.alike(ctor[0].opts.env, { A: '1' })
+  t.alike(ctor[0].opts.allowedKeys, ['k'])
+  t.ok(handle.runtime.started)
+  await handle.stop()
+  t.ok(handle.runtime.stopped)
+})
+
+test('parseWorkerDevices reads the mdk.yaml devices shape from env or a file', (t) => {
+  const { parseWorkerDevices, parseWorkerEnv } = require('../../utils/service-bootstrap')
+  t.exception(() => parseWorkerDevices({}), /ERR_MDK_WORKER_DEVICES_REQUIRED/)
+  t.exception(() => parseWorkerDevices({ MDK_WORKER_DEVICES: 'nope' }), /ERR_MDK_WORKER_DEVICES_INVALID/)
+  t.exception(() => parseWorkerDevices({ MDK_WORKER_DEVICES: '[]' }), /ERR_MDK_WORKER_DEVICES_INVALID/)
+  t.exception(() => parseWorkerDevices({ MDK_WORKER_DEVICES: '[{"opts":{}}]' }), /device 0 has no id/)
+  t.alike(
+    parseWorkerDevices({ MDK_WORKER_DEVICES: '[{"id":"a","opts":{"port":1},"info":{"container":"c"}},{"deviceId":"b","config":{"port":2}}]' }),
+    [{ deviceId: 'a', config: { port: 1 }, info: { container: 'c' } }, { deviceId: 'b', config: { port: 2 } }]
+  )
+  const fs = require('fs')
+  const os = require('os')
+  const path = require('path')
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mdk-devices-')), 'devices.json')
+  fs.writeFileSync(file, '[{"id":"f","opts":{"port":3}}]')
+  t.alike(parseWorkerDevices({ MDK_WORKER_DEVICES_FILE: file }), [{ deviceId: 'f', config: { port: 3 } }])
+  t.alike(parseWorkerEnv({}), {})
+  t.alike(parseWorkerEnv({ MDK_WORKER_ENV: '{"F2POOL_API_SECRET":"s"}' }), { F2POOL_API_SECRET: 's' })
+  t.exception(() => parseWorkerEnv({ MDK_WORKER_ENV: '[1]' }), /ERR_MDK_WORKER_ENV_INVALID/)
+
+  // The wrapped shapes startServices writes.
+  const wrapped = path.join(path.dirname(file), 'wrapped.devices.json')
+  fs.writeFileSync(wrapped, '{"_generated":"x","devices":[{"id":"w","opts":{"port":4}}]}')
+  t.alike(parseWorkerDevices({ MDK_WORKER_DEVICES_FILE: wrapped }), [{ deviceId: 'w', config: { port: 4 } }])
+  const envFile = path.join(path.dirname(file), 'wrapped.env.json')
+  fs.writeFileSync(envFile, '{"_generated":"x","env":{"F2POOL_API_SECRET":"f"}}')
+  t.alike(parseWorkerEnv({ MDK_WORKER_ENV_FILE: envFile }), { F2POOL_API_SECRET: 'f' })
+  fs.writeFileSync(envFile, '{"PLAIN":"1"}')
+  t.alike(parseWorkerEnv({ MDK_WORKER_ENV_FILE: envFile }), { PLAIN: '1' }, 'an unwrapped env file is read as is')
+  t.alike(parseWorkerEnv({ MDK_WORKER_ENV: '{"A":"inline"}', MDK_WORKER_ENV_FILE: envFile }), { A: 'inline' }, 'inline wins')
+  fs.writeFileSync(envFile, '{"_generated":"x"}')
+  t.exception(() => parseWorkerEnv({ MDK_WORKER_ENV_FILE: envFile }), /ERR_MDK_WORKER_ENV_INVALID/)
+})
+
+test('isV2Worker names the WorkerRuntimeV2 families', (t) => {
+  const { isV2Worker } = require('../../utils/service-bootstrap')
+  for (const w of ['miner-avalon', 'powermeter-abb', 'powermeter-satec', 'powermeter-schneider', 'minerpool-f2pool']) t.ok(isV2Worker(w), w)
+  for (const w of ['container-antspace', 'container-bitdeer', 'sensor-seneca', 'nope', 'toString']) t.absent(isV2Worker(w), w)
 })
 
 test('resolveWorkerTrust - env keys and the explicit allow-all opt-in', (t) => {

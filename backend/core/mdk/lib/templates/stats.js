@@ -1,6 +1,6 @@
 'use strict'
 
-const { groupBy } = require('../stats/utils')
+const { groupBy } = require('@tetherto/mdk-stats/utils')
 const { hasErrorAndPositiveHashrate } = require('../utils')
 const { STATUS, POWER_MODE, MAINTENANCE } = require('../things/constants')
 

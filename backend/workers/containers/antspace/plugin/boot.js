@@ -14,7 +14,10 @@ const WRITE_ACTIONS = [
   ['switchSocket', 1],
   ['switchCoolingSystem', 1],
   ['resetCoolingSystem', 2],
-  ['setLiquidSupplyTemperature', 2]
+  ['setLiquidSupplyTemperature', 2],
+  ['registerThing', 1],
+  ['updateThing', 1],
+  ['forgetThings', 1]
 ]
 
 // Container stat cadences, mirroring the legacy ContainerManager

@@ -26,7 +26,7 @@ listener port to open between MDK processes; what each host needs is UDP reachab
 | -------- | ------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------- |
 | Operator | Gateway HTTP              | TCP `spec.gateway.port`, behind the TLS proxy you run                             | Inbound from operators and the UI origin only  |
 | Operator | Operator shell (UI)       | Static files served by that same proxy                                            | Inbound from operators                         |
-| Backend  | Kernel, Workers, app runtimes | UDP, ephemeral local ports; HyperDHT bootstrap `49737` (public set) or your private list | Peer to peer inside the backend network; outbound to the bootstrap nodes |
+| Backend  | Kernel, Workers, app runtimes, and Gateway | UDP on a local port each DHT node picks. On the public DHT it tries `49737` first, then any free port. With a private bootstrap list it tries the ports just above the bootstrap's, then any free port. HyperDHT bootstrap `49737` (public set) or your private list. | Peer to peer inside the backend network; outbound to the bootstrap nodes |
 | Backend  | MCP server                | TCP `127.0.0.1:<gateway port + 100>`, loopback only                               | Local processes on the MCP host                |
 | Backend  | Agent model provider      | TCP to `qvac` or your OpenAI-compatible URL                                       | Outbound from the agent host only              |
 | Devices  | [Avalon][run-avalon] (CGMiner) | TCP `4028`, no authentication                                                | From the owning Worker only                    |
@@ -122,7 +122,7 @@ Named operators may change the fleet, and every fleet-changing write waits for a
   validation, the cache or the app, and the app receives the verified identity as `req._info`, never the token
   ([auth in app controllers][app-auth])
 - An app acting for a signed-in user calls Kernel through `req.mdk`, so Kernel requires both the app's and the user's rules to
-  allow the write; a payload's self-asserted `authPerms` are ignored for any caller that carries a token
+  allow the write
 - Power mode, pool assignment, container PDU and bulk reboot go through `action.push` with the vote threshold the site owner
   signed off; single-device, operator-in-front actions may use a direct `command.request`
 - MCP write tools stay hidden unless `spec.mcp.allowWrite` or `spec.mcp.allowTools` names them, and each agent signs in with its
@@ -169,7 +169,7 @@ The [trust and admission reference][trust-and-admission] describes automatic key
 | DHT bootstrap list and bind interface | `spec.network.dht` (`host`, `port`, `bootstrap`) | `getKernel({ hrpc: { bootstrap, dhtHost } })`, `bootstrap` and `dhtHost` on Worker boot functions and `startGateway()`; `MDK_DHT_BOOTSTRAP` and `MDK_DHT_HOST` for `worker.js` | The [private profile][private-dht] if outbound UDP is blocked | Same |
 | Gateway bind address             | Not exposed; configure the Gateway HTTP facility | `startGateway({ httpd })` overrides or the Gateway's `config/facs/httpd.config.json` | The proxy-facing interface | Same |
 | Gateway `allowedHosts`           | `spec.gateway.config.allowedHosts`          | `startGateway({ allowedHosts })`                          | The names operators type          | Same                                       |
-| Gateway `trustProxy`             | `spec.gateway.config.trustProxy`            | `startGateway({ trustProxy })`                            | `true` only behind your proxy     | Same                                       |
+| Gateway `trustProxy`             | `spec.gateway.config.trustProxy`            | `startGateway({ trustProxy })`                            | Your proxy's address or subnet, never `true` | Same                          |
 | Gateway `rateLimit`              | `spec.gateway.config.rateLimit`             | `startGateway({ rateLimit })`                             | Default `300` per minute per IP   | Lower on write routes                      |
 | Gateway identity                 | Not exposed; `spec.gateway.config.authVerifier` is refused | `startGateway({ kernel })` in process, or `startGateway({ gatewayCredential })` against a Kernel elsewhere | The Kernel's token issuer | Same |
 | MCP                              | `spec.mcp` absent, or `port`, `allowWrite`, `allowTools` | `createMcpServer(root, port, config, pluginDirs, apps, options)` | Absent, or defaults | `allowWrite` only for agents whose rules cover the tools |

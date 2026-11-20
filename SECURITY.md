@@ -6,6 +6,8 @@ MDK is in the `0.y.z` initial-development range; the public API is not considere
 
 Security fixes are handled on a best-effort basis for the latest commit on `main`. Tagged releases and older commits may not receive security fixes.
 
+From `1.0.0`, the [versioning and deprecation policy](docs/reference/versioning.md) sets how long each MAJOR line keeps receiving security fixes.
+
 ## Reporting a vulnerability
 
 Please do **not** open public GitHub issues for security vulnerabilities.

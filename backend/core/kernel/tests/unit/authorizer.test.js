@@ -11,7 +11,8 @@ const WORKERS = {
   'antminer-a': { family: 'miner', brand: 'antminer', devices: ['AM-001', 'AM-002'] },
   'antminer-b': { family: 'miner', brand: 'antminer', devices: ['AM-101'] },
   'avalon-a': { family: 'miner', brand: 'avalon', devices: ['AV-001', 'bad id!'] },
-  'not-ready': { family: null, brand: null, devices: ['NR-1'] }
+  'not-ready': { family: null, brand: null, devices: ['NR-1'] },
+  'odd/worker': { family: 'miner', brand: 'avalon', devices: [] }
 }
 const registry = {
   resolveWorkerForDevice (deviceId) {
@@ -34,14 +35,16 @@ const POLICY = {
   roles: [
     { name: 'tuner', rules: [{ resources: ['devices'], verbs: ['read', 'write'], resourceNames: ['miner/antminer/*'] }] },
     { name: 'sentinel', rules: [{ resources: ['devices'], verbs: ['read'], resourceNames: ['miner/antminer/antminer-a/*'] }, { resources: ['workers'], verbs: ['list'] }] },
-    { name: 'janitor', rules: [{ resources: ['workers'], verbs: ['delete'], resourceNames: ['miner/avalon/*'] }] },
-    { name: 'voter', rules: [{ resources: ['actions'], verbs: ['delegate'] }] }
+    { name: 'janitor', rules: [{ resources: ['workers'], verbs: ['delete', 'read'], resourceNames: ['miner/avalon/*'] }] },
+    { name: 'voter', rules: [{ resources: ['actions'], verbs: ['delegate'] }] },
+    { name: 'auditor', rules: [{ resources: ['devices'], verbs: ['read'] }] }
   ],
   bindings: [
     { role: 'tuner', subjects: [{ kind: 'ServiceAccount', name: 'app:tuner' }] },
     { role: 'sentinel', subjects: [{ kind: 'ServiceAccount', name: 'app:sentinel' }] },
     { role: 'janitor', subjects: [{ kind: 'ServiceAccount', name: 'app:sentinel' }] },
-    { role: 'voter', subjects: [{ kind: 'ServiceAccount', name: 'app:tuner' }] }
+    { role: 'voter', subjects: [{ kind: 'ServiceAccount', name: 'app:tuner' }] },
+    { role: 'auditor', subjects: [{ kind: 'ServiceAccount', name: 'app:auditor' }] }
   ]
 }
 
@@ -50,9 +53,12 @@ async function setup (t) {
   t.teardown(() => auth.close())
   const sentinel = generateCredential()
   await auth.identity.upsertServiceAccount({ name: 'app:sentinel', publicKey: sentinel.publicKey })
+  const auditor = generateCredential()
+  await auth.identity.upsertServiceAccount({ name: 'app:auditor', publicKey: auditor.publicKey })
   const tokens = {
     tuner: await auth.token(),
-    sentinel: await mintToken(auth.identity, { name: 'app:sentinel', privateKey: sentinel.privateKeyPem })
+    sentinel: await mintToken(auth.identity, { name: 'app:sentinel', privateKey: sentinel.privateKeyPem }),
+    auditor: await mintToken(auth.identity, { name: 'app:auditor', privateKey: auditor.privateKeyPem })
   }
   const decisions = []
   auth.authorizer.on('decision', (d) => decisions.push(d))
@@ -73,6 +79,33 @@ test('device rules by family/brand/worker/device', async (t) => {
   t.absent((await ask('sentinel', ACTIONS.COMMAND_REQUEST, { deviceId: 'AM-001', payload: { command: 'reboot' } })).allowed, 'read only')
 })
 
+test('a worker recovered from the store keeps its name: scoped rules match before it reconnects', async (t) => {
+  const { WorkerRegistry } = require('../../lib/modules/worker-registry')
+  const mockStore = () => {
+    const data = new Map()
+    return {
+      async get (key) { const v = data.get(key); return v ? { value: v } : null },
+      async put (key, value) { data.set(key, value) },
+      async del (key) { data.delete(key) },
+      createReadStream () { return (async function * () { for (const [key, value] of data) yield { key, value } })() }
+    }
+  }
+  const store = mockStore()
+  const capabilityStore = mockStore()
+  const live = new WorkerRegistry({ store, capabilityStore })
+  await live.register({ workerId: 'antminer-a', deviceIds: ['AM-001'], rpcKey: 'aa', channel: 'ch' })
+  await live.setReady('antminer-a', { metadata: { deviceFamily: 'miner', brand: 'Antminer' }, capabilities: {} })
+  const recovered = new WorkerRegistry({ store, capabilityStore })
+  await recovered.recover()
+
+  const auth = await createTestAuth({ registry: recovered, stateMachine, name: 'app:tuner', policy: POLICY })
+  t.teardown(() => auth.close())
+  const token = await auth.token()
+  const ask = (deviceId) => auth.authorizer.authorize(build({ action: ACTIONS.TELEMETRY_PULL, type: MESSAGE_TYPES.REQUEST, sender: 'x', deviceId, auth: token }), { publicKey: 'ab'.repeat(32) })
+  t.ok((await ask('AM-001')).allowed, 'miner/antminer/* matches the recovered device name')
+  t.absent(recovered.isRoutable('antminer-a'), 'allowed is not routable: the read still answers ERR_WORKER_NOT_ROUTABLE')
+})
+
 test('unknown devices, unready workers and odd ids never match a scoped rule', async (t) => {
   const { ask } = await setup(t)
   for (const deviceId of ['ghost', 'NR-1', 'bad id!', undefined]) {
@@ -85,6 +118,20 @@ test('a worker- or rack-scoped command is checked for every device the worker ow
   t.ok((await ask('tuner', ACTIONS.COMMAND_REQUEST, { payload: { command: 'reboot', scope: 'worker', workerId: 'antminer-a' } })).allowed)
   t.absent((await ask('tuner', ACTIONS.COMMAND_REQUEST, { payload: { command: 'reboot', scope: 'rack', workerId: 'avalon-a' } })).allowed)
   t.absent((await ask('tuner', ACTIONS.COMMAND_REQUEST, { payload: { command: 'reboot', scope: 'worker', workerId: 'nobody' } })).allowed, 'no devices: unscoped rules only')
+})
+
+test('a worker-level telemetry read is checked for every device of every listed worker', async (t) => {
+  const { ask } = await setup(t)
+  const read = (who, workers, type = 'snapshot') => ask(who, ACTIONS.TELEMETRY_PULL, { payload: { query: { type, workers } } })
+  t.ok((await read('sentinel', ['antminer-a'])).allowed)
+  t.ok((await read('sentinel', ['antminer-a'], 'list')).allowed, 'any type with workers is checked the same way')
+  t.absent((await read('sentinel', ['antminer-b'], 'list')).allowed)
+  const refused = await read('sentinel', ['antminer-a', 'antminer-b'])
+  t.absent(refused.allowed)
+  t.is(refused.error, 'ERR_KERNEL_ACTION_FORBIDDEN: app:sentinel may not read devices miner/antminer/antminer-b/AM-101')
+  t.absent((await read('sentinel', ['antminer-a', 'nobody'])).allowed, 'an unknown worker: unscoped rules only')
+  t.ok((await read('auditor', ['antminer-a', 'antminer-b'])).allowed, 'an unscoped read rule allows both')
+  t.ok((await read('auditor', ['antminer-a', 'nobody'])).allowed)
 })
 
 test('command status and cancel are checked against the command target', async (t) => {
@@ -102,6 +149,17 @@ test('worker rules by family/brand/worker; unscoped actions', async (t) => {
   t.ok((await ask('sentinel', ACTIONS.WORKER_LIST)).allowed)
   t.absent((await ask('tuner', ACTIONS.WORKER_LIST)).allowed)
   t.absent((await ask('tuner', ACTIONS.RBAC_APPLY, { payload: { rbac: null } })).allowed)
+})
+
+test('worker reads (the RPC key in worker.list) by family/brand/worker', async (t) => {
+  const { auth } = await setup(t)
+  const sentinel = { kind: 'serviceaccount', sub: 'app:sentinel' }
+  t.ok(auth.authorizer.canReadWorker(sentinel, 'avalon-a'))
+  t.absent(auth.authorizer.canReadWorker(sentinel, 'antminer-a'), 'out of scope')
+  t.absent(auth.authorizer.canReadWorker(sentinel, 'not-ready'), 'unnamed: unscoped rules only')
+  t.absent(auth.authorizer.canReadWorker(sentinel, 'odd/worker'), 'an id that cannot be a name segment')
+  t.absent(auth.authorizer.canReadWorker({ kind: 'serviceaccount', sub: 'app:tuner' }, 'avalon-a'), 'list is not read')
+  t.absent(auth.authorizer.canReadWorker(sentinel, 'avalon-a', { kind: 'user', sub: 'bob' }), 'the operator must be allowed too')
 })
 
 test('tokens: required, verified, bound to the caller', async (t) => {

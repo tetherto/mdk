@@ -30,6 +30,11 @@ Ask the backend for `period.query` (`{ start, end, granularity }`), and put it i
 ## Notes
 
 - Custom ranges are whole days in `timezone`, the site's, not the browser's
-- A bucket that does not fit the range (hourly over a year, monthly over a day) is disabled, and `period.query.granularity` falls back to one that fits
+- A bucket that does not fit the range (hourly over a year, monthly over a day) is disabled, with a tooltip saying why, and `period.query.granularity` falls back to one that fits
+- The date range picker offers the last 7, 14, 30 and 90 days, as whole days in `timezone` ending today. Applying one
+  the Period select also has (7, 30, 90) sets that rolling preset, so both controls agree. Last 14 days sets a custom
+  range.
+- A rolling preset counted in days (7, 30, 90 days, 12 months) shows in the picker as that many whole days ending
+  today, so "Last 7 days" reads as 7 days selected
 - Hide the bucket toggle with `showGranularity={false}` on a page that shows one figure per period
 - Reset is disabled while the URL holds no period

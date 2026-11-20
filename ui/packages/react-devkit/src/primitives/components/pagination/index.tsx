@@ -273,9 +273,12 @@ export const Pagination = forwardRef<HTMLDivElement, PaginationProps>(
             value={pageSize?.toString()}
             onValueChange={(value) => handlePageSizeChange(Number(value))}
             disabled={disabled}
-            aria-label="Items per page"
           >
-            <SelectTrigger disabled={disabled} className="mdk-pagination__size-changer--trigger">
+            <SelectTrigger
+              disabled={disabled}
+              className="mdk-pagination__size-changer--trigger"
+              aria-label="Items per page"
+            >
               <SelectValue placeholder="Actions" />
             </SelectTrigger>
             <SelectContent>

@@ -21,8 +21,7 @@ export const ALERT_ICON_MAP: Record<string, ReactNode> = {
   ),
   [ALERT_SEVERITY_TYPES.MEDIUM]: (
     <span
-      className="mdk-alarm-row__icon mdk-alarm-row__icon--dot"
-      style={{ backgroundColor: ALERT_COLOR_MAP[ALERT_SEVERITY_TYPES.MEDIUM] }}
+      className="mdk-alarm-row__icon mdk-alarm-row__icon--dot mdk-alarm-row__icon--medium"
       role="img"
       aria-label="medium"
     />

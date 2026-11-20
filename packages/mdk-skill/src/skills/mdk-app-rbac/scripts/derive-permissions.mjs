@@ -33,6 +33,9 @@ export const METHODS = Object.freeze({
   terminateWorker: { action: 'worker.terminate', resource: 'workers', verb: 'delete', name: 'worker' },
   getCapabilities: { action: 'device.capabilities', resource: 'devices', verb: 'read', name: 'device' },
   pullTelemetry: { action: 'telemetry.pull', resource: 'devices', verb: 'read', name: 'device' },
+  pullSnapshot: { action: 'telemetry.pull', resource: 'devices', verb: 'read', name: 'device' },
+  pullAggregate: { action: 'telemetry.pull', resource: 'devices', verb: 'read', name: 'device' },
+  pullWorkerQuery: { action: 'telemetry.pull', resource: 'devices', verb: 'read', name: 'device' },
   pullState: { action: 'state.pull', resource: 'devices', verb: 'read', name: 'device' },
   getCommandStatus: { action: 'command.status', resource: 'devices', verb: 'read', name: 'command' },
   sendCommand: { action: 'command.request', resource: 'devices', verb: 'write', name: 'device' },
@@ -55,12 +58,13 @@ export const METHODS = Object.freeze({
   rotateSigningKey: { action: 'identity.keys.rotate', resource: 'identities', verb: 'write', name: null }
 })
 
-// Client helpers that reach the Kernel through listWorkers (worker.list).
+// Client helpers that reach the Kernel through listWorkers (worker.list). `key`
+// ones read a worker's RPC key, which worker.list returns only with workers: read.
 export const HELPERS = Object.freeze({
   getStatus: { via: 'listWorkers' },
   waitForWorkers: { via: 'listWorkers' },
   waitForDevice: { via: 'listWorkers' },
-  getWorkerKey: { via: 'listWorkers' }
+  getWorkerKey: { via: 'listWorkers', key: true }
 })
 
 // The verbs each Kernel resource takes (KERNEL_RESOURCES in @tetherto/mdk-rbac); a `*` expands over these.
@@ -137,13 +141,19 @@ export function scan (appDir) {
 export function derive (calls) {
   const byResource = new Map()
   const actor = calls.some((c) => c.method === 'withActor')
+  const add = (resource, verb) => {
+    if (!byResource.has(resource)) byResource.set(resource, new Set())
+    byResource.get(resource).add(verb)
+  }
   for (const call of calls) {
     let method = call.method
     if (method === 'withActor') continue
-    if (HELPERS[method]) method = HELPERS[method].via
+    if (HELPERS[method]) {
+      if (HELPERS[method].key) add('workers', 'read')
+      method = HELPERS[method].via
+    }
     const { resource, verb } = METHODS[method]
-    if (!byResource.has(resource)) byResource.set(resource, new Set())
-    byResource.get(resource).add(verb)
+    add(resource, verb)
   }
   const rules = [...byResource.entries()]
     .sort((a, b) => RESOURCE_ORDER.indexOf(a[0]) - RESOURCE_ORDER.indexOf(b[0]))

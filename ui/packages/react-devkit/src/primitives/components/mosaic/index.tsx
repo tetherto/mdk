@@ -212,7 +212,11 @@ export const Mosaic = ({
   )
 
   return (
-    <div className={`mosaic-grid ${className || ''}`} style={gridStyle}>
+    <div
+      className={`mosaic-grid ${className || ''}`}
+      // oxlint-disable-next-line react/forbid-dom-props -- grid template computed from the layout prop
+      style={gridStyle}
+    >
       {patchedChildren}
     </div>
   )
@@ -232,7 +236,13 @@ const MosaicItemComponent = forwardRef<HTMLDivElement, MosaicItemComponentProps>
     )
 
     return (
-      <div ref={ref} className={`mosaic-item ${className || ''}`} style={itemStyle} {...props}>
+      <div
+        ref={ref}
+        className={`mosaic-item ${className || ''}`}
+        // oxlint-disable-next-line react/forbid-dom-props -- grid placement computed from the item props
+        style={itemStyle}
+        {...props}
+      >
         {children}
       </div>
     )

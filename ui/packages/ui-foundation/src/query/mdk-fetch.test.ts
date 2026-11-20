@@ -30,7 +30,7 @@ describe('createBearerFetcher', () => {
     const fetchImpl = vi.fn(async () => okJson({ ok: true }))
     const fetcher = createBearerFetcher({ fetchImpl })
 
-    const result = await fetcher<{ ok: boolean }>('http://api/test')
+    const result = await fetcher<{ ok: boolean }>('https://api/test')
 
     expect(result).toEqual({ ok: true })
     expect(fetchImpl).toHaveBeenCalledOnce()
@@ -43,7 +43,7 @@ describe('createBearerFetcher', () => {
     const fetchImpl = vi.fn(async () => okJson({ ok: true }))
     const fetcher = createBearerFetcher({ fetchImpl })
 
-    await fetcher('http://api/test')
+    await fetcher('https://api/test')
 
     const [, init] = fetchImpl.mock.calls[0]!
     const headers = init?.headers as Headers
@@ -55,9 +55,9 @@ describe('createBearerFetcher', () => {
     const fetcher = createBearerFetcher({ fetchImpl })
 
     authStore.getState().setToken('first')
-    await fetcher('http://api/test')
+    await fetcher('https://api/test')
     authStore.getState().setToken('second')
-    await fetcher('http://api/test')
+    await fetcher('https://api/test')
 
     const firstHeaders = fetchImpl.mock.calls[0]![1]!.headers as Headers
     const secondHeaders = fetchImpl.mock.calls[1]![1]!.headers as Headers
@@ -69,7 +69,7 @@ describe('createBearerFetcher', () => {
     const fetchImpl = vi.fn(async () => errResponse(401, { error: 'invalid' }))
     const fetcher = createBearerFetcher({ fetchImpl })
 
-    await expect(fetcher('http://api/test')).rejects.toMatchObject({
+    await expect(fetcher('https://api/test')).rejects.toMatchObject({
       name: 'MdkFetchError',
       status: 401,
       body: { error: 'invalid' },
@@ -79,7 +79,7 @@ describe('createBearerFetcher', () => {
   it('returns undefined for 204 No Content', async () => {
     const fetchImpl = vi.fn(async () => new Response(null, { status: 204 }))
     const fetcher = createBearerFetcher({ fetchImpl })
-    await expect(fetcher('http://api/test')).resolves.toBeUndefined()
+    await expect(fetcher('https://api/test')).resolves.toBeUndefined()
   })
 
   it('returns a binary body as a Blob with its exact bytes', async () => {
@@ -92,7 +92,7 @@ describe('createBearerFetcher', () => {
     )
     const fetcher = createBearerFetcher({ fetchImpl })
 
-    const result = await fetcher<Blob>('http://api/logs.tar.gz')
+    const result = await fetcher<Blob>('https://api/logs.tar.gz')
 
     expect(result).toBeInstanceOf(Blob)
     expect(new Uint8Array(await result.arrayBuffer())).toEqual(bytes)
@@ -109,7 +109,7 @@ describe('createBearerFetcher', () => {
     )
     const fetcher = createBearerFetcher({ fetchImpl })
 
-    const result = await fetcher<Blob>('http://api/export')
+    const result = await fetcher<Blob>('https://api/export')
 
     expect(new Uint8Array(await result.arrayBuffer())).toEqual(bytes)
   })
@@ -127,7 +127,7 @@ describe('createBearerFetcher', () => {
     )
     const fetcher = createBearerFetcher({ fetchImpl })
 
-    await expect(fetcher<string>('http://api/test')).resolves.toBe(body)
+    await expect(fetcher<string>('https://api/test')).resolves.toBe(body)
   })
 
   it('returns a body with no content type as a string, as before', async () => {
@@ -136,13 +136,13 @@ describe('createBearerFetcher', () => {
     const fetchImpl = vi.fn(async () => response)
     const fetcher = createBearerFetcher({ fetchImpl })
 
-    await expect(fetcher<string>('http://api/test')).resolves.toBe('plain')
+    await expect(fetcher<string>('https://api/test')).resolves.toBe('plain')
   })
 
   it('honours a custom token getter', async () => {
     const fetchImpl = vi.fn(async () => okJson({}))
     const fetcher = createBearerFetcher({ fetchImpl, getToken: () => 'custom' })
-    await fetcher('http://api/test')
+    await fetcher('https://api/test')
     const headers = fetchImpl.mock.calls[0]![1]!.headers as Headers
     expect(headers.get('Authorization')).toBe('Bearer custom')
   })

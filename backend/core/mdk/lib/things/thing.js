@@ -88,6 +88,20 @@ class Thing extends EventEmitter {
   async getRealtimeData () {
     return this.lastSnap
   }
+
+  // getSnap() folds every failure into a status; a host that reports errors
+  // itself (a WorkerRuntimeV2 handler) reads the snapshot and lets the failure
+  // propagate with its own message. readSnap() throws instead of returning
+  // success: false; `success` stays only so the snap shape matches getSnap().
+  async readSnap () {
+    const data = await this._prepSnap()
+    return {
+      success: true,
+      raw_errors: this._errorLog,
+      stats: data.stats,
+      config: data.config
+    }
+  }
 }
 
 module.exports = Thing

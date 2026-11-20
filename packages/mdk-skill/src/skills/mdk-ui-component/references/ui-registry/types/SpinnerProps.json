@@ -1,0 +1,1 @@
+{"name":"SpinnerProps","path":"src/primitives/components/spinner/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** * Size variant of the spinner * @default 'md' */ size?: ComponentSize /** * Color variant of the spinner * @default 'primary' */ color?: 'primary' | 'secondary' /** * Whether to display in fullscreen mode * @default false */ fullScre…"}

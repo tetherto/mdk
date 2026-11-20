@@ -28,23 +28,21 @@ with `--org`) — `mdk.yaml` references whatever name lands here, the same way
 it would a published package. `mdk-app.yaml`'s `version` must equal this
 `version`; the [`mdk-create-app`](../../mdk-create-app/SKILL.md) skill owns the rest of that manifest.
 
-### mdk-plugin.json — required route fields
+### Route fields
 
-| Field | Purpose |
+Every field, its type, and when it is checked are in
+[`mdk-plugin.schema.json`](../../../../../../backend/core/app-runtime/mdk-plugin.schema.json) (bundled beside this file as
+`references/mdk-plugin.schema.json`), owned by the app runtime; `mdk validate app` checks a table against it. This table is the
+authoring guidance the schema cannot carry; a field not listed here is fully described there.
+
+| Field | Authoring guidance |
 | --- | --- |
-| `name` / `version` / `description` | Package identity (often mirrors package.json) |
 | `routes[].id` | Stable id (`<domain>.<resource>`) |
-| `routes[].handler` | Relative path, e.g. `./controllers/power.js` |
-| `routes[].auth` | Not an access switch under `mdk run`: the Gateway checks every route against `spec.rbac`, whatever `auth` says. A request needs a bearer token (`401` without one) and a rule that grants the caller the route's verb on its resource (`403` otherwise). The resource is `<app>/<path>`, e.g. `ops/api/ops/summary`. The caller's identity, never its token, reaches the controller as `req._info`. `spec.gateway.config.authVerifier` is refused |
-| `routes[].verb` | Optional RBAC verb. Without it the verb follows the method: `GET` `get`, `POST` `create`, `PUT`/`PATCH` `update`, `DELETE` `delete` |
-| `routes[].resourceName` | Optional `{ "param" \| "query" \| "body": "<field>" }`: where the request names the instance, so a `spec.rbac` rule with `resourceNames` can scope it |
-| `routes[].http.method` | `GET` / `POST` / … |
+| `routes[].verb` / `routes[].resourceName` | How `spec.rbac` governs the route under `mdk run`, which checks every route as the resource `<app>/<path>`: `verb` overrides the one from the method ([the Gateway's mapping](../../../../../../backend/core/gateway/README.md#security-model)), and `resourceName` (`{ param \| query \| body: "<field>" }`) names the instance a rule's `resourceNames` match. Who may call the route is the operator's rule in `mdk.yaml`, never the app's |
+| `routes[].auth` | Changes nothing under `spec.rbac`; set `true` anyway so a Gateway running an `authVerifier` instead answers `401` unless the verifier returns an identity, which reaches the controller as `req._info`. Only that verifier reads a route's `permissions` (as `route.permissions`): `spec.rbac` ignores them, `mdk validate app` warns about them, and the Gateway logs them at boot |
 | `routes[].http.path` | Path the UI fetches (`/api/...`), served under `/apps/<app-name>` unless the app is mounted elsewhere |
 | `routes[].http.responses` | Document `200` schema + error statuses |
-| `routes[].description` | What the route does (operator + LLM context) |
-| `routes[].constraints` | Runtime preconditions (Kernel connected, channels present) |
 | `routes[].examples` | At least one request/response example with realistic values |
-| `routes[].errors` | `ERR_*` strings the controller may throw |
 | `routes[].safety` | `"read-only"` unless the route mutates devices. `mdk run mcp` withholds every other route unless started with `--allow-write` |
 
 ## Response schema rules
@@ -68,7 +66,7 @@ it would a published package. `mdk-app.yaml`'s `version` must equal this
 
 ## Fully populated route example
 
-Every field from the table above, together, on one route. What the route grants is set in `spec.rbac`, not here:
+Every field from the route fields table, together, on one route. What the route grants is set in `spec.rbac`, not here:
 
 ```json
 {

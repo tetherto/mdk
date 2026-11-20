@@ -4,7 +4,7 @@
 import { NotFoundPage } from '@tetherto/mdk-react-devkit'
 
 export const NotFoundPageExample = () => (
-  <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+  <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-2xl">
     {/* Default 404 with Go Home button */}
     <NotFoundPage
       onGoHome={() => {

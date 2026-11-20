@@ -1,0 +1,1 @@
+{"name":"SidebarProps","path":"src/primitives/components/sidebar/types.ts","kind":"type","description":"","public":true,"definition":"SidebarOptions & SidebarCallbacks & { /** Menu items (supports nested `items`) */ items: SidebarMenuItem[] }"}

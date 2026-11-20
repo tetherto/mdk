@@ -14,7 +14,7 @@ you get title, legend, range selector, and loading / empty states for free.
 |------|--------|----------------|---------|-------------|
 | `data` | Required | `LineChartData` | - | Data of the chart |
 | `backgroundColor` | Optional | `string` | - | Background color of the chart |
-| `beginAtZero` | Optional | `boolean` | - | Starts the value axis at 0 |
+| `beginAtZero` | Optional | `boolean` | - | Starts the value axis at 0. A series whose values are all `>= 0` never gets a negative axis in any case, including one sitting flat at 0 |
 | `chartRef` | Optional | `React.MutableRefObject<IChartApi \| null>` | - | Mutable ref to hold the LightWeightCharts reference |
 | `customDateFormat` | Optional | `string` | - | `date-fns` format for axis and crosshair time labels, rendered in the browser's local time zone. Without it, labels are in UTC |
 | `customLabel` | Optional | `string` | - | Name shown in the tooltip row of a series that has no `label`; a dataset's own `label` wins |

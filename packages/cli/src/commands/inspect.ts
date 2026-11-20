@@ -4,6 +4,7 @@ import { stringify as toYaml } from 'yaml';
 import { collectStatus, type AppReport, type StatusReport, type WorkerReport } from '../lib/status.js';
 import { STACK_FILE } from '../lib/spec.js';
 import { theme, tick } from '../lib/theme.js';
+import { failureText } from '../lib/flags.js';
 
 // Group C — Run & manage (read-only inspection commands)
 const OUTPUT_FORMATS = ['table', 'json', 'yaml'];
@@ -45,10 +46,10 @@ function columns(headers: string[] | null, rows: string[][]): string {
   return headers ? [`  ${theme.muted(line(headers))}`, ...body].join('\n') : body.join('\n');
 }
 
-function workerRows(items: WorkerReport[]): string[][] {
+function workerRows(items: WorkerReport[], checked: boolean): string[][] {
   return items.map((w) => [
     w.name,
-    w.registered ? 'yes' : 'no',
+    !checked ? '-' : w.registered ? 'yes' : 'no',
     w.state ?? '-',
     w.health ?? '-',
     String(w.devices),
@@ -119,17 +120,24 @@ function renderTable(report: StatusReport): string {
     return `${flag(component.state === 'up', component.state.padEnd(4))}  ${theme.muted(note)}`;
   };
 
+  // A Kernel that is up but refused the CLI's session or permission: say why under its row.
+  const refusal = stack.kernel.refused ? [['', theme.warn(stack.kernel.error ?? '')]] : [];
+  const workersUnchecked = !stack.workers.checked && stack.kernel.state === 'up';
+
   out.push('', theme.label('Stack'));
   out.push(
     columns(null, [
       ['Kernel', detail(stack.kernel, stack.kernel.key?.slice(0, 16) ?? '')],
+      ...refusal,
       ['Gateway', detail(stack.gateway, stack.gateway.url ?? '')],
       [
         'Workers',
-        `${stack.workers.registered}/${stack.workers.declared} registered  ` +
-          theme.muted(
-            `${stack.workers.totalDevices} device${stack.workers.totalDevices === 1 ? '' : 's'}`,
-          ),
+        workersUnchecked
+          ? theme.warn('not checked')
+          : `${stack.workers.registered}/${stack.workers.declared} registered  ` +
+            theme.muted(
+              `${stack.workers.totalDevices} device${stack.workers.totalDevices === 1 ? '' : 's'}`,
+            ),
       ],
       ['Apps', `${stack.apps.running}/${stack.apps.declared} running`],
     ]),
@@ -140,7 +148,7 @@ function renderTable(report: StatusReport): string {
       '',
       columns(
         ['WORKER', 'REGISTERED', 'STATE', 'HEALTH', 'DEVICES', ''],
-        workerRows(stack.workers.items),
+        workerRows(stack.workers.items, !workersUnchecked),
       ),
     );
   }
@@ -196,7 +204,7 @@ export function registerStatus(program: Command): void {
         report = await collectStatus(options.dir);
       } catch (error) {
         process.stderr.write(
-          `${theme.warn('error')}: ${error instanceof Error ? error.message : String(error)}\n`,
+          `${theme.warn('error')}: ${failureText(error)}\n`,
         );
         process.exit(1);
       }

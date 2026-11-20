@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { detectEnvironment } from '../../src/lib/detect.js';
+import { detectEnvironment, nodeVersionWarning } from '../../src/lib/detect.js';
 import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
 
 afterEach(() => cleanupTmpDirs());
@@ -69,5 +69,15 @@ describe('detectEnvironment', () => {
   it('defaults cwd to process.cwd() when omitted', () => {
     const env = detectEnvironment();
     expect(typeof env.packageManager).toBe('string');
+  });
+});
+
+describe('nodeVersionWarning', () => {
+  it('warns below Node 24, naming the consequence, and is silent from 24 up', () => {
+    expect(nodeVersionWarning('things may break', '22.12.0')).toBe(
+      'Node 22.12.0 is too old; MDK needs Node >= 24, so things may break.',
+    );
+    expect(nodeVersionWarning('things may break', '24.0.0')).toBeUndefined();
+    expect(nodeVersionWarning('things may break', '25.1.0')).toBeUndefined();
   });
 });

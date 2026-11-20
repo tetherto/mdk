@@ -11,13 +11,28 @@ const { ACTIONS } = require('@tetherto/mdk-kernel/protocol/actions')
 const { buildResponse, serialize, deserialize, validateFull: validateEnvelope } = require('@tetherto/mdk-kernel/protocol/envelope')
 const { loadPlugin } = require('./plugin-loader')
 const { telemetryBuiltin, commandBuiltin, mergeBuiltinCommands, builtinCommandParams } = require('./service-builtins')
+const { publicError } = require('./public-error')
+const { sweep, openTelemetryStore, createPoller, snapshot, validateOps, aggregate, toEntry, createAggregateCache, rollup, createArchive } = require('./telemetry')
 const { validateParams, normalizeParams } = require('@tetherto/mdk-kernel/protocol/params')
+const { dhtPortOpts } = require('@tetherto/mdk-kernel/dht')
 
-// Errors that already carry a protocol code (ERR_*) are part of the wire
-// contract and go back as-is; anything else (a stack-less TypeError from a
-// handler, a driver message with an address or a credential in it) is logged
-// here and replaced by the fallback code before it crosses the RPC boundary.
-const ERR_CODE = /^ERR_[A-Z0-9_]+/
+// Contract keys an operator may override per instance from mdk.yaml
+// spec.workers[].config (opts.config); the override wins key by key.
+const TELEMETRY_CONFIG_KEYS = ['telemetryPollIntervalMs', 'aggregateCacheTtlMs', 'telemetryArchive']
+// Published with the contract when the archive is on, so the Kernel
+// dispatches it (ERR_COMMAND_NOT_IN_CAPABILITIES otherwise) and spec.rbac
+// evaluates it as a device write.
+const RESTORE_COMMAND = Object.freeze({
+  name: 'restoreTelemetry',
+  description: 'Load the archived full-resolution telemetry points of a range back into the device\'s stored series.',
+  params: [{ name: 'from', type: 'number' }, { name: 'to', type: 'number' }]
+})
+// Applied whenever the collector is on, so no worker grows without bound;
+// contract and mdk.yaml override it key by key.
+const RETENTION_DEFAULTS = Object.freeze({ rawMs: 86400000, rollupIntervalMs: 300000, keepMs: 2592000000 })
+// Node's timer ceiling; a retention pass never waits longer than this.
+const MAX_INTERVAL_MS = 2147483647
+const ROLLUP_PASS_MAX_MS = 3600000
 
 /**
  * Generic host for a Worker Plugin: N same-type devices behind one HRPC
@@ -46,6 +61,40 @@ const ERR_CODE = /^ERR_[A-Z0-9_]+/
  * (directory of seed files) so the public key is stable across restarts.
  * Without either, seeds are random per boot.
  *
+ * Telemetry collector (opt-in): a contract that declares
+ * `telemetryPollIntervalMs` — or an `opts.config` that sets it (null there
+ * turns a contract's polling off) — makes the runtime sweep every online
+ * device at start() and then on that interval, calling each distinct handler
+ * once, and store the result as a `{ data, ts }` series per device: a value
+ * or an `{ error }` marker per metric, so a device that answered nothing
+ * still gets a point that says why. The `snapshot` query type is then served
+ * from that store with no device call, and every sweep updates the device's
+ * reachability like a live poll does. The `aggregate` query type runs a
+ * lib-stats op spec over the latest point of every device that holds a
+ * reading; an answer is served from memory until a sweep stores a point, or
+ * for `aggregateCacheTtlMs` (floored at one poll interval) while none does.
+ * An op groups or filters on `metrics.<name>`, `deviceId` or `info.<key>`:
+ * `info` is the label block a host attaches to a device spec
+ * (`{ deviceId, config, info }`, the CLI's `config.devices[].info`), never
+ * the config block, which holds the host's connection details.
+ * The capability payload carries the poll interval in force, so the Kernel
+ * leaves a polling Worker out of its scheduled pull.
+ * `telemetryRetention` { rawMs, rollupIntervalMs, keepMs } bounds the store:
+ * points older than rawMs are rolled up into one per rollupIntervalMs
+ * bucket, points older than keepMs are dropped (defaults 24h / 5m / 30d).
+ * The series lives in `opts.store` when the host provides one, else in a
+ * store the runtime opens under `opts.telemetryStoreDir`
+ * (default `<storeDir>/telemetry`); ERR_TELEMETRY_STORE_REQUIRED without any.
+ * `telemetryArchive: true` keeps the raw points rollup thins out: each
+ * bucket is appended to NDJSON day files under `opts.telemetryArchiveDir`
+ * (default `<telemetryStoreDir>-archive` or `<storeDir>/telemetry-archive`;
+ * ERR_TELEMETRY_ARCHIVE_DIR_REQUIRED without any) before it is deleted.
+ * The `archive` query type lists a device's day files, and the
+ * `restoreTelemetry` command (published with the contract while the archive
+ * is on) puts a range back into the series at full resolution, replacing
+ * the rolled points of the buckets it covers; a restored range stays raw
+ * until keepMs expires it.
+ *
  * RPC admission is fail closed: `opts.allowedKeys` (hex/Buffer public keys —
  * the Kernel's kernel.getClientPublicKey()) or runtime allowKey() name who may
  * call; start() throws ERR_WORKER_ALLOWED_KEYS_REQUIRED with none, unless
@@ -64,6 +113,10 @@ class WorkerRuntime {
     this.storeDir = opts.storeDir || null
     this.services = opts.services || null
     this._publishedContract = mergeBuiltinCommands(this._plugin.publishedContract, this.services)
+
+    this._telemetry = _telemetryConfig(this._plugin.contract, opts)
+    this._publishedContract = _publishPollInterval(this._publishedContract, this._telemetry)
+    this._publishedContract = _publishArchiveCommand(this._publishedContract, this._telemetry)
 
     this._commandParams = new Map()
     for (const entry of this._plugin.contract.capabilities.commands || []) {
@@ -87,6 +140,7 @@ class WorkerRuntime {
       this._devices.set(spec.deviceId, {
         deviceId: spec.deviceId,
         config: spec.config,
+        info: spec.info,
         device: null,
         ctx: null,
         status: 'offline',
@@ -114,14 +168,16 @@ class WorkerRuntime {
     if (allowEmpty && (!devices || (Array.isArray(devices) && devices.length === 0))) return []
     if (!Array.isArray(devices) || devices.length === 0) throw new Error('ERR_DEVICES_REQUIRED')
     const seen = new Set()
+    // config and info are both plain objects (or absent): arrays are not.
+    const isBlock = (block) => block === undefined || (typeof block === 'object' && block !== null && !Array.isArray(block))
     return devices.map((spec) => {
       if (!spec || typeof spec.deviceId !== 'string' || !spec.deviceId) throw new Error('ERR_DEVICE_ID_MISSING')
+      if (spec.deviceId.includes('\0')) throw new Error(`ERR_DEVICE_ID_INVALID: ${spec.deviceId}`)
       if (seen.has(spec.deviceId)) throw new Error(`ERR_DEVICE_ID_DUPLICATE: ${spec.deviceId}`)
       seen.add(spec.deviceId)
-      if (spec.config !== undefined && (typeof spec.config !== 'object' || spec.config === null)) {
-        throw new Error(`ERR_DEVICE_CONFIG_INVALID: ${spec.deviceId}`)
-      }
-      return { deviceId: spec.deviceId, config: spec.config || {} }
+      if (!isBlock(spec.config)) throw new Error(`ERR_DEVICE_CONFIG_INVALID: ${spec.deviceId}`)
+      if (!isBlock(spec.info)) throw new Error(`ERR_DEVICE_INFO_INVALID: ${spec.deviceId}`)
+      return { deviceId: spec.deviceId, config: spec.config || {}, info: spec.info || {} }
     })
   }
 
@@ -133,6 +189,7 @@ class WorkerRuntime {
     }
 
     await this._openContexts()
+    await this._startTelemetry()
 
     const seedDht = await this._getOrCreateSeed('seedDht')
     const seedRpc = await this._getOrCreateSeed('seedRpc')
@@ -140,6 +197,7 @@ class WorkerRuntime {
     this._dht = new DHT({
       keyPair: DHT.keyPair(seedDht),
       ...(this._bootstrap ? { bootstrap: this._bootstrap } : {}),
+      ...dhtPortOpts(this._bootstrap),
       ...(this._dhtHost ? { host: this._dhtHost } : {})
     })
     this._rpc = new HyperswarmRPC({ dht: this._dht, seed: seedRpc })
@@ -156,7 +214,7 @@ class WorkerRuntime {
         const result = await this.handleRequest(envelope)
         return serialize(result)
       } catch (err) {
-        return serialize({ error: _publicError(err, 'ERR_REQUEST_FAILED') })
+        return serialize({ error: publicError(err, 'ERR_REQUEST_FAILED') })
       }
     })
 
@@ -171,6 +229,10 @@ class WorkerRuntime {
   }
 
   async stop () {
+    // Sweeps end before the device contexts close; the store itself outlives
+    // the RPC server so an in-flight read can finish (see _stopTelemetry).
+    if (this._telemetry && this._telemetry.poller) await this._telemetry.poller.stop()
+    if (this._telemetry && this._telemetry.rollup) await this._telemetry.rollup.stop()
     if (this._announceTimer) { clearInterval(this._announceTimer); this._announceTimer = null }
     this._discovery = null
     if (this._swarm) { await this._swarm.destroy(); this._swarm = null }
@@ -178,7 +240,131 @@ class WorkerRuntime {
     if (this._rpc) { await this._rpc.destroy(); this._rpc = null }
     if (this._dht) { await this._dht.destroy(); this._dht = null }
     await this._closeContexts()
+    await this._stopTelemetry()
     debug('worker runtime stopped')
+  }
+
+  async _startTelemetry () {
+    if (!this._telemetry || this._telemetry.store) return
+    const { config, storeOpts } = this._telemetry
+    this._telemetry.store = await openTelemetryStore(storeOpts)
+    this._telemetry.archive = this._telemetry.archiveDir ? createArchive(this._telemetry.archiveDir) : null
+    this._telemetry.cache = createAggregateCache(Math.max(config.aggregateCacheTtlMs || 0, config.telemetryPollIntervalMs))
+    this._telemetry.poller = createPoller(config.telemetryPollIntervalMs, () => this._pollTelemetry())
+    // The first retention pass scans every device's series; it waits for
+    // its interval rather than loading every boot.
+    this._telemetry.rollup = createPoller(Math.min(config.telemetryRetention.rollupIntervalMs, ROLLUP_PASS_MAX_MS), () => this._rollupTelemetry(), { immediate: false })
+    // Started last: the first sweep runs at once.
+    this._telemetry.poller.start()
+    this._telemetry.rollup.start()
+    debug('telemetry collector started (every %d ms)', config.telemetryPollIntervalMs)
+  }
+
+  async _stopTelemetry () {
+    if (!this._telemetry || !this._telemetry.store) return
+    await this._telemetry.poller.stop()
+    await this._telemetry.rollup.stop()
+    await this._telemetry.store.close()
+    this._telemetry.store = null
+    this._telemetry.archive = null
+  }
+
+  // One sweep of every online device: each gets a point (values or error
+  // markers) and its reachability updated, as a live poll would. Cached
+  // aggregates are dropped as each point lands, so no answer outlives the
+  // data it was computed from.
+  async _pollTelemetry () {
+    for (const entry of this._devices.values()) {
+      if (this._telemetry.poller.stopped) break
+      if (entry.status !== 'online') continue
+      const { metrics, answered, error } = await sweep(entry.ctx, this._plugin.contract.capabilities.telemetry, this._plugin.handlers.telemetry, {})
+      const ts = Date.now()
+      _recordPoll(entry, answered, error, ts)
+      await this._telemetry.store.put(entry.deviceId, ts, metrics)
+      this._telemetry.cache.clear()
+    }
+  }
+
+  _rollupTelemetry () {
+    const { store, config, cursors, archive } = this._telemetry
+    return rollup(store, [...this._devices.keys()], this._plugin.contract.capabilities.telemetry, config.telemetryRetention, cursors, Date.now(), archive)
+  }
+
+  async _archiveDays (deviceId) {
+    if (!this._telemetry || !this._telemetry.archive) return { error: 'ERR_TELEMETRY_ARCHIVE_DISABLED: archive' }
+    if (!deviceId) return { error: 'ERR_DEVICE_ID_REQUIRED: archive' }
+    if (!this._devices.has(deviceId)) return { error: `ERR_DEVICE_NOT_FOUND: ${deviceId}` }
+    return { deviceId, days: await this._telemetry.archive.days(deviceId) }
+  }
+
+  // The rolled point of every bucket the archived range covers is replaced
+  // by the raw points; a bucket the archive holds nothing for is left alone.
+  // Older than keepMs is refused: expiry would never revisit those points.
+  async _restoreTelemetry (deviceId, { from, to }) {
+    if (!deviceId) return { error: 'ERR_DEVICE_ID_REQUIRED' }
+    if (!this._devices.has(deviceId)) return { error: `ERR_DEVICE_NOT_FOUND: ${deviceId}` }
+    if (!Number.isInteger(from) || !Number.isInteger(to) || to < from) return { error: `ERR_RANGE_INVALID: ${from}..${to}` }
+    const { store, archive, cache, config, cursors } = this._telemetry
+    const { rollupIntervalMs, keepMs } = config.telemetryRetention
+    if (from < Date.now() - keepMs) return { error: `ERR_TELEMETRY_RESTORE_RANGE: from ${from} is older than keepMs` }
+    // Read whole buckets, not just `from..to`: a bucket is replaced as a unit
+    // below, so restoring part of one would delete its rolled point and put
+    // back only the slice the caller named, dropping the rest of that bucket
+    // from the series.
+    const alignedFrom = from - (from % rollupIntervalMs)
+    const alignedTo = to - (to % rollupIntervalMs) + rollupIntervalMs - 1
+    const points = await archive.read(deviceId, alignedFrom, alignedTo)
+    const buckets = new Set(points.map((point) => point.ts - (point.ts % rollupIntervalMs)))
+    for (const start of buckets) await store.del(deviceId, start, start + rollupIntervalMs - 1)
+    for (const point of points) await store.put(deviceId, point.ts, point.data, { restored: true })
+    // `from` is inside keepMs, but aligning down can land before the point
+    // expiry has already swept past, and the sweep only moves forward. Rewind
+    // its cursor so the next pass covers what was just put back, rather than
+    // leaving those readings in the store until a restart resets the cursors.
+    const cursor = points.length ? cursors.get(deviceId) : null
+    if (cursor && alignedFrom < cursor.expired) cursor.expired = alignedFrom
+    cache.clear()
+    debug('restored %d points for %s', points.length, deviceId)
+    return { restored: points.length, buckets: buckets.size, from: alignedFrom, to: alignedTo }
+  }
+
+  _snapshot (deviceId, params) {
+    if (!this._telemetry || !this._telemetry.store) return { error: 'ERR_TELEMETRY_STORE_DISABLED: snapshot' }
+    if (deviceId && !this._devices.has(deviceId)) return { error: `ERR_DEVICE_NOT_FOUND: ${deviceId}` }
+    return snapshot(this._telemetry.store, deviceId ? [deviceId] : [...this._devices.keys()], params)
+  }
+
+  async _aggregate (deviceId, params) {
+    if (!this._telemetry || !this._telemetry.store) return { error: 'ERR_TELEMETRY_STORE_DISABLED: aggregate' }
+    if (deviceId && !this._devices.has(deviceId)) return { error: `ERR_DEVICE_NOT_FOUND: ${deviceId}` }
+    const { state, error } = validateOps(params.ops, this._plugin.contract.capabilities.telemetry)
+    if (error) return { error }
+    const deviceIds = deviceId ? [deviceId] : [...this._devices.keys()]
+    const key = { ops: params.ops, deviceIds }
+    const { cache } = this._telemetry
+    let result = cache.get(key)
+    if (!result) {
+      // Read before the points: a sweep that lands meanwhile moves the
+      // generation on, and the cache then refuses this answer.
+      const gen = cache.gen
+      // A device whose latest point holds no reading (every handler failed)
+      // is left out, as a device with no point is.
+      const entries = []
+      for (const id of deviceIds) {
+        const point = await this._telemetry.store.latest(id)
+        const entry = point && toEntry(id, point.data, this._devices.get(id).info)
+        if (entry && Object.keys(entry.metrics).length) entries.push(entry)
+      }
+      // Cached in wire form, so in-process callers see what RPC callers see
+      // and nobody holds a reference into the cache.
+      result = JSON.parse(JSON.stringify({ ...aggregate(state, entries), deviceCount: entries.length }))
+      cache.set(key, result, gen)
+    }
+    // The pre-tally pack is for the Kernel's cross-worker merge; a
+    // device-scoped read gets the tallied ops only.
+    if (!deviceId) return result
+    const { partial, ...tallied } = result
+    return tallied
   }
 
   /**
@@ -396,10 +582,16 @@ class WorkerRuntime {
           deviceIds: [...this._devices.keys()]
         })
       } catch (err) {
-        result = { error: _publicError(err, 'ERR_TELEMETRY_FAILED') }
+        result = { error: publicError(err, 'ERR_TELEMETRY_FAILED') }
       }
     } else if (type === 'list') {
       result = { devices: [...this._devices.values()].map((e) => ({ deviceId: e.deviceId, status: e.status })) }
+    } else if (type === 'snapshot') {
+      result = await this._snapshot(deviceId, params)
+    } else if (type === 'aggregate') {
+      result = await this._aggregate(deviceId, params)
+    } else if (type === 'archive') {
+      result = await this._archiveDays(deviceId)
     } else if (!deviceId) {
       if (type !== 'metrics') {
         result = { error: `ERR_DEVICE_ID_REQUIRED: ${type}` }
@@ -439,18 +631,7 @@ class WorkerRuntime {
       return { error }
     }
 
-    const metrics = {}
-    let answered = false
-    let error = null
-    for (const [name, fn] of this._plugin.handlers.telemetry) {
-      try {
-        metrics[name] = await fn(entry.ctx, params)
-        answered = true
-      } catch (err) {
-        metrics[name] = { error: _publicError(err, 'ERR_TELEMETRY_FAILED') }
-        error = error || metrics[name].error
-      }
-    }
+    const { metrics, answered, error } = await sweep(entry.ctx, this._plugin.contract.capabilities.telemetry, this._plugin.handlers.telemetry, params)
     if (answered || error) _recordPoll(entry, answered, error)
     return { metrics }
   }
@@ -461,7 +642,7 @@ class WorkerRuntime {
     try {
       return { name, value: await this._plugin.handlers.telemetry.get(name)(entry.ctx, params) }
     } catch (err) {
-      return { error: _publicError(err, 'ERR_TELEMETRY_FAILED') }
+      return { error: publicError(err, 'ERR_TELEMETRY_FAILED') }
     }
   }
 
@@ -477,6 +658,14 @@ class WorkerRuntime {
     // Built-ins run before the device checks: provisioning commands arrive
     // Worker-scoped (deviceId null) and store-backed commands must work for
     // devices the runtime holds offline.
+    if (command === RESTORE_COMMAND.name && this._telemetry && this._telemetry.archive) {
+      const invalid = validateParams(RESTORE_COMMAND.params, params || {})
+      if (invalid) return fail(invalid)
+      const result = await this._restoreTelemetry(deviceId, params)
+      if (result.error) return fail(result.error)
+      return buildResponse(envelope, ACTIONS.COMMAND_RESULT, { commandId, status: 'SUCCESS', result }, this.workerId)
+    }
+
     const builtin = commandBuiltin(this.services, command)
     if (builtin) {
       const invalid = validateParams(builtinCommandParams(command), params || {})
@@ -489,7 +678,7 @@ class WorkerRuntime {
           result: result === undefined ? {} : result
         }, this.workerId)
       } catch (err) {
-        return fail(_publicError(err, 'ERR_COMMAND_FAILED'))
+        return fail(publicError(err, 'ERR_COMMAND_FAILED'))
       }
     }
 
@@ -515,7 +704,7 @@ class WorkerRuntime {
         result: result === undefined ? {} : result
       }, this.workerId)
     } catch (err) {
-      return fail(_publicError(err, 'ERR_COMMAND_FAILED'))
+      return fail(publicError(err, 'ERR_COMMAND_FAILED'))
     }
   }
 
@@ -578,8 +767,70 @@ function _normalizeKey (key) {
   return hex
 }
 
-function _recordPoll (entry, answered, error) {
-  const now = Date.now()
+// null when the plugin does not poll; else { config, storeOpts } with the
+// store opened lazily by _startTelemetry().
+function _telemetryConfig (contract, opts) {
+  const config = {}
+  for (const key of TELEMETRY_CONFIG_KEYS) {
+    const value = opts.config && opts.config[key] !== undefined ? opts.config[key] : contract[key]
+    if (value !== undefined) config[key] = value
+  }
+  if (config.telemetryPollIntervalMs === undefined || config.telemetryPollIntervalMs === null) return null
+  if (!Number.isInteger(config.telemetryPollIntervalMs) || config.telemetryPollIntervalMs < 1 || config.telemetryPollIntervalMs > MAX_INTERVAL_MS) {
+    throw new Error(`ERR_TELEMETRY_POLL_INTERVAL_INVALID: ${config.telemetryPollIntervalMs}`)
+  }
+  if (config.aggregateCacheTtlMs !== undefined && (!Number.isInteger(config.aggregateCacheTtlMs) || config.aggregateCacheTtlMs < 0)) {
+    throw new Error(`ERR_AGGREGATE_CACHE_TTL_INVALID: ${config.aggregateCacheTtlMs}`)
+  }
+  const retention = { ...RETENTION_DEFAULTS }
+  for (const source of [contract.telemetryRetention, opts.config && opts.config.telemetryRetention]) {
+    if (source === undefined) continue
+    if (!source || typeof source !== 'object' || Array.isArray(source)) throw new Error(`ERR_TELEMETRY_RETENTION_INVALID: ${source}`)
+    for (const key of Object.keys(source)) {
+      if (!(key in RETENTION_DEFAULTS)) throw new Error(`ERR_TELEMETRY_RETENTION_INVALID: unknown key ${key}`)
+      retention[key] = source[key]
+    }
+  }
+  for (const key of Object.keys(RETENTION_DEFAULTS)) {
+    if (!Number.isInteger(retention[key]) || retention[key] < 1) throw new Error(`ERR_TELEMETRY_RETENTION_INVALID: ${key} ${retention[key]}`)
+  }
+  if (retention.rawMs > retention.keepMs || retention.rollupIntervalMs > retention.keepMs) {
+    throw new Error(`ERR_TELEMETRY_RETENTION_INVALID: keepMs ${retention.keepMs} is shorter than the raw or rollup window`)
+  }
+  config.telemetryRetention = retention
+  const storeDir = opts.telemetryStoreDir || (opts.storeDir ? path.join(opts.storeDir, 'telemetry') : null)
+  if (!opts.store && !storeDir) throw new Error('ERR_TELEMETRY_STORE_REQUIRED: pass opts.store, opts.telemetryStoreDir or opts.storeDir')
+  if (config.telemetryArchive !== undefined && typeof config.telemetryArchive !== 'boolean') {
+    throw new Error(`ERR_TELEMETRY_ARCHIVE_INVALID: ${config.telemetryArchive}`)
+  }
+  let archiveDir = null
+  if (config.telemetryArchive) {
+    archiveDir = opts.telemetryArchiveDir ||
+      (opts.telemetryStoreDir ? `${opts.telemetryStoreDir}-archive` : opts.storeDir ? path.join(opts.storeDir, 'telemetry-archive') : null)
+    if (!archiveDir) throw new Error('ERR_TELEMETRY_ARCHIVE_DIR_REQUIRED: pass opts.telemetryArchiveDir, opts.telemetryStoreDir or opts.storeDir')
+  }
+  return { config, storeOpts: { store: opts.store, storeDir }, archiveDir, archive: null, store: null, poller: null, rollup: null, cache: null, cursors: new Map() }
+}
+
+function _publishArchiveCommand (contract, telemetry) {
+  if (!telemetry || !telemetry.archiveDir) return contract
+  const copy = JSON.parse(JSON.stringify(contract))
+  copy.capabilities.commands = [...(copy.capabilities.commands || []), RESTORE_COMMAND]
+  return copy
+}
+
+// The capability payload says whether this instance polls: the interval in
+// force (an mdk.yaml override included), or no key at all when polling is off.
+function _publishPollInterval (contract, telemetry) {
+  const active = telemetry ? telemetry.config.telemetryPollIntervalMs : null
+  if (contract.telemetryPollIntervalMs === (active === null ? undefined : active)) return contract
+  const copy = JSON.parse(JSON.stringify(contract))
+  if (active === null) delete copy.telemetryPollIntervalMs
+  else copy.telemetryPollIntervalMs = active
+  return copy
+}
+
+function _recordPoll (entry, answered, error, now = Date.now()) {
   entry.reachable = answered
   if (answered) entry.lastSuccessAt = now
   if (error) {
@@ -595,13 +846,6 @@ function _health (entry) {
     lastError: entry.lastError,
     lastErrorAt: entry.lastErrorAt
   }
-}
-
-function _publicError (err, fallback) {
-  const message = err && typeof err.message === 'string' ? err.message : String(err)
-  if (ERR_CODE.test(message)) return message
-  debug('%s: %s', fallback, (err && err.stack) || message)
-  return fallback
 }
 
 module.exports = WorkerRuntime

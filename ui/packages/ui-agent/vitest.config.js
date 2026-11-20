@@ -16,7 +16,7 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     execArgv: testExecArgv,
-    setupFiles: ['./src/test-utils/setup.ts'],
+    setupFiles: ['../../vitest.setup.base.ts', './src/test-utils/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist', 'build', 'coverage', '**/*.d.ts'],
 

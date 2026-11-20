@@ -52,13 +52,14 @@ export const TableBody = <I = unknown,>({
             const align = cell.column.columnDef.meta?.align
 
             return (
-            <td
-              key={cell.id}
-              style={{ width: cell.column.getSize() }}
-              className={getTableCellAlignClassName(align)}
-            >
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </td>
+              <td
+                key={cell.id}
+                // oxlint-disable-next-line react/forbid-dom-props -- column width from the table's computed column sizes
+                style={{ width: cell.column.getSize() }}
+                className={getTableCellAlignClassName(align)}
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </td>
             )
           })}
         </tr>

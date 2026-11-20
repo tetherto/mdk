@@ -6,10 +6,7 @@ export const CheckboxExample = (): React.ReactElement => {
       <h2 className="demo-section__title">Checkbox & Switch</h2>
       <div className="demo-section__form-controls">
         <h2>Checkbox</h2>
-        <div
-          className="demo-section__form-item demo-section__form-item--baseline"
-          style={{ gap: '5rem' }}
-        >
+        <div className="demo-section__form-item demo-section__form-item--baseline demo-section__form-item--spacious">
           {/* Color Variants */}
           <section>
             <h3>Color Variants</h3>

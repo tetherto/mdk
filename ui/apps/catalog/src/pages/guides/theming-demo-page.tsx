@@ -97,7 +97,11 @@ export const ThemingDemoPage = (): JSX.Element => {
           ))}
         </div>
 
-        <div className="theming-demo__preview" style={preset.tokens as React.CSSProperties}>
+        <div
+          className="theming-demo__preview"
+          // oxlint-disable-next-line react/forbid-dom-props -- applies the selected preset's --mdk-* tokens at runtime
+          style={preset.tokens as React.CSSProperties}
+        >
           <Card>
             <div className="theming-demo__card">
               <h3>Preview</h3>

@@ -149,12 +149,23 @@ module.exports = function (ctx) {
     }
   }
 
+  // Registers are encoded on every read, not once at start, so a value edited
+  // while the mock runs (state[276].value = …) reaches the next poll.
+  function encode () {
+    Object.values(state).forEach(({ value, buffer, offset, signed }) => {
+      signed
+        ? buffer.writeInt16BE(value, offset)
+        : buffer.writeUInt16BE(value, offset)
+    })
+  }
+
   function bind (connection) {
     connection.on('read-holding-registers', (request, reply) => {
       const id = ctx.telemetry ? ctx.telemetry.id() : null
       sendTelemetryRequest(request.request, id)
       const address = request.request.address
       const quantity = request.request.quantity
+      encode()
 
       let bufferStart = 0
       let buffer
@@ -178,21 +189,11 @@ module.exports = function (ctx) {
     })
   }
 
-  const getInitialState = () => {
-    Object.entries(state).forEach(([_, { value, buffer, offset, signed }]) => {
-      signed
-        ? buffer.writeInt16BE(value, offset)
-        : buffer.writeUInt16BE(value, offset)
-    })
-
-    return state
-  }
-
-  // Preserve the initial state for the reset
-  const initialState = JSON.parse(JSON.stringify(getInitialState()))
+  // Only the values are snapshotted: the register entries keep their Buffers.
+  const initialValues = Object.fromEntries(Object.entries(state).map(([addr, { value }]) => [addr, value]))
 
   function cleanup () {
-    Object.assign(state, initialState)
+    for (const [addr, value] of Object.entries(initialValues)) state[addr].value = value
     return state
   }
 

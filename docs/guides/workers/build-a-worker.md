@@ -88,42 +88,47 @@ placeholder `vendor`. Its tests run with **zero** dependency on `WorkerRuntimeV2
 
 ### Scaffold the package
 
-Create your own repo (or a directory inside your existing one) with a `package.json`. Pick your own npm scope (as an external
-Worker provider, you publish under your own domain (not `@tetherto`)):
+Create your own repo (or a directory inside your existing one). `mdk create worker <name> --org your-org` scaffolds
+one into a project's `workers/<name>` (`--no-stack-entry` keeps it out of `mdk.yaml`), and its
+[template manifest][worker-template-manifest] is the base either way: it carries the `@tetherto/mdk-worker`
+dependency, the `debug` client dependency and the `brittle` test runner at the versions this release builds against.
+As an external Worker provider you publish under your own domain, so the npm scope is yours, not `@tetherto`.
+
+The production-oriented package this guide builds adds a lint and test setup on top of that manifest:
 
 ```json
 {
   "name": "@your-org/mdk-worker-vendor",
-  "version": "0.1.0",
-  "description": "MDK Worker plugin for Vendor firmware v1 devices",
-  "license": "Apache-2.0",
-  "engines": { "node": ">=24" },
   "type": "commonjs",
   "scripts": {
-    "lint": "standard",
+    "lint": "bfx-lint-js .",
     "test": "npm run lint && npm run test:unit",
     "test:unit": "NODE_ENV=test brittle tests/unit/*.test.js"
   },
-  "dependencies": {
-    "debug": "^4.4.1"
-  },
   "devDependencies": {
-    "brittle": "^3.16.0",
-    "standard": "^17.1.2"
+    "@bitfinex/lint-js": "^1.0.0"
   }
 }
 ```
 
-Handler files are loaded with `require()`, so set `"type": "commonjs"` or use `.cjs` files. An ESM-only package
-(`"type": "module"` with `.js` handlers) is not a supported handler-loading path today. `brittle` and `standard` are
-the repository's test and lint tools; substitute your own tooling if you prefer.
+Merge these fields into the template's `package.json`: set your own `name`, add `type`, and add the scripts and the
+`devDependencies` entry next to the template's `mock` script and `brittle`. Keep every other template field as it is.
 
-Your own contract-level tests (`loadContract`, `createInstance`, see Step 7) need `@tetherto/mdk-worker` too. Install
-it from npm, the same way [Test a Worker with MDK][test-a-worker]'s [Install MDK step][test-a-worker-install] does:
+Handler files are loaded with `require()`, so set `"type": "commonjs"` or use `.cjs` files. An ESM-only package
+(`"type": "module"` with `.js` handlers) is not a supported handler-loading path today. `brittle` and
+`@bitfinex/lint-js` are the backend packages' test and lint tools; substitute your own tooling if you prefer.
+
+A package written by hand declares `@tetherto/mdk-worker` itself: the contract-level tests in Step 7 (`loadContract`,
+`createInstance`) and any `@tetherto/mdk-worker/sweep-memo` import resolve against the installed package. Install it
+from npm, the same way [Test a Worker with MDK][test-a-worker]'s [Install MDK step][test-a-worker-install] does:
 
 ```bash
 npm install @tetherto/mdk-worker
 ```
+
+> [!TIP]
+> This installs the newest published release. To [pin an exact version][versioning-before-1], pass it with `--save-exact`,
+> for example `npm install --save-exact @tetherto/mdk-worker@0.14.0`. Without `--save-exact`, npm saves a `^` range.
 
 The host process that constructs `WorkerRuntimeV2` and brings its transport dependencies (`@hyperswarm/rpc`,
 `hyperswarm`, `hyperdht`) is a separate package, not this one.
@@ -321,6 +326,20 @@ A few fields worth calling out because they aren't just documentation:
   reports `verification` `VERIFIED` or `UNVERIFIED` in `command.status`. Declare it only when a telemetry entry reports the exact value the
   param sets; without it, callers only ever learn that the handler returned. The readback runs your telemetry handler, so keep any device
   read cache shorter than the Kernel's verify interval (`commandVerifyIntervalMs`, default 5 s) or a stale reading can confirm the command
+- `telemetryPollIntervalMs` (optional, root level) turns on the runtime's telemetry collector: every device is swept on
+  that interval and the results are stored, so fleet reads (`mdkClient.pullSnapshot()`, `mdkClient.pullAggregate()`)
+  cost no device call. Set the interval your device tolerates; an operator overrides it per instance in `mdk.yaml`
+  under `spec.workers[].config` (`null` turns it off). `aggregateCacheTtlMs`, `telemetryRetention` and
+  `telemetryArchive` tune the [collector][worker-collector] the same way. An operator labels a device
+  for aggregate reads under `config.devices[].info` (`info: { container: c1 }`), which the plugin never sees
+- `path` (optional, per telemetry entry) lets one handler serve several metrics: the handler returns the device's
+  whole response and each entry names the dotted keypath (`minerData.hashrate`, `boards.0.temp`) that holds its
+  value. The runtime calls each distinct handler once per sweep, for live reads and for the collector
+  alike. When several handlers need the same device response but `path` cannot merge them into one contract
+  entry, wrap the read in
+  [`@tetherto/mdk-worker/sweep-memo`][worker-exports] so they
+  share one call for that sweep. Unlike `@tetherto/mdk-worker/device` it is not an ambient import, so it resolves
+  against the installed package, and the factory must be called in the plugin's own module
 - `errors` maps your device's error codes to human-readable text; throw `Error` messages that contain these codes so
   operators and agents can look them up
 - `health.alerts` is optional because a plugin without an alerting layer must not invent alerts. `metadata`,
@@ -537,7 +556,9 @@ answer the same fields.
 
 ```js
 await mdkClient.pullTelemetry(deviceId, 'health')
-// → { name: 'health', value: { reachable: true, lastSuccessAt: 1792505336310, lastError: null, lastErrorAt: null } }
+// → { deviceId, name: 'health',
+//     value: { reachable: true, lastSuccessAt: 1792505336310, lastError: null, lastErrorAt: null },
+//     timestamp: 1792505336402 }
 ```
 
 </Step>
@@ -641,6 +662,13 @@ function createServer ({ host, port, hashrateThs, powerW }) {
 
 module.exports = { createServer }
 ```
+
+`createServer(opts)` returns the handle `mdk run` drives when `config.mock` names this mock for the worker.
+Expose the listening object as `server` (a `net`/`http` server as in this sample, or a Fastify instance), or under
+`app` if your mock names it that, plus a stop method called `close`, `stop` or `exit`, tried in that order. Add a
+`ready` promise when the handle signals its bind that way instead of emitting `listening`, as the Fastify-shaped
+mocks do. `mdk run` waits for whichever of the two the handle offers, then calls the stop method and drops any
+socket still open, so the port frees as soon as the stack stops.
 
 The mock must cover every device-client path your handlers call: summary fields for each telemetry handler, plus
 `/api/v1/reboot` for the reboot command (Step 2's `src/client.js` already defines that method).
@@ -767,14 +795,14 @@ npm install
 npm test
 ```
 
-Expected output ends with:
+Expected output ends with `# ok` once every test and assertion passes:
 
 ```text
-# tests = 4/4 pass
-# asserts = 20/20 pass
-
 # ok
 ```
+
+`mdk validate worker --smoke` runs the handlers against the mock too, and [needs a device spec][test-a-worker-smoke]: a
+`smoke.config.js` at the package root, or one passed with `--smoke-config`.
 
 </Step>
 
@@ -796,6 +824,7 @@ generated hardware catalogue and docs-sync tooling, and doesn't apply to a packa
 
 Before calling your Worker done:
 
+- [ ] The package passes the [checks a catalogue listing requires][listing-criteria]
 - [ ] `mdk-contract.json` validates against
       [`mdk-contract.schema.json`][contract-schema]; every telemetry/command entry has
       a unique name and a CommonJS handler path that resolves to a function
@@ -853,12 +882,12 @@ For errors from a live Kernel registration or requests once your Worker is actua
 
 ## Next steps
 
-- List your Worker in the catalogue, either:
+- List your Worker in the catalogue once it meets the [listing criteria][listing-criteria], either:
   - [Raise an issue](https://github.com/tetherto/mdk/issues) and share the link to your Worker contract
   - Add a row to [`external-workers.json`][external-workers]
 - Test your new [Worker's integration with MDK][test-a-worker]
 - Understand the [security boundaries][security-boundaries]
-- See the end-user experience of controlling and monitoring your device via the Worker in [Test a Worker's next steps][test-a-worker-next-steps]
+- See your device in a dashboard and hand it to an agent by [running your Worker with the CLI][run-your-worker]
 
 ## Links
 
@@ -881,6 +910,9 @@ For errors from a live Kernel registration or requests once your Worker is actua
 [worker-template]: ../../../packages/cli/templates/worker/README.md
 <!-- docs@tether.io: worker-template → https://github.com/tetherto/mdk/blob/main/packages/cli/templates/worker/README.md -->
 
+[worker-template-manifest]: ../../../packages/cli/templates/worker/package.json
+<!-- docs@tether.io: worker-template-manifest → https://github.com/tetherto/mdk/blob/main/packages/cli/templates/worker/package.json -->
+
 [contract-schema]: ../../../backend/core/mdk-worker/mdk-contract.schema.json
 <!-- docs@tether.io: contract-schema → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/mdk-contract.schema.json -->
 
@@ -895,8 +927,14 @@ For errors from a live Kernel registration or requests once your Worker is actua
 [create-module-context]: ../../../backend/core/mdk-worker/lib/module-context.js
 <!-- docs@tether.io: create-module-context → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/lib/module-context.js -->
 
+[worker-collector]: ../../../backend/core/mdk-worker/README.md#telemetry-collector
+<!-- docs@tether.io: worker-collector → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#telemetry-collector -->
+
+[worker-exports]: ../../../backend/core/mdk-worker/README.md#what-this-package-exports
+<!-- docs@tether.io: worker-exports → https://github.com/tetherto/mdk/blob/main/backend/core/mdk-worker/README.md#what-this-package-exports -->
+
 [agent-ready-sdk]: ../../reference/maintainers/agent-ready-sdk.md
-<!-- docs@tether.io: agent-ready-sdk → https://github.com/tetherto/mdk/blob/main/backend/core/README.md -->
+<!-- docs@tether.io: agent-ready-sdk → https://github.com/tetherto/mdk/blob/main/docs/reference/maintainers/agent-ready-sdk.md#what-this-monorepo-adds-on-top -->
 
 [security-boundaries]: ../../concepts/security-boundaries.md
 <!-- docs@tether.io: security-boundaries → concepts/security-boundaries -->
@@ -904,11 +942,20 @@ For errors from a live Kernel registration or requests once your Worker is actua
 [test-a-worker]: test-a-worker.md
 <!-- docs@tether.io: test-a-worker → guides/workers/test-a-worker -->
 
+[test-a-worker-smoke]: test-a-worker.md#check-the-package
+<!-- docs@tether.io: test-a-worker-smoke → guides/workers/test-a-worker#check-the-package -->
+
+[versioning-before-1]: ../../reference/versioning.md#before-10
+<!-- docs@tether.io: versioning-before-1 → reference/versioning#before-10 -->
+
 [test-a-worker-install]: test-a-worker.md#install-mdk
 <!-- docs@tether.io: test-a-worker-install → guides/workers/test-a-worker -->
 
-[test-a-worker-next-steps]: test-a-worker.md#next-steps
-<!-- docs@tether.io: test-a-worker-next-steps → guides/workers/test-a-worker -->
+[run-your-worker]: ../cli/run-your-worker.md
+<!-- docs@tether.io: run-your-worker → guides/cli/run-your-worker -->
+
+[listing-criteria]: ../../../CONTRIBUTING.md#listing-criteria
+<!-- docs@tether.io: listing-criteria → support/community/contributing#listing-criteria -->
 
 [external-workers]: ../../../backend/workers/external-workers.json
 <!-- docs@tether.io: external-workers → https://github.com/tetherto/mdk/blob/main/backend/workers/external-workers.json -->

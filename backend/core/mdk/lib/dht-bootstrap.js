@@ -13,10 +13,17 @@
 //
 // This is plain HyperDHT configuration: no proxy and no other transport.
 
+const fs = require('fs')
 const net = require('net')
+const path = require('path')
 const debug = require('debug')('mdk:dht-bootstrap')
 
 const DEFAULT_PORT = 49737
+
+// Where the process that runs the Kernel (`mdk run` or `mdk run kernel`)
+// publishes the stack's resolved DHT settings, relative to the
+// project directory holding mdk.yaml.
+const PROJECT_NETWORK_FILE = path.join('.mdk', 'network.json')
 
 // hyperdht's public bootstrap set (hyperdht/lib/constants.js BOOTSTRAP_NODES).
 const PUBLIC_BOOTSTRAP_HOSTS = new Set([
@@ -127,6 +134,55 @@ function dhtFromEnv (env = process.env) {
 }
 
 /**
+ * The private-DHT settings of a *stack*, for a component hosted in a process
+ * that never reads `mdk.yaml` — for example, a Worker started alongside
+ * `mdk run`. The process that runs the Kernel (`mdk run` or
+ * `mdk run kernel`) publishes them to
+ * `<projectDir>/.mdk/network.json`; this reads the resolved values back, so the
+ * host and the stack cannot drift.
+ *
+ *   const { dhtFromProject } = require('@tetherto/mdk-core')
+ *   new WorkerRuntimeV2(pkgDir, { ...opts, ...dhtFromProject(projectDir) })
+ *
+ * Returns `{}` on the public DHT and for a stack that has not been run yet —
+ * both mean "join the public network", which is the default anyway. A file that
+ * is unreadable or holds something other than a bootstrap list throws, rather
+ * than silently falling back to the public DHT.
+ *
+ * @param {string} projectDir - the directory holding the stack's mdk.yaml
+ * @returns {{ bootstrap?: string[], dhtHost?: string }} ready to spread into a
+ *   Worker boot, `startGateway()` or a client's config
+ */
+function dhtFromProject (projectDir) {
+  if (typeof projectDir !== 'string' || !projectDir.trim()) {
+    throw new Error('ERR_MDK_PROJECT_DIR_REQUIRED: dhtFromProject needs the directory holding the stack mdk.yaml')
+  }
+  const file = path.join(projectDir, PROJECT_NETWORK_FILE)
+  let raw
+  try {
+    raw = fs.readFileSync(file, 'utf8')
+  } catch (err) {
+    if (err.code === 'ENOENT') return {}
+    throw new Error(`ERR_MDK_NETWORK_FILE_UNREADABLE: ${file}: ${err.message}`)
+  }
+  let parsed
+  try {
+    parsed = JSON.parse(raw)
+  } catch (err) {
+    throw new Error(`ERR_MDK_NETWORK_FILE_INVALID: ${file}: ${err.message}`)
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`ERR_MDK_NETWORK_FILE_INVALID: ${file}: expected a JSON object`)
+  }
+  const bootstrap = parseBootstrap(parsed.bootstrap)
+  const dhtHost = parseDhtHost(parsed.dhtHost)
+  return {
+    ...(bootstrap ? { bootstrap } : {}),
+    ...(dhtHost ? { dhtHost } : {})
+  }
+}
+
+/**
  * Start a private HyperDHT bootstrap: a bootstrap node at `host:port` and
  * `nodes` persistent DHT nodes that join through it (hyperdht needs at least
  * one persistent node for announce/lookup to work).
@@ -178,9 +234,11 @@ async function startDhtBootstrap (opts = {}) {
 
 module.exports = {
   DEFAULT_PORT,
+  PROJECT_NETWORK_FILE,
   parseBootstrap,
   parseDhtHost,
   resolveDhtHost,
   dhtFromEnv,
+  dhtFromProject,
   startDhtBootstrap
 }

@@ -1,0 +1,1 @@
+{"name":"TimeframeWeekFlatContentProps","path":"src/domain/components/timeframe/timeframe-controls/timeframe-controls-week-content.tsx","kind":"type","description":"","public":true,"definition":"{ /** Weeks to list, as returned by `weeksOfMonth(year, month, timezone)` */ visibleWeeks: ReturnType<typeof weeksOfMonth> }"}

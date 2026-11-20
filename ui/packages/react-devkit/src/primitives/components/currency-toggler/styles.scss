@@ -2,8 +2,10 @@
   gap: 4px;
   padding: 4px;
   display: inline-flex;
-  background-color: var(--mdk-color-background-dark);
-  border: 1px solid var(--mdk-button-secondary-border);
+  box-sizing: border-box;
+  height: var(--mdk-control-height);
+  background-color: var(--mdk-control-bg);
+  border: 1px solid var(--mdk-control-border);
 
   &--full-width {
     display: flex;
@@ -19,24 +21,28 @@
     box-shadow: none;
     font-weight: 500;
     cursor: pointer;
-    padding: 7px 17px;
+    padding: 0 17px;
     font-size: 0.875rem;
     background: transparent;
     transition:
-    color 0.3s ease-in-out,
-    background 0.3s ease-in-out;
+      color 0.3s ease-in-out,
+      background 0.3s ease-in-out;
     font-family: var(--font-mono);
-    color: var(--mdk-table-table-text-secondary);
+    // Unselected options are muted, so the selected one stands out.
+    color: var(--mdk-color-text-muted);
 
     &--active {
       background: var(--color-primary-transparent-20);
       color: var(--mdk-color-primary);
     }
 
-    &:disabled {
+    &:disabled,
+    &[aria-disabled='true'] {
+      // Dimmer than an unselected option, on the toggler's own surface: an
+      // option you can't pick doesn't read as one you could.
       cursor: not-allowed;
-      color: var(--mdk-color-gray-450);
-      background: var(--mdk-color-white-8);
+      color: var(--mdk-color-white-12);
+      background: transparent;
     }
   }
 }

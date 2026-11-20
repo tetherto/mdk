@@ -23,10 +23,11 @@
   gap: 8px;
   max-width: 245px;
   width: fit-content;
+  box-sizing: border-box;
   padding: 8px 12px;
-  min-height: 40px;
-  background-color: var(--mdk-popover-bg);
-  border: 1px solid var(--mdk-button-secondary-border);
+  min-height: var(--mdk-control-height);
+  background-color: var(--mdk-control-bg);
+  border: 1px solid var(--mdk-control-border);
   border-radius: 0;
   color: var(--mdk-color-white);
   font-family: var(--font-mono);
@@ -166,7 +167,13 @@
     @include flex_column_align_center;
   }
 
+  /* Caption on the nav's row, left of the two 28px arrows the nav overlays at the top right */
   .rdp-month_caption {
+    @include flex_align;
+
+    align-self: stretch;
+    min-height: 28px;
+    padding-right: 64px;
     margin-bottom: 8px;
   }
 
@@ -183,7 +190,6 @@
     font-size: 12px;
     font-weight: 400;
     color: var(--mdk-color-text-disabled);
-    text-transform: uppercase;
     padding: 0;
   }
 
@@ -289,28 +295,24 @@
 }
 
 /* ===== Modal Layout (DateRangePicker) ===== */
-/* Combined selector to override Popover's max-width: 500px */
-.mdk-popover__content.mdk-date-picker__modal {
-  width: auto !important;
-  max-width: none !important;
+/* Combined selector to override Dialog's 32rem max-width: the modal is as wide as its two months */
+.mdk-dialog__content.mdk-date-picker__modal {
+  width: max-content;
+  max-width: calc(100vw - 2rem);
   padding: 16px;
+  gap: 16px;
   background-color: var(--mdk-color-surface);
   border: 1px solid var(--mdk-button-secondary-border);
+
+  .mdk-dialog__header {
+    padding-bottom: 16px;
+    border-bottom-color: var(--mdk-button-secondary-border);
+  }
 }
 
-.mdk-date-picker__modal-header {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--mdk-button-secondary-border);
-  margin-bottom: 16px;
-}
-
-.mdk-date-picker__modal-title {
-  font-family: var(--font-mono);
-  font-size: 18px;
-  font-weight: 400;
-  line-height: 18px;
-  color: var(--mdk-color-white);
-  margin: 0;
+/* Blurs the page behind the picker; other dialogs keep a plain overlay */
+.mdk-date-picker__overlay {
+  backdrop-filter: blur(4px);
 }
 
 .mdk-date-picker__modal-body {
@@ -428,6 +430,12 @@
   .rdp-month {
     position: relative;
     margin-top: 20px;
+  }
+
+  /* Each month of the range picker has one arrow at its outer edge: centre the caption between them */
+  .rdp-month_caption {
+    justify-content: center;
+    padding-right: 0;
   }
 
   .rdp-month::before {

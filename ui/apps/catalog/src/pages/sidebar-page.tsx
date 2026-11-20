@@ -89,48 +89,31 @@ export const SidebarPage = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">Sidebar</h2>
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-        <section style={{ flex: 1, minWidth: '360px' }}>
+      <div className="demo-section__showcase demo-section__showcase--stretch">
+        <section className="sidebar-demo__column">
           <h3>Inline (desktop)</h3>
-          <p style={{ fontSize: '13px', opacity: 0.7, marginBottom: '12px' }}>
+          <p className="demo-section__label">
             Toggle expand/collapse. Hover collapsed groups for flyout.
           </p>
-          <div
-            style={{
-              height: '420px',
-              border: '1px solid #ffffff1a',
-              display: 'flex',
-              overflow: 'hidden',
-              borderRadius: '4px',
-            }}
-          >
+          <div className="sidebar-demo__frame">
             <Sidebar
               items={SIDEBAR_EXAMPLE_ITEMS}
               activeId={sidebarActiveId}
               onItemClick={(item) => setSidebarActiveId(item.id)}
             />
-            <div
-              style={{
-                flex: 1,
-                padding: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#666',
-              }}
-            >
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: '14px', marginBottom: '8px' }}>
-                  Active: <strong style={{ color: '#f7931a' }}>{sidebarActiveId}</strong>
+            <div className="sidebar-demo__content">
+              <div className="sidebar-demo__status">
+                <p className="sidebar-demo__status-text demo-section__mb-sm">
+                  Active: <strong className="demo-section__text-primary">{sidebarActiveId}</strong>
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section style={{ flex: 1, minWidth: '360px' }}>
+        <section className="sidebar-demo__column">
           <h3>Controlled collapse</h3>
-          <p style={{ fontSize: '13px', opacity: 0.7, marginBottom: '12px' }}>
+          <p className="demo-section__label">
             Pass <code>expanded</code> + <code>onExpandedChange</code> to drive the chevron from the
             outside — useful when a top-bar toggle or keyboard shortcut needs to control the
             sidebar.
@@ -138,19 +121,11 @@ export const SidebarPage = (): JSX.Element => {
           <Button
             variant="secondary"
             onClick={() => setControlledExpanded((prev) => !prev)}
-            style={{ marginBottom: '12px' }}
+            className="demo-section__mb-md"
           >
             {controlledExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
           </Button>
-          <div
-            style={{
-              height: '420px',
-              border: '1px solid #ffffff1a',
-              display: 'flex',
-              overflow: 'hidden',
-              borderRadius: '4px',
-            }}
-          >
+          <div className="sidebar-demo__frame">
             <Sidebar
               items={SIDEBAR_EXAMPLE_ITEMS}
               activeId={sidebarActiveId}
@@ -158,26 +133,17 @@ export const SidebarPage = (): JSX.Element => {
               onExpandedChange={setControlledExpanded}
               onItemClick={(item) => setSidebarActiveId(item.id)}
             />
-            <div
-              style={{
-                flex: 1,
-                padding: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#666',
-              }}
-            >
-              <p style={{ fontSize: '14px' }}>
+            <div className="sidebar-demo__content">
+              <p className="sidebar-demo__status-text">
                 State: <strong>{controlledExpanded ? 'expanded' : 'collapsed'}</strong>
               </p>
             </div>
           </div>
         </section>
 
-        <section style={{ flex: 1, minWidth: '260px' }}>
+        <section className="sidebar-demo__column sidebar-demo__column--narrow">
           <h3>Overlay (mobile)</h3>
-          <p style={{ fontSize: '13px', opacity: 0.7, marginBottom: '12px' }}>
+          <p className="demo-section__label">
             Fixed overlay with backdrop. Closes on backdrop click or Escape.
           </p>
           <Button variant="secondary" onClick={() => setMobileSidebarOpen(true)}>

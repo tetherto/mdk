@@ -119,6 +119,14 @@ describe('mdk user', () => {
     expect(lib.setDisabled.mock.calls.map((c) => c[2])).toEqual([true, false]);
     expect(io.out()).toMatch(/Disabled ankit[\s\S]*Enabled ankit/);
 
+    process.exitCode = undefined;
+    lib.setDisabled.mockResolvedValueOnce({ ok: false, message: 'No user named "ghost-user".' });
+    await run('user', 'disable', 'ghost-user');
+    expect(io.err()).toMatch(/error: No user named "ghost-user"/);
+    expect(io.out()).not.toMatch(/Disabled ghost-user/);
+    expect(process.exitCode).toBe(1);
+    process.exitCode = undefined;
+
     lib.removeUser.mockResolvedValueOnce({ ok: true, value: { deleted: true } });
     await run('user', 'remove', 'ankit');
     expect(io.out()).toMatch(/Removed user ankit/);
@@ -177,6 +185,12 @@ describe('mdk sa', () => {
     lib.removeAgent.mockResolvedValueOnce({ removed: false, credential: null, registered: false, message: 'down' });
     await run('sa', 'remove', 'ghost');
     expect(io.err()).toMatch(/No service account named "ghost"/);
+    process.exitCode = undefined;
+    lib.removeAgent.mockResolvedValueOnce({ removed: false, credential: null, registered: true });
+    await run('sa', 'remove', 'nobody');
+    expect(io.err(), 'the Kernel is up and has no such account').toMatch(/No service account named "nobody"/);
+    expect(io.out()).not.toMatch(/Removed nobody/);
+    expect(process.exitCode).toBe(1);
   });
 
   it('lists accounts with their state', async () => {
@@ -200,11 +214,28 @@ describe('mdk sa', () => {
     lib.listAccounts.mockResolvedValueOnce({ kernel: 'down', rows: [], message: 'no Kernel key' });
     await run('sa', 'list');
     expect(io.out()).toMatch(/No service accounts\.[\s\S]*kernel down: no Kernel key/);
+    expect(process.exitCode).toBeUndefined();
     lib.listAccounts.mockResolvedValue({ kernel: 'up', rows: [] });
     await run('-o', 'json', 'sa', 'list');
     expect(io.out()).toContain('"kernel": "up"');
     await run('-o', 'yaml', 'sa', 'list');
     expect(io.out()).toContain('kernel: up');
+  });
+
+  it('list exits 1 when the Kernel refuses, after the local rows', async () => {
+    const message = 'ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.';
+    const res = { kernel: 'up', refused: true, message, rows: [{ name: 'mdk-cli', kind: 'agent', local: true, registered: null, stale: false }] };
+    const io = capture();
+    lib.listAccounts.mockResolvedValue(res);
+    await run('sa', 'list');
+    expect(io.out()).toMatch(/mdk-cli .*local[\s\S]*registrations not checked: ERR_CLI_SESSION_EXPIRED/);
+    expect(io.out()).not.toMatch(/kernel down/);
+    expect(process.exitCode).toBe(1);
+
+    process.exitCode = undefined;
+    await run('-o', 'json', 'sa', 'list');
+    expect(io.out()).toContain('"refused": true');
+    expect(process.exitCode).toBe(1);
   });
 
   it('token prints the access token alone, or everything as json', async () => {

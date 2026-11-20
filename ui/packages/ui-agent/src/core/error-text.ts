@@ -5,13 +5,19 @@
  * like `ERR_AGENT_STREAM_TRUNCATED` — useful in a bug report, meaningless in a
  * transcript. The raw code stays on the message; this is applied at render time,
  * so the stored history keeps the diagnosable value.
+ *
+ * Imports `AGENT_NAME` from outside `core/` — the one exception to this
+ * directory standing alone. `branding.ts` is a dependency-free leaf whose whole
+ * reason to exist is that the product name appears once, and duplicating it
+ * here to preserve the layering would defeat that.
  */
 
 import { ERR_STREAM_IDLE, ERR_STREAM_TRUNCATED } from './sse'
+import { AGENT_NAME } from '../branding'
 import { AGENT_ERROR } from './transport'
 
 /** Shown when a turn dies before the gateway said anything useful. */
-export const GENERIC_TURN_ERROR = 'The agent could not complete that request.'
+export const GENERIC_TURN_ERROR = `${AGENT_NAME} could not complete that request.`
 
 /**
  * The request never reached the gateway — `fetch` rejected rather than
@@ -21,18 +27,18 @@ export const GENERIC_TURN_ERROR = 'The agent could not complete that request.'
 export const ERR_OFFLINE = 'ERR_AGENT_OFFLINE'
 
 const SESSION_EXPIRED = 'Your session expired. Sign in again.'
-const TROUBLE = 'The agent is having trouble right now. Try again in a moment.'
+const TROUBLE = `${AGENT_NAME} is having trouble right now. Try again in a moment.`
 
 const TEXT_FOR_CODE: Record<string, string> = {
   [ERR_OFFLINE]: "You're offline. Check your connection and try again.",
-  [AGENT_ERROR.UNAVAILABLE]: 'The agent is not configured on this gateway.',
+  [AGENT_ERROR.UNAVAILABLE]: `${AGENT_NAME} is not configured on this gateway.`,
   [AGENT_ERROR.TURN_ACTIVE]: 'A turn is already running in this conversation.',
   [AGENT_ERROR.TEXT_REQUIRED]: 'Type a message first.',
   [AGENT_ERROR.SESSION_NOT_FOUND]: 'That conversation is no longer open on the gateway.',
   [AGENT_ERROR.ROUTES_NOT_MOUNTED]:
     'This stack has no agent app installed, so the gateway serves no agent routes.',
-  [ERR_STREAM_TRUNCATED]: 'The connection to the agent ended before the answer finished.',
-  [ERR_STREAM_IDLE]: 'The agent stopped responding, so the connection was assumed lost.',
+  [ERR_STREAM_TRUNCATED]: `The connection to ${AGENT_NAME} ended before the answer finished.`,
+  [ERR_STREAM_IDLE]: `${AGENT_NAME} stopped responding, so the connection was assumed lost.`,
 }
 
 /**

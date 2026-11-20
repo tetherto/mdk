@@ -7,7 +7,7 @@ import { Input } from '@tetherto/mdk-react-devkit'
 export const InputExample = () => {
   const [value, setValue] = useState('')
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 320 }}>
+    <div className="mdk-example-col mdk-example-col--gap-lg mdk-example-col--narrow">
       <Input
         id="mac"
         label="MAC address"

@@ -28,6 +28,10 @@ the connection fails: the app answers `503 ERR_AGENT_UNAVAILABLE` and tries agai
 and retry. The standalone CLI exits instead, with `(is the MCP server running at <url>?)`. Only an agent with no `mcp.url` set
 runs with no tools, answering from the model alone.
 
+`mdk run mcp` checks every agent against `spec.rbac`, so the agent signs in to it as its own service account, set under
+`agent.mcp.credential`. Without one, the connection is refused with `401` and the app answers `503 ERR_AGENT_UNAVAILABLE`.
+[Giving the agent a service account][agent-service-account] covers `mdk sa add`, the `spec.rbac` binding and the config.
+
 ## Choose a guide
 
 | Goal | Guide |
@@ -58,6 +62,9 @@ deployment path. See [Expose data to the agent][expose-data] there.
 
 [gateway-deployment]: gateway-deployment.md
 <!-- docs@tether.io: gateway-deployment → guides/agent/gateway-deployment -->
+
+[agent-service-account]: gateway-deployment.md#give-the-agent-a-service-account
+<!-- docs@tether.io: agent-service-account → guides/agent/gateway-deployment#give-the-agent-a-service-account -->
 
 [expose-data]: expose-data.md
 <!-- docs@tether.io: expose-data → guides/agent/expose-data -->

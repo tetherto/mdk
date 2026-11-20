@@ -31,7 +31,7 @@ export const DetailLegendExample = () => {
   const items = ITEMS.map((item, i) => ({ ...item, hidden: !!hidden[i] }))
 
   return (
-    <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-xl">
       {/* Interactive — click items to toggle visibility */}
       <DetailLegend
         items={items}

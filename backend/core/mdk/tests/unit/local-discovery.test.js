@@ -257,7 +257,7 @@ test('discoverWorkerKeys - a worker that never registers is named at warn level,
   publishWorkerKey(dir, 'ocean-pool-worker', K1)
   const warnings = captureWarnings(t)
 
-  const kernel = { dhtListener: { discoverWorker: async () => false } }
+  const kernel = { dhtListener: { discoverWorker: async () => ({ registered: false, error: 'ERR_WORKER_IDENTITY_UNAVAILABLE' }) } }
   const ctrl = discover(kernel, dir, { rescanMs: 20, warnAfterMs: 100 })
   t.teardown(() => ctrl.stop())
 
@@ -276,7 +276,7 @@ test('discoverWorkerKeys - a registered worker is silent, and a recovery resolve
   const warnings = captureWarnings(t)
 
   let ready = false
-  const kernel = { dhtListener: { discoverWorker: async () => ready } }
+  const kernel = { dhtListener: { discoverWorker: async () => ({ registered: ready }) } }
   const ctrl = discover(kernel, dir, { rescanMs: 20, warnAfterMs: 100 })
   t.teardown(() => ctrl.stop())
 
@@ -294,7 +294,7 @@ test('discoverWorkerKeys - a healthy worker never warns', async (t) => {
   publishWorkerKey(dir, 'healthy-worker', K1)
   const warnings = captureWarnings(t)
 
-  const kernel = { dhtListener: { discoverWorker: async () => true } }
+  const kernel = { dhtListener: { discoverWorker: async () => ({ registered: true, workerId: 'healthy-worker' }) } }
   const ctrl = discover(kernel, dir, { rescanMs: 20, warnAfterMs: 50 })
   t.teardown(() => ctrl.stop())
 

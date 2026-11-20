@@ -1,0 +1,1 @@
+{"name":"CardHeaderProps","path":"src/primitives/components/card/index.tsx","kind":"type","description":"Props for {@link CardHeader} slot. Forwards all native `<div>` attributes","public":true,"definition":"HTMLAttributes<HTMLDivElement>"}

@@ -304,6 +304,24 @@ describe('useAgentChat — failures', () => {
     expect(result.current.messages[1]?.error).toBe('ERR_AGENT_UNAVAILABLE')
   })
 
+  it('does not take a gateway 404 body as a code', async () => {
+    // A stack with no agent app answers with Fastify's own 404, and the
+    // fragment before its colon — `Route POST` — used to reach the operator as
+    // if it were one of the producer's codes.
+    fetchImpl.mockResolvedValue(
+      jsonResponse(
+        { statusCode: 404, error: 'Not Found', message: 'Route POST:/agent/sessions not found' },
+        404,
+      ),
+    )
+
+    const { result } = setup()
+    act(() => result.current.send('hi'))
+    await waitFor(() => expect(result.current.messages).toHaveLength(2))
+
+    expect(result.current.messages[1]?.error).toBe(AGENT_ERROR.ROUTES_NOT_MOUNTED)
+  })
+
   it('calls a request that never left the browser offline', async () => {
     // `fetch` rejects with a TypeError when there is no connection at all —
     // there is no status to read because it never got one.

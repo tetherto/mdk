@@ -45,7 +45,7 @@ There is no minimal single-file runnable example for Whatsminer anymore (the old
 the retired in-repo package); the mvp-site example stack is the reference implementation.
 `cd examples/mvp-site && npm run setup:example && npm
 start` boots the whole stack — Kernel, mocks, and the Whatsminer Worker included — against seed data in
-`config/devices.json`.
+`config/devices.json`. It needs [the Starter site's prerequisites][mvp-site-prereqs], PM2 included.
 
 </details>
 
@@ -93,7 +93,7 @@ input validation and debug logging — copy the real file rather than this excer
 #### 2.2 Register your miner
 
 Add this to the Node.js service or script that runs your Worker. The snippet shows the minimum boot call seeding one
-Whatsminer device; replace the example IP address, password and account with your miner's values:
+Whatsminer device; replace the example IP address, password, and account with your miner's values:
 
 ```js
 const { getKernel } = require('@tetherto/mdk-core')
@@ -166,6 +166,9 @@ If the Worker does not come up, or a mock port is already in use, follow [miner 
 
 [mvp-site-adapter]: ../../../examples/mvp-site/backend/whatsminer-adapter.js
 <!-- docs@tether.io: mvp-site-adapter → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/backend/whatsminer-adapter.js -->
+
+[mvp-site-prereqs]: ../../../examples/mvp-site/README.md#prerequisites
+<!-- docs@tether.io: mvp-site-prereqs → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/README.md#prerequisites -->
 
 [install-pattern]: ../../../backend/workers/docs/install-pattern.md
 <!-- docs@tether.io: install-pattern → https://github.com/tetherto/mdk/blob/main/backend/workers/docs/install-pattern.md -->

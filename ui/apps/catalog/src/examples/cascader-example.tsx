@@ -178,7 +178,7 @@ export const CascaderExample = (): JSX.Element => {
             choose a container from the right panel. The selected value is stored as a path array.
           </p>
 
-          <div style={{ width: '30%' }}>
+          <div className="cascader-section__field">
             <Cascader
               options={locationOptions}
               value={singleValue}
@@ -209,7 +209,7 @@ export const CascaderExample = (): JSX.Element => {
             status, priority, and type. Perfect for dashboards and monitoring systems.
           </p>
 
-          <div style={{ width: '30%' }}>
+          <div className="cascader-section__field">
             <Cascader
               options={filterOptions}
               value={filterValue}
@@ -249,7 +249,7 @@ export const CascaderExample = (): JSX.Element => {
             coming soon features.
           </p>
 
-          <div style={{ width: '30%' }}>
+          <div className="cascader-section__field">
             <Cascader
               options={statusOptions}
               value={statusValue}
@@ -273,7 +273,7 @@ export const CascaderExample = (): JSX.Element => {
             doesn't match any options.
           </p>
 
-          <div style={{ width: '30%' }}>
+          <div className="cascader-section__field">
             <Cascader
               options={categoryOptions}
               value={emptyValue}

@@ -1,0 +1,1212 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MVP Site",
+    "version": "0.14.0",
+    "description": "MVP-site example app: aggregates the site (miners, a powermeter, a mining pool) via the MDK protocol client."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/site/overview": {
+      "get": {
+        "operationId": "site.overview",
+        "description": "Live site snapshot assembled from `telemetry.pull` across all workers: all miners, site power consumption from powermeters, and pool data from all minerpool workers. Workers that are down are listed in `unavailableWorkers` with their device counts, since their devices cannot be read.",
+        "security": [
+          {
+            "bearer": [
+              "get site/site/overview"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live site snapshot: miners, site power, and pools.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_MDK_CLIENT_UNAVAILABLE",
+                "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).",
+                "fix": "Check the Kernel is running and reachable from the app runtime, then retry."
+              },
+              {
+                "code": "ERR_APP_BAD_REQUEST",
+                "description": "The app runtime refused the request envelope the Gateway sent: malformed, with no `routeId`, or with an `actor` that is not an access token.",
+                "fix": "Run the Gateway and the app runtime from the same MDK release.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_IS_STREAM",
+                "description": "The Gateway called a stream route as a unary one, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_NOT_STREAM",
+                "description": "The Gateway called a unary route as a stream, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              }
+            ]
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_KERNEL_ACTION_FORBIDDEN",
+                "description": "The Kernel refused the call for the caller's roles, or for this app's service account.",
+                "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`."
+              },
+              {
+                "code": "ERR_GATEWAY_HOST_NOT_ALLOWED",
+                "description": "The request's `Host` header is missing, or names a host the Gateway does not serve. The Gateway serves loopback on its port, its own bind address, and each `allowedHosts` entry. With `trustProxy` set, `X-Forwarded-Host` is checked instead.",
+                "fix": "Call the Gateway by a host it serves, or have the operator add the host to `allowedHosts`.",
+                "stage": "Host check"
+              },
+              {
+                "code": "ERR_AUTH_FORBIDDEN",
+                "description": "No `spec.rbac` rule grants the caller the route's verb on its resource, or the Gateway's copy of the policy is stale. The message names the caller, the verb, and the resource, and the Gateway's decision log names the reason.",
+                "fix": "Ask an operator for a role that grants the call in `spec.rbac`.",
+                "stage": "Authorization"
+              }
+            ]
+          },
+          "404": {
+            "$ref": "#/components/responses/AppRouteNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AppRuntimeBadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/AppRuntimeNotStarted"
+          },
+          "504": {
+            "$ref": "#/components/responses/AppRuntimeTimeout"
+          }
+        },
+        "x-mdk-access": {
+          "resource": "site/site/overview",
+          "verb": "get"
+        },
+        "x-mdk-safety": "read-only",
+        "x-mdk-errors": [
+          "ERR_MDK_CLIENT_UNAVAILABLE",
+          "ERR_KERNEL_ACTION_FORBIDDEN"
+        ]
+      }
+    },
+    "/site/history": {
+      "get": {
+        "operationId": "site.history",
+        "description": "Historical telemetry from the workers' persisted tail-logs (`telemetry.pull` type `logs`). `metric=hashrate` reads pool stats-history (H/s, the unit the pool contracts declare; all pools summed by default; pass `deviceId` for one pool). `metric=site-hashrate` reads the miners' own snap tail-logs summed across all miners (MH/s; pass `deviceId` for one miner). `metric=power` reads site powermeter series (all meters summed by default; pass `deviceId` for one meter). `metric=temperature` reads sensor tail-logs, averaged by default; this example ships no sensor Worker, so it returns empty unless one is added. Defaults to the last hour.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "metric",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hashrate",
+                "site-hashrate",
+                "power",
+                "temperature"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "deviceId",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearer": [
+              "get site/site/history"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historical time-series read from a worker tail-log.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_MDK_CLIENT_UNAVAILABLE",
+                "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).",
+                "fix": "Check the Kernel is running and reachable from the app runtime, then retry."
+              },
+              {
+                "code": "ERR_INVALID_DATE_RANGE",
+                "description": "`start` is not before `end`.",
+                "fix": "Send a `start` earlier than `end`."
+              },
+              {
+                "code": "ERR_UNKNOWN_DEVICE_ID",
+                "description": "`deviceId` matches none of the requested metric's devices (mining pools, for `hashrate`). A metric with no devices at all answers an empty log instead.",
+                "fix": "Send a `deviceId` from `GET /site/overview`, or omit it for every device."
+              },
+              {
+                "code": "ERR_APP_BAD_REQUEST",
+                "description": "The app runtime refused the request envelope the Gateway sent: malformed, with no `routeId`, or with an `actor` that is not an access token.",
+                "fix": "Run the Gateway and the app runtime from the same MDK release.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_IS_STREAM",
+                "description": "The Gateway called a stream route as a unary one, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_NOT_STREAM",
+                "description": "The Gateway called a unary route as a stream, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              }
+            ]
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_KERNEL_ACTION_FORBIDDEN",
+                "description": "The Kernel refused the call for the caller's roles, or for this app's service account.",
+                "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`."
+              },
+              {
+                "code": "ERR_GATEWAY_HOST_NOT_ALLOWED",
+                "description": "The request's `Host` header is missing, or names a host the Gateway does not serve. The Gateway serves loopback on its port, its own bind address, and each `allowedHosts` entry. With `trustProxy` set, `X-Forwarded-Host` is checked instead.",
+                "fix": "Call the Gateway by a host it serves, or have the operator add the host to `allowedHosts`.",
+                "stage": "Host check"
+              },
+              {
+                "code": "ERR_AUTH_FORBIDDEN",
+                "description": "No `spec.rbac` rule grants the caller the route's verb on its resource, or the Gateway's copy of the policy is stale. The message names the caller, the verb, and the resource, and the Gateway's decision log names the reason.",
+                "fix": "Ask an operator for a role that grants the call in `spec.rbac`.",
+                "stage": "Authorization"
+              }
+            ]
+          },
+          "404": {
+            "$ref": "#/components/responses/AppRouteNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AppRuntimeBadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/AppRuntimeNotStarted"
+          },
+          "504": {
+            "$ref": "#/components/responses/AppRuntimeTimeout"
+          }
+        },
+        "x-mdk-access": {
+          "resource": "site/site/history",
+          "verb": "get"
+        },
+        "x-mdk-safety": "read-only",
+        "x-mdk-errors": [
+          "ERR_MDK_CLIENT_UNAVAILABLE",
+          "ERR_KERNEL_ACTION_FORBIDDEN",
+          "ERR_INVALID_DATE_RANGE",
+          "ERR_UNKNOWN_DEVICE_ID"
+        ]
+      }
+    },
+    "/site/access": {
+      "get": {
+        "operationId": "site.access",
+        "description": "The signed-in user's identity, the roles `spec.rbac` binds to them, which site routes they may call, and which miners they may send each command to. Advisory, for the UI: the Gateway and the Kernel enforce the same policy on every call.",
+        "security": [
+          {
+            "bearer": [
+              "get site/site/access"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What the signed-in user may do on this site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_MDK_CLIENT_UNAVAILABLE",
+                "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).",
+                "fix": "Check the Kernel is running and reachable from the app runtime, then retry."
+              },
+              {
+                "code": "ERR_APP_BAD_REQUEST",
+                "description": "The app runtime refused the request envelope the Gateway sent: malformed, with no `routeId`, or with an `actor` that is not an access token.",
+                "fix": "Run the Gateway and the app runtime from the same MDK release.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_IS_STREAM",
+                "description": "The Gateway called a stream route as a unary one, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_NOT_STREAM",
+                "description": "The Gateway called a unary route as a stream, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              }
+            ]
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_SIGN_IN_REQUIRED",
+                "description": "The request carries no signed-in identity.",
+                "fix": "Sign in, and send the access token."
+              },
+              {
+                "code": "ERR_AUTH_UNAUTHORIZED",
+                "description": "The request carries no bearer token, or one that fails verification, such as an expired or revoked token.",
+                "fix": "Sign in, and send the access token as `Authorization: Bearer <token>`.",
+                "stage": "Authentication"
+              }
+            ]
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_KERNEL_ACTION_FORBIDDEN",
+                "description": "The Kernel refused the call for the caller's roles, or for this app's service account.",
+                "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`."
+              },
+              {
+                "code": "ERR_GATEWAY_HOST_NOT_ALLOWED",
+                "description": "The request's `Host` header is missing, or names a host the Gateway does not serve. The Gateway serves loopback on its port, its own bind address, and each `allowedHosts` entry. With `trustProxy` set, `X-Forwarded-Host` is checked instead.",
+                "fix": "Call the Gateway by a host it serves, or have the operator add the host to `allowedHosts`.",
+                "stage": "Host check"
+              },
+              {
+                "code": "ERR_AUTH_FORBIDDEN",
+                "description": "No `spec.rbac` rule grants the caller the route's verb on its resource, or the Gateway's copy of the policy is stale. The message names the caller, the verb, and the resource, and the Gateway's decision log names the reason.",
+                "fix": "Ask an operator for a role that grants the call in `spec.rbac`.",
+                "stage": "Authorization"
+              }
+            ]
+          },
+          "404": {
+            "$ref": "#/components/responses/AppRouteNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AppRuntimeBadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/AppRuntimeNotStarted"
+          },
+          "504": {
+            "$ref": "#/components/responses/AppRuntimeTimeout"
+          }
+        },
+        "x-mdk-access": {
+          "resource": "site/site/access",
+          "verb": "get"
+        },
+        "x-mdk-safety": "read-only",
+        "x-mdk-errors": [
+          "ERR_MDK_CLIENT_UNAVAILABLE",
+          "ERR_KERNEL_ACTION_FORBIDDEN",
+          "ERR_SIGN_IN_REQUIRED"
+        ]
+      }
+    },
+    "/site/activity": {
+      "get": {
+        "operationId": "site.activity",
+        "description": "Every miner command attempted on this site, newest first, refused ones included: who sent it (the operator, via the site app), the roles they held, the command, the target device, and the outcome. Reads the Kernel's write-command log (`command.log`), so the caller needs `commands: read`.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearer": [
+              "get site/site/activity"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Kernel's write-command log, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_MDK_CLIENT_UNAVAILABLE",
+                "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).",
+                "fix": "Check the Kernel is running and reachable from the app runtime, then retry."
+              },
+              {
+                "code": "ERR_APP_BAD_REQUEST",
+                "description": "The app runtime refused the request envelope the Gateway sent: malformed, with no `routeId`, or with an `actor` that is not an access token.",
+                "fix": "Run the Gateway and the app runtime from the same MDK release.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_IS_STREAM",
+                "description": "The Gateway called a stream route as a unary one, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_NOT_STREAM",
+                "description": "The Gateway called a unary route as a stream, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              }
+            ]
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_SIGN_IN_REQUIRED",
+                "description": "The request carries no signed-in identity.",
+                "fix": "Sign in, and send the access token."
+              },
+              {
+                "code": "ERR_AUTH_UNAUTHORIZED",
+                "description": "The request carries no bearer token, or one that fails verification, such as an expired or revoked token.",
+                "fix": "Sign in, and send the access token as `Authorization: Bearer <token>`.",
+                "stage": "Authentication"
+              }
+            ]
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_KERNEL_ACTION_FORBIDDEN",
+                "description": "The Kernel refused the call for the caller's roles, or for this app's service account.",
+                "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`."
+              },
+              {
+                "code": "ERR_GATEWAY_HOST_NOT_ALLOWED",
+                "description": "The request's `Host` header is missing, or names a host the Gateway does not serve. The Gateway serves loopback on its port, its own bind address, and each `allowedHosts` entry. With `trustProxy` set, `X-Forwarded-Host` is checked instead.",
+                "fix": "Call the Gateway by a host it serves, or have the operator add the host to `allowedHosts`.",
+                "stage": "Host check"
+              },
+              {
+                "code": "ERR_AUTH_FORBIDDEN",
+                "description": "No `spec.rbac` rule grants the caller the route's verb on its resource, or the Gateway's copy of the policy is stale. The message names the caller, the verb, and the resource, and the Gateway's decision log names the reason.",
+                "fix": "Ask an operator for a role that grants the call in `spec.rbac`.",
+                "stage": "Authorization"
+              }
+            ]
+          },
+          "404": {
+            "$ref": "#/components/responses/AppRouteNotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AppRuntimeBadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/AppRuntimeNotStarted"
+          },
+          "504": {
+            "$ref": "#/components/responses/AppRuntimeTimeout"
+          }
+        },
+        "x-mdk-access": {
+          "resource": "site/site/activity",
+          "verb": "get"
+        },
+        "x-mdk-safety": "read-only",
+        "x-mdk-errors": [
+          "ERR_MDK_CLIENT_UNAVAILABLE",
+          "ERR_KERNEL_ACTION_FORBIDDEN",
+          "ERR_SIGN_IN_REQUIRED"
+        ]
+      }
+    },
+    "/site/miners/{deviceId}/command": {
+      "post": {
+        "operationId": "site.miner-command",
+        "description": "Dispatches the `setPowerMode` capability command to a single miner through Kernel. The new mode appears on the next telemetry poll.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deviceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mode"
+                ],
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "normal",
+                      "high",
+                      "high_performance"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "create site/site/miners/:deviceId/command"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Command dispatched to the miner via Kernel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_MDK_CLIENT_UNAVAILABLE",
+                "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).",
+                "fix": "Check the Kernel is running and reachable from the app runtime, then retry."
+              },
+              {
+                "code": "ERR_DEVICE_ID_REQUIRED",
+                "description": "The `deviceId` path segment is empty.",
+                "fix": "Put the miner's `deviceId` in the path."
+              },
+              {
+                "code": "ERR_APP_BAD_REQUEST",
+                "description": "The app runtime refused the request envelope the Gateway sent: malformed, with no `routeId`, or with an `actor` that is not an access token.",
+                "fix": "Run the Gateway and the app runtime from the same MDK release.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_IS_STREAM",
+                "description": "The Gateway called a stream route as a unary one, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_NOT_STREAM",
+                "description": "The Gateway called a unary route as a stream, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              }
+            ]
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_KERNEL_ACTION_FORBIDDEN",
+                "description": "The Kernel refused the call for the caller's roles, or for this app's service account.",
+                "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`."
+              },
+              {
+                "code": "ERR_GATEWAY_HOST_NOT_ALLOWED",
+                "description": "The request's `Host` header is missing, or names a host the Gateway does not serve. The Gateway serves loopback on its port, its own bind address, and each `allowedHosts` entry. With `trustProxy` set, `X-Forwarded-Host` is checked instead.",
+                "fix": "Call the Gateway by a host it serves, or have the operator add the host to `allowedHosts`.",
+                "stage": "Host check"
+              },
+              {
+                "code": "ERR_AUTH_FORBIDDEN",
+                "description": "No `spec.rbac` rule grants the caller the route's verb on its resource, or the Gateway's copy of the policy is stale. The message names the caller, the verb, and the resource, and the Gateway's decision log names the reason.",
+                "fix": "Ask an operator for a role that grants the call in `spec.rbac`.",
+                "stage": "Authorization"
+              }
+            ]
+          },
+          "404": {
+            "description": "The target device does not exist.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_DEVICE_NOT_FOUND",
+                "description": "The Kernel refused the command: no such device.",
+                "fix": "Send a `deviceId` from `GET /site/overview`."
+              },
+              {
+                "code": "ERR_APP_ROUTE_NOT_FOUND",
+                "description": "The app runtime has no route with the id the Gateway forwarded, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              }
+            ]
+          },
+          "422": {
+            "description": "The Kernel refused the command.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_WORKER_NOT_ROUTABLE",
+                "description": "The Kernel refused the command: the device's Worker is not ready or not healthy. Any other refusal code the Kernel returns for the command also arrives as 422.",
+                "fix": "Retry once the Worker reports ready and healthy in `GET /site/overview`."
+              },
+              {
+                "code": "ERR_COMMAND_REJECTED",
+                "description": "The Kernel refused the command without a code. A fallback: the current Kernel always sends one.",
+                "fix": "Retry; if it repeats, check the Kernel log for the refusal."
+              }
+            ]
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AppRuntimeBadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/AppRuntimeNotStarted"
+          },
+          "504": {
+            "$ref": "#/components/responses/AppRuntimeTimeout"
+          }
+        },
+        "x-mdk-access": {
+          "resource": "site/site/miners/:deviceId/command",
+          "verb": "create"
+        },
+        "x-mdk-safety": "write",
+        "x-mdk-errors": [
+          "ERR_MDK_CLIENT_UNAVAILABLE",
+          "ERR_KERNEL_ACTION_FORBIDDEN",
+          "ERR_DEVICE_ID_REQUIRED",
+          "ERR_DEVICE_NOT_FOUND",
+          "ERR_WORKER_NOT_ROUTABLE",
+          "ERR_COMMAND_REJECTED"
+        ],
+        "x-mdk-constraints": [
+          "mode must be one of low | normal | high | high_performance."
+        ]
+      }
+    },
+    "/site/miners/{deviceId}/pools": {
+      "post": {
+        "operationId": "site.miner-pools",
+        "description": "Dispatches the `setupPools` capability command to a single miner through Kernel. Pools from the request body take precedence; with no body the site-wide default from `config/site.deploy.json` (`worker.pools`) is applied. The miner reboots to pick up the new pools, so expect it to drop offline briefly.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deviceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pools": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "url",
+                        "worker_name"
+                      ],
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "worker_name": {
+                          "type": "string"
+                        },
+                        "worker_password": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "appendId": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [
+              "create site/site/miners/:deviceId/pools"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "setupPools command dispatched to the miner via Kernel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_MDK_CLIENT_UNAVAILABLE",
+                "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).",
+                "fix": "Check the Kernel is running and reachable from the app runtime, then retry."
+              },
+              {
+                "code": "ERR_DEVICE_ID_REQUIRED",
+                "description": "The `deviceId` path segment is empty.",
+                "fix": "Put the miner's `deviceId` in the path."
+              },
+              {
+                "code": "ERR_INVALID_POOLS",
+                "description": "`pools` is an empty list, or an entry has an empty `url` or `worker_name`.",
+                "fix": "Send one to three pools, each with a non-empty `url` and `worker_name`."
+              },
+              {
+                "code": "ERR_APP_BAD_REQUEST",
+                "description": "The app runtime refused the request envelope the Gateway sent: malformed, with no `routeId`, or with an `actor` that is not an access token.",
+                "fix": "Run the Gateway and the app runtime from the same MDK release.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_IS_STREAM",
+                "description": "The Gateway called a stream route as a unary one, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              },
+              {
+                "code": "ERR_APP_ROUTE_NOT_STREAM",
+                "description": "The Gateway called a unary route as a stream, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              }
+            ]
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_KERNEL_ACTION_FORBIDDEN",
+                "description": "The Kernel refused the call for the caller's roles, or for this app's service account.",
+                "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`."
+              },
+              {
+                "code": "ERR_GATEWAY_HOST_NOT_ALLOWED",
+                "description": "The request's `Host` header is missing, or names a host the Gateway does not serve. The Gateway serves loopback on its port, its own bind address, and each `allowedHosts` entry. With `trustProxy` set, `X-Forwarded-Host` is checked instead.",
+                "fix": "Call the Gateway by a host it serves, or have the operator add the host to `allowedHosts`.",
+                "stage": "Host check"
+              },
+              {
+                "code": "ERR_AUTH_FORBIDDEN",
+                "description": "No `spec.rbac` rule grants the caller the route's verb on its resource, or the Gateway's copy of the policy is stale. The message names the caller, the verb, and the resource, and the Gateway's decision log names the reason.",
+                "fix": "Ask an operator for a role that grants the call in `spec.rbac`.",
+                "stage": "Authorization"
+              }
+            ]
+          },
+          "404": {
+            "description": "The target device does not exist.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_DEVICE_NOT_FOUND",
+                "description": "The Kernel refused the command: no such device.",
+                "fix": "Send a `deviceId` from `GET /site/overview`."
+              },
+              {
+                "code": "ERR_APP_ROUTE_NOT_FOUND",
+                "description": "The app runtime has no route with the id the Gateway forwarded, such as when the Gateway and the app runtime loaded different route tables.",
+                "fix": "Restart the Gateway and the app runtime on the same route table.",
+                "stage": "Forwarding"
+              }
+            ]
+          },
+          "422": {
+            "description": "The Kernel refused the command.",
+            "x-mdk-errors": [
+              {
+                "code": "ERR_WORKER_NOT_ROUTABLE",
+                "description": "The Kernel refused the command: the device's Worker is not ready or not healthy. Any other refusal code the Kernel returns for the command also arrives as 422.",
+                "fix": "Retry once the Worker reports ready and healthy in `GET /site/overview`."
+              },
+              {
+                "code": "ERR_COMMAND_REJECTED",
+                "description": "The Kernel refused the command without a code. A fallback: the current Kernel always sends one.",
+                "fix": "Retry; if it repeats, check the Kernel log for the refusal."
+              }
+            ]
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "502": {
+            "$ref": "#/components/responses/AppRuntimeBadGateway"
+          },
+          "503": {
+            "$ref": "#/components/responses/AppRuntimeNotStarted"
+          },
+          "504": {
+            "$ref": "#/components/responses/AppRuntimeTimeout"
+          }
+        },
+        "x-mdk-access": {
+          "resource": "site/site/miners/:deviceId/pools",
+          "verb": "create"
+        },
+        "x-mdk-safety": "write",
+        "x-mdk-errors": [
+          "ERR_MDK_CLIENT_UNAVAILABLE",
+          "ERR_KERNEL_ACTION_FORBIDDEN",
+          "ERR_DEVICE_ID_REQUIRED",
+          "ERR_INVALID_POOLS",
+          "ERR_DEVICE_NOT_FOUND",
+          "ERR_WORKER_NOT_ROUTABLE",
+          "ERR_COMMAND_REJECTED"
+        ],
+        "x-mdk-constraints": [
+          "At most 3 pools per miner (whatsminer API limit).",
+          "Each pool needs url and worker_name; appendId=false disables the per-device worker-name suffix."
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "An access token from the Gateway's `/auth/login`, `/auth/token` or `/auth/refresh`. Each operation's role name is its `spec.rbac` requirement: the verb and resource a rule must grant the caller."
+      }
+    },
+    "schemas": {
+      "GatewayError": {
+        "type": "object",
+        "description": "The body of every error the Gateway answers.",
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ],
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "description": "The HTTP status, repeated."
+          },
+          "error": {
+            "type": "string",
+            "description": "The HTTP status text, such as `Unauthorized`."
+          },
+          "message": {
+            "type": "string",
+            "description": "The `ERR_*` code, followed by a colon, a space, and a detail when there is one. For a body the Gateway cannot read, or a request that fails the route's schema, Fastify's message. Otherwise, the HTTP status text."
+          }
+        }
+      }
+    },
+    "responses": {
+      "HostNotAllowed": {
+        "description": "The Gateway does not serve the request's host.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Host check",
+        "x-mdk-status": 403,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_GATEWAY_HOST_NOT_ALLOWED",
+            "description": "The request's `Host` header is missing, or names a host the Gateway does not serve. The Gateway serves loopback on its port, its own bind address, and each `allowedHosts` entry. With `trustProxy` set, `X-Forwarded-Host` is checked instead.",
+            "fix": "Call the Gateway by a host it serves, or have the operator add the host to `allowedHosts`.",
+            "stage": "Host check"
+          }
+        ]
+      },
+      "RateLimited": {
+        "description": "The caller has sent too many requests.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Rate limit",
+        "x-mdk-status": 429,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_RATE_LIMITED",
+            "description": "The caller's address has sent more requests than the Gateway's `rateLimit` allows in its time window, `300` a minute by default.",
+            "fix": "Wait for the time window to pass, then retry.",
+            "stage": "Rate limit"
+          }
+        ]
+      },
+      "Unauthorized": {
+        "description": "The Gateway could not authenticate the caller.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Authentication",
+        "x-mdk-status": 401,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_AUTH_UNAUTHORIZED",
+            "description": "The request carries no bearer token, or one that fails verification, such as an expired or revoked token.",
+            "fix": "Sign in, and send the access token as `Authorization: Bearer <token>`.",
+            "stage": "Authentication"
+          }
+        ]
+      },
+      "VerifierRefused": {
+        "description": "On a Gateway with no RBAC authority, an `auth: true` route runs the operator's `authVerifier` after the rate limit and before the body is read, in place of authentication and authorization. The route answers the verifier's own `4xx` error when it throws one whose message starts with `ERR_`. Otherwise it answers `401` `ERR_AUTH_UNAUTHORIZED`: when none is configured, when the verifier refuses the caller, and when it throws anything else. The operator who supplies the verifier documents its codes, and the `@tetherto/mdk-gateway` README describes the hook.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Custom verifier",
+        "x-mdk-status": "4XX",
+        "x-mdk-fix": "Send the credentials the operator's verifier expects."
+      },
+      "MediaTypeUnsupported": {
+        "description": "A request other than `GET` carries a body in a content type the Gateway has no parser for; it parses `application/json` and `text/plain`. The Gateway reads the body after the rate limit and the caller's authentication or custom verifier, and before authorization. The message is Fastify's `Unsupported Media Type`, not an `ERR_*` code.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Body parsing",
+        "x-mdk-status": 415,
+        "x-mdk-fix": "Send the body in the content type the operation declares."
+      },
+      "BodyTooLarge": {
+        "description": "A request other than `GET` carries a body larger than the Gateway's `bodyLimit`, `1048576` bytes by default. The Gateway reads the body after the rate limit and the caller's authentication or custom verifier, and before authorization. The message is Fastify's `Request body is too large`, not an `ERR_*` code.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Body parsing",
+        "x-mdk-status": 413,
+        "x-mdk-fix": "Send a smaller body, or have the operator raise `bodyLimit`."
+      },
+      "BodyMalformed": {
+        "description": "A request other than `GET` carries a body that does not parse as its content type, such as malformed JSON, or an empty body sent as `application/json`. The Gateway reads the body after the rate limit and the caller's authentication or custom verifier, and before authorization. The message is Fastify's parse error, not an `ERR_*` code.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Body parsing",
+        "x-mdk-status": 400,
+        "x-mdk-fix": "Send a body that parses as its `Content-Type`."
+      },
+      "Forbidden": {
+        "description": "The caller may not make this call.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Authorization",
+        "x-mdk-status": 403,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_AUTH_FORBIDDEN",
+            "description": "No `spec.rbac` rule grants the caller the route's verb on its resource, or the Gateway's copy of the policy is stale. The message names the caller, the verb, and the resource, and the Gateway's decision log names the reason.",
+            "fix": "Ask an operator for a role that grants the call in `spec.rbac`.",
+            "stage": "Authorization"
+          }
+        ]
+      },
+      "RequestInvalid": {
+        "description": "The request's path parameters, query, or body fail the schema the app's route table declares for the route. The message is Fastify's validation error, not an `ERR_*` code.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Body validation",
+        "x-mdk-status": 400,
+        "x-mdk-fix": "Send the parameters and body the operation declares."
+      },
+      "AppRequestRefused": {
+        "description": "The app runtime refused the request the Gateway forwarded.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 400,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_BAD_REQUEST",
+            "description": "The app runtime refused the request envelope the Gateway sent: malformed, with no `routeId`, or with an `actor` that is not an access token.",
+            "fix": "Run the Gateway and the app runtime from the same MDK release.",
+            "stage": "Forwarding"
+          },
+          {
+            "code": "ERR_APP_ROUTE_IS_STREAM",
+            "description": "The Gateway called a stream route as a unary one, such as when the Gateway and the app runtime loaded different route tables.",
+            "fix": "Restart the Gateway and the app runtime on the same route table.",
+            "stage": "Forwarding"
+          },
+          {
+            "code": "ERR_APP_ROUTE_NOT_STREAM",
+            "description": "The Gateway called a unary route as a stream, such as when the Gateway and the app runtime loaded different route tables.",
+            "fix": "Restart the Gateway and the app runtime on the same route table.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "AppRouteNotFound": {
+        "description": "The app runtime has no such route.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 404,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_ROUTE_NOT_FOUND",
+            "description": "The app runtime has no route with the id the Gateway forwarded, such as when the Gateway and the app runtime loaded different route tables.",
+            "fix": "Restart the Gateway and the app runtime on the same route table.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "AppRuntimeBadGateway": {
+        "description": "The Gateway could not reach the app runtime, or could not read its answer.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 502,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_PROTOCOL_VERSION",
+            "description": "The app runtime answered in a different protocol version from the Gateway's client.",
+            "fix": "Run the Gateway and the app runtime from the same MDK release.",
+            "stage": "Forwarding"
+          },
+          {
+            "code": "ERR_APP_RUNTIME_UNAVAILABLE",
+            "description": "The app runtime is unreachable, does not allow the Gateway's key, or closed or garbled its reply.",
+            "fix": "Check that the app runtime is running and allows the Gateway's key, then retry. A call that changes something may have run before its reply was lost, so check its result first.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "AppRuntimeNotStarted": {
+        "description": "The app runtime is not serving yet.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 503,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_RUNTIME_UNAVAILABLE",
+            "description": "The app runtime has not published its key file: it has not started yet, or it has stopped.",
+            "fix": "Start the app runtime, or retry once it has started.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "AppRuntimeTimeout": {
+        "description": "The app runtime did not answer in time.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 504,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_RUNTIME_TIMEOUT",
+            "description": "The app runtime sent no answer, or no stream head, within the Gateway's `appTimeoutMs`, `60000` by default. The Gateway stops waiting, but the route's controller is not stopped, so the call may still complete.",
+            "fix": "Retry a call that only reads. For a call that changes something, check its result or the device's state before sending it again. If it repeats, check the route's controller, or raise `appTimeoutMs`.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "ControllerError": {
+        "description": "An error the route's controller throws arrives with its `statusCode` when that is `400` or more, else `403` for `ERR_KERNEL_ACTION_FORBIDDEN` (the Kernel refused the call under `spec.rbac`), `400` for any other `ERR_*` error, and `500` for anything else. A message that does not start with `ERR_` arrives as the status text, such as `Internal Server Error`, and the app runtime logs the original. The app's route table declares the codes its controllers throw.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Controller",
+        "x-mdk-fix": "Act on the code as the operation declares it."
+      },
+      "KernelClientError": {
+        "description": "A controller that passes on an error from its Kernel client relays the client's `ERR_*` code, which arrives as `400` by the controller rule, or `403` for `ERR_KERNEL_ACTION_FORBIDDEN`. The `@tetherto/mdk-client` README documents the client's transport codes, and the `@tetherto/mdk-kernel` README the Kernel's refusals.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Controller",
+        "x-mdk-fix": "Act on the code as the package that throws it documents."
+      }
+    }
+  }
+}

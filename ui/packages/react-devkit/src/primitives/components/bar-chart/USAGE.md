@@ -54,3 +54,6 @@ const data = {
 - Bar datasets automatically receive a vertical gradient fill derived from `backgroundColor`. Pass `backgroundColor` as a function to opt out.
 - For mixed bar + line charts pass the dataset `type: 'line'` inside `data.datasets` and use `data` typed as `any`
 - `showDataLabels` adds `chartjs-plugin-datalabels`; it adds 20 px of top padding to prevent label clipping
+- Clicking a legend item hides its series and dims the item; swatches are filled at 0.2 opacity. A dataset that starts
+  with `hidden: true` is dimmed the same way. `buildBarChartOptions` keeps this legend, so options built with it don't
+  fall back to Chart.js's struck-through labels.

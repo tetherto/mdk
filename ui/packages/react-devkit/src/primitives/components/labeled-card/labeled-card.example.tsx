@@ -4,21 +4,13 @@
 import { LabeledCard } from '@tetherto/mdk-react-devkit'
 
 const Placeholder = ({ text }: { text: string }) => (
-  <div
-    style={{
-      padding: '12px 16px',
-      background: 'var(--mdk-color-surface-secondary, #1a1a2e)',
-      borderRadius: 4,
-      color: 'var(--mdk-color-text-secondary, #888)',
-      fontSize: 13,
-    }}
-  >
+  <div className="mdk-example-panel mdk-example-panel--compact mdk-example-surface mdk-example-caption">
     {text}
   </div>
 )
 
 export const LabeledCardExample = () => (
-  <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+  <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-lg">
     {/* Basic */}
     <LabeledCard label="Device Overview">
       <Placeholder text="Device stats here" />

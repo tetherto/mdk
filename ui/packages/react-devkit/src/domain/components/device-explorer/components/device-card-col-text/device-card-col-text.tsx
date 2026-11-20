@@ -18,6 +18,7 @@ export const DeviceCardColText = ({
 }: DeviceCardColTextProps): JSX.Element => {
   return (
     <div
+      // oxlint-disable-next-line react/forbid-dom-props -- forwards the consumer's style prop
       style={style}
       className={`mdk-device-card-col-text${className ? ` ${className}` : ''}`}
     >

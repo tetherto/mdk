@@ -51,6 +51,8 @@ need more than one skill in order.
 | Deploy / run / register apps in `mdk.yaml` | `mdk-deployment` | project `mdk.yaml` |
 | Size a site from a description (Workers, host tier, envelope) | `mdk-site-sizing` | [`mdk-site-sizing/references/envelope.json`](../mdk-site-sizing/references/envelope.json) |
 | Security-audit packages before an npm publish | `mdk-publish-security` | [`mdk-publish-security/references/vuln-classes.md`](../mdk-publish-security/references/vuln-classes.md) |
+| Security-review a vendor device Worker before a site installs or upgrades it | `mdk-worker-security` | [`mdk-worker-security/references/worker-review.md`](../mdk-worker-security/references/worker-review.md) |
+| Security-review a vendor MDK App before a site adds or upgrades it | `mdk-app-security` | [`mdk-app-security/references/app-review.md`](../mdk-app-security/references/app-review.md) |
 
 ### Composite prompts (use multiple skills, in order)
 
@@ -62,7 +64,7 @@ Prompts like **"create a UI to show \<metric\> for a \<device\>"** are
 | 1    | *(discovery)* | Resolve each `mdk.yaml` → `spec.workers[].package` to its `mdk-contract.json` at the package root (or legacy `plugin/mdk-contract.json`); confirm the telemetry channel, unit, and brand/fingerprint exist |
 | 2    | `mdk-app-routes`                 | If no Gateway route returns that shaped metric, `mdk create app <name>` (scaffolds + registers under `mdk.yaml` → `spec.apps`; manifest rules in `mdk-create-app`) then write the controller + `plugin/mdk-plugin.json` |
 | 3    | `mdk-deployment`                 | Restart with `mdk run` (or `mdk run app <name>`) as needed |
-| 4    | `mdk-ui-component` | Data (`mdkFetch`) → hook (`toQueryView` view) → presentational component → thin page, registered in the app's `defineMdkApp` (or a dashboard's `routes.ts`); props from [`ui-registry.json`](../mdk-ui-component/references/ui-registry.json) only |
+| 4    | `mdk-ui-component` | Data (`mdkFetch`) → hook (`toQueryView` view) → presentational component → thin page, registered in the app's `defineMdkApp` (or a dashboard's `routes.ts`); props from [`ui-registry/`](../mdk-ui-component/references/ui-registry/index.json) only |
 | 5    | `mdk-deployment`                 | Verify with `curl` + running dashboard |
 
 Skip step 2–3 when the route already exists and returns the right JSON.
@@ -96,6 +98,8 @@ User: "show / UI / dashboard for <metric> on <device family>"
 | "Start Kernel + Worker + Gateway"                      | `mdk-deployment`                         |
 | "Size this site / how many Workers for N miners"       | `mdk-site-sizing`                        |
 | "Audit the packages before we publish"                 | `mdk-publish-security`                   |
+| "Is whatsminer-mdk-worker safe to install?"            | `mdk-worker-security`                    |
+| "Security-review the demo app before we add it"        | `mdk-app-security`                       |
 | "What permissions does this app need?" / "the app gets 403 from the Kernel" | `mdk-app-rbac`      |
 
 ## Non-negotiable invariants

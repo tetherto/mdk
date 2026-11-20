@@ -36,6 +36,7 @@ const SkeletonBlock = React.forwardRef<HTMLDivElement, SkeletonBlockProps>(
       <div
         ref={ref}
         className={cn('mdk-skeleton mdk-skeleton__line', className)}
+        // oxlint-disable-next-line react/forbid-dom-props -- size computed from the width/height props
         style={computedStyle}
         {...props}
       />

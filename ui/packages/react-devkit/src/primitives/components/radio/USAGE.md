@@ -15,7 +15,7 @@ Accessible radio buttons built on Radix UI `@radix-ui/react-radio-group`. Provid
 | `color` | Optional | `"success" \| "warning" \| "error" \| "primary" \| "default"` | `"primary"` | Color variant when checked |
 | `indicatorClassName` | Optional | `string` | - | Custom className for the indicator element |
 | `label` | Optional | `string` | - | Label text (or use children for custom content) |
-| `radius` | Optional | `"small" \| "none" \| "medium" \| "large" \| "full"` | `"full"` | Border radius variant (full makes it circular) |
+| `radius` | Optional | `"none" \| "small" \| "medium" \| "large" \| "full"` | `"full"` | Border radius variant (full makes it circular) |
 | `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Size variant of the radio |
 
 ### `RadioCard` props
@@ -28,7 +28,7 @@ Accessible radio buttons built on Radix UI `@radix-ui/react-radio-group`. Provid
 | `color` | Optional | `"success" \| "warning" \| "error" \| "primary" \| "default"` | `"primary"` | Color variant when checked |
 | `indicatorClassName` | Optional | `string` | - | Custom className for the indicator element |
 | `label` | Optional | `string` | - | Label text (or use children for custom content) |
-| `radius` | Optional | `"small" \| "none" \| "medium" \| "large" \| "full"` | `"full"` | Border radius variant (full makes it circular) |
+| `radius` | Optional | `"none" \| "small" \| "medium" \| "large" \| "full"` | `"full"` | Border radius variant (full makes it circular) |
 | `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Size variant of the radio |
 
 ### `RadioGroup` props

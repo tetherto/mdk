@@ -39,7 +39,7 @@ import { writeProjectEnv } from '../lib/env-file.js';
 import { validateApp } from '../lib/app-package.js';
 import { grantApp } from '../lib/rbac.js';
 import { resolveProjectPackageDir } from '../lib/runtime.js';
-import { createDashboard, dashboardNameFromStack } from '../lib/dashboard.js';
+import { createDashboard, dashboardNameFromStack, LEGACY_PEER_DEPS_RETRY_NOTICE } from '../lib/dashboard.js';
 import {
   addFileDependency,
   ensureProjectGitignore,
@@ -49,6 +49,7 @@ import {
 import { theme, badge, banner, kvBlock, cmdBlock, tick } from '../lib/theme.js';
 import { pkg } from '../lib/pkg.js';
 import { NAME_RE } from '../lib/names.js';
+import { failureText } from '../lib/flags.js';
 
 const AGENT_CLIENTS = [
   { value: 'cursor', label: 'Cursor' },
@@ -340,7 +341,7 @@ async function runOnboard(): Promise<void> {
     }
   } catch (error) {
     w.stop(theme.warn('Could not write the project files'));
-    log.error(error instanceof Error ? error.message : String(error));
+    log.error(failureText(error));
     bail();
   }
 
@@ -493,6 +494,10 @@ async function runOnboard(): Promise<void> {
     if (result.ok) {
       dashboardPath = result.appPath;
       ui.stop(`${tick} UI dashboard scaffolded${dashboardPath ? ` at ${theme.value(dashboardPath)}` : ''}`);
+      // The scaffold succeeds even when npm does not, so say so rather than
+      // leaving the operator to discover it at `mdk run dashboard`.
+      if (result.installWarning) log.warn(`Dashboard dependencies not installed: ${result.installWarning}`);
+      else if (result.installRetried) log.message(theme.muted(LEGACY_PEER_DEPS_RETRY_NOTICE));
     } else {
       ui.stop(theme.warn(`UI dashboard skipped: ${result.message}`));
       if (result.detail) log.message(theme.muted(result.detail));

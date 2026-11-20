@@ -143,7 +143,7 @@ test('pipeToResponse writes the head and resolves after the body', async (t) => 
   out.writeHead = (status, headers) => written.push([status, headers])
   const done = pipeToResponse({ statusCode: 201, headers: { a: 'b' }, stream: body }, out)
   body.end('hello')
-  await done
+  t.is(await done, undefined, 'a completed body resolves with nothing')
   t.alike(written, [[201, { a: 'b' }]])
   t.is(out.read().toString(), 'hello')
 
@@ -151,7 +151,7 @@ test('pipeToResponse writes the head and resolves after the body', async (t) => 
   const sink = new PassThrough()
   sink.writeHead = () => {}
   const aborted = pipeToResponse({ statusCode: 200, headers: {}, stream: broken }, sink)
-  broken.destroy(new Error('gone'))
-  await aborted
-  t.pass('resolves even when the stream is torn down')
+  const gone = Object.assign(new Error('ERR_APP_STREAM_OVERFLOW: r'), { code: 'ERR_APP_STREAM_OVERFLOW' })
+  broken.destroy(gone)
+  t.is(await aborted, gone, 'resolves, not rejects, with the error that tore it down')
 })

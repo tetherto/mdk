@@ -101,10 +101,11 @@ function createStubServices () {
       updateThing: async (params) => ({ ...params, updatedAt: Date.now() }),
       forgetThings: async (params) => (params.ids || []).length || 1,
       getThingConf: async () => ({ pool: 'stratum+tcp://pool.example.com:3333', workerName: 'WM001' }),
-      listDevices: () => [
+      // Honours `query.id` and paging as ProvisioningService.listDevices does.
+      listDevices: ({ query, offset = 0, limit = 100 } = {}) => [
         { id: 'wm001', type: 'miner-wm-m56s', tags: ['whatsminer'], info: { serialNum: 'WM001' }, opts: { address: '192.168.1.10', port: 4028 } },
         { id: 'wm002', type: 'miner-wm-m56s', tags: ['whatsminer'], info: { serialNum: 'WM002' }, opts: { address: '192.168.1.11', port: 4028 } }
-      ],
+      ].filter((dev) => !query?.id || dev.id === query.id).slice(offset, offset + limit),
       listDeviceIds: () => ['wm001', 'wm002']
     },
     stats: {
@@ -162,9 +163,9 @@ async function telemetryPull (deviceId, query) {
   const channel = makeInProcessChannel(runtime)
   const { registry } = await registeredReadyRegistry(channel)
   const tc = new TelemetryCollector({ registry, workerChannel: new WorkerChannel({ timeout: 5000 }) })
-  // For queries that don't need a specific device (e.g. logs_multi all-devices),
-  // route via wm001 since TelemetryCollector.pull needs a resolvable deviceId to find the worker.
-  return tc.pull(deviceId || 'wm001', query)
+  // No device: a Worker-scoped read (pullWorkerQuery), answered per worker.
+  if (!deviceId) return (await tc.pullWorkers({ ...query, workers: ['wm-rack-1'] })).workers['wm-rack-1']
+  return tc.pull(deviceId, query)
 }
 
 /**
@@ -202,7 +203,7 @@ async function commandDispatch (command, params, deviceId) {
 // Reference: the reference app's kernel worker constants.js RPC_METHODS (read ops)
 
 test('parity[telemetry] list → old listThings: all registered devices returned', async (t) => {
-  const data = await telemetryPull('wm001', { type: 'list' })
+  const data = await telemetryPull(null, { type: 'list' })
   t.ok(data, 'response received')
   t.ok(data.things, 'things array present')
   t.is(data.things.length, 2, '2 devices in list')
@@ -212,6 +213,9 @@ test('parity[telemetry] list → old listThings: all registered devices returned
   // the provisioning-backed list carries identity/config fields only.
   t.is(data.things[0].type, 'miner-wm-m56s', 'device type included')
   t.is(data.things[0].address, '192.168.1.10', 'device address included')
+
+  const addressed = await telemetryPull('wm001', { type: 'list' })
+  t.alike(addressed.things.map(th => th.id), ['wm001'], 'a device-addressed list holds that device only')
 })
 
 test('parity[telemetry] count → old getThingsCount: device count per worker', async (t) => {
@@ -265,11 +269,15 @@ test('parity[telemetry] settings → old getWrkSettings: worker settings object'
 })
 
 test('parity[telemetry] stats → old aggrStats: aggregated per-worker statistics', async (t) => {
-  const data = await telemetryPull('wm001', { type: 'stats' })
+  const data = await telemetryPull(null, { type: 'stats' })
   t.ok(data, 'response received')
   t.ok(data.stats, 'stats present')
   t.is(data.stats.totalHashrate, 180.5, 'totalHashrate aggregated')
   t.is(data.stats.count, 2, 'device count in stats')
+  t.alike(data.stats.deviceIds, [], 'a Worker-scoped read aggregates the whole Worker')
+
+  const addressed = await telemetryPull('wm001', { type: 'stats', deviceIds: ['wm001', 'wm002'] })
+  t.alike(addressed.stats.deviceIds, ['wm001'], 'a device-addressed read aggregates that device only')
 })
 
 test('parity[telemetry] ext_data → old getWrkExtData: extended worker metadata', async (t) => {
@@ -318,15 +326,15 @@ test('parity[telemetry] metrics all devices → old pullAll fan-out across entir
 })
 
 test('parity[telemetry] logs_multi → old tailLogMulti: logs from multiple devices in one request', async (t) => {
-  const data = await telemetryPull('wm001', { type: 'logs_multi', deviceIds: ['wm001', 'wm002'] })
+  const data = await telemetryPull(null, { type: 'logs_multi', deviceIds: ['wm001', 'wm002'] })
   t.ok(data, 'response received')
   t.ok(Array.isArray(data.logs), 'logs is an array')
   t.is(data.logs.length, 2, 'logs from both devices combined')
-  // single-device fallback: TelemetryCollector always provides a deviceId for routing,
-  // so the runtime receives deviceId='wm001' and fans to ['wm001'] when no deviceIds in query
+  // A device-addressed read stays within the addressed device whatever the list names.
+  const addressed = await telemetryPull('wm001', { type: 'logs_multi', deviceIds: ['wm001', 'wm002'] })
+  t.alike(addressed.logs.map(l => l.deviceId), ['wm001'], 'the list does not widen a device-addressed read')
   const dataFallback = await telemetryPull('wm001', { type: 'logs_multi' })
-  t.ok(Array.isArray(dataFallback.logs), 'single-device fallback when no deviceIds in query')
-  t.is(dataFallback.logs.length, 1, 'falls back to routing deviceId only')
+  t.is(dataFallback.logs.length, 1, 'no list reads the addressed device')
 })
 
 // SKIPPED: tailLogCustomRangeAggr

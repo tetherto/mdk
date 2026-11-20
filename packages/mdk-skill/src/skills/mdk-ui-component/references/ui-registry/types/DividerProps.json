@@ -1,0 +1,1 @@
+{"name":"DividerProps","path":"src/primitives/components/divider/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** * Line orientation * @default 'horizontal' */ orientation?: DividerOrientation /** * Line style * @default false */ dashed?: boolean /** * Renders a dotted line (takes precedence over `dashed`) * @default false */ dotted?: boolean /*…"}

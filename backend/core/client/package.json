@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-client",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "MDK protocol client — HRPC (RPC listener) transport for Kernel",
   "main": "index.js",
   "keywords": [
@@ -14,22 +14,22 @@
     "node": ">=24"
   },
   "scripts": {
-    "lint": "standard",
-    "lint:fix": "standard --fix",
+    "lint": "bfx-lint-js .",
+    "lint:fix": "bfx-lint-js . --fix",
     "test": "npm run lint && npm run test:unit",
     "test:unit": "NODE_ENV=test brittle tests/unit/*.js",
     "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
-    "@tetherto/mdk-identity": "^0.13.1",
-    "@tetherto/mdk-kernel": "^0.13.1",
+    "@tetherto/mdk-identity": "^0.14.0",
+    "@tetherto/mdk-kernel": "^0.14.0",
     "@hyperswarm/rpc": "^3.5.0",
     "debug": "^4.4.1",
     "hyperdht": "6.34.1"
   },
   "devDependencies": {
     "brittle": "3.18.0",
-    "standard": "17.1.0"
+    "@bitfinex/lint-js": "^1.0.0"
   },
   "repository": {
     "type": "git",

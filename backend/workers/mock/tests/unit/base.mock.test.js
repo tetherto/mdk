@@ -68,6 +68,16 @@ test('_validateType - passes when ctx.type matches a declared type (case-insensi
   t.pass()
 })
 
+test('_resolveType - accepts the plugin device tag and `model` as the mock type', (t) => {
+  class Typed extends BaseMock { static TYPES = ['pm180', 'b23'] }
+  t.is(new Typed({ type: 'powermeter-satec-pm180' }).ctx.type, 'pm180', 'legacy tag resolves to its model')
+  t.is(new Typed({ model: 'B23' }).ctx.type, 'b23', 'model is an alias for type')
+  t.is(new Typed({ type: 'miner-av-a1346' }).ctx.type, 'miner-av-a1346', 'an unsupported tag is left for _validateType')
+  t.exception(() => new Typed({ type: 'miner-av-a1346' })._validateType(), /ERR_UNSUPPORTED/)
+  t.is(new Typed({}).ctx.type, '', 'no type at all')
+  t.execution(() => new Typed({})._validateType(), 'absent type passes: the default state stands in')
+})
+
 test('_validateType - throws ERR_UNSUPPORTED when ctx.type does not match', (t) => {
   class TypedMock extends BaseMock { static TYPES = ['foo'] }
   const mock = new TypedMock({ type: 'unknown' })
@@ -239,6 +249,16 @@ test('parseCli - parses argv with declared options and defaults', (t) => {
   t.is(argv.delay, 0, 'defaults delay')
   t.is(argv.error, false, 'defaults error')
   t.pass()
+})
+
+test('parseCli - refuses stray positional arguments instead of ignoring them', (t) => {
+  class TestMock extends BaseMock { static dir = CLI_FIXTURE_DIR }
+
+  const originalArgv = process.argv
+  process.argv = ['node', 'server.js', '--type', 'sample', '10883', 'id=D40-DEV']
+  t.teardown(() => { process.argv = originalArgv })
+
+  t.exception(() => TestMock.parseCli(), /ERR_MOCK_CLI_POSITIONAL: unexpected argument\(s\) 10883 id=D40-DEV/)
 })
 
 test('parseCli - merges extraCliOptions', (t) => {

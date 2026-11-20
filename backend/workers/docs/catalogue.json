@@ -215,7 +215,7 @@
         "A1346"
       ],
       "package": "backend/workers/miners/avalon",
-      "contract": "backend/workers/miners/avalon/plugin/mdk-contract.json",
+      "contract": "backend/workers/miners/avalon/mdk-contract.json",
       "link": "backend/workers/miners/avalon/README.md",
       "usage": "backend/workers/miners/avalon/USAGE.md",
       "usageLabel": "USAGE.md",
@@ -232,7 +232,7 @@
         "F2POOL-BTC"
       ],
       "package": "backend/workers/minerpools/f2pool",
-      "contract": "backend/workers/minerpools/f2pool/plugin/mdk-contract.json",
+      "contract": "backend/workers/minerpools/f2pool/mdk-contract.json",
       "link": "backend/workers/minerpools/f2pool/README.md",
       "usage": null,
       "usageLabel": "USAGE.md",
@@ -253,7 +253,7 @@
         "REU615"
       ],
       "package": "backend/workers/power-meter/abb",
-      "contract": "backend/workers/power-meter/abb/plugin/mdk-contract.json",
+      "contract": "backend/workers/power-meter/abb/mdk-contract.json",
       "link": "backend/workers/power-meter/abb/README.md",
       "usage": null,
       "usageLabel": "USAGE.md",
@@ -270,7 +270,7 @@
         "PM180"
       ],
       "package": "backend/workers/power-meter/satec",
-      "contract": "backend/workers/power-meter/satec/plugin/mdk-contract.json",
+      "contract": "backend/workers/power-meter/satec/mdk-contract.json",
       "link": "backend/workers/power-meter/satec/README.md",
       "usage": null,
       "usageLabel": "USAGE.md",
@@ -288,7 +288,7 @@
         "PM5340"
       ],
       "package": "backend/workers/power-meter/schneider",
-      "contract": "backend/workers/power-meter/schneider/plugin/mdk-contract.json",
+      "contract": "backend/workers/power-meter/schneider/mdk-contract.json",
       "link": "backend/workers/power-meter/schneider/README.md",
       "usage": null,
       "usageLabel": "USAGE.md",

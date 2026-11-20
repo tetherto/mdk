@@ -7,7 +7,7 @@ plus its plugin: a route manifest ([`plugin/mdk-plugin.json`](./plugin/mdk-plugi
 
 ## Layout
 
-```
+```text
 mdk-app.yaml                # app manifest: id, version, displayName, permissions, config defaults
 plugin/mdk-plugin.json      # route manifest: id, handler, http.method + http.path
 plugin/lib/client.js        # the app runtime's Kernel client, from @tetherto/mdk-gateway/plugin
@@ -45,6 +45,12 @@ The return value is sent as JSON (HTTP 200), so return plain data: a `Buffer` wo
 Mark a route that only reads with `"safety": "read-only"`: `mdk run mcp` turns routes into agent tools and
 withholds every other one as a write unless it is started with `--allow-write`. Mark a route that changes
 devices with `"safety": "write"`.
+
+`plugin/mdk-plugin.json` starts with `"routeTableVersion": "1"`. Keep it: `mdk validate app` then reports a route that
+breaks the route-table schema as an error, not a warning.
+
+Give each route a `description` that says what it does and when to call it. It becomes the description of its agent tool,
+and the route's purpose in an HTTP reference if you generate one; `mdk validate app` warns about a route without one.
 
 No route is open: a caller needs an access token (`401` without one) and a
 `spec.rbac` rule for the route (`403` without one). So a route needs a rule in the

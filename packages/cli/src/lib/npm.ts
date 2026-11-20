@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isFileLinkedFromProject, isWorkspaceMember } from './project.js';
 
@@ -8,6 +9,8 @@ export interface InstallResult {
   /** Skipped when there is nothing to install (no package.json) or `run: false`. */
   skipped?: boolean;
   message?: string;
+  /** npm's exit code when it ran and failed (unset when it never started). */
+  exitCode?: number;
 }
 
 export interface ScaffoldInstall extends InstallResult {
@@ -48,8 +51,98 @@ function shellArg(spec: string): string {
 }
 
 /**
- * Runs `npm install` in `dir` (best-effort). Streams npm's output so progress is
- * visible. Never throws: a missing `package.json`, a missing `npm`, or a
+ * The gist of a failed npm run: the `npm error code` and the first message line
+ * after it (e.g. `E404 404 Not Found - GET https://…`). Reads npm's stderr
+ * (`npm error …`, or `npm ERR! …` before npm 10) and its debug log, which holds
+ * the same lines as `<n> error …`. Undefined when there are no error lines.
+ */
+export function npmErrorSummary(output: string): string | undefined {
+  const lines = output
+    .split(/\r?\n/)
+    .map((line) => /^(?:npm (?:error|ERR!)|\d+ error)\s?(.*)$/.exec(line)?.[1]?.trim())
+    .filter((line): line is string => !!line && !/^A complete log of this run/.test(line));
+  const code = lines.find((line) => /^code\s/.test(line))?.slice(5).trim();
+  const message = lines.find((line) => !/^(code|errno|syscall)\s/.test(line) && !/^\d{3}$/.test(line));
+  if (!code && !message) return undefined;
+  return [code, message].filter(Boolean).join(' ');
+}
+
+/** A fresh dir for npm's debug log, or undefined when the temp dir can't take one. */
+function makeLogsDir(): string | undefined {
+  try {
+    return mkdtempSync(join(tmpdir(), 'mdk-npm-logs-'));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Removes the logs dir; a leftover temp dir is not worth failing an install over. */
+function removeLogsDir(logsDir: string | undefined): void {
+  if (!logsDir) return;
+  try {
+    rmSync(logsDir, { recursive: true, force: true });
+  } catch {
+    // best-effort
+  }
+}
+
+/** Every debug log npm wrote to `logsDir`, joined; empty when there are none. */
+function readNpmDebugLogs(logsDir: string | undefined): string {
+  if (!logsDir) return '';
+  try {
+    return readdirSync(logsDir)
+      .filter((name) => name.endsWith('.log'))
+      .map((name) => readFileSync(join(logsDir, name), 'utf8'))
+      .join('\n');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Runs `npm install <args>` in `dir` with the terminal handed straight to npm.
+ * npm draws its progress spinner only when stdout and stderr are both TTYs, so
+ * piping stderr (even to forward it live) would leave a cold install looking
+ * hung. To still put npm's own error in a failure message, npm writes its debug
+ * log to a fresh `--logs-dir`, read only when npm fails. A failed run keeps that
+ * log, since npm's last stderr line points the user at it; a clean run removes
+ * it. The logs dir is best-effort: when it can't be made, npm runs without one
+ * and a failure reports just the exit code. `what` names the fallback for a
+ * missing npm.
+ */
+function runNpmInstall(dir: string, args: string[], what: string): InstallResult {
+  const logsDir = makeLogsDir();
+  const logsArgs = !logsDir ? [] : [npmNeedsShell() ? `--logs-dir="${logsDir}"` : `--logs-dir=${logsDir}`];
+  const res = spawnSync(npmBin(), ['install', ...args, ...logsArgs], {
+    cwd: dir,
+    stdio: 'inherit',
+    env: process.env,
+    shell: npmNeedsShell(),
+  });
+
+  if (res.error) {
+    removeLogsDir(logsDir);
+    const missing = (res.error as NodeJS.ErrnoException).code === 'ENOENT';
+    return {
+      ok: false,
+      message: missing ? `npm was not found on PATH — ${what} manually.` : `npm install failed to start: ${res.error.message}`,
+    };
+  }
+  if (typeof res.status === 'number' && res.status !== 0) {
+    const summary = npmErrorSummary(readNpmDebugLogs(logsDir));
+    return {
+      ok: false,
+      message: `npm install exited with code ${res.status}${summary ? `: ${summary}` : ''}.`,
+      exitCode: res.status,
+    };
+  }
+  removeLogsDir(logsDir);
+  return { ok: true };
+}
+
+/**
+ * Runs `npm install` in `dir` (best-effort). npm owns the terminal, so its
+ * progress is visible. Never throws: a missing `package.json`, a missing `npm`, or a
  * non-zero exit is reported via the result so the scaffold still succeeds and
  * the user can install manually.
  */
@@ -59,26 +152,7 @@ export function installDeps(dir: string, run = true, extraArgs: string[] = []): 
     return { ok: true, skipped: true, message: 'no package.json — nothing to install' };
   }
 
-  const res = spawnSync(npmBin(), ['install', ...extraArgs], {
-    cwd: dir,
-    stdio: 'inherit',
-    env: process.env,
-    shell: npmNeedsShell(),
-  });
-
-  if (res.error) {
-    const missing = (res.error as NodeJS.ErrnoException).code === 'ENOENT';
-    return {
-      ok: false,
-      message: missing
-        ? 'npm was not found on PATH — install dependencies manually.'
-        : `npm install failed to start: ${res.error.message}`,
-    };
-  }
-  if (typeof res.status === 'number' && res.status !== 0) {
-    return { ok: false, message: `npm install exited with code ${res.status}.` };
-  }
-  return { ok: true };
+  return runNpmInstall(dir, extraArgs, 'install dependencies');
 }
 
 /**
@@ -100,26 +174,7 @@ export function installPackages(dir: string, packages: string[], run = true, ext
   const invalid = packages.find((spec) => !INSTALL_SPEC_RE.test(spec));
   if (invalid) return { ok: false, message: `refusing to install "${invalid}": not a valid npm package or GitHub spec` };
 
-  const res = spawnSync(npmBin(), ['install', ...extraArgs, ...packages.map(shellArg)], {
-    cwd: dir,
-    stdio: 'inherit',
-    env: process.env,
-    shell: npmNeedsShell(),
-  });
-
-  if (res.error) {
-    const missing = (res.error as NodeJS.ErrnoException).code === 'ENOENT';
-    return {
-      ok: false,
-      message: missing
-        ? 'npm was not found on PATH — install the plugins manually.'
-        : `npm install failed to start: ${res.error.message}`,
-    };
-  }
-  if (typeof res.status === 'number' && res.status !== 0) {
-    return { ok: false, message: `npm install exited with code ${res.status}.` };
-  }
-  return { ok: true };
+  return runNpmInstall(dir, [...extraArgs, ...packages.map(shellArg)], 'install the plugins');
 }
 
 /**

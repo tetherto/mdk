@@ -1,0 +1,1 @@
+{"name":"AlertConfirmationModalProps","path":"src/domain/components/alerts/current-alerts/alert-confirmation-modal/alert-confirmation-modal.tsx","kind":"type","description":"","public":true,"definition":"{ /** Controls dialog visibility */ isOpen: boolean /** Called when the user confirms the action */ onOk: VoidFunction }"}

@@ -121,7 +121,8 @@ export type LightWeightLineChartProps = {
    */
   unit?: string
   /**
-   * Starts the value axis at 0
+   * Starts the value axis at 0. A series whose values are all `>= 0` never gets a negative axis
+   * in any case, including one sitting flat at 0
    */
   beginAtZero?: boolean
   /**

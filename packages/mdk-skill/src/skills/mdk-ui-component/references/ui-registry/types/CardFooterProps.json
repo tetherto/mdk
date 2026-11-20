@@ -1,0 +1,1 @@
+{"name":"CardFooterProps","path":"src/primitives/components/card/index.tsx","kind":"type","description":"Props for {@link CardFooter} slot. Forwards all native `<div>` attributes","public":true,"definition":"HTMLAttributes<HTMLDivElement>"}

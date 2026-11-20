@@ -6,6 +6,11 @@ const { collectDevices, powerModesFor, isEmpty, json } = require('../lib/site')
 
 const DEVICE_ATTRS = ['telemetry', 'state', 'capabilities', 'power_modes']
 
+// The Kernel answers `{ error }` for a device it could not read, and a Worker
+// adds `deviceId` and `timestamp` to its own.
+const unread = (reply) => isEmpty(reply) || typeof reply.error === 'string'
+const because = (reply) => (typeof reply?.error === 'string' ? ` (${reply.error})` : '')
+
 module.exports = {
   schema: {
     ref: z.string().meta({ 'x-mdk-ref': 'device' }).describe('A device id taken from a previous result.'),
@@ -32,7 +37,7 @@ module.exports = {
     }
     if (attr === 'state') {
       const state = await mdkClient.pullState(ref)
-      return json({ summary: isEmpty(state) ? `${ref} reports no state.` : `State of ${ref}.`, ref, attr, value: state ?? null })
+      return json({ summary: unread(state) ? `${ref} reports no state${because(state)}.` : `State of ${ref}.`, ref, attr, value: state ?? null })
     }
     if (attr === 'power_modes') {
       const modes = (await powerModesFor(ref)).supportedPowerModes ?? null
@@ -45,7 +50,7 @@ module.exports = {
     }
     const telemetry = await mdkClient.pullTelemetry(ref, 'metrics')
     return json({
-      summary: isEmpty(telemetry) ? `${ref} reports no readings.` : `Live readings for ${ref}.`,
+      summary: unread(telemetry) ? `${ref} reports no readings${because(telemetry)}.` : `Live readings for ${ref}.`,
       ref,
       attr,
       value: telemetry ?? null

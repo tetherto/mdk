@@ -5,7 +5,7 @@ import { Button, SimpleTooltip } from '@tetherto/mdk-react-devkit'
 
 export const TooltipExample = () => {
   return (
-    <div style={{ display: 'flex', gap: 16 }}>
+    <div className="mdk-example-inline mdk-example-inline--gap-lg">
       <SimpleTooltip content="Refresh data" side="bottom">
         <Button>Refresh</Button>
       </SimpleTooltip>

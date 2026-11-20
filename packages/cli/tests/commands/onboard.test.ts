@@ -69,6 +69,7 @@ const createDashboardMock = vi.hoisted(() => vi.fn());
 vi.mock('../../src/lib/dashboard.js', () => ({
   createDashboard: createDashboardMock,
   dashboardNameFromStack: (name: string) => `${name}-dashboard`,
+  LEGACY_PEER_DEPS_RETRY_NOTICE: 'npm install failed, so it was retried with --legacy-peer-deps; the npm error above can be ignored.',
 }));
 
 const addFileDependencyMock = vi.hoisted(() => vi.fn());
@@ -577,6 +578,24 @@ describe('mdk onboard', () => {
     expect(text.indexOf('mdk run')).toBeLessThan(text.indexOf('mdk user add <name> --admin'));
     expect(text).toContain('mdk run dashboard');
     expect(text).not.toContain('npm run dev');
+  });
+
+  it('says the npm error can be ignored when the dashboard install succeeded on its retry', async () => {
+    const dir = makeTmpDir();
+    clack.text.mockResolvedValueOnce(dir).mockResolvedValueOnce('my-stack');
+    clack.confirm
+      .mockResolvedValueOnce(true) // add UI dashboard
+      .mockResolvedValueOnce(false) // skill
+      .mockResolvedValueOnce(true); // write mdk.yaml
+    clack.multiselect.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    createDashboardMock.mockResolvedValue({ ok: true, appPath: join(dir, 'apps', 'my-stack-dashboard'), installRetried: true });
+
+    await buildProgram().parseAsync(['node', 'mdk', 'onboard']);
+
+    expect(clack.log.message).toHaveBeenCalledWith(
+      expect.stringContaining('npm install failed, so it was retried with --legacy-peer-deps; the npm error above can be ignored.'),
+    );
+    expect(clack.log.warn).not.toHaveBeenCalledWith(expect.stringContaining('Dashboard dependencies not installed'));
   });
 
   it('reports two seed devices (plural) and an empty dashboard app path without an "at ..." suffix', async () => {

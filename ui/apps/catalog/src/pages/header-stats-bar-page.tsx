@@ -40,19 +40,19 @@ export const HeaderStatsBarPage = (): JSX.Element => (
 
     <DemoBlock
       title="Loading — all numbers undefined"
-      description="Each box renders an em-dash fallback when its value is missing, so the strip keeps its silhouette during initial fetch."
+      description="Each box renders an em-dash fallback when its value is missing. A site that has pools passes showPool so the pool row holds its space during the initial fetch instead of appearing when the query resolves."
     >
       <HeaderStatsBar>
-        <HeaderMinersBox />
-        <HeaderHashrateBox />
+        <HeaderMinersBox showPool />
+        <HeaderHashrateBox showPool />
         <HeaderConsumptionBox />
         <HeaderEfficiencyBox />
       </HeaderStatsBar>
     </DemoBlock>
 
     <DemoBlock
-      title="Partial data"
-      description="Some pool-side counts not yet available — fallback only fires for the missing fields."
+      title="Site with no pool"
+      description="No pool-side props passed, so the pool row is dropped rather than reading Pool —. The miners box keeps its app-side online / total ratio."
     >
       <HeaderStatsBar>
         <HeaderMinersBox total={2188} online={158} error={1} offline={57} appTotal={216} />

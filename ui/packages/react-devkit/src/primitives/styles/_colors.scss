@@ -205,11 +205,18 @@
     --mdk-button-primary-bg-hover-overlay: rgba(255, 255, 255, 0.15);
     --mdk-color-primary-10: color-mix(in srgb, var(--mdk-color-primary) 10%, transparent);
 
+    /* Form controls that sit side by side in a filter bar (Select, the date range button,
+       CurrencyToggler, the secondary Button) share one height, background and border.
+       The height is the outer box: each of them is `box-sizing: border-box`, so the border is inside it */
+    --mdk-control-height: var(--mdk-control-height-lg);
+    --mdk-control-bg: #17130f;
+    --mdk-control-border: #ffffff33;
+
     --mdk-button-secondary-text: #ffffffcc;
-    --mdk-button-secondary-border: #ffffff33;
+    --mdk-button-secondary-border: var(--mdk-control-border);
     --mdk-button-secondary-border-visible: rgba(255, 255, 255, 0.65);
     --mdk-button-secondary-border-hover: color-mix(in srgb, var(--mdk-color-primary) 50%, transparent);
-    --mdk-button-secondary-bg: #17130f;
+    --mdk-button-secondary-bg: var(--mdk-control-bg);
 
     --mdk-button-danger-bg: #ef4444;
     --mdk-button-danger-bg-hover: #f36060;

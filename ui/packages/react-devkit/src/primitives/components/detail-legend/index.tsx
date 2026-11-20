@@ -32,6 +32,7 @@ type DefaultColorBoxProps = { color: string }
 const DefaultColorBox = ({ color }: DefaultColorBoxProps) => (
   <div
     className="mdk-detail-legend__color-box"
+    // oxlint-disable-next-line react/forbid-dom-props -- per-item colour from the legend data
     style={{
       border: `1px solid ${color}`,
       backgroundColor: hexToOpacity(color),
@@ -77,7 +78,11 @@ export const DetailLegend = ({ items, onToggle, className }: DetailLegendProps) 
           )}
           onClick={() => onToggle?.(item.label, index)}
         >
-          <div className="mdk-detail-legend__icon" style={{ color: item.color }}>
+          <div
+            className="mdk-detail-legend__icon"
+            // oxlint-disable-next-line react/forbid-dom-props -- per-item colour from the legend data
+            style={{ color: item.color }}
+          >
             {item.icon ?? <DefaultColorBox color={item.color} />}
           </div>
           <div className="mdk-detail-legend__content">

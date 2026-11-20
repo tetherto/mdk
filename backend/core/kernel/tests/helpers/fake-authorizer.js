@@ -3,11 +3,11 @@
 /**
  * A stand-in KernelAuthorizer for router tests: `allow(action)` decides, the
  * identity is `{ kind: 'serviceaccount', sub }` bound to `roles`, and
- * `delegate` grants `actions: delegate`. An envelope with an `actor` token
+ * `delegate` grants `actions: delegate`, `canRead(workerId, actor)` grants `workers: read`. An envelope with an `actor` token
  * acts for the user named by the token itself, bound to `actorRoles`.
  * `calls` records what was asked.
  */
-function fakeAuthorizer ({ allow = () => true, sub = 'app:test', roles = ['test'], actorRoles = ['operator'], delegate = false, canWrite = () => true } = {}) {
+function fakeAuthorizer ({ allow = () => true, sub = 'app:test', roles = ['test'], actorRoles = ['operator'], delegate = false, canWrite = () => true, canRead = () => true } = {}) {
   const calls = []
   return {
     calls,
@@ -20,7 +20,8 @@ function fakeAuthorizer ({ allow = () => true, sub = 'app:test', roles = ['test'
       return { allowed: true, sub, roles, ...acting, identity: { kind: 'serviceaccount', sub }, ...(actor ? { actor } : {}) }
     },
     canDelegate: () => delegate,
-    canWriteDevice: (_identity, deviceId, actor) => canWrite(deviceId, actor)
+    canWriteDevice: (_identity, deviceId, actor) => canWrite(deviceId, actor),
+    canReadWorker: (_identity, workerId, actor) => canRead(workerId, actor)
   }
 }
 

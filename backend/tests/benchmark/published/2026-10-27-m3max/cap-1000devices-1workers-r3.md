@@ -181,7 +181,7 @@ workflow (see "What's measured vs. left blank" in the harness README).
 
 ### Alerts path
 
-Real condition, not injected: every device's temperature-warning threshold is forced below any real reading, so the devices's own alert trips on the first snap the Worker collects. Both rows below are n samples of one-per-device "time since this checklist started watching until the alert first appeared" — bounded below by the poll interval, and by the Worker's own snap interval above (`10000` ms): n = 0
+Induced condition: every device's temperature-warning threshold is forced below any real reading, so each device's own alert trips on the first snap the Worker collects. Both rows below are n samples of one-per-device "time since this checklist started watching until the alert first appeared" — bounded below by the poll interval, and by the Worker's own snap interval above (`10000` ms): n = 0
 | Operation | Boundary | p50 ms | p95 ms | p99 ms | max ms | n | errors |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Alert visible via Kernel (pull / list / query) | Consumer → Kernel → alert source | 133.0 | 133.0 | 133.0 | 133.0 | 1000 | 0 |

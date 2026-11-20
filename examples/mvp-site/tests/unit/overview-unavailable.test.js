@@ -7,8 +7,8 @@ const overview = require('../../backend/gateway-plugins/site/controllers/overvie
 // cannot be listed; the overview must say it is down instead of leaving its miners out silently.
 function fakeClient ({ forbidden = [] } = {}) {
   const workers = [
-    { workerId: 'worker-avalon', state: 'READY', healthState: 'HEALTHY', deviceIds: ['av-1'] },
-    { workerId: 'worker-antminer', state: 'READY', healthState: 'DEAD', deviceIds: ['am-1', 'am-2', 'am-3'] }
+    { workerId: 'worker-avalon', state: 'READY', healthState: 'HEALTHY', deviceIds: ['av-1'], deviceFamily: 'miner', brand: 'Avalon' },
+    { workerId: 'worker-antminer', state: 'READY', healthState: 'DEAD', deviceIds: ['am-1', 'am-2', 'am-3'], deviceFamily: 'miner', brand: 'Antminer' }
   ]
   return {
     listWorkers: async () => ({ workers }),
@@ -16,15 +16,11 @@ function fakeClient ({ forbidden = [] } = {}) {
       if (forbidden.includes(deviceId)) throw new Error('ERR_KERNEL_ACTION_FORBIDDEN: tenant may not read devices ' + deviceId)
       return {}
     },
-    pullTelemetry: async (deviceId, query) => {
-      if (deviceId !== 'av-1') throw new Error(`unexpected pull for ${deviceId}`)
-      if (query.type === 'config') return { config: { contract: { deviceFamily: 'miner' } } }
-      if (query.type === 'count') return { count: 1 }
-      if (query.type === 'list') {
-        return { things: [{ id: 'av-1', code: 'AV-1', info: { container: 'c1' }, last: { snap: { stats: { status: 'mining' } } } }] }
-      }
-      return null
-    }
+    pullWorkerQuery: async ({ workers: ids, type }) => {
+      if (ids.length !== 1 || ids[0] !== 'worker-avalon' || type !== 'list') throw new Error(`unexpected Worker read for ${ids.join(',')}: ${type}`)
+      return { workers: { 'worker-avalon': { things: [{ id: 'av-1', code: 'AV-1', info: { container: 'c1' }, last: { snap: { stats: { status: 'mining' } } } }] } } }
+    },
+    pullTelemetry: async (deviceId) => { throw new Error(`unexpected device pull for ${deviceId}`) }
   }
 }
 

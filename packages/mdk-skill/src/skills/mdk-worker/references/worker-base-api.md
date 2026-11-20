@@ -54,6 +54,9 @@ response envelope.
 | `kernelTopic` | no | Hex string or Buffer; when set, the runtime announces on this DHT topic |
 | `store` | no | Persistent store (Hyperbee-style) for the DHT/RPC seeds → stable public key across restarts; without it keys are random per boot |
 | `storeDir` | no | Directory for file-backed DHT/RPC seeds (same stability as `store`, for hosts that do not own a Hyperbee). Ignored when `store` is set |
+| `config` | no | The per-instance block from `mdk.yaml` `spec.workers[].config`. A directory-loaded plugin ([`WorkerRuntimeV2`](#directory-loaded-plugins-workerruntimev2)) reads it as `device.config`; a [`WorkerRuntime`](#handler-signature) plugin never sees it, since its `ctx.config` is the device's own `devices[].config`. The runtime reads its own keys from it (`telemetryPollIntervalMs`, `aggregateCacheTtlMs`, `telemetryRetention`, `telemetryArchive`) ahead of the contract's |
+| `telemetryStoreDir` | yes* | Where the telemetry collector keeps its series. *Only when the collector is on and `store` is unset; without any of `store`, `telemetryStoreDir` or `storeDir` the constructor throws `ERR_TELEMETRY_STORE_REQUIRED`. Defaults to `<storeDir>/telemetry` |
+| `telemetryArchiveDir` | no | Where `telemetryArchive` writes its NDJSON day files. Defaults to `<telemetryStoreDir>-archive` or `<storeDir>/telemetry-archive`; with none of them the constructor throws `ERR_TELEMETRY_ARCHIVE_DIR_REQUIRED` |
 | `allowedKeys` | yes* | Hex strings or Buffers naming the RPC callers the runtime accepts, normally `[kernel.getClientPublicKey()]`; `start()` throws `ERR_WORKER_ALLOWED_KEYS_REQUIRED` when empty. *Or `allowAll` |
 | `allowAll` | no | `true` accepts any caller and logs a warning at `start()`; local development only |
 | `services` | no | Worker-infra services (logs, settings, stats, comments, provisioning…). Served as built-ins ahead of plugin handlers and exposed to handlers as `ctx.services` |
@@ -117,6 +120,12 @@ device's context opens.
   metrics poll (never `env`, `opts` or `config`) — unless the contract itself
   declares a `health` channel, which always wins and should answer the same
   fields.
+- **Per-sweep read memo**: `require('@tetherto/mdk-worker/sweep-memo')()`,
+  called in the plugin's own module, returns `sweep(params, name, read)`. It
+  memoizes `read` on the identity of the `params` object the runtime passes,
+  which is shared by every handler of one poll sweep and fresh for every other
+  read, so channels of a device share one device call per sweep and a later
+  pull re-reads.
 
 `loadContract(dir)` and `createInstance({ dir, entries, device })` are also
 usable directly, without a runtime, for contract-level tests — see

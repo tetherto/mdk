@@ -57,9 +57,34 @@ describe('HeaderHashrateBox', () => {
     expect(screen.getAllByText('PH/s')).toHaveLength(2)
   })
 
-  it('renders em-dashes when both values are undefined', () => {
+  it('drops the pool row when no pool hashrate is given', () => {
+    render(<HeaderHashrateBox appPhs={12.345} />)
+    expect(screen.queryByText('Pool')).not.toBeInTheDocument()
+    expect(screen.getAllByText('PH/s')).toHaveLength(1)
+  })
+
+  it('renders one em-dash and no pool row when both values are undefined', () => {
     render(<HeaderHashrateBox />)
-    expect(screen.getAllByText('—')).toHaveLength(2)
+    expect(screen.getAllByText('—')).toHaveLength(1)
+    expect(screen.queryByText('Pool')).not.toBeInTheDocument()
+  })
+
+  it('keeps the pool row when only the pool value is given', () => {
+    render(<HeaderHashrateBox poolPhs={11.111} />)
+    expect(screen.getByText('Pool')).toBeInTheDocument()
+    expect(screen.getByText('11.111')).toBeInTheDocument()
+  })
+
+  it('holds the pool row open with showPool while the value loads', () => {
+    render(<HeaderHashrateBox appPhs={12.345} showPool />)
+    expect(screen.getByText('Pool')).toBeInTheDocument()
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
+  it('drops the pool row with showPool={false} even when a pool value is given', () => {
+    render(<HeaderHashrateBox appPhs={12.345} poolPhs={11.111} showPool={false} />)
+    expect(screen.queryByText('Pool')).not.toBeInTheDocument()
+    expect(screen.queryByText('11.111')).not.toBeInTheDocument()
   })
 
   it('accepts a custom icon and unit override', () => {
@@ -99,12 +124,36 @@ describe('HeaderMinersBox', () => {
     expect(screen.getByText('4')).toBeInTheDocument()
   })
 
-  it('falls back to em-dashes when every count is undefined', () => {
+  it('falls back to em-dashes for the app-side counts when every count is undefined', () => {
     const { container } = render(<HeaderMinersBox />)
     expect(container.querySelectorAll('.mdk-header-stat-box__success').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(6)
+    expect(screen.getAllByText('—')).toHaveLength(4)
     expect(screen.getByText(`${WEBAPP_SHORT_NAME} (—)`)).toBeInTheDocument()
+    expect(screen.queryByText('Pool (—)')).not.toBeInTheDocument()
+  })
+
+  it('keeps the online / total ratio when the pool counts are dropped', () => {
+    render(<HeaderMinersBox total={2188} online={158} error={1} offline={57} appTotal={216} />)
+    expect(screen.getAllByText('158')).toHaveLength(2)
+    expect(screen.getByText('/ 2,188')).toBeInTheDocument()
+    expect(screen.queryByText(/^Pool/)).not.toBeInTheDocument()
+  })
+
+  it('renders the pool counts when a single pool prop is given', () => {
+    render(<HeaderMinersBox total={2188} online={158} poolOnline={2150} />)
     expect(screen.getByText('Pool (—)')).toBeInTheDocument()
+    expect(screen.getByText('2,150')).toBeInTheDocument()
+  })
+
+  it('holds the pool counts open with showPool while they load', () => {
+    render(<HeaderMinersBox total={2188} online={158} showPool />)
+    expect(screen.getByText('Pool (—)')).toBeInTheDocument()
+  })
+
+  it('drops the pool counts with showPool={false} even when they are given', () => {
+    render(<HeaderMinersBox total={2188} online={158} poolTotal={2200} showPool={false} />)
+    expect(screen.queryByText(/^Pool/)).not.toBeInTheDocument()
+    expect(screen.queryByText('2,200')).not.toBeInTheDocument()
   })
 
   it('uses the default miners icon when none is provided', () => {

@@ -1,5 +1,7 @@
 @use '../../styles/mixins' as *;
 $_prefix: mdk-table;
+// Keep in step with SORT_ICON_SIZE in data-table-header.tsx.
+$sort-icon-size: 24px;
 
 .#{$_prefix} {
   margin: 10px 0;
@@ -164,6 +166,10 @@ $_prefix: mdk-table;
               }
 
               .#{$_prefix}-header-sort {
+                // Reserves the sort icon's width so the header doesn't shift when a
+                // column becomes sorted.
+                min-width: $sort-icon-size;
+
                 svg {
                   color: var(--mdk-color-primary);
                 }

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { bumpLinkinator, bumpReadme, hasTagSkip } from '../scripts/release/bump.mjs'
+import { bumpReadme, pinRepoLinks } from '../scripts/release/bump.mjs'
 import { SCAFFOLD_APP_VERSION, applyAppBump, applyBump, assertSemver, findBadPins } from '../scripts/release/lib.mjs'
 
 const manifest = () => ({
@@ -90,25 +90,53 @@ test('bumpReadme moves the badge and the inline release link', () => {
   assert.equal(out.match(/v0\.12\.2/g).length, 3)
 })
 
-test('bumpLinkinator adds the new tag once, right after the previous one', () => {
-  const text = '{\n  "skip": [\n    "https://github.com/tetherto/mdk/releases/tag/v0.12.1",\n    "other"\n  ]\n}\n'
-  const once = bumpLinkinator(text, '0.12.1', '0.12.2')
-  assert.match(once, /v0\.12\.1",\n {4}"https:\/\/github\.com\/tetherto\/mdk\/releases\/tag\/v0\.12\.2",\n {4}"other"/)
-  assert.equal(bumpLinkinator(once, '0.12.1', '0.12.2'), once)
-  assert.doesNotThrow(() => JSON.parse(once))
-})
-
-test('hasTagSkip tells a present skip entry from a missing one, so the caller can warn', () => {
-  const text = '{\n  "skip": [\n    "https://github.com/tetherto/mdk/releases/tag/v0.12.1",\n    "other"\n  ]\n}\n'
-  assert.equal(hasTagSkip(text, '0.12.1'), true)
-  assert.equal(hasTagSkip(text, '0.12.2'), false)
-  const odd = text.replace('    "https', '\t"https') // different indent: bumpLinkinator cannot anchor on it
-  assert.equal(bumpLinkinator(odd, '0.12.1', '0.12.2'), odd)
-  assert.equal(hasTagSkip(bumpLinkinator(odd, '0.12.1', '0.12.2'), '0.12.2'), false)
-})
-
 test('assertSemver rejects anything that is not X.Y.Z[-tag]', () => {
   assert.doesNotThrow(() => assertSemver('0.12.2'))
   assert.doesNotThrow(() => assertSemver('1.0.0-rc.1'))
   for (const bad of [undefined, '', 'v0.12.2', '0.12', '^0.12.2']) assert.throws(() => assertSemver(bad))
+})
+
+test('pinRepoLinks moves main and an earlier tag to the release tag, for blob, tree and raw links', () => {
+  const text = [
+    '[a](https://github.com/tetherto/mdk/blob/main/backend/README.md#setup)',
+    '[b]: https://github.com/tetherto/mdk/tree/main/examples/site',
+    '<!-- docs@tether.io: c → https://github.com/tetherto/mdk/blob/v0.13.1/docs/c.md -->',
+    '"$schema": "https://raw.githubusercontent.com/tetherto/mdk/main/backend/core/mdk-worker/mdk-contract.schema.json"',
+    '[root](https://github.com/tetherto/mdk/tree/main)',
+  ].join('\n')
+  const out = pinRepoLinks(text, '0.14.0')
+  assert.equal(out.match(/\/v0\.14\.0(?=[/)])/g).length, 5)
+  assert.equal(/\/main\b|v0\.13\.1/.test(out), false)
+  assert.equal(pinRepoLinks(out, '0.14.0'), out, 'idempotent')
+})
+
+test('pinRepoLinks leaves other repositories, release pages and slash refs alone', () => {
+  const text = [
+    'https://github.com/tetherto/mdk-docs/blob/main/README.md',
+    'https://github.com/tetherto/mdk-prv/blob/main/README.md',
+    'https://github.com/demo/demo-worker/tree/main',
+    'https://github.com/tetherto/mdk/releases/tag/v0.13.1',
+    'https://github.com/tetherto/mdk/blob/release/0.14.0/backend/README.md',
+    'https://github.com/tetherto/mdk/blob/mainline/x.md',
+  ].join('\n')
+  assert.equal(pinRepoLinks(text, '0.14.0'), text)
+})
+
+test('pinRepoLinks moves a ref that ends a sentence, a bracket or a query, and a hyphenated pre-release', () => {
+  const at = (tail) => `https://github.com/tetherto/mdk/tree/main${tail}`
+  for (const tail of ['.', ', then', ']', '?plain=1', '`']) {
+    assert.equal(pinRepoLinks(at(tail), '0.14.0'), at(tail).replace('/main', '/v0.14.0'), tail)
+  }
+  assert.equal(
+    pinRepoLinks('https://github.com/tetherto/mdk/blob/v1.0.0-rc-1/x.md', '1.0.0'),
+    'https://github.com/tetherto/mdk/blob/v1.0.0/x.md'
+  )
+  assert.equal(pinRepoLinks(`${at('').replace('main', 'v1.0.0-rc.1')}. Next`, '1.0.0'), `${at('').replace('main', 'v1.0.0')}. Next`)
+})
+
+test('pinRepoLinks pins a pre-release tag too', () => {
+  assert.equal(
+    pinRepoLinks('https://github.com/tetherto/mdk/blob/v1.0.0-rc.1/x.md', '1.0.0'),
+    'https://github.com/tetherto/mdk/blob/v1.0.0/x.md',
+  )
 })

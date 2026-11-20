@@ -4,6 +4,16 @@ import { join } from 'node:path';
 /** Lowest Node major the CLI and the MDK runtime packages support (their `engines`). */
 export const NODE_MIN_MAJOR = 24;
 
+/**
+ * A one-line warning when the running Node is below `NODE_MIN_MAJOR`, saying
+ * what `consequence` may follow; undefined on a supported Node.
+ */
+export function nodeVersionWarning(consequence: string, nodeVersion: string = process.versions.node): string | undefined {
+  const major = Number(nodeVersion.split('.')[0] ?? '0');
+  if (major >= NODE_MIN_MAJOR) return undefined;
+  return `Node ${nodeVersion} is too old; MDK needs Node >= ${NODE_MIN_MAJOR}, so ${consequence}.`;
+}
+
 export interface Environment {
   nodeVersion: string;
   nodeOk: boolean;

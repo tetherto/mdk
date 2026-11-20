@@ -13,7 +13,7 @@ Toggle switch built on Radix UI. Controlled or uncontrolled.
 | `defaultChecked` | Optional | `boolean` | - | Uncontrolled initial checked state |
 | `disabled` | Optional | `boolean` | `false` | Disable the switch |
 | `onCheckedChange` | Optional | `((checked: boolean) => void)` | - | Change handler |
-| `radius` | Optional | `"small" \| "none" \| "medium" \| "large" \| "full"` | `"none"` | Border radius variant |
+| `radius` | Optional | `"none" \| "small" \| "medium" \| "large" \| "full"` | `"none"` | Border radius variant |
 | `size` | Optional | `"sm" \| "md" \| "lg"` | `"md"` | Size variant of the switch |
 | `thumbClassName` | Optional | `string` | - | Custom className for the thumb element |
 <!-- END GENERATED: props -->

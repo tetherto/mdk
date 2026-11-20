@@ -4,6 +4,8 @@
 
 The Workers MDK can run today, for miners, containers, power meters, sensors and mining pools. A Worker is either published by the partner whose device or pool it integrates, or maintained in this repository.
 
+> A row flagged "v1 strictness gaps" has a contract that does not yet meet the v1 requirements: it carries no `"contractVersion": "1"` stamp, and may also lack a canonical `unit` on numeric telemetry or `min` and `max` on numeric command parameters. Without the stamp these are reported as warnings, so they do not stop the Worker from loading; a contract that adds the stamp is held to them as errors. The rules are in [Contract validation](../../core/mdk-worker/README.md#contract-validation).
+
 ## Partner-maintained Workers
 
 Built and maintained by the partner, a device manufacturer or a mining pool, and fetched and schema-validated from their own repository at generation time. MDK does not independently test these against specific firmware or models beyond the contract shape. See the linked repository for what it actually supports.
@@ -69,4 +71,4 @@ Built and maintained in this repository, with a bundled mock and unit and integr
 
 ## Contract conformance
 
-All worker contracts validate cleanly against the vendored schema.
+No worker contract fails [`mdk-contract.schema.json`](../../core/mdk-worker/mdk-contract.schema.json). 18 contracts have v1 strictness gaps, reported as warnings rather than failures: see the rows flagged "v1 strictness gaps" above.

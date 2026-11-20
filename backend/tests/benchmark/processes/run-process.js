@@ -130,9 +130,9 @@ async function runWorkerRole () {
   const workerIndex = Number(arg('--worker-index', 0))
   const { workers } = loadDevicePlan(root)
   const w = workers[workerIndex]
-  const handle = await bootWorker({ workerId: w.workerId, type: w.type, model: w.model, kernel: null, root, mode: 'local', devices: w.devices })
+  await bootWorker({ workerId: w.workerId, type: w.type, model: w.model, kernel: null, root, mode: 'local', devices: w.devices })
   fs.writeFileSync(path.join(root, `.worker-${workerIndex}-pid`), String(process.pid))
-  console.log('MDK_READY worker id=%s devices=%d pid=%d', w.workerId, handle.services.provisioning.listDeviceIds().length, process.pid)
+  console.log('MDK_READY worker id=%s devices=%d pid=%d', w.workerId, w.devices.length, process.pid)
 }
 
 // Reads the Kernel key the kernel role already wrote (same pattern as

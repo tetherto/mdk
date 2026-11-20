@@ -46,6 +46,9 @@ function renderApply(r: RbacApplyResult): string {
   return `${tick} Applied spec.rbac ${theme.muted(r.previous ?? 'none')} ${arrow} ${policy(r.local)}\n`;
 }
 
+/** The Kernel handed over its policy, so mdk.yaml was compared with it. */
+const compared = (r: RbacShowResult): boolean => r.kernel === 'up' && !r.refused;
+
 function renderShow(r: RbacShowResult): string {
   const lines = [`  ${theme.muted('mdk.yaml')}  ${policy(r.local)}`];
   if (r.kernel === 'down') lines.push(`  ${theme.muted('kernel')}    ${theme.warn('down')} ${theme.muted(r.message ?? '')}`);
@@ -55,7 +58,7 @@ function renderShow(r: RbacShowResult): string {
       `  ${theme.muted('kernel')}    ${theme.value(r.applied.version)} ${theme.muted(`applied ${r.applied.appliedAt} by ${r.applied.source}`)}`,
     );
   }
-  if (r.kernel === 'up') {
+  if (compared(r)) {
     lines.push(r.inSync ? `${tick} in sync` : `${theme.warn('differs')}: run ${theme.cmd('mdk rbac apply')} to enforce mdk.yaml`);
   }
   return `${lines.join('\n')}\n`;
@@ -78,7 +81,7 @@ function renderInit(r: InitResult): string {
   lines.push(
     r.applied.ok
       ? `${tick} The Kernel enforces ${theme.value(r.applied.local.version)}`
-      : r.applied.kernel === 'down'
+      : r.applied.kernel === 'down' || r.applied.accessRefused
         ? `  ${theme.muted('policy')} ${r.applied.message}`
         : `  ${theme.muted('policy')} ${r.applied.message}. Restart the Kernel (\`mdk run\`) and it applies mdk.yaml at boot.`,
   );
@@ -127,6 +130,6 @@ export function registerRbac(program: Command): void {
     .summary('Compare spec.rbac with the policy the Kernel enforces')
     .option('-d, --dir <path>', 'Project directory containing mdk.yaml', '.')
     .action((options: { dir: string }, cmd: Command) =>
-      run(cmd, () => showStackRbac(options.dir), renderShow, (r) => r.kernel === 'up'),
+      run(cmd, () => showStackRbac(options.dir), renderShow, compared),
     );
 }

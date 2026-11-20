@@ -70,6 +70,10 @@ Antspace uses a REST HTTP API. The Worker connects over HTTP and polls the conta
 | `liquid_supply_temp` | °C   | Liquid coolant supply temperature |
 | `cooling_status`     | —    | Cooling system operational status |
 
+The Worker Runtime polls every field above every 60 s (`telemetryPollIntervalMs` in `mdk-contract.json`) and stores the series,
+so a fleet read through `mdkClient.pullSnapshot()` or `mdkClient.pullAggregate()` costs no device call. An operator overrides the
+interval per instance in `mdk.yaml` under `spec.workers[].config` (`null` turns polling off).
+
 ## Commands
 
 | Command              | Parameters | Description                                                   |

@@ -9,10 +9,12 @@ import { RadioCard, RadioGroup } from '../radio'
 export type RangeSelectorOption = {
   label: string
   value: string
+  /** Renders the option greyed out and unselectable, e.g. a range the current route cannot serve */
+  disabled?: boolean
 }
 
 export type RangeSelectorProps = {
-  /** `{ label, value }` items */
+  /** `{ label, value, disabled? }` items */
   options: RangeSelectorOption[]
   /** Currently selected value */
   value: string
@@ -182,6 +184,7 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
             >
               <span
                 className="mdk-chart-container__legend-box"
+                // oxlint-disable-next-line react/forbid-dom-props -- per-series colours from the chart data
                 style={{
                   backgroundColor: swatch.fill,
                   borderColor: swatch.stroke,
@@ -189,6 +192,7 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
               />
               <span
                 className="mdk-chart-container__legend-label"
+                // oxlint-disable-next-line react/forbid-dom-props -- per-series label colour from the chart data
                 style={{ color: swatch.labelColor }}
               >
                 {item.label}
@@ -203,6 +207,7 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
       <div className="mdk-chart-container__highlight-area">
         <div
           className={cn('mdk-chart-container__highlighted-value', highlightedValue.className)}
+          // oxlint-disable-next-line react/forbid-dom-props -- forwards highlightedValue.style from the consumer
           style={highlightedValue.style}
         >
           <span className="mdk-chart-container__highlighted-value__number">
@@ -237,11 +242,12 @@ export const ChartContainer = forwardRef<HTMLDivElement, ChartContainerProps>(
     const rangeSelectorBlock = rangeSelector && rangeSelector.options.length > 0 && (
       <div role="group" aria-label="Time range">
         <RadioGroup defaultValue={rangeSelector.value} orientation="horizontal" noGap>
-          {rangeSelector.options.map(({ value, label }) => (
+          {rangeSelector.options.map(({ value, label, disabled }) => (
             <RadioCard
               value={value}
               label={label}
               key={value}
+              disabled={disabled}
               aria-pressed={rangeSelector.value === value}
               onClick={() => rangeSelector.onChange(value)}
             />

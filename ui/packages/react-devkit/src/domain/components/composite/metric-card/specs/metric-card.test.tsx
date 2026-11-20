@@ -88,45 +88,39 @@ describe('MetricCard', () => {
   })
 
   describe('value colour selection', () => {
-    it('uses the default white colour when neither highlight nor transparent is set', () => {
-      const { container } = render(<MetricCard label="Hashrate" unit="TH/s" value={102.4} />)
+    const renderValue = (props: Partial<Parameters<typeof MetricCard>[0]> = {}): HTMLElement => {
+      const { container } = render(
+        <MetricCard label="Hashrate" unit="TH/s" value={102.4} {...props} />,
+      )
+      return container.querySelector('.mdk-metric-card__value') as HTMLElement
+    }
 
-      const valueEl = container.querySelector('.mdk-metric-card__value') as HTMLElement
-      expect(valueEl.style.color.toLowerCase()).toBe(
-        toRgbOrHex(COLOR.WHITE, valueEl.style.color).toLowerCase(),
+    it('uses the default colour when neither highlight nor transparent is set', () => {
+      const valueEl = renderValue()
+      expect(valueEl).not.toHaveClass('mdk-metric-card__value--highlighted')
+      expect(valueEl).not.toHaveClass('mdk-metric-card__value--transparent')
+    })
+
+    it('uses the highlight modifier when isHighlighted=true', () => {
+      expect(renderValue({ isHighlighted: true })).toHaveClass(
+        'mdk-metric-card__value--highlighted',
       )
     })
 
-    it('uses the highlight colour when isHighlighted=true', () => {
-      const { container } = render(
-        <MetricCard label="Hashrate" unit="TH/s" value={102.4} isHighlighted />,
-      )
-
-      const valueEl = container.querySelector('.mdk-metric-card__value') as HTMLElement
-      expect(valueEl.style.color.toLowerCase()).toBe(
-        toRgbOrHex(COLOR.COLD_ORANGE, valueEl.style.color).toLowerCase(),
+    it('uses the transparent modifier when isTransparentColor=true and not highlighted', () => {
+      expect(renderValue({ isTransparentColor: true })).toHaveClass(
+        'mdk-metric-card__value--transparent',
       )
     })
 
-    it('uses the transparent-white colour when isTransparentColor=true and not highlighted', () => {
-      const { container } = render(
-        <MetricCard label="Hashrate" unit="TH/s" value={102.4} isTransparentColor />,
-      )
-
-      const valueEl = container.querySelector('.mdk-metric-card__value') as HTMLElement
-      // happy-dom may serialise the hex as-is; just assert the literal was set
-      const colorValue = valueEl.getAttribute('style') ?? ''
-      expect(colorValue.toLowerCase()).toContain(COLOR.WHITE_ALPHA_05.toLowerCase())
+    it('prefers the highlight modifier when both highlight and transparent are set', () => {
+      const valueEl = renderValue({ isHighlighted: true, isTransparentColor: true })
+      expect(valueEl).toHaveClass('mdk-metric-card__value--highlighted')
+      expect(valueEl).not.toHaveClass('mdk-metric-card__value--transparent')
     })
 
-    it('prefers the highlight colour when both highlight and transparent are set', () => {
-      const { container } = render(
-        <MetricCard label="Hashrate" unit="TH/s" value={102.4} isHighlighted isTransparentColor />,
-      )
-
-      const valueEl = container.querySelector('.mdk-metric-card__value') as HTMLElement
-      const colorValue = valueEl.getAttribute('style') ?? ''
-      expect(colorValue.toLowerCase()).toContain(COLOR.COLD_ORANGE.toLowerCase())
+    it('sets no inline colour on the value', () => {
+      expect(renderValue({ isHighlighted: true }).getAttribute('style')).toBeNull()
     })
   })
 
@@ -208,14 +202,3 @@ describe('MetricCard', () => {
     })
   })
 })
-
-// Helper for hex/rgb comparisons in happy-dom (style.color is stored verbatim
-// in happy-dom — this just lets the assertion read naturally even if a future
-// jsdom switch normalises to rgb()).
-function toRgbOrHex(hex: string, actual: string): string {
-  if (actual.startsWith('rgb')) {
-    // Fallback path — not expected under happy-dom today.
-    return actual
-  }
-  return hex
-}

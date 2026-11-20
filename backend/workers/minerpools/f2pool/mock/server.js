@@ -11,7 +11,9 @@ class F2poolMock extends MinerpoolMock {
 
   constructor (ctx = {}) {
     super(ctx)
-    const u = this.ctx.usernames
+    // `accounts` is the Worker's own device option, so one opts object can
+    // serve both the mock and the plugin under `mdk run`.
+    const u = this.ctx.usernames || this.ctx.accounts
     this.ctx.usernames = Array.isArray(u) ? u : (typeof u === 'string' ? u.split(',') : ['haven7346'])
   }
 

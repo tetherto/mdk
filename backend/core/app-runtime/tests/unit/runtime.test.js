@@ -16,9 +16,10 @@ const {
 } = require('../fixtures/helpers')
 
 const UNAVAILABLE = /ERR_APP_RUNTIME_UNAVAILABLE/
+const LOOPBACK = '127.0.0.1'
 
 test('runtime', { timeout: 120000 }, async (suite) => {
-  const testnet = await createTestnet(3, suite.teardown)
+  const testnet = await createTestnet(4, suite.teardown)
   const caller = identityFor()
   const lateFile = path.join(tmpDir(suite), 'late', 'gateway.key')
   const kernelKey = 'ab'.repeat(32)
@@ -77,7 +78,8 @@ test('runtime', { timeout: 120000 }, async (suite) => {
   })
 
   await suite.test('protocol version mismatch and malformed requests', async (t) => {
-    const rpc = new HyperswarmRPC({ bootstrap: testnet.bootstrap, seed: caller.seed })
+    const keyPair = DHT.keyPair(caller.seed)
+    const rpc = new HyperswarmRPC({ keyPair, dht: testnet.createNode({ keyPair }) })
     t.teardown(() => rpc.destroy())
     const call = async (buf) => protocol.decode(await rpc.request(publicKey, 'app.invoke', buf))
     const mismatch = await call(protocol.encode({ v: 2, routeId: 'echo', req: {} }))
@@ -129,7 +131,7 @@ test('runtime', { timeout: 120000 }, async (suite) => {
     const stranger = identityFor()
     t.is(createRuntimeClient({ seed: stranger.seed }).publicKey.toString('hex'), stranger.publicKey, 'the client key derives from its seed')
     const denied = await connectClient(t, testnet, publicKey, stranger)
-    await t.exception(denied.invoke('whoami', {}, { timeoutMs: 5000 }), UNAVAILABLE, 'stranger blocked')
+    await t.exception(denied.invoke('whoami', {}, { timeoutMs: 15000 }), UNAVAILABLE, 'stranger blocked')
     await t.exception(denied.stream('stream', { query: { count: 1 } }), UNAVAILABLE, 'streams too')
     t.ok(logger.lines.some((l) => l.startsWith('warn:blocked')), 'blocks are logged')
 
@@ -185,6 +187,7 @@ test('runtime', { timeout: 120000 }, async (suite) => {
       name: 'echo',
       appDir: ECHO_APP,
       bootstrap: testnet.bootstrap,
+      dhtHost: LOOPBACK,
       keyFile: path.join(dir, 'echo.key'),
       kernelKeyFile: path.join(dir, 'not-a-dir', 'kernel.pub'),
       logger: capturingLogger()
@@ -195,7 +198,8 @@ test('runtime', { timeout: 120000 }, async (suite) => {
   })
 
   await suite.test('a stream END before any HEAD fails the call instead of hanging it', async (t) => {
-    const rpc = new HyperswarmRPC({ bootstrap: testnet.bootstrap })
+    const dht = testnet.createNode()
+    const rpc = new HyperswarmRPC({ keyPair: dht.defaultKeyPair, dht })
     t.teardown(() => rpc.destroy())
     const server = rpc.createServer()
     server.on('connection', (conn) => {
@@ -213,7 +217,7 @@ test('runtime', { timeout: 120000 }, async (suite) => {
   })
 
   await suite.test('a second start() during startup waits until the runtime is serving', async (t) => {
-    const rt = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, logger: capturingLogger() })
+    const rt = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, dhtHost: LOOPBACK, logger: capturingLogger() })
     t.teardown(() => rt.stop())
     let firstDone = false
     const first = rt.start().then((r) => { firstDone = true; return r })
@@ -229,6 +233,7 @@ test('runtime', { timeout: 120000 }, async (suite) => {
       name: 'echo',
       appDir: ECHO_APP,
       bootstrap: testnet.bootstrap,
+      dhtHost: LOOPBACK,
       storeDir: path.join(dir, 'store'),
       keyFile: path.join(dir, 'run', 'echo.key'),
       kernelKeyFile: path.join(dir, 'run', 'kernel.key'),
@@ -260,7 +265,7 @@ test('runtime', { timeout: 120000 }, async (suite) => {
   await suite.test('main runs with the config before the runtime serves, sharing modules with the controllers', async (t) => {
     const dir = tmpDir(t)
     const appDir = path.join(__dirname, '..', 'fixtures', 'main-app')
-    const rt = createAppRuntime({ name: 'main', appDir, bootstrap: testnet.bootstrap, storeDir: path.join(dir, 'store'), allowedKeys: [caller.publicKey], logger: capturingLogger() })
+    const rt = createAppRuntime({ name: 'main', appDir, bootstrap: testnet.bootstrap, dhtHost: LOOPBACK, storeDir: path.join(dir, 'store'), allowedKeys: [caller.publicKey], logger: capturingLogger() })
     t.teardown(() => rt.stop())
     const { publicKey: mainKey } = await rt.start()
     const mainClient = await connectClient(t, testnet, mainKey, caller)
@@ -275,7 +280,7 @@ test('runtime', { timeout: 120000 }, async (suite) => {
     let exitCode = null
     const io = { send: (m) => sent.push(m), stderr: () => {}, exit: (c) => { exitCode = c }, on: (e, fn) => { handlers[e] = fn } }
 
-    const env = { MDK_APP_RUNTIME_OPTIONS: JSON.stringify({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap }) }
+    const env = { MDK_APP_RUNTIME_OPTIONS: JSON.stringify({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, dhtHost: LOOPBACK }) }
     const started = await main(env, io)
     t.teardown(() => started.runtime.stop())
     t.absent('MDK_APP_RUNTIME_OPTIONS' in env, 'the options (app config included) are dropped from the environment once read')

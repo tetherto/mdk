@@ -5,7 +5,7 @@ import { Typography } from '@tetherto/mdk-react-devkit'
 
 export const TypographyExample = () => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="mdk-example-col">
       <Typography variant="heading1">Operations dashboard</Typography>
       <Typography variant="heading2">Sites</Typography>
       <Typography variant="heading3">Site #1</Typography>

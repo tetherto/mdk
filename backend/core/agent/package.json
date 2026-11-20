@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-agent",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "MDK operator agent — headless loop over a local (QVAC) model, consuming MDK tools via MCP.",
   "type": "module",
   "files": [
@@ -32,8 +32,8 @@
   },
   "scripts": {
     "start": "node bin/mdk-agent.js",
-    "lint": "standard",
-    "lint:fix": "standard --fix",
+    "lint": "bfx-lint-js .",
+    "lint:fix": "bfx-lint-js . --fix",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
     "test:unit": "NODE_ENV=test brittle tests/unit/*.js",
     "test:integration": "NODE_ENV=test brittle tests/integration/*.test.js"
@@ -42,12 +42,13 @@
     "@ai-sdk/openai-compatible": "^3.0.0",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "@qvac/ai-sdk-provider": "^0.6.1",
+    "@tetherto/mdk-identity": "^0.14.0",
     "ai": "^7.0.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
     "brittle": "3.18.0",
-    "standard": "17.1.0"
+    "@bitfinex/lint-js": "^1.0.0"
   },
   "peerDependencies": {
     "@qvac/cli": "^0.12.0"

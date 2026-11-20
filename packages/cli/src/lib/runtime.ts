@@ -1,10 +1,11 @@
 import { createRequire } from 'node:module';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { once, type EventEmitter } from 'node:events';
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve, sep } from 'node:path';
 import {
   DEFAULT_DHT_HOST,
+  DEFAULT_DHT_PORT,
   isLocalPackagePath,
   loadStackDht,
   loadStackSpec,
@@ -16,8 +17,10 @@ import {
 import { DEFAULT_HOST, findFreePort, isPortFree } from './ports.js';
 import { APP_MANIFEST } from './app-package.js';
 import { WORKER_CONTRACT } from './worker-package.js';
+import { findCatalogApp, findCatalogWorker } from './catalog.js';
+import { mdkRbac } from './rbac.js';
 import { theme, tick, arrow } from './theme.js';
-import { appChildFile, appChildPid } from './run-lock.js';
+import { appChildFile, writeAppChildFile } from './run-lock.js';
 import {
   CLI_ACCOUNT,
   GATEWAY_ACCOUNT,
@@ -45,6 +48,8 @@ export interface KernelHandle {
   allowKey?: (key: Buffer | string) => string;
   /** Hex keys admitted to connect. */
   listAllowedKeys?: () => string[];
+  /** The Kernel is an EventEmitter; `worker-rejected` carries a WorkerConflict. */
+  on?: (event: string, listener: (...args: never[]) => void) => unknown;
   _cleanup: Array<() => unknown>;
   stop: () => Promise<void>;
   [key: string]: unknown;
@@ -258,6 +263,17 @@ export function appKeyFile(projectDir: string, name: string): string {
   return componentDir(projectDir, 'apps', name, 'runtime.key');
 }
 
+/**
+ * Where the process that runs the Kernel (`mdk run` or `mdk run kernel`)
+ * publishes the stack's *resolved* DHT settings, for a
+ * component hosted in a process that never reads `mdk.yaml` — for example, a
+ * Worker started alongside `mdk run`. Read it with mdk-core's
+ * `dhtFromProject(projectDir)` rather than parsing it by hand.
+ */
+export function networkFile(projectDir: string): string {
+  return componentDir(projectDir, 'network.json');
+}
+
 /** Where every DHT node of a stack joins and binds; empty on the public HyperDHT. */
 export interface StackDht {
   bootstrap?: string[];
@@ -345,12 +361,15 @@ export function resolveProjectPackageDir(projectDir: string, pkgName: string): s
     // `npm install`; naming it would fetch an unrelated registry package. The
     // install command names the *package*: `npm install @scope/pkg/plugin-a`
     // is not a thing npm can do.
+    // A catalog package that is not on npm installs from its `source`
+    // (`github:<owner>/<repo>`); its bare name would 404 on the registry.
     const declared = declaredDependency(projectDir, pkg);
+    const installSpec = (findCatalogApp(pkg) ?? findCatalogWorker(pkg))?.source ?? pkg;
     throw new Error(
       `Package "${pkgName}" is not installed in ${resolve(projectDir)}.\n` +
         (declared
           ? `package.json declares it ("${declared}"), so run: npm install`
-          : `Install it first, e.g.: npm install ${pkg}`),
+          : `Install it first, e.g.: npm install ${installSpec}`),
     );
   }
 
@@ -419,7 +438,15 @@ export function policyWarnings(spec: StackSpec): string[] {
   if (!bound('ServiceAccount', CLI_ACCOUNT)) out.push(`spec.rbac does not bind ${CLI_ACCOUNT}: \`mdk status\`, \`mdk user\` and \`mdk rbac apply\` are refused.`);
   if (!bound('ServiceAccount', MCP_ACCOUNT)) out.push(`spec.rbac does not bind ${MCP_ACCOUNT}: the MCP server (\`mdk run mcp\`) cannot read the policy, so it refuses every agent.`);
   if (!bound('ServiceAccount', GATEWAY_ACCOUNT)) out.push(`spec.rbac does not bind ${GATEWAY_ACCOUNT}: a Gateway started on its own (\`mdk run gateway\`) cannot read the policy, so it refuses every route.`);
+  // An app whose mdk-app.yaml requests no permissions gets no role or binding
+  // from `mdk rbac init` (planAppGrant: action `none`), and makes no Kernel
+  // calls to refuse. The recorded digest of `[]` says it was granted that way.
+  // It is the digest mdk.yaml recorded, not the app's current mdk-app.yaml: an
+  // app updated to request permissions stays silent here until `mdk add app` or
+  // `mdk rbac init` re-plans its grant and records the new digest.
+  const noAccess = mdkRbac().permissionsDigest([]);
   for (const app of spec.spec.apps) {
+    if (app.permissionsDigest === noAccess) continue;
     if (!bound('ServiceAccount', `app:${app.name}`)) out.push(`app ${app.name} has no binding in spec.rbac: the Kernel refuses its calls. Run \`mdk rbac init\`.`);
   }
   return out;
@@ -431,8 +458,16 @@ export function policyWarnings(spec: StackSpec): string[] {
  * stack without one applies the empty, deny-all policy), and its apps and this
  * instance's agents are the service accounts it registers; without it, the
  * Kernel keeps the policy and accounts last applied to its store.
+ *
+ * With `holdUnreachable`, a Worker the Kernel could not reach is not reported
+ * until releaseUnreachableReports: the caller is about to start Workers in this
+ * process, and the Kernel may dial one of their keys before it is up.
  */
-export async function runKernel(projectDir: string, spec?: StackSpec): Promise<KernelHandle> {
+export async function runKernel(
+  projectDir: string,
+  spec?: StackSpec,
+  opts: { holdUnreachable?: boolean } = {},
+): Promise<KernelHandle> {
   const core = mdkCore();
   const root = componentDir(projectDir, 'kernel');
   mkdirSync(root, { recursive: true });
@@ -455,6 +490,11 @@ export async function runKernel(projectDir: string, spec?: StackSpec): Promise<K
     }
     process.stderr.write(`${tick} ${theme.label('dht')} private bootstrap ${theme.value(dhtBootstrap.bootstrap.join(','))}\n`);
   }
+
+  // Published for processes that host a component without reading mdk.yaml.
+  // Rewritten every run, so a stack moved back onto the public DHT leaves `{}`
+  // behind rather than a stale bootstrap a Worker would keep dialling.
+  writeFileSync(networkFile(projectDir), `${JSON.stringify(dht, null, 2)}\n`);
 
   process.stderr.write(`${theme.muted('Starting kernel')} ${arrow} ${theme.value(root)}\n`);
   let kernel: KernelHandle;
@@ -484,11 +524,154 @@ export async function runKernel(projectDir: string, spec?: StackSpec): Promise<K
   }
 
   if (spec) for (const warning of policyWarnings(spec)) process.stderr.write(`${theme.warn('warning')}: ${warning}\n`);
+  // Otherwise only in a debug log: Workers in other processes register over
+  // local discovery, with nobody waiting on the outcome.
+  if (typeof kernel.on === 'function') {
+    kernel.on('worker-rejected', (conflict: WorkerConflict) => {
+      process.stderr.write(`${theme.warn('warning')}: ${workerConflictMessage(conflict)}\n`);
+    });
+    // The Kernel retries a refused Worker once the binding that refused it is
+    // released, so a warning above can resolve itself in the same run.
+    kernel.on('worker-admitted', ({ workerId }: { workerId: string }) => {
+      process.stderr.write(`${tick} ${theme.label('worker')} ${theme.value(workerId)} registered: the binding that refused it was released\n`);
+    });
+    // A Worker `mdk run` hosts itself reports its own failure to register (see
+    // runWorker). This covers the other kind: one hosted in another process,
+    // which the Kernel only ever sees as an RPC key that never answered. A
+    // hosted Worker's key can still arrive here, from a key file an earlier
+    // `mdk run worker` left in the keys dir that the Kernel dials at boot,
+    // before that Worker is up; those reports are dropped.
+    const reports: UnreachableReports = {
+      hosted: new Set(),
+      held: opts.holdUnreachable ? [] : null,
+      print: ({ error, rpcKey }) => {
+        if (reports.hosted.has(rpcKey)) return;
+        process.stderr.write(
+          `${theme.warn('warning')}: the Kernel could not reach the worker at ${theme.value(`${rpcKey.slice(0, 16)}…`)} (${error}).\n`,
+        );
+        printHintOnce(workerUnreachableHint(error, dht));
+      },
+    };
+    unreachableReports.set(kernel, reports);
+    kernel.on('worker-unreachable', (report: UnreachableReport) => {
+      if (reports.held) reports.held.push(report);
+      else reports.print(report);
+    });
+  }
 
   const key = typeof kernel.getPublicKey === 'function' ? kernel.getPublicKey() : undefined;
   const keyHex = key ? key.toString('hex') : '(unknown)';
   process.stderr.write(`${tick} ${theme.label('kernel')} ready ${theme.muted(keyHex)}\n`);
   return kernel;
+}
+
+/** A Kernel `worker-unreachable` event. */
+interface UnreachableReport {
+  error: string;
+  rpcKey: string;
+}
+
+/**
+ * What runKernel keeps per Kernel: the Worker keys this process hosts (added by
+ * runWorker), the reports held until releaseUnreachableReports (null when not
+ * holding), and how a report is printed.
+ */
+interface UnreachableReports {
+  hosted: Set<string>;
+  held: UnreachableReport[] | null;
+  print: (report: UnreachableReport) => void;
+}
+
+const unreachableReports = new WeakMap<KernelHandle, UnreachableReports>();
+
+/**
+ * Prints the unreachable reports runKernel held, now that this process's Workers
+ * are started, except those for the Workers it hosts; later ones print as they come.
+ */
+export function releaseUnreachableReports(kernel: KernelHandle): void {
+  const reports = unreachableReports.get(kernel);
+  if (!reports?.held) return;
+  const held = reports.held;
+  reports.held = null;
+  for (const report of held) reports.print(report);
+}
+
+/** A binding conflict the Kernel refused a Worker for (its `worker-rejected` event). */
+export interface WorkerConflict {
+  error: string;
+  workerId: string;
+  deviceId?: string;
+  ownerId?: string;
+  /** The owner's claim is from an earlier run and it has not registered again yet. */
+  ownerPending?: boolean;
+}
+
+/**
+ * Both bindings are persisted in the Kernel's store and outlive restarts; only
+ * terminating the bound registration releases them, which keeps the Kernel's
+ * key, users and policy history (moving .mdk/kernel aside does not).
+ */
+export function workerConflictMessage(c: WorkerConflict): string {
+  if (c.error === 'ERR_WORKER_DEVICE_CONFLICT' && c.ownerPending) {
+    return (
+      `the Kernel refused worker "${c.workerId}" for now: device "${c.deviceId}" is still bound to worker ` +
+      `"${c.ownerId}" from an earlier run, and "${c.ownerId}" has not registered again yet. "${c.workerId}" is retried ` +
+      `when "${c.ownerId}" registers. If "${c.ownerId}" was renamed or removed, release it with the Kernel action ` +
+      `worker.terminate (client.terminateWorker('${c.ownerId}')).`
+    );
+  }
+  if (c.error === 'ERR_WORKER_DEVICE_CONFLICT') {
+    return (
+      `the Kernel refused worker "${c.workerId}": device "${c.deviceId}" is bound to worker "${c.ownerId}", ` +
+      `so none of "${c.workerId}"'s devices are reachable. A device stays bound to the first worker that registered it, ` +
+      `across restarts. If "${c.ownerId}" was renamed or removed, release it with the Kernel action ` +
+      `worker.terminate (client.terminateWorker('${c.ownerId}')).`
+    );
+  }
+  if (c.error === 'ERR_WORKER_KEY_CONFLICT') {
+    return (
+      `the Kernel refused worker "${c.workerId}": that name is bound to another worker key (its identity was ` +
+      `regenerated, or another process uses the name). If the new key is the one to keep, release the old ` +
+      `registration with worker.terminate (client.terminateWorker('${c.workerId}')).`
+    );
+  }
+  return `the Kernel refused worker "${c.workerId}" (${c.error}).`;
+}
+
+/** Hints already printed by this process (see workerUnreachableHint). */
+const printedHints = new Set<string>();
+
+/** Kernel answers for a Worker it could not reach at all, as opposed to one it reached and refused. */
+const UNREACHABLE_WORKER_ERRORS = new Set(['ERR_WORKER_IDENTITY_UNAVAILABLE', 'ERR_CHANNEL_NOT_CONNECTED']);
+
+/**
+ * What to check when the Kernel could not reach a Worker over the DHT, or
+ * undefined for any other refusal. On the public DHT the usual cause is
+ * blocked outbound UDP, which leaves the Kernel, apps and Gateway ready and no
+ * Worker registered, so the hint names the private-bootstrap fix.
+ */
+export function workerUnreachableHint(error: string, dht: StackDht): string | undefined {
+  if (!UNREACHABLE_WORKER_ERRORS.has(error)) return undefined;
+  if (!dht.bootstrap) {
+    return (
+      'The Kernel could not reach it over the DHT. This stack joins the public DHT (*.hyperdht.org), because ' +
+      'mdk.yaml has no `spec.network.dht`, and no Worker can register where outbound UDP to it is blocked. ' +
+      `For a stack on one machine, add \`network: { dht: { host: ${DEFAULT_DHT_HOST}, port: ${DEFAULT_DHT_PORT} } }\` ` +
+      'under `spec` to run a private bootstrap on loopback.'
+    );
+  }
+  return (
+    `The Kernel could not reach it over the stack's DHT (${dht.bootstrap.join(', ')}). A Worker started outside ` +
+    '`mdk run` must join that bootstrap too: spread mdk-core\'s `dhtFromProject(projectDir)` into its runtime ' +
+    'options, or pass the same `bootstrap` and `dhtHost` by hand.'
+  );
+}
+
+/** Writes a hint to stderr the first time this process produces it; later copies are dropped. */
+function printHintOnce(hint: string | undefined): void {
+  if (!hint || printedHints.has(hint)) return;
+  printedHints.add(hint);
+  process.stderr.write(`  ${theme.muted(hint)}\n`);
 }
 
 /**
@@ -698,34 +881,68 @@ export async function runMcp(
 
 // --- worker boot ----------------------------------------------------------
 
-/** A seed device from a worker's `config.devices` — `opts` is plugin-defined. */
+/**
+ * A seed device from a worker's `config.devices` — `opts` is plugin-defined;
+ * `info` is the operator's label block (container, rack, …) that aggregate
+ * reads group and filter on as `info.<key>`.
+ */
 interface SeedDevice {
   id: string;
   opts?: Record<string, unknown>;
+  info?: Record<string, unknown>;
 }
 
-/** A running mock device server (the shape mvp-site and scaffolded-worker mocks return). */
+/** A bound (or binding) listener: `net.Server` and `http.Server` both look like this. */
+interface MockListener {
+  on?: (event: string, cb: () => void) => void;
+  listening?: boolean;
+  /** Node >= 18.2 — drops lingering keep-alive sockets so the port frees now. */
+  closeAllConnections?: () => void;
+  /** A Fastify instance nests its `http.Server` here. */
+  server?: MockListener;
+}
+
+/**
+ * A running mock device server. Three shapes are in the wild and all are
+ * accepted: the scaffolded/in-repo mocks (`{ server, ready, exit }`), the
+ * partner-maintained Antminer and Whatsminer mocks (`{ server, ready, close }`)
+ * and the Ocean mock (`{ app, stop }`, whose `exit()` ends the process).
+ */
 interface MockServer {
   /**
    * The listening object, whose type depends on the mock's transport: a
    * `net.Server` for the TCP/Modbus mocks, a Fastify instance for the HTTP ones.
    * Only the members both share can be relied on here.
    */
-  server?: {
-    on?: (event: string, cb: () => void) => void;
-    /** Present on a `net.Server`; a Fastify instance nests it under `.server`. */
-    listening?: boolean;
-    /** Node >= 18.2 — drops lingering keep-alive sockets so the port frees now. */
-    closeAllConnections?: () => void;
-    /** Fastify's underlying `http.Server`. */
-    server?: { closeAllConnections?: () => void };
-  };
+  server?: MockListener;
+  /** A Fastify instance, when the mock exposes it under this name instead. */
+  app?: MockListener;
   /** Resolves once the transport is bound — the mock framework's own signal. */
   ready?: Promise<unknown>;
-  exit: () => void;
+  close?: () => unknown;
+  stop?: () => unknown;
+  exit?: () => unknown;
 }
 interface MockModule {
   createServer(opts: Record<string, unknown>): MockServer;
+}
+
+/** `mock/server.js` unless `config.mock` names another module inside the package. */
+const DEFAULT_MOCK_MODULE = join('mock', 'server.js');
+
+/**
+ * Resolves the mock module `config.mock` asks for. `true` means the
+ * conventional `mock/server.js`; a string is a path relative to the package
+ * root (`mock/cgi-server.js` for the Antminer plugin, say), which must stay
+ * inside the package: the mock is part of the worker, not an arbitrary script.
+ */
+export function resolveMockModule(pkgDir: string, mock: unknown): string {
+  const sub = typeof mock === 'string' ? mock : DEFAULT_MOCK_MODULE;
+  const file = resolve(pkgDir, sub);
+  if (!file.startsWith(resolve(pkgDir) + sep) || sub.trim() === '') {
+    throw new Error(`config.mock must name a file inside the worker package, got "${String(mock)}".`);
+  }
+  return file;
 }
 
 /**
@@ -741,18 +958,31 @@ interface MockModule {
 async function awaitMockReady(mock: MockServer): Promise<void> {
   if (mock.ready) await mock.ready;
 
-  const server = mock.server;
-  // `listening` is the tell for a real net.Server; guarding on it also avoids
-  // waiting for an event that has already fired.
-  if (server?.on && server.listening === false) {
-    await once(server as unknown as EventEmitter, 'listening');
-  }
+  // `listening` is the tell for a real net/http.Server; guarding on it also
+  // avoids waiting for an event that has already fired.
+  const server = mockListeners(mock).find((s) => s.on && s.listening === false);
+  if (server) await once(server as unknown as EventEmitter, 'listening');
+}
+
+/** Every listener a mock handle may carry, outermost first. */
+function mockListeners(mock: MockServer): MockListener[] {
+  return [mock.server, mock.server?.server, mock.app?.server].filter((s): s is MockListener => Boolean(s));
 }
 
 /** Frees the listener now, whether the mock is Fastify-shaped or net.Server-shaped. */
 function dropMockConnections(mock: MockServer): void {
-  mock.server?.closeAllConnections?.();
-  mock.server?.server?.closeAllConnections?.();
+  for (const s of mockListeners(mock)) s.closeAllConnections?.();
+}
+
+/**
+ * Stops a mock through whichever method its handle offers. `exit()` comes
+ * last: the Ocean mock's `exit()` ends the whole process, so its `stop()` has
+ * to win, and the Antminer/Whatsminer mocks only have `close()`.
+ */
+async function stopMock(mock: MockServer): Promise<void> {
+  const stop = mock.close ?? mock.stop ?? mock.exit;
+  if (!stop) return;
+  await stop.call(mock);
 }
 
 /**
@@ -880,11 +1110,15 @@ export async function runWorker(
   }
 
   // Per-worker persistent state: plugin SQLite under storeDir, DHT/RPC seeds
-  // under storeDir/identity so the worker's public key survives restarts.
+  // under storeDir/identity so the worker's public key survives restarts, and
+  // the runtime's telemetry series under storeDir/telemetry and, when the
+  // worker's config turns the archive on, its day files under storeDir/telemetry-archive.
   const storeDir = componentDir(projectDir, 'workers', worker.name);
   mkdirSync(storeDir, { recursive: true });
   const dbPath = join(storeDir, 'data.db');
   const identityDir = join(storeDir, 'identity');
+  const telemetryStoreDir = join(storeDir, 'telemetry');
+  const telemetryArchiveDir = join(storeDir, 'telemetry-archive');
   // Holds the worker's key seeds: owner-only, also for a dir an older CLI made.
   mkdirSync(identityDir, { recursive: true, mode: 0o700 });
   chmodSync(identityDir, 0o700);
@@ -901,14 +1135,25 @@ export async function runWorker(
     ? await resolveMockPorts(worker.name, seeds, opts.reservedPorts)
     : seeds.map((d) => ({ ...(d.opts ?? {}) }));
 
-  // Mock device servers — one per seed device, from `<pkg>/mock/server`.
+  // Mock device servers — one per seed device, from `<pkg>/mock/server.js` or
+  // the module `config.mock` names.
   const mocks: MockServer[] = [];
   if (config.mock) {
-    const mockPath = join(dir, 'mock', 'server.js');
+    const mockPath = resolveMockModule(dir, config.mock);
+    const named = typeof config.mock === 'string' ? config.mock : 'mock/server.js';
     if (!existsSync(mockPath)) {
-      throw new Error(`config.mock is set but ${worker.package} has no mock/server.js.`);
+      throw new Error(
+        `config.mock is set but ${worker.package} has no ${named}. ` +
+          'Set `mock: <path>` to the mock module the package ships (for example mock/cgi-server.js).',
+      );
+    }
+    if (!statSync(mockPath).isFile()) {
+      throw new Error(`config.mock must name the mock module file, and ${named} in ${worker.package} is not a file.`);
     }
     const mockMod = require(mockPath) as MockModule;
+    if (typeof mockMod.createServer !== 'function') {
+      throw new Error(`${mockPath} does not export createServer(opts).`);
+    }
     for (const [i, d] of seeds.entries()) {
       const opts = deviceOpts[i];
       try {
@@ -929,7 +1174,8 @@ export async function runWorker(
 
   // Device set: `config.devices[].opts` is the plugin's own per-device config;
   // dbPath is threaded through for the sample plugin's SQLite persistence.
-  const devices = seeds.map((d, i) => ({ deviceId: d.id, config: { ...deviceOpts[i], dbPath } }));
+  // `info` never reaches the plugin: it is what aggregate reads label a device by.
+  const devices = seeds.map((d, i) => ({ deviceId: d.id, config: { ...deviceOpts[i], dbPath }, info: d.info ?? {} }));
 
   // Worker RPC is fail-closed and admits the Kernel's client key only (in
   // process, or kernel.pub in the trusted-keys dir), so every device call goes
@@ -952,11 +1198,17 @@ export async function runWorker(
   }
 
   const { WorkerRuntimeV2 } = mdkWorker();
+  // `config` is the opaque per-worker block from mdk.yaml: the plugin reads it
+  // as device.config, and the runtime reads its own keys from it
+  // (telemetryPollIntervalMs and friends) ahead of the contract's defaults.
   const runtime = new WorkerRuntimeV2(dir, {
     workerId: worker.name,
     devices,
     env: worker.env ?? {},
+    config: worker.config,
     storeDir: identityDir,
+    telemetryStoreDir,
+    telemetryArchiveDir,
     allowedKeys,
     ...projectDht(projectDir, opts.spec),
   });
@@ -969,10 +1221,15 @@ export async function runWorker(
   }
 
   const rpcKeyHex = runtime.getPublicKey().toString('hex');
+  let refused: string | undefined;
   if (kernel) {
-    await (kernel as unknown as { registerWorker: (k: Buffer) => Promise<void> }).registerWorker(
-      runtime.getPublicKey(),
-    );
+    // This Worker reports its own registration below, so the Kernel's
+    // unreachable report for its key is not printed (see runKernel).
+    unreachableReports.get(kernel)?.hosted.add(rpcKeyHex);
+    const outcome = await (
+      kernel as unknown as { registerWorker: (k: Buffer) => Promise<{ registered: boolean; error?: string } | undefined> }
+    ).registerWorker(runtime.getPublicKey());
+    if (outcome && !outcome.registered) refused = outcome.error ?? 'refused';
     if (Array.isArray(kernel._cleanup)) {
       kernel._cleanup.push(() => {
         trust.stop();
@@ -984,8 +1241,12 @@ export async function runWorker(
   }
 
   process.stderr.write(
-    `${tick} ${theme.label('worker')} ${theme.value(worker.name)} ready ${theme.muted(rpcKeyHex.slice(0, 16))}\n`,
+    refused
+      ? `${theme.warn('!')} ${theme.label('worker')} ${theme.value(worker.name)} not registered with the Kernel (${refused})\n`
+      : `${tick} ${theme.label('worker')} ${theme.value(worker.name)} ready ${theme.muted(rpcKeyHex.slice(0, 16))}\n`,
   );
+  // Once per run: every Worker fails the same way when the DHT is the problem.
+  if (refused) printHintOnce(workerUnreachableHint(refused, projectDht(projectDir, opts.spec)));
 
   // Signals are owned by the `run` command (see lib/shutdown.ts), which stops
   // every component in reverse boot order and exits even if one of them wedges.
@@ -994,7 +1255,7 @@ export async function runWorker(
     await runtime.stop();
     for (const m of mocks) {
       try {
-        m.exit();
+        await stopMock(m);
         // `server.close()` only stops new connections; a keep-alive socket from
         // the plugin's poller would hold the listener (and its port) open.
         dropMockConnections(m);
@@ -1131,8 +1392,7 @@ export async function superviseApp(
           ready = true;
           readyAt = Date.now();
           clearTimeout(timer);
-          mkdirSync(dirname(childFile), { recursive: true });
-          writeFileSync(childFile, String(proc.pid));
+          writeAppChildFile(cwd, app.name, proc.pid!);
           resolveReady();
         } else if (msg.type === 'error') {
           fail(new Error(msg.message ?? 'unknown error'));
@@ -1142,7 +1402,6 @@ export async function superviseApp(
       proc.on('exit', (code, signal) => {
         clearTimeout(timer);
         if (child === proc) child = undefined;
-        if (appChildPid(projectDir, app.name) === proc.pid) rmSync(childFile, { force: true });
         const how = signal ? `signal ${signal}` : `code ${code}`;
         if (!ready) {
           rejectReady(new Error(`App "${app.name}" exited before it was ready (${how}).`));
@@ -1181,12 +1440,14 @@ export async function superviseApp(
       stopped = true;
       clearTimeout(restartTimer);
       const proc = child;
-      if (!proc) return;
-      const killTimer = setTimeout(() => proc.kill('SIGKILL'), APP_STOP_GRACE_MS);
-      const exited = once(proc, 'exit');
-      proc.kill('SIGTERM');
-      await exited;
-      clearTimeout(killTimer);
+      if (proc) {
+        const killTimer = setTimeout(() => proc.kill('SIGKILL'), APP_STOP_GRACE_MS);
+        const exited = once(proc, 'exit');
+        proc.kill('SIGTERM');
+        await exited;
+        clearTimeout(killTimer);
+      }
+      rmSync(childFile, { force: true });
     },
   };
 }

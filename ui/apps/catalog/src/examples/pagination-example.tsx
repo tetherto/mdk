@@ -52,36 +52,21 @@ export const PaginationExample = (): React.ReactElement => {
   return (
     <section className="demo-section">
       <DemoPageHeader title="Pagination" />
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
+      <div className="demo-section__tile-grid">
         {currentPageItems.map((item) => (
-          <div
-            key={item.id}
-            style={{
-              padding: '16px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-            }}
-          >
+          <div key={item.id} className="demo-section__tile">
             <Typography
               variant="heading3"
               size="xl"
               color="primary"
-              style={{ marginBottom: '8px' }}
+              className="demo-section__mb-sm"
             >
               {item.name}
             </Typography>
-            <Typography size="sm" color="muted" style={{ marginBottom: '12px' }}>
+            <Typography size="sm" color="muted" className="demo-section__mb-md">
               {item.description}
             </Typography>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="demo-section__control-row">
               <Indicator color={StatusColors[item.status]}>{item.status}</Indicator>
               <Typography variant="caption" color="muted">
                 ID: {item.id}

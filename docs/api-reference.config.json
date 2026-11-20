@@ -1,0 +1,17 @@
+{
+  "$comment": "What `npm run generate:api-reference` (docs/scripts/generate-api-reference.mjs) generates in this repository: the route-table field reference from app-runtime's schema, the Gateway's own HTTP routes, and each listed app's route table under the name and mount a stack gives it. An explicit, stable list, so freshness checks never depend on the apps a developer has installed. Apps MDK ships live in their own repositories and generate their references there with the same @tetherto/mdk-app-runtime functions.",
+  "routeTableSchema": {
+    "out": "backend/core/app-runtime/docs"
+  },
+  "gateway": {
+    "out": "backend/core/gateway/docs"
+  },
+  "apps": [
+    {
+      "name": "site",
+      "dir": "examples/mvp-site/backend/gateway-plugins/site",
+      "mount": "/",
+      "out": "examples/mvp-site/backend/gateway-plugins/site/docs"
+    }
+  ]
+}

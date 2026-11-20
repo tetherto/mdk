@@ -118,7 +118,7 @@ describe('derive-permissions', () => {
     assert.equal(malformedRule([{ resources: ['x'], verbs: ['y'] }, { resources: 'x', verbs: ['y'] }]), 1)
     assert.deepEqual(derive([]), { rules: [], actor: false })
     assert.deepEqual(derive([{ method: 'getWorkerKey', file: 'f', line: 1 }]), {
-      rules: [{ resources: ['workers'], verbs: ['list'] }],
+      rules: [{ resources: ['workers'], verbs: ['list', 'read'] }],
       actor: false
     })
   })

@@ -36,6 +36,41 @@ describe('CurrencyToggler', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('keeps an option with a disabledReason focusable, shows the reason and ignores clicks', async () => {
+    const onChange = vi.fn()
+    render(
+      <CurrencyToggler
+        value="USD"
+        onChange={onChange}
+        currencies={['USD', { value: 'BTC', disabled: true, disabledReason: 'No BTC prices yet' }]}
+      />,
+    )
+    const btc = screen.getByRole('button', { name: 'Select BTC currency' })
+
+    expect(btc).not.toBeDisabled()
+    expect(btc).toHaveAttribute('aria-disabled', 'true')
+
+    fireEvent.focus(btc)
+    expect((await screen.findAllByText('No BTC prices yet')).length).toBeGreaterThan(0)
+
+    fireEvent.click(btc)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('ignores disabledReason on an enabled option', () => {
+    render(
+      <CurrencyToggler
+        value="USD"
+        onChange={vi.fn()}
+        currencies={[{ value: 'USD', disabledReason: 'unused' }]}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Select USD currency' })).not.toHaveAttribute(
+      'aria-disabled',
+    )
+  })
+
   it('stretches to its container when full width', () => {
     const { container } = render(
       <CurrencyToggler currencies={['A']} value="A" onChange={() => {}} fullWidth />,

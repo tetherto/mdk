@@ -1,4 +1,5 @@
 {
+  "routeTableVersion": "1",
   "name": "@tetherto/mdk-plugin-mvp-site",
   "version": "0.1.0",
   "description": "MVP-site example plugin: aggregates the site (miners, a powermeter, a mining pool) via the MDK protocol client over the RPC listener.",
@@ -13,11 +14,23 @@
           "200": {
             "description": "Live site snapshot: miners, site power, and pools.",
             "content": { "application/json": { "schema": { "type": "object" } } }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              { "code": "ERR_MDK_CLIENT_UNAVAILABLE", "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).", "fix": "Check the Kernel is running and reachable from the app runtime, then retry." }
+            ]
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              { "code": "ERR_KERNEL_ACTION_FORBIDDEN", "description": "The Kernel refused the call for the caller's roles, or for this app's service account.", "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`." }
+            ]
           }
         }
       },
-      "description": "Live site snapshot assembled from telemetry.pull across all workers: all miners, site power consumption from powermeters, and pool data from all minerpool workers. Workers that are down are listed in unavailableWorkers with their device counts, since their devices cannot be read.",
-      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE"],
+      "description": "Live site snapshot assembled from `telemetry.pull` across all workers: all miners, site power consumption from powermeters, and pool data from all minerpool workers. Workers that are down are listed in `unavailableWorkers` with their device counts, since their devices cannot be read.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_KERNEL_ACTION_FORBIDDEN"],
       "safety": "read-only"
     },
     {
@@ -36,11 +49,25 @@
           "200": {
             "description": "Historical time-series read from a worker tail-log.",
             "content": { "application/json": { "schema": { "type": "object" } } }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              { "code": "ERR_MDK_CLIENT_UNAVAILABLE", "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).", "fix": "Check the Kernel is running and reachable from the app runtime, then retry." },
+              { "code": "ERR_INVALID_DATE_RANGE", "description": "`start` is not before `end`.", "fix": "Send a `start` earlier than `end`." },
+              { "code": "ERR_UNKNOWN_DEVICE_ID", "description": "`deviceId` matches none of the requested metric's devices (mining pools, for `hashrate`). A metric with no devices at all answers an empty log instead.", "fix": "Send a `deviceId` from `GET /site/overview`, or omit it for every device." }
+            ]
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              { "code": "ERR_KERNEL_ACTION_FORBIDDEN", "description": "The Kernel refused the call for the caller's roles, or for this app's service account.", "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`." }
+            ]
           }
         }
       },
-      "description": "Historical telemetry from the workers' persisted tail-logs (telemetry.pull type 'logs'). metric=hashrate reads pool stats-history (all pools summed by default; pass deviceId for one pool). metric=site-hashrate reads the miners' own snap tail-logs summed across all miners (MH/s; pass deviceId for one miner). metric=power reads site powermeter series (all meters summed by default; pass deviceId for one meter). metric=temperature reads sensor tail-logs, averaged by default; this example ships no sensor Worker, so it returns empty unless one is added. Defaults to the last hour.",
-      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_UNKNOWN_METRIC", "ERR_INVALID_DATE_RANGE", "ERR_UNKNOWN_DEVICE_ID"],
+      "description": "Historical telemetry from the workers' persisted tail-logs (`telemetry.pull` type `logs`). `metric=hashrate` reads pool stats-history (H/s, the unit the pool contracts declare; all pools summed by default; pass `deviceId` for one pool). `metric=site-hashrate` reads the miners' own snap tail-logs summed across all miners (MH/s; pass `deviceId` for one miner). `metric=power` reads site powermeter series (all meters summed by default; pass `deviceId` for one meter). `metric=temperature` reads sensor tail-logs, averaged by default; this example ships no sensor Worker, so it returns empty unless one is added. Defaults to the last hour.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_KERNEL_ACTION_FORBIDDEN", "ERR_INVALID_DATE_RANGE", "ERR_UNKNOWN_DEVICE_ID"],
       "safety": "read-only"
     },
     {
@@ -53,11 +80,29 @@
           "200": {
             "description": "What the signed-in user may do on this site.",
             "content": { "application/json": { "schema": { "type": "object" } } }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              { "code": "ERR_MDK_CLIENT_UNAVAILABLE", "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).", "fix": "Check the Kernel is running and reachable from the app runtime, then retry." }
+            ]
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "x-mdk-errors": [
+              { "code": "ERR_SIGN_IN_REQUIRED", "description": "The request carries no signed-in identity.", "fix": "Sign in, and send the access token." }
+            ]
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              { "code": "ERR_KERNEL_ACTION_FORBIDDEN", "description": "The Kernel refused the call for the caller's roles, or for this app's service account.", "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`." }
+            ]
           }
         }
       },
-      "description": "The signed-in user's identity, the roles spec.rbac binds to them, which site routes they may call, and which miners they may send each command to. Advisory, for the UI: the Gateway and the Kernel enforce the same policy on every call.",
-      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_SIGN_IN_REQUIRED"],
+      "description": "The signed-in user's identity, the roles `spec.rbac` binds to them, which site routes they may call, and which miners they may send each command to. Advisory, for the UI: the Gateway and the Kernel enforce the same policy on every call.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_KERNEL_ACTION_FORBIDDEN", "ERR_SIGN_IN_REQUIRED"],
       "safety": "read-only"
     },
     {
@@ -73,11 +118,29 @@
           "200": {
             "description": "The Kernel's write-command log, newest first.",
             "content": { "application/json": { "schema": { "type": "object" } } }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              { "code": "ERR_MDK_CLIENT_UNAVAILABLE", "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).", "fix": "Check the Kernel is running and reachable from the app runtime, then retry." }
+            ]
+          },
+          "401": {
+            "description": "Sign-in required.",
+            "x-mdk-errors": [
+              { "code": "ERR_SIGN_IN_REQUIRED", "description": "The request carries no signed-in identity.", "fix": "Sign in, and send the access token." }
+            ]
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              { "code": "ERR_KERNEL_ACTION_FORBIDDEN", "description": "The Kernel refused the call for the caller's roles, or for this app's service account.", "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`." }
+            ]
           }
         }
       },
-      "description": "Every miner command attempted on this site, newest first, refused ones included: who sent it (the operator, via the site app), the roles they held, the command, the target device, and the outcome. Reads the Kernel's write-command log (command.log), so the caller needs commands: read.",
-      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_SIGN_IN_REQUIRED"],
+      "description": "Every miner command attempted on this site, newest first, refused ones included: who sent it (the operator, via the site app), the roles they held, the command, the target device, and the outcome. Reads the Kernel's write-command log (`command.log`), so the caller needs `commands: read`.",
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_KERNEL_ACTION_FORBIDDEN", "ERR_SIGN_IN_REQUIRED"],
       "safety": "read-only"
     },
     {
@@ -105,12 +168,38 @@
           "200": {
             "description": "Command dispatched to the miner via Kernel.",
             "content": { "application/json": { "schema": { "type": "object" } } }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              { "code": "ERR_MDK_CLIENT_UNAVAILABLE", "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).", "fix": "Check the Kernel is running and reachable from the app runtime, then retry." },
+              { "code": "ERR_DEVICE_ID_REQUIRED", "description": "The `deviceId` path segment is empty.", "fix": "Put the miner's `deviceId` in the path." }
+            ]
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              { "code": "ERR_KERNEL_ACTION_FORBIDDEN", "description": "The Kernel refused the call for the caller's roles, or for this app's service account.", "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`." }
+            ]
+          },
+          "404": {
+            "description": "The target device does not exist.",
+            "x-mdk-errors": [
+              { "code": "ERR_DEVICE_NOT_FOUND", "description": "The Kernel refused the command: no such device.", "fix": "Send a `deviceId` from `GET /site/overview`." }
+            ]
+          },
+          "422": {
+            "description": "The Kernel refused the command.",
+            "x-mdk-errors": [
+              { "code": "ERR_WORKER_NOT_ROUTABLE", "description": "The Kernel refused the command: the device's Worker is not ready or not healthy. Any other refusal code the Kernel returns for the command also arrives as 422.", "fix": "Retry once the Worker reports ready and healthy in `GET /site/overview`." },
+              { "code": "ERR_COMMAND_REJECTED", "description": "The Kernel refused the command without a code. A fallback: the current Kernel always sends one.", "fix": "Retry; if it repeats, check the Kernel log for the refusal." }
+            ]
           }
         }
       },
-      "description": "Dispatches the setPowerMode capability command to a single miner through Kernel. The new mode appears on the next telemetry poll.",
-      "constraints": ["mode must be one of low | normal | high."],
-      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_DEVICE_ID_REQUIRED", "ERR_INVALID_POWER_MODE", "ERR_DEVICE_NOT_FOUND", "ERR_WORKER_NOT_ROUTABLE"],
+      "description": "Dispatches the `setPowerMode` capability command to a single miner through Kernel. The new mode appears on the next telemetry poll.",
+      "constraints": ["mode must be one of low | normal | high | high_performance."],
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_KERNEL_ACTION_FORBIDDEN", "ERR_DEVICE_ID_REQUIRED", "ERR_DEVICE_NOT_FOUND", "ERR_WORKER_NOT_ROUTABLE", "ERR_COMMAND_REJECTED"],
       "safety": "write"
     },
     {
@@ -152,12 +241,39 @@
           "200": {
             "description": "setupPools command dispatched to the miner via Kernel.",
             "content": { "application/json": { "schema": { "type": "object" } } }
+          },
+          "400": {
+            "description": "The request cannot be served as sent.",
+            "x-mdk-errors": [
+              { "code": "ERR_MDK_CLIENT_UNAVAILABLE", "description": "The Kernel client could not reach the Kernel (no `kernelKey`, a failed connection or a closed channel).", "fix": "Check the Kernel is running and reachable from the app runtime, then retry." },
+              { "code": "ERR_DEVICE_ID_REQUIRED", "description": "The `deviceId` path segment is empty.", "fix": "Put the miner's `deviceId` in the path." },
+              { "code": "ERR_INVALID_POOLS", "description": "`pools` is an empty list, or an entry has an empty `url` or `worker_name`.", "fix": "Send one to three pools, each with a non-empty `url` and `worker_name`." }
+            ]
+          },
+          "403": {
+            "description": "The Kernel refused the call.",
+            "x-mdk-errors": [
+              { "code": "ERR_KERNEL_ACTION_FORBIDDEN", "description": "The Kernel refused the call for the caller's roles, or for this app's service account.", "fix": "Grant the caller, or this app's service account, the access the route needs in `spec.rbac`." }
+            ]
+          },
+          "404": {
+            "description": "The target device does not exist.",
+            "x-mdk-errors": [
+              { "code": "ERR_DEVICE_NOT_FOUND", "description": "The Kernel refused the command: no such device.", "fix": "Send a `deviceId` from `GET /site/overview`." }
+            ]
+          },
+          "422": {
+            "description": "The Kernel refused the command.",
+            "x-mdk-errors": [
+              { "code": "ERR_WORKER_NOT_ROUTABLE", "description": "The Kernel refused the command: the device's Worker is not ready or not healthy. Any other refusal code the Kernel returns for the command also arrives as 422.", "fix": "Retry once the Worker reports ready and healthy in `GET /site/overview`." },
+              { "code": "ERR_COMMAND_REJECTED", "description": "The Kernel refused the command without a code. A fallback: the current Kernel always sends one.", "fix": "Retry; if it repeats, check the Kernel log for the refusal." }
+            ]
           }
         }
       },
-      "description": "Dispatches the setupPools capability command to a single miner through Kernel. Pools from the request body take precedence; with no body the site-wide default from config/site.deploy.json (worker.pools) is applied. The miner reboots to pick up the new pools, so expect it to drop offline briefly.",
+      "description": "Dispatches the `setupPools` capability command to a single miner through Kernel. Pools from the request body take precedence; with no body the site-wide default from `config/site.deploy.json` (`worker.pools`) is applied. The miner reboots to pick up the new pools, so expect it to drop offline briefly.",
       "constraints": ["At most 3 pools per miner (whatsminer API limit).", "Each pool needs url and worker_name; appendId=false disables the per-device worker-name suffix."],
-      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_DEVICE_ID_REQUIRED", "ERR_INVALID_POOLS", "ERR_DEVICE_NOT_FOUND", "ERR_WORKER_NOT_ROUTABLE"],
+      "errors": ["ERR_MDK_CLIENT_UNAVAILABLE", "ERR_KERNEL_ACTION_FORBIDDEN", "ERR_DEVICE_ID_REQUIRED", "ERR_INVALID_POOLS", "ERR_DEVICE_NOT_FOUND", "ERR_WORKER_NOT_ROUTABLE", "ERR_COMMAND_REJECTED"],
       "safety": "write"
     }
   ]

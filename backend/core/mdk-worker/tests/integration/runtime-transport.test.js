@@ -10,8 +10,10 @@ const simPlugin = require('../fixtures/sim-plugin')
 const { ACTIONS, MESSAGE_TYPES } = require('../../../kernel/lib/protocol/actions')
 const { build, serialize, deserialize } = require('../../../kernel/lib/protocol/envelope')
 
+const LOOPBACK = '127.0.0.1'
+
 test('runtime serves MDK envelopes for N devices over one HRPC channel', { timeout: 60000 }, async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const callerKeyPair = DHT.keyPair()
 
   const runtime = new WorkerRuntime(simPlugin, {
@@ -19,6 +21,7 @@ test('runtime serves MDK envelopes for N devices over one HRPC channel', { timeo
     allowedKeys: [callerKeyPair.publicKey.toString('hex')],
     kernelTopic: crypto.randomBytes(32).toString('hex'),
     bootstrap: testnet.bootstrap,
+    dhtHost: LOOPBACK,
     devices: [
       { deviceId: 'SIM-001', config: { hashrate: 100, power: 3000 } },
       { deviceId: 'SIM-002', config: { hashrate: 140, power: 3200 } }
@@ -27,7 +30,7 @@ test('runtime serves MDK envelopes for N devices over one HRPC channel', { timeo
   await runtime.start()
   t.teardown(() => runtime.stop())
 
-  const rpc = new HyperswarmRPC({ keyPair: callerKeyPair, bootstrap: testnet.bootstrap })
+  const rpc = new HyperswarmRPC({ keyPair: callerKeyPair, dht: testnet.createNode({ keyPair: callerKeyPair }) })
   t.teardown(() => rpc.destroy())
   const send = async (opts) => {
     const envelope = build({ type: MESSAGE_TYPES.REQUEST, sender: 'kernel:kernel:test', ...opts })
@@ -66,6 +69,7 @@ function bootRuntime (t, testnet, opts) {
   const runtime = new WorkerRuntime(simPlugin, {
     workerId: 'sim-rack-fw',
     bootstrap: testnet.bootstrap,
+    dhtHost: LOOPBACK,
     devices: [{ deviceId: 'SIM-001', config: { hashrate: 100, power: 3000 } }],
     ...opts
   })
@@ -74,14 +78,14 @@ function bootRuntime (t, testnet, opts) {
 }
 
 test('runtime refuses to start without an allowlist (fail closed)', async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const runtime = bootRuntime(t, testnet, {})
   await t.exception(() => runtime.start(), /ERR_WORKER_ALLOWED_KEYS_REQUIRED/)
   t.exception(() => runtime.allowKey('nothex'), /ERR_WORKER_ALLOWED_KEY_INVALID/)
 })
 
 test('runtime firewall rejects unknown callers and honours allowKey/revokeKey', { timeout: 60000 }, async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const allowed = DHT.keyPair()
   const stranger = DHT.keyPair()
   const runtime = bootRuntime(t, testnet, { allowedKeys: [allowed.publicKey] })
@@ -89,11 +93,11 @@ test('runtime firewall rejects unknown callers and honours allowKey/revokeKey', 
 
   const ping = build({ type: MESSAGE_TYPES.REQUEST, sender: 'kernel:kernel:test', action: ACTIONS.HEALTH_PING })
 
-  const strangerRpc = new HyperswarmRPC({ keyPair: stranger, bootstrap: testnet.bootstrap })
+  const strangerRpc = new HyperswarmRPC({ keyPair: stranger, dht: testnet.createNode({ keyPair: stranger }) })
   t.teardown(() => strangerRpc.destroy())
   await t.exception(() => strangerRpc.request(runtime.getPublicKey(), 'mdk', serialize(ping)), 'unknown key is rejected at connect')
 
-  const rpc = new HyperswarmRPC({ keyPair: allowed, bootstrap: testnet.bootstrap })
+  const rpc = new HyperswarmRPC({ keyPair: allowed, dht: testnet.createNode({ keyPair: allowed }) })
   t.teardown(() => rpc.destroy())
   const pong = deserialize(await rpc.request(runtime.getPublicKey(), 'mdk', serialize(ping)))
   t.is(pong.payload.status, 'OK', 'allowlisted key is served')

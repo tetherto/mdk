@@ -12,8 +12,10 @@ const { createRawMdkClient } = require('../../../client')
 const { grantTestAdmin } = require('../../lib/testing')
 const simPlugin = require('../../../mdk-worker/tests/fixtures/sim-plugin')
 
+const LOOPBACK = '127.0.0.1'
+
 async function startSite (t) {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mdk-levels-'))
   t.teardown(() => fs.rmSync(root, { recursive: true, force: true }))
 
@@ -21,6 +23,7 @@ async function startSite (t) {
     workerId: 'sim-rack-1',
     storeDir: path.join(root, 'worker'),
     bootstrap: testnet.bootstrap,
+    dhtHost: LOOPBACK,
     allowAll: true,
     devices: [{ deviceId: 'SIM-001', config: { hashrate: 100, power: 3000 } }]
   })
@@ -28,7 +31,7 @@ async function startSite (t) {
   t.teardown(() => worker.stop())
 
   const kernel = new KernelManager({
-    kernel: { hrpc: { whitelist: [], bootstrap: testnet.bootstrap }, discovery: { mode: 'local', dir: path.join(root, 'keys') }, commandVerifyIntervalMs: 100 }
+    kernel: { hrpc: { whitelist: [], bootstrap: testnet.bootstrap, dhtHost: LOOPBACK }, discovery: { mode: 'local', dir: path.join(root, 'keys') }, commandVerifyIntervalMs: 100 }
   }, { storeDir: path.join(root, 'kernel'), root, loadConf: () => {} })
   await kernel.init()
   await kernel.start()
@@ -38,7 +41,7 @@ async function startSite (t) {
   const credential = await grantTestAdmin(kernel)
   const keyPair = DHT.keyPair()
   kernel.allowKey(keyPair.publicKey)
-  const client = createRawMdkClient({ hrpc: { key: kernel.getPublicKey(), bootstrap: testnet.bootstrap, keyPair }, credential })
+  const client = createRawMdkClient({ hrpc: { key: kernel.getPublicKey(), bootstrap: testnet.bootstrap, dhtHost: LOOPBACK, keyPair }, credential })
   await client.connect()
   t.teardown(() => client.close())
   await client.waitForWorkers({ count: 1, timeoutMs: 20000 })

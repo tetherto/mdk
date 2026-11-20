@@ -37,6 +37,7 @@ function healthyReport(overrides: Partial<StatusReport> = {}): StatusReport {
       kernel: { state: 'up', keyFile: '/proj/.mdk/kernel.key', key: 'deadbeefdeadbeef', error: null },
       gateway: { state: 'up', url: 'http://127.0.0.1:3847', error: null },
       workers: {
+        checked: true,
         declared: 1,
         registered: 1,
         totalDevices: 1,
@@ -128,6 +129,7 @@ describe('mdk status', () => {
           kernel: { state: 'up', keyFile: '/proj/.mdk/kernel.key', key: 'deadbeef', error: null },
           gateway: { state: 'down', url: 'http://127.0.0.1:3847', error: 'ERR_MDK_STATUS_TIMEOUT: timed out' },
           workers: {
+            checked: true,
             declared: 2,
             registered: 1,
             totalDevices: 1,
@@ -168,6 +170,7 @@ describe('mdk status', () => {
           kernel: { state: 'down', keyFile: '/proj/.mdk/kernel.key', key: null, error: null },
           gateway: { state: 'down', url: null, error: 'connection refused, retry later' },
           workers: {
+            checked: false,
             declared: 1,
             registered: 2,
             totalDevices: 0,
@@ -187,8 +190,42 @@ describe('mdk status', () => {
     expect(out).toContain('not running');
     expect(out).toContain('connection refused, retry later');
     expect(out).toContain('0 devices');
+    expect(out).toMatch(/Workers\s+2\/1 registered/);
+    expect(out).not.toContain('not checked');
     expect(out).toContain('not in spec');
     expect(out).toContain('Health: down');
+    expect(process.exitCode).toBe(5);
+  });
+
+  it('shows a Kernel that refused the session as up, says why, and leaves the workers unchecked', async () => {
+    const error = 'ERR_CLI_SESSION_EXPIRED: the session ran out. Sign in again with `mdk login`.';
+    collectStatusMock.mockResolvedValue(
+      healthyReport({
+        health: 'degraded',
+        ok: false,
+        stack: {
+          kernel: { state: 'up', keyFile: '/proj/.mdk/kernel.key', key: 'deadbeefdeadbeef', error, refused: true },
+          gateway: { state: 'up', url: 'http://127.0.0.1:3847', error: null },
+          workers: {
+            checked: false,
+            declared: 1,
+            registered: 0,
+            totalDevices: 0,
+            items: [{ name: 'a', declared: true, registered: false, state: null, health: null, devices: 0 }],
+          },
+          apps: { declared: 0, running: 0, items: [] },
+        },
+      }),
+    );
+    const program = buildProgram();
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await program.parseAsync(['node', 'mdk', 'status']);
+    const out = stdout.mock.calls.join('');
+    expect(out).toMatch(/Kernel\s+up\s+deadbeefdeadbeef\n\s+ERR_CLI_SESSION_EXPIRED: the session ran out\. Sign in again with `mdk login`\.\n/);
+    expect(out).not.toContain('unreachable');
+    expect(out).toMatch(/Workers\s+not checked/);
+    expect(out).toMatch(/\n\s+a\s+-\s+-\s+-\s+0/);
+    expect(out).toContain('Health: degraded');
     expect(process.exitCode).toBe(5);
   });
 

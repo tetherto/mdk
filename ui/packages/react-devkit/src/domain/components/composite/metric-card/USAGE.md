@@ -33,4 +33,9 @@ inline KPI strips where visual weight needs to be controlled.
 - When `value` is `null` the component renders the FALLBACK placeholder (`—`) from `@primitives`
 - `showDashForZero` and `null` values both render the same FALLBACK string
 - `isHighlighted` takes precedence over `isTransparentColor` for color resolution
+- The value color comes from the `mdk-metric-card__value--highlighted` (`--mdk-color-primary`) and
+  `mdk-metric-card__value--transparent` (`--mdk-color-white` at 50%) modifiers in
+  [`styles.scss`](./styles.scss), so a theme recolors the value by overriding those tokens or modifiers
+- `getMetricCardValueColor` is deprecated. It returns only the default-theme hex values and does not follow a theme
+  override, so style the value with the modifiers instead.
 - The background color is applied via a `--mdk-metric-card-bg` CSS custom property, allowing it to be overridden at the `@layer app` level

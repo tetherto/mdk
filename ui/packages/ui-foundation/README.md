@@ -63,7 +63,9 @@ await auth.signInWithPassword({ username, password }) // on the sign-in page
 [`utils/period-utils.ts`](./src/utils/period-utils.ts): a period is a rolling preset (`PERIOD_PRESETS`, last
 24 hours to year to date) or custom days, plus a `Granularity` (`hour`, `day`, `week`, `month`).
 `periodRange(period, timezone)` gives its `[start, end)` in ms, with custom days as whole days in the site's
-timezone; `allowedGranularities(ms)` the buckets that fit a range; `zonedDayStart` / `zonedDayOf` convert
+timezone; `allowedGranularities(ms)` the buckets that fit a range, from the limits in `GRANULARITY_LIMITS`, and
+`granularityDisabledReason(granularity, ms)` why one doesn't (e.g. "Hourly buckets need a period of 31 days or less");
+`zonedDayStart` / `zonedDayOf` convert
 between instants and `YYYY-MM-DD` days in a timezone. `usePeriod` in `@tetherto/mdk-react-adapter` keeps
 a period in the URL
 

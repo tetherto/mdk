@@ -5,9 +5,9 @@ the universal Agent Skills format (`SKILL.md`), that makes any
 skills-compatible coding agent (Cursor, Claude Code, …) fluent in MDK
 conventions the moment the repo is cloned.
 
-The suite ships eight flat skills: the `mdk` router plus full workflows for
-device Workers, app routes served through the Gateway, MDK Apps, UI pages, stack deployment, site sizing
-from a measured envelope, and the pre-publish security audit. Composite prompts (e.g. "create a UI to show
+The suite ships eleven flat skills: the `mdk` router plus full workflows for
+device Workers, app routes served through the Gateway, MDK Apps, app RBAC, UI pages, stack deployment, site sizing
+from a measured envelope, the pre-publish security audit, and security reviews of vendor Workers and vendor Apps. Composite prompts (e.g. "create a UI to show
 \<metric\> for \<device family\>") are routed as an ordered chain in
 [`mdk/SKILL.md`](./src/skills/mdk/SKILL.md).
 
@@ -28,7 +28,9 @@ src/
 │   ├── mdk-ui-component/   # UI pages and panels for MDK Apps and dashboards + ui-registry (generated)
 │   ├── mdk-deployment/     # mdk.yaml / mdk run workflow
 │   ├── mdk-site-sizing/    # Size a site from a description + measured envelope
-│   └── mdk-publish-security/ # Pre-publish security audit: tarball scan + 18-class review
+│   ├── mdk-publish-security/ # Pre-publish security audit: tarball scan + 18-class review
+│   ├── mdk-worker-security/  # Vendor Worker review: scan-worker.mjs + W1–W14 checklist
+│   └── mdk-app-security/     # Vendor App review: scan-app.mjs + A1–A14 checklist
 ├── sources.map.json        # Source-of-truth -> bundle mapping (contract schema comes from backend/core/mdk-worker)
 ├── index.mjs               # Programmatic entry point (assemble / installSkills)
 ├── index.d.ts              # TypeScript types for the entry point
@@ -37,11 +39,12 @@ src/
 dist/skills/                # Assembled suite — build output, gitignored, never hand-edited
 ```
 
-[`skills/mdk-ui-component/references/ui-registry.json`](./src/skills/mdk-ui-component/references/ui-registry.json) is generated, not hand-authored. It is a verbatim copy of the devkit's
-`dist/registry.json`, written by [`docs/scripts/sync-ui-registry.mjs`](../../docs/scripts/sync-ui-registry.mjs). Regenerate it with
-`npm run generate:ui-registry` from the repo root, which rebuilds the devkit registry and rewrites this file. Hand-edits do not survive the next run,
-and a stale copy tells coding agents to use component props that no longer exist. The
-`docs-freshness` workflow watches this file and its devkit source on PRs and
+[`skills/mdk-ui-component/references/ui-registry/`](./src/skills/mdk-ui-component/references/ui-registry/index.json) is generated, not
+hand-authored. It is the devkit's `dist/registry.json` split into an `index.json` of names plus one file per component, hook and type,
+each holding its registry entry verbatim, so an agent reads only the entries it uses. [`docs/scripts/sync-ui-registry.mjs`](../../docs/scripts/sync-ui-registry.mjs)
+writes it. Regenerate it with `npm run generate:ui-registry` from the repo root, which rebuilds the devkit registry and rewrites the folder.
+Hand-edits do not survive the next run, and a stale copy tells coding agents to use component props that no longer exist. The
+`docs-freshness` workflow watches this folder and its devkit source on PRs and
 fails the check when it drifts. The job summary shows what differs; fix it by running `npm run generate:ui-registry` (or
 `npm run regenerate-docs`) and committing the result.
 
@@ -105,6 +108,8 @@ prompt activates the matching skills:
 | "How do I deploy the MDK stack?"                            | `mdk-deployment`                    |
 | "Size this site: 80 Whatsminer M56S on a 16-core NVMe box"  | `mdk-site-sizing`                   |
 | "Security check the packages before we publish to npm"      | `mdk-publish-security`              |
+| "Is whatsminer-mdk-worker safe to install at this commit?"  | `mdk-worker-security`               |
+| "Audit mdk-app-demo before we add it to the site"           | `mdk-app-security`                  |
 | "Create an MDK app called sentinel"                         | `mdk-create-app`                    |
 | "What permissions does the ops app need?"                   | `mdk-app-rbac`                      |
 | "What is MDK and how is it structured?"                     | `mdk` (router)                      |

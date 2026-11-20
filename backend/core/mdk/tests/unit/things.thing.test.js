@@ -167,3 +167,11 @@ test('getRealtimeData returns lastSnap after getSnap is called', async (t) => {
   const rtd = await thg.getRealtimeData()
   t.ok(rtd.success)
 })
+
+test('readSnap returns the snapshot shape and lets a failure propagate', async (t) => {
+  const ok = new ConcreteThing('miner', {}, { stats: { power_w: 1 }, config: { a: 1 } })
+  t.alike(await ok.readSnap(), { success: true, raw_errors: [], stats: { power_w: 1 }, config: { a: 1 } })
+
+  const failing = new ConcreteThing('miner', {}, null, 'ERR_DATA_INSUFFICIENT')
+  await t.exception(failing.readSnap(), /ERR_DATA_INSUFFICIENT/)
+})

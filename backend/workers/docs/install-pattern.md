@@ -1,71 +1,78 @@
 # Worker install pattern
 
-Every Worker package in this workspace ships the same shape. Per-manufacturer specifics live in each Worker's own `USAGE.md`.
+Every Worker package in this workspace ships the same shape. Per-manufacturer specifics live in each Worker's own `README.md`.
 
 ## What a Worker package contains
 
-```
+```text
 backend/workers/<family>/<provider>/
-  index.js              # exports the manager classes (one per device model)
-  lib/                  # manager implementations + protocol translation
-  mock/server.js        # local HTTP server mimicking the vendor's device API
+  mdk-contract.json     # runtime contract: metadata, telemetry, commands, errors; names the handlers
+  src/
+    device.js           # builds this device's client from the ambient device module (f2pool: `pool.js`)
+    telemetry/*.js      # one (params) handler per metric field
+    commands/*.js       # one (params) handler per write action, where the device has any
+  lib/                  # device client implementations + protocol translation
+  mock/server.js        # local server mimicking the vendor's device API
   mock/initial_states/  # canned responses the mock returns
-  config/*.json.example # config templates copied by setup-config.sh
-  setup-config.sh       # copies *.example -> active config files
-  mdk-contract.json     # runtime contract: metadata, telemetry, commands, errors
+  smoke.config.js       # device spec for `mdk validate worker --smoke`
+  index.js              # exports the device classes, for a host that drives a device without the runtime
   tests/                # unit + integration tests
   package.json          # vendor-specific deps
-  USAGE.md              # this package's install/run notes (per-package)
-  examples/             # runnable scenarios per the qvac model
 ```
 
-The contract — [`mdk-contract.json`](../../workers/miners/avalon/plugin/mdk-contract.json) is the engineering source of truth for telemetry units, command 
-shapes, and supported models. 
+The [Antspace, Bitdeer and Seneca packages](../README.md#1-worker-plugin) are still on the older module-exporting
+shape: their contract and handlers live under `plugin/`, they ship a `plugin/boot.js` boot helper on
+`WorkerRuntime` v1, and they keep `config/*.json.example` templates.
+
+[`mdk-contract.json`](../../workers/miners/avalon/mdk-contract.json) is the engineering source of truth for telemetry units,
+command shapes, and supported models.
 
 ## The two ways to run a Worker
 
 ### As a library, in your own Node process
 
-The canonical SDK shape. There is no single generic `startWorker(WorkerClass, opts)`: each Worker package ships its own boot
-function that constructs a [`WorkerRuntime`](../../core/mdk-worker/lib/worker-runtime.js) and seeds devices from `opts.seedDevices`:
+The canonical SDK shape. Point [`WorkerRuntimeV2`](../../core/mdk-worker/lib/worker-runtime-v2.js) at the package
+directory and hand it the device list (`mdk run` does the same from `mdk.yaml`):
 
 ```js
+const path = require('path')
 const { getKernel } = require('@tetherto/mdk-core')
-const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
 const kernel = await getKernel()
 
-const { runtime } = await startAvalonWorker({
+const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-avalon/package.json')), {
   workerId: 'avalon-rack-1',
-  model: 'a1346',
   storeDir: './data/avalon',
   allowedKeys: [kernel.getClientPublicKey()],
-  seedDevices: [{
-    id: 'AV-001',
-    opts: { address: '127.0.0.1', port: 14030, password: 'admin' }
-  }]
+  devices: [{ deviceId: 'AV-001', config: { address: '127.0.0.1', port: 14030, password: 'admin' } }]
 })
-
+await runtime.start()
 await kernel.registerWorker(runtime.getPublicKey())
 ```
 
 `allowedKeys` is required: the Worker refuses to start without the Kernel's client key (`ERR_WORKER_ALLOWED_KEYS_REQUIRED`).
 The [Avalon](../../../docs/guides/miners/run-avalon-worker.md), [Antspace](../../../docs/guides/containers/run-antspace-worker.md)
 and [Bitdeer](../../../docs/guides/containers/run-bitdeer-worker.md) guides run this shape against each Worker's mock.
-The per-package `USAGE.md` documents which boot function a given Worker exports, its `model` values, and the `opts` it needs.
+The per-package `README.md` documents each Worker's device options and mock, and Avalon adds a `USAGE.md`. The Antspace,
+Bitdeer and Seneca packages still ship a `start<Family>Worker()` boot helper on `WorkerRuntime` v1 instead.
 
 ### Standalone via [`worker.js`](../../core/mdk/worker.js)
 
-The core SDK ships [`backend/core/mdk/worker.js`](../../core/mdk/worker.js): a shared process entry compatible with pm2, Docker, or `node worker.js` 
-directly. It is driven by environment variables, not CLI flags — [`utils/service-bootstrap.js`](../../core/mdk/utils/service-bootstrap.js) reads `SERVICE` 
+The core SDK ships [`backend/core/mdk/worker.js`](../../core/mdk/worker.js): a shared process entry compatible with pm2, Docker, or `node worker.js`
+directly. It is driven by environment variables, not CLI flags — [`utils/service-bootstrap.js`](../../core/mdk/utils/service-bootstrap.js) reads `SERVICE`
 (and, for a Worker, `WORKER`/`TYPE`/`RACK`, plus `MDK_REPO_ROOT` naming the MDK source checkout) and bootstraps the matching manager.
+A directory-loaded family (Avalon, ABB, SATEC, Schneider, F2Pool) is hosted on `WorkerRuntimeV2` with its device list from
+`MDK_WORKER_DEVICES` (a JSON array in the `mdk.yaml` `devices` shape) or `MDK_WORKER_DEVICES_FILE`, and its worker env from
+`MDK_WORKER_ENV` (a JSON object, for a secret such as `F2POOL_API_SECRET`) or `MDK_WORKER_ENV_FILE`. `startServices()` writes both files
+from a service's `devices` and `env` and sets the `_FILE` variables.
 A Worker started this way joins the DHT topic, and the Kernel admits it only if its RPC key is in `discovery.workerKeys` (or
 `discovery.allowAnyWorker: true` is set for development). (The only `--wtype` in play is the one it passes when spawning the Gateway's own Worker;
 miner Workers run with a fixed internal `wtype`.)
 
 Choosing this over the library shape is a deployment-topology decision, not just "for production": running each service as its own OS process
 (under pm2 or Docker) is what lets a supervisor allocate resources per process/container, restart or scale one Worker independently, and keep a
-Worker crash from taking down its siblings or the Gateway. The library shape instead runs everything in one Node heap (lower footprint, simplest). 
+Worker crash from taking down its siblings or the Gateway. The library shape instead runs everything in one Node heap (lower footprint, simplest).
 See [`docs/concepts/deployment-topologies.md`](../../../docs/concepts/deployment-topologies.md) for the full trade-off.
 
 ## Run a mock device
@@ -76,6 +83,17 @@ type, with the port as a bare number (run it with no arguments to list every dev
 ```bash
 npm run mock a1346 14030
 ```
+
+Dash-free tokens are translated for you (a bare number is the port, `key=value` sets any flag). From the
+first dashed token on, the rest of the entry is handed to the mock unchanged, so raw flags after npm's `--`
+work too:
+
+```bash
+npm run mock d40_m56 -- --port 10883 --id D40-DEV
+```
+
+A mock's own CLI takes flags only. A stray positional argument is refused with `ERR_MOCK_CLI_POSITIONAL`
+rather than ignored.
 
 To run the same mock directly:
 
@@ -90,20 +108,20 @@ const avMock = require('@tetherto/mdk-worker-avalon/mock/server')
 avMock.createServer({ port: 14030, host: '127.0.0.1', type: 'a1346', serial: 'AV-001' })
 ```
 
-The mock binds an HTTP server that answers the vendor's native API with canned data from `mock/initial_states/`. Per-Worker mock options (supported types,
-default credentials, control port) are documented in each Worker's `USAGE.md`.
+The mock binds a server that answers the vendor's native protocol with canned data from `mock/initial_states/`: TCP, HTTP,
+Modbus or MQTT, depending on the family. Per-Worker mock options (supported types, default credentials, control port) are
+documented in each Worker's `README.md`.
 
 ## Configuration
 
-`setup-config.sh` copies every `config/*.example` into an active config file (strips the `.example` suffix). Pass `-t` to also seed test variants:
+A directory-loaded Worker takes its devices from `config.devices[]` under `spec.workers` in `mdk.yaml`, or
+from the `devices` list a host hands `WorkerRuntimeV2`. There is no per-package config file to seed. The
+per-package `README.md` documents each Worker's device options, and `smoke.config.js` at the package root
+holds the device spec `mdk validate worker --smoke` runs against the bundled mock.
 
-```bash
-cd backend/workers/miners/avalon
-./setup-config.sh        # copies *.example -> active
-./setup-config.sh -t     # additionally seeds tests/test.*.json
-```
-
-The example files are checked in; the copied actives are gitignored, leaving room for environment-specific overrides.
+The Antspace, Bitdeer and Seneca packages ship `config/*.json.example` templates instead. There is nothing to copy
+by hand: an active `config/*.json` is used when present, and the example is the fallback. The active copies are
+gitignored, leaving room for environment-specific overrides.
 
 ## Coverage
 
@@ -122,5 +140,5 @@ Partner-maintained Workers (Antminer, Whatsminer) are plain contract plugins in 
 - [`backend/core/kernel/README.md`](../../core/kernel/README.md) — the Kernel side of the install picture
 - [`workers-manifest.yaml`](workers-manifest.yaml) — agent-readable manifest of variants + mock ports
 - [`docs/tutorials/run-a-site.md`](../../../docs/tutorials/run-a-site.md): narrative onboarding that uses this pattern
-- [`docs/reference/maintainers/agent-ready-sdk.md`](../../../docs/reference/maintainers/agent-ready-sdk.md) — the workspace-wide USAGE.md + examples 
+- [`docs/reference/maintainers/agent-ready-sdk.md`](../../../docs/reference/maintainers/agent-ready-sdk.md) — the workspace-wide USAGE.md + examples
 convention this page implements

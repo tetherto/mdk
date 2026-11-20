@@ -22,7 +22,10 @@ const WRITE_ACTIONS = [
   ['setTankEnabled', 1],
   ['setAirExhaustEnabled', 1],
   ['resetAlarm', 1],
-  ['setTemperatureSettings', 2]
+  ['setTemperatureSettings', 2],
+  ['registerThing', 1],
+  ['updateThing', 1],
+  ['forgetThings', 1]
 ]
 
 // Container stat cadences, mirroring the legacy ContainerManager

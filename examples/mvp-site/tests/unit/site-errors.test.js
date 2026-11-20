@@ -66,14 +66,24 @@ test('overview - a dead Worker is reported in unavailableWorkers, not silently d
 test('overview - a contract Worker that does not answer is reported', async (t) => {
   const mdkClient = {
     listWorkers: async () => ({ workers: [{ workerId: 'vendor-worker', deviceIds: ['V-1'] }] }),
-    // No worker-infra config: the Worker is classified by its contract, and that call fails.
-    pullTelemetry: async () => ({}),
+    // No worker-infra store: the Worker lists bare devices, is classified by its contract, and that call fails.
+    pullWorkerQuery: async () => ({ workers: { 'vendor-worker': { devices: [{ deviceId: 'V-1', status: 'online' }] } } }),
     getCapabilities: async () => { throw Object.assign(new Error('ERR_WORKER_UNAVAILABLE: channel closed'), { code: 'ERR_WORKER_UNAVAILABLE' }) }
   }
   const res = await overview({}, { mdkClient })
 
   t.alike(res.miners, [])
   t.alike(res.unavailableWorkers, [{ workerId: 'vendor-worker', reason: 'ERR_WORKER_UNAVAILABLE' }])
+})
+
+test('overview - a Worker the Kernel could not ask is reported with the Kernel\'s reason', async (t) => {
+  const mdkClient = {
+    listWorkers: async () => ({ workers: [{ workerId: 'container-worker', deviceIds: ['C-1'], deviceFamily: 'container' }] }),
+    pullWorkerQuery: async () => ({ workers: {}, errors: { 'container-worker': 'ERR_WORKER_NOT_ROUTABLE' } })
+  }
+  const res = await overview({}, { mdkClient })
+
+  t.alike(res.unavailableWorkers, [{ workerId: 'container-worker', reason: 'ERR_WORKER_NOT_ROUTABLE' }])
 })
 
 test('overview - a healthy site reports no unavailable Workers', async (t) => {

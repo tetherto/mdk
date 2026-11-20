@@ -1,5 +1,5 @@
 import { resolveProvider } from './provider.js'
-import { connectMcp } from './mcp.js'
+import { connectMcp, mcpAuth } from './mcp.js'
 import { Session } from './session.js'
 import { MemorySessionStore } from './session-store.js'
 import { admitTools, CAPABILITY } from './tools.js'
@@ -22,6 +22,16 @@ import { charterVersionFor } from './charter.js'
  *
  * @typedef {object} McpConfig
  * @property {string} url                          e.g. `'http://127.0.0.1:3101/mcp'`
+ * @property {McpCredential} [credential]          the agent's service account; sent as a bearer token on every request
+ * @property {string} [token]                      a fixed access token instead, for a short test (`mdk sa token` lasts minutes)
+ */
+
+/**
+ * A service account the agent signs in to the MCP server as. Excludes `token`.
+ *
+ * @typedef {object} McpCredential
+ * @property {string} file                         the JSON `mdk sa add` wrote, e.g. `'.mdk/credentials/agents/operator-agent.json'`; relative to the working directory
+ * @property {string} gatewayUrl                   the Gateway the account signs in at (`POST /auth/token`), e.g. `'http://127.0.0.1:3847'`
  */
 
 /**
@@ -61,7 +71,7 @@ import { charterVersionFor } from './charter.js'
 /**
  * @typedef {object} AgentConfig
  * @property {ProviderConfig} provider             required
- * @property {McpConfig} [mcp]                     `{ url }` of a Streamable HTTP MCP server
+ * @property {McpConfig} [mcp]                     `{ url, credential? | token? }` of a Streamable HTTP MCP server
  * @property {AgentLimits} [limits]
  * @property {string} [system]                     override the operator-assistant charter
  * @property {string} [charter]                    alias for `system`; the agent's standing instruction
@@ -86,6 +96,8 @@ import { charterVersionFor } from './charter.js'
  */
 export async function createAgent (config = {}) {
   if (!config.provider) throw new Error('createAgent: config.provider is required')
+  // Before the provider: a managed one spawns a model, which a typo in the credential should not wait on.
+  const auth = config.mcp?.url ? mcpAuth(config.mcp) : null
 
   const provider = await resolveProvider(config.provider)
   const limits = config.limits ?? {}
@@ -108,7 +120,7 @@ export async function createAgent (config = {}) {
   let tools = []
   let skipped = []
   if (config.mcp?.url) {
-    mcp = await connectMcp(config.mcp.url)
+    mcp = await connectMcp(config.mcp.url, auth)
     ;({ admitted: tools, skipped } = admitTools(await mcp.listTools(), { capability, strictToolGating }))
   }
 

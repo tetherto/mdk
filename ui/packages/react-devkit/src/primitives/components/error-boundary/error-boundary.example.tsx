@@ -9,15 +9,11 @@ const BrokenComponent = ({ shouldThrow }: { shouldThrow: boolean }) => {
   if (shouldThrow) {
     throw new Error('Simulated rendering error')
   }
-  return (
-    <div style={{ padding: 16, fontSize: 13, color: 'var(--mdk-color-text-primary, #fff)' }}>
-      Component rendered successfully
-    </div>
-  )
+  return <div className="mdk-example-panel">Component rendered successfully</div>
 }
 
 const SafeChart = withErrorBoundary(
-  ({ title }: { title: string }) => <div style={{ padding: 16, fontSize: 13 }}>{title}</div>,
+  ({ title }: { title: string }) => <div className="mdk-example-panel">{title}</div>,
   'SafeChart',
   (err) => console.error('Caught via HOC:', err),
 )
@@ -26,13 +22,13 @@ export const ErrorBoundaryExample = () => {
   const [throwError, setThrowError] = useState(false)
 
   return (
-    <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-xl">
       {/* Default fallback panel */}
       <div>
         <button
           type="button"
           onClick={() => setThrowError((v) => !v)}
-          style={{ marginBottom: 8, padding: '4px 12px', cursor: 'pointer' }}
+          className="mdk-example-button"
         >
           {throwError ? 'Reset (remount required)' : 'Trigger error'}
         </button>
@@ -43,7 +39,7 @@ export const ErrorBoundaryExample = () => {
 
       {/* Custom fallback */}
       <ErrorBoundary
-        fallback={<div style={{ color: '#F87171', padding: 16 }}>Custom error UI</div>}
+        fallback={<div className="mdk-example-panel mdk-example-panel--error">Custom error UI</div>}
       >
         <BrokenComponent shouldThrow />
       </ErrorBoundary>

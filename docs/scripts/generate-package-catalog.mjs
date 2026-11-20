@@ -20,7 +20,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const OUT = 'docs/reference/packages.md'
-const GITHUB_BLOB = 'https://github.com/tetherto/mdk/blob/main/'
+const GITHUB_BLOB = 'https://github.com/tetherto/mdk/blob/'
+// The ref each package link carries on the page as it stands. A link is written on `main` and
+// release:bump pins it to the release tag, so regenerating keeps a pin and gives a package added
+// since the last release `main`: its path does not exist at that tag.
+const refsIn = (page) => new Map([...page.matchAll(/→ https:\/\/github\.com\/tetherto\/mdk\/blob\/([^/\s]+)\/(\S+) -->/g)].map(([, ref, docs]) => [docs, ref]))
 
 const MANIFESTS = [
   ':(glob)backend/core/*/package.json',
@@ -28,7 +32,6 @@ const MANIFESTS = [
   ':(glob)ui/packages/*/package.json',
   ':(glob)packages/*/package.json'
 ]
-const EXCLUDED = ['backend/workers/samples/']
 const CONTRACTS = ['mdk-contract.json', 'plugin/mdk-contract.json']
 const GROUPS = [
   ['backend/core/', 'Core'],
@@ -52,7 +55,6 @@ export function buildCatalog (root, manifestPaths) {
 
   for (const manifestPath of manifestPaths) {
     const dir = path.posix.dirname(manifestPath)
-    if (EXCLUDED.some((prefix) => `${dir}/`.startsWith(prefix))) continue
 
     const pkg = JSON.parse(fs.readFileSync(path.join(root, manifestPath), 'utf8'))
     const fail = (msg) => errors.push(`${manifestPath}: ${msg}`)
@@ -91,11 +93,13 @@ export function buildCatalog (root, manifestPaths) {
 
 const cell = (value) => String(value).replace(/[\\|]/g, '\\$&').trimEnd().replace(/\.$/, '')
 
-export function render (entries) {
+// `current` is the page being replaced, read for its refs.
+export function render (entries, current = '') {
+  const refs = refsIn(current)
   const links = []
   const packageLink = (entry) => {
     const slug = entry.name.slice(entry.name.indexOf('/') + 1)
-    links.push(`[${slug}]: ${path.posix.relative('docs/reference', entry.docs)}\n<!-- docs@tether.io: ${slug} → ${GITHUB_BLOB}${entry.docs} -->`)
+    links.push(`[${slug}]: ${path.posix.relative('docs/reference', entry.docs)}\n<!-- docs@tether.io: ${slug} → ${GITHUB_BLOB}${refs.get(entry.docs) ?? 'main'}/${entry.docs} -->`)
     return `[\`${entry.name}\`][${slug}]`
   }
   const table = (rows, integrations) => {
@@ -173,7 +177,8 @@ function main () {
     process.exit(1)
   }
 
-  fs.writeFileSync(path.join(REPO_ROOT, OUT), render(entries))
+  const out = path.join(REPO_ROOT, OUT)
+  fs.writeFileSync(out, render(entries, fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : ''))
   console.log(`[generate-package-catalog] wrote ${OUT} (${entries.length} packages).`)
 }
 

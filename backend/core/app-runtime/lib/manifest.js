@@ -72,4 +72,4 @@ function resolvePluginDir (appDir) {
   throw new Error(`ERR_PLUGIN_MANIFEST_MISSING: ${appDir}`)
 }
 
-module.exports = { MANIFEST_FILE, validateAppManifest, loadAppManifest, resolvePluginDir }
+module.exports = { MANIFEST_FILE, PLUGIN_FILE, validateAppManifest, loadAppManifest, resolvePluginDir }

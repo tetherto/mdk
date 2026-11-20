@@ -4,7 +4,7 @@
 import { ErrorCard } from '@tetherto/mdk-react-devkit'
 
 export const ErrorCardExample = () => (
-  <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+  <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-lg">
     {/* Default card variant */}
     <ErrorCard error="Connection timed out. Please try again." />
 

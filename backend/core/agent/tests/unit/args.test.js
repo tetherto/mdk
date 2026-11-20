@@ -1,5 +1,5 @@
 import test from 'brittle'
-import { parseArgs, evalOptions, resolveProviderArgs, runtimeOptions, describeProvider, DEFAULT_API_KEY_ENV } from '../../src/args.js'
+import { parseArgs, evalOptions, resolveProviderArgs, runtimeOptions, describeProvider, mcpOptions, DEFAULT_API_KEY_ENV, MCP_TOKEN_ENV } from '../../src/args.js'
 import { PROVIDER } from '../../src/provider.js'
 import { CAPABILITY_LIMITS } from '../../src/constants.js'
 import { CAPABILITY } from '../../src/tools.js'
@@ -295,4 +295,39 @@ test('a chosen capability is told apart from a fallen-back one', (t) => {
   t.absent(runtimeOptions({}, { kind: 'openai-compatible' }).declared, 'a provider default is not a declaration')
   t.ok(runtimeOptions({ capability: 'small' }, { kind: 'qvac' }).declared,
     'declaring the same value the default would have given still counts as declaring it')
+})
+
+const MCP = 'http://127.0.0.1:3947/mcp'
+const GATEWAY = 'http://127.0.0.1:3847'
+const CRED = '.mdk/credentials/agents/operator-agent.json'
+
+test('no --mcp-url is plain chat, whatever the environment holds', (t) => {
+  t.is(mcpOptions({}, {}), null)
+  t.is(mcpOptions({}, { [MCP_TOKEN_ENV]: 'tok' }), null, 'an exported token does not conjure a server')
+})
+
+test('--mcp-url alone connects without signing in', (t) => {
+  t.alike(mcpOptions({ 'mcp-url': MCP }, {}), { url: MCP })
+})
+
+test('--mcp-credential with --gateway-url signs in as the service account', (t) => {
+  t.alike(
+    mcpOptions({ 'mcp-url': MCP, 'mcp-credential': CRED, 'gateway-url': GATEWAY }, {}),
+    { url: MCP, credential: { file: CRED, gatewayUrl: GATEWAY } }
+  )
+})
+
+test('a fixed token comes from the environment before --mcp-token', (t) => {
+  t.alike(mcpOptions({ 'mcp-url': MCP, 'mcp-token': 'flag' }, {}), { url: MCP, token: 'flag' })
+  t.alike(mcpOptions({ 'mcp-url': MCP, 'mcp-token': 'flag' }, { [MCP_TOKEN_ENV]: ' env ' }), { url: MCP, token: 'env' })
+  t.alike(mcpOptions({ 'mcp-url': MCP }, { [MCP_TOKEN_ENV]: '  ' }), { url: MCP }, 'an exported-but-empty token is missing')
+})
+
+test('mcpOptions names the sign-in flag that is missing or in conflict', (t) => {
+  t.ok(/need --mcp-url/.test(rejection(() => mcpOptions({ 'mcp-credential': CRED, 'gateway-url': GATEWAY }, {}))), 'credential without a server')
+  t.ok(/need --mcp-url/.test(rejection(() => mcpOptions({ 'mcp-token': 'tok' }, {}))), 'token without a server')
+  t.ok(/--mcp-credential needs --gateway-url/.test(rejection(() => mcpOptions({ 'mcp-url': MCP, 'mcp-credential': CRED }, {}))))
+  t.ok(/--gateway-url needs --mcp-credential/.test(rejection(() => mcpOptions({ 'mcp-url': MCP, 'gateway-url': GATEWAY }, {}))))
+  t.ok(/mutually exclusive/.test(rejection(() => mcpOptions({ 'mcp-url': MCP, 'mcp-credential': CRED, 'gateway-url': GATEWAY }, { [MCP_TOKEN_ENV]: 'tok' }))))
+  t.ok(/--mcp-url needs a value/.test(rejection(() => mcpOptions({ 'mcp-url': true }, {}))), 'a bare --mcp-url')
 })

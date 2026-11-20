@@ -8,6 +8,18 @@ class BaseTransport {
     this.mock = mock
     this.handlers = handlers
     this.server = null
+    this.sockets = new Set()
+  }
+
+  // A net.Server's close() only stops new connections: a device client that
+  // keeps its socket open (a Modbus poller, say) would hold the listener and
+  // the process with it. Tracked sockets are destroyed by close().
+  _trackConnections (server) {
+    if (!server || typeof server.on !== 'function') return
+    server.on('connection', (socket) => {
+      this.sockets.add(socket)
+      socket.once('close', () => this.sockets.delete(socket))
+    })
   }
 
   get ctx () { return this.mock.ctx }
@@ -25,6 +37,8 @@ class BaseTransport {
 
   close () {
     if (this.server && typeof this.server.close === 'function') this.server.close()
+    for (const socket of this.sockets) socket.destroy()
+    this.sockets.clear()
   }
 
   get listening () {

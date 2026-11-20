@@ -11,7 +11,7 @@ const StatsService = require('./services/stats.service')
 const SnapsService = require('./services/snaps.service')
 const ActionsService = require('./services/actions.service')
 const DeviceProvisioningService = require('./services/provisioning.service')
-const gLibStats = require('./stats')
+const gLibStats = require('@tetherto/mdk-stats')
 
 const THING_CONF_DEFAULTS = {
   collectSnapsItvMs: 60000,

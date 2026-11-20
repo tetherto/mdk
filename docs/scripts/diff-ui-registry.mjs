@@ -2,18 +2,19 @@
 // Explains why the committed component registry differs from a freshly generated one.
 //
 // `regenerate-docs --check` only says that
-// packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry.json is stale; it then
+// packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry/ is stale; it then
 // restores the committed copy, so the generated one is gone from that path. The generator's own
-// output survives at ui/packages/react-devkit/dist/registry.json. This script compares the two as
-// JSON, ignoring the provenance fields (generatedAt, generatedFrom) that move on every build, and
-// prints every leaf value that differs with the JSON path to it. Reading the list tells you which
+// output survives at ui/packages/react-devkit/dist/registry.json. This script splits that registry
+// the way the sync does, compares it with the committed files as JSON, ignoring the provenance
+// fields (generatedAt, generatedFrom) that move on every build, and prints every leaf value that
+// differs with the path to it: the file, then the JSON path inside it. Reading the list tells you which
 // export changed, and whether the generated side collapsed a type to `any`, which means the
 // environment that ran the generator could not resolve that type.
 //
 // Usage:
-//   node docs/scripts/diff-ui-registry.mjs [committed.json] [generated.json]
+//   node docs/scripts/diff-ui-registry.mjs [committed-dir] [generated.json]
 //
-// Defaults to the committed copy and the devkit's dist/registry.json. Output is Markdown so the
+// Defaults to the committed split and the devkit's dist/registry.json. Output is Markdown so the
 // docs-freshness workflow can append it to the job summary. Always exits 0: it is a diagnostic,
 // not a gate.
 
@@ -21,21 +22,27 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { INDEX_FILE, PROVENANCE_FIELDS, readSplitFiles, splitRegistry } from './lib/ui-registry-split.mjs'
+
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(HERE, '../..')
 
-const DEFAULT_COMMITTED = 'packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry.json'
+const DEFAULT_COMMITTED = 'packages/mdk-skill/src/skills/mdk-ui-component/references/ui-registry'
 const DEFAULT_GENERATED = 'ui/packages/react-devkit/dist/registry.json'
 const MAX_ROWS = 60
 const MAX_VALUE = 120
 
 const rel = (p) => path.relative(REPO_ROOT, p)
 
-function load (file) {
-  const data = JSON.parse(fs.readFileSync(file, 'utf8'))
-  delete data.generatedAt
-  delete data.generatedFrom
-  return data
+// { "<file>": parsed JSON } for every file of a split, with the index's provenance fields dropped.
+function parseSplit (files) {
+  const out = {}
+  for (const [rel, text] of files) {
+    const data = JSON.parse(text)
+    if (rel === INDEX_FILE) for (const f of PROVENANCE_FIELDS) delete data[f]
+    out[rel] = data
+  }
+  return out
 }
 
 // Flattens nested JSON into { "/components/3/props/0/type": value }. Arrays of components and
@@ -79,8 +86,8 @@ function main () {
     }
   }
 
-  const committed = flatten(load(committedPath))
-  const generated = flatten(load(generatedPath))
+  const committed = flatten(parseSplit(readSplitFiles(committedPath)))
+  const generated = flatten(parseSplit(splitRegistry(JSON.parse(fs.readFileSync(generatedPath, 'utf8')))))
   const keys = new Set([...committed.keys(), ...generated.keys()])
   const rows = []
   for (const k of [...keys].sort()) {
@@ -92,7 +99,7 @@ function main () {
   console.log('### UI registry diff\n')
   console.log(`Committed \`${rel(committedPath)}\` against generated \`${rel(generatedPath)}\`, provenance fields ignored.\n`)
   if (!rows.length) {
-    console.log('No content differences. If the check still reports this file stale, the two copies differ only in generatedAt or gitSha, which the sync is meant to ignore.')
+    console.log('No content differences. If the check still reports these files stale, the two copies differ only in generatedAt or gitSha, which the sync is meant to ignore.')
     return
   }
 

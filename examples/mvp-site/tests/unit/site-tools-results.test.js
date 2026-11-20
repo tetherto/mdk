@@ -12,13 +12,11 @@ function fleet (overrides = {}) {
   return {
     getStatus: async () => ({
       workers: [
-        { workerId: 'miner-worker', state: 'READY', deviceIds: ['miner-0', 'miner-1'] },
+        { workerId: 'miner-worker', state: 'READY', deviceIds: ['miner-0', 'miner-1'], deviceFamily: 'miner', brand: 'Antminer' },
         { workerId: 'container-worker', state: 'DISCOVERED', deviceIds: ['container-0'] }
       ]
     }),
-    pullTelemetry: async (ref, arg) => (arg && arg.type === 'config'
-      ? { config: { contract: { brand: 'Antminer' } } }
-      : { metrics: { power: 3200, hashrate: 100 } }),
+    pullTelemetry: async () => ({ metrics: { power: 3200, hashrate: 100 } }),
     pullState: async () => ({ up: true }),
     getCapabilities: async () => ({ reboot: true }),
     sendCommand: async () => ({ status: 'QUEUED' }),
@@ -70,6 +68,10 @@ test('get_device says a device reported nothing rather than narrating an empty r
   const nothing = await call('get-device.js', { ref: 'miner-0', attr: 'telemetry' }, fleet({ pullTelemetry: async () => null }))
   t.is(nothing.value, null, 'a client returning nothing still answers under value')
   t.ok(validateToolResult('get_device', nothing).ok, 'so the result stays contract-valid instead of failing the call')
+
+  const unreachable = await call('get-device.js', { ref: 'miner-0', attr: 'telemetry' }, fleet({ pullTelemetry: async () => ({ error: 'ERR_WORKER_UNREACHABLE' }) }))
+  t.is(unreachable.summary, 'miner-0 reports no readings (ERR_WORKER_UNREACHABLE).', 'a Kernel error is named, not read as a reading')
+  t.ok(validateToolResult('get_device', unreachable).ok)
 
   const live = await call('get-device.js', { ref: 'miner-0', attr: 'telemetry' })
   t.ok(live.summary.includes('Live readings'), 'a real reading still reads as one')

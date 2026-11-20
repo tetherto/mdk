@@ -6,7 +6,6 @@ const { ACTIONS, MESSAGE_TYPES, COMMAND_SCOPES } = require('../../protocol/actio
 const { build } = require('../../protocol/envelope')
 const { validateWriteCallsResponse } = require('../../protocol/schemas')
 const { WORKER_WRITE_ACTION_TYPES } = require('./constants')
-const { hasWritePermission } = require('../../permissions')
 const { isPlainObject } = require('@bitfinex/lib-js-util-base')
 const debug = require('debug')('mdk:kernel:dispatcher')
 
@@ -39,11 +38,8 @@ class ActionCaller {
    * @param {object} query
    * @param {string} action
    * @param {any[]} params
-   * @param {string[]|null} permissions - `<family>:w` strings naming the device
-   *   families to ask; null asks every family (a caller checked by spec.rbac,
-   *   whose device rule is applied to the calls that come back)
    */
-  async getWriteCalls (query, action, params, permissions) {
+  async getWriteCalls (query, action, params) {
     if (!isPlainObject(query)) {
       throw new Error('ERR_QUERY_INVALID')
     }
@@ -68,7 +64,7 @@ class ActionCaller {
 
     await async.eachLimit(workers, this._getWriteCallsLimit, async (worker) => {
       const baseType = worker.deviceFamily
-      if (!baseType || (permissions !== null && !hasWritePermission(permissions, baseType))) {
+      if (!baseType) {
         return
       }
       if (!worker.channel) {

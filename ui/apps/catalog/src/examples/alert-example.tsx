@@ -125,6 +125,34 @@ export const AlertExample = (): ReactElement => {
             />
           </div>
         </section>
+
+        {/* Live region */}
+        <section>
+          <h3>Live region</h3>
+          <div className="demo-section__alerts--content">
+            <Alert
+              type="error"
+              title="Default — role=alert, aria-live=assertive"
+              description="Interrupts the screen reader. For a message that appears in response to something the user just did."
+              showIcon
+            />
+            <Alert
+              role="status"
+              type="warning"
+              title='role="status" — aria-live=polite'
+              description="Announced once the reader is idle, rather than cutting in."
+              showIcon
+            />
+            <Alert
+              role="none"
+              type="info"
+              title='role="none" — no live region at all'
+              description="For a banner that is part of the page. Without this it is re-announced on every navigation."
+              banner
+              showIcon
+            />
+          </div>
+        </section>
       </section>
     </section>
   )

@@ -27,9 +27,20 @@
     line-height: normal;
     white-space: nowrap;
     font-family: var(--font-mono);
+    color: var(--mdk-color-white);
 
     &--medium {
       font-size: 20px;
+    }
+
+    &--transparent {
+      color: color-mix(in srgb, var(--mdk-color-white) 50%, transparent);
+    }
+
+    // index.tsx applies at most one of --transparent / --highlighted
+    // (isHighlighted wins), so their order here does not matter.
+    &--highlighted {
+      color: var(--mdk-color-primary);
     }
   }
 }

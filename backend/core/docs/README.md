@@ -100,7 +100,8 @@ Package-specific APIs and configuration live with each package:
 
 ## Next steps
 
-- Follow the [shared conventions](../README.md#shared-conventions) every core package keeps: strict mode, `debug` logging, `ERR_*` constants, `brittle` tests, StandardJS
+- Follow the [shared conventions](../README.md#shared-conventions) every core package keeps: strict mode, `debug` logging, `ERR_*` constants,
+  `brittle` tests, `bfx-lint-js` lint
 - See [how the packages depend on each other](../README.md#dependency-graph) before adding an import between them
 - Read [what an agent can rely on](AGENT_READY.md) when building against core: exports maps, error codes, and the shared protocol
 - Learn [which layer owns which responsibility](../../../docs/concepts/control-plane.md#responsibility-boundaries)

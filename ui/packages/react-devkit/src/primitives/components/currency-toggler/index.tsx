@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { cn } from '../../utils'
+import { SimpleTooltip } from '../tooltip'
 
 type CurrencyItem = {
   /** Option value (used for selection) */
@@ -8,6 +9,11 @@ type CurrencyItem = {
   label?: string
   /** Disables this option */
   disabled?: boolean
+  /**
+   * Why the option is disabled, shown in a tooltip on hover and focus. The option is then
+   * marked `aria-disabled` instead of `disabled`, so it still receives pointer and focus events
+   */
+  disabledReason?: string
 }
 
 type CurrencyTogglerProps = {
@@ -51,7 +57,7 @@ const currencyAriaLabel = (label: string): string => `Select ${label} currency`
  * <CurrencyToggler
  *   currencies={[
  *     { value: 'USD', label: 'USD' },
- *     { value: 'BTC', label: 'BTC', disabled: true },
+ *     { value: 'BTC', label: 'BTC', disabled: true, disabledReason: 'No BTC prices yet' },
  *   ]}
  *   value="USD"
  *   onChange={(currency) => console.log(currency)}
@@ -96,21 +102,24 @@ const CurrencyToggler = forwardRef<HTMLDivElement, CurrencyTogglerProps>(
       {currencies.map((currency) => {
         const item = typeof currency === 'string' ? { value: currency, label: currency } : currency
         const label = item.label ?? item.value
+        const reason = item.disabled ? item.disabledReason : undefined
 
         return (
-          <button
-            type="button"
-            key={item.value}
-            disabled={item.disabled}
-            aria-label={itemAriaLabel(label)}
-            className={cn(
-              'mdk_currency_toggler__button',
-              value === item.value && 'mdk_currency_toggler__button--active',
-            )}
-            onClick={() => !item.disabled && onChange(item.value)}
-          >
-            {label}
-          </button>
+          <SimpleTooltip key={item.value} content={reason}>
+            <button
+              type="button"
+              disabled={item.disabled && !reason}
+              aria-disabled={reason ? true : undefined}
+              aria-label={itemAriaLabel(label)}
+              className={cn(
+                'mdk_currency_toggler__button',
+                value === item.value && 'mdk_currency_toggler__button--active',
+              )}
+              onClick={() => !item.disabled && onChange(item.value)}
+            >
+              {label}
+            </button>
+          </SimpleTooltip>
         )
       })}
     </div>

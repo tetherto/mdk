@@ -1,0 +1,76 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tetherto/mdk/main/backend/core/mdk-worker/mdk-contract.schema.json",
+  "telemetryPollIntervalMs": 300000,
+  "metadata": {
+    "provider": "f2pool",
+    "deviceFamily": "minerpool",
+    "brand": "F2Pool",
+    "modelsSupported": [
+      "F2POOL-BTC"
+    ],
+    "overview": "Reports F2Pool mining pool account data: hashrate, workers, balances and revenue. Read-only — pool state is polled over HTTPS, no device writes."
+  },
+  "capabilities": {
+    "telemetry": [
+      {
+        "name": "hashrate",
+        "unit": "H/s",
+        "type": "number",
+        "handler": "src/telemetry/hashrate.js",
+        "description": "Latest pool-side hashrate across configured accounts."
+      },
+      {
+        "name": "workers_online",
+        "unit": "",
+        "type": "number",
+        "handler": "src/telemetry/workers-online.js",
+        "description": "Workers currently known to the pool."
+      },
+      {
+        "name": "balance",
+        "unit": "BTC",
+        "type": "number",
+        "handler": "src/telemetry/balance.js",
+        "description": "Total income balance across accounts."
+      },
+      {
+        "name": "estimated_earnings",
+        "unit": "BTC",
+        "type": "number",
+        "handler": "src/telemetry/estimated-earnings.js",
+        "description": "Estimated income for the current day across accounts."
+      },
+      {
+        "name": "transactions",
+        "unit": "",
+        "type": "array",
+        "handler": "src/telemetry/transactions.js",
+        "description": "Earnings rows (F2Pool revenue transactions, changed_balance in BTC, mining_extra with the pps and tx_fee split) across configured accounts, fetched from the pool for the range in one call per account. start and end (ms) select the range; without them (a poll sweep) only the rows that arrived since the previous sweep, from UTC midnight on the first. aggrHourly=true returns one { ts, revenue } row per hour, the range total spread evenly."
+      }
+    ],
+    "commands": [],
+    "config": {
+      "schema": "f2pool_config_v1"
+    },
+    "health": {
+      "supportedStates": [
+        "OK",
+        "DEGRADED",
+        "OFFLINE"
+      ],
+      "alerts": [],
+      "troubleshooting": [
+        "If alert.pool_unreachable, verify the apiUrl, apiSecret and outbound HTTPS connectivity.",
+        "If alert.hashrate_low, cross-check the fleet's own hashrate before escalating."
+      ]
+    },
+    "errors": {
+      "ERR_ACCOUNTS_REQUIRED": "Device opts.accounts must be a non-empty list of F2Pool mining user names.",
+      "ERR_API_SECRET_REQUIRED": "No API secret: set F2POOL_API_SECRET in the worker env (or opts.apiSecret).",
+      "ERR_POOL_API": "The F2Pool REST API call failed, timed out or returned a non-2xx status.",
+      "ERR_START_INVALID": "end was given without start.",
+      "ERR_END_INVALID": "start was given without end.",
+      "ERR_RANGE_INVALID": "start or end is not a finite number of ms, or start is after end."
+    }
+  }
+}

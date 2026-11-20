@@ -4,7 +4,7 @@
     {
       "source": "packages/mdk-skill/src/skills",
       "dest": ".",
-      "note": "Hand-authored suite content: router + mdk-worker, mdk-app-routes, mdk-create-app, mdk-app-rbac, mdk-ui-component, mdk-deployment, mdk-site-sizing, mdk-publish-security (full workflows). One file in this tree is generated, not hand-authored: skills/mdk-ui-component/references/ui-registry.json is copied verbatim from ui/packages/react-devkit/dist/registry.json by docs/scripts/sync-ui-registry.mjs. Regenerate it with `npm run generate:ui-registry` from the repo root; never hand-edit it. mdk-site-sizing/references/envelope.json is compiled from eval/profiles (or harness results) by skills/mdk-site-sizing/scripts/compile-envelope.mjs."
+      "note": "Hand-authored suite content: router + mdk-worker, mdk-app-routes, mdk-create-app, mdk-app-rbac, mdk-ui-component, mdk-deployment, mdk-site-sizing, mdk-publish-security, mdk-worker-security, mdk-app-security (full workflows). One folder in this tree is generated, not hand-authored: skills/mdk-ui-component/references/ui-registry/ is ui/packages/react-devkit/dist/registry.json split into an index plus one file per entry by docs/scripts/sync-ui-registry.mjs. Regenerate it with `npm run generate:ui-registry` from the repo root; never hand-edit it. mdk-site-sizing/references/envelope.json is compiled from eval/profiles (or harness results) by skills/mdk-site-sizing/scripts/compile-envelope.mjs."
     },
     {
       "source": "backend/core/mdk-worker/mdk-contract.schema.json",
@@ -15,6 +15,11 @@
       "source": "backend/core/mdk-worker/mdk-contract.schema.json",
       "dest": "mdk-worker/references/mdk-contract.schema.json",
       "note": "Second copy so the device-worker skill is self-contained when installed alone; same source, cannot drift apart."
+    },
+    {
+      "source": "backend/core/app-runtime/mdk-plugin.schema.json",
+      "dest": "mdk-app-routes/references/mdk-plugin.schema.json",
+      "note": "Verbatim copy of the route-table schema owned by backend/core/app-runtime, so agents author route tables against exactly what `mdk validate app` and the check:plugin-manifest gate validate. Change the schema there, never in a bundle."
     },
     {
       "source": "packages/cli/templates/worker",

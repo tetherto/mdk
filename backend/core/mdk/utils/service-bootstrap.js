@@ -36,15 +36,17 @@ function ensureConfigFromExamples (dir) {
   }
 }
 
-// Every worker family boots through its package's runtime plugin boot,
-// resolved by package name.
-// TYPE (env) maps onto the boot's model id; workerId is
-// `<prefix>-<model>-<rack>` so persistent stores and RPC seeds are stable
-// per rack. Pool workers take no model — one logical pool per rack.
+// Every worker family boots by package name. A directory-loaded package
+// (`runtime: 'v2'`) is hosted on WorkerRuntimeV2 with the device list from
+// MDK_WORKER_DEVICES / MDK_WORKER_DEVICES_FILE; the others ship a boot factory (`factory`) on
+// WorkerRuntime v1 with a provisioning store.
+// TYPE (env) maps onto the model id; workerId is `<prefix>-<model>-<rack>`
+// so persistent stores and RPC seeds are stable per rack. Pool workers take
+// no model — one logical pool per rack.
 const WORKER_BOOTS = {
   'miner-avalon': {
     pkg: '@tetherto/mdk-worker-avalon',
-    factory: 'startAvalonWorker',
+    runtime: 'v2',
     prefix: 'avalon',
     models: { A1346: 'a1346' }
   },
@@ -62,19 +64,19 @@ const WORKER_BOOTS = {
   },
   'powermeter-abb': {
     pkg: '@tetherto/mdk-worker-abb',
-    factory: 'startAbbWorker',
+    runtime: 'v2',
     prefix: 'abb',
     models: { B23: 'b23', B24: 'b24', M1M20: 'm1m20', M4M20: 'm4m20', REU615: 'reu615' }
   },
   'powermeter-satec': {
     pkg: '@tetherto/mdk-worker-satec',
-    factory: 'startSatecWorker',
+    runtime: 'v2',
     prefix: 'satec',
     models: { PM180: 'pm180' }
   },
   'powermeter-schneider': {
     pkg: '@tetherto/mdk-worker-schneider',
-    factory: 'startSchneiderWorker',
+    runtime: 'v2',
     prefix: 'schneider',
     models: { P3U30: 'p3u30', PM5340: 'pm5340' }
   },
@@ -87,7 +89,7 @@ const WORKER_BOOTS = {
   },
   'minerpool-f2pool': {
     pkg: '@tetherto/mdk-worker-f2pool',
-    factory: 'startF2poolWorker',
+    runtime: 'v2',
     prefix: 'f2pool',
     pool: true
   }
@@ -99,12 +101,89 @@ function resolveWorkerBoot (worker, load = require) {
   if (!spec) {
     throw new Error(`ERR_MDK_WORKER_UNKNOWN: no runtime boot for "${worker}"`)
   }
+  if (spec.runtime === 'v2') {
+    const resolve = typeof load.resolve === 'function' ? load.resolve : require.resolve
+    const pkgDir = path.dirname(resolve(`${spec.pkg}/package.json`))
+    return { spec, factory: (opts) => _bootV2(pkgDir, opts, load) }
+  }
   const mod = load(spec.pkg)
   const factory = mod[spec.factory]
   if (!factory) {
     throw new Error(`ERR_MDK_WORKER_EXPORT: ${spec.factory} not found in ${worker}`)
   }
   return { spec, factory }
+}
+
+// True when `worker` is hosted on WorkerRuntimeV2, so it boots with a fixed
+// device list (startServices requires services[].devices for it).
+function isV2Worker (worker) {
+  return Object.hasOwn(WORKER_BOOTS, worker) && WORKER_BOOTS[worker].runtime === 'v2'
+}
+
+// The device list a standalone V2 worker boots with: MDK_WORKER_DEVICES, a
+// JSON array of { id, opts, info? } (the mdk.yaml `devices` shape;
+// { deviceId, config } is accepted too), or MDK_WORKER_DEVICES_FILE naming a
+// JSON file with that array (or `{ devices: [...] }`, the shape startServices
+// writes). The list is fixed for the process.
+function parseWorkerDevices (env = process.env) {
+  let raw = env.MDK_WORKER_DEVICES
+  if (!raw && env.MDK_WORKER_DEVICES_FILE) raw = fs.readFileSync(path.resolve(env.MDK_WORKER_DEVICES_FILE), 'utf8')
+  if (!raw) {
+    throw new Error('ERR_MDK_WORKER_DEVICES_REQUIRED: set MDK_WORKER_DEVICES (a JSON array of { id, opts }) or MDK_WORKER_DEVICES_FILE for this worker')
+  }
+  let list
+  try {
+    list = JSON.parse(raw)
+  } catch (err) {
+    throw new Error(`ERR_MDK_WORKER_DEVICES_INVALID: ${err.message}`)
+  }
+  if (list && typeof list === 'object' && !Array.isArray(list) && Array.isArray(list.devices)) list = list.devices
+  if (!Array.isArray(list) || !list.length) throw new Error('ERR_MDK_WORKER_DEVICES_INVALID: expected a non-empty JSON array')
+  return list.map((d, i) => {
+    const deviceId = d && (d.deviceId || d.id)
+    if (typeof deviceId !== 'string' || !deviceId) throw new Error(`ERR_MDK_WORKER_DEVICES_INVALID: device ${i} has no id`)
+    return { deviceId, config: { ...(d.config || d.opts || {}) }, ...(d.info ? { info: d.info } : {}) }
+  })
+}
+
+// Worker-level env for a standalone V2 worker (secrets the plugin reads from
+// its device env, such as F2POOL_API_SECRET): MDK_WORKER_ENV, a JSON object,
+// or MDK_WORKER_ENV_FILE naming a JSON file with that object. A file
+// startServices wrote is `{ _generated, env: {...} }` and is unwrapped.
+function parseWorkerEnv (env = process.env) {
+  let raw = env.MDK_WORKER_ENV
+  let fromFile = false
+  if (!raw && env.MDK_WORKER_ENV_FILE) {
+    raw = fs.readFileSync(path.resolve(env.MDK_WORKER_ENV_FILE), 'utf8')
+    fromFile = true
+  }
+  if (!raw) return {}
+  try {
+    let parsed = JSON.parse(raw)
+    if (fromFile && parsed && typeof parsed === 'object' && Object.hasOwn(parsed, '_generated')) parsed = parsed.env
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('expected a JSON object')
+    return parsed
+  } catch (err) {
+    throw new Error(`ERR_MDK_WORKER_ENV_INVALID: ${err.message}`)
+  }
+}
+
+async function _bootV2 (pkgDir, opts, load = require) {
+  const { WorkerRuntimeV2 } = load('@tetherto/mdk-worker')
+  const runtime = new WorkerRuntimeV2(pkgDir, {
+    workerId: opts.workerId,
+    storeDir: opts.storeDir,
+    kernelTopic: opts.kernelTopic || null,
+    bootstrap: opts.bootstrap || null,
+    dhtHost: opts.dhtHost || null,
+    allowedKeys: opts.allowedKeys || [],
+    allowAll: opts.allowAll === true,
+    env: opts.env || {},
+    config: opts.model ? { model: opts.model } : {},
+    devices: opts.devices
+  })
+  await runtime.start()
+  return { runtime, stop: () => runtime.stop() }
 }
 
 function requireMdk () {
@@ -179,11 +258,13 @@ async function runWorker (repoRoot) {
 
   const { spec, factory } = resolveWorkerBoot(worker)
 
+  const v2 = spec.runtime === 'v2' ? { devices: parseWorkerDevices(), env: parseWorkerEnv() } : {}
+
   if (spec.pool) {
     const workerId = `${spec.prefix}-${rack}`
     const storeDir = path.join(root, 'workers', workerId, 'store')
     fs.mkdirSync(storeDir, { recursive: true })
-    return _followTrust(await factory({ workerId, rack, storeDir, root, kernelTopic, allowedKeys, allowAll, ...dht }), trustDir)
+    return _followTrust(await factory({ workerId, rack, storeDir, root, kernelTopic, allowedKeys, allowAll, ...dht, ...v2 }), trustDir)
   }
 
   if (!type) {
@@ -198,7 +279,7 @@ async function runWorker (repoRoot) {
   const storeDir = path.join(root, 'workers', workerId, 'store')
   fs.mkdirSync(storeDir, { recursive: true })
 
-  const opts = { workerId, storeDir, kernelTopic, allowedKeys, allowAll, ...dht }
+  const opts = { workerId, storeDir, kernelTopic, allowedKeys, allowAll, ...dht, ...v2 }
   if (!spec.noModelOpt) opts.model = model
   return _followTrust(await factory(opts), trustDir)
 }
@@ -285,6 +366,7 @@ module.exports = {
   gatewayPackageDir,
   ensureConfigFromExamples,
   WORKER_BOOTS,
+  isV2Worker,
   resolveWorkerBoot,
   runGateway,
   gatewayArgs,
@@ -292,7 +374,9 @@ module.exports = {
   runDhtBootstrap,
   resolveWorkerTrust,
   resolveDht,
-  main
+  main,
+  parseWorkerDevices,
+  parseWorkerEnv
 }
 
 if (require.main === module) {

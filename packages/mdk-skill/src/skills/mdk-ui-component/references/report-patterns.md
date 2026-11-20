@@ -81,7 +81,8 @@ export const ReportPage = ({ timezone }: { timezone: string }) => {
 | `12m`, `ytd`      | `month`        |
 
 `period.query` is `{ start, end, granularity }`, with `start` and `end` in ms; `period.allowed` lists the bucket sizes
-that fit the range. Pass `showGranularity={false}` to `PeriodControl` on a page that shows one figure per period.
+that fit the range. `PeriodControl` disables the others, each with a tooltip from `granularityDisabledReason` saying
+why. Pass `showGranularity={false}` to `PeriodControl` on a page that shows one figure per period.
 
 > [!IMPORTANT]
 > With `placeholderData`, the view holds the previous period's body while the next one loads. Shape it from what the

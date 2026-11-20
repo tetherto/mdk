@@ -73,12 +73,10 @@ parts (router, sidebar, line charts, domain panels) this single-page, single-Wor
 
 ### Pick the Worker
 
-Use the Avalon Worker as-is: `startAvalonWorker` boots its own Worker Runtime and provisioning store, and
+Use the Avalon Worker as-is: it is a directory-loaded Worker package `WorkerRuntimeV2` hosts, and
 `backend/workers/miners/avalon/mock/server` is a mock Avalon miner that speaks the same protocol as the real
-hardware. Nothing in the steps below is specific to it, though: swap in one of
-[the Starter site's Worker adapters][mvp-site-adapter] (`examples/mvp-site/backend/whatsminer-adapter.js` and its
-siblings wrap the external miner plugins behind the same start-function shape; copy one into your project) or
-your own Worker from [Build a third-party Worker][build-a-worker] and everything past the next step is unchanged.
+hardware. Nothing in the steps below is specific to it, though: point the runtime at the Whatsminer or Antminer
+package, or your own Worker from [Build a third-party Worker][build-a-worker], and everything past the next step is unchanged.
 
 </Step>
 
@@ -97,11 +95,11 @@ so there's no key file or DHT topic to manage.
 const path = require('path')
 const { getKernel, waitForDiscovery } = require('../../backend/core/mdk')
 const { trustKernel } = require('../../backend/core/mdk/lib/local-discovery')
-const { startAvalonWorker } = require('../../backend/workers/miners/avalon')
+const { WorkerRuntimeV2 } = require('../../backend/core/mdk-worker')
 const avalonMock = require('../../backend/workers/miners/avalon/mock/server')
 
 const ROOT = path.join(__dirname, '.mdk-data')
-const MOCK_PORT = 4028
+const MOCK_PORT = Number(process.env.MOCK_PORT) || 4028
 const HTTP_PORT = Number(process.env.MDK_HTTP_PORT) || 3000
 
 async function main () {
@@ -111,27 +109,26 @@ async function main () {
 
   // Kernel + the one Worker, same process
   const kernel = await getKernel({ root: ROOT })
-  const { runtime, services } = await startAvalonWorker({
+  const runtime = new WorkerRuntimeV2(path.join(__dirname, '../../backend/workers/miners/avalon'), {
     workerId: 'avalon-1',
-    model: 'a1346',
     storeDir: path.join(ROOT, 'avalon'),
     allowedKeys: [kernel.getClientPublicKey()],
-    seedDevices: [{ info: { serialNum: 'AV-0001' }, opts: { address: '127.0.0.1', port: MOCK_PORT, password: 'admin' } }]
+    devices: [{ deviceId: 'AV-0001', config: { address: '127.0.0.1', port: MOCK_PORT, password: 'admin' } }]
   })
+  await runtime.start()
   trustKernel(runtime, kernel)
   await kernel.registerWorker(runtime.getPublicKey())
   await waitForDiscovery(kernel, { minWorkers: 1 })
 
-  const ids = services.provisioning.listDevices({ limit: 10 }).map((d) => d.id)
-  console.log('worker registered: %s', ids.join(', '))
+  console.log('worker registered: %s', runtime.getPublicKey().toString('hex').slice(0, 16))
 }
 
 module.exports = { main, ROOT, HTTP_PORT }
 if (require.main === module) main().catch((err) => { console.error(err); process.exit(1) })
 ```
 
-`startAvalonWorker` owns the Worker Runtime, device provisioning, persistence, sampling, and shutdown; `seedDevices`
-provisions the one mock miner on first boot. Workers are fail-closed: they answer only keys they were told to trust.
+`WorkerRuntimeV2` loads the Avalon package by directory and owns identity, transport, sampling, and shutdown; `devices`
+is the one mock miner, fixed at construction. Workers are fail-closed: they answer only keys they were told to trust.
 `allowedKeys` admits the Kernel's client key at boot, and `trustKernel(runtime, kernel)` keeps the Worker in step with
 every key the Kernel admits later (the app's and the Gateway's, in Step 4).
 
@@ -146,7 +143,7 @@ This example then registers the Worker's public key directly because both object
 
 ### Write the one app route
 
-An [app][apps] is a directory with an app manifest, a route table and a controller. This one has a single read-only
+An [app][apps] is a directory with an app manifest, a route table, and a controller. This one has a single read-only
 route that lists every registered Worker's devices and pulls each one's default `metrics` telemetry bundle, with no
 per-device-family branching, because there's only one family here.
 
@@ -252,11 +249,11 @@ const { getKernel, startGateway, waitForDiscovery } = require('../../backend/cor
 const { generateCredential } = require('../../backend/core/identity')
 const { createAppRuntime } = require('../../backend/core/app-runtime')
 const { trustKernel } = require('../../backend/core/mdk/lib/local-discovery')
-const { startAvalonWorker } = require('../../backend/workers/miners/avalon')
+const { WorkerRuntimeV2 } = require('../../backend/core/mdk-worker')
 const avalonMock = require('../../backend/workers/miners/avalon/mock/server')
 
 const ROOT = path.join(__dirname, '.mdk-data')
-const MOCK_PORT = 4028
+const MOCK_PORT = Number(process.env.MOCK_PORT) || 4028
 const HTTP_PORT = Number(process.env.MDK_HTTP_PORT) || 3000
 const PASSWORD = process.env.MDK_OPERATOR_PASSWORD || 'dashboard-demo'
 
@@ -302,13 +299,13 @@ async function main () {
 
   // One operator to sign in as, the programmatic equivalent of `mdk user add operator`.
   await kernel.identity.upsertUser({ name: 'operator', password: PASSWORD })
-  const { runtime, services } = await startAvalonWorker({
+  const runtime = new WorkerRuntimeV2(path.join(__dirname, '../../backend/workers/miners/avalon'), {
     workerId: 'avalon-1',
-    model: 'a1346',
     storeDir: path.join(ROOT, 'avalon'),
     allowedKeys: [kernel.getClientPublicKey()],
-    seedDevices: [{ info: { serialNum: 'AV-0001' }, opts: { address: '127.0.0.1', port: MOCK_PORT, password: 'admin' } }]
+    devices: [{ deviceId: 'AV-0001', config: { address: '127.0.0.1', port: MOCK_PORT, password: 'admin' } }]
   })
+  await runtime.start()
   trustKernel(runtime, kernel)
 
   // Register the Worker and wait until it is ready before accepting HTTP traffic.
@@ -341,8 +338,7 @@ async function main () {
     common: { staticRootPath: path.join(__dirname, 'ui', 'dist') }
   })
 
-  const ids = services.provisioning.listDevices({ limit: 10 }).map((d) => d.id)
-  console.log('worker registered: %s', ids.join(', '))
+  console.log('worker registered: %s', runtime.getPublicKey().toString('hex').slice(0, 16))
   console.log(`dashboard up: http://localhost:${HTTP_PORT}/`)
 }
 
@@ -552,7 +548,7 @@ The [react-adapter auth presets][react-adapter-auth] cover the other providers:
 that serves an OAuth redirect flow (an MDK Gateway does not), and `noAuth()` for a fixture-backed demo, since every
 app route on a real stack answers `401`.
 
-Create `ui/src/OverviewPage.tsx` under your new `examples/minimal-dashboard/`: `useQuery` polls the route from Step 3 the same way
+`examples/minimal-dashboard/ui/src/OverviewPage.tsx`: `useQuery` polls the route from Step 3 the same way
 [`examples/mvp-site/ui/src/SitePage.tsx`][mvp-site-page] polls `/site/overview`; `DataTable` and `Badge` replace that page's
 hand-rolled markup:
 
@@ -681,8 +677,8 @@ TOKEN=$(curl -s -X POST http://localhost:3000/auth/login \
 curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/overview
 ```
 
-You should see JSON shaped like `{ "ts": ..., "devices": [{ "deviceId": "<uuid>", "workerId": "avalon-1", "workerState": "READY", "hashrate_avg": ..., "power": ..., "temperature": ..., ... }] }`.
-`deviceId` is the id the provisioning store assigned on first boot; it is kept in `.mdk-data/avalon`, so it is the same on the next start.
+You should see JSON shaped like `{ "ts": ..., "devices": [{ "deviceId": "AV-0001", "workerId": "avalon-1", "workerState": "READY", "hashrate_avg": ..., "power": ..., "temperature": ..., ... }] }`.
+`deviceId` is the id `start.js` gives the mock miner in the `WorkerRuntimeV2` `devices` list, so it is the same on every start.
 
 ### Hot-reload UI development
 
@@ -717,8 +713,7 @@ Open **`http://localhost:3041/`** (the Vite port), not `:3000`. Step 5's proxy f
 ## Next steps
 
 - **More Workers, zero controller changes**: `overview.js` already loops over every registered Worker generically.
-  Register a second Worker the same way (Step 2's `startAvalonWorker` plus a copied Starter site adapter such as
-  `startWhatsminerWorker`, each with its own mock port,
+  Register a second Worker the same way (a second `WorkerRuntimeV2` pointed at another Worker package, each with its own mock port,
   `trustKernel(...)` and `kernel.registerWorker(...)`) and it appears in `/overview` for free.
 - **A write route**: Add a second manifest entry (`POST /devices/{deviceId}/command`) calling
   `mdkClient.sendCommand(deviceId, 'setPowerMode', { mode })`, following the `command.js` example in
@@ -737,24 +732,25 @@ Open **`http://localhost:3041/`** (the Vite port), not `:3000`. Step 5's proxy f
 | Symptom | Cause |
 | --- | --- |
 | `/overview` returns `{ devices: [] }` | `kernel.registerWorker(...)` wasn't awaited, or `startGateway` was called before `waitForDiscovery` resolved |
-| `/overview` returns `500` / `Cannot read properties of null` | Controller spread `tel.metrics` when `pullTelemetry` returned `null`: keep Step 3's `(tel && tel.metrics) \|\| {}` guard |
-| `pullTelemetry` throws / device shows zeros | The Worker couldn't reach the mock at boot: `await mock.ready` before `startAvalonWorker` seeds the device, and keep the seeded `port` equal to the mock's `MOCK_PORT` |
-| `ERR_WORKER_ALLOWED_KEYS_REQUIRED` when the Worker starts | Workers are fail-closed: pass `allowedKeys: [kernel.getClientPublicKey()]` to `startAvalonWorker`, then call `trustKernel(runtime, kernel)` before `kernel.registerWorker(...)` as in Step 2 |
+| A device row in `/overview` has no metric fields | `pullTelemetry` answered `{ error }` (for example `ERR_WORKER_UNREACHABLE`) instead of `metrics`: check `tel.error` |
+| `pullTelemetry` throws / device shows zeros | The Worker couldn't reach the mock at boot: `await mock.ready` before constructing `WorkerRuntimeV2`, and keep the seeded `port` equal to the mock's `MOCK_PORT` |
+| `EADDRINUSE` on `127.0.0.1:4028` at start | Another mock holds the port, such as a second copy of this dashboard: [stop it][clean-up-mock-port], or start this one with `MOCK_PORT` set to a free port |
+| `File descriptor could not be locked` at start | Another copy is running from this directory, and copies in one directory share `.mdk-data`. Run the second copy from its own directory, with `MOCK_PORT` and `MDK_HTTP_PORT` set to free ports. |
+| `ERR_WORKER_ALLOWED_KEYS_REQUIRED` when the Worker starts | Workers are fail-closed: pass `allowedKeys: [kernel.getClientPublicKey()]` to `WorkerRuntimeV2`, then call `trustKernel(runtime, kernel)` before `kernel.registerWorker(...)` as in Step 2 |
 | Vite shows `http proxy error: /overview` / `ECONNREFUSED`, page at `:3041` has no data | Gateway is not listening on the proxy target: keep `npm run start` running in another terminal, and set `VITE_API_PORT` to that Gateway port (default `3000`). Open `:3041`, not `:3000` |
 | Browser `fetch('/overview')` fails from Vite with CORS / wrong host when Gateway is up | See the CORS note in Step 4: the Vite proxy must target the Gateway (`VITE_API_PORT`); do not call a different origin from the page |
-| `ERR_PLUGIN_HANDLER_NOT_FOUND: .../apps/dashboard: route "dashboard.overview" handler "./controllers/overview.js"` when the app runtime starts | `appDir` must point at the directory *containing* `mdk-app.yaml` and `mdk-plugin.json`, and the route's `handler` must be relative to `mdk-plugin.json` |
+| `ERR_APP_MANIFEST_MISSING: .../apps` when the app runtime starts | `appDir` must be the directory that holds `mdk-app.yaml`, `apps/dashboard` here ([errors at startup][app-runtime-startup-errors]) |
+| `ERR_PLUGIN_HANDLER_NOT_FOUND: .../apps/dashboard: route "dashboard.overview" handler "..."` when the app runtime starts | The route's `handler` resolves relative to `mdk-plugin.json`, so `./controllers/overview.js` must sit beside it ([route table load errors][app-runtime-load-errors]) |
 | `/overview` answers `404` | The app entry in `startGateway({ apps })` has no `mount: '/'`, so the route is served at `/apps/dashboard/overview` |
 | `/overview` answers `503` | The app runtime has not written its key to `keyFile` yet, or it is not running |
-| Gateway boots but the page 404s | `common.staticRootPath` must be an absolute path (`path.join(__dirname, 'ui', 'dist')`) pointing at a *built* UI (`npm run build` in Step 6), not a relative string or the unbuilt `ui/src` |
+| The Gateway doesn't start: `FST_STATIC_INVALID_OPTION`, `"root" option must be an absolute path` | `common.staticRootPath` is relative: set it to `path.join(__dirname, 'ui', 'dist')` ([`staticRootPath`][gateway-config]) |
+| Gateway boots but the page 404s | The UI isn't built (`npm run build` in Step 6), or `common.staticRootPath` points at `ui/src` instead of `ui/dist` |
 | `Cannot find module '@tetherto/mdk-react-devkit'` when building this tutorial's `ui/` | Run the Prerequisites' `npm run setup:ui && npm run build:ui` from the repo root first: [the monorepo's UI packages][ui-readme] ship pre-built `dist/` output that this tutorial's `ui/package.json` depends on via `file:` links |
 
 ## Links
 
 [mvp-site]: ../../examples/mvp-site/README.md
 <!-- docs@tether.io: mvp-site → https://github.com/tetherto/mdk/tree/main/examples/mvp-site -->
-
-[mvp-site-adapter]: ../../examples/mvp-site/backend/whatsminer-adapter.js
-<!-- docs@tether.io: mvp-site-adapter → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/backend/whatsminer-adapter.js -->
 
 [mvp-site-overview]: ../../examples/mvp-site/backend/gateway-plugins/site/controllers/overview.js
 <!-- docs@tether.io: mvp-site-overview → https://github.com/tetherto/mdk/blob/main/examples/mvp-site/backend/gateway-plugins/site/controllers/overview.js -->
@@ -805,3 +801,15 @@ Open **`http://localhost:3041/`** (the Vite port), not `:3000`. Step 5's proxy f
 
 [ui-readme]: ../../ui/README.md
 <!-- docs@tether.io: ui-readme → https://github.com/tetherto/mdk/blob/main/ui/README.md -->
+
+[app-runtime-startup-errors]: ../../backend/core/app-runtime/README.md#errors-at-startup
+<!-- docs@tether.io: app-runtime-startup-errors → https://github.com/tetherto/mdk/blob/main/backend/core/app-runtime/README.md#errors-at-startup -->
+
+[app-runtime-load-errors]: ../../backend/core/app-runtime/README.md#route-table-load-errors
+<!-- docs@tether.io: app-runtime-load-errors → https://github.com/tetherto/mdk/blob/main/backend/core/app-runtime/README.md#route-table-load-errors -->
+
+[gateway-config]: ../../backend/core/gateway/README.md#configuration
+<!-- docs@tether.io: gateway-config → https://github.com/tetherto/mdk/blob/main/backend/core/gateway/README.md#configuration -->
+
+[clean-up-mock-port]: ../guides/miners/troubleshooting.md#clean-up-a-mock-port
+<!-- docs@tether.io: clean-up-mock-port → guides/miners/troubleshooting#clean-up-a-mock-port -->

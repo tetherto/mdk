@@ -245,6 +245,9 @@ class KernelManager extends EventEmitter {
    * (skips DHT discovery, connects via RPC key directly).
    *
    * @param {string|Buffer} rpcKey - Worker's RPC public key (hex string or Buffer)
+   * @returns {Promise<object>} `{ registered: true, workerId }`, or
+   *   `{ registered: false, error, ... }` (see DHTListener.discoverWorker); a
+   *   key already registered or registering resolves that attempt's outcome.
    */
   async registerWorker (rpcKey) {
     if (!this._started) throw new Error('ERR_KERNEL_NOT_STARTED')
@@ -325,7 +328,8 @@ class KernelManager extends EventEmitter {
 
     this.registry = new WorkerRegistry({
       store: this.stores.registry,
-      capabilityStore: this.stores.capabilities
+      capabilityStore: this.stores.capabilities,
+      onRelease: (workerId) => this.dhtListener?.retryRefusedBy(workerId)
     })
 
     this.telemetryCollector = new TelemetryCollector({
@@ -445,7 +449,10 @@ class KernelManager extends EventEmitter {
         workerKeys: orkConf.discovery.workerKeys,
         allowAnyWorker: orkConf.discovery.allowAnyWorker === true,
         registry: this.registry,
-        workerChannel: this.workerChannel
+        workerChannel: this.workerChannel,
+        onConflict: (conflict) => this.emit('worker-rejected', conflict),
+        onAdmitted: (admitted) => this.emit('worker-admitted', admitted),
+        onUnreachable: (peer) => this.emit('worker-unreachable', peer)
       })
     }
 

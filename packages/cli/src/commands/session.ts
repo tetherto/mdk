@@ -4,6 +4,7 @@ import { examples } from '../lib/help.js';
 import { login, logout, whoami } from '../lib/session-kernel.js';
 import { theme, tick } from '../lib/theme.js';
 import { readPassword } from './user.js';
+import { failureText } from '../lib/flags.js';
 
 function fail(message: string): void {
   process.stderr.write(`${theme.warn('error')}: ${message}\n`);
@@ -30,7 +31,7 @@ export function registerSession(program: Command): void {
         if (!res.ok) return fail(res.message ?? 'sign-in failed');
         process.stdout.write(`${tick} Signed in as ${theme.label(username)} ${theme.muted(`(until ${new Date(res.expiresAt!).toISOString()})`)}\n`);
       } catch (error) {
-        fail(error instanceof Error ? error.message : String(error));
+        fail(failureText(error));
       }
     });
 
@@ -57,7 +58,7 @@ export function registerSession(program: Command): void {
       try {
         me = whoami(o.dir);
       } catch (error) {
-        return fail(error instanceof Error ? error.message : String(error));
+        return fail(failureText(error));
       }
       const output = String(cmd.optsWithGlobals().output ?? 'table');
       if (output === 'json') return void process.stdout.write(`${JSON.stringify(me, null, 2)}\n`);

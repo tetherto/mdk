@@ -46,6 +46,10 @@ writes these variables into that config; set them yourself only when you start `
 | `RACK` | `SERVICE=worker` | Required | Rack name, the last part of the Worker id |
 | `MDK_WORKER_ROOT` | `SERVICE=worker` | `data/<RACK>` under the working directory | State root; the Worker's store is `<root>/workers/<workerId>/store` |
 | `MDK_WORKER_ALLOWED_KEYS` | `SERVICE=worker` | None | Comma-separated hex public keys the Worker admits, on top of the Kernel key in the default trusted-keys directory |
+| `MDK_WORKER_DEVICES` | `SERVICE=worker`, WorkerRuntimeV2 families | None | JSON array of `{ id, opts, info? }`, the `mdk.yaml` `devices` shape. Avalon, ABB, SATEC, Schneider and F2Pool need it or `MDK_WORKER_DEVICES_FILE` |
+| `MDK_WORKER_DEVICES_FILE` | `SERVICE=worker`, WorkerRuntimeV2 families | None | JSON file holding that array, or `{ "devices": [...] }`; read when `MDK_WORKER_DEVICES` is unset. `startServices()` sets it from `services[].devices` |
+| `MDK_WORKER_ENV` | `SERVICE=worker`, WorkerRuntimeV2 families | None | JSON object of Worker env, such as `{ "F2POOL_API_SECRET": "..." }` |
+| `MDK_WORKER_ENV_FILE` | `SERVICE=worker`, WorkerRuntimeV2 families | None | JSON file holding that object; read when `MDK_WORKER_ENV` is unset. `startServices()` sets it from `services[].env` |
 | `MDK_WORKER_ALLOW_ALL` | `SERVICE=worker` | Unset | `1` or `true` admits every peer with no policy check; for throwaway local experiments only |
 | `MDK_DHT_BOOTSTRAP` | `SERVICE=gateway`, `SERVICE=worker` | The public HyperDHT bootstrap set | Comma-separated `host:port` list of [private bootstrap][private-dht] nodes |
 | `MDK_DHT_HOST` | Every service | Every interface; `127.0.0.1` for `SERVICE=dht-bootstrap` | IP address the process's DHT nodes bind; for `dht-bootstrap`, also the address it advertises |
@@ -57,6 +61,7 @@ writes these variables into that config; set them yourself only when you start `
 | Variable | Read by | Default | Purpose |
 | --- | --- | --- | --- |
 | `MDK_AGENT_API_KEY` | `mdk-agent` | None | API key for a hosted model endpoint. `--provider openai` reads `OPENAI_API_KEY` before it; `--api-key` is the fallback. The default local `qvac` provider takes no key. See [talking to a hosted model][agent-hosted] |
+| `MDK_AGENT_MCP_TOKEN` | `mdk-agent` | None | A fixed [MCP access token][agent-mcp-signin], read before `--mcp-token`. The agent refuses to start when it's set together with `--mcp-credential`, and ignores it without `--mcp-url`. |
 | `MDK_EVAL_DIR` | `mdk-agent`, `eval/analyse.mjs` | The package's `eval/` directory | Where the eval ledger and run files are written and read |
 | `MDK_NODE` | The agent's `run.sh` | `/usr/bin/node` | Node.js binary `run.sh` starts the agent with |
 
@@ -136,6 +141,9 @@ npm install -g npm@11
 
 [agent-hosted]: ../../backend/core/agent/README.md#talking-to-a-hosted-model
 <!-- docs@tether.io: agent-hosted → https://github.com/tetherto/mdk/blob/main/backend/core/agent/README.md#talking-to-a-hosted-model -->
+
+[agent-mcp-signin]: ../../backend/core/agent/README.md#sign-in-to-an-mcp-server-that-checks-agents
+<!-- docs@tether.io: agent-mcp-signin → https://github.com/tetherto/mdk/blob/main/backend/core/agent/README.md#sign-in-to-an-mcp-server-that-checks-agents -->
 
 [hosted-site]: ../guides/deployment/hosted-site.md#gateway-and-kernel-settings
 <!-- docs@tether.io: hosted-site → guides/deployment/hosted-site#gateway-and-kernel-settings -->

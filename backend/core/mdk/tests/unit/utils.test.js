@@ -171,7 +171,7 @@ test('getLogMaxHeight defaults to logKeepCount 3 when not provided', (t) => {
 // getLogsCountForTimeRange
 // ---------------------------------------------------------------------------
 
-const gLibStats = require('../../lib/stats')
+const gLibStats = require('@tetherto/mdk-stats')
 const realTimeframes = gLibStats.defaults.timeframes
 
 test('getLogsCountForTimeRange returns 0 when no timeframes', (t) => {

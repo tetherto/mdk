@@ -6,19 +6,50 @@ const path = require('path')
 const { startBitdeerWorker } = require('../../../../../../workers/containers/bitdeer')
 const { createServer: createBitdeerMock } = require('../../../../../../workers/containers/bitdeer/mock/server')
 
-const { ACTION_TYPES, runFixtureTests } = require('../actions-flow.helpers')
+const { ACTION_TYPES, runFixtureTests, verifyProvisioned } = require('../actions-flow.helpers')
 
 const BROKER_BASE_PORT = 58103
 const CONTAINER_ID = 'C024_D40_E2E_001'
+const PROVISIONED_ID = 'D40-E2E-PROV'
 
 const makeActions = () => [
-  { query: {}, action: ACTION_TYPES.SET_TANK_ENABLED, params: [{ tankIndex: 1, status: true }], voter: 'testing-agent', authPerms: ['container:w'] },
-  { query: {}, action: ACTION_TYPES.SET_AIR_EXHAUST_ENABLED, params: [{ status: true }], voter: 'testing-agent', authPerms: ['container:w'] },
-  { query: {}, action: ACTION_TYPES.RESET_ALARM, params: [{}], voter: 'testing-agent', authPerms: ['container:w'] },
-  { query: {}, action: ACTION_TYPES.SET_TEMPERATURE_SETTINGS, params: [{ settings: { coldOil: 25, hotOil: 55 } }], voter: 'testing-agent', authPerms: ['container:w'], extraVoters: [{ voter: 'testing-agent-2', authPerms: ['container:w'] }] },
-  { query: {}, action: ACTION_TYPES.SWITCH_CONTAINER, params: [true], voter: 'testing-agent', authPerms: ['container:w'] },
-  { query: {}, action: ACTION_TYPES.SWITCH_SOCKET, params: [[['0', '0', true]]], voter: 'testing-agent', authPerms: ['container:w'] },
-  { query: {}, action: ACTION_TYPES.SWITCH_COOLING_SYSTEM, params: [true], voter: 'testing-agent', authPerms: ['container:w'] }
+  { query: {}, action: ACTION_TYPES.SET_TANK_ENABLED, params: [{ tankIndex: 1, status: true }], voter: 'testing-agent' },
+  { query: {}, action: ACTION_TYPES.SET_AIR_EXHAUST_ENABLED, params: [{ status: true }], voter: 'testing-agent' },
+  { query: {}, action: ACTION_TYPES.RESET_ALARM, params: [{}], voter: 'testing-agent' },
+  { query: {}, action: ACTION_TYPES.SET_TEMPERATURE_SETTINGS, params: [{ settings: { coldOil: 25, hotOil: 55 } }], voter: 'testing-agent', extraVoters: [{ voter: 'testing-agent-2' }] },
+  { query: {}, action: ACTION_TYPES.SWITCH_CONTAINER, params: [true], voter: 'testing-agent' },
+  { query: {}, action: ACTION_TYPES.SWITCH_SOCKET, params: [[['0', '0', true]]], voter: 'testing-agent' },
+  { query: {}, action: ACTION_TYPES.SWITCH_COOLING_SYSTEM, params: [true], voter: 'testing-agent' },
+  // Provisioning through the Kernel: rack actions addressed by params[0].workerId,
+  // persisted to the Worker's store (picked up on restart, no hot-add).
+  (workerId) => ({
+    query: {},
+    action: ACTION_TYPES.REGISTER_THING,
+    params: [{ workerId: 'not-this-worker', id: PROVISIONED_ID, info: { serialNum: PROVISIONED_ID }, opts: { containerId: PROVISIONED_ID } }],
+    voter: 'testing-agent',
+    expectNoTarget: true
+  }),
+  (workerId) => ({
+    query: {},
+    action: ACTION_TYPES.REGISTER_THING,
+    params: [{ workerId, id: PROVISIONED_ID, info: { serialNum: PROVISIONED_ID, container: 'e2e-container-2' }, opts: { containerId: PROVISIONED_ID } }],
+    voter: 'testing-agent',
+    verify: verifyProvisioned(PROVISIONED_ID, (dev) => dev.info.container === 'e2e-container-2' && dev.opts.containerId === PROVISIONED_ID)
+  }),
+  (workerId) => ({
+    query: {},
+    action: ACTION_TYPES.UPDATE_THING,
+    params: [{ workerId, id: PROVISIONED_ID, info: { serialNum: PROVISIONED_ID, container: 'e2e-container-3' }, opts: { containerId: PROVISIONED_ID } }],
+    voter: 'testing-agent',
+    verify: verifyProvisioned(PROVISIONED_ID, (dev) => dev.info.container === 'e2e-container-3')
+  }),
+  (workerId) => ({
+    query: {},
+    action: ACTION_TYPES.FORGET_THINGS,
+    params: [{ workerId, query: { id: PROVISIONED_ID } }],
+    voter: 'testing-agent',
+    verify: verifyProvisioned(PROVISIONED_ID, null)
+  })
 ]
 
 // Runtime-hosted fixtures: startBitdeerWorker owns the MQTT broker the mock
@@ -32,7 +63,7 @@ const makeFixture = ({ name, model, mockType }, index) => {
     workerId,
     actions: makeActions(),
     mockFactory: () => createBitdeerMock({ host: '127.0.0.1', port: brokerPort, type: mockType, id: CONTAINER_ID }),
-    createWorker: async ({ root, kernel, bootstrap }) => {
+    createWorker: async ({ root, kernel, bootstrap, dhtHost }) => {
       const storeDir = path.join(root, 'workers', workerId, 'store')
       fs.mkdirSync(storeDir, { recursive: true })
 
@@ -41,6 +72,7 @@ const makeFixture = ({ name, model, mockType }, index) => {
         model,
         storeDir,
         bootstrap,
+        dhtHost,
         allowedKeys: [kernel.getClientPublicKey()],
         mqttPort: brokerPort,
         seedDevices: [{
@@ -53,7 +85,7 @@ const makeFixture = ({ name, model, mockType }, index) => {
       const deviceId = handle.services.provisioning.listDevices({ limit: 10 })
         .find((d) => d.info?.serialNum === 'BD-E2E-001')?.id
 
-      return { workerId, deviceId, stop: () => handle.stop() }
+      return { workerId, deviceId, handle, stop: () => handle.stop() }
     }
   }
 }

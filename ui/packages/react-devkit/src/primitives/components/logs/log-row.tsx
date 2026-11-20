@@ -12,7 +12,11 @@ import type { JSX } from 'react'
  * @tier agent-ready
  */
 const LogRow = ({ style, log, onLogClicked, type }: LogRowProps): JSX.Element => (
-  <div className="mdk-logs-card__row-container" style={{ ...style }}>
+  <div
+    className="mdk-logs-card__row-container"
+    // oxlint-disable-next-line react/forbid-dom-props -- positioning style handed in by the virtualised list
+    style={{ ...style }}
+  >
     <LogDot status={log.status} type={type} />
     <LogItem data={log} onLogClicked={onLogClicked} />
   </div>

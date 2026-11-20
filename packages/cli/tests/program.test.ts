@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Command } from 'commander';
 import { buildProgram } from '../src/program.js';
 import { pkg } from '../src/lib/pkg.js';
+import { applyGlobalFlags, failureText } from '../src/lib/flags.js';
 
 /** Stub commands that were removed; none may be registered or listed in help. */
 const RETIRED_COMMANDS = ['get', 'describe', 'logs', 'discover', 'manifest', 'mcp'];
@@ -48,6 +49,32 @@ describe('buildProgram', () => {
     const program = buildProgram();
     const flags = program.options.map((o) => o.long);
     expect(flags).toEqual(expect.arrayContaining(['--output', '--verbose', '--debug']));
+  });
+
+  it('applies -v and --debug before the command runs', async () => {
+    const saved = process.env.DEBUG;
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    try {
+      delete process.env.DEBUG;
+      const error = new Error('boom');
+      await buildProgram().parseAsync(['node', 'mdk', 'version']);
+      expect(failureText(error), 'without --debug: the message').toBe('boom');
+      expect(process.env.DEBUG).toBeUndefined();
+
+      await buildProgram().parseAsync(['node', 'mdk', 'version', '-v', '--debug']);
+      expect(failureText(error), 'with --debug: the stack trace').toBe(error.stack);
+      expect(process.env.DEBUG, "-v turns on the MDK components' debug logs").toBe('mdk:*');
+
+      process.env.DEBUG = 'mdk:kernel*';
+      await buildProgram().parseAsync(['node', 'mdk', '-v', 'version']);
+      expect(process.env.DEBUG, 'a DEBUG the user set wins').toBe('mdk:kernel*');
+      expect(failureText('not an Error')).toBe('not an Error');
+    } finally {
+      applyGlobalFlags({});
+      if (saved === undefined) delete process.env.DEBUG;
+      else process.env.DEBUG = saved;
+      vi.restoreAllMocks();
+    }
   });
 
   it('groups the top-level commands under headings', () => {

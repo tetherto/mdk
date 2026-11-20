@@ -1,0 +1,1 @@
+{"name":"IndicatorProps","path":"src/primitives/components/indicator/index.tsx","kind":"type","description":"","public":true,"definition":"{ /** * Color variant of the indicator * @default 'gray' */ color?: IndicatorColor /** * Size variant of the indicator * @default 'md' */ size?: ComponentSize /** * Custom className for the root element */ className?: string /** * When tru…"}

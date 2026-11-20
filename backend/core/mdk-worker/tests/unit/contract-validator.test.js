@@ -195,3 +195,72 @@ test('handler existence is checked only when dir is given', (t) => {
   fs.writeFileSync(path.join(dir, 'handlers', 'set-power-limit.js'), 'module.exports = () => true\n')
   t.ok(validateContract(c, { dir }).ok)
 })
+
+test('telemetry polling, cache and retention keys plus per-metric path are accepted', (t) => {
+  const c = contract({
+    telemetryPollIntervalMs: 60000,
+    aggregateCacheTtlMs: 0,
+    telemetryRetention: { rawMs: 86400000, rollupIntervalMs: 300000, keepMs: 2592000000 }
+  })
+  c.capabilities.telemetry[0].path = 'minerData.hashrate'
+  const { ok, errors, warnings } = validateContract(c)
+  t.ok(ok, errors.join('; '))
+  t.alike(errors, [])
+  t.alike(warnings, [])
+})
+
+test('telemetryPollIntervalMs must be a positive integer', (t) => {
+  const zero = validateContract(contract({ telemetryPollIntervalMs: 0 }))
+  t.absent(zero.ok)
+  t.ok(zero.errors.some((e) => e.startsWith('ERR_CONTRACT_MINIMUM') && e.includes('/telemetryPollIntervalMs')))
+
+  const str = validateContract(contract({ telemetryPollIntervalMs: '60000' }))
+  t.absent(str.ok)
+  t.ok(str.errors.some((e) => e.startsWith('ERR_CONTRACT_TYPE') && e.includes('/telemetryPollIntervalMs')))
+
+  const frac = validateContract(contract({ telemetryPollIntervalMs: 1.5 }))
+  t.absent(frac.ok)
+  t.ok(frac.errors.some((e) => e.startsWith('ERR_CONTRACT_TYPE') && e.includes('/telemetryPollIntervalMs')))
+})
+
+test('telemetryRetention windows must be coherent and closed', (t) => {
+  const inverted = validateContract(contract({ telemetryRetention: { rawMs: 10, keepMs: 5 } }))
+  t.absent(inverted.ok)
+  t.ok(inverted.errors.some((e) => e.startsWith('ERR_CONTRACT_RETENTION_INVALID') && e.includes('/telemetryRetention')))
+
+  const rollup = validateContract(contract({ telemetryRetention: { rollupIntervalMs: 10, keepMs: 5 } }))
+  t.absent(rollup.ok)
+  t.ok(rollup.errors.some((e) => e.startsWith('ERR_CONTRACT_RETENTION_INVALID') && e.includes('rollupIntervalMs')))
+
+  const unknown = validateContract(contract({ telemetryRetention: { keepMs: 5, maxPoints: 100 } }))
+  t.absent(unknown.ok)
+  t.ok(unknown.errors.some((e) => e.startsWith('ERR_CONTRACT_UNEXPECTED') && e.includes("'maxPoints'")))
+})
+
+test('telemetry path must be a dotted keypath of safe identifiers', (t) => {
+  for (const bad of ['', 'a.', 'a..b', '__proto__.x', 'a[0]', 'a.01']) {
+    const c = contract()
+    c.capabilities.telemetry[0].path = bad
+    const { ok, errors } = validateContract(c)
+    t.absent(ok, JSON.stringify(bad))
+    t.ok(errors.some((e) => e.startsWith('ERR_CONTRACT_PATH_INVALID') && e.includes('/capabilities/telemetry/0')), JSON.stringify(bad))
+  }
+
+  for (const path of ['minerData.hashrate', 'boards.0.temp', '$stats.hashrate_5s']) {
+    const good = contract()
+    good.capabilities.telemetry[0].path = path
+    t.ok(validateContract(good).ok, path)
+  }
+})
+
+test('a legacy contract with the telemetry storage keys validates with no new warnings', (t) => {
+  const baseline = validateContract(legacy()).warnings
+  const c = legacy()
+  c.telemetryPollIntervalMs = 60000
+  c.aggregateCacheTtlMs = 5000
+  c.telemetryRetention = { rawMs: 1000, keepMs: 2000 }
+  c.capabilities.telemetry[0].path = 'hashrate'
+  const { ok, errors, warnings } = validateContract(c)
+  t.ok(ok, errors.join('; '))
+  t.alike(warnings, baseline)
+})

@@ -50,7 +50,7 @@ export const LogsExample = () => {
   const [page, setPage] = useState(2)
 
   return (
-    <div className="mdk-example-row" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="mdk-example-col mdk-example-col--centered mdk-example-col--gap-xl">
       {/* Incidents with pagination */}
       <LogsCard
         label="Recent Incidents"

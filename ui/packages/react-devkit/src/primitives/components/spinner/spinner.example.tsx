@@ -5,7 +5,7 @@ import { Spinner } from '@tetherto/mdk-react-devkit'
 
 export const SpinnerExample = () => {
   return (
-    <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+    <div className="mdk-example-inline mdk-example-inline--gap-2xl">
       <Spinner size="sm" />
       <Spinner size="md" type="circle" />
       <Spinner size="lg" label="Loading miners…" />

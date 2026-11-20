@@ -179,7 +179,8 @@ test('runChecklist: measures every row against a fake Kernel client and Gateway'
   t.ok(lat.actionSubmit.n > 0)
   t.is(seen.unauthorized, 0)
 
-  t.is(result.alerts.rulesCount, 1)
+  // no in-repo miner family declares ALERT_INDUCTION thresholds (WorkerRuntimeV2 has no alerts service)
+  t.is(result.alerts.rulesCount, 0)
   t.alike(result.alerts.byName, { chips_temp_critical: 2 })
   t.is(result.alerts.devicesWithAlerts, 2)
   t.is(result.alerts.visibleViaGateway.n, 1)

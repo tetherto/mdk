@@ -69,14 +69,19 @@ If you also want to opt your own component styles into the cascade ordering
 ## Design tokens
 
 All design tokens are declared as CSS custom properties under `:root` inside
-`@layer base`. The source of truth lives in
-[`packages/react-devkit/src/primitives/styles/_colors.scss`](../packages/react-devkit/src/primitives/styles/_colors.scss)
-and is also exposed as a subpath import:
+`@layer base`. The shared color and component tokens live in
+[`packages/react-devkit/src/primitives/styles/_colors.scss`](../packages/react-devkit/src/primitives/styles/_colors.scss),
+which is also exposed as a subpath import:
 
 ```scss
 // Build-time consumers can @use the SCSS source:
 @use "@tetherto/mdk-react-devkit/tokens.scss";
 ```
+
+Layout tokens, the spacing scale and the control heights, live in
+[`_layout.scss`](../packages/react-devkit/src/primitives/styles/_layout.scss). They ship as CSS custom
+properties in `styles.css` only; the `tokens.scss` subpath does not include them, so
+`--mdk-control-height`, which it does declare, resolves only once `styles.css` is loaded.
 
 Overriding tokens in your app:
 
@@ -108,10 +113,14 @@ The most common knobs:
 | `--mdk-font-size`                | Default control font size            |
 | `--mdk-shadow-md` / `-lg`        | Elevation tokens                     |
 | `--mdk-button-primary-bg`        | Primary button background            |
+| `--mdk-control-height` / `-bg` / `-border` | Shared height, background and border of filter-bar controls: Select, the date range button, CurrencyToggler, secondary Button. The height is the outer box: each control is `box-sizing: border-box` |
+| `--mdk-control-height-lg` / `-md` / `-sm` | Control heights, outer box: 40, 34, 26px. Match one to line a custom control up with a `Select` of that size; `--mdk-control-height` is `-lg`. `Select` compiles its heights from the same values, so overriding these tokens does not resize it |
+| `--mdk-spacing-xs` … `-2xl`      | Spacing scale: 4, 8, 12, 16, 24, 32px. Use it for gaps and padding instead of a literal |
 | `--mdk-table-header-bg`          | Data table header background         |
 
-See the source file for the full list, every variable prefixed with `--mdk-`
-is part of the public theming surface.
+See `_colors.scss` and `_layout.scss` for the full shared set. A few components declare
+their own tokens at the top of their stylesheet, such as `--mdk-dialog-max-width`.
+Every variable prefixed with `--mdk-` is part of the public theming surface.
 
 ## Per-component class overrides
 

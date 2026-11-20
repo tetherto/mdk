@@ -57,12 +57,28 @@ export interface ValidateAppOptions {
 }
 
 interface RouteTable {
-  routes: Array<{ id: string; handler: string }>;
+  routes: Array<{ id: string; handler: string; description?: unknown; permissions?: unknown; schema?: { body?: unknown }; http?: { requestBody?: unknown } }>;
 }
 
 interface PluginLoader {
   validateManifest(manifest: unknown, label: string): void;
 }
+
+interface RouteTableValidation {
+  ok: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+interface AppRuntime {
+  validateRouteTable(table: unknown, opts?: { strict?: boolean }): RouteTableValidation;
+}
+
+// `ERR_X: /path text` from the schema, labelled with the file like the loader's own errors.
+const labelled = (name: string, finding: string): string => {
+  const at = finding.indexOf(': ');
+  return at < 0 ? `${name}: ${finding}` : `${finding.slice(0, at)}: ${name}: ${finding.slice(at + 2)}`;
+};
 
 export const isMapping = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -182,7 +198,72 @@ function checkModule(dir: string, pluginDir: string, spec: string, what: string,
   if (syntax) errors.push(`${what} "${spec}" does not compile: ${syntax}`);
 }
 
-function checkRouteTable(dir: string, errors: string[]): { routes: number; pluginDir: string | null } {
+// Ajv coerces a JSON null to these when a branch tries them: 0, "", false, or an array holding it.
+const NULL_COERCED = new Set(['number', 'integer', 'string', 'boolean', 'array']);
+
+const typeList = (schema: Record<string, unknown>): unknown[] => (Array.isArray(schema.type) ? schema.type : [schema.type]);
+
+// A branch that accepts null as it is.
+const takesNull = (schema: Record<string, unknown>): boolean =>
+  typeList(schema).includes('null') || schema.nullable === true || schema.const === null || (Array.isArray(schema.enum) && schema.enum.includes(null));
+
+// A local `#/...` ref resolved against the body schema; anything else is left as it is.
+function deref(schema: unknown, root: unknown): unknown {
+  if (!isMapping(schema) || typeof schema.$ref !== 'string' || !schema.$ref.startsWith('#/')) return schema;
+  let target: unknown = root;
+  for (const part of schema.$ref.slice(2).split('/')) target = isMapping(target) ? target[part.replace(/~1/g, '/').replace(/~0/g, '~')] : undefined;
+  return target ?? schema;
+}
+
+/**
+ * Where a request body schema loses a JSON null: the Gateway validates bodies
+ * with Fastify's Ajv, which coerces types. In `anyOf`, a number, integer,
+ * string, boolean or array branch tried before the branch that takes null turns
+ * null into 0, "", false or an array; in `oneOf`, both branches then match and the
+ * request is refused. `type: [..., "null"]` keeps null. z.toJSONSchema writes a
+ * bounded nullable scalar (`.min(0).nullable()`) and a nullable array as such an anyOf.
+ */
+export function nullCoercedPaths(schema: unknown, path = 'body', root: unknown = schema, ancestors = new Set<unknown>()): string[] {
+  // A $ref can lead back to a schema being walked.
+  if (!isMapping(schema) || ancestors.has(schema)) return [];
+  ancestors.add(schema);
+  const found: string[] = [];
+  for (const keyword of ['anyOf', 'oneOf'] as const) {
+    const branches = schema[keyword];
+    if (!Array.isArray(branches)) continue;
+    const resolved = branches.map((b) => deref(b, root)).filter(isMapping);
+    const nullAt = resolved.findIndex(takesNull);
+    if (nullAt < 0) continue;
+    const scalarAt = resolved.findIndex((b) => !takesNull(b) && typeList(b).some((t) => NULL_COERCED.has(t as string)));
+    if (scalarAt >= 0 && (keyword === 'oneOf' || scalarAt < nullAt)) found.push(path);
+  }
+  const children: Array<[string, unknown]> = [];
+  for (const key of ['properties', 'patternProperties', '$defs', 'definitions', 'dependentSchemas'] as const) {
+    if (isMapping(schema[key])) for (const [k, v] of Object.entries(schema[key])) children.push([key === 'properties' ? `${path}.${k}` : `${path}/${key}/${k}`, v]);
+  }
+  for (const key of ['items', 'additionalProperties', 'contains', 'not', 'if', 'then', 'else'] as const) {
+    if (isMapping(schema[key])) children.push([key === 'items' ? `${path}[]` : `${path}/${key}`, schema[key]]);
+  }
+  for (const key of ['anyOf', 'oneOf', 'allOf', 'prefixItems', 'items'] as const) {
+    if (Array.isArray(schema[key])) (schema[key] as unknown[]).forEach((v, i) => children.push([key === 'prefixItems' || key === 'items' ? `${path}[${i}]` : path, deref(v, root)]));
+  }
+  for (const [childPath, child] of children) found.push(...nullCoercedPaths(child, childPath, root, ancestors));
+  ancestors.delete(schema);
+  return [...new Set(found)];
+}
+
+// The body schema the Gateway enforces, as the loader builds it: from `http`
+// only when the route has no `schema`, and an optional body may also be null.
+function requestBodySchema(route: RouteTable['routes'][number]): { schema: unknown; optional: boolean } {
+  if (route.schema) return { schema: route.schema.body, optional: false };
+  const requestBody = route.http?.requestBody;
+  if (!isMapping(requestBody) || !isMapping(requestBody.content) || !isMapping(requestBody.content['application/json'])) return { schema: undefined, optional: false };
+  const schema = requestBody.content['application/json'].schema;
+  if (!isMapping(schema)) return { schema: undefined, optional: false };
+  return { schema, optional: requestBody.required !== true };
+}
+
+function checkRouteTable(dir: string, errors: string[], warnings: string[]): { routes: number; pluginDir: string | null } {
   const name = ROUTE_TABLES.find((candidate) => existsSync(join(dir, candidate)));
   if (!name) {
     errors.push('mdk-plugin.json: not found (looked in plugin/ and the package root)');
@@ -200,9 +281,32 @@ function checkRouteTable(dir: string, errors: string[]): { routes: number; plugi
     return { routes: 0, pluginDir };
   }
 
+  // The loader's rules run first, so an author sees the error the runtime would throw.
+  // The schema adds what the loader does not check: the OpenAPI-shaped form, as
+  // warnings, or as errors for a table that declares routeTableVersion.
+  const { validateRouteTable } = require('@tetherto/mdk-app-runtime') as AppRuntime;
+  const schema = validateRouteTable(table);
+  errors.push(...schema.errors.map((e) => labelled(name, e)));
+  warnings.push(...schema.warnings.map((w) => labelled(name, w)));
+
   const { routes } = table as RouteTable;
   for (const route of routes) {
     checkModule(dir, pluginDir, route.handler, `${name}: route "${route.id}" handler`, errors);
+    if (typeof route.description !== 'string' || !route.description.trim()) {
+      warnings.push(`${name}: route "${route.id}" has no description, so its API reference shows Purpose as "Not declared" and its MCP tool falls back to the app's description`);
+    }
+    // Read only by an authVerifier: spec.rbac, which mdk run always enforces, decides who may call a route.
+    if (route.permissions !== undefined) {
+      warnings.push(`${name}: route "${route.id}" sets permissions, which spec.rbac ignores, so they gate nothing under mdk run (declare verb or resourceName, and grant the route in spec.rbac)`);
+    }
+    const { schema, optional } = requestBodySchema(route);
+    const own = nullCoercedPaths(schema);
+    for (const path of own) {
+      warnings.push(`${name}: route "${route.id}" ${path} pairs a null branch with a number, integer, string, boolean or array one in anyOf/oneOf, so the Gateway coerces a JSON null to 0, "", false or an array, or refuses it (write type: [<type>, "null"] beside the other keywords instead)`);
+    }
+    if (optional && !own.includes('body') && nullCoercedPaths({ anyOf: [schema, { type: 'null' }] }).includes('body')) {
+      warnings.push(`${name}: route "${route.id}" body is optional, so the Gateway wraps it in anyOf with null and coerces a JSON null body to 0, "", false or an array (set requestBody.required: true, or write type: [<type>, "null"] in the body schema)`);
+    }
   }
   return { routes: routes.length, pluginDir };
 }
@@ -235,7 +339,7 @@ export function validateApp(dir: string, opts: ValidateAppOptions = {}): AppVali
     checkManifest(manifest, pkg, errors);
   }
 
-  const { routes, pluginDir } = checkRouteTable(dir, errors);
+  const { routes, pluginDir } = checkRouteTable(dir, errors, warnings);
   const main = isMapping(manifest) ? manifest.main : undefined;
   if (pluginDir && typeof main === 'string' && main.trim()) {
     checkModule(dir, pluginDir, main, `${APP_MANIFEST}: main`, errors);

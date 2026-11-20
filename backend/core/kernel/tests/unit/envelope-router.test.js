@@ -64,8 +64,7 @@ test('envelope router - routes action.push to action manager', async (t) => {
       query: { id: 'dev-1' },
       action: 'reboot',
       params: [],
-      voter: 'user@example.com',
-      authPerms: ['miner:w']
+      voter: 'user@example.com'
     }
   })
 
@@ -82,7 +81,7 @@ test('envelope router - routes all action lifecycle envelopes', async (t) => {
     action: ACTIONS.ACTION_PUSH_BATCH,
     type: MESSAGE_TYPES.REQUEST,
     sender: 'gateway',
-    payload: { batchActionsPayload: [], voter: 'user@example.com', authPerms: [] }
+    payload: { batchActionsPayload: [], voter: 'user@example.com' }
   }), deps)
   t.is(calls.push.length, 1)
 
@@ -114,7 +113,7 @@ test('envelope router - routes all action lifecycle envelopes', async (t) => {
     action: ACTIONS.ACTION_VOTE,
     type: MESSAGE_TYPES.REQUEST,
     sender: 'gateway',
-    payload: { id: 9, voter: 'user@example.com', approve: true, authPerms: ['miner:w'] }
+    payload: { id: 9, voter: 'user@example.com', approve: true }
   }), deps)
   t.is(voteRes, 1)
   t.is(calls.vote[0].id, 9)
@@ -158,7 +157,7 @@ test('envelope router - rejects a payload that fails its schema (validateFull)',
     action: ACTIONS.ACTION_PUSH,
     type: MESSAGE_TYPES.REQUEST,
     sender: 'gateway',
-    payload: { action: 'reboot', voter: 'u', authPerms: [], params: [] }
+    payload: { action: 'reboot', voter: 'u', params: [] }
   }), deps)
   t.is(res.error, 'ERR_PAYLOAD_QUERY_REQUIRED')
   t.is(calls.push.length, 0, 'action manager never reached')
@@ -192,11 +191,27 @@ test('envelope router - a caller is authorized per request; a denial never reach
   t.is(calls.logged[0].result.error, cmd.error)
 
   const vote = await routeEnvelope(build({
-    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'v', approve: true, authPerms: [] }
+    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'v', approve: true }
   }), deps, caller)
   t.ok(/ERR_KERNEL_ACTION_FORBIDDEN/.test(vote.error))
   t.is(calls.vote.length, 0)
   t.alike(deps.authorizer.calls.map((c) => c.caller), [CALLER_KEY, CALLER_KEY, CALLER_KEY], 'each request checked')
+})
+
+test('envelope router - worker.list hands a worker RPC key only to callers that may read that worker', async (t) => {
+  const { deps } = createDeps()
+  deps.registry.listWorkers = () => [{ workerId: 'w-1', rpcKey: 'aa', deviceFamily: 'miner', brand: 'Avalon' }, { workerId: 'w-2', rpcKey: 'bb', deviceFamily: 'miner', brand: 'Antminer' }]
+  const asked = []
+  deps.authorizer = fakeAuthorizer({ canRead: (workerId, actor) => { asked.push([workerId, actor && actor.sub]); return workerId === 'w-1' } })
+  const list = (extra, caller = { publicKey: CALLER_KEY }) => routeEnvelope(build({ action: ACTIONS.WORKER_LIST, type: MESSAGE_TYPES.REQUEST, sender: 'x', ...extra }), deps, caller)
+
+  t.alike((await list()).workers, [
+    { workerId: 'w-1', rpcKey: 'aa', deviceFamily: 'miner', brand: 'Avalon' },
+    { workerId: 'w-2', deviceFamily: 'miner', brand: 'Antminer' }
+  ], 'deviceFamily and brand go to every lister; only the key is gated')
+  await list({ actor: 'alice' })
+  t.alike(asked.slice(2), [['w-1', 'alice'], ['w-2', 'alice']], 'the operator is checked too')
+  t.alike((await list({}, null)).workers.map((w) => w.rpcKey), ['aa', 'bb'], 'in-process callers keep every key')
 })
 
 test('envelope router - a caller with no authorizer is refused', async (t) => {
@@ -213,7 +228,7 @@ test('envelope router - a caller votes and requests as its token identity', asyn
   const caller = { publicKey: CALLER_KEY }
 
   await routeEnvelope(build({
-    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'someone-else', approve: true, authPerms: [] }
+    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'someone-else', approve: true }
   }), deps, caller)
   t.is(calls.vote[0].voter, 'app:ops-center', 'self-asserted voter replaced')
 
@@ -236,11 +251,11 @@ test('envelope router - an app acting for an operator requests and votes as the 
   await routeEnvelope(req(ACTIONS.COMMAND_REQUEST, { command: 'reboot' }, 'd'), deps, caller)
   t.alike(dispatchOpts, { requesterId: 'alice', roles: ['operator'], via: { requesterId: 'app:ops-center', roles: ['app-ops-center'] } })
 
-  await routeEnvelope(req(ACTIONS.ACTION_VOTE, { id: 1, voter: 'someone-else', approve: true, authPerms: [] }), deps, caller)
+  await routeEnvelope(req(ACTIONS.ACTION_VOTE, { id: 1, voter: 'someone-else', approve: true }), deps, caller)
   t.is(calls.vote[0].voter, 'alice', 'the operator votes, even for an app that may delegate')
 
   deps.actionManager.pushAction = async (payload, opts) => { calls.push.push(payload); opts.canWrite('d-1'); return { id: 1 } }
-  await routeEnvelope(req(ACTIONS.ACTION_PUSH, { query: { id: 'd-1' }, action: 'reboot', params: [], voter: 'v', authPerms: [] }), deps, caller)
+  await routeEnvelope(req(ACTIONS.ACTION_PUSH, { query: { id: 'd-1' }, action: 'reboot', params: [], voter: 'v' }), deps, caller)
   t.is(calls.push[0].voter, 'alice')
   t.alike(writes, [['d-1', 'alice']], 'device writes are checked for the operator too')
 })
@@ -269,7 +284,7 @@ test('envelope router - a caller granted actions: delegate keeps the payload vot
   const { calls, deps } = createDeps()
   deps.authorizer = fakeAuthorizer({ delegate: true })
   await routeEnvelope(build({
-    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'gateway', payload: { id: 1, voter: 'user@example.com', approve: true, authPerms: [] }
+    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'gateway', payload: { id: 1, voter: 'user@example.com', approve: true }
   }), deps, { publicKey: CALLER_KEY })
   t.is(calls.vote[0].voter, 'user@example.com')
 })
@@ -280,7 +295,7 @@ test('envelope router - action pushes carry the caller device rule', async (t) =
   deps.actionManager.pushAction = async (payload, opts) => { seen = opts; return { id: 1 } }
   deps.authorizer = fakeAuthorizer({ canWrite: (d) => d === 'ok' })
   await routeEnvelope(build({
-    action: ACTIONS.ACTION_PUSH, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { query: { id: 'dev-1' }, action: 'reboot', params: [], voter: 'v', authPerms: [] }
+    action: ACTIONS.ACTION_PUSH, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { query: { id: 'dev-1' }, action: 'reboot', params: [], voter: 'v' }
   }), deps, { publicKey: CALLER_KEY })
   t.ok(seen, 'pushAction got the options')
   t.ok(seen.canWrite('ok'))
@@ -293,8 +308,38 @@ test('envelope router - votes carry the caller device rule', async (t) => {
   deps.actionManager.voteAction = async (payload, opts) => { seen = opts; return 1 }
   deps.authorizer = fakeAuthorizer({ canWrite: (d) => d === 'ok' })
   await routeEnvelope(build({
-    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'v', approve: true, authPerms: ['miner:w'] }
+    action: ACTIONS.ACTION_VOTE, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { id: 1, voter: 'v', approve: true }
   }), deps, { publicKey: CALLER_KEY })
   t.ok(seen && seen.canWrite('ok'), 'voteAction got the voter device rule')
   t.absent(seen.canWrite('other'))
+})
+
+test('envelope router - a worker-level telemetry.pull fans out through pullWorkers', async (t) => {
+  const { deps } = createDeps()
+  const seen = { pull: [], pullWorkers: [] }
+  deps.telemetryCollector = {
+    pull: async (deviceId, query) => { seen.pull.push({ deviceId, query }); return { device: true } },
+    pullWorkers: async (query) => { seen.pullWorkers.push(query); return { devices: {}, snapshotTs: null } }
+  }
+  const query = { type: 'snapshot', workers: ['w-1', 'w-2'] }
+
+  const fleet = await routeEnvelope(build({ action: ACTIONS.TELEMETRY_PULL, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { query } }), deps)
+  t.alike(fleet, { devices: {}, snapshotTs: null })
+  t.alike(seen.pullWorkers, [query])
+  t.is(seen.pull.length, 0, 'no device pull for a worker-level read')
+
+  const device = await routeEnvelope(build({ action: ACTIONS.TELEMETRY_PULL, type: MESSAGE_TYPES.REQUEST, sender: 'x', deviceId: 'dev-1', payload: { query } }), deps)
+  t.alike(device, { device: true })
+  t.alike(seen.pull, [{ deviceId: 'dev-1', query }])
+  t.is(seen.pullWorkers.length, 1, 'a deviceId keeps the device pull even with workers listed')
+
+  await routeEnvelope(build({ action: ACTIONS.TELEMETRY_PULL, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { query: { type: 'snapshot' } } }), deps)
+  t.alike(seen.pullWorkers[1], { type: 'snapshot' }, 'a snapshot without workers still reaches pullWorkers, which refuses it')
+
+  await routeEnvelope(build({ action: ACTIONS.TELEMETRY_PULL, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { query: { type: 'list', workers: ['w-1'] } } }), deps)
+  t.alike(seen.pullWorkers[2], { type: 'list', workers: ['w-1'] }, 'any type naming workers fans out')
+
+  await routeEnvelope(build({ action: ACTIONS.TELEMETRY_PULL, type: MESSAGE_TYPES.REQUEST, sender: 'x', payload: { query: { type: 'list' } } }), deps)
+  t.is(seen.pullWorkers.length, 3, 'a device query type without workers stays a device pull')
+  t.alike(seen.pull[1], { deviceId: null, query: { type: 'list' } })
 })

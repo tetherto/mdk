@@ -15,6 +15,7 @@ vi.mock('../../src/lib/dashboard.js', () => ({
   createDashboard: createDashboardMock,
   dashboardNameFromStack: (name: string) => `${name}-dashboard`,
   defaultTemplateRef: () => 'v9.9.9',
+  LEGACY_PEER_DEPS_RETRY_NOTICE: 'npm install failed, so it was retried with --legacy-peer-deps; the npm error above can be ignored.',
 }));
 
 const { registerCreate } = await import('../../src/commands/create.js');
@@ -169,6 +170,17 @@ describe('mdk create app next steps', () => {
     expect(stdout.mock.calls.join('')).toContain('mdk validate app demo');
     stdout.mockRestore();
   });
+
+  it('points a permissions change at `mdk add app <package> --accept-permissions`, not `mdk rbac init`', async () => {
+    createAppMock.mockReturnValue({ ok: true, appPath: '/proj/apps/demo', packageName: '@your-org/demo', appName: 'demo', stackFile: 'added' });
+    const stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await buildProgram().parseAsync(['node', 'mdk', 'create', 'app', 'demo', '--org', 'your-org']);
+    const out = stdout.mock.calls.join('');
+    expect(out).toContain('mdk add app @your-org/demo --accept-permissions');
+    expect(out).toContain('mdk rbac apply');
+    expect(out).not.toContain('mdk rbac init');
+    stdout.mockRestore();
+  });
 });
 
 describe('mdk create dashboard', () => {
@@ -195,6 +207,14 @@ describe('mdk create dashboard', () => {
     expect(stdout.mock.calls.join('')).toContain('local monorepo template');
   });
 
+  it('says the npm error can be ignored when the install succeeded on its retry', async () => {
+    createDashboardMock.mockResolvedValue({ ok: true, appPath: '/proj/apps/custom', source: 'github', installRetried: true });
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    await buildProgram().parseAsync(['node', 'mdk', 'create', 'dashboard', 'custom']);
+    expect(stderr.mock.calls.join('')).toContain('retried with --legacy-peer-deps; the npm error above can be ignored.');
+  });
+
   it('uses an explicit name under apps/<name>', async () => {
     createDashboardMock.mockResolvedValue({ ok: true, appPath: '/proj/apps/custom', source: 'github' });
     const program = buildProgram();
@@ -202,6 +222,39 @@ describe('mdk create dashboard', () => {
     await program.parseAsync(['node', 'mdk', 'create', 'dashboard', 'custom']);
     expect(createDashboardMock).toHaveBeenCalledWith(expect.objectContaining({ name: 'custom' }));
     expect(stdout.mock.calls.join('')).toContain('GitHub template');
+  });
+
+  // The release tag is the flag's commander default, so it reaches
+  // createDashboard as an explicit ref even when nobody typed --ref. The
+  // "not published yet" hint keys on that value, so the wiring is load-bearing.
+  it('forwards the default release tag as the ref, and an explicit --ref over it', async () => {
+    createDashboardMock.mockResolvedValue({ ok: true, appPath: '/proj/apps/custom', source: 'github' });
+    const program = buildProgram();
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await program.parseAsync(['node', 'mdk', 'create', 'dashboard', 'custom']);
+    expect(createDashboardMock).toHaveBeenCalledWith(expect.objectContaining({ ref: 'v9.9.9' }));
+
+    await program.parseAsync(['node', 'mdk', 'create', 'dashboard', 'custom', '--ref', 'main']);
+    expect(createDashboardMock).toHaveBeenLastCalledWith(expect.objectContaining({ ref: 'main' }));
+  });
+
+  // A bare `mdk run dashboard` starts apps/dashboard, so a dashboard created
+  // under its own name has to be named in the next step too.
+  it('names the dashboard in its `mdk run dashboard` next step, and only when it has one', async () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'mdk.yaml'), 'metadata:\n  name: my-stack\n', 'utf8');
+    createDashboardMock.mockResolvedValue({ ok: true, appPath: join(dir, 'apps', 'ui2'), source: 'monorepo' });
+
+    let stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await buildProgram().parseAsync(['node', 'mdk', 'create', 'dashboard', 'ui2', '--dir', dir]);
+    expect(stdout.mock.calls.join('')).toContain(`mdk run dashboard ui2 --dir ${dir}`);
+    stdout.mockRestore();
+
+    stdout = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await buildProgram().parseAsync(['node', 'mdk', 'create', 'dashboard', '--dir', dir]);
+    expect(stdout.mock.calls.join('')).toContain(`mdk run dashboard --dir ${dir}`);
+    stdout.mockRestore();
   });
 
   it('surfaces an install warning and a failure', async () => {

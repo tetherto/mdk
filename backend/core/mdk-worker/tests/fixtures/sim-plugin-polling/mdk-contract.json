@@ -1,0 +1,25 @@
+{
+  "contractVersion": "1",
+  "metadata": {
+    "provider": "tether",
+    "deviceFamily": "miner",
+    "brand": "SimMiner",
+    "modelsSupported": ["SIM-1"],
+    "overview": "In-memory simulated miner that declares a telemetry poll interval; used by mdk-worker tests."
+  },
+  "capabilities": {
+    "telemetry": [
+      { "name": "hashrate_rt", "unit": "TH/s", "type": "number", "handler": "src/telemetry/stats.js", "path": "minerData.hashrate", "description": "Real-time hashrate." },
+      { "name": "power", "unit": "W", "type": "number", "handler": "src/telemetry/stats.js", "path": "power", "description": "Power draw." },
+      { "name": "status", "type": "string", "handler": "src/telemetry/status.js", "description": "mining or sleeping." }
+    ],
+    "commands": [
+      { "name": "setPower", "handler": "src/commands/set-power.js", "params": [{ "name": "watts", "type": "number", "min": 0, "max": 5000 }] }
+    ],
+    "health": { "supportedStates": ["OK", "OFFLINE"] },
+    "errors": {}
+  },
+  "telemetryPollIntervalMs": 60000,
+  "aggregateCacheTtlMs": 60000,
+  "telemetryRetention": { "rawMs": 86400000, "rollupIntervalMs": 300000, "keepMs": 2592000000 }
+}

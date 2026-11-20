@@ -105,13 +105,31 @@ export async function addUser(projectDir: string, opts: AddUserOptions): Promise
   return { ok: result.applied.ok, value: result, ...(result.applied.ok ? {} : { message: result.applied.message }) };
 }
 
+/**
+ * Changes a user the Kernel already has: `upsertUser` alone would create one under a mistyped name.
+ * A caller that may write users but not list them gets the plain update, as before.
+ */
+async function updateUser(
+  projectDir: string,
+  name: string,
+  change: { password?: string; disabled?: boolean },
+): Promise<Outcome<{ created: boolean; user: IdentityUser }>> {
+  const res = await kernelCall<{ users: IdentityUser[] } | { created: boolean; user: IdentityUser }>(projectDir, async (client) => {
+    const listed = await client.listUsers(call).catch(() => null);
+    if (listed && !isRefusal(listed) && !listed.users.some((u) => u.name === name)) return listed;
+    return client.upsertUser({ name, ...change }, call);
+  });
+  if (res.value && 'users' in res.value) return failed(`No user named "${name}".`);
+  return res as Outcome<{ created: boolean; user: IdentityUser }>;
+}
+
 export function setPassword(projectDir: string, name: string, password: string): Promise<Outcome<{ created: boolean; user: IdentityUser }>> {
   checkPassword(password);
-  return kernelCall(projectDir, (client) => client.upsertUser({ name, password }, call));
+  return updateUser(projectDir, name, { password });
 }
 
 export function setDisabled(projectDir: string, name: string, disabled: boolean): Promise<Outcome<{ created: boolean; user: IdentityUser }>> {
-  return kernelCall(projectDir, (client) => client.upsertUser({ name, disabled }, call));
+  return updateUser(projectDir, name, { disabled });
 }
 
 export function listUsers(projectDir: string): Promise<Outcome<{ users: IdentityUser[] }>> {
@@ -149,7 +167,10 @@ export async function rotateAccount(projectDir: string, name: string): Promise<A
   return register(projectDir, rotateCredential(projectDir, name));
 }
 
-/** Removes an agent's credential and its registration. An app's account goes with the app. */
+/**
+ * Removes an agent's credential and its registration; `removed` says either was there.
+ * An app's account goes with the app.
+ */
 export async function removeAgent(projectDir: string, name: string): Promise<AccountChange & { removed: boolean }> {
   if (parseAccount(name).kind === 'app') {
     throw new Error(`"${name}" belongs to an app: remove the app from spec.apps and its account goes at the next \`mdk run\`.`);
@@ -158,7 +179,7 @@ export async function removeAgent(projectDir: string, name: string): Promise<Acc
   const res = await withKernelClient(projectDir, (client) => client.deleteServiceAccount(name, call));
   if ('down' in res) return { removed, credential: null, registered: false, message: `${res.down}; it is removed when the Kernel next starts` };
   if (isRefusal(res.value)) return { removed, credential: null, registered: false, message: `the Kernel refused: ${res.value.error}` };
-  return { removed, credential: null, registered: true };
+  return { removed: removed || res.value.deleted, credential: null, registered: true };
 }
 
 export interface AccountRow {
@@ -166,13 +187,15 @@ export interface AccountRow {
   kind: 'app' | 'agent';
   /** This instance holds its credential. */
   local: boolean;
-  /** Registered with the running Kernel; null when the Kernel is down. */
+  /** Registered with the running Kernel; null when that was not checked (the Kernel is down or refused). */
   registered: boolean | null;
   /** The registered key differs from the local credential (restart or `mdk sa rotate` to resync). */
   stale: boolean;
 }
 
-export async function listAccounts(projectDir: string): Promise<{ rows: AccountRow[]; kernel: 'up' | 'down'; message?: string }> {
+export async function listAccounts(
+  projectDir: string,
+): Promise<{ rows: AccountRow[]; kernel: 'up' | 'down'; refused?: true; message?: string }> {
   const local = listCredentials(projectDir);
   const res = await withKernelClient(projectDir, (client) => client.listServiceAccounts(call));
   const remote: IdentityServiceAccount[] | null = 'down' in res || isRefusal(res.value) ? null : res.value.serviceAccounts;
@@ -189,8 +212,10 @@ export async function listAccounts(projectDir: string): Promise<{ rows: AccountR
       stale: !!cred && !!reg && reg.publicKey !== cred.publicKey,
     };
   });
-  const message = 'down' in res ? res.down : isRefusal(res.value) ? res.value.error : undefined;
-  return { rows, kernel: remote ? 'up' : 'down', ...(message ? { message } : {}) };
+  if ('down' in res) return { rows, kernel: 'down', message: res.down };
+  // The Kernel answered, or the session could not sign the call: registrations are unknown, not absent.
+  if (isRefusal(res.value)) return { rows, kernel: 'up', refused: true, message: res.value.error };
+  return { rows, kernel: 'up' };
 }
 
 /**

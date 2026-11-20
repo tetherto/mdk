@@ -24,8 +24,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** Placeholders baked into `templates/app/**`, replaced at scaffold time. */
 const NAME_TOKEN = '__PLUGIN_NAME__';
-/** The `spec.apps[].name` (see `toAppName`), also the last segment of the `mdk-app.yaml` id. */
+/** The `spec.apps[].name` (see `toAppName`). */
 const APP_TOKEN = '__PLUGIN_APP__';
+/** The `mdk-app.yaml` id (see `appManifestId`). */
+const ID_TOKEN = '__MANIFEST_ID__';
 /** The package name, scoped under `--org` when given. */
 const PACKAGE_TOKEN = '__PACKAGE_NAME__';
 
@@ -79,6 +81,20 @@ function uiDevDependencies(uiSrc: string): Record<string, string> {
     typescript: '^7.0.2',
     vite: '^7.0.0',
   };
+}
+
+/**
+ * The reverse-DNS `mdk-app.yaml` id: `com.<org>.<app>` under `--org`, else
+ * `com.example.<app>`. The org (already checked by `parseOrg`) may carry `_`
+ * or start a segment with `-`, which the id pattern rejects, so each of its
+ * dot-separated segments is reduced to lowercase letters and digits joined by single `-`.
+ */
+export function appManifestId(appName: string, org?: string): string {
+  const segments = (org ?? '')
+    .split('.')
+    .map((seg) => seg.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''))
+    .filter(Boolean);
+  return ['com', ...(segments.length ? segments : ['example']), appName].join('.');
 }
 
 const writeJson = (file: string, value: unknown): void =>
@@ -354,7 +370,12 @@ export function createApp(opts: AppScaffoldOptions): AppScaffoldResult {
     // so logs and the mdk.yaml entry agree. A new app starts at the manifest's
     // version, not the template's release pin.
     const packageName = org.org ? `@${org.org}/${name}` : name;
-    copyTemplate(src, appPath, { [NAME_TOKEN]: name, [APP_TOKEN]: appName, [PACKAGE_TOKEN]: packageName });
+    copyTemplate(src, appPath, {
+      [NAME_TOKEN]: name,
+      [APP_TOKEN]: appName,
+      [PACKAGE_TOKEN]: packageName,
+      [ID_TOKEN]: appManifestId(appName, org.org),
+    });
     updateJson(join(appPath, 'package.json'), { name: packageName, version: '0.1.0' });
     linkCheckoutBackend(join(appPath, 'package.json'));
     updateJson(join(appPath, 'plugin', 'mdk-plugin.json'), { name: packageName });

@@ -23,6 +23,12 @@ anything outside it fails to resolve with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
 
 The [run a mining site tutorial](../../../docs/tutorials/run-a-site.md) is the full clone-and-install walkthrough.
 
+> [!IMPORTANT]
+> The Worker packages the examples on this page load (`@tetherto/mdk-worker-avalon` and every other `@tetherto/mdk-worker-*`
+> under [`backend/workers/`](../../workers/README.md)) are private workspace members, not published to npm. `require.resolve()`
+> finds them only inside the monorepo after the root `npm install`. Outside it, `npm install @tetherto/mdk-worker-avalon` fails
+> with `E404`; pass `WorkerRuntimeV2` the Worker's directory path (e.g. a checkout's `backend/workers/miners/avalon`) instead.
+
 > [!NOTE]
 > Installed from npm, this package pulls in `@tetherto/mdk-gateway`, so `npm audit` reports an `@fastify/static` advisory until
 > your app's root `package.json` overrides it. See the Gateway's
@@ -31,23 +37,23 @@ The [run a mining site tutorial](../../../docs/tutorials/run-a-site.md) is the f
 ## Usage
 
 ```js
+const path = require('path')
 const { getKernel, startGateway, waitForDiscovery, shutdown } = require('@tetherto/mdk-core')
-const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
 // 1. Start Kernel
 const kernel = await getKernel()
 
-// 2. Start a Worker: each Worker package ships its own boot function that
-//    constructs a WorkerRuntime internally (see @tetherto/mdk-worker).
-//    Worker RPC is fail-closed: allow only the key the Kernel dials with, so
-//    every command goes through the Kernel.
-const { runtime } = await startAvalonWorker({
+// 2. Start a Worker: WorkerRuntimeV2 hosts a Worker package by directory (see
+//    @tetherto/mdk-worker). Worker RPC is fail-closed: allow only the key the
+//    Kernel dials with, so every command goes through the Kernel.
+const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-avalon/package.json')), {
   workerId: 'avalon-rack-1',
-  model: 'a1346',
   storeDir: './data/avalon',
   allowedKeys: [kernel.getClientPublicKey()],
-  seedDevices: [{ info: { serialNum: 'AV-001' }, opts: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
+  devices: [{ deviceId: 'AV-001', config: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
 })
+await runtime.start()
 
 // 3. Register the Worker with Kernel (same-process mode, no DHT/local discovery needed)
 await kernel.registerWorker(runtime.getPublicKey())
@@ -91,7 +97,7 @@ Start the Kernel with defaults suited for single-process development. Automatica
 - Publishes `kernel.pub` (its worker-dialing key, `kernel.getClientPublicKey()`) to the trusted-keys dir and admits the
   other keys published there
 - With `opts.handleSignals: true` only, registers `SIGINT`/`SIGTERM` handlers that drain `kernel._cleanup`, stop the
-  Kernel and call `process.exit(0)`. The default (library use) leaves the process's signals alone; call
+  Kernel and call `process.exit(0)`, or `process.exit(1)` if that takes longer than `opts.shutdownForceMs`. The default (library use) leaves the process's signals alone; call
   [`shutdown(kernel)`](#shutdownhandle--promisevoid) yourself
 
 The key file is not deleted on shutdown: the key is stable across restarts (HRPC seeds persist in the Kernel store), so a leftover
@@ -124,39 +130,54 @@ const kernel = await getKernel()
 | `opts.healthPingMs` | Optional | `number` | The Kernel's own default | Health ping interval in ms |
 | `opts.statePullMs` | Optional | `number` | The Kernel's own default | Worker identity and device-list refresh interval in ms |
 | `opts.handleSignals` | Optional | `boolean` | `false` | Install `SIGINT`/`SIGTERM` handlers that stop the Kernel and exit the process. Set it in a standalone Kernel process |
+| `opts.shutdownForceMs` | Optional | `number` | `3000` | With `handleSignals`: time in ms for draining `kernel._cleanup` and stopping the Kernel before the process force-exits with code `1`. Anything other than a number from `0` to `2147483647` (Node's timer limit) throws `ERR_SHUTDOWN_FORCE_MS_INVALID` before the Kernel starts |
 
 Cadence options are flat on `getKernel()`. For nested `cadences` configuration, use the
 [`createKernel()` API](../kernel/README.md#createkernelopts--kernelmanager).
 
 ### Start a Worker
 
-There is no generic `startWorker(WorkerClass, opts)` export in this package. Each Worker package (e.g.
-`@tetherto/mdk-worker-avalon`) supplies its own boot function that constructs a
-[`WorkerRuntime`](../mdk-worker/lib/worker-runtime.js) internally and connects it to Kernel through [DHT, local, or
-same-process discovery](../../../docs/concepts/deployment-topologies.md). Every boot function accepts (`kernelTopic`, `discovery`,
-or direct `kernel.registerWorker(runtime.getPublicKey())`).
+There is no generic `startWorker(WorkerClass, opts)` export in this package. A Worker package (e.g.
+`@tetherto/mdk-worker-avalon`) is a directory `@tetherto/mdk-worker`'s
+[`WorkerRuntimeV2`](../mdk-worker/lib/worker-runtime-v2.js) hosts; the host connects it to Kernel through [DHT, local, or
+same-process discovery](../../../docs/concepts/deployment-topologies.md) (`kernelTopic`, the trusted-keys dir, or direct
+`kernel.registerWorker(runtime.getPublicKey())`).
+
+`registerWorker()` resolves `{ registered: true, workerId }`, or `{ registered: false, error, ... }` when the Kernel
+refuses the Worker: most often a `workerId` or `deviceId` already bound to another registration, a Worker that never
+answered, or one whose contract fails validation. It does not throw on a refusal, so test `registered` rather than the
+result itself. The Kernel's [Worker bindings](../kernel/README.md#worker-bindings) cover the two binding conflicts, and
+its [error table](../kernel/README.md#errors) lists every refusal code.
 
 ```js
-const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
+const path = require('path')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
 
-const { runtime, stop } = await startAvalonWorker({
+const runtime = new WorkerRuntimeV2(path.dirname(require.resolve('@tetherto/mdk-worker-avalon/package.json')), {
   workerId: 'avalon-rack-1',     // one runtime process = one workerId
-  model: 'a1346',
   storeDir: './data/avalon',
   allowedKeys: [kernel.getClientPublicKey()],
   kernelTopic: null,               // omit/null to register by key instead of a DHT topic
-  seedDevices: [{ info: { serialNum: 'AV-001' }, opts: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
+  devices: [{ deviceId: 'AV-001', config: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
 })
+await runtime.start()
+const stop = () => runtime.stop()
 
 await kernel.registerWorker(runtime.getPublicKey()) // same-process discovery
 ```
 
-> [!CAUTION]
-> This boot shape (`storeDir`, `seedDevices`) is the deprecated thing/adapter Worker surface. A new Worker runs on
-> `WorkerRuntimeV2`; see [Build a third-party Worker](../../../docs/guides/workers/build-a-worker.md).
+`WorkerRuntimeV2` takes its sweep interval and retention from the contract's `telemetryPollIntervalMs` and
+`telemetryRetention`, overridable per Worker through `opts.config`. The
+[telemetry collector](../mdk-worker/README.md#telemetry-collector) documents those keys and their defaults.
 
-Returns vary by Worker package, but every boot function returns at least `{ runtime, stop }`: `runtime` is the
-`WorkerRuntime` instance (`getPublicKey()`, `getDeviceContext(deviceId)`); `stop()` tears the Worker down.
+The Antspace, Bitdeer and Seneca packages are hosted differently: each exports a `start<Family>Worker(opts)` boot function
+on `WorkerRuntime` v1. Returns vary by package, but every boot function returns at least `{ runtime, stop }`: `runtime` is
+the `WorkerRuntime` instance (`getPublicKey()`, `getDeviceContext(deviceId)`); `stop()` tears the Worker down.
+
+> [!CAUTION]
+> That boot shape (`opts.conf`, `seedDevices`) is the deprecated thing/adapter Worker surface.
+> [Building a third-party Worker](../../../docs/guides/workers/build-a-worker.md) covers the `WorkerRuntimeV2` shape a new
+> Worker uses.
 
 On this surface `opts.conf.thing` sets the store's sampling and retention. The keys that decide disk growth:
 
@@ -193,17 +214,18 @@ const server = await startGateway({
 | `opts.port` | Optional | `number` | `3000` | HTTP port |
 | `opts.env` | Optional | `string` | `'development'` | Environment string |
 | `opts.kernel` | Optional, one of `opts.kernel`/`opts.kernelKey`/`opts.keyFile` must resolve a key | `KernelManager` | None | Kernel instance; Gateway stop is registered on cleanup. Its `getPublicKey()` also resolves the Kernel key. |
-| `opts.kernelKey` | Optional, see `opts.kernel` | `string\|Buffer\|false` | None | Kernel HRPC listener public key (hex or Buffer); `false` to run without one. The Gateway passes it to no app; each [app runtime](../app-runtime/README.md) takes its own `kernelKey` |
-| `opts.keyFile` | Optional, see `opts.kernel` | `string` | `DEFAULT_KEY_FILE` | Key file to resolve the Kernel key from |
-| `opts.bootstrap` | Optional | `array` | None | DHT bootstrap nodes for every DHT node the Gateway starts: its net facility, Kernel client and app runtime client |
+| `opts.kernelKey` | Optional, one of `opts.kernel`/`opts.kernelKey`/`opts.keyFile` must resolve a key | `string\|Buffer\|false` | None | Kernel HRPC listener public key (hex or Buffer); `false` to run without one. The Gateway passes it to no app; each [app runtime](../app-runtime/README.md) takes its own `kernelKey` |
+| `opts.keyFile` | Optional, one of `opts.kernel`/`opts.kernelKey`/`opts.keyFile` must resolve a key | `string` | `DEFAULT_KEY_FILE` | Key file to resolve the Kernel key from |
+| `opts.bootstrap` | Optional | `array` | None | DHT bootstrap nodes for every DHT node the Gateway starts: its net facility, Kernel client, and app runtime client |
 | `opts.dhtHost` | Optional | `string` | All interfaces | Interface those DHT nodes bind |
-| `opts.common` | Optional | `object` | `{}` | Overrides for `common.json` |
+| `opts.common` | Optional | `object` | `{}` | Overrides for `common.json`, the only home of `staticRootPath` and the Gateway's [app forwarding options](../gateway/README.md#app-forwarding); see [config management](#config-management) for how an existing file is merged |
 | `opts.httpd` | Optional | `object` | `{}` | Overrides for `httpd.config.json` |
 | `opts.store` | Optional | `object` | `{}` | Overrides for `store.config.json` |
 | `opts.additionalRoutes` | Optional | `array` | None | Extra Fastify route definitions; a raw escape hatch, prefer `apps` |
-| `opts.apps` | Optional | `array` | None | The complete set of apps this Gateway mounts — nothing else is registered. See [Apps](#apps) |
+| `opts.apps` | Optional | `array` | None | The complete set of apps this Gateway mounts, and nothing else is registered; [Apps](#apps) covers the shape |
 | `opts.gatewayKeyFile` | Optional | `string` | None | File the Gateway writes the public key it presents to app runtimes to, once it is serving |
 | `opts.handleSignals` | Optional | `boolean` | `false` | Standalone Gateway (no `opts.kernel`) only: install `SIGINT`/`SIGTERM` handlers that stop it and exit the process |
+| `opts.shutdownForceMs` | Optional | `number` | `3000` | With `handleSignals`: time in ms for stopping the Gateway before the process force-exits with code `1`. Anything other than a number from `0` to `2147483647` (Node's timer limit) throws `ERR_SHUTDOWN_FORCE_MS_INVALID` before the Gateway starts |
 | `opts.trustedKeysDir` | Optional | `string\|false` | `opts.kernel.trustedKeysDir`, else `DEFAULT_TRUSTED_KEYS_DIR` | Where the Gateway publishes its client key (`status.rpcClientKey`) as `gateway.pub`; `false` disables. With `opts.kernel` the key is also admitted in-process |
 | `opts.trustedKeyName` | Optional | `string` | `'gateway'` | File name for that key (set it when several Gateways share a dir) |
 | `opts.authority` | Optional | `object` | From `opts.kernel` or `opts.gatewayCredential` | What checks every app route against `spec.rbac` and serves `/auth/*` (`@tetherto/mdk-gateway/workers/lib/authority`). Default: the in-process `opts.kernel`'s issuer and policy |
@@ -256,7 +278,8 @@ a failed connect fails that app's calls with
 
 Lower-level Kernel start. Prefer `getKernel()` for new code. Does not register SIGINT or read the topic file, and writes the key file only when
 `opts.keyFile` is explicitly passed.
-For caller-managed construction and lifecycle, use [`createKernel()` from `@tetherto/mdk-kernel`](../kernel/README.md#createkernelopts--kernelmanager).
+For caller-managed construction and lifecycle, use
+[`createKernel()` from `@tetherto/mdk-kernel`](../kernel/README.md#createkernelopts--kernelmanager).
 
 ### `startDhtBootstrap(opts?)` → `Promise<{ bootstrap, host, port, close }>`
 
@@ -279,6 +302,25 @@ const kernel = await getKernel({ hrpc: { bootstrap: net.bootstrap, dhtHost: '127
 `dhtFromEnv(env?)` reads `MDK_DHT_BOOTSTRAP` (comma-separated `host:port`) and `MDK_DHT_HOST` into `{ bootstrap, dhtHost }`.
 `parseBootstrap(value)` normalizes a list or a comma-separated string. Both refuse public `*.hyperdht.org` nodes.
 
+### `dhtFromProject(projectDir)` → `{ bootstrap?, dhtHost? }`
+
+The DHT settings of a *stack*, for a component you host in a process that never reads `mdk.yaml` — for example, a Worker you start
+yourself alongside `mdk run`. The process that runs the Kernel (`mdk run` or `mdk run kernel`)
+publishes what it resolved from `spec.network.dht` to `<projectDir>/.mdk/network.json`; this reads it back, so the host and
+the stack cannot drift.
+
+```js
+const { dhtFromProject } = require('@tetherto/mdk-core')
+
+// `{}` on the public DHT and before the stack's first run, so spreading it is always safe.
+const runtime = new WorkerRuntimeV2(pkgDir, { workerId, storeDir, devices, allowedKeys, ...dhtFromProject(projectDir) })
+```
+
+Start the Kernel first: the file is written when the Kernel starts, and a host that reads it earlier joins the public DHT. A
+file that cannot be read or parsed throws `ERR_MDK_NETWORK_FILE_UNREADABLE` or `ERR_MDK_NETWORK_FILE_INVALID`, and a
+bootstrap entry or `dhtHost` that `parseBootstrap` or `parseDhtHost` refuses throws that function's error, rather than falling
+back to the public network.
+
 ### `waitForDiscovery(kernel, timeout?)` → `Promise<WorkerEntry[]>`
 
 Poll the registry until at least one Worker reaches `READY` state with devices populated, or `timeout` ms elapses
@@ -293,15 +335,20 @@ const workers = kernel.registry.listWorkers()
 
 Register a one-shot cleanup handler on `SIGINT` / `SIGTERM`. Returns the handler so tests can invoke it directly.
 
+Every `onShutdown` in the process shares one shutdown. The first signal runs each registered cleanup once, last-registered
+first, then exits with code `0`. If the cleanups are still running when the force timeout fires, the process exits with
+code `1` instead, so a supervisor can tell the shutdown was cut short. A cleanup that throws is skipped and the rest still run, and removing the returned handler
+from its signals before then cancels its cleanup. A cleanup you register after
+`getKernel({ handleSignals: true })` or `startGateway({ handleSignals: true })` therefore finishes before the Kernel or Gateway
+stops.
+
 | Option | Status | Type | Default | Description |
 | --- | --- | --- | --- | --- |
 | `opts.signals` | Optional | `string[]` | `['SIGINT', 'SIGTERM']` | Signals to listen for |
-| `opts.forceMs` | Optional | `number` | `3000` | Force-exit timeout in ms if cleanup hangs |
+| `opts.forceMs` | Optional | `number` | `3000` | Force-exit timeout in ms if cleanup hangs. The shutdown force-exits with code `1` after the longest `forceMs` registered, counted from the signal. Anything other than a number from `0` to `2147483647` (Node's timer limit) throws `ERR_SHUTDOWN_FORCE_MS_INVALID` |
 
-> [!NOTE]
-> `getKernel()`, `startGateway()`, and every Worker boot function register their own `onShutdown`
-> handlers internally. Call this only when you need to add teardown logic outside
-> a boot handle — for example, closing a database or flushing a log buffer.
+`getKernel()` registers a handler only with `handleSignals: true`, and `startGateway()` only with `handleSignals: true` and no
+`opts.kernel`. Without `handleSignals`, a signal stops the Kernel or Gateway only if your own handler calls `shutdown()` on it.
 
 ### `shutdown(handle)` → `Promise<void>`
 
@@ -328,8 +375,9 @@ const { DEFAULT_TOPIC_FILE, DEFAULT_KEY_FILE, DEFAULT_TRUSTED_KEYS_DIR } = requi
 
 ### `libStats`
 
-Telemetry aggregation ops (`applyStats`, `tallyStats`, `groupBy`, `getVal`, `defaults.timeframes`) used by `StatsService` and
-by each Worker plugin's stats template. See [`lib/stats/README.md`](./lib/stats/README.md).
+Telemetry aggregation ops (`applyStats`, `tallyStats`, `mergeStats`, `groupBy`, `getVal`, `defaults.timeframes`) used by
+`StatsService` and by each V1 Worker's stats template. [`@tetherto/mdk-stats`](../stats/README.md) carries the API and the
+`ERR_STATS_*` codes these throw.
 
 ```js
 const { libStats } = require('@tetherto/mdk-core')
@@ -359,7 +407,8 @@ The Worker-infra services treat everything arriving over RPC as untrusted:
 - **Device labels are checked.** `registerThing`/`updateThing` accept `info.container` and `info.pos` only as strings of
   up to 64 letters, digits, spaces and `_ . : # -`, starting with a letter or digit (`ERR_THING_INFO_CONTAINER_INVALID`,
   `ERR_THING_INFO_POS_INVALID`). Stats ops build their group maps without a prototype and skip `__proto__`,
-  `constructor` and `prototype` keys, and op names are looked up in a fixed table (`ERR_STATS_OP_UNKNOWN`).
+  `constructor` and `prototype` keys, and op names are looked up in a fixed table
+  ([`ERR_STATS_OP_UNKNOWN`](../stats/README.md#errors)).
 - **Device addresses are checked.** Remote `registerThing`/`updateThing` refuse loopback, unspecified, link-local (including
   `169.254.169.254`), cloud-metadata and multicast addresses, hostnames resolving to them, and ports outside 1–65535. Set
   `conf.thing.allowedAddressCidrs` (for example `['10.0.0.0/8']`) to replace that policy with an allowlist. Seed devices are
@@ -378,7 +427,51 @@ so the Kernel you start with `getKernel()` must admit them: pass their RPC keys 
 `kernel.allowWorkerKey()`), or set `discovery.allowAnyWorker: true` for local development. Each
 file carries a `@generated by @tetherto/mdk-core` marker; a file without it is never overwritten
 (`ERR_MDK_GENERATED_FILE_CONFLICT`) unless `config.overwrite: true`. Docker publishes Gateway ports on `127.0.0.1` unless
-`config.host` or `services[].host` names an interface. `config.dht` switches the stack to a private HyperDHT:
+`config.host` or `services[].host` names an interface.
+
+Each entry in `config.services` is a Gateway or a Worker:
+
+| Key | Applies to | Required | Effect |
+| --- | --- | --- | --- |
+| `kind` | Every service | Yes | `'gateway'`, or `'worker'` |
+| `name` | Every service | Yes | Service name; the PM2 app is `mdk-<name>`. A Worker name uses only letters, digits, `.`, `_` and `-` |
+| `port` | Gateway | Yes | Gateway HTTP port |
+| `host` | Gateway, Docker | No | Interface the published port binds; overrides `config.host` |
+| `worker` | Worker | Yes | The Worker to boot, such as `miner-avalon` or `container-antspace` (the `WORKER` variable) |
+| `type` | Worker | Yes, except `minerpool-f2pool` | The device model (the `TYPE` variable) |
+| `rack` | Worker | Yes | Rack name, the last part of the Worker id (the `RACK` variable) |
+| `devices` | WorkerRuntimeV2 Worker | Yes | Non-empty array of `{ id, opts, info? }`, the `mdk.yaml` `devices` shape |
+| `env` | WorkerRuntimeV2 Worker | No | Object of Worker env, such as `{ F2POOL_API_SECRET: '...' }` |
+
+Avalon, ABB, SATEC, Schneider and F2Pool (`miner-avalon`, `powermeter-abb`, `powermeter-satec`, `powermeter-schneider`,
+`minerpool-f2pool`) run on `WorkerRuntimeV2` and boot with a fixed device list, so their entries need `devices`. `startServices`
+writes them to `mdk-workers/<name>.devices.json`, and `env` to `mdk-workers/<name>.env.json`, both mode `0600`, and points the process
+at them with `MDK_WORKER_DEVICES_FILE` and `MDK_WORKER_ENV_FILE`. Device credentials and secrets stay out of `ecosystem.config.js`
+and the compose file. Antspace, Bitdeer and Seneca provision their devices at runtime and refuse `devices` and `env`.
+
+```js
+await startServices({
+  runtime: 'pm2',
+  repoRoot,
+  services: [
+    { kind: 'gateway', name: 'gw', port: 3000 },
+    {
+      kind: 'worker',
+      name: 'avalon-r1',
+      worker: 'miner-avalon',
+      type: 'A1346',
+      rack: 'r1',
+      devices: [{ id: 'av-1', opts: { address: '10.0.0.21', port: 4028, password: 'admin' } }]
+    }
+  ]
+})
+```
+
+> [!IMPORTANT]
+> Under Docker the files are read through the repo mount. The container user must be able to read a `0600` file owned by the
+> host user: run the container as that user's uid, or as root.
+
+`config.dht` switches the stack to a private HyperDHT:
 
 | `config.dht` key | Runtime | Default | Effect |
 | --- | --- | --- | --- |
@@ -397,30 +490,32 @@ is not one. MDK packages (the Gateway, Worker packages, this package) are always
 The typical pattern for running everything in one process during development:
 
 ```js
+const path = require('path')
 const { getKernel, startGateway, waitForDiscovery } = require('@tetherto/mdk-core')
-const { startAvalonWorker } = require('@tetherto/mdk-worker-avalon')
-const { startSatecWorker } = require('@tetherto/mdk-worker-satec')
+const { WorkerRuntimeV2 } = require('@tetherto/mdk-worker')
+
+const pkgDir = (name) => path.dirname(require.resolve(`${name}/package.json`))
 
 async function main () {
   const kernel = await getKernel()
   const allowedKeys = [kernel.getClientPublicKey()]
 
-  const { runtime: av } = await startAvalonWorker({
+  const av = new WorkerRuntimeV2(pkgDir('@tetherto/mdk-worker-avalon'), {
     workerId: 'avalon-rack-1',
-    model: 'a1346',
     storeDir: './data/avalon',
     allowedKeys,
-    seedDevices: [{ info: { serialNum: 'AV-001' }, opts: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
+    devices: [{ deviceId: 'AV-001', config: { address: '192.168.1.10', port: 4028, password: 'admin' } }]
   })
+  await av.start()
   await kernel.registerWorker(av.getPublicKey())
 
-  const { runtime: pm } = await startSatecWorker({
+  const pm = new WorkerRuntimeV2(pkgDir('@tetherto/mdk-worker-satec'), {
     workerId: 'satec-site-1',
-    model: 'pm180',
     storeDir: './data/satec',
     allowedKeys,
-    seedDevices: [{ info: { serialNum: 'SATEC-001' }, opts: { address: '192.168.1.30', port: 502, unitId: 1 } }]
+    devices: [{ deviceId: 'SATEC-001', config: { address: '192.168.1.30', port: 502, unitId: 1 } }]
   })
+  await pm.start()
   await kernel.registerWorker(pm.getPublicKey())
 
   await waitForDiscovery(kernel)
@@ -445,7 +540,8 @@ Who dials whom, and with which key:
 | Caller | Dials | With key | Admitted by |
 | --- | --- | --- | --- |
 | Kernel | Workers | `kernel.getClientPublicKey()` (the Kernel's DHT keypair, stable across restarts) | Worker `allowedKeys` |
-| Apps | Kernel | `status.rpcClientKey` (Gateway DHT keypair, persisted) | Kernel allowlist |
+| Gateway | Kernel | `status.rpcClientKey` (Gateway DHT keypair, persisted) | Kernel allowlist |
+| App runtimes | Kernel | each runtime's own keypair, derived from a seed in its store and written to its `kernelKeyFile` | same |
 | MCP / CLI clients | Kernel | a persistent `callerKeyPair(dir)` passed as `kernelKeyPair` | same |
 
 Workers admit the Kernel's key and no other, so every command reaches a device through the Kernel's checks and its
@@ -490,22 +586,27 @@ Every service passes `MDK_DHT_BOOTSTRAP` and `MDK_DHT_HOST` to the DHT nodes it 
 ## Config management
 
 `startGateway()` and each Worker's boot function copy example config files into their `opts.root/config/` (or `storeDir`) on first run.
-After that, the files are left untouched so your edits survive restarts. Pass override objects to `startGateway()` to programmatically
-set specific values without editing files.
+A later start with no override objects leaves the files alone, so your edits survive restarts. Pass override objects to
+`startGateway()` to set specific values without editing files: they are deep-merged over the file on disk (or over the
+`.example` template on first run) and written back, so an override outlives the boot option that set it until you edit the file.
+A file on disk that is not valid JSON is replaced by the overrides alone, with no error, so fix a broken file before passing them.
 
 Config file precedence:
-1. Existing file on disk (your edits are authoritative).
-2. Deep-merged overrides from `opts.*`.
+1. Deep-merged overrides from `opts.*`, written into the file.
+2. Existing file on disk.
 3. `.example` template from the package.
 
 ## Errors
 
 | Code | Fires when | Fix |
 | --- | --- | --- |
+| `ERR_ADDRESS_ALLOWLIST_INVALID` | An `allowedAddressCidrs` entry is not a string, is not an IP or CIDR, or has a prefix outside its address family's range | Fix the entry in `conf.thing.allowedAddressCidrs` |
 | `ERR_ALERTS_LOGS_REQUIRED` | AlertsService is constructed without a `logs` instance | Pass the logs service in the AlertsService constructor options |
 | `ERR_BEE_LOG_META_NOTFOUND` | A log key is rotated but has no meta record to advance | Initialize the log meta before rotating, or rotate only known log keys |
 | `ERR_BEE_ROTATED_LOG_META_NOTFOUND` | A corrupted time log is rotated but its new meta cannot be read back | Inspect the log store for corruption and rebuild the affected log key |
+| `ERR_CALLER_SEED_MALFORMED` | The `seed` file in a `callerKeyPair(dir)` directory is not 32 bytes | Restore the seed, or delete it and trust the new key it generates |
 | `ERR_COMMENT_ACCESS_DENIED` | A comment edit or delete is requested by a user who is not the comment's author, or the comment has no author | Perform the edit or delete as the user who created the comment |
+| `ERR_COMMENT_USER_INVALID` | The authenticated `ctx.user` is set and is not a non-empty string | Pass the user's name as `ctx.user` |
 | `ERR_COMMENT_USER_MISMATCH` | `req.user` differs from the authenticated `ctx.user` | Drop `req.user`; the authenticated identity is used |
 | `ERR_COMMENT_USER_REQUIRED` | A comment call carries no user | Pass `ctx.user` (or `req.user`) |
 | `ERR_COMMENT_USER_UNAUTHENTICATED` | `requireAuthenticatedUser` is set and no `ctx.user` is passed | Forward the authenticated identity as `ctx.user` |
@@ -514,6 +615,8 @@ Config file precedence:
 | `ERR_DEVICE_UNAVAILABLE` | A device call targets a `deviceId` that has no live runtime context | Register and bind the device before calling it |
 | `ERR_END_INVALID` | A DB range read is requested without an `end` bound | Supply an `end` timestamp in the query |
 | `ERR_ENTRIES_INVALID` | Settings are saved with an entries argument that is not an object | Pass an object of key/value settings entries |
+| `ERR_GATEWAY_APP_MOUNT_DUPLICATE` | Two `apps` entries resolve to the same mount, other than `/` | Give each app its own `mount` |
+| `ERR_GATEWAY_EXTRA_PLUGIN_DIRS_UNSUPPORTED` | `startGateway()` is called with `extraPluginDirs` | Run each app with `@tetherto/mdk-app-runtime` and pass it in `apps` |
 | `ERR_HIST_LOG_NOTFOUND` | A history log is read but does not parse to an array of entries | Check that the log key holds valid history entries |
 | `ERR_INFO_HISTORY_LOG_NOTFOUND` | An `info` historical-logs request finds no `thing-history-log` time log | Confirm info-history logging is enabled and the log exists |
 | `ERR_INFO_HISTORY_LOG_TYPE_INVALID` | A historical-logs request omits `logType` | Set `logType` to `alerts` or `info` |
@@ -546,16 +649,27 @@ Config file precedence:
 | `ERR_MDK_DHT_SUBNET_TOO_SMALL` | The Docker subnet has no address left for every service | Use a wider subnet |
 | `ERR_MDK_GENERATED_FILE_CONFLICT` | `startServices` would overwrite a file in the site dir it did not generate | Move the file away or pass `overwrite: true` |
 | `ERR_MDK_INIT_SOURCES_NOT_FOUND` | `initialize()` finds no MDK source checkout at `opts.sources` | Pass `opts.sources` pointing at an MDK monorepo checkout |
+| `ERR_MDK_NETWORK_FILE_INVALID` | `<projectDir>/.mdk/network.json` is not valid JSON, or is not a JSON object | Delete it and start the Kernel again; `mdk run` rewrites it |
+| `ERR_MDK_NETWORK_FILE_UNREADABLE` | `dhtFromProject` cannot read that file (permissions, or it is a directory) | Fix its ownership, or delete it and start the Kernel again |
+| `ERR_MDK_PROJECT_DIR_REQUIRED` | `dhtFromProject` is called without a project directory | Pass the directory holding the stack's `mdk.yaml` |
 | `ERR_MDK_INIT_SOURCES_REQUIRED` | `initialize()` is called without `opts.sources` | Pass `opts.sources` pointing at an MDK monorepo checkout |
 | `ERR_MDK_REPO_ROOT_REQUIRED` | `startServices` has no `config.repoRoot`, or the service bootstrap runs a Worker without `MDK_REPO_ROOT` | Pass `repoRoot` / set `MDK_REPO_ROOT` to the MDK source checkout |
 | `ERR_KEYS_DIR_UNSAFE` | A Worker-keys dir is not a real directory, is owned by another user, or is group/world-writable | Use a private (`0700`) directory owned by the service user |
-| `ERR_STATS_OP_UNKNOWN` | A stats spec names an op that is not one of the built-in ops | Use a built-in op name (`sum`, `avg`, `group_sum`, ...) |
+| `ERR_OFFSET_INVALID` / `ERR_LIMIT_INVALID` | A pool read's `offset`/`limit` is not a non-negative integer | Pass integers |
+| `ERR_QUERY_FIELDS_INVALID` | A caller projection is not an object, or one of its values is not `0`, `1`, `true` or `false` | Pass `{ field: 1 }` or `{ field: 0 }` |
+| `ERR_QUERY_PATH_INVALID` | A filter or sort path is not a string, is empty, or is over 256 characters | Correct or shorten the path |
+| `ERR_QUERY_SORT_INVALID` | A caller sort is not an object, or one of its directions is not `1` or `-1` | Pass `{ field: 1 }` or `{ field: -1 }` |
 | `ERR_THING_INFO_INVALID` | `registerThing`/`updateThing` `info` is not an object | Pass `info` as an object |
 | `ERR_THING_INFO_CONTAINER_INVALID` / `ERR_THING_INFO_POS_INVALID` | `info.container` / `info.pos` is not a short label (64 chars of letters, digits, space, `_ . : # -`) or is a prototype key | Use a plain label |
 | `ERR_MDK_SERVICE_ENV` | The `SERVICE` env var is unset | Set `SERVICE` to `gateway`, `worker` or `dht-bootstrap` |
+| `ERR_MDK_SERVICE_NAME_INVALID` | A WorkerRuntimeV2 Worker's service `name` is not letters, digits, `.`, `_` and `-` | Rename the service; the name becomes its `mdk-workers/` file name |
 | `ERR_MDK_SERVICE_NAME_RESERVED` | A service is named `dht-bootstrap` while `config.dht` generates that service | Rename the service |
 | `ERR_MDK_SERVICE_UNKNOWN` | `SERVICE` is set to something other than `gateway`, `worker` or `dht-bootstrap` | Set `SERVICE` to `gateway`, `worker` or `dht-bootstrap` |
 | `ERR_MDK_WORKER_ENV` | A Worker is started without both `WORKER` and `RACK`, or a non-pool Worker is started without `TYPE` | Set `WORKER` and `RACK`, and set `TYPE` for non-pool Workers |
+| `ERR_MDK_WORKER_DEVICES_INVALID` | A device list (`services[].devices`, `MDK_WORKER_DEVICES` or the devices file) is not valid JSON, is empty, or has a device with no `id` | Pass a non-empty array of `{ id, opts }` |
+| `ERR_MDK_WORKER_DEVICES_REQUIRED` | `startServices` gets a WorkerRuntimeV2 Worker with no `services[].devices`, or `worker.js` boots one with neither `MDK_WORKER_DEVICES` nor `MDK_WORKER_DEVICES_FILE` | Add `devices` to the service entry, or set one of the variables |
+| `ERR_MDK_WORKER_DEVICES_UNSUPPORTED` | `startServices` gets `devices` or `env` for a Worker that provisions its devices at runtime (Antspace, Bitdeer, Seneca) | Drop `devices` and `env`; register devices through the Kernel |
+| `ERR_MDK_WORKER_ENV_INVALID` | `services[].env`, `MDK_WORKER_ENV` or the env file is not a JSON object | Pass an object |
 | `ERR_MDK_WORKER_EXPORT` | The resolved Worker package does not export the expected factory function | Check the Worker package exports the factory named in its boot spec |
 | `ERR_MDK_WORKER_UNKNOWN` | The `WORKER` name has no runtime boot entry, or the `WORKER`+`TYPE` pair has no plugin model | Use a known Worker name and a `TYPE` its boot spec defines |
 | `ERR_NO_IMPL` | An abstract Thing or Container method is called on a class that has not overridden it | Implement the method on the concrete device class |
@@ -568,10 +682,10 @@ Config file precedence:
 | `ERR_QUERY_REGEX_INVALID` | A `$regex` is not a string, is over 256 characters, or has `$options` other than `i` | Send the literal text to search for, with optional `^` / `$` |
 | `ERR_QUERY_TOO_COMPLEX` | A caller filter is deeper than 8 levels or has more than 500 nodes | Simplify the filter |
 | `ERR_QUERY_OFFSET_INVALID` / `ERR_QUERY_LIMIT_INVALID` | `offset`/`limit` is not a non-negative integer | Pass integers |
-| `ERR_STATS_KEYPATH_FORBIDDEN` / `ERR_STATS_KEYPATH_INVALID` | A `libStats` keypath reaches `__proto__`/`constructor`/`prototype` or is not `a.b[0].c` syntax | Use a plain property path |
 | `ERR_RUNTIME_NOT_BOUND` | A device call runs before the runtime device-context getter is bound | Bind the runtime (start the Worker infra) before making device calls |
 | `ERR_SET_LED_ENABLED_INVALID` | A miner `setLED` action is given a non-boolean `enabled` | Pass `enabled` as a boolean |
 | `ERR_SETTINGS_DB_REQUIRED` | SettingsService is constructed without a `settingsDb` | Pass a `settingsDb` in the constructor options |
+| `ERR_SHUTDOWN_FORCE_MS_INVALID` | `onShutdown`'s `forceMs`, or the `shutdownForceMs` of `getKernel` or `startGateway`, is not a number from `0` to `2147483647` | Pass the timeout in ms as a number in that range |
 | `ERR_SNAPS_COLLECT_SNAP_REQUIRED` | SnapsService is constructed without a `collectSnap` function | Pass a `collectSnap` function in the constructor options |
 | `ERR_SNAPS_LOGS_REQUIRED` | SnapsService is constructed without a `logs` instance | Pass the logs service in the constructor options |
 | `ERR_START_INVALID` | A DB range read is requested without a `start` bound | Supply a `start` timestamp in the query |
@@ -599,6 +713,8 @@ Config file precedence:
 | `ERR_THING_VALIDATE_OPTS_INVALID` | A device is registered without an `opts` object | Include the device's `opts` in the registration payload |
 | `ERR_THING_WITH_CODE_ALREADY_EXISTS` | A device is registered with a `code` already assigned to another device | Use a unique code or omit it to auto-generate |
 | `ERR_THING_WITH_ID_ALREADY_EXISTS` | A device is registered with an `id` that already exists | Use a new `id` or omit it to auto-generate |
+| `ERR_TRUSTED_KEY_INVALID` | `publishTrustedKey()` or `publishWorkerKey()` is given a key that is not 32-byte hex | Pass the caller's public key |
+| `ERR_TRUSTED_KEY_NAME_INVALID` | `publishTrustedKey()` or `publishWorkerKey()` is given a name with characters outside `A-Z a-z 0-9 . _ -` | Rename the key or the Worker |
 | `ERR_UNKNOWN_OPERATION` | Numeric aggregation is asked for an operation other than `avg` or `sum` | Use `avg` or `sum` |
 
 ## Directory layout
@@ -609,11 +725,10 @@ mdk/
 ├── services.js           # `startServices` — facility bootstrap helpers
 ├── worker.js             # Worker-side entry point
 ├── lib/
-│   ├── dht-bootstrap.js    # `startDhtBootstrap`, `dhtFromEnv`: private HyperDHT network
+│   ├── dht-bootstrap.js    # `startDhtBootstrap`, `dhtFromEnv`, `dhtFromProject`: private HyperDHT network
 │   ├── local-discovery.js  # `discovery: { mode: 'local' }` helpers and the trusted-keys (admission) helpers
 │   ├── utils.js            # Shared helpers (isValidSnap, isOffline, etc.)
 │   ├── worker-infra.js     # `createWorkerInfra` — per-Worker infra bootstrap
-│   ├── stats/              # `libStats` — telemetry aggregation ops (sum, avg, group_*, …)
 │   ├── services/           # One class per domain service (Actions, Alerts, Comments, LogHistory, Logs, Pool, Provisioning, Settings, Snaps, Stats)
 │   │   └── pool-utils/     # Shared pool-service constants and time helpers
 │   ├── templates/          # Alert and stats computation templates
@@ -635,4 +750,4 @@ mdk/
 - [Add hardware devices](../../workers/README.md): understand how Workers register devices and expose them to Kernel
 - [Add custom routes with apps](../../../docs/guides/gateway/apps.md): extend the Gateway with its own route handlers
 - [See the MVP site example](../../../examples/mvp-site/README.md): multi-Worker, multi-device setup in a separate-process topology
-- [Understand the the full MDK layer model](../../../docs/concepts/architecture.md)
+- [Understand the full MDK layer model](../../../docs/concepts/architecture.md)

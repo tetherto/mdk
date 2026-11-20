@@ -20,6 +20,7 @@ class BaseMock {
       ...ctx,
       port: ctx.port != null ? ctx.port : this.constructor.defaultPort
     }
+    this.ctx.type = this._resolveType()
     this.state = null
     this._loaded = null
     this._stateCleanup = null
@@ -30,10 +31,24 @@ class BaseMock {
     throw new Error('ERR_ABSTRACT: createTransport() must be implemented by a transport/category mock')
   }
 
+  // One opts object serves both the mock and the plugin under `mdk run`, so
+  // the type may arrive as the mock's bare model (`pm180`), the plugin's legacy
+  // device tag (`powermeter-satec-pm180`) or as `model`. Absent, the state
+  // loader's default.js stands in.
+  _resolveType () {
+    const types = (this.constructor.TYPES || []).map((t) => String(t).toLowerCase())
+    const raw = String(this.ctx.type || this.ctx.model || '').toLowerCase()
+    if (!raw || types.includes(raw)) return raw
+    const tail = raw.split('-').pop()
+    return types.includes(tail) ? tail : raw
+  }
+
+  // An absent type is allowed on purpose (it boots on default.js, see
+  // _resolveType); only a type outside TYPES is refused.
   _validateType () {
     const types = (this.constructor.TYPES || []).map((t) => String(t).toLowerCase())
-    if (!types.length) return
-    if (!types.includes(String(this.ctx.type || '').toLowerCase())) {
+    if (!types.length || !this.ctx.type) return
+    if (!types.includes(this.ctx.type)) {
       throw new Error('ERR_UNSUPPORTED')
     }
   }
@@ -103,7 +118,7 @@ class BaseMock {
     // "type": "module" package
     const yargs = leafRequire('yargs')
     const { hideBin } = leafRequire('yargs/helpers')
-    return yargs(hideBin(process.argv))
+    const argv = yargs(hideBin(process.argv))
       .option('port', { alias: 'p', type: 'number', default: this.defaultPort })
       .option('host', { alias: 'h', type: 'string', default: '127.0.0.1' })
       .option('type', { type: 'string', description: 'device model/type' })
@@ -113,6 +128,8 @@ class BaseMock {
       .option('error', { type: 'boolean', default: false, description: 'inject error responses' })
       .options(this.extraCliOptions)
       .parse()
+    if (argv._.length) throw new Error(`ERR_MOCK_CLI_POSITIONAL: unexpected argument(s) ${argv._.join(' ')}; pass flags, e.g. --port 10883`)
+    return argv
   }
 }
 

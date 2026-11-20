@@ -1,6 +1,6 @@
 {
   "name": "@tetherto/mdk-worker-mock",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "private": true,
   "description": "Generic mock framework for MDK device workers (BaseMock + transport adapters)",
   "keywords": [
@@ -15,18 +15,18 @@
   },
   "type": "commonjs",
   "scripts": {
-    "lint": "standard",
-    "lint:fix": "standard --fix",
+    "lint": "bfx-lint-js .",
+    "lint:fix": "bfx-lint-js . --fix",
     "test": "npm run lint && npm run test:unit",
     "test:unit": "NODE_ENV=test brittle 'tests/unit/**/*.test.js'",
     "test:coverage": "NODE_ENV=test brittle --coverage 'tests/**/*.test.js'"
   },
   "dependencies": {
-    "fastify": "5.12.5"
+    "fastify": "5.12.7"
   },
   "devDependencies": {
     "brittle": "3.18.0",
-    "standard": "17.1.2",
+    "@bitfinex/lint-js": "^1.0.0",
     "yargs": "17.7.2"
   },
   "overrides": {

@@ -25,18 +25,30 @@ export function runLockFile(projectDir: string, component: RunComponent): string
 }
 
 /**
- * Where `mdk run` records the pid of a supervised app's runtime process. The run
- * lock names the supervisor, which outlives a child that crashed and is waiting
- * to restart; this file only exists while a child is up.
+ * Where `mdk run` records `<runtime pid> <supervisor pid>` for a supervised app.
+ * The run lock names the supervisor, which outlives a child that crashed and is
+ * waiting to restart: the file keeps the dead runtime's pid until the restart,
+ * and goes when the supervisor stops the app.
  */
 export function appChildFile(projectDir: string, name: string): string {
   return runLockFile(projectDir, { kind: 'app', name }).replace(/\.pid$/, '.child');
 }
 
-/** The pid in an app's child file: undefined without one (the app runs in-process). */
-export function appChildPid(projectDir: string, name: string): number | undefined {
+/** Records that `supervisor` runs app `name`'s runtime as process `child`. */
+export function writeAppChildFile(projectDir: string, name: string, child: number, supervisor = process.pid): void {
+  const file = appChildFile(projectDir, name);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${child} ${supervisor}`);
+}
+
+/**
+ * The runtime pid in an app's child file, if `supervisor` wrote it: undefined
+ * without one (the app runs in-process) or for one a previous run left behind.
+ */
+export function appChildPid(projectDir: string, name: string, supervisor: number): number | undefined {
   try {
-    return Number(readFileSync(appChildFile(projectDir, name), 'utf8').trim());
+    const [child, owner] = readFileSync(appChildFile(projectDir, name), 'utf8').trim().split(' ').map(Number);
+    return owner === supervisor ? child : undefined;
   } catch {
     return undefined;
   }

@@ -22,6 +22,8 @@ const { DHTListener } = require('../../lib/discovery/dht-listener')
 const { ACTIONS, MESSAGE_TYPES } = require('../../lib/protocol/actions')
 const { build: buildEnvelope } = require('../../lib/protocol/envelope')
 
+const LOOPBACK = '127.0.0.1'
+
 // ─── Helpers ──────────────────────────────────────────────────────────
 
 async function createTestBee (t) {
@@ -113,7 +115,7 @@ async function registeredReadyRegistry (channel) {
 // ─── Test 1: Full discovery flow via DHT testnet ───────────────────────
 
 test('parity - discover → identity → capability → READY via testnet DHT', async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const bootstrap = testnet.bootstrap
   const topic = crypto.randomBytes(32)
 
@@ -124,6 +126,7 @@ test('parity - discover → identity → capability → READY via testnet DHT', 
     workerId: 'wm-rack-1',
     kernelTopic: topic.toString('hex'),
     bootstrap,
+    dhtHost: LOOPBACK,
     allowedKeys: [orkKeyPair.publicKey],
     devices: DEVICES,
     services: createStubServices()
@@ -135,7 +138,7 @@ test('parity - discover → identity → capability → READY via testnet DHT', 
   })
 
   // ─── Kernel side ───────────────────────────────────────────────────────
-  const orkRpc = new HyperswarmRPC({ keyPair: orkKeyPair, bootstrap })
+  const orkRpc = new HyperswarmRPC({ keyPair: orkKeyPair, dht: testnet.createNode({ keyPair: orkKeyPair }) })
   const workerChannel = new WorkerChannel({ timeout: 15000, rpc: orkRpc })
   const registry = new WorkerRegistry({
     store: createMockStore(),
@@ -147,7 +150,7 @@ test('parity - discover → identity → capability → READY via testnet DHT', 
     registry,
     workerChannel,
     workerKeys: [runtime.getPublicKey()],
-    swarmOpts: { bootstrap }
+    swarmOpts: { dht: testnet.createNode() }
   })
 
   t.teardown(async () => {
@@ -211,9 +214,9 @@ test('parity - telemetry pull returns WM metrics (in-process)', async (t) => {
   t.ok(data3, 'wm003 response received')
   t.ok(data3.error, 'offline device returns error field')
 
-  // Unknown device returns null
+  // Unknown device answers ERR_DEVICE_NOT_FOUND
   const missing = await tc.pull('nonexistent')
-  t.absent(missing, 'unknown device returns null')
+  t.alike(missing, { error: 'ERR_DEVICE_NOT_FOUND' }, 'unknown device answers ERR_DEVICE_NOT_FOUND')
 })
 
 test('parity - telemetry pullAll fans out to all registered devices', async (t) => {

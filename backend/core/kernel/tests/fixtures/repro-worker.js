@@ -5,10 +5,11 @@
 // swarm. Boots the real WorkerRuntime with the sim plugin — enough for the
 // identity → capability → Ready flow the Kernel runs after key-exchange.
 //
-//   node repro-worker.js --topic <hex> --store <dir> [--bootstrap host:port,...]
+//   node repro-worker.js --topic <hex> --store <dir> [--bootstrap host:port,...] [--host <ip>]
 //
 // `--bootstrap` points the process at a private DHT. Omit it and the process
 // joins hyperdht's public network, which needs outbound UDP.
+// `--host` binds its DHT node to one interface (default: every interface).
 
 const path = require('path')
 const StoreFacility = require('@tetherto/hp-svc-facs-store')
@@ -33,6 +34,7 @@ async function main () {
   const topic = arg('--topic', null)
   const storeDir = arg('--store', null)
   const bootstrap = bootstrapArg()
+  const host = arg('--host', null)
   if (!topic || !storeDir) throw new Error('ERR_REPRO_ARGS: --topic and --store required')
 
   const store = new StoreFacility(null, { storeDir }, {})
@@ -44,7 +46,8 @@ async function main () {
     store,
     allowedKeys: [arg('--allow', null)].filter(Boolean),
     devices: [{ deviceId: 'd1', config: { hashrate: 1, power: 100 } }],
-    ...(bootstrap ? { bootstrap } : {})
+    ...(bootstrap ? { bootstrap } : {}),
+    ...(host ? { dhtHost: host } : {})
   })
   await runtime.start()
 

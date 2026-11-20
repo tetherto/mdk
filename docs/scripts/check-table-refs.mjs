@@ -6,10 +6,17 @@
 // somewhere in its own package's tracked source. Existence-only — does not
 // verify a table's claimed condition/default against actual guard/fallback
 // logic. See docs/reference/maintainers/linters.md for policy and rationale.
+//
+// Known weakness: the checker tests whether the code appears anywhere in the
+// package, not whether the package emits it. A mention in a test file, a
+// comparison (err.code !== 'ERR_X'), a status map or a generated file such as
+// openapi.json passes, so a row for a code another package owns is flagged
+// only when this package never names that code.
 
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { globToRegExp, requireSkipNotes, isSkippedFile } from './lib/skip-config.mjs'
 import { listTrackedMarkdown } from './lib/tracked-markdown.mjs'
 
@@ -62,7 +69,7 @@ function splitRow (line) {
 // Scans a file's lines for canonical error/option tables (header row whose
 // second cell is 'Fires when' or 'Status', immediately followed by a GFM
 // separator row), returning each as { kind, rows: [{ cells, line }] }.
-function findTables (lines) {
+export function findTables (lines) {
   const tables = []
   let i = 0
   while (i < lines.length) {
@@ -78,7 +85,8 @@ function findTables (lines) {
     }
     const header = splitRow(line)
     let kind = null
-    if (header[1] === 'Fires when') kind = 'error'
+    // An error table leads with Code; its second column may be Fires when or an HTTP Status.
+    if (header[0] === 'Code' || header[1] === 'Fires when') kind = 'error'
     else if (header[1] === 'Status') kind = 'option'
 
     if (kind === null) {
@@ -98,7 +106,7 @@ function findTables (lines) {
   return tables
 }
 
-function extractIdentifiers (kind, firstCell) {
+export function extractIdentifiers (kind, firstCell) {
   if (kind === 'error') {
     const matches = firstCell.match(ERR_CODE_RE)
     return matches || []
@@ -149,6 +157,8 @@ function packageSource (packageDir) {
 
   const scope = packageDir === '.' ? [] : ['--', packageDir]
   const out = execFileSync('git', ['ls-files', ...scope], { cwd: REPO_ROOT, encoding: 'utf8' })
+  // Every tracked non-Markdown file counts as source, tests and generated files
+  // included: presence is matched, not emission (see the header comment).
   const files = out.split('\n').filter(Boolean).filter((f) => {
     if (f.endsWith('.md')) return false
     if (f.endsWith('package-lock.json')) return false
@@ -220,4 +230,4 @@ function main () {
   process.exitCode = 1
 }
 
-main()
+if (import.meta.url === pathToFileURL(process.argv[1]).href) main()

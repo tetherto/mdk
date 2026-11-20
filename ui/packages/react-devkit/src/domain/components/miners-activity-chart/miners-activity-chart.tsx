@@ -161,6 +161,7 @@ export const MinersActivityChart = ({
                 'mdk-miners-activity-chart__tile',
                 large && 'mdk-miners-activity-chart__tile--large',
               )}
+              // oxlint-disable-next-line react/forbid-dom-props -- tile colour from the activity data
               style={{ color, backgroundColor: hexToRgba(color, TILE_BACKGROUND_ALPHA) }}
             >
               {showLabel && (

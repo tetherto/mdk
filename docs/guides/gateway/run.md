@@ -33,18 +33,23 @@ This is the standard production path.
 ```js
 const { getKernel, startGateway } = require('@tetherto/mdk-core')
 
-const kernel = await getKernel()
-const server = await startGateway({ kernel, port: 3000 })
-// HTTP server is up at http://localhost:3000
+const main = async () => {
+  const kernel = await getKernel()
+  await startGateway({ kernel, port: 3000 })
+  // HTTP server is up at http://localhost:3000
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
 
 > [!WARNING]
-> A Gateway started with a Kernel, as above, or with a Gateway credential checks a bearer access token and a `spec.rbac` rule on
+> A Gateway started with a Kernel (as above) or with a Gateway credential checks a bearer access token and a `spec.rbac` rule on
 > every app route before the request reaches the app, so [write the policy][security-policy] before you expose the port. A route
 > an app declares with `"auth": true` and its own `permissions` is authorized the same way, as [auth and permissions][app-auth]
 > describes. A custom `authVerifier` function is for a Gateway started with no authority at all; it is not how you add
-> authentication to this path. Only `localhost`, `127.0.0.1` and `[::1]` on the bound port pass the Host check by default, so
-> list the names your clients use in `allowedHosts` when you bind to a LAN address.
+> authentication to this path. Only `localhost`, `127.0.0.1`, and `[::1]` on the bound port pass the Host check by default, so
+> list the names your clients use in `allowedHosts` when you bind to a LAN address. The check stops DNS rebinding in a browser; it is
+> not a network boundary, and [the access token, the policy, and a firewall keep the network out][security-host-check].
 
 The full configuration reference, including all `startGateway()` options, is in the [Gateway API reference][gateway-readme].
 
@@ -65,8 +70,12 @@ On the host running Kernel, start Kernel and print its public key:
 ```js
 const { getKernel } = require('@tetherto/mdk-core')
 
-const kernel = await getKernel()
-console.log('Kernel listener key:', kernel.getPublicKey().toString('hex'))
+const main = async () => {
+  const kernel = await getKernel()
+  console.log('Kernel listener key:', kernel.getPublicKey().toString('hex'))
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
 
 Share that hex string with the Gateway host.
@@ -76,14 +85,18 @@ Share that hex string with the Gateway host.
 ```js
 const { startGateway } = require('@tetherto/mdk-core')
 
-const server = await startGateway({
-  kernelKey: '<kernel-listener-pubkey-hex>',
-  port: 3000
-})
+const main = async () => {
+  await startGateway({
+    kernelKey: '<kernel-listener-pubkey-hex>',
+    port: 3000
+  })
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
 
 > [!NOTE]
-> Kernel's allowlist `auth.whitelist` is fail-closed: empty admits nobody. `startGateway({ kernel })` admits the Gateway's key on an
+> Kernel's allowlist, [`getKernel({ hrpc: { whitelist } })`][getkernel-options], is fail-closed: empty admits nobody. `startGateway({ kernel })` admits the Gateway's key on an
 > in-process Kernel, and a same-machine Kernel admits it from the shared trusted-keys dir. For a Kernel on another host, add the Gateway's
 > DHT public key (`status.rpcClientKey` in its status file, stable across restarts) to Kernel's allowlist — see the
 > [Gateway concept page][gateway-concept] and [`opts.kernelKey` reference][mdk-readme].
@@ -99,8 +112,11 @@ To run the Gateway directly from the source tree without embedding it:
 ```bash
 cd backend/core/gateway
 npm install
+./setup-config.sh
 npm run dev
 ```
+
+`setup-config.sh` copies the example configs into place and preserves existing settings on subsequent runs.
 
 For production mode:
 
@@ -150,11 +166,17 @@ npm start
 [security-policy]: ../security/index.md#step-5-authorize-writes
 <!-- docs@tether.io: security-policy → guides/security#step-5-authorize-writes -->
 
+[security-host-check]: ../security/index.md#step-4-write-the-policy-and-put-identity-in-the-gateway
+<!-- docs@tether.io: security-host-check → guides/security#step-4-write-the-policy-and-put-identity-in-the-gateway -->
+
 [deployment-topologies]: ../../concepts/deployment-topologies.md
 <!-- docs@tether.io: deployment-topologies → https://github.com/tetherto/mdk/blob/main/docs/concepts/deployment-topologies.md -->
 
 [mdk-readme]: ../../../backend/core/mdk/README.md
 <!-- docs@tether.io: mdk-readme → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md -->
+
+[getkernel-options]: ../../../backend/core/mdk/README.md#getkernelopts--promisekernelmanager
+<!-- docs@tether.io: getkernel-options → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md#getkernelopts--promisekernelmanager -->
 
 [network-requirements]: ../../reference/environment.md#requirements
 <!-- docs@tether.io: network-requirements → reference/environment#requirements -->

@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, renameSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -7,7 +7,7 @@ import { cleanupTmpDirs, makeTmpDir } from '../helpers.js';
 // Packages "published" for the tests: a directory per npm/GitHub spec. The mock does
 // what npm does: copies the package into node_modules and records the dependency.
 // `record: false` is an install that leaves package.json alone.
-const registry = vi.hoisted(() => new Map<string, { name: string; dir: string; record?: boolean }>());
+const registry = vi.hoisted(() => new Map<string, { name: string; dir: string; record?: boolean; resolved?: string }>());
 const installPackagesMock = vi.hoisted(() =>
   vi.fn((dir: string, specs: string[], run = true) => {
     if (!run) return { ok: true, skipped: true };
@@ -25,6 +25,18 @@ const installPackagesMock = vi.hoisted(() =>
       return { ok: false, message: 'npm install exited with code 1.' }; // EJSONPARSE
     }
     writeFileSync(pkgPath, JSON.stringify({ ...pkg, dependencies: { ...pkg.dependencies, [entry.name]: specs[0] } }));
+    // A git install: npm's lockfile pins the commit the spec resolved to.
+    if (entry.resolved) {
+      const lock = {
+        lockfileVersion: 3,
+        packages: {
+          '': { dependencies: { [entry.name]: specs[0] } },
+          [`node_modules/${entry.name}`]: { resolved: entry.resolved },
+        },
+      };
+      // Tab-indented, so a test can tell the pin keeps the file's own indent.
+      writeFileSync(join(dir, 'package-lock.json'), `${JSON.stringify(lock, null, '\t')}\n`);
+    }
     return { ok: true };
   }),
 );
@@ -115,6 +127,20 @@ describe('addPackage (app)', () => {
     const result = addPackage({ kind: 'app', source: 'https://github.com/me/my-app.git#main', dir, name: 'Site View' });
     expect(result).toMatchObject({ ok: true, packageName: name, instanceName: 'site-view' });
     expect(yamlOf(dir).spec.apps[0]).toMatchObject({ name: 'site-view', package: name });
+  });
+
+  it('records the commit a GitHub install resolved to, in package.json and the lockfile', () => {
+    const dir = project();
+    const sha = '99738ac6b1d6343bf347a6c578f6e64bf74cf879';
+    const name = publishApp('github:me/my-app', 'me', 'my-app');
+    registry.set('github:me/my-app', { ...registry.get('github:me/my-app')!, resolved: `git+ssh://git@github.com/me/my-app.git#${sha}` });
+    expect(addPackage({ kind: 'app', source: 'github:me/my-app', dir })).toMatchObject({ ok: true, packageName: name, commit: sha });
+    expect(JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).dependencies[name]).toBe(`github:me/my-app#${sha}`);
+    const lockText = readFileSync(join(dir, 'package-lock.json'), 'utf8');
+    expect(JSON.parse(lockText).packages[''].dependencies[name]).toBe(`github:me/my-app#${sha}`);
+    // Rewritten in place, not reformatted: the tab indent and trailing newline survive.
+    expect(lockText).toMatch(/^\{\n\t"lockfileVersion"/);
+    expect(lockText.endsWith('}\n')).toBe(true);
   });
 
   it('mounts the agent at the root, where the UI calls it', () => {
@@ -384,6 +410,17 @@ describe('addPackage (worker)', () => {
     expect(worker).toMatchObject({ name: 'rig', package: '@your-org/mdk-worker-rig' });
     expect(worker.config.mock).toBe(true);
     expect(worker.config.devices[0].opts.port).toBeTypeOf('number');
+  });
+
+  it('names the mock module when the package ships it under another file name', () => {
+    const dir = project();
+    publishWorker('@your-org/mdk-worker-rig');
+    const pkg = registry.get('@your-org/mdk-worker-rig')!.dir;
+    renameSync(join(pkg, 'mock', 'server.js'), join(pkg, 'mock', 'cgi-server.js'));
+
+    const result = addPackage({ kind: 'worker', source: '@your-org/mdk-worker-rig', dir });
+    expect(result).toMatchObject({ ok: true, needsDeviceOpts: false });
+    expect(yamlOf(dir).spec.workers[0].config.mock).toBe('mock/cgi-server.js');
   });
 
   it('leaves device options to the operator when the worker ships no mock', () => {

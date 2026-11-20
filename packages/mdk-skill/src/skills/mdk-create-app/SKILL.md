@@ -25,19 +25,24 @@ Every scaffolded app follows the canonical structure, as `mdk create app` writes
 
 ```text
 <name>/
-├── package.json        # name, version, files (mdk-app.yaml, plugin/, ui/, README.md), build:ui/dev:ui/typecheck:ui scripts
+├── package.json        # name, version, files (mdk-app.yaml, plugin/, ui/, README.md), build:ui/dev:ui/typecheck* scripts
 ├── mdk-app.yaml        # app manifest
 ├── README.md
+├── .gitignore          # node_modules/
 ├── plugin/             # backend plugin
 │   ├── mdk-plugin.json # route table (the Gateway serves it under /apps/<name> unless mounted)
 │   ├── controllers/    # route handlers (the starter has summary.js)
-│   └── lib/client.js   # the app's ambient MDK client
-├── ui-src/             # UI source, not published: defineMdkApp module, data/hooks/components/pages, Vite build
+│   ├── lib/client.js   # the app's ambient MDK client
+│   └── types.d.ts      # route response types, shared by the controllers and the UI
+├── ui-src/             # UI source, not published: defineMdkApp module, Vite build
 │   ├── index.tsx
+│   ├── data/ hooks/ components/ pages/
+│   ├── styles.css      # and styles.d.ts
 │   ├── vite.config.ts
+│   ├── tsconfig.json   # tsconfig.plugin.json beside it type-checks plugin/
 │   └── package.json    # the UI's own build dependencies
-└── ui/                 # built UI module, published and committed
-    ├── index.js
+└── ui/                 # built UI module (npm run build:ui), published and committed
+    ├── index.js        # a placeholder until the first build
     └── style.css
 ```
 
@@ -49,11 +54,12 @@ under `ui-src/` and the build.
 ## 2. The Strict `mdk-app.yaml` Specification
 
 `mdk-app.yaml` defines the app's identity, permissions, and configuration. It contains these 5 keys, plus an optional
-one-line `description`:
+one-line `description` and an optional `main` (background logic, `<file>[#export]` beside the route table, run before the
+routes serve):
 
 ```yaml
 id: io.tether.sentinel              # 1. Immutable identity, reverse-DNS
-version: 0.1.0                     # 2. Semver; must equal package.json version
+version: 0.1.0                     # 2. semver; must equal package.json version
 displayName: Sentinel              # 3. Shown in shell's sidebar and CLI
 permissions:                       # 4. The Kernel access the app's service account needs; required ([] for none)
   - resources: [workers]           # The scaffold's summary route lists workers
@@ -66,7 +72,7 @@ config:                            # 5. Operational defaults (overridable in mdk
 ```
 
 ### Critical Negative Constraints: What NOT to Add
-* **DO NOT add extraneous top-level keys**: Never add `icon`, `routes`, `auth`, `mcp`, `devices`, `metadata`, or `entry`. The specification limits the manifest to these 5 keys plus `description`; `mdk validate app` reports any other key.
+* **DO NOT add extraneous top-level keys**: Never add `icon`, `routes`, `auth`, `mcp`, `devices`, `metadata`, or `entry`. The specification limits the manifest to these 5 keys plus `description` and `main`; `mdk validate app` reports any other key.
 * **`config` must always be an object**: If the app has no default configuration parameters, write `config: {}`. Never leave it null, undefined, or an array.
 
 ---
@@ -77,7 +83,8 @@ config:                            # 5. Operational defaults (overridable in mdk
 * **Site Project Mode (Inside an MDK project)**: If an `mdk.yaml` exists in the project directory, run `mdk create app <name>`.
   It scaffolds `apps/<name>/`, links the package into the project's `package.json`, adds it under `spec.apps` and grants
   its permissions in `spec.rbac`.
-* **Standalone Repo Mode (an app repo, installed with `mdk add app github:<owner>/<repo>#<tag>`)**: run
+* **Standalone Repo Mode (an app repo, installed with `mdk add app github:<owner>/<repo>#<tag>`)**: `mdk add`
+  rewrites the tag to the commit it resolved, so the install is reproducible. Run
   `mdk create app <name> --flat` at the repo root. It scaffolds `./package.json`, `./mdk-app.yaml`, `./plugin/`,
   `./ui-src/` and `./ui/` directly in the directory, and links nothing: no project, no `mdk.yaml`. It refuses a
   directory that has `mdk.yaml`, and one that already has any of those files unless `--force` is given. Never scaffold
@@ -167,7 +174,7 @@ Collect or confirm the definition parameters with sensible fallbacks:
 | Parameter | Prompt / Meaning | Default / Fallback |
 | :--- | :--- | :--- |
 | **`name`** | App slug (kebab-case) | Required (e.g. `sentinel`) |
-| **`id`** | Reverse-DNS identity | The CLI writes `com.example.<name>`; set your own |
+| **`id`** | Reverse-DNS identity | The CLI writes `com.example.<name>`, or `com.<scope>.<name>` with `--org <scope>`; set your own |
 | **`displayName`** | Human name for shell sidebar and CLI | The CLI writes `<name>`; TitleCase it |
 | **`location`** | In a site project, or the root of its own repo | Project when `mdk.yaml` exists, else ask (`--flat`) |
 | **`devices`** | Target hardware hierarchy (`resourceNames`) | No device rule (the starter lists workers only) |
@@ -193,20 +200,23 @@ Then adjust `id`, `displayName`, `permissions` and the routes, rebuild the UI wi
 result with `mdk validate app <name>` (in a project).
 
 Without the CLI, copy the CLI's templates (`packages/cli/templates/app/` and `packages/cli/templates/app-ui/ui-src/`)
-and replace their `__PLUGIN_NAME__`, `__PLUGIN_APP__`, `__PACKAGE_NAME__`, `__APP_*__` placeholders. The files that
-matter, in their scaffolded form:
+and replace their `__PLUGIN_NAME__`, `__PLUGIN_APP__`, `__PACKAGE_NAME__`, `__MANIFEST_ID__`, `__APP_*__` placeholders. The
+files that matter, in their scaffolded form:
 
 1. **`package.json`**:
 ```json
 {
   "name": "@<scope>/<name>",
   "version": "0.1.0",
+  "private": true,
   "files": ["mdk-app.yaml", "plugin/", "ui/", "README.md"],
   "engines": { "node": ">=24" },
   "scripts": {
     "build:ui": "npm --prefix ui-src run build",
     "dev:ui": "npm --prefix ui-src run dev",
-    "typecheck:ui": "npm --prefix ui-src run typecheck"
+    "typecheck:ui": "npm --prefix ui-src run typecheck",
+    "typecheck:plugin": "npm --prefix ui-src run typecheck:plugin",
+    "typecheck": "npm run typecheck:plugin && npm run typecheck:ui"
   },
   "dependencies": { "@tetherto/mdk-client": "^<mdk version>" }
 }
@@ -224,7 +234,7 @@ config: {}
 3. **`plugin/mdk-plugin.json`**:
 ```json
 {
-  "name": "<name>",
+  "name": "@<scope>/<name>",
   "version": "0.1.0",
   "routes": [
     {
@@ -252,7 +262,7 @@ config: {}
 
 Before completing the task, the agent must verify:
 * [ ] **Manifest Keys**: `mdk-app.yaml` contains ONLY `id`, `version`, `displayName`, `permissions` (required, `[]` for none),
-  `config`, and optionally `description`.
+  `config`, and optionally `description` and `main`.
 * [ ] **Version Parity**: `package.json` version equals `mdk-app.yaml` version.
 * [ ] **RBAC Resources**: `permissions[].resources` names Kernel resources only, and every verb is one its resource takes.
 * [ ] **RBAC matches the code**: `node <skills-dir>/mdk-app-rbac/scripts/derive-permissions.mjs <app> --check` exits 0.
@@ -261,7 +271,9 @@ Before completing the task, the agent must verify:
 * [ ] **Device Hierarchy / Scope**: `permissions[].resourceNames` defaults to `["*"]` (allow all) or follows `family/brand/worker/device` (using `powermeter` for power meters).
 * [ ] **Route Namespacing**: No route in `plugin/mdk-plugin.json` starts with `/apps/<name>/`; the Gateway adds that prefix.
 * [ ] **Validation**: `mdk validate app <name>` passes (the app's name in `mdk.yaml`), which also checks the app's grant in
-  `spec.rbac`; run `mdk rbac init` after changing `permissions`.
+  `spec.rbac`. After changing `permissions`, run `mdk add app <package> --accept-permissions` in the project, then
+  `mdk rbac apply` if the Kernel is running. For an app repo (`--flat`), run it in the project that installs the app,
+  with the new tag: `mdk add app github:<owner>/<repo>#<tag> --accept-permissions`.
 * [ ] **UI Contract**: `ui-src/index.tsx` default-exports `defineMdkApp({ id, displayName, routes, panels })` (plus
   `sections` when a section needs an icon), its `id` equals `id` in `mdk-app.yaml`, and `ui/` is rebuilt and committed.
 * [ ] **Location**: in a site project the app is under `apps/<name>/`; an app repo has it at the root (`--flat`).

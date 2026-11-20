@@ -341,7 +341,18 @@ const LightWeightLineChart = ({
         seriesToDatasetMap.current.set(series, ds)
       }
     }
-  }, [createChart, chartRef, data.datasets, data, priceFormatter, yTicksFormatter, chartOptions, beginAtZero, showPointMarkers, seriesPriceFormat])
+  }, [
+    createChart,
+    chartRef,
+    data.datasets,
+    data,
+    priceFormatter,
+    yTicksFormatter,
+    chartOptions,
+    beginAtZero,
+    showPointMarkers,
+    seriesPriceFormat,
+  ])
 
   const resetPriceScaleWidth = (): void => {
     lastAppliedPriceScaleWidth.current = 0
@@ -552,7 +563,15 @@ const LightWeightLineChart = ({
         updateVisibleRange()
       })
     }
-  }, [createChart, data.datasets, fixedTimezone, skipRound, roundPrecision, shouldResetZoom, updateVisibleRange])
+  }, [
+    createChart,
+    data.datasets,
+    fixedTimezone,
+    skipRound,
+    roundPrecision,
+    shouldResetZoom,
+    updateVisibleRange,
+  ])
 
   useEffect(() => {
     updateVisibleRange()
@@ -587,6 +606,7 @@ const LightWeightLineChart = ({
           'mdk-lw-line-chart-tooltip--no-min-width': skipMinWidth,
         })}
         ref={toolTipRef}
+        // oxlint-disable-next-line react/forbid-dom-props -- the crosshair handler also writes display imperatively, so React must own the reset; a class could not override the inline value
         style={{
           display: showTooltip ? 'block' : 'none',
         }}

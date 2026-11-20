@@ -16,6 +16,8 @@ const actionsPlugin = require('../fixtures/actions-plugin')
 const { ACTIONS, MESSAGE_TYPES } = require('../../lib/protocol/actions')
 const { build: buildEnvelope, serialize, deserialize } = require('../../lib/protocol/envelope')
 
+const LOOPBACK = '127.0.0.1'
+
 const ACTION_EXEC_INTERVAL_MS = 100
 
 // Device state plus the worker-infra services the runtime serves builtins
@@ -126,7 +128,7 @@ async function sleep (ms) {
 }
 
 async function setupActionsFixture (t, opts = {}) {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const bootstrap = testnet.bootstrap
   const topic = crypto.randomBytes(32)
   const tmpDir = createTmpDir(t)
@@ -137,6 +139,7 @@ async function setupActionsFixture (t, opts = {}) {
     workerId: 'wm-rack-1',
     kernelTopic: topic.toString('hex'),
     bootstrap,
+    dhtHost: LOOPBACK,
     // the worker boots before the Kernel exists, so its client key is unknown
     allowAll: true,
     devices: fleet.devices,
@@ -152,7 +155,7 @@ async function setupActionsFixture (t, opts = {}) {
   const kernel = createKernel({
     db: path.join(tmpDir, 'store'),
     root: tmpDir,
-    listeners: { hrpc: { bootstrap } },
+    listeners: { hrpc: { bootstrap, dhtHost: LOOPBACK } },
     // Topic admission is fail-closed: admit the worker booted above.
     discovery: { topic: topic.toString('hex'), workerKeys: [runtime.getPublicKey().toString('hex')] },
     actions: { actionIntvlMs: opts.actionIntvlMs ?? ACTION_EXEC_INTERVAL_MS },
@@ -166,7 +169,8 @@ async function setupActionsFixture (t, opts = {}) {
   if (!ready.length) throw new Error('ERR_TEST_WORKER_NOT_READY')
 
   const orkPublicKey = kernel.getPublicKey()
-  const clientRpc = new HyperswarmRPC({ bootstrap })
+  const clientDht = testnet.createNode()
+  const clientRpc = new HyperswarmRPC({ keyPair: clientDht.defaultKeyPair, dht: clientDht })
   kernel.allowKey(clientRpc.defaultKeyPair.publicKey)
   clientRpc.mdkToken = await grantTestToken(kernel)
   t.teardown(async () => {
@@ -184,8 +188,7 @@ test('actions - pushAction resolves write calls and stores action', async (t) =>
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   t.ok(result.id, 'returns action id')
@@ -211,8 +214,7 @@ test('actions - approved reboot executes through command dispatcher', async (t) 
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   const done = await doneP
@@ -236,8 +238,7 @@ test('actions - voteAction approves multi-vote action', async (t) => {
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   let stored = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_GET, {
@@ -249,8 +250,7 @@ test('actions - voteAction approves multi-vote action', async (t) => {
   await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id: pushRes.id,
     voter: 'approver@test',
-    approve: true,
-    authPerms: ['miner:w']
+    approve: true
   })
 
   stored = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_GET, {
@@ -268,8 +268,7 @@ test('actions - voteAction rejects action on negative vote', async (t) => {
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   let stored = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_GET, {
@@ -281,8 +280,7 @@ test('actions - voteAction rejects action on negative vote', async (t) => {
   await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id: pushRes.id,
     voter: 'rejecter@test',
-    approve: false,
-    authPerms: ['miner:w']
+    approve: false
   })
 
   stored = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_GET, {
@@ -310,8 +308,7 @@ test('actions - pushActionsBatch stamps batchActionUID with suffix', async (t) =
     ],
     batchActionUID: 'repair-batch',
     suffix: 'site-a',
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   t.is(results.length, 2)
@@ -340,15 +337,13 @@ test('actions - queryActions filters by suffix', async (t) => {
     batchActionsPayload: [{ query: { id: 'wm001' }, action: 'reboot', params: [] }],
     batchActionUID: 'batch-a',
     suffix: 'site-a',
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
   await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_PUSH_BATCH, {
     batchActionsPayload: [{ query: { id: 'wm002' }, action: 'reboot', params: [] }],
     batchActionUID: 'batch-b',
     suffix: 'site-b',
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   const all = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_QUERY, {
@@ -371,8 +366,7 @@ test('actions - getAction, vote, and cancel lifecycle', async (t) => {
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   const fetched = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_GET, {
@@ -391,8 +385,7 @@ test('actions - getAction, vote, and cancel lifecycle', async (t) => {
   const voteRes = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id: pushRes.id,
     voter: 'approver@test',
-    approve: false,
-    authPerms: ['miner:w']
+    approve: false
   })
   t.is(voteRes, 1)
 
@@ -412,8 +405,7 @@ test('actions - rackReboot resolves rack-level target and dispatches rack scope'
     query: {},
     action: 'rackReboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   t.ok(pushRes.id, 'returns action id')
@@ -449,8 +441,7 @@ test('actions - updateThing rack action scopes to matching worker', async (t) =>
     query: {},
     action: 'updateThing',
     params: [{ workerId: 'wm-rack-1', id: 'wm001', info: { serialNum: 'WM001-UPDATED' } }],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   t.ok(pushRes.id, 'returns action id')
@@ -476,8 +467,7 @@ test('actions - pushAction rejects query with no matching devices', async (t) =>
     query: { id: 'missing-miner' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   assertPushRejected(t, result, 'unknown device yields no write calls')
@@ -499,7 +489,7 @@ async function voterWithoutDeviceWrite (kernel) {
   return mintToken(kernel.identity, { name: 'test-voter', privateKey: cred.privateKeyPem })
 }
 
-test('actions - pushAction rejects a caller spec.rbac does not let write the device, whatever authPerms it sends', async (t) => {
+test('actions - pushAction rejects a caller spec.rbac does not let write the device', async (t) => {
   const { kernel, clientRpc, orkPublicKey } = await setupActionsFixture(t)
   clientRpc.mdkToken = await voterWithoutDeviceWrite(kernel)
 
@@ -507,8 +497,7 @@ test('actions - pushAction rejects a caller spec.rbac does not let write the dev
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   t.is(result.id, null, 'no action stored')
@@ -522,8 +511,7 @@ test('actions - pushAction rejects invalid query payload', async (t) => {
     query: null,
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   assertKernelError(t, result, 'ERR_PAYLOAD_QUERY_REQUIRED')
@@ -536,8 +524,7 @@ test('actions - pushAction rejects non-array params', async (t) => {
     query: { id: 'wm001' },
     action: 'reboot',
     params: { mode: 'high' },
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   assertKernelError(t, result, 'ERR_PAYLOAD_PARAMS_REQUIRED')
@@ -550,8 +537,7 @@ test('actions - pushAction rejects blank action name', async (t) => {
     query: { id: 'wm001' },
     action: '   ',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   assertKernelError(t, result, 'ERR_ACTION_INVALID')
@@ -564,8 +550,7 @@ test('actions - pushAction rejects rack action missing worker id', async (t) => 
     query: {},
     action: 'updateThing',
     params: [{ id: 'wm001', info: { serialNum: 'BAD' } }],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   assertPushRejected(t, result, 'invalid rack action params produce no calls')
@@ -576,8 +561,7 @@ test('actions - pushActionsBatch rejects non-array payload', async (t) => {
 
   const result = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_PUSH_BATCH, {
     batchActionsPayload: 'not-an-array',
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   assertKernelError(t, result, 'ERR_PAYLOAD_BATCH_ACTIONS_REQUIRED')
@@ -604,15 +588,14 @@ test('actions - getActionsBatch ignores unknown ids', async (t) => {
   t.alike(result, [], 'unknown ids produce no entries')
 })
 
-test('actions - voteAction rejects a voter spec.rbac does not let write the target, whatever authPerms it sends', async (t) => {
+test('actions - voteAction rejects a voter spec.rbac does not let write the target', async (t) => {
   const { kernel, clientRpc, orkPublicKey } = await setupActionsFixture(t, { rebootReqVotes: 2 })
 
   const pushRes = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_PUSH, {
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
   t.ok(pushRes.id, 'the admin pushed it')
 
@@ -621,8 +604,7 @@ test('actions - voteAction rejects a voter spec.rbac does not let write the targ
   const result = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id: pushRes.id,
     voter: 'approver@test',
-    approve: true,
-    authPerms: ['miner:w']
+    approve: true
   })
 
   assertKernelError(t, result, 'ERR_KERNEL_ACTION_FORBIDDEN: may not write wm001')
@@ -635,15 +617,13 @@ test('actions - voteAction rejects duplicate voter', async (t) => {
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   const result = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id: pushRes.id,
     voter: 'operator@test',
-    approve: true,
-    authPerms: ['miner:w']
+    approve: true
   })
 
   assertKernelError(t, result, 'ERR_VOTER_EXISTS')
@@ -655,8 +635,7 @@ test('actions - voteAction rejects vote on missing action', async (t) => {
   const result = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id: 999999999,
     voter: 'approver@test',
-    approve: true,
-    authPerms: ['miner:w']
+    approve: true
   })
 
   assertKernelError(t, result, 'ERR_ACTION_ID_NOT_FOUND')
@@ -669,8 +648,7 @@ test('actions - cancelActionsBatch rejects non-creator voter', async (t) => {
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   const cancelled = await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_CANCEL_BATCH, {
@@ -704,15 +682,13 @@ test('actions - denied action is not executed by action interval', async (t) => 
     query: { id: 'wm001' },
     action: 'reboot',
     params: [],
-    voter: 'operator@test',
-    authPerms: ['miner:w']
+    voter: 'operator@test'
   })
 
   await requestKernel(clientRpc, orkPublicKey, ACTIONS.ACTION_VOTE, {
     id: pushRes.id,
     voter: 'rejecter@test',
-    approve: false,
-    authPerms: ['miner:w']
+    approve: false
   })
 
   await sleep(ACTION_EXEC_INTERVAL_MS * 3)

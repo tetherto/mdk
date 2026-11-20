@@ -364,7 +364,7 @@ export const ReactHookFormTestComponent = ({
   }, [form, hasUpdatedFields.current])
 
   return (
-    <div style={{ display: 'none' }}>
+    <div hidden>
       <form onSubmit={form.handleSubmit(() => {})}>
         {/* Personal Information - 4 fields */}
         <input {...form.register('firstName')} placeholder="First Name" />

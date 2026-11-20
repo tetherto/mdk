@@ -9,7 +9,7 @@ const util = require('util')
 const createDebug = require('debug')
 const HyperswarmRPC = require('@hyperswarm/rpc')
 const DHT = require('hyperdht')
-const { createMdkClient } = require('@tetherto/mdk-client')
+const { createMdkClient, dhtPortOpts } = require('@tetherto/mdk-client')
 const { loadPlugin } = require('./plugin-loader')
 const { loadAppManifest, resolvePluginDir } = require('./manifest')
 const protocol = require('./protocol')
@@ -572,10 +572,10 @@ function createAppRuntime (opts) {
     // Own DHT node only to bind an interface (hyperdht `host`); the keypair
     // matches what HyperswarmRPC would derive, so the server key is unchanged.
     if (opts.dhtHost) {
-      dht = new DHT({ keyPair: DHT.keyPair(seedRpc), host: opts.dhtHost, ...(opts.bootstrap ? { bootstrap: opts.bootstrap } : {}) })
+      dht = new DHT({ keyPair: DHT.keyPair(seedRpc), host: opts.dhtHost, ...(opts.bootstrap ? { bootstrap: opts.bootstrap } : {}), ...dhtPortOpts(opts.bootstrap) })
       rpc = new HyperswarmRPC({ seed: seedRpc, dht })
     } else {
-      rpc = new HyperswarmRPC({ seed: seedRpc, bootstrap: opts.bootstrap || undefined })
+      rpc = new HyperswarmRPC({ seed: seedRpc, bootstrap: opts.bootstrap || undefined, ...dhtPortOpts(opts.bootstrap) })
     }
     server = rpc.createServer({ firewall })
     server.respond(METHODS.INVOKE, onInvoke)

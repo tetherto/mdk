@@ -1,6 +1,6 @@
 {
   "name": "__PLUGIN_NAME__",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "private": true,
   "description": "MDK app (mdk-app.yaml + plugin/ route manifest and controllers). Run by `mdk run` behind the Gateway — it serves HTTP endpoints that aggregate worker telemetry over the MDK protocol.",
   "keywords": [
@@ -12,6 +12,6 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@tetherto/mdk-client": "^0.13.1"
+    "@tetherto/mdk-client": "^0.14.0"
   }
 }

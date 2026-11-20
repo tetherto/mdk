@@ -105,7 +105,7 @@ export function addWorkerToStackFile(
   parentDir: string,
   name: string,
   relPackage: string,
-  { mock = true }: { mock?: boolean } = {},
+  { mock = true }: { mock?: boolean | string } = {},
 ): StackFileResult {
   let port = MOCK_PORT_BASE;
   const update = appendToStackList(
@@ -124,7 +124,7 @@ export function addWorkerToStackFile(
       const worker = doc.createNode({
         name,
         package: relPackage,
-        config: { ...(mock ? { mock: true } : {}), devices: [{ id: deviceId(name) }] },
+        config: { ...(mock ? { mock } : {}), devices: [{ id: deviceId(name) }] },
       }) as YAMLMap;
       worker.setIn(['config', 'devices', 0, 'opts'], opts);
       return worker;

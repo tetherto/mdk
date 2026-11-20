@@ -1,5 +1,52 @@
 {
   "skipFiles": [],
-  "skipIdentifiers": [],
-  "_skip_notes": {}
+  "skipIdentifiers": [
+    {
+      "file": "backend/core/app-runtime/README.md",
+      "identifier": "ERR_PLUGIN_"
+    },
+    {
+      "file": "backend/core/app-runtime/README.md",
+      "identifier": "ERR_PLUGIN_MANIFEST_TYPE"
+    },
+    {
+      "file": "backend/core/kernel/README.md",
+      "identifier": "ERR_PAYLOAD_BATCH_ACTIONS_TOO_MANY"
+    },
+    {
+      "file": "backend/core/kernel/README.md",
+      "identifier": "ERR_PAYLOAD_CALLS_TOO_MANY"
+    },
+    {
+      "file": "backend/core/kernel/README.md",
+      "identifier": "ERR_PAYLOAD_DEVICES_TOO_MANY"
+    },
+    {
+      "file": "backend/core/kernel/README.md",
+      "identifier": "ERR_PAYLOAD_QUERIES_TOO_MANY"
+    },
+    {
+      "file": "backend/core/kernel/README.md",
+      "identifier": "ERR_PAYLOAD_TARGETS_TOO_MANY"
+    },
+    {
+      "file": "backend/core/kernel/README.md",
+      "identifier": "ERR_PAYLOAD_START_INVALID"
+    },
+    {
+      "file": "backend/core/kernel/README.md",
+      "identifier": "ERR_PAYLOAD_END_INVALID"
+    }
+  ],
+  "_skip_notes": {
+    "backend/core/app-runtime/README.md::ERR_PLUGIN_": "The `ERR_PLUGIN_*` wildcard row in Errors at startup; each code it stands for is itemised, and checked, in Route table load errors on the same page.",
+    "backend/core/app-runtime/README.md::ERR_PLUGIN_MANIFEST_TYPE": "validateRouteTable builds its finding codes from the prefix `ERR_PLUGIN_MANIFEST` plus the schema keyword (route-table-validator.js, codePrefix), so the full code never appears as a literal in source.",
+    "backend/core/kernel/README.md::ERR_PAYLOAD_BATCH_ACTIONS_TOO_MANY": "tooLong() in protocol/schemas.js builds the code from the template `ERR_PAYLOAD_${name}_TOO_MANY`, called with name 'BATCH_ACTIONS', so the full code never appears as a literal in source.",
+    "backend/core/kernel/README.md::ERR_PAYLOAD_CALLS_TOO_MANY": "tooLong() in protocol/schemas.js builds the code from the template `ERR_PAYLOAD_${name}_TOO_MANY`, called with name 'CALLS', so the full code never appears as a literal in source.",
+    "backend/core/kernel/README.md::ERR_PAYLOAD_DEVICES_TOO_MANY": "tooLong() in protocol/schemas.js builds the code from the template `ERR_PAYLOAD_${name}_TOO_MANY`, called with name 'DEVICES', so the full code never appears as a literal in source.",
+    "backend/core/kernel/README.md::ERR_PAYLOAD_QUERIES_TOO_MANY": "tooLong() in protocol/schemas.js builds the code from the template `ERR_PAYLOAD_${name}_TOO_MANY`, called with name 'QUERIES', so the full code never appears as a literal in source.",
+    "backend/core/kernel/README.md::ERR_PAYLOAD_TARGETS_TOO_MANY": "tooLong() in protocol/schemas.js builds the code from the template `ERR_PAYLOAD_${name}_TOO_MANY`, called with name 'TARGETS', so the full code never appears as a literal in source.",
+    "backend/core/kernel/README.md::ERR_PAYLOAD_START_INVALID": "validateCommandLog in protocol/schemas.js builds the code from the template `ERR_PAYLOAD_${name.toUpperCase()}_INVALID` over ['start', 'end'], so the full code never appears as a literal in source.",
+    "backend/core/kernel/README.md::ERR_PAYLOAD_END_INVALID": "validateCommandLog in protocol/schemas.js builds the code from the template `ERR_PAYLOAD_${name.toUpperCase()}_INVALID` over ['start', 'end'], so the full code never appears as a literal in source."
+  }
 }

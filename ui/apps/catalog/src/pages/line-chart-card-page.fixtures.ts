@@ -39,6 +39,14 @@ export const TIMELINE_OPTIONS = [
   { label: '1 D', value: '1D' },
 ]
 
+/**
+ * Same list with the longest range marked `disabled` — the shape an app uses
+ * when its history route cannot serve that bucket yet.
+ */
+export const TIMELINE_OPTIONS_WITH_DISABLED = TIMELINE_OPTIONS.map((option) =>
+  option.value === '1D' ? { ...option, disabled: true } : option,
+)
+
 export const BASIC_DATA: LineChartCardData = {
   datasets: [
     {

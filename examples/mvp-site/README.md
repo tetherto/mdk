@@ -50,7 +50,11 @@ Antminer, and SealMiner workers, Ocean, EMCD, SpiderPool, and Foundry pool worke
 
 - Node.js >= 24
 - PM2 (`npm install -g pm2`, once per machine)
-- [Outbound UDP to the HyperDHT bootstrap nodes](../../docs/reference/environment.md#requirements)
+- Network access to npm and GitHub, where `npm run setup` fetches the Worker packages
+
+> [!NOTE]
+> The running site needs no outbound access: every role joins a
+> [private HyperDHT bootstrap on loopback](#private-hyperdht-bootstrap).
 
 ## Setup
 
@@ -72,7 +76,7 @@ npm start
 the processes running in the background.
 
 ```bash
-pm2 list      # mocks, mocks-antminer, mocks-sealminer, mocks-ocean, mocks-satec, mocks-emcd, mocks-spiderpool, mocks-foundry, kernel, worker, worker-antminer, worker-sealminer, worker-ocean, worker-satec, worker-emcd, worker-spiderpool, worker-foundry, app-site, gateway, mcp
+pm2 list      # dht-bootstrap, mocks, mocks-antminer, mocks-sealminer, mocks-ocean, mocks-satec, mocks-emcd, mocks-spiderpool, mocks-foundry, kernel, worker, worker-antminer, worker-sealminer, worker-ocean, worker-satec, worker-emcd, worker-spiderpool, worker-foundry, app-site, gateway, mcp
 pm2 logs
 ```
 
@@ -96,8 +100,8 @@ internet access at all:
 
 Remove that section to join the public HyperDHT through the `*.hyperdht.org` bootstrap nodes instead — which needs outbound UDP
 to those hosts. On a network that blocks it, every role still reports `online` and `MDK_READY` while no Kernel call ever
-completes: the Gateway answers `503 ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED`, MCP tools return `ERR_MDK_STATUS_TIMEOUT`, and
-`mdk status` reports the Kernel unreachable. Keep the private bootstrap unless you need roles on more than one host.
+completes: the Gateway's sign-in routes answer `503 ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED` and the site app's routes `400`
+with the same code, MCP tools return `ERR_MDK_STATUS_TIMEOUT`, and `mdk status` reports the Kernel unreachable. Keep the private bootstrap unless you need roles on more than one host.
 
 | `dht` value                                   | What runs                                                                            |
 | --------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -111,9 +115,14 @@ completes: the Gateway answers `503 ERR_MDK_CLIENT_UNAVAILABLE: CHANNEL_CLOSED`,
 > reachable interface, or pointing every role at one `bootstrap` address.
 
 There is no need to edit `pm2.roles`: `npm start` adds the `dht-bootstrap` role to the front when the `dht` section needs it, and
-skips it with a warning when it does not. Start order does not matter: a role that starts first joins as soon as the bootstrap
-answers. After `npm start`, `lsof -nP -iUDP | grep node` lists every DHT socket bound to `host`, not `*`. The
-[local and air-gapped profile](../../docs/guides/deployment/private-dht.md) covers the same setup outside this example.
+skips it with a warning when it does not. After `npm start`, `lsof -nP -iUDP | grep node` lists every DHT socket bound to
+`host`, not `*`. The [local and air-gapped profile](../../docs/guides/deployment/private-dht.md) covers the same setup outside
+this example.
+
+> [!NOTE]
+> The roles' DHT nodes bind the ports above the bootstrap's, so `dht-bootstrap` starts whatever order PM2 starts the roles in. If
+> it starts after them, for example when it alone is restarted late, sign-in answers `503` until each node's next refresh
+> reaches the bootstrap, within about five minutes.
 
 ### Open the UI from another machine
 
@@ -274,14 +283,14 @@ yours against `devices.json.example` and add any key it has gained:
 
 Leave `opts.port` as `null` — each device is assigned its own mock port
 automatically (miners from `mocks.portBase`, `14031` by default; antminers
-from `antminer.mocks.portBase`, `16080` by default; sealminers from
+from `antminer.mocks.portBase`, `16080` by default; SealMiner miners from
 `sealminer.mocks.portBase`, `17028` by default; powermeters from
 `satec.mocks.portBase`, `15020` by default, in `config/site.deploy.json`).
 
 To register **real devices**, set each entry's `opts.address`/`opts.port` to
 the device's LAN address — Whatsminer API port (usually `4028`) for miners,
 HTTP CGI port (usually `80`) plus web `username`/`password` for antminers,
-bdminer API port (usually `4028`, no credentials) for sealminers,
+`bdminer` API port (usually `4028`, no credentials) for SealMiner miners,
 Modbus TCP address/port/`unitId` for SATEC PM180 meters. Keep `info.pos`
 `"site"` on powermeters you want aggregated into the site power figures.
 
@@ -342,9 +351,9 @@ These pools work like Ocean: one logical device per worker, configured under `em
 `config/site.deploy.json`, each with a `pool`, `worker`, and `mock` section.
 
 - `emcd.pool.apiUrl` defaults to the local mock (`http://127.0.0.1:5065/pool/v1`); `emcd.pool.accounts` lists EMCD
-  subaccount IDs, and an empty list means the master account.
+  sub-account IDs, and an empty list means the main account.
 - `spiderpool.pool.apiUrl` defaults to the local mock (`http://127.0.0.1:5066`); `spiderpool.pool.accounts` lists
-  SpiderPool subaccount names. The mock serves `spider-test`.
+  SpiderPool sub-account names. The mock serves `spider-test`.
 - `foundry.pool.apiUrl` defaults to the local mock (`http://127.0.0.1:5067`); `foundry.pool.accounts` lists Foundry
   sub-account names and can't be empty. The mock serves `test`. A name entry uses `FOUNDRY_API_KEY`; to give a
   sub-account its own key, write the entry as `{ "name": "...", "apiKey": "..." }` in a local config only.
@@ -371,7 +380,7 @@ These packages declare the MDK monorepo as an `@tetherto/mdk` peer dependency, w
 
 `config/site.deploy.json` under `satec`:
 
-- `satec.worker.thing` — snap collection/persist cadence (demo-fast, 5s).
+- `satec.worker.collectSnapsItvMs` — interval the meter's 15-minute power average is sized for (demo-fast, 5s).
 - `satec.mocks.portBase` — Modbus mock ports. By default the reported power
   scales with the number of miners (Whatsminer plus Antminer) seeded in `config/devices.json` (split
   evenly across however many `powermeters` entries you configure); set
@@ -396,6 +405,10 @@ Every process keeps its runtime state under one directory, `root` in `config/sit
 ├── gateway.key        # Gateway key the app runtimes admit
 └── mcp/               # MCP caller identity
 ```
+
+Outside it, the Kernel also writes its public key to `~/.mdk/.kernel-key`, because `site.js` leaves
+[`getKernel()`'s `keyFile`](../../backend/core/mdk/README.md#getkernelopts--promisekernelmanager) at its default. The file holds
+no secret. A reset leaves it, and the next start overwrites it.
 
 What a change to [`config/devices.json`](./config/devices.json.example) after the first run needs depends on the worker. The
 Whatsminer, Antminer, and SealMiner adapters rebuild their device list from the file on every start, so a restart picks up miner

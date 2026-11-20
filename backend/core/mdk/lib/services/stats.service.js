@@ -3,7 +3,7 @@
 const debug = require('debug')('mdk:stats')
 const async = require('async')
 const utilsStore = require('@tetherto/hp-svc-facs-store/utils')
-const gLibStats = require('../stats')
+const gLibStats = require('@tetherto/mdk-stats')
 
 const STAT_RTD = 'stat-rtd'
 

@@ -52,7 +52,8 @@ flowchart LR
 One request, traced end to end: an AI agent or a dashboard reaches an app's capability. A dashboard calls the
 app's HTTP route directly; an [AI agent][ai-agents-docs] arrives instead through an MCP endpoint, a standalone
 [`@tetherto/mdk-mcp`][mcp-readme] process that derives tools from that app's routes (the Gateway doesn't host the MCP itself).
-Either way, the app builds its own [`@tetherto/mdk-client`][client-concept] and dispatches a command through it.
+Either way, the app dispatches a command through its own [`@tetherto/mdk-client`][client-concept], signed in as the app;
+for a signed-in user the request carries the user's token too, and the Kernel checks both.
 [Kernel][kernel-concept] resolves which Worker owns the target device, forwards the command over the Worker's own
 connection, and relays the result back through the same path: app, then caller. Telemetry travels the same
 round trip in reverse, on demand: the app's client asks Kernel for a device's telemetry, Kernel forwards that

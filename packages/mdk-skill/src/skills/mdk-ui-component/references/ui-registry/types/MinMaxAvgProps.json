@@ -1,0 +1,1 @@
+{"name":"MinMaxAvgProps","path":"src/primitives/components/min-max-avg/types.ts","kind":"type","description":"","public":true,"definition":"MinMaxAvgValues & { /** Additional root class */ className?: string }"}

@@ -254,10 +254,12 @@ export function buildStackSpec(answers: StackAnswers): StackSpec {
     spec: {
       // A scaffolded stack runs on one machine, so it joins a private bootstrap
       // on loopback rather than the public `*.hyperdht.org` nodes: no outbound
-      // UDP, and it starts with no internet access. Without this every role
-      // still reports ready while no Kernel call completes, which surfaces only
-      // as `ERR_MDK_STATUS_TIMEOUT`. Delete `network` to join the public DHT,
-      // or set `host`/`bootstrap` to spread roles across machines.
+      // UDP, and it starts with no internet access. Without this, where outbound
+      // UDP is blocked, no Worker can register: `mdk run` warns that the Kernel
+      // could not reach it (see workerUnreachableHint in runtime.ts) and
+      // `mdk status` reports the Kernel unreachable. Delete `network` to join
+      // the public DHT, or set `host`/`bootstrap` to spread roles across
+      // machines.
       network: { dht: { host: DEFAULT_DHT_HOST, port: DEFAULT_DHT_PORT } },
       kernel: { port: answers.kernelPort },
       gateway: {

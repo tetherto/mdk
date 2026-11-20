@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path'
 import { createAgent } from '../src/agent.js'
 import { EVENT } from '../src/events.js'
 import { CHARTER_VERSION } from '../src/charter.js'
-import { parseArgs, evalOptions, resolveProviderArgs, runtimeOptions, describeProvider } from '../src/args.js'
+import { parseArgs, evalOptions, resolveProviderArgs, runtimeOptions, describeProvider, mcpOptions, MCP_TOKEN_ENV } from '../src/args.js'
 import { PROVIDER } from '../src/provider.js'
 import { formatReport, formatResult } from '../src/report.js'
 import { DEFAULT_ENDPOINTS } from '../src/constants.js'
@@ -54,14 +54,16 @@ let provider
 let capability
 let declared
 let limits
+let mcp
 try {
   provider = resolveProviderArgs(args, process.env)
   ;({ capability, declared, limits } = runtimeOptions(args, provider))
+  mcp = mcpOptions(args, process.env)
 } catch (err) {
   console.error(err.message)
   process.exit(2)
 }
-const mcpUrl = args['mcp-url'] ?? null
+const mcpUrl = mcp?.url ?? null
 
 // Checked before anything connects: waiting on a model load to then reject the flags would
 // spend a minute to report a typo.
@@ -80,6 +82,8 @@ field('provider', describeProvider(provider))
 field('model', provider.model)
 if (provider.baseURL) field('endpoint', provider.baseURL)
 field('mcp', mcpUrl ?? 'none (plain chat)')
+if (mcp?.credential) field('mcp auth', `service account ${mcp.credential.file} via ${mcp.credential.gatewayUrl}`)
+else if (mcp?.token) field('mcp auth', 'fixed token')
 field('capability', `${capability}${declared ? '' : ` ${C.yellow}(default)${C.reset}`} ${C.dim}(${limits.maxSteps} steps · ${limits.maxOutputTokens} tokens)${C.reset}`)
 if (!declared && provider.kind === PROVIDER.QVAC) {
   console.log(`  ${C.dim}a bigger local model needs --capability mid — nothing is inferred from the model name${C.reset}`)
@@ -93,13 +97,14 @@ let agent
 try {
   agent = await createAgent({
     provider,
-    mcp: mcpUrl ? { url: mcpUrl } : undefined,
+    mcp: mcp ?? undefined,
     capability,
     limits
   })
 } catch (err) {
   console.error(`Failed to start: ${err.message}`)
-  if (mcpUrl) console.error(`(is the MCP server running at ${mcpUrl}?)`)
+  if (err.cause?.code === 401) console.error(`(sign the agent in: --mcp-credential <file> --gateway-url <url>, or ${MCP_TOKEN_ENV})`)
+  else if (mcpUrl) console.error(`(is the MCP server running at ${mcpUrl}?)`)
   process.exit(1)
 }
 const tools = agent.tools ?? []

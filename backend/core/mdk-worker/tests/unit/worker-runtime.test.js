@@ -46,6 +46,18 @@ test('constructor validates workerId and device specs', (t) => {
     () => new WorkerRuntime(simPlugin, { workerId: 'w', devices: [{ deviceId: 'a', config: 'nope' }] }),
     /ERR_DEVICE_CONFIG_INVALID: a/
   )
+  t.exception(
+    () => new WorkerRuntime(simPlugin, { workerId: 'w', devices: [{ deviceId: 'a', config: [] }] }),
+    /ERR_DEVICE_CONFIG_INVALID: a/
+  )
+  t.exception(
+    () => new WorkerRuntime(simPlugin, { workerId: 'w', devices: [{ deviceId: 'a', info: ['rack'] }] }),
+    /ERR_DEVICE_INFO_INVALID: a/
+  )
+  t.exception(
+    () => new WorkerRuntime(simPlugin, { workerId: 'w', devices: [{ deviceId: 'a', info: null }] }),
+    /ERR_DEVICE_INFO_INVALID: a/
+  )
 })
 
 test('identity pull lists every hosted device', async (t) => {

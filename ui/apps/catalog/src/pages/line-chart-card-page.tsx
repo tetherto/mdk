@@ -11,6 +11,7 @@ import {
   RAW_DATA_EXAMPLE,
   rawDataAdapter,
   TIMELINE_OPTIONS,
+  TIMELINE_OPTIONS_WITH_DISABLED,
 } from './line-chart-card-page.fixtures'
 
 /**
@@ -24,18 +25,28 @@ export const LineChartCardPage = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">Line Chart Card</h2>
-      <p style={{ color: 'var(--color-text-secondary)', marginBottom: '1.5rem' }}>
+      <p className="demo-section__intro">
         Composable chart card with timeline selector, legend, lightweight-charts renderer, and stats
         footer. Part of <code>@tetherto/mdk-react-devkit</code>.
       </p>
 
-      <div style={{ display: 'grid', gap: '2rem', gridTemplateColumns: '1fr' }}>
+      <div className="demo-section__stack-grid">
         <section>
           <h3>Basic — single dataset</h3>
           <LineChartCard
             title="Hashrate"
             data={BASIC_DATA}
             timelineOptions={TIMELINE_OPTIONS}
+            defaultTimeline="3h"
+          />
+        </section>
+
+        <section>
+          <h3>Disabled timeline option — 1 D cannot be selected</h3>
+          <LineChartCard
+            title="Hashrate"
+            data={BASIC_DATA}
+            timelineOptions={TIMELINE_OPTIONS_WITH_DISABLED}
             defaultTimeline="3h"
           />
         </section>

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   allowedGranularities,
+  granularityDisabledReason,
   periodRange,
   presetGranularity,
   zonedDayOf,
@@ -81,6 +82,31 @@ describe('allowedGranularities', () => {
     expect(allowedGranularities(14 * DAY)).toEqual(['hour', 'day', 'week'])
     expect(allowedGranularities(60 * DAY)).toEqual(['day', 'week', 'month'])
     expect(allowedGranularities(4 * 366 * DAY)).toEqual(['week', 'month'])
+  })
+})
+
+describe('granularityDisabledReason', () => {
+  it('says which limit a granularity misses', () => {
+    expect(granularityDisabledReason('hour', 32 * DAY)).toBe(
+      'Hourly buckets need a period of 31 days or less',
+    )
+    expect(granularityDisabledReason('day', 4 * 366 * DAY)).toBe(
+      'Daily buckets need a period of 3 years or less',
+    )
+    expect(granularityDisabledReason('week', 7 * DAY)).toBe(
+      'Weekly buckets need a period of 14 days or more',
+    )
+    expect(granularityDisabledReason('month', 30 * DAY)).toBe(
+      'Monthly buckets need a period of 60 days or more',
+    )
+  })
+
+  it('is undefined for every allowed granularity', () => {
+    for (const ms of [DAY, 14 * DAY, 31 * DAY, 60 * DAY, 4 * 366 * DAY]) {
+      for (const g of allowedGranularities(ms)) {
+        expect(granularityDisabledReason(g, ms)).toBeUndefined()
+      }
+    }
   })
 })
 

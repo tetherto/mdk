@@ -1,0 +1,1 @@
+{"name":"TextAreaProps","path":"src/primitives/components/textarea/index.tsx","kind":"type","description":"","public":true,"definition":"ComponentProps<'textarea'> & { /** * Optional label displayed above the textarea */ label?: string /** * HTML id for the textarea. Required when using label for accessibility. * @default auto-generated */ id?: string /** * Validation error…"}

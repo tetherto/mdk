@@ -24,7 +24,7 @@ function fakeTransport (respond) {
 test('getStatus - shapes WORKER_LIST into { workers, totalDevices }', async (t) => {
   const transport = fakeTransport(() => ({
     workers: [
-      { workerId: 'w1', deviceIds: ['d1', 'd2'], state: 'READY', healthState: 'HEALTHY', rpcKey: 'aa' },
+      { workerId: 'w1', deviceIds: ['d1', 'd2'], state: 'READY', healthState: 'HEALTHY', rpcKey: 'aa', deviceFamily: 'miner', brand: 'Whatsminer' },
       { workerId: 'w2', deviceIds: ['d3'], state: 'READY', healthState: 'DEGRADED', rpcKey: 'bb' }
     ]
   }))
@@ -40,9 +40,12 @@ test('getStatus - shapes WORKER_LIST into { workers, totalDevices }', async (t) 
     healthState: 'HEALTHY',
     deviceIds: ['d1', 'd2'],
     deviceCount: 2,
-    rpcKey: 'aa'
+    rpcKey: 'aa',
+    deviceFamily: 'miner',
+    brand: 'Whatsminer'
   }, 'first worker fully shaped')
   t.is(status.workers[1].deviceCount, 1)
+  t.alike([status.workers[1].deviceFamily, status.workers[1].brand], [null, null], 'a row from a Kernel that sends neither reads null')
   t.is(transport.requests[0].action, ACTIONS.WORKER_LIST, 'queried WORKER_LIST')
 })
 

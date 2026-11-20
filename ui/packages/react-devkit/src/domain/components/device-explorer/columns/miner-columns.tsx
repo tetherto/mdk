@@ -193,6 +193,7 @@ export const getMinerColumns = ({
         <div className="mdk-device-explorer__table__cell--type-power-mode">
           <div
             className="mdk-device-explorer__table__cell--type-power-mode__icon"
+            // oxlint-disable-next-line react/forbid-dom-props -- colour looked up from the miner's power mode
             style={{
               color: getPowerModeColor(power_mode as keyof typeof PowerModeColors) ?? 'inherit',
             }}

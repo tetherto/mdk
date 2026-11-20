@@ -4,6 +4,7 @@ import { stringify as toYaml } from 'yaml';
 import { examples } from '../lib/help.js';
 import { addUser, listUsers, removeUser, setDisabled, setPassword, type Outcome } from '../lib/identity-kernel.js';
 import { theme, tick } from '../lib/theme.js';
+import { failureText } from '../lib/flags.js';
 
 /**
  * Where a password comes from: stdin with --password-stdin (scripts), else an
@@ -41,7 +42,7 @@ async function guarded(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
   } catch (error) {
-    fail(error instanceof Error ? error.message : String(error));
+    fail(failureText(error));
   }
 }
 

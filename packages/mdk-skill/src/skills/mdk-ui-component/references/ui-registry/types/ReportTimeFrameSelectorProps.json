@@ -1,0 +1,1 @@
+{"name":"ReportTimeFrameSelectorProps","path":"src/domain/components/timeframe/report-time-frame-selector/report-time-frame-selector.tsx","kind":"type","description":"","public":true,"definition":"Pick< ReportTimeFrameSelectorState, 'presetTimeFrame' | 'dateRange' | 'setPresetTimeFrame' | 'setDateRange' >"}

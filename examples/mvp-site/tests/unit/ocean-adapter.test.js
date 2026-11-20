@@ -15,7 +15,7 @@ test('startOceanWorker - rejects missing boot options', async (t) => {
 })
 
 test('startOceanWorker - joins the private DHT and binds its interface', { timeout: 60000 }, async (t) => {
-  const testnet = await createTestnet(3, { host: '127.0.0.1' })
+  const testnet = await createTestnet(4, { host: '127.0.0.1' })
   const storeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mvp-site-ocean-'))
   t.teardown(async () => {
     await testnet.destroy()

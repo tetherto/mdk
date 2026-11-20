@@ -448,6 +448,14 @@
         "kind": "const"
       },
       {
+        "name": "GRANULARITY_LIMITS",
+        "kind": "const"
+      },
+      {
+        "name": "granularityDisabledReason",
+        "kind": "function"
+      },
+      {
         "name": "ImportResult",
         "kind": "type"
       },

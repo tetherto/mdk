@@ -6,7 +6,7 @@ export const BadgeExample = (): JSX.Element => {
   return (
     <section className="demo-section">
       <h2 className="demo-section__title">Badges</h2>
-      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+      <div className="demo-section__showcase demo-section__showcase--stretch">
         {/* Basic number badge */}
         <Badge count={5}>
           <Button>Messages</Button>

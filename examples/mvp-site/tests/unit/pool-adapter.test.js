@@ -17,6 +17,8 @@ const foundryMock = require('foundry-mdk-worker/mock/server')
 const foundryKeys = require('foundry-mdk-worker/mock/keys')
 const { startPoolPluginWorker } = require('../../backend/pool-adapter')
 
+const LOOPBACK = '127.0.0.1'
+
 test('lib/mdk-compat maps the workers\' monorepo paths onto the workspace packages', (t) => {
   t.is(require('@tetherto/mdk/backend/core/mdk'), require('@tetherto/mdk-core'))
   t.is(require('@tetherto/mdk/backend/core/mdk-worker'), require('@tetherto/mdk-worker'))
@@ -58,7 +60,7 @@ const POOLS = [
 
 for (const pool of POOLS) {
   test(`startPoolPluginWorker - boots ${pool.name} fail-closed against its mock`, { timeout: 60000 }, async (t) => {
-    const testnet = await createTestnet(3)
+    const testnet = await createTestnet(4)
     const mock = await pool.mock.createServer({ port: 0 })
     const storeDir = fs.mkdtempSync(path.join(os.tmpdir(), `mvp-site-${pool.name}-`))
     t.teardown(async () => {
@@ -75,6 +77,7 @@ for (const pool of POOLS) {
       storeDir,
       conf: pool.conf(mock.apiUrl),
       bootstrap: testnet.bootstrap,
+      dhtHost: LOOPBACK,
       allowedKeys: [crypto.randomBytes(32).toString('hex')]
     })
     t.teardown(() => handle.stop(), { order: -1 })

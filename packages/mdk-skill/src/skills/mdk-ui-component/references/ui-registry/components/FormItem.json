@@ -1,0 +1,1 @@
+{"name":"FormItem","path":"src/primitives/components/form/index.tsx","description":"Layout wrapper for a form field. Generates a unique ID for accessibility linking","tier":"agent-ready","public":true,"category":"forms","domainContext":"generic","props":[],"examples":["src/primitives/components/form/form.example.tsx"],"usageDoc":"src/primitives/components/form/USAGE.md"}

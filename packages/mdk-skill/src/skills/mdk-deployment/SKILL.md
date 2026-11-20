@@ -17,7 +17,7 @@ started with `mdk run`. Boot order matters: **Kernel → Workers → apps → Ga
 
 ## Project shape
 
-```
+```text
 <project>/
 ├── mdk.yaml                 # Stack spec (source of truth)
 ├── package.json             # private root manifest; links workers/<name> and apps/<name> by file: deps
@@ -35,16 +35,13 @@ installs on its own, so its React is never hoisted alongside those links.
 
 ## `mdk.yaml` essentials
 
+The [stack file reference](../../../../../docs/reference/mdk-yaml.md) shows the minimal `mdk.yaml` (the header and
+`spec.gateway`) and maps every block under `spec` to the page that teaches it. A deployment merges
+these keys into that file's existing `spec`; pasting the block below the file adds a second top-level `spec`, which the
+CLI's YAML parser rejects (`Map keys must be unique`):
+
 ```yaml
-apiVersion: mdk/v1
-kind: Stack
-metadata:
-  name: <stack-name>
 spec:
-  kernel:
-    port: 3848
-  gateway:
-    port: 3847
   apps:
     - name: <app-name>                 # ^[a-z][a-z0-9-]*$; routes served under /apps/<app-name>
       package: <app-package-name>      # e.g. fleet-summary, or @org/name
@@ -56,7 +53,7 @@ spec:
     - name: <worker-name>
       package: ./workers/<worker-name>   # local path, or an installed npm name
       config:
-        mock: true
+        mock: true                         # or a mock module path inside the package, e.g. mock/cgi-server.js
         devices:
           - id: dev-0
             opts: { host: 127.0.0.1, port: 18080, serial: DEV-0 }
@@ -65,7 +62,7 @@ spec:
 Both `mdk create worker <name>` and `mdk create app <name>` scaffold the
 package **and** register it here automatically (Workers under
 `spec.workers`, apps under `spec.apps`) — no manual
-`package.json` linking step. `create worker` also seeds a stack-unique mock port/device id
+`package.json` linking step. `mdk create worker` also seeds a stack-unique mock port/device id
 per Worker, so scaffolding several in one project never collides. A published
 package goes through `mdk add app <npm-or-github-source>` / `mdk add worker <source>`,
 which installs it, validates it, and only then adds the entry. If you add a
@@ -82,7 +79,7 @@ mdk run kernel
 mdk run gateway
 mdk run worker <name>       # e.g. mdk run worker demo-miner
 mdk run app <name>          # one app runtime, in the foreground
-mdk run dashboard           # the scaffolded UI shell's dev server
+mdk run dashboard [name]    # the scaffolded UI shell's dev server
 mdk run mcp                 # standalone MCP server for AI agents (needs Kernel running first)
 ```
 
@@ -95,7 +92,7 @@ and accepts calls only from the Gateway's key; the Gateway forwards each request
 
 Like the dashboard, `mcp` is never part of the default `all` target — always
 start it explicitly, in its own terminal, after `mdk run kernel` (a standalone
-`run mcp` has no in-process Kernel handle to reuse). It reads `spec.apps` and exposes each
+`mdk run mcp` has no in-process Kernel handle to reuse). It reads `spec.apps` and exposes each
 declared app's routes as agent-callable tools, over `spec.mcp.port` if set,
 else `spec.gateway.port + 100`. Routes not marked `"safety": "read-only"` are withheld
 unless it is started with `--allow-write`.
@@ -117,7 +114,9 @@ mdk status -o json | jq .health
 ```
 
 No app route is open, so reaching one needs an access token (`401 ERR_AUTH_UNAUTHORIZED` without it) and a
-`spec.rbac` rule (`403 ERR_AUTH_FORBIDDEN` without one). `mdk user add <name> --admin` gives a first operator a rule to
+`spec.rbac` rule (`403 ERR_AUTH_FORBIDDEN` without one); the Gateway reference lists
+[every error an app route can answer](../../../../../backend/core/gateway/docs/http-api.md#errors-on-every-app-route).
+`mdk user add <name> --admin` gives a first operator a rule to
 sign in with, [smoke-checking a route](../mdk-app-routes/SKILL.md#6-smoke-check-the-route) has the calls, and
 the [rule a route needs](../mdk-app-rbac/SKILL.md) is that skill's subject.
 
@@ -155,6 +154,10 @@ project rather than getting its own nested `node_modules`.
 Starting the UI or an app before the Worker is online yields empty arrays,
 not necessarily HTTP errors — treat an empty `devices: []` in an app
 response as a deployment signal, not a bug.
+
+`mdk run` reports a Worker that does not register rather than printing its ready line, as
+`! worker <name> not registered with the Kernel (<error>)`. A conflict names the binding to release
+with `worker.terminate`; an unreachable Worker gets a DHT hint instead, printed once per run.
 
 ## Hand-off
 

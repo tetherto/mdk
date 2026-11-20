@@ -1,0 +1,1 @@
+{"name":"HeaderStatsBarProps","path":"src/domain/components/header-stats/header-stats-bar.tsx","kind":"type","description":"","public":true,"definition":"{ /** Stat boxes to render in order, left-to-right. */ children: ReactNode /** Optional class hook. */ className?: string }"}

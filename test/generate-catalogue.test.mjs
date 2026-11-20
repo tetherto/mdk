@@ -16,6 +16,7 @@ const {
   compileValidator,
   displayProvider,
   formatModels,
+  renderMarkdown,
   familySection,
   otherFamiliesSection,
   FULL_SHA_RE
@@ -423,4 +424,73 @@ test('otherFamiliesSection renders nothing when every entry has a known family',
   }
   const out = otherFamiliesSection([entry], 3, 'MDK-maintained')
   assert.equal(out, '')
+})
+
+// --- renderMarkdown --------------------------------------------------------------------
+
+const LEGEND = 'A row flagged "v1 strictness gaps"'
+const CLEAN = 'All worker contracts validate cleanly'
+
+function entry (over = {}) {
+  return {
+    source: 'in-repo',
+    family: 'miner',
+    brand: 'Demo',
+    provider: 'demo',
+    models: [],
+    package: 'backend/workers/miners/demo',
+    contract: 'backend/workers/miners/demo/plugin/mdk-contract.json',
+    link: 'backend/workers/miners/demo/README.md',
+    usage: null,
+    conformant: true,
+    strictConformant: true,
+    confirmed: true,
+    ...over
+  }
+}
+
+test('renderMarkdown keeps the clean sentence and no legend when nothing is flagged', () => {
+  const md = renderMarkdown([entry()], [])
+  assert.ok(md.includes(CLEAN))
+  assert.ok(!md.includes(LEGEND))
+  assert.ok(!md.includes('(v1 strictness gaps)'))
+})
+
+test('renderMarkdown explains a strictness-gap row and no longer claims every contract is clean', () => {
+  const md = renderMarkdown([entry({ strictConformant: false }), entry({ brand: 'Other' })], [])
+  assert.ok(md.includes('| Demo (v1 strictness gaps) |'))
+  assert.ok(md.includes(LEGEND))
+  assert.ok(md.includes('[Contract validation](../../core/mdk-worker/README.md#contract-validation)'), 'the legend links the rules it summarises')
+  assert.ok(md.indexOf(LEGEND) < md.indexOf('## MDK-maintained Workers'), 'the legend sits above both source sections')
+  assert.ok(!md.includes(CLEAN))
+  assert.ok(md.includes('No worker contract fails [`mdk-contract.schema.json`](../../core/mdk-worker/mdk-contract.schema.json). 1 contract has v1 strictness gaps'))
+})
+
+test('renderMarkdown counts strictness gaps beside a non-conformant list as other contracts', () => {
+  const md = renderMarkdown(
+    [entry({ strictConformant: false }), entry({ brand: 'B', strictConformant: false }), entry({ brand: 'C', conformant: false, strictConformant: false })],
+    [{ source: 'in-repo', contract: 'c.json', errors: ['ERR_CONTRACT_TYPE: x'] }]
+  )
+  assert.ok(md.includes('These contracts do not yet conform'))
+  assert.ok(md.includes('2 other contracts have v1 strictness gaps'))
+})
+
+test('renderMarkdown does not count unconfirmed or non-conformant rows as strictness gaps', () => {
+  const md = renderMarkdown(
+    [entry({ confirmed: false, conformant: false, strictConformant: false }), entry({ brand: 'C', conformant: false, strictConformant: false })],
+    [{ source: 'in-repo', contract: 'c.json', errors: ['ERR_CONTRACT_TYPE: x'] }]
+  )
+  assert.ok(!md.includes(LEGEND))
+  assert.ok(!md.includes('strictness gaps, reported'))
+  assert.ok(!md.includes('(v1 strictness gaps)'))
+})
+
+test('renderMarkdown flags a real legacy contract that compileValidator reports warnings for', () => {
+  const validate = compileValidator()
+  const ok = validate(validContract())
+  assert.ok(ok)
+  assert.ok(validate.warnings.length > 0)
+  const md = renderMarkdown([entry({ conformant: ok, strictConformant: ok && validate.warnings.length === 0 })], [])
+  assert.ok(md.includes(LEGEND))
+  assert.ok(md.includes('| Demo (v1 strictness gaps) |'))
 })

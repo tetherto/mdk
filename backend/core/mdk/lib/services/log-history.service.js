@@ -23,7 +23,8 @@ const DEVICE_LOG_KEY = 'thing-5m'
  * 10000), `start`/`end` finite timestamps. tailLog only opens the per-device
  * snapshot log (`thing-5m`, tag = the device id) and `stat-*` aggregate
  * logs, plus any key listed in conf.tailLogKeys; when the request is scoped
- * to a device (thingId) the tag must belong to that device.
+ * to a device (thingId) the tag must belong to that device, and
+ * getHistoricalLogs returns that device's alerts and info changes only.
  */
 class LogHistoryService {
   constructor ({ logs, getDeviceInfo, statTimeframes, conf, tailLogHook = async () => {} }) {
@@ -92,8 +93,11 @@ class LogHistoryService {
     return gLibUtilBase.pick(dev, ['id', 'info', 'tags', 'type', 'code'])
   }
 
+  // A device-scoped request (thingId) sees that device's entries only; the
+  // filter runs before the limit so the page is that device's, not the Worker's.
   _transformAlerts (res, req) {
-    const flattenedAlerts = res.flatMap(log => Object.values(log)).slice(0, req.limit)
+    const alerts = res.flatMap(log => Object.values(log))
+    const flattenedAlerts = (req.thingId ? alerts.filter(alert => alert.thingId === req.thingId) : alerts).slice(0, req.limit)
     return flattenedAlerts.map(alert => {
       const { thingId, ...rest } = alert
       return { ...rest, thing: this._pickDevice(thingId) }
@@ -101,7 +105,8 @@ class LogHistoryService {
   }
 
   _transformInfoHistory (res, req) {
-    const flattenedHistory = res.flat(1).slice(0, req.limit)
+    const changes = res.flat(1)
+    const flattenedHistory = (req.thingId ? changes.filter(change => change.id === req.thingId) : changes).slice(0, req.limit)
     const historyWithCurrentInfo = flattenedHistory.map(change => {
       const { id, ...rest } = change
       return { ...rest, thing: this._pickDevice(id) }

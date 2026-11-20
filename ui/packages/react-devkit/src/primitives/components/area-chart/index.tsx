@@ -74,7 +74,12 @@ export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(
     }, [data])
 
     return (
-      <div ref={ref} className={cn('mdk-area-chart', className)} style={{ height }}>
+      <div
+        ref={ref}
+        className={cn('mdk-area-chart', className)}
+        // oxlint-disable-next-line react/forbid-dom-props -- height is a runtime prop
+        style={{ height }}
+      >
         <Suspense fallback={null}>
           <AreaCanvas data={chartData} options={mergedOptions} plugins={[legendMarginPlugin]} />
         </Suspense>

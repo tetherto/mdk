@@ -5,10 +5,11 @@
 // Boots the real KernelManager (HRPC listener + DHTListener); polls its registry
 // and prints a token the moment a worker reaches READY.
 //
-//   node repro-kernel.js --topic <hex> --store <dir> [--bootstrap host:port,...]
+//   node repro-kernel.js --topic <hex> --store <dir> [--bootstrap host:port,...] [--host <ip>]
 //
 // `--bootstrap` points the process at a private DHT. Omit it and the process
 // joins hyperdht's public network, which needs outbound UDP.
+// `--host` binds its DHT node to one interface (default: every interface).
 
 const { createKernel } = require(require('path').join(__dirname, '..', '..'))
 
@@ -30,12 +31,13 @@ async function main () {
   const topic = arg('--topic', null)
   const storeDir = arg('--store', null)
   const bootstrap = bootstrapArg()
+  const host = arg('--host', null)
   if (!topic || !storeDir) throw new Error('ERR_REPRO_ARGS: --topic and --store required')
 
   const kernel = createKernel({
     db: storeDir,
     root: storeDir,
-    listeners: { hrpc: bootstrap ? { bootstrap } : {} },
+    listeners: { hrpc: { ...(bootstrap ? { bootstrap } : {}), ...(host ? { dhtHost: host } : {}) } },
     // The worker process boots after this one, so its key is unknown here.
     // This repro covers discovery timing, not admission: admit any topic peer.
     discovery: { topic, allowAnyWorker: true }

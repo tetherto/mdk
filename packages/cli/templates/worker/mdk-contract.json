@@ -1,5 +1,6 @@
 {
   "contractVersion": "1",
+  "telemetryPollIntervalMs": 60000,
   "metadata": {
     "provider": "demo",
     "deviceFamily": "device",

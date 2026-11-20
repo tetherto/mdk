@@ -1,0 +1,1 @@
+{"name":"FormCascaderProps","path":"src/primitives/components/form/form-fields.tsx","kind":"type","description":"","public":true,"definition":"BaseFormFieldProps<TFieldValues, TName> & { options: CascaderOption[] multiple?: boolean cascaderProps?: Omit< React.ComponentProps<typeof Cascader>, 'value' | 'onChange' | 'options' | 'placeholder' > }"}

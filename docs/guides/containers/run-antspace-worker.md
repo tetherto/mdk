@@ -37,8 +37,8 @@ the Worker in a second, both from the repository root.
    npm run mock hk3 18001
    ```
 
-2. Save this script as `antspace-dev.js` in the repository root. It is the boot call from Connect a container, pointed
-   at `127.0.0.1`:
+2. Save this script as `antspace-dev.js` in the repository root. It starts the same Worker as Connect a container,
+   pointed at `127.0.0.1` and without the provisioner account, policy and caller key that `registerThing` needs:
 
    ```js
    'use strict'
@@ -106,26 +106,52 @@ Use [the Antspace README][antspace-readme] to confirm the `model` value for your
 
 #### 2.2 Register your container
 
-Add this code to the Node.js service or script that runs the MDK Worker in your deployment. The snippet shows the minimum boot call seeding one Antspace container, replace the example address and credentials with your container's values:
+Add this code to the Node.js service or script that runs the MDK Worker in your deployment. Run `mdk sa add provisioner` in your project directory first: it writes the credential the boot script reads, so
+the `registerThing` step below can push to this Kernel. The snippet shows the minimum boot call seeding one Antspace container, replace the example address and credentials with your container's values:
 
 ```js
 const { getKernel } = require('@tetherto/mdk-core')
 const { startAntspaceWorker } = require('@tetherto/mdk-worker-antspace')
+const { callerKeyPair } = require('@tetherto/mdk-core/lib/local-discovery')
+const provisioner = require('./.mdk/credentials/agents/provisioner.json')
 
-const kernel = await getKernel()
+const main = async () => {
+  // The Kernel's complete policy and account list: merge these into the Kernel's existing ones
+  const kernel = await getKernel({
+    rbac: {
+      enforcement: 'deny',
+      roles: [{
+        name: 'provisioning',
+        rules: [{ resources: ['actions', 'devices'], verbs: ['read', 'write'] }]
+      }],
+      bindings: [{ role: 'provisioning', subjects: [{ kind: 'ServiceAccount', name: 'provisioner' }] }]
+    },
+    serviceAccounts: [{ name: provisioner.name, publicKey: provisioner.publicKey }]
+  })
+  kernel.allowKey(callerKeyPair('./.mdk/provisioner-caller').publicKey)
 
-const worker = await startAntspaceWorker({
-  workerId: 'antspace-rack-1',
-  model: 'hk3',
-  storeDir: './store/antspace-rack-1',
-  allowedKeys: [kernel.getClientPublicKey()],
-  seedDevices: [{
-    info: { serialNum: 'HK3-A', container: 'container-A', location: 'site-a-01.container' },
-    opts: { address: '192.168.1.100', port: 18001 }
-  }]
-})
-await kernel.registerWorker(worker.runtime.getPublicKey())
+  const worker = await startAntspaceWorker({
+    workerId: 'antspace-rack-1',
+    model: 'hk3',
+    storeDir: './store/antspace-rack-1',
+    allowedKeys: [kernel.getClientPublicKey()],
+    seedDevices: [{
+      info: { serialNum: 'HK3-A', container: 'container-A', location: 'site-a-01.container' },
+      opts: { address: '192.168.1.100', port: 18001 }
+    }]
+  })
+  await kernel.registerWorker(worker.runtime.getPublicKey())
+  console.log('Kernel HRPC key:', kernel.getPublicKey().toString('hex'))
+}
+
+main().catch((err) => { console.error(err); process.exit(1) })
 ```
+
+> [!WARNING]
+> `rbac` and `serviceAccounts` are the Kernel's complete policy and service-account list, applied at every start: the
+> policy replaces the stored one, and any service account not listed is removed. Users stay but lose their bindings. On a
+> Kernel that already has a policy, users or accounts, merge the `provisioning` role, binding and account into the ones
+> it already has, or everyone else loses access. The [`getKernel` options][getkernel-options] define both.
 
 `allowedKeys` lists the RPC callers the Worker accepts. The Worker refuses to start without it
 (`ERR_WORKER_ALLOWED_KEYS_REQUIRED`), so pass the Kernel's client key.
@@ -135,44 +161,99 @@ await kernel.registerWorker(worker.runtime.getPublicKey())
 
 `seedDevices` only seeds a fresh, empty `storeDir`, once persisted, the device set survives restarts on its own. To add a container to an
 already-running fleet, push a `registerThing` write action through the Kernel instead. The Kernel routes it to the Worker named in
-`params[0].workerId` and runs it once the action has the approvals that Worker requires. `kernel` is the handle the boot
-script holds; from another process, pass the Kernel's public key instead:
+`params[0].workerId` and runs it once the action has the approvals that Worker requires. `registerThing` needs one
+approval. `resetCoolingSystem` and `setLiquidSupplyTemperature` need two: a different signed-in identity, holding
+`actions: vote` and `devices: write` on the affected devices, casts the second with `voteAction` (see
+[Provisioning a device][provisioning-rules]). This runs in its own
+process. Run both scripts from the same project directory and pass the Kernel's public key as hex, as printed by the boot
+script. The boot script admits the provisioner's persistent dialing key. The action script uses that same key and signs in
+with the provisioner's service-account credential.
 
 ```js
+const { setTimeout: delay } = require('node:timers/promises')
 const { createMdkClient } = require('@tetherto/mdk-client')
+const { callerKeyPair } = require('@tetherto/mdk-core/lib/local-discovery')
 const { name, privateKeyPem } = require('./.mdk/credentials/agents/provisioner.json')
 
 const main = async () => {
+  const kernelKeyPair = callerKeyPair('./.mdk/provisioner-caller')
+
   const client = createMdkClient({
-    kernelKey: kernel.getPublicKey(),
+    kernelKey: '<kernel-public-key-hex>',
+    kernelKeyPair,
     kernelCredential: { name, privateKey: privateKeyPem }
   })
-  await client.connect()
-  await client.pushAction({
-    query: {},
-    action: 'registerThing',
-    voter: 'provisioner',
-    authPerms: ['container:w'],
-    params: [{
-      workerId: 'antspace-rack-1',
-      id: 'HK3-B',
-      info: { serialNum: 'HK3-B', container: 'container-A' },
-      opts: { address: '192.168.1.101', port: 18001 }
-    }]
-  })
+  try {
+    await client.connect()
+    const res = await client.pushAction({
+      query: {},
+      action: 'registerThing',
+      voter: 'provisioner',
+      params: [{
+        workerId: 'antspace-rack-1',
+        id: 'HK3-B',
+        info: { serialNum: 'HK3-B', container: 'container-A' },
+        opts: { address: '192.168.1.101', port: 18001 }
+      }]
+    })
+    if (!res.id) throw new Error(res.error || res.errors?.join(', ') || 'The Kernel returned no action ID')
+    console.log('Action:', res.id, res.data.status)
+    if (res.data.status !== 'APPROVED') return
+
+    const deadline = Date.now() + 120_000
+    let commandId
+    while (Date.now() < deadline) {
+      if (!commandId) {
+        const done = await client.getAction({ id: res.id, type: 'done' }, { timeout: 5000 })
+        if (done.error && done.error !== 'ERR_ACTION_ID_NOT_FOUND') throw new Error(done.error)
+        if (!done.error) {
+          const call = done.targets?.['antspace-rack-1']?.calls?.[0]
+          if (done.status !== 'COMPLETED' || !call?.commandId) {
+            throw new Error(call?.error || `Action ${res.id} ended with ${done.status} without a command ID`)
+          }
+          commandId = call.commandId
+        }
+      }
+
+      if (commandId) {
+        const command = await client.getCommandStatus(commandId, { timeout: 5000 })
+        if (command.status === 'SUCCESS') {
+          console.log('Registration succeeded:', commandId)
+          return
+        }
+        if (command.error || ['FAILED', 'TIMEOUT', 'REJECTED'].includes(command.status)) {
+          throw new Error(command.error || `Command ${commandId} ended with ${command.status}`)
+        }
+      }
+      await delay(1000)
+    }
+    throw new Error(`Timed out waiting for action ${res.id}${commandId ? ` (command ${commandId})` : ''}`)
+  } finally {
+    await client.close()
+  }
 }
 
 main().catch((err) => { console.error(err); process.exit(1) })
 ```
 
-`registerThing` is a write action, so the Kernel evaluates it against `spec.rbac` before any Worker sees it.
-`mdk sa add provisioner` writes the credential this reads, and the account needs `actions: write` to push, plus
-`devices: write`. [Provisioning a device][provisioning-rules] covers how to scope that grant and why a successful push
-is not yet a live device.
+The boot script grants the provisioner `actions: write` and `devices: write` to push the action, plus
+`actions: read` and `devices: read` to check its outcome. [Provisioning a device][provisioning-rules] covers how to scope
+those grants.
+
+The Kernel checks approved actions every 30 seconds by default. The script waits for the action to finish dispatching,
+then checks the Worker's command result. If the action is still voting, use the printed action ID to check it after the
+required approvals. Restart the Worker after the command reaches `SUCCESS` and confirm the new device appears in
+`worker.services.provisioning.listDeviceIds()`.
+
+The Worker checks `opts.address` before it registers the device. It refuses a loopback, unspecified, link-local, multicast,
+broadcast or cloud metadata address, a hostname resolving to one, or a name such as `localhost`, with
+`ERR_THING_ADDRESS_FORBIDDEN`. Unless the Worker's `conf.allowDuplicateIPs` is `true`, it refuses an address another of its
+devices holds with `ERR_THING_IP_ADDRESS_EXISTS`. The [device address policy][address-policy] covers replacing those
+defaults with a CIDR allowlist in `conf.thing.allowedAddressCidrs`.
 
 
 > [!IMPORTANT]
-> `registerThing` persists the container config immediately, but the running Worker does not pick it up until it is stopped and restarted (`await worker.stop()`, then call `startAntspaceWorker` again with the same `storeDir` and no `seedDevices`), there is no hot-add.
+> A successful `registerThing` command persists the container config, but the running Worker does not pick it up until it is stopped and restarted (`await worker.stop()`, then call `startAntspaceWorker` again with the same `storeDir` and no `seedDevices`), there is no hot-add.
 
 For the full `seedDevices` and `registerThing` option reference, the telemetry and command tables, and the shared install pattern, see [the Antspace README][antspace-readme] and [install pattern][install-pattern].
 
@@ -186,6 +267,10 @@ A working development run of `antspace-dev.js` prints the Kernel HRPC key and th
 running until Ctrl+C.
 
 If it does not print those values, or if `npm run mock` reports port `18001` already in use, the network and port checks in [miner troubleshooting][miner-troubleshooting] apply here too, the underlying HRPC and DHT requirements are the same across every Worker.
+
+If you replace a Worker after deleting its `storeDir`, the Kernel may still hold its old key or device bindings. An
+authorized client can call `terminateWorker(oldWorkerId)` to release those bindings before registering the replacement.
+See [Worker bindings][worker-bindings].
 
 ## Next steps
 
@@ -212,5 +297,14 @@ If it does not print those values, or if `npm run mock` reports port `18001` alr
 [miner-troubleshooting]: ../miners/troubleshooting.md
 <!-- docs@tether.io: miner-troubleshooting → guides/miners/troubleshooting -->
 
+[worker-bindings]: ../../../backend/core/kernel/README.md#worker-bindings
+<!-- docs@tether.io: worker-bindings → https://github.com/tetherto/mdk/blob/main/backend/core/kernel/README.md#worker-bindings -->
+
 [provisioning-rules]: ../security/index.md#provisioning-a-device
 <!-- docs@tether.io: provisioning-rules → guides/security#provisioning-a-device -->
+
+[getkernel-options]: ../../../backend/core/mdk/README.md#getkernelopts--promisekernelmanager
+<!-- docs@tether.io: getkernel-options → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md#getkernelopts--promisekernelmanager -->
+
+[address-policy]: ../../../backend/core/mdk/README.md#device-data-and-caller-input
+<!-- docs@tether.io: address-policy → https://github.com/tetherto/mdk/blob/main/backend/core/mdk/README.md#device-data-and-caller-input -->

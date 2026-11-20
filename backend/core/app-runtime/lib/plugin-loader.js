@@ -64,6 +64,15 @@ function _normalizePath (routePath) {
   return routePath.replace(/\{([^{}]+)\}/g, ':$1')
 }
 
+// A route as the Gateway registers it: method and path read from `http` or the
+// route top level, the method upper-cased, `{param}` templating turned into
+// Fastify's `:param`, and a Fastify schema derived from `http` when the route
+// carries none. Assumes a route validateManifest accepted.
+function normalizeRoute (route) {
+  const resolved = _resolveHttpFields(route)
+  return { ...resolved, method: (resolved.method || '').toUpperCase(), path: _normalizePath(resolved.path) }
+}
+
 function _validateManifest (manifest, pluginDir) {
   if (!manifest || typeof manifest !== 'object') {
     throw new Error(`ERR_PLUGIN_MANIFEST_INVALID: ${pluginDir}: must be a JSON object`)
@@ -196,21 +205,16 @@ function loadPlugin (pluginDir, context, { handlers = true } = {}) {
   })
 
   const routes = manifest.routes.map(route => {
-    const resolved = _resolveHttpFields(route)
-    if (!handlers) return { ...resolved, method: (resolved.method || '').toUpperCase(), path: _normalizePath(resolved.path) }
+    const normalized = normalizeRoute(route)
+    if (!handlers) return normalized
 
-    const handler = _loadExport(moduleContext, pluginDir, resolved.handler, `route "${resolved.id}" handler`)
+    const handler = _loadExport(moduleContext, pluginDir, normalized.handler, `route "${normalized.id}" handler`)
 
     if (typeof handler !== 'function') {
-      throw new Error(`ERR_PLUGIN_HANDLER_NOT_FUNCTION: ${pluginDir}: route "${resolved.id}" must export a function`)
+      throw new Error(`ERR_PLUGIN_HANDLER_NOT_FUNCTION: ${pluginDir}: route "${normalized.id}" must export a function`)
     }
 
-    return {
-      ...resolved,
-      method: (resolved.method || '').toUpperCase(),
-      path: _normalizePath(resolved.path),
-      _handler: handler
-    }
+    return { ...normalized, _handler: handler }
   })
 
   // Loads another `<file>[#export]` of the plugin (an app's `main`) in the same
@@ -220,4 +224,4 @@ function loadPlugin (pluginDir, context, { handlers = true } = {}) {
   return { manifest, routes, load }
 }
 
-module.exports = { loadPlugin, validateManifest: _validateManifest }
+module.exports = { loadPlugin, normalizeRoute, validateManifest: _validateManifest }

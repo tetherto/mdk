@@ -21,7 +21,6 @@ const LIMITS = Object.freeze({
   batchActions: 100,
   ids: 1000,
   queries: 50,
-  authPerms: 256,
   params: 256,
   logEntries: 1000,
   // Worker write.calls.response: calls per Worker, and the most approvals a
@@ -205,18 +204,13 @@ function validateActionPush (payload) {
   if (!payload.voter) {
     return { valid: false, error: 'ERR_PAYLOAD_VOTER_REQUIRED' }
   }
-  if (!Array.isArray(payload.authPerms)) {
-    return { valid: false, error: 'ERR_PAYLOAD_AUTH_PERMS_REQUIRED' }
-  }
   if (!payload.query || typeof payload.query !== 'object' || Array.isArray(payload.query)) {
     return { valid: false, error: 'ERR_PAYLOAD_QUERY_REQUIRED' }
   }
   if (!Array.isArray(payload.params)) {
     return { valid: false, error: 'ERR_PAYLOAD_PARAMS_REQUIRED' }
   }
-  return tooLong(payload.authPerms, LIMITS.authPerms, 'AUTH_PERMS') ||
-    tooLong(payload.params, LIMITS.params, 'PARAMS') ||
-    { valid: true }
+  return tooLong(payload.params, LIMITS.params, 'PARAMS') || { valid: true }
 }
 
 function validateActionPushBatch (payload) {
@@ -229,11 +223,7 @@ function validateActionPushBatch (payload) {
   if (!payload.voter) {
     return { valid: false, error: 'ERR_PAYLOAD_VOTER_REQUIRED' }
   }
-  if (!Array.isArray(payload.authPerms)) {
-    return { valid: false, error: 'ERR_PAYLOAD_AUTH_PERMS_REQUIRED' }
-  }
-  const len = tooLong(payload.batchActionsPayload, LIMITS.batchActions, 'BATCH_ACTIONS') ||
-    tooLong(payload.authPerms, LIMITS.authPerms, 'AUTH_PERMS')
+  const len = tooLong(payload.batchActionsPayload, LIMITS.batchActions, 'BATCH_ACTIONS')
   if (len) return len
   for (let i = 0; i < payload.batchActionsPayload.length; i++) {
     const entry = payload.batchActionsPayload[i]
@@ -293,10 +283,7 @@ function validateActionVote (payload) {
   if (typeof payload.approve !== 'boolean') {
     return { valid: false, error: 'ERR_PAYLOAD_APPROVE_REQUIRED' }
   }
-  if (!Array.isArray(payload.authPerms)) {
-    return { valid: false, error: 'ERR_PAYLOAD_AUTH_PERMS_REQUIRED' }
-  }
-  return tooLong(payload.authPerms, LIMITS.authPerms, 'AUTH_PERMS') || { valid: true }
+  return { valid: true }
 }
 
 function validateCommandLog (payload) {

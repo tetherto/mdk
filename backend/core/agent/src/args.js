@@ -4,6 +4,7 @@ import { PROVIDER } from './provider.js'
 import { parseDuration, DEFAULT_TTL } from './cache-reaper.js'
 
 export const DEFAULT_API_KEY_ENV = 'MDK_AGENT_API_KEY'
+export const MCP_TOKEN_ENV = 'MDK_AGENT_MCP_TOKEN'
 
 // Kept out of bin/, which has top-level await and process.exit and so cannot be imported by
 // any test — logic living there is unreachable rather than merely uncovered.
@@ -101,6 +102,36 @@ export function resolveProviderArgs (args = {}, env = {}) {
   if (!model) throw new TypeError(`--provider ${kind} needs --model`)
 
   return { kind: PROVIDER.OPENAI_COMPATIBLE, name: preset.name, baseURL, apiKey, model, rpm }
+}
+
+/**
+ * Build the MCP config, or null for plain chat. `--mcp-credential` with `--gateway-url` signs the
+ * agent in as its service account; a fixed token is read from the environment first and only
+ * then from `--mcp-token`, for the same reason as the api key. createAgent checks the values.
+ *
+ * @param {Record<string, string|true>} args
+ * @param {Record<string, string|undefined>} env
+ * @returns {{url: string, credential?: {file: string, gatewayUrl: string}, token?: string}|null}
+ * @throws {TypeError} on a sign-in flag without --mcp-url, a credential without a Gateway (or the
+ *   reverse), or a credential and a token together.
+ */
+export function mcpOptions (args = {}, env = {}) {
+  const url = value(args, 'mcp-url')
+  const file = value(args, 'mcp-credential')
+  const gatewayUrl = value(args, 'gateway-url')
+  const flagToken = value(args, 'mcp-token')
+  if (!url) {
+    if (file || gatewayUrl || flagToken) throw new TypeError('--mcp-credential, --gateway-url and --mcp-token need --mcp-url')
+    return null
+  }
+  if (file && !gatewayUrl) throw new TypeError('--mcp-credential needs --gateway-url, the Gateway the agent signs in at')
+  if (gatewayUrl && !file) throw new TypeError('--gateway-url needs --mcp-credential, the service account that signs in there')
+
+  const token = env[MCP_TOKEN_ENV]?.trim() || flagToken
+  if (file && token) throw new TypeError(`--mcp-credential and a token (${MCP_TOKEN_ENV} or --mcp-token) are mutually exclusive`)
+  if (file) return { url, credential: { file, gatewayUrl } }
+  if (token) return { url, token }
+  return { url }
 }
 
 /**

@@ -18,6 +18,7 @@ const { createMcpServer } = require('../../server')
 const FIXTURES = path.join(path.dirname(require.resolve('@tetherto/mdk-app-runtime/package.json')), 'tests', 'fixtures')
 const ECHO_APP = path.join(FIXTURES, 'echo-app')
 const { tmpDir, capturingLogger } = require(path.join(FIXTURES, 'helpers'))
+const LOOPBACK = '127.0.0.1'
 
 const POLICY = {
   roles: [
@@ -41,7 +42,7 @@ async function connect (t, port, token) {
 const unwrap = (text) => JSON.parse(/^<untrusted-tool-output tool="[^"]*">\n([\s\S]*)\n<\/untrusted-tool-output>\n/.exec(text)[1])
 
 test('createMcpServer - agents are checked against spec.rbac, each with its own identity', { timeout: 120000 }, async (t) => {
-  const testnet = await createTestnet(3, t.teardown)
+  const testnet = await createTestnet(4, t.teardown)
   const dir = tmpDir(t)
   const appKeyFile = path.join(dir, 'run', 'echo.key')
   const mcpKeyFile = path.join(dir, 'run', 'mcp.key')
@@ -55,11 +56,11 @@ test('createMcpServer - agents are checked against spec.rbac, each with its own 
 
   const decisions = []
   const port = 41890
-  const server = await createMcpServer(path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap }, [],
+  const server = await createMcpServer(path.join(dir, 'mcp'), port, { kernelBootstrap: testnet.bootstrap, kernelDhtHost: LOOPBACK }, [],
     [{ name: 'echo', appDir: ECHO_APP, keyFile: appKeyFile }],
     { allowWrite: true, keyFile: mcpKeyFile, authority: localAuthority(auth), onDecision: (d) => decisions.push(d) })
   t.teardown(() => new Promise((resolve) => server.close(resolve)))
-  const runtime = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, keyFile: appKeyFile, allowedKeyFiles: [mcpKeyFile], logger: capturingLogger() })
+  const runtime = createAppRuntime({ name: 'echo', appDir: ECHO_APP, bootstrap: testnet.bootstrap, dhtHost: LOOPBACK, keyFile: appKeyFile, allowedKeyFiles: [mcpKeyFile], logger: capturingLogger() })
   await runtime.start()
   t.teardown(() => runtime.stop())
 

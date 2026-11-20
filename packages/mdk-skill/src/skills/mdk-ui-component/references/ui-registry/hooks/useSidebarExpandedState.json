@@ -1,0 +1,1 @@
+{"name":"useSidebarExpandedState","path":"src/primitives/components/sidebar/use-sidebar-state.ts","description":"Custom hook to persist sidebar expanded state in localStorage","tier":"agent-ready","public":true,"signature":"(defaultExpanded: boolean) => [boolean, (expanded: boolean) => void]","category":"navigation","domainContext":"generic"}

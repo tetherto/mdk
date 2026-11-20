@@ -31,7 +31,7 @@ function report(kind: PackageKind, result: AddPackageResult): void {
   let out =
     `${tick} ${result.stackFile === 'exists' ? 'Updated' : 'Added'} ${kind} ${theme.label(result.instanceName!)} ${arrow} ${theme.value(result.reference!)}\n` +
     (result.installed
-      ? `  ${theme.muted('package.json')} dependency ${theme.value(result.packageName!)}\n`
+      ? `  ${theme.muted('package.json')} dependency ${theme.value(result.packageName!)}${result.commit ? theme.muted(` pinned to commit ${result.commit.slice(0, 12)}`) : ''}\n`
       : `  ${theme.muted('package.json')} not changed (--no-install)\n`) +
     `  ${theme.muted('mdk.yaml')} ${stack}\n` +
     (result.grant ? grantLine(result.grant) : '') +
@@ -68,7 +68,7 @@ function register(add: Command, kind: PackageKind): void {
     .description(
       `Install ${kind === 'app' ? 'an app' : 'a worker'} from npm or GitHub (npm records it in package.json), ` +
         `check it with the same rules as \`mdk validate ${kind}\`, then add it to mdk.yaml under ${section}. ` +
-        'Install scripts do not run, and the exact version is recorded. A refused package leaves mdk.yaml and package.json unchanged.' +
+        'Install scripts do not run, and the exact version is recorded: for a GitHub source, the commit it resolved to. A refused package leaves mdk.yaml and package.json unchanged.' +
         (kind === 'app'
           ? ' The app runs as service account app:<name>; install writes a role in spec.rbac granting it exactly the Kernel access its mdk-app.yaml requests.'
           : ''),

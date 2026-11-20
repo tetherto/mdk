@@ -19,7 +19,7 @@ vi.mock('../../src/lib/npm.js', () => ({
   npmNeedsShell: () => false,
 }));
 
-const { createApp } = await import('../../src/lib/app-scaffold.js');
+const { appManifestId, createApp } = await import('../../src/lib/app-scaffold.js');
 
 afterEach(() => {
   cleanupTmpDirs();
@@ -58,8 +58,19 @@ describe('createApp', () => {
     expect(pkg.name).toBe('summary2');
     const manifest = JSON.parse(readFileSync(join(result.appPath!, 'plugin', 'mdk-plugin.json'), 'utf8'));
     expect(manifest.name).toBe('summary2');
+    // A new app opts into the strict tier: the current route-table schema generation.
+    const schema = JSON.parse(readFileSync(join(REPO_ROOT, 'backend/core/app-runtime/mdk-plugin.schema.json'), 'utf8'));
+    expect(manifest.routeTableVersion).toBe(schema.properties.routeTableVersion.enum.at(-1));
     const app = parse(readFileSync(join(result.appPath!, 'mdk-app.yaml'), 'utf8'));
     expect(app).toMatchObject({ id: 'com.example.summary2', version: '0.1.0', displayName: 'summary2' });
+  });
+
+  it('tells a permissions change to re-add the app, since `mdk rbac init` leaves a changed role alone', () => {
+    const result = createApp({ name: 'summary2', parentDir: makeTmpDir() });
+    const manifest = readFileSync(join(result.appPath!, 'mdk-app.yaml'), 'utf8');
+    expect(manifest).toContain('`mdk add app <package> --accept-permissions`');
+    expect(manifest).toContain('`mdk rbac apply`');
+    expect(manifest).not.toContain('mdk rbac init');
   });
 
   it('scaffolds the ambient mdkClient pattern (lib/client, not services)', () => {
@@ -167,6 +178,27 @@ describe('createApp', () => {
     const readme = readFileSync(join(result.appPath!, 'README.md'), 'utf8');
     expect(readme).toContain('package: @demo/summary2');
     expect(readme).not.toMatch(/__[A-Z_]+__/);
+  });
+
+  it('names the manifest id after --org, and keeps com.example without one', () => {
+    const scoped = createApp({ name: 'summary2', parentDir: makeTmpDir(), org: '@demo' });
+    const scopedManifest = parse(readFileSync(join(scoped.appPath!, 'mdk-app.yaml'), 'utf8')) as { id: string };
+    expect(scopedManifest.id).toBe('com.demo.summary2');
+    expect(validateApp(scoped.appPath!).errors).toEqual([]);
+
+    const plain = createApp({ name: 'summary2', parentDir: makeTmpDir() });
+    expect((parse(readFileSync(join(plain.appPath!, 'mdk-app.yaml'), 'utf8')) as { id: string }).id).toBe(
+      'com.example.summary2',
+    );
+  });
+
+  it('turns any valid --org into a valid reverse-DNS id segment', () => {
+    expect(appManifestId('ops', 'demo')).toBe('com.demo.ops');
+    expect(appManifestId('ops', 'my_org')).toBe('com.my-org.ops');
+    expect(appManifestId('ops', 'demo.io')).toBe('com.demo.io.ops');
+    expect(appManifestId('ops', '1-_x')).toBe('com.1-x.ops');
+    expect(appManifestId('ops', 'a..b')).toBe('com.a.b.ops');
+    expect(appManifestId('ops')).toBe('com.example.ops');
   });
 
   it('refuses to overwrite without --force, and allows it with --force', () => {

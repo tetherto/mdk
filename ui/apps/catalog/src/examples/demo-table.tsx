@@ -43,7 +43,7 @@ const columns = [
   columnHelper.accessor((row) => row.value, {
     id: 'value',
     header: 'Value (Aligned Right)',
-    cell: (info) => <div style={{ textAlign: 'end' }}>{info.getValue()}</div>,
+    cell: (info) => <div className="demo-table-cell--end">{info.getValue()}</div>,
   }),
   {
     id: 'type-0',
@@ -183,7 +183,7 @@ export const ControlledTable = (): JSX.Element => {
       <p>
         Table with horizontal scroll, pagination, sorting, row selection, row expansion, empty state
       </p>
-      <div style={{ display: 'flex', gap: '10px', margin: '10px 0' }}>
+      <div className="demo-table-actions">
         <Button onClick={handleToggleFirst}>Toggle 1st row selection</Button>
         <Button onClick={handleExpandThird}>Toggle 3rd row expansion</Button>
         <Button onClick={handleToggleLoading}>Toggle loading</Button>

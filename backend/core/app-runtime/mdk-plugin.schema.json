@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MDK app route table",
+  "description": "The HTTP routes an MDK app serves through the Gateway, declared in the app's route table. The base rules match what the app-runtime loader rejects and always fail. The rules for the OpenAPI-shaped form fail only in a table that declares `routeTableVersion`, and are warnings in one that does not. The loader itself checks what the schema cannot express: non-empty strings and arrays, method and path each read from `http` or the route top level, unique ids and method and path pairs, a leading slash on each path, and the RBAC verb vocabulary.",
+  "$comment": "Uses only the keyword subset implemented by @tetherto/mdk-worker/lib/schema-subset. A keyword outside it validates as always-passing there; test/route-table-validator-parity.test.mjs pins the subset to ajv.",
+  "type": "object",
+  "required": ["name", "version", "routes"],
+  "properties": {
+    "$schema": { "type": "string", "x-mdk-strict": true },
+    "routeTableVersion": {
+      "type": "string",
+      "enum": ["1"],
+      "x-mdk-strict": true,
+      "description": "The route-table schema generation this table is written against, as the Worker contract's `contractVersion`. Declaring it opts the table into the OpenAPI-shaped rules as errors; a table without it is validated as legacy, with those rules reported as warnings. A stamp that is not a string counts as no stamp: its type error is a warning, as for a Worker contract's `contractVersion`."
+    },
+    "name": {
+      "type": "string",
+      "description": "The app's package name. Must be non-empty."
+    },
+    "version": {
+      "type": "string",
+      "description": "The app's version. Must be non-empty."
+    },
+    "description": {
+      "type": "string",
+      "x-mdk-strict": true,
+      "description": "What the app does, for the generated reference."
+    },
+    "setup": {
+      "type": "array",
+      "x-mdk-strict": true,
+      "description": "Interactive setup questions the CLI asks when the app is added; validated in full by the CLI.",
+      "items": { "type": "object" }
+    },
+    "routes": {
+      "type": "array",
+      "description": "The app's routes. Must be non-empty.",
+      "items": {
+        "type": "object",
+        "required": ["id", "handler"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Route identifier, unique in the table. Names the MCP tool derived from the route."
+          },
+          "handler": {
+            "type": "string",
+            "description": "`<file>[#export]`, relative to the route table's directory and confined to it."
+          },
+          "description": {
+            "type": "string",
+            "x-mdk-strict": true,
+            "description": "What the route does and when to call it. Shown as Purpose in the generated API reference, and as the description of the MCP tool derived from the route. The reference shows \"Not declared\" when it is absent."
+          },
+          "auth": {
+            "type": "boolean",
+            "description": "Without `spec.rbac`: `true` runs the Gateway's `authVerifier` before the route. With `spec.rbac`, every route needs a token and a rule, and this field no longer matters."
+          },
+          "verb": {
+            "type": "string",
+            "description": "RBAC verb the route is checked as. Defaults from the HTTP method. Must be a Gateway verb."
+          },
+          "resourceName": {
+            "type": "object",
+            "description": "Where the RBAC instance name comes from: exactly one of `param`, `query` or `body`, naming the field, such as `{ \"param\": \"deviceId\" }`."
+          },
+          "method": {
+            "type": "string",
+            "x-mdk-strict": true,
+            "description": "Flat form: the HTTP method. Read only when `http.method` is absent."
+          },
+          "path": {
+            "type": "string",
+            "x-mdk-strict": true,
+            "description": "Flat form: the path under the app's mount. Read only when `http.path` is absent."
+          },
+          "cache": {
+            "type": "array",
+            "x-mdk-strict": true,
+            "description": "Request fields, as dot-paths such as `query.k`, that key a cached response.",
+            "items": { "type": "string" }
+          },
+          "stream": {
+            "type": "boolean",
+            "x-mdk-strict": true,
+            "description": "`true`: the route streams its response, and produces no MCP tool."
+          },
+          "permissions": {
+            "type": "array",
+            "x-mdk-strict": true,
+            "description": "Without `spec.rbac`: permissions the caller's identity must hold on an `auth: true` route.",
+            "items": { "type": "string" }
+          },
+          "safety": {
+            "type": "string",
+            "enum": ["read-only", "write"],
+            "x-mdk-strict": true,
+            "description": "The MCP tool hint, `read-only` or `write`. Not an access control."
+          },
+          "errors": {
+            "type": "array",
+            "x-mdk-strict": true,
+            "description": "Application error codes the route can return.",
+            "items": { "type": "string" }
+          },
+          "constraints": {
+            "type": "array",
+            "x-mdk-strict": true,
+            "description": "Operating conditions a caller must respect.",
+            "items": { "type": "string" }
+          },
+          "examples": {
+            "type": "array",
+            "x-mdk-strict": true,
+            "items": { "type": "object" }
+          },
+          "schema": {
+            "type": "object",
+            "x-mdk-strict": true,
+            "description": "A Fastify route schema, used as is instead of one derived from `http.parameters` and `http.requestBody`."
+          },
+          "http": {
+            "type": "object",
+            "x-mdk-strict": true,
+            "description": "OpenAPI 3.1 Operation subset. A table that validates converts to an OpenAPI document without loss.",
+            "additionalProperties": false,
+            "properties": {
+              "method": {
+                "type": "string",
+                "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+              },
+              "path": {
+                "type": "string",
+                "description": "The path under the app's mount, with `{name}` templating."
+              },
+              "summary": { "type": "string" },
+              "description": { "type": "string" },
+              "tags": { "type": "array", "items": { "type": "string" } },
+              "deprecated": { "type": "boolean" },
+              "parameters": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["in", "name"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "in": { "type": "string", "enum": ["path", "query", "header"] },
+                    "name": { "type": "string" },
+                    "required": { "type": "boolean" },
+                    "description": { "type": "string" },
+                    "schema": { "type": "object" }
+                  }
+                }
+              },
+              "requestBody": {
+                "type": "object",
+                "required": ["content"],
+                "additionalProperties": false,
+                "properties": {
+                  "required": { "type": "boolean" },
+                  "description": { "type": "string" },
+                  "content": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": { "schema": { "type": "object" } }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "required": ["description"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": { "type": "string" },
+                    "content": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": { "schema": { "type": "object" } }
+                      }
+                    },
+                    "x-mdk-errors": {
+                      "type": "array",
+                      "description": "The application error codes that arrive with this status, each with when it fires. The generated reference lists them in its Errors section; the Gateway's own routes use the same field.",
+                      "items": {
+                        "type": "object",
+                        "required": ["code", "description"],
+                        "additionalProperties": false,
+                        "properties": {
+                          "code": { "type": "string", "description": "The `ERR_*` code the error message starts with." },
+                          "description": { "type": "string", "description": "When the code fires." },
+                          "fix": { "type": "string", "description": "What the caller does about it." }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

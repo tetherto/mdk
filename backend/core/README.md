@@ -9,6 +9,7 @@ Core infrastructure packages for MDK. These packages form the coordination layer
 | [`kernel/`](./kernel/README.md) | `@tetherto/mdk-kernel` | Orchestration Kernel — DHT discovery, command dispatch, telemetry, health monitoring, and the token issuer |
 | [`mdk/`](./mdk/README.md) | `@tetherto/mdk-core` | Bootstrap utilities: `getKernel()`, `startGateway()`, `waitForDiscovery()`, plus the injectable services runtime-hosted Workers use |
 | [`mdk-worker/`](./mdk-worker/README.md) | `@tetherto/mdk-worker` | Worker Runtime: hosts a Worker Plugin's devices behind one HRPC channel to Kernel |
+| [`stats/`](./stats/README.md) | `@tetherto/mdk-stats` | Telemetry aggregation ops (`applyStats`, `tallyStats`, `mergeStats`, `groupBy`): the Worker Runtime aggregates with them, the Kernel merges Worker results with them, and mdk-core's `StatsService` and stats templates use them |
 | [`gateway/`](./gateway/README.md) | `@tetherto/mdk-gateway` | HTTP router — signs callers in, checks each app route against `spec.rbac`, forwards to the app's runtime |
 | [`app-runtime/`](./app-runtime/README.md) | `@tetherto/mdk-app-runtime` | Runs one app's controllers in its own process and serves them to the Gateway over HRPC |
 | [`mcp/`](./mcp/README.md) | `@tetherto/mdk-mcp` | Standalone MCP server that exposes app routes and native tools to AI agents |
@@ -53,7 +54,7 @@ All packages in `core/` follow these rules:
 - Logging via the `debug` module: `require('debug')('mdk:<package>:<module>')`
 - Error constants in `SCREAMING_SNAKE_CASE` prefixed with `ERR_`
 - Tests use the `brittle` framework — run with `npm test` (unit) or `npm run test:coverage` (full suite with `tests/**/*.test.js`)
-- Linting with StandardJS (`npm run lint`)
+- Linting with `@bitfinex/lint-js` (`npm run lint`)
 
 ## Running tests
 

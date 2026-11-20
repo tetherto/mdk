@@ -140,7 +140,7 @@ export const FormExample = (): React.ReactElement => {
             name="notifications"
             render={({ field }) => (
               <FormItem>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div className="demo-section__control-row demo-section__control-row--loose">
                   <FormControl>
                     <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
@@ -164,15 +164,15 @@ export const FormExample = (): React.ReactElement => {
                     defaultValue={field.value}
                     orientation="horizontal"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <div className="demo-section__inline-option">
                       <Radio value="low" id="priority-low" />
                       <Label htmlFor="priority-low">Low</Label>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <div className="demo-section__inline-option">
                       <Radio value="medium" id="priority-medium" />
                       <Label htmlFor="priority-medium">Medium</Label>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <div className="demo-section__inline-option">
                       <Radio value="high" id="priority-high" />
                       <Label htmlFor="priority-high">High</Label>
                     </div>
@@ -207,7 +207,7 @@ export const FormExample = (): React.ReactElement => {
             name="terms"
             render={({ field }) => (
               <FormItem>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className="demo-section__control-row">
                   <FormControl>
                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>

@@ -77,7 +77,7 @@ Define enough that someone outside the team can repeat the run.
 
 | Field | Value |
 | --- | --- |
-| Profile id | e.g. `cap-100dev-w2` |
+| Profile id | e.g. `cap-100devices-2workers` |
 | `n` (samples per latency row) | `_` (minimum recommended: `_`) |
 | Soak duration | `_` (minimum **24 h** for growth / leak claims) |
 | Load generator | name / script / commit |
@@ -258,16 +258,16 @@ Measure process failure recovery on at least one profile per reference tier. "Un
 
 ## Profile comparison matrix
 
-One row per capacity profile. Copy columns as needed. Leave cells blank until measured. Prefer profile ids like `cap-10dev` / `cap-100dev-w2` (not `cap-10m`, which reads as ten minutes).
+One row per capacity profile. Copy columns as needed. Leave cells blank until measured. Use the harness's profile id form, `cap-<N>devices-<W>workers` (for example `cap-100devices-2workers`), so hand-filled rows match harness reports. For a repeat run, add an `-r<n>` suffix as the [benchmark quickstart][benchmark-repeat-runs] describes.
 
 | Profile id | Tier | Real/sim | Kernels | Gateways | Apps | W | D | Alert rules | CPU sum % | RSS sum | Heap sum | Disk now | Disk/day | Headroom | Reads/s | Actions/s | Rejects+timeouts | Read p99 | Action e2e p99 | Alert gen p99 | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `cap-10dev` | `_` | `_` | 1 | 1 | 1 | 3 | 12 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
-| `cap-50dev` | `_` | `_` | 1 | 1 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
-| `cap-100dev` | `_` | `_` | 1 | 1 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
-| `cap-500dev` | `_` | `_` | 1 | 1 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
-| `cap-1000dev` | `_` | `_` | 1 | 1 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
-| `cap-5000dev` | `_` | `_` | 1 | 1 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
+| `cap-12devices-3workers` | `_` | `_` | 1 | 1 | 1 | 3 | 12 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
+| `cap-50devices-<W>workers` | `_` | `_` | 1 | 1 | `_` | `_` | 50 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
+| `cap-100devices-<W>workers` | `_` | `_` | 1 | 1 | `_` | `_` | 100 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
+| `cap-500devices-<W>workers` | `_` | `_` | 1 | 1 | `_` | `_` | 500 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
+| `cap-1000devices-<W>workers` | `_` | `_` | 1 | 1 | `_` | `_` | 1000 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
+| `cap-5000devices-<W>workers` | `_` | `_` | 1 | 1 | `_` | `_` | 5000 | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
 | `cap-custom` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` | `_` |
 
 ## Measurement checklist
@@ -296,3 +296,6 @@ Use the same checklist for every profile so results stay comparable.
 
 [benchmark-harness]: benchmark-your-site.md
 <!-- docs@tether.io: benchmark-harness → guides/deployment/benchmark-your-site -->
+
+[benchmark-repeat-runs]: ../../../backend/tests/benchmark/README.md#quickstart
+<!-- docs@tether.io: benchmark-repeat-runs → guides/deployment/benchmark-your-site#quickstart -->

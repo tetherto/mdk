@@ -57,11 +57,9 @@ test('benchmark smoke: 5 devices / 1 worker boots and measures cleanly', { timeo
   t.ok(result.latencies.gatewayRequest.n > 0, 'gateway request latency samples recorded')
   t.ok(Number.isFinite(result.latencies.gatewayRequest.p99Ms), 'gateway request p99 is a finite number')
 
-  // Only asserts induction happened (real, not timing-dependent) — whether
-  // an alert is actually *visible* yet depends on the Worker's own
-  // (never-overridden, default 60s) snap cadence completing within this
-  // short soak, which this fast smoke test doesn't control either way.
-  t.ok(result.alerts.rulesCount > 0, 'alert thresholds were induced for the booted worker type')
+  // The Avalon package is a WorkerRuntimeV2 plugin with no alerts service, so
+  // ALERT_INDUCTION declares nothing for it and the alerts path is unmeasured.
+  t.is(result.alerts.rulesCount, 0, 'no alert thresholds are induced for a V2 worker type')
   t.is(result.alerts.deviceCount, 5, 'alerts summary covers every device')
   t.is(result.failureBehaviour, null, 'failure drills were skipped for this fast run')
 

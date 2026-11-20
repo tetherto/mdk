@@ -1,0 +1,1 @@
+{"name":"FormRadioGroupProps","path":"src/primitives/components/form/form-fields.tsx","kind":"type","description":"","public":true,"definition":"BaseFormFieldProps<TFieldValues, TName> & { options: FormRadioOption[] orientation?: 'horizontal' | 'vertical' radioGroupProps?: Omit< React.ComponentProps<typeof RadioGroup>, 'onValueChange' | 'defaultValue' | 'orientation' > }"}

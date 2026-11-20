@@ -1,0 +1,1 @@
+{"name":"FormField","path":"src/primitives/components/form/index.tsx","description":"Wraps react-hook-form's Controller and provides field context to descendants","tier":"agent-ready","public":true,"category":"forms","domainContext":"generic","props":[],"examples":["src/primitives/components/form/form.example.tsx"],"usageDoc":"src/primitives/components/form/USAGE.md"}

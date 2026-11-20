@@ -1,32 +1,41 @@
 'use strict'
 
-const { eachDayOfInterval, set, eachHourOfInterval } = require('date-fns')
+const { eachHourOfInterval } = require('date-fns')
 const { convertMsToSeconds } = require('../../lib/utils')
 const crypto = require('crypto')
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
+// Satoshi precision. Every getRandomDecimal caller is a BTC amount or a fee
+// rate whose whole range sits below 0.01, so rounding any coarser than this
+// quantises the range away.
+const BTC_DECIMALS = 8
+
+// Mock pool figures, so there is nothing here to keep unguessable and no
+// reason to draw them from the CSPRNG. Deriving a float by dividing random
+// bytes also reads as a biased-randomness defect to a scanner, which is noise
+// on a generator of development data. `crypto.randomInt` below stays: it is
+// unbiased by construction and ids have to be collision-free.
 function randomFloat () {
-  return crypto.randomBytes(6).readUIntBE(0, 6) / 2 ** 48
+  return Math.random()
 }
 
-function randomNumber (min = 0, max = 1) {
-  const number = randomFloat() * (max - min) + min
-  return parseFloat(number.toFixed(2))
-}
-
+// Uniform integer in [min, max]. randomFloat() is strictly below 1, so the
+// floor never reaches max - min + 1 and the result never overruns max.
 function getRandomInt (min, max) {
-  return Math.floor(randomNumber() * (max - min + 1)) + min
+  return Math.floor(randomFloat() * (max - min + 1)) + min
 }
 
+// Uniform value in [min, max], rounded to satoshis rather than to 2 decimals:
+// the pool fields this feeds are fractions of a BTC, and at 2 decimals every
+// draw rounded to zero and collapsed onto `min`, so a reporting app reading
+// the mock saw one flat payout repeated for every day of its history.
 function getRandomDecimal (min, max) {
-  return randomNumber(min, max) * (max - min) + min
+  return parseFloat((randomFloat() * (max - min) + min).toFixed(BTC_DECIMALS))
 }
 
 function getRandomIntTimestamp (minDate, maxDate) {
-  const minTime = minDate.getTime()
-  const maxTime = maxDate.getTime()
-  const randomTime =
-    Math.floor(randomNumber() * (maxTime - minTime + 1)) + minTime
-  return randomTime
+  return getRandomInt(minDate.getTime(), maxDate.getTime())
 }
 
 function getRandomIP () {
@@ -79,7 +88,9 @@ function getRandomWorkerData () {
 
 function getRandomTransactionData (minDate, maxDate) {
   return {
-    id: getRandomInt(100000000, 999999999),
+    // Unbiased and full-precision: a repeated id makes
+    // generateAndAddToStateRandomTxs skip that day's row.
+    id: crypto.randomInt(100000000, 1000000000),
     type: 'revenue_fpps',
     changed_balance: getRandomDecimal(0.0001, 0.0009),
     created_at: convertMsToSeconds(minDate.getTime()),
@@ -145,19 +156,14 @@ function generateRandomizedDataWorkers (workerCount) {
 
 function generateRandomTransactions (startDateTimestamp, endDateTimestamp) {
   const transactions = []
-  const start = new Date(startDateTimestamp * 1000)
+  const startMs = startDateTimestamp * 1000
   const end = new Date(endDateTimestamp * 1000)
 
-  eachDayOfInterval({ start, end }).forEach(date => {
-    const dateAt1AM = set(date, {
-      hours: 1,
-      minutes: 0,
-      seconds: 0,
-      milliseconds: 0
-    })
-    const transaction = getRandomTransactionData(dateAt1AM, end)
-    transactions.push(transaction)
-  })
+  // F2Pool settles revenue once a day at 00:00 UTC, so one row per UTC day,
+  // whatever timezone the mock runs in.
+  for (let day = startMs - (startMs % DAY_MS); day <= end.getTime(); day += DAY_MS) {
+    transactions.push(getRandomTransactionData(new Date(day), end))
+  }
 
   return transactions
 }

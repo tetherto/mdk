@@ -46,7 +46,7 @@ const REQUIRED = [
   'mdk-app-rbac/references/kernel-access.md',
   'mdk-app-rbac/scripts/derive-permissions.mjs',
   'mdk-ui-component/SKILL.md',
-  'mdk-ui-component/references/ui-registry.json',
+  'mdk-ui-component/references/ui-registry/index.json',
   'mdk-ui-component/references/app-ui-module.md',
   'mdk-ui-component/references/page-recipe.md',
   'mdk-ui-component/references/report-patterns.md',
@@ -67,7 +67,13 @@ const REQUIRED = [
   'mdk-worker/assets/worker-template/mock/server.js',
   'mdk-worker/assets/worker-template/smoke.config.js',
   'mdk-worker/scripts/validate-contract.mjs',
-  'mdk-worker/scripts/worker-smoke.mjs'
+  'mdk-worker/scripts/worker-smoke.mjs',
+  'mdk-worker-security/SKILL.md',
+  'mdk-worker-security/references/worker-review.md',
+  'mdk-worker-security/scripts/scan-worker.mjs',
+  'mdk-app-security/SKILL.md',
+  'mdk-app-security/references/app-review.md',
+  'mdk-app-security/scripts/scan-app.mjs'
 ]
 
 function copyEntry (entry, sources) {

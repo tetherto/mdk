@@ -7,7 +7,6 @@ const {
   PUSH_ACTIONS_BATCH_LIMIT,
   BATCH_ACTION_QUERY_WINDOW_MS
 } = require('./constants')
-const { hasWritePermission } = require('../../permissions')
 const { createActionCallerProxy } = require('./caller-proxy')
 const { assertSafeQuery, assertSafeProjection } = require('./query-guard')
 const { redactSecrets } = require('./redact')
@@ -54,17 +53,12 @@ class ActionManager {
    * @param {object} req
    * @param {{ canWrite?: (deviceId: string) => boolean }} [opts] - the caller's
    *   device rule from spec.rbac: a push reaching any device it may not write is
-   *   refused whole. With it, the payload's self-asserted `authPerms` are ignored.
+   *   refused whole. Without it (in-process calls) every device may be written.
    */
   async pushAction (req, opts = {}) {
-    const { query, action, params, voter, authPerms, batchActionUID } = req
+    const { query, action, params, voter, batchActionUID } = req
 
-    const { targets, requiredPerms } = await this._actionCaller.getWriteCalls(
-      query,
-      action,
-      params,
-      opts.canWrite ? null : authPerms
-    )
+    const { targets, requiredPerms } = await this._actionCaller.getWriteCalls(query, action, params)
 
     if (opts.canWrite) {
       const denied = _deniedCalls(targets, opts.canWrite)
@@ -101,7 +95,7 @@ class ActionManager {
   }
 
   async pushActionsBatch (req, opts) {
-    const { batchActionsPayload, voter, authPerms, batchActionUID, suffix } = req
+    const { batchActionsPayload, voter, batchActionUID, suffix } = req
     const batchTs = Date.now()
     if (!Array.isArray(batchActionsPayload)) {
       throw new Error('ERR_PAYLOAD_INVALID')
@@ -116,7 +110,6 @@ class ActionManager {
           action,
           params,
           voter,
-          authPerms,
           ...(batchActionUID
             ? { batchActionUID: `${batchTs}-${batchActionUID}${suffix ? `-${suffix}` : ''}` }
             : {})
@@ -163,20 +156,15 @@ class ActionManager {
    * @param {object} req
    * @param {{ canWrite?: (deviceId: string) => boolean }} [opts] - the voter's
    *   device rule from spec.rbac: a vote on an action that writes any device the
-   *   voter may not write is refused. With it, the payload's `authPerms` are
-   *   ignored; without it (in-process calls) they decide, as before.
+   *   voter may not write is refused. Without it (in-process calls) every vote
+   *   is allowed.
    */
   async voteAction (req, opts = {}) {
-    const { id, voter, approve, authPerms } = req
+    const { id, voter, approve } = req
     const { data } = await this._actionApprover.getAction('voting', id)
     if (opts.canWrite) {
       const denied = _deniedCalls(data.payload[1], opts.canWrite)
       if (denied.length) throw new Error(`ERR_KERNEL_ACTION_FORBIDDEN: may not write ${denied.join(', ')}`)
-    } else {
-      const requiredBaseTypePerms = data.payload[2]
-      if (!requiredBaseTypePerms.every(baseType => hasWritePermission(authPerms, baseType))) {
-        throw new Error('ERR_ACTION_DENIED')
-      }
     }
 
     await this._actionApprover.voteAction({ id, voter, approve })

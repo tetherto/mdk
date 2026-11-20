@@ -3,14 +3,14 @@ import { examples } from '../lib/help.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { createDashboard, dashboardNameFromStack, defaultTemplateRef } from '../lib/dashboard.js';
+import { createDashboard, dashboardNameFromStack, defaultTemplateRef, LEGACY_PEER_DEPS_RETRY_NOTICE } from '../lib/dashboard.js';
 import { NAME_RE } from '../lib/names.js';
 import { createWorker } from '../lib/worker-scaffold.js';
 import { deviceId, deviceSerial } from '../lib/spec.js';
 import { createApp } from '../lib/app-scaffold.js';
 import { grantLine } from '../lib/grant-report.js';
 import { DIRS } from '../lib/project.js';
-import { detectEnvironment, NODE_MIN_MAJOR } from '../lib/detect.js';
+import { nodeVersionWarning } from '../lib/detect.js';
 import { theme, tick, arrow } from '../lib/theme.js';
 
 /**
@@ -66,13 +66,8 @@ export function registerCreate(program: Command): void {
     // What `create` scaffolds declares `engines.node >=24` and installs and builds
     // under this Node, so say so up front rather than through an npm or Vite error.
     .hook('preAction', () => {
-      const env = detectEnvironment();
-      if (!env.nodeOk) {
-        process.stderr.write(
-          `${theme.warn('warning')}: Node ${env.nodeVersion} is too old; MDK needs Node >= ${NODE_MIN_MAJOR}, ` +
-            `so installing or building the scaffold may fail.\n`,
-        );
-      }
+      const warning = nodeVersionWarning('installing or building the scaffold may fail');
+      if (warning) process.stderr.write(`${theme.warn('warning')}: ${warning}\n`);
     });
 
   create
@@ -179,7 +174,7 @@ export function registerCreate(program: Command): void {
       `Scaffold an app (mdk-app.yaml, plugin/ route table and controllers, and a starter UI built into ui/) ` +
         `into <dir>/${DIRS.apps}/<name>, link it into package.json and add it to mdk.yaml under spec.apps.`,
     )
-    .option('--org <scope>', 'npm scope for the package name, e.g. your-org -> @your-org/<name>')
+    .option('--org <scope>', 'Names the npm package @<scope>/<name> and the app id com.<scope>.<name> in mdk-app.yaml')
     .option('--dir <path>', 'Project directory', '.')
     .option(
       '--flat',
@@ -282,7 +277,7 @@ export function registerCreate(program: Command): void {
         out +=
           `\n${theme.label('Next steps')}\n` +
           `  ${theme.muted('1.')} Add routes in ${theme.value('plugin/mdk-plugin.json')} + ${theme.value('plugin/controllers/')}.\n` +
-          `  ${theme.muted('2.')} Set ${theme.key('id')} and ${theme.key('permissions')} in ${theme.value('mdk-app.yaml')} (${theme.cmd('mdk rbac init')} updates ${theme.key('spec.rbac')} after a change), then check it: ${theme.cmd(`mdk validate app ${result.appName}`)}\n` +
+          `  ${theme.muted('2.')} Set ${theme.key('id')} and ${theme.key('permissions')} in ${theme.value('mdk-app.yaml')} (after a change, ${theme.cmd(`mdk add app ${result.packageName} --accept-permissions`)} updates ${theme.key('spec.rbac')}, then ${theme.cmd('mdk rbac apply')} if the Kernel is running), then check it: ${theme.cmd(`mdk validate app ${result.appName}`)}\n` +
           `  ${theme.muted('3.')} Run it: ${theme.cmd('mdk run')} ${theme.muted(`(or \`mdk run app ${result.appName}\` + \`mdk run gateway\`)`)}, then ${theme.cmd('mdk run dashboard')} to see its UI\n` +
           `  ${theme.muted('4.')} Edit the UI in ${theme.value('ui-src/')}; rebuild with ${theme.cmd('npm run build:ui')} (or ${theme.cmd('npm run dev:ui')} to rebuild on save).\n`;
 
@@ -335,13 +330,17 @@ export function registerCreate(program: Command): void {
               `${theme.warn('warning')}: ${result.installWarning} ` +
                 `${theme.muted(`(run \`npm install\` in ${result.appPath})`)}\n`,
             );
+          } else if (result.installRetried) {
+            process.stderr.write(`${theme.muted(LEGACY_PEER_DEPS_RETRY_NOTICE)}\n`);
           }
           const from =
             result.source === 'monorepo' ? 'local monorepo template' : 'GitHub template';
           const steps = [
             ...(result.uiPackagesHint ? [result.uiPackagesHint] : []),
             `Edit ${theme.value(`${result.appPath}/.env`)} if you need a different Gateway/OAuth URL.`,
-            `Run it: ${theme.cmd(`mdk run dashboard --dir ${opts.dir}`)}`,
+            // A named dashboard is one of several the project may hold, so name
+            // it here too — a bare `mdk run dashboard` would start apps/dashboard.
+            `Run it: ${theme.cmd(`mdk run dashboard ${name ? `${app.name} ` : ''}--dir ${opts.dir}`)}`,
           ];
           const out =
             `Scaffolded ${result.appPath} ${theme.muted(`(${from})`)}\n` +

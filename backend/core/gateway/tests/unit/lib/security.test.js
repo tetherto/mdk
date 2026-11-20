@@ -7,6 +7,7 @@ const fs = require('fs')
 const Fastify = require('fastify')
 const {
   resolveSecurityOptions,
+  trustProxyWarning,
   buildHostAllowlist,
   isHostAllowed,
   createHostCheck,
@@ -53,6 +54,53 @@ test('resolveSecurityOptions - CLI strings and invalid values', (t) => {
   t.exception(() => resolveSecurityOptions({}, { authVerifier: 'yes' }), /ERR_GATEWAY_AUTH_VERIFIER_INVALID/)
   t.exception(() => resolveSecurityOptions({ bodyLimit: -1 }, {}), /ERR_GATEWAY_BODY_LIMIT_INVALID/)
   t.exception(() => resolveSecurityOptions({ allowedHosts: { a: 1 } }, {}), /ERR_GATEWAY_ALLOWED_HOSTS_INVALID/)
+})
+
+// Fastify 5 turns a numeric trustProxy into "trust nothing", so a hop count
+// would quietly put every client in the proxy's rate-limit bucket.
+test('resolveSecurityOptions - a trustProxy hop count is refused; addresses, lists and true pass', (t) => {
+  for (const hops of [1, 2, 0, '1', ' 2 ']) {
+    t.exception(() => resolveSecurityOptions({}, { trustProxy: hops }), /ERR_GATEWAY_TRUST_PROXY_INVALID/, `ctx ${JSON.stringify(hops)}`)
+    t.exception(() => resolveSecurityOptions({ trustProxy: hops }, {}), /ERR_GATEWAY_TRUST_PROXY_INVALID/, `common.json ${JSON.stringify(hops)}`)
+  }
+  const fn = () => true
+  for (const ok of [true, 'true', '10.0.0.1', '10.0.0.0/8', '10.0.0.1, 10.0.0.2', ['10.0.0.1', '127.0.0.1'], 'loopback', fn]) {
+    t.is(resolveSecurityOptions({}, { trustProxy: ok }).trustProxy, ok === 'true' ? true : ok, JSON.stringify(String(ok)))
+  }
+})
+
+test('trustProxyWarning - only true, which lets a client choose its own IP, is warned about', (t) => {
+  t.ok(/X-Forwarded-For/.test(trustProxyWarning(true)))
+  t.ok(/X-Forwarded-For/.test(trustProxyWarning(resolveSecurityOptions({}, { trustProxy: 'true' }).trustProxy)), 'the CLI string too')
+  for (const quiet of [false, '10.0.0.1', ['10.0.0.0/8'], () => true]) t.is(trustProxyWarning(quiet), null)
+})
+
+// With true, a client that forges the left-most X-Forwarded-For entry picks its
+// own IP; with the proxy's address it gets the entry the proxy appended.
+test('trustProxy - true takes the client-written entry, the proxy address the proxy-written one', async (t) => {
+  const Fastify = require('fastify')
+  const ipFor = async (tp) => {
+    const app = Fastify({ trustProxy: resolveSecurityOptions({}, { trustProxy: tp }).trustProxy })
+    app.get('/', (req) => ({ ip: req.ip }))
+    const res = await app.inject({ url: '/', remoteAddress: '127.0.0.1', headers: { 'x-forwarded-for': '6.6.6.6, 1.1.1.1' } })
+    await app.close()
+    return res.json().ip
+  }
+  t.is(await ipFor(true), '6.6.6.6', 'forged')
+  t.is(await ipFor('127.0.0.1'), '1.1.1.1', 'appended by the proxy')
+})
+
+// What each accepted value does in Fastify itself: the client IP behind a proxy
+// at 10.0.0.1 that appended the real client to X-Forwarded-For.
+test('trustProxy - an accepted value gives the client IP behind the proxy', async (t) => {
+  const Fastify = require('fastify')
+  for (const tp of [true, '10.0.0.1', ['10.0.0.1']]) {
+    const app = Fastify({ trustProxy: resolveSecurityOptions({}, { trustProxy: tp }).trustProxy })
+    app.get('/', (req) => ({ ip: req.ip }))
+    const res = await app.inject({ url: '/', remoteAddress: '10.0.0.1', headers: { 'x-forwarded-for': '1.1.1.1' } })
+    await app.close()
+    t.is(res.json().ip, '1.1.1.1', JSON.stringify(tp))
+  }
 })
 
 test('resolveSecurityOptions - there are no built-in verifiers; a name is refused', (t) => {
@@ -262,6 +310,25 @@ test('gateway http - failed auth attempts count against the rate limit', async (
   t.is(calls, 2, 'the verifier is not reached once the caller is throttled')
 })
 
+test('gateway http - with an authority, missing and bad tokens count against the rate limit', async (t) => {
+  let verified = 0
+  const authority = {
+    verify: async () => { verified++; throw Object.assign(new Error('bad token'), { code: 'ERR_TOKEN_INVALID' }) },
+    evaluate: () => ({ allowed: true })
+  }
+  const app = await buildServer([{ id: 'c', method: 'GET', path: '/c', handler: './controllers/c.js' }], {
+    rateLimit: { max: 2, timeWindow: '1 minute' }
+  }, { authority })
+  t.teardown(() => app.close())
+
+  const codes = []
+  for (const authorization of [undefined, 'Bearer bad', undefined, 'Bearer bad']) {
+    codes.push((await app.inject({ url: '/c', headers: { ...HOST, ...(authorization ? { authorization } : {}) } })).statusCode)
+  }
+  t.alike(codes, [401, 401, 429, 429])
+  t.is(verified, 1, 'the token is not verified once the caller is throttled')
+})
+
 test('WrkServerHttp - httpd facility gets the hardened options', (t) => {
   const WrkServerHttp = require('../../../workers/http.node.wrk')
   const base = Object.getPrototypeOf(WrkServerHttp.prototype)
@@ -289,6 +356,32 @@ test('WrkServerHttp - a malformed appTimeoutMs fails the boot', (t) => {
 
   const fake = { conf: { appTimeoutMs: '60s' }, ctx: { port: 3000 }, setInitFacs () {} }
   t.exception(() => WrkServerHttp.prototype.init.call(fake), /ERR_GATEWAY_APP_TIMEOUT_INVALID/)
+})
+
+test('WrkServerHttp - maxStreamBufferBytes is read from common.json, and a malformed one fails the boot', (t) => {
+  const WrkServerHttp = require('../../../workers/http.node.wrk')
+  const base = Object.getPrototypeOf(WrkServerHttp.prototype)
+  const realInit = base.init
+  base.init = function () {}
+  t.teardown(() => { base.init = realInit })
+
+  const bad = { conf: { maxStreamBufferBytes: '16MiB' }, ctx: { port: 3000 }, setInitFacs () {} }
+  t.exception(() => WrkServerHttp.prototype.init.call(bad), /ERR_GATEWAY_STREAM_BUFFER_INVALID/)
+
+  const good = { conf: { maxStreamBufferBytes: '4194304' }, ctx: { port: 3000 }, setInitFacs () {} }
+  WrkServerHttp.prototype.init.call(good)
+  t.is(good._maxStreamBufferBytes, 4194304)
+})
+
+test('WrkServerHttp - a trustProxy hop count fails the boot', (t) => {
+  const WrkServerHttp = require('../../../workers/http.node.wrk')
+  const base = Object.getPrototypeOf(WrkServerHttp.prototype)
+  const realInit = base.init
+  base.init = function () {}
+  t.teardown(() => { base.init = realInit })
+
+  const fake = { conf: {}, ctx: { port: 3000, trustProxy: '1' }, setInitFacs () {} }
+  t.exception(() => WrkServerHttp.prototype.init.call(fake), /ERR_GATEWAY_TRUST_PROXY_INVALID/)
 })
 
 // ==================== cache and identity ====================

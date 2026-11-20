@@ -6,7 +6,7 @@ Workers do not initiate RPC to Kernel. Kernel obtains each Worker's RPC public k
 
 ## Directory layout
 
-```
+```text
 backend/workers/
 ├── miners/          # ASIC miners — avalon
 ├── containers/      # Enclosure / cooling control — antspace, bitdeer
@@ -24,55 +24,57 @@ Each family directory holds one package per vendor. Related docs: [supported-wor
 
 Every Worker package follows the same layout:
 
-```
+```text
 <family>/<provider>/
-├── index.js                 # exports { plugin, start*Worker, device client }
-├── lib/                     # vendor protocol client + templates
-├── plugin/
-│   ├── index.js             # { contract, dir, connect, disconnect? }
-│   ├── boot.js              # createWorkerInfra → WorkerRuntime
-│   ├── mdk-contract.json    # telemetry, commands, health, errors
-│   └── src/
-│       ├── telemetry/*.js   # one handler per metric field
-│       └── commands/*.js    # one handler per write action
-├── mock/                    # mock device API for local / CI testing
+├── index.js                 # exports the device driver class only
+├── lib/                     # vendor protocol client
+├── mdk-contract.json        # telemetry, commands, health, errors; names the handlers
+├── src/
+│   ├── device.js            # builds this device's driver from '@tetherto/mdk-worker/device'
+│   ├── telemetry/*.js       # one (params) handler per metric field
+│   └── commands/*.js        # one (params) handler per write action
+├── mock/                    # fake device API for local / CI testing
+├── smoke.config.js          # device spec for `mdk validate worker --smoke`
 └── tests/
 ```
 
-The plugin is data + functions — never subclassed. `WorkerRuntime` (`@tetherto/mdk-worker`) loads it, connects each device via `connect(config)`, and routes Kernel actions to the matching handler with `{ deviceId, device, config, services }`.
+The plugin is data + functions — never subclassed. `WorkerRuntimeV2` (`@tetherto/mdk-worker`) loads the package by
+directory, instantiates its handler modules once per device, and routes Kernel actions to the matching `(params)`
+handler.
 
 > [!CAUTION]
-> `createWorkerInfra` in `boot.js`, the injected `services` and their built-ins (`registerThing`, logs, comments, …) are the deprecated
-> [store services surface](../../core/mdk-worker/README.md#store-services). The in-repo Workers keep running on it. A new Worker is a
-> [directory-loaded package on `WorkerRuntimeV2`](../../../docs/guides/workers/build-a-worker.md) instead.
+> The Antspace, Bitdeer and Seneca Workers still ship the older shape: `plugin/index.js` with `connect()`, booted by
+> `plugin/boot.js` on `WorkerRuntime` v1 with `createWorkerInfra`. That injected `services` surface and its built-ins
+> (`registerThing`, logs, comments, …) are the deprecated [store services surface](../../core/mdk-worker/README.md#store-services).
+> A new Worker is a [directory-loaded package on `WorkerRuntimeV2`](../../../docs/guides/workers/build-a-worker.md) instead.
 
 ## Runtime workflow
 
-```
-boot.js
-  │  createWorkerInfra (store, provisioning, logs/stats/alerts/…)
+```text
+host (mdk run, or your own process)
+  │
   ▼
-WorkerRuntime(plugin, { workerId, devices, services, … })
-  │  connect() each device → device contexts
+WorkerRuntimeV2(pkgDir, { workerId, devices, allowedKeys, … })
+  │  loads mdk-contract.json, one private module registry per device
   │  Hyperswarm RPC server + discovery announce
   ▼
 Kernel discovers Worker → capability.request → caches mdk-contract
   │
   │  telemetry / command envelopes (HRPC)
   ▼
-handler(ctx) → vendor API → response envelope
+handler(params) → vendor API → response envelope
 ```
 
-1. **Boot** — `plugin/boot.js` (or env-driven [`worker.js`](../../core/mdk/worker.js) via `WORKER` / `TYPE` / `RACK`) builds infra and starts the runtime.
-2. **Connect** — for each provisioned device, `plugin.connect` returns a vendor client. Failures mark that device offline; siblings keep running.
+1. **Boot** — the host (`mdk run` from `mdk.yaml`, or a script constructing `WorkerRuntimeV2`) names the package directory and the device list.
+2. **Load** — for each declared device, the runtime loads the handler modules into a private registry; `src/device.js` builds that device's vendor client. There is no boot-time probe: an unreachable device surfaces as an error inside the channel that touched it.
 3. **Announce** — the runtime makes its RPC key reachable with a stable identity from the store: joining the Kernel topic in DHT mode, or handing the key over directly in the other two [discovery modes](#discovery-model).
-4. **Serve** — Kernel requests hit contract handlers or infra built-ins (`registerThing`, logs, comments, …). Device-set changes go through provisioning and typically require a Worker restart.
+4. **Serve** — Kernel requests hit contract handlers. The device list is fixed at construction: a device-set change is a config edit and a restart.
 
 ## Discovery model
 
 How the Kernel obtains a Worker's RPC public key is determined by the [deployment topology](../../../docs/concepts/deployment-topologies.md). Once a Worker is connected, each runs the same identity → capability → Ready sequence, then carries the same MDK Protocol envelopes (`command.request`, `telemetry.pull`, …) over the same Hyperswarm RPC transport. Only **how** Kernel first learns the key differs, the transport itself never changes: HRPC runs its own HyperDHT node in every mode, and that node needs outbound UDP to its bootstrap nodes (public by default vs. pass a private DHT network to every component, as in the [local and air-gapped profile](../../../docs/guides/deployment/private-dht.md)).
 
-Each Worker package ships its own boot function that constructs the runtime internally — there is no generic `startWorker(WorkerClass, opts)` entry point, and a v2 package loaded from a directory has no boot function at all. [`deployment-topologies.md`](../../../docs/concepts/deployment-topologies.md) has the diagrams and trade-offs; [`test-a-worker.md`](../../../docs/guides/workers/test-a-worker.md) has a runnable host script for each mode.
+A directory-loaded Worker package has no boot function: `mdk run` or your own host constructs `WorkerRuntimeV2` on it. Only the older Antspace, Bitdeer and Seneca packages ship a `start<Family>Worker()` boot helper. [`deployment-topologies.md`](../../../docs/concepts/deployment-topologies.md) has the diagrams and trade-offs; [`test-a-worker.md`](../../../docs/guides/workers/test-a-worker.md) has a runnable host script for each mode.
 
 ### Single-process mode
 
@@ -98,7 +100,7 @@ Either process may start first. A Worker re-announces on the topic every 30 seco
 
 ## How it fits MDK
 
-```
+```text
 Kernel ──HRPC──► WorkerRuntime ──plugin handlers──► vendor client ──► hardware
                      ▲
                      └── services (store, alerts, stats, provisioning)

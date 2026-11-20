@@ -1,0 +1,1 @@
+{"name":"HeatmapLegendProps","path":"src/primitives/components/heatmap/types.ts","kind":"type","description":"","public":true,"definition":"{ /** Value (or pre-formatted label) at the low end of the scale. */ min: number | string /** Value (or pre-formatted label) at the high end of the scale. */ max: number | string /** Unit suffix appended to `min`/`max`. */ unit?: string /*…"}

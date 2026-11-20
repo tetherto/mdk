@@ -1,14 +1,19 @@
 import type { PeriodState } from '@tetherto/mdk-react-adapter'
-import type { DateRange } from '@primitives'
+import type { DateRange, PresetItem } from '@primitives'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { PeriodControl } from '../period-control'
 
 // The real date picker, swapped for one that records what it was given.
 const picker = vi.hoisted(() => ({
   props: undefined as
-    { selected?: DateRange; onSelect: (range: DateRange | undefined) => void } | undefined,
+    | {
+        selected?: DateRange
+        presets?: PresetItem[]
+        onSelect: (range: DateRange | undefined) => void
+      }
+    | undefined,
 }))
 vi.mock('@primitives', async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
@@ -34,7 +39,24 @@ describe('PeriodControl', () => {
   it('disables the buckets that do not fit the range', () => {
     render(<PeriodControl state={state()} timezone="UTC" />)
     expect(screen.getByRole('button', { name: 'Hourly buckets' })).toBeEnabled()
-    expect(screen.getByRole('button', { name: 'Monthly buckets' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Monthly buckets' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+  })
+
+  it('says why a bucket is disabled', async () => {
+    const s = state()
+    render(<PeriodControl state={s} timezone="UTC" />)
+    const monthly = screen.getByRole('button', { name: 'Monthly buckets' })
+
+    fireEvent.focus(monthly)
+    expect(
+      (await screen.findAllByText('Monthly buckets need a period of 60 days or more')).length,
+    ).toBeGreaterThan(0)
+
+    fireEvent.click(monthly)
+    expect(s.setGranularity).not.toHaveBeenCalled()
   })
 
   it('sets the granularity from the bucket toggle', () => {
@@ -56,6 +78,69 @@ describe('PeriodControl', () => {
     rerender(<PeriodControl state={s} timezone="UTC" />)
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
     expect(s.reset).toHaveBeenCalledOnce()
+  })
+
+  describe('picker presets', () => {
+    beforeAll(() => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(Date.UTC(2026, 9, 23, 12)) // Oct 23, 12:00 UTC
+    })
+    afterEach(() => {
+      picker.props = undefined
+    })
+    afterAll(() => {
+      vi.useRealTimers()
+    })
+
+    const day = (d?: Date) => d && [d.getFullYear(), d.getMonth() + 1, d.getDate()]
+
+    it('offers the last 7, 14, 30 and 90 days as site days ending today', () => {
+      render(<PeriodControl state={state()} timezone="UTC" />)
+      const presets = picker.props?.presets ?? []
+      expect(presets.map((p) => p.label)).toEqual([
+        'Last 7 days',
+        'Last 14 days',
+        'Last 30 days',
+        'Last 90 days',
+      ])
+      // Whole days ending today: Last 7 days is Oct 17 to 23, seven days
+      expect(day(presets[0]?.value.from)).toEqual([2026, 10, 17])
+      expect(day(presets[0]?.value.to)).toEqual([2026, 10, 23])
+      expect(day(presets[1]?.value.from)).toEqual([2026, 10, 10])
+    })
+
+    it('shows a rolling day preset as that many whole days, so it matches its picker preset', () => {
+      const now = Date.UTC(2026, 9, 23, 12)
+      render(
+        <PeriodControl
+          state={state({
+            period: { preset: '7d', granularity: 'day' },
+            query: { start: now - 7 * 86_400_000, end: now, granularity: 'day' },
+          })}
+          timezone="UTC"
+        />,
+      )
+      expect(day(picker.props?.selected?.from)).toEqual([2026, 10, 17])
+      expect(day(picker.props?.selected?.to)).toEqual([2026, 10, 23])
+    })
+
+    it('sets the rolling preset when a preset matching the Period select is applied', () => {
+      const s = state()
+      render(<PeriodControl state={s} timezone="UTC" />)
+      const last30 = picker.props!.presets![2]!
+      picker.props!.onSelect(last30.value)
+      expect(s.setPreset).toHaveBeenCalledWith('30d')
+      expect(s.setCustom).not.toHaveBeenCalled()
+    })
+
+    it('sets a custom range for a preset the Period select does not have', () => {
+      const s = state()
+      render(<PeriodControl state={s} timezone="UTC" />)
+      const last14 = picker.props!.presets![1]!
+      picker.props!.onSelect(last14.value)
+      expect(s.setCustom).toHaveBeenCalledWith('2026-10-10', '2026-10-23')
+      expect(s.setPreset).not.toHaveBeenCalled()
+    })
   })
 
   describe('with the browser in another timezone than the site', () => {

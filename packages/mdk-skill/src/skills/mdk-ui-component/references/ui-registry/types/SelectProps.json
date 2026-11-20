@@ -1,0 +1,1 @@
+{"name":"SelectProps","path":"src/primitives/components/select/index.tsx","kind":"type","description":"","public":true,"definition":"SelectRootProps & { // Key controlled-state props re-declared from the Radix root so they surface in // the generated docs (types reuse Radix's via indexed access — cannot drift). /** Controlled value */ value?: SelectRootProps['value'] /*…"}

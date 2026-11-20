@@ -1,5 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/tetherto/mdk/main/backend/core/mdk-worker/mdk-contract.schema.json",
+  "telemetryPollIntervalMs": 60000,
   "metadata": {
     "provider": "bitdeer",
     "deviceFamily": "container",

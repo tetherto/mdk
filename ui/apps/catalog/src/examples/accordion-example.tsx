@@ -36,7 +36,7 @@ export const AccordionExample: FC = () => (
     </section>
 
     {/* Multiple Accordion */}
-    <section style={{ marginTop: '2rem' }}>
+    <section className="demo-section__mt-2xl">
       <Accordion title="Multiple Accordion">
         <AccordionItem value="faq-1">
           <AccordionTrigger>What is Bitcoin mining?</AccordionTrigger>

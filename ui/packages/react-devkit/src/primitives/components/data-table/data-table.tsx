@@ -384,6 +384,7 @@ export const DataTable = <I = unknown,>({
               'mdk-table__element--width-full': fullWidth,
               'mdk-table__element--bordered': bordered,
             })}
+            // oxlint-disable-next-line react/forbid-dom-props -- min width from the table's computed column sizes
             style={{
               minWidth: tableBackend.getCenterTotalSize(),
             }}

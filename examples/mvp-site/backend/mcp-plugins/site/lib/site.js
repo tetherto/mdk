@@ -11,7 +11,10 @@ const AXIS = {
   order: ['desc', 'asc']
 }
 
-// Device ids here are UUIDs, so the owning worker's id is the family signal.
+// The Worker's family in the tool vocabulary: from its status row (the contract's
+// metadata.deviceFamily, null until the Worker has been READY once, absent from an
+// older Kernel), else guessed from the worker id since device ids here are UUIDs.
+const FAMILY_BY_DEVICE_FAMILY = { miner: 'miner', container: 'container', 'power-meter': 'powermeter', powermeter: 'powermeter', sensor: 'sensor', minerpool: 'pool' }
 const WORKER_FAMILY = [
   { test: /powermeter|power-meter|satec|meter/i, family: 'powermeter' },
   { test: /pool/i, family: 'pool' },
@@ -19,8 +22,10 @@ const WORKER_FAMILY = [
   { test: /container/i, family: 'container' },
   { test: /miner/i, family: 'miner' }
 ]
-function classifyWorker (workerId) {
-  const match = WORKER_FAMILY.find((e) => e.test.test(workerId))
+function classifyWorker (worker) {
+  const declared = FAMILY_BY_DEVICE_FAMILY[worker.deviceFamily]
+  if (declared) return declared
+  const match = WORKER_FAMILY.find((e) => e.test.test(worker.workerId))
   return match ? match.family : 'other'
 }
 
@@ -30,7 +35,7 @@ function collectDevices (status) {
   for (const w of (status?.workers ?? [])) {
     const state = w.state === 'READY' ? 'online' : 'offline'
     for (const id of (w.deviceIds ?? [])) {
-      rows.push({ deviceId: id, family: classifyWorker(w.workerId), state, worker: w.workerId })
+      rows.push({ deviceId: id, family: classifyWorker(w), state, worker: w.workerId })
     }
   }
   return rows
@@ -78,8 +83,8 @@ async function mapInBatches (items, fn) {
   return results
 }
 
-// Keyed by contract metadata.brand — the owning worker's contract is the
-// only power-mode signal for a UUID device id.
+// Keyed by contract metadata.brand, as the owning Worker's status row carries
+// it — the only power-mode signal for a UUID device id.
 const POWER_MODES_BY_BRAND = {
   Whatsminer: ['low', 'normal', 'high', 'sleep'],
   Antminer: ['sleep', 'normal'],
@@ -88,8 +93,9 @@ const POWER_MODES_BY_BRAND = {
   Avalon: ['normal', 'high', 'sleep']
 }
 async function powerModesFor (deviceId) {
-  const cfg = await mdkClient.pullTelemetry(deviceId, { type: 'config' }).catch(() => null)
-  const brand = cfg?.config?.contract?.brand
+  const status = await mdkClient.getStatus().catch(() => null)
+  const owner = (status?.workers ?? []).find((w) => (w.deviceIds ?? []).includes(deviceId))
+  const brand = owner?.brand
   const modes = brand ? POWER_MODES_BY_BRAND[brand] : null
   return modes
     ? { deviceId, brand, supportedPowerModes: modes }

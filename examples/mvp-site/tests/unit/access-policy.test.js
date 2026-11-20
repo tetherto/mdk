@@ -17,7 +17,7 @@ const configDir = path.join(exampleDir, 'config')
 const WM = { workerId: 'whatsminer-m56s-telemetry-flow', id: 'wm-1', type: 'miner-wm-m56s' }
 const AM = { workerId: 'antminer-s21-telemetry-flow', id: 'am-1', type: 'miner-am-s21' }
 // Contract-only workers report no device type: the brand comes from the workerId.
-const SM = { workerId: 'sealminer-a2-contract', id: 'sm-1', type: '' }
+const SM = { workerId: 'sealminer-a2-contract', id: 'sm-1', type: '', brand: 'SealMiner' }
 const wmName = deviceName({ family: 'miner', brand: 'whatsminer', worker: WM.workerId, device: WM.id })
 const amName = deviceName({ family: 'miner', brand: 'antminer', worker: AM.workerId, device: AM.id })
 const poolName = deviceName({ family: 'minerpool', brand: 'ocean', worker: 'ocean-pool-worker', device: 'ocean-1' })
@@ -161,13 +161,11 @@ test('site config - the example shares one demo password the issuer accepts', (t
 const fakeClient = (policy) => ({
   getRbac: async () => ({ record: { version: 'v1', policy } }),
   listWorkers: async () => ({
-    workers: [WM, AM, SM].map((m) => ({ workerId: m.workerId, deviceIds: [m.id], state: 'READY', healthState: 'HEALTHY' }))
+    workers: [WM, AM, SM].map((m) => ({ workerId: m.workerId, deviceIds: [m.id], state: 'READY', healthState: 'HEALTHY', deviceFamily: 'miner', brand: m.brand ?? null }))
   }),
-  pullTelemetry: async (deviceId, query) => {
-    const m = [WM, AM, SM].find((x) => x.id === deviceId)
-    if (query.type === 'config') return { config: { contract: { deviceFamily: 'miner' } } }
-    if (query.type === 'count') return { count: 1 }
-    return { things: [{ id: m.id, type: m.type }] }
+  pullWorkerQuery: async ({ workers }) => {
+    const m = [WM, AM, SM].find((x) => x.workerId === workers[0])
+    return { workers: { [m.workerId]: { things: [{ id: m.id, type: m.type }] } } }
   }
 })
 

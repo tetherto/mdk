@@ -39,6 +39,13 @@ corrected in place on 2026-11-03: the loaded numbers now sit in a "Send / submit
 execution and end-to-end rows are blank, and the threshold reads "Action accept p99". No measured number changed, and the
 JSON files are untouched (their `actionSubmit` key already named the measurement correctly).
 
+### Alerts path label corrected after publication
+
+As generated, each report opened its "Alerts path" section with "Real condition, not injected", although the harness forces
+every device's temperature-warning threshold below any real reading to make the alert trip. The Markdown label was corrected
+in place on 2026-11-17 to "Induced condition". No measured number changed, and the JSON files, which carry no such label, are
+untouched.
+
 ### Network path
 
 Every report records "Network path to devices" as `simulated-in-process`. That value is the [capacity template][capacity-template]

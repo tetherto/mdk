@@ -1,0 +1,1 @@
+{"name":"DetailLegendProps","path":"src/primitives/components/detail-legend/types.ts","kind":"type","description":"","public":true,"definition":"{ /** Legend items to display */ items: DetailLegendItem[] /** Callback when a legend item is toggled */ onToggle?: (label: string, index: number) => void /** Custom class name */ className?: string }"}

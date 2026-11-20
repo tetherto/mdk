@@ -101,6 +101,7 @@ const ActiveIncidentsCard = forwardRef<HTMLDivElement, ActiveIncidentsCardPartia
           <div ref={scrollRef} className="mdk-active-incidents-card__list">
             <div
               className="mdk-active-incidents-card__virtual-spacer"
+              // oxlint-disable-next-line react/forbid-dom-props -- total height measured by the virtualiser
               style={{ height: virtualizer.getTotalSize() }}
             >
               {virtualizer.getVirtualItems().map((virtualItem) => {
@@ -112,6 +113,7 @@ const ActiveIncidentsCard = forwardRef<HTMLDivElement, ActiveIncidentsCardPartia
                     data-index={virtualItem.index}
                     ref={virtualizer.measureElement}
                     className="mdk-active-incidents-card__virtual-row"
+                    // oxlint-disable-next-line react/forbid-dom-props -- row offset measured by the virtualiser
                     style={{ transform: `translateY(${virtualItem.start}px)` }}
                   >
                     <IncidentRow {...item} onClick={onItemClick} />

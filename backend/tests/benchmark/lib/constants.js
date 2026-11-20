@@ -10,20 +10,19 @@ const path = require('path')
 
 // Every worker family under backend/workers/miners, keyed by the package
 // name (without the @tetherto/ scope) — the only `type` values a
-// config.workers[] entry may use. Each mock exposes its own supported
-// models (`TYPES`) and auth default (`extraCliOptions.password.default`),
-// read here instead of duplicated in the benchmark config.
-const WORKER_PACKAGES = {
-  'mdk-worker-avalon': 'startAvalonWorker'
-}
+// config.workers[] entry may use. Each package is a directory-loaded Worker
+// Plugin that bootWorker hosts on WorkerRuntimeV2 from `pkgDir`; its mock
+// exposes the supported models (`TYPES`) and auth default
+// (`extraCliOptions.password.default`), read here instead of duplicated in
+// the benchmark config.
+const WORKER_PACKAGES = ['mdk-worker-avalon']
 
 const WORKER_REGISTRY = Object.fromEntries(
-  Object.entries(WORKER_PACKAGES).map(([type, startExport]) => {
+  WORKER_PACKAGES.map((type) => {
     const pkg = `@tetherto/${type}`
-    const worker = require(pkg)
     const mock = require(`${pkg}/mock/server`)
     return [type, {
-      startWorker: worker[startExport],
+      pkgDir: path.dirname(require.resolve(`${pkg}/package.json`)),
       mock,
       models: mock.types,
       defaultPassword: mock.defaultPassword
@@ -31,34 +30,16 @@ const WORKER_REGISTRY = Object.fromEntries(
   })
 )
 
-// Alert thresholds forced far outside any real reading, so the family's own
-// temperature-warning alert always trips on the first completed snap cycle.
-// devicePrefix mirrors each worker package's own `deviceType` build
-// (`miner-${devicePrefix}-${model}`, see plugin/boot.js in each package) —
-// AlertsService keys its config by that exact device-type string. This is
-// the one intentional exception to bootWorker's "workers boot on their own
-// package defaults" rule (see lib/site.js): alerts need *some* threshold
-// policy to fire at all, and there's no sensible default that isn't itself
-// a deliberate choice, unlike the cadence/timeout knobs that rule protects.
-const ALERT_INDUCTION = {
-  // chips_temp_critical reads snap.stats.temperature_c.chips[].avg, sourced
-  // from data.estats.avg_chip_temperature in avalon.miner.js. With the
-  // threshold forced below any reading it trips on every online device's
-  // first completed snap (expect devicesWithAlerts === deviceCount).
-  'mdk-worker-avalon': {
-    devicePrefix: 'av',
-    alerts: {
-      chips_temp_critical: { params: { temp: -1000 } }
-    }
-  }
-}
+// Alert induction per worker type. A WorkerRuntimeV2 package has no alerts
+// service (the Worker-infra surface left with the V1 shape), so no in-repo
+// miner family can trip an alert for the harness to time: the alerts path
+// reports `rulesCount: 0` and empty latency rows until a family with alerts
+// is benchmarked. Kept as a map so a V1 family can declare its thresholds
+// here again (`{ devicePrefix, alerts: { <alert>: { params } } }`).
+const ALERT_INDUCTION = {}
 
 const DEFAULT_WORKER_TYPE = 'mdk-worker-avalon'
 const DEFAULT_MODEL = 'a1346'
-
-// This harness only ever runs mocks on loopback, differentiated by port —
-// every device shares the same host, so duplicate-IP checks must stay off.
-const ALLOW_DUPLICATE_IPS = true
 
 const MOCK_PORT_RANGE = { min: 20000, max: 60000 }
 
@@ -242,7 +223,6 @@ module.exports = {
   ALERT_INDUCTION,
   DEFAULT_WORKER_TYPE,
   DEFAULT_MODEL,
-  ALLOW_DUPLICATE_IPS,
   MOCK_PORT_RANGE,
   DEFAULT_THING_RTD_CONCURRENCY,
   WORKER_CONF_DEFAULTS,

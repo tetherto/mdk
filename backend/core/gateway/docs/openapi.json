@@ -1,0 +1,1013 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Gateway",
+    "version": "0.14.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Sign in with a username and password",
+        "description": "Checks the credentials with the Kernel's token issuer. The refresh token is set as an `HttpOnly`, `SameSite=Strict` cookie scoped to `/auth`; send `\"refreshIn\": \"body\"` to get it in the body instead.",
+        "tags": [
+          "Gateway authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "password": {
+                    "type": "string",
+                    "maxLength": 1024
+                  },
+                  "refreshIn": {
+                    "enum": [
+                      "cookie",
+                      "body"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed in. The refresh token is in the cookie, or in the body with `\"refreshIn\": \"body\"`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "tokenType",
+                        "accessToken",
+                        "expiresIn"
+                      ],
+                      "properties": {
+                        "tokenType": {
+                          "const": "Bearer"
+                        },
+                        "accessToken": {
+                          "type": "string",
+                          "description": "Send as `Authorization: Bearer <accessToken>`."
+                        },
+                        "expiresIn": {
+                          "type": "integer",
+                          "description": "Lifetime in seconds."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "tokenType",
+                        "accessToken",
+                        "expiresIn",
+                        "refreshToken",
+                        "refreshExpiresIn"
+                      ],
+                      "properties": {
+                        "tokenType": {
+                          "const": "Bearer"
+                        },
+                        "accessToken": {
+                          "type": "string",
+                          "description": "Send as `Authorization: Bearer <accessToken>`."
+                        },
+                        "expiresIn": {
+                          "type": "integer",
+                          "description": "Lifetime in seconds."
+                        },
+                        "refreshToken": {
+                          "type": "string",
+                          "description": "Send to `/auth/refresh` or `/auth/logout`."
+                        },
+                        "refreshExpiresIn": {
+                          "type": "integer",
+                          "description": "Lifetime in seconds."
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "The refresh token, unless `\"refreshIn\": \"body\"` was sent.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body fails the route's schema; `message` is the validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`ERR_IDENTITY_INVALID_CREDENTIALS`: The username or password is wrong, or the user is disabled or has no password.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_IDENTITY_INVALID_CREDENTIALS",
+                "description": "The username or password is wrong, or the user is disabled or has no password.",
+                "fix": "Check the username and password, and that the user is enabled."
+              }
+            ]
+          },
+          "403": {
+            "$ref": "#/components/responses/HostNotAllowed"
+          },
+          "429": {
+            "description": "`ERR_IDENTITY_LOGIN_THROTTLED`: Too many failed sign-ins for this username; the detail says how long to wait.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_IDENTITY_LOGIN_THROTTLED",
+                "description": "Too many failed sign-ins for this username; the detail says how long to wait.",
+                "fix": "Wait the interval in the message, then retry."
+              },
+              {
+                "code": "ERR_RATE_LIMITED",
+                "description": "The caller's address has sent more requests than the Gateway's `rateLimit` allows in its time window, `300` a minute by default.",
+                "fix": "Wait for the time window to pass, then retry.",
+                "stage": "Rate limit"
+              }
+            ]
+          },
+          "503": {
+            "description": "`ERR_IDENTITY_NOT_READY`: The token issuer is still starting and has no signing key yet. Retry once it is ready; a refresh from the cookie has cleared the cookie, so a browser signs in again. `ERR_AUTH_UNAVAILABLE`: The token issuer is unreachable or failed. A remote Kernel's own non-identity `ERR_*` code is passed on with the same status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_IDENTITY_NOT_READY",
+                "description": "The token issuer is still starting and has no signing key yet. Retry once it is ready; a refresh from the cookie has cleared the cookie, so a browser signs in again.",
+                "fix": "Retry once the issuer is ready."
+              },
+              {
+                "code": "ERR_AUTH_UNAVAILABLE",
+                "description": "The token issuer is unreachable or failed. A remote Kernel's own non-identity `ERR_*` code is passed on with the same status.",
+                "fix": "Retry once the Kernel and its token issuer are reachable."
+              }
+            ]
+          }
+        }
+      }
+    },
+    "/auth/token": {
+      "post": {
+        "summary": "Sign in a service account with a signed assertion",
+        "description": "For an AI agent or another service account: send an assertion signed with its own key (`createAssertion` in `@tetherto/mdk-identity`). Both tokens come back in the body.",
+        "tags": [
+          "Gateway authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "assertion"
+                ],
+                "properties": {
+                  "assertion": {
+                    "type": "string",
+                    "maxLength": 8192
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed in, with both tokens in the body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "tokenType",
+                    "accessToken",
+                    "expiresIn",
+                    "refreshToken",
+                    "refreshExpiresIn"
+                  ],
+                  "properties": {
+                    "tokenType": {
+                      "const": "Bearer"
+                    },
+                    "accessToken": {
+                      "type": "string",
+                      "description": "Send as `Authorization: Bearer <accessToken>`."
+                    },
+                    "expiresIn": {
+                      "type": "integer",
+                      "description": "Lifetime in seconds."
+                    },
+                    "refreshToken": {
+                      "type": "string",
+                      "description": "Send to `/auth/refresh` or `/auth/logout`."
+                    },
+                    "refreshExpiresIn": {
+                      "type": "integer",
+                      "description": "Lifetime in seconds."
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body fails the route's schema; `message` is the validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`ERR_IDENTITY_ASSERTION_INVALID`: The assertion is malformed, expired, too long-lived, for another audience, already used, or not signed by a known service account; the detail says which.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_IDENTITY_ASSERTION_INVALID",
+                "description": "The assertion is malformed, expired, too long-lived, for another audience, already used, or not signed by a known service account; the detail says which.",
+                "fix": "Sign a fresh assertion with the service account's registered key."
+              }
+            ]
+          },
+          "403": {
+            "$ref": "#/components/responses/HostNotAllowed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "description": "`ERR_IDENTITY_NOT_READY`: The token issuer is still starting and has no signing key yet. Retry once it is ready; a refresh from the cookie has cleared the cookie, so a browser signs in again. `ERR_AUTH_UNAVAILABLE`: The token issuer is unreachable or failed. A remote Kernel's own non-identity `ERR_*` code is passed on with the same status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_IDENTITY_NOT_READY",
+                "description": "The token issuer is still starting and has no signing key yet. Retry once it is ready; a refresh from the cookie has cleared the cookie, so a browser signs in again.",
+                "fix": "Retry once the issuer is ready."
+              },
+              {
+                "code": "ERR_AUTH_UNAVAILABLE",
+                "description": "The token issuer is unreachable or failed. A remote Kernel's own non-identity `ERR_*` code is passed on with the same status.",
+                "fix": "Retry once the Kernel and its token issuer are reachable."
+              }
+            ]
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Get a new access token",
+        "description": "Takes the refresh token from the body (`refreshToken`) or, without one, from the refresh cookie; send `{}` with the cookie, since a JSON body is required. Answers new tokens the way the old one arrived, and rotates the refresh token on every use. When a cookie refresh is refused or the issuer fails, the cookie is cleared and a browser signs in again.",
+        "tags": [
+          "Gateway authentication"
+        ],
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "mdk_refresh",
+            "required": false,
+            "description": "The refresh token, read when the body carries no `refreshToken`; the body takes precedence.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "maxLength": 256
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New tokens, the way the old refresh token arrived.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "tokenType",
+                        "accessToken",
+                        "expiresIn"
+                      ],
+                      "properties": {
+                        "tokenType": {
+                          "const": "Bearer"
+                        },
+                        "accessToken": {
+                          "type": "string",
+                          "description": "Send as `Authorization: Bearer <accessToken>`."
+                        },
+                        "expiresIn": {
+                          "type": "integer",
+                          "description": "Lifetime in seconds."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "tokenType",
+                        "accessToken",
+                        "expiresIn",
+                        "refreshToken",
+                        "refreshExpiresIn"
+                      ],
+                      "properties": {
+                        "tokenType": {
+                          "const": "Bearer"
+                        },
+                        "accessToken": {
+                          "type": "string",
+                          "description": "Send as `Authorization: Bearer <accessToken>`."
+                        },
+                        "expiresIn": {
+                          "type": "integer",
+                          "description": "Lifetime in seconds."
+                        },
+                        "refreshToken": {
+                          "type": "string",
+                          "description": "Send to `/auth/refresh` or `/auth/logout`."
+                        },
+                        "refreshExpiresIn": {
+                          "type": "integer",
+                          "description": "Lifetime in seconds."
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "The rotated refresh token, when the old one came from the cookie; cleared when the issuer refuses that refresh or fails.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body fails the route's schema; `message` is the validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`ERR_AUTH_UNAUTHORIZED`: No refresh token in the body or the cookie. `ERR_IDENTITY_REFRESH_INVALID`: The refresh token is not one the issuer holds. `ERR_IDENTITY_REFRESH_REVOKED`: The session was signed out or revoked. `ERR_IDENTITY_REFRESH_REUSED`: A used refresh token was sent again outside the issuer's reuse grace window, so the whole session is revoked. Inside the window, while its successor is unused, a reuse gets that same successor instead. `ERR_IDENTITY_REFRESH_EXPIRED`: The refresh token or its session has expired. `ERR_IDENTITY_REFRESH_BINDING`: The session is bound to the HRPC caller that signed in (a service account's assertion sign-in, unless it sent `bind: false`), so refresh it from that caller.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_AUTH_UNAUTHORIZED",
+                "description": "No refresh token in the body or the cookie.",
+                "fix": "Send the token the route reads: a bearer access token, or a refresh token for `/auth/refresh`."
+              },
+              {
+                "code": "ERR_IDENTITY_REFRESH_INVALID",
+                "description": "The refresh token is not one the issuer holds.",
+                "fix": "Sign in again."
+              },
+              {
+                "code": "ERR_IDENTITY_REFRESH_REVOKED",
+                "description": "The session was signed out or revoked.",
+                "fix": "Sign in again."
+              },
+              {
+                "code": "ERR_IDENTITY_REFRESH_REUSED",
+                "description": "A used refresh token was sent again outside the issuer's reuse grace window, so the whole session is revoked. Inside the window, while its successor is unused, a reuse gets that same successor instead.",
+                "fix": "Sign in again, and treat the refresh token as leaked."
+              },
+              {
+                "code": "ERR_IDENTITY_REFRESH_EXPIRED",
+                "description": "The refresh token or its session has expired.",
+                "fix": "Sign in again."
+              },
+              {
+                "code": "ERR_IDENTITY_REFRESH_BINDING",
+                "description": "The session is bound to the HRPC caller that signed in (a service account's assertion sign-in, unless it sent `bind: false`), so refresh it from that caller.",
+                "fix": "Refresh from the HRPC caller that signed in."
+              }
+            ]
+          },
+          "403": {
+            "$ref": "#/components/responses/HostNotAllowed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "description": "`ERR_IDENTITY_NOT_READY`: The token issuer is still starting and has no signing key yet. Retry once it is ready; a refresh from the cookie has cleared the cookie, so a browser signs in again. `ERR_AUTH_UNAVAILABLE`: The token issuer is unreachable or failed. A remote Kernel's own non-identity `ERR_*` code is passed on with the same status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_IDENTITY_NOT_READY",
+                "description": "The token issuer is still starting and has no signing key yet. Retry once it is ready; a refresh from the cookie has cleared the cookie, so a browser signs in again.",
+                "fix": "Retry once the issuer is ready."
+              },
+              {
+                "code": "ERR_AUTH_UNAVAILABLE",
+                "description": "The token issuer is unreachable or failed. A remote Kernel's own non-identity `ERR_*` code is passed on with the same status.",
+                "fix": "Retry once the Kernel and its token issuer are reachable."
+              }
+            ]
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Sign out",
+        "description": "Clears the refresh cookie and ends the session of the refresh token sent in the body (`refreshToken`) or, without one, in the cookie; a JSON body is required either way, so send `{}` with the cookie. Signing out a token that is missing, unknown or already revoked is not an error.",
+        "tags": [
+          "Gateway authentication"
+        ],
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "mdk_refresh",
+            "required": false,
+            "description": "The refresh token, read when the body carries no `refreshToken`; the body takes precedence.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "maxLength": 256
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "revoked"
+                  ],
+                  "properties": {
+                    "revoked": {
+                      "type": "boolean",
+                      "description": "`false` when no token was sent or the issuer holds no live session for it."
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "Clears the refresh cookie on every request that passes validation.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body fails the route's schema; `message` is the validation error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/HostNotAllowed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "description": "`ERR_AUTH_UNAVAILABLE`: The token issuer is unreachable or failed. A remote Kernel's own non-identity `ERR_*` code is passed on with the same status.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_AUTH_UNAVAILABLE",
+                "description": "The token issuer is unreachable or failed. A remote Kernel's own non-identity `ERR_*` code is passed on with the same status.",
+                "fix": "Retry once the Kernel and its token issuer are reachable."
+              }
+            ]
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Read the signed-in identity",
+        "description": "Verifies the bearer token in the `Authorization` header and answers the identity it carries.",
+        "tags": [
+          "Gateway authentication"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The identity the token carries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "sub"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "description": "What signed in: a user or a service account."
+                    },
+                    "sub": {
+                      "type": "string",
+                      "description": "The user or service account name."
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`ERR_AUTH_UNAUTHORIZED`: No bearer token, or one that is invalid, expired or revoked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GatewayError"
+                }
+              }
+            },
+            "x-mdk-errors": [
+              {
+                "code": "ERR_AUTH_UNAUTHORIZED",
+                "description": "No bearer token, or one that is invalid, expired or revoked.",
+                "fix": "Send the token the route reads: a bearer access token, or a refresh token for `/auth/refresh`."
+              }
+            ]
+          },
+          "403": {
+            "$ref": "#/components/responses/HostNotAllowed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "An access token from `/auth/login`, `/auth/token` or `/auth/refresh`."
+      }
+    },
+    "schemas": {
+      "GatewayError": {
+        "type": "object",
+        "description": "The body of every error the Gateway answers.",
+        "required": [
+          "statusCode",
+          "error",
+          "message"
+        ],
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "description": "The HTTP status, repeated."
+          },
+          "error": {
+            "type": "string",
+            "description": "The HTTP status text, such as `Unauthorized`."
+          },
+          "message": {
+            "type": "string",
+            "description": "The `ERR_*` code, followed by a colon, a space, and a detail when there is one. For a body the Gateway cannot read, or a request that fails the route's schema, Fastify's message. Otherwise, the HTTP status text."
+          }
+        }
+      }
+    },
+    "responses": {
+      "HostNotAllowed": {
+        "description": "The Gateway does not serve the request's host.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Host check",
+        "x-mdk-status": 403,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_GATEWAY_HOST_NOT_ALLOWED",
+            "description": "The request's `Host` header is missing, or names a host the Gateway does not serve. The Gateway serves loopback on its port, its own bind address, and each `allowedHosts` entry. With `trustProxy` set, `X-Forwarded-Host` is checked instead.",
+            "fix": "Call the Gateway by a host it serves, or have the operator add the host to `allowedHosts`.",
+            "stage": "Host check"
+          }
+        ]
+      },
+      "RateLimited": {
+        "description": "The caller has sent too many requests.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Rate limit",
+        "x-mdk-status": 429,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_RATE_LIMITED",
+            "description": "The caller's address has sent more requests than the Gateway's `rateLimit` allows in its time window, `300` a minute by default.",
+            "fix": "Wait for the time window to pass, then retry.",
+            "stage": "Rate limit"
+          }
+        ]
+      },
+      "Unauthorized": {
+        "description": "The Gateway could not authenticate the caller.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Authentication",
+        "x-mdk-status": 401,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_AUTH_UNAUTHORIZED",
+            "description": "The request carries no bearer token, or one that fails verification, such as an expired or revoked token.",
+            "fix": "Sign in, and send the access token as `Authorization: Bearer <token>`.",
+            "stage": "Authentication"
+          }
+        ]
+      },
+      "VerifierRefused": {
+        "description": "On a Gateway with no RBAC authority, an `auth: true` route runs the operator's `authVerifier` after the rate limit and before the body is read, in place of authentication and authorization. The route answers the verifier's own `4xx` error when it throws one whose message starts with `ERR_`. Otherwise it answers `401` `ERR_AUTH_UNAUTHORIZED`: when none is configured, when the verifier refuses the caller, and when it throws anything else. The operator who supplies the verifier documents its codes, and the `@tetherto/mdk-gateway` README describes the hook.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Custom verifier",
+        "x-mdk-status": "4XX",
+        "x-mdk-fix": "Send the credentials the operator's verifier expects."
+      },
+      "MediaTypeUnsupported": {
+        "description": "A request other than `GET` carries a body in a content type the Gateway has no parser for; it parses `application/json` and `text/plain`. The Gateway reads the body after the rate limit and the caller's authentication or custom verifier, and before authorization. The message is Fastify's `Unsupported Media Type`, not an `ERR_*` code.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Body parsing",
+        "x-mdk-status": 415,
+        "x-mdk-fix": "Send the body in the content type the operation declares."
+      },
+      "BodyTooLarge": {
+        "description": "A request other than `GET` carries a body larger than the Gateway's `bodyLimit`, `1048576` bytes by default. The Gateway reads the body after the rate limit and the caller's authentication or custom verifier, and before authorization. The message is Fastify's `Request body is too large`, not an `ERR_*` code.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Body parsing",
+        "x-mdk-status": 413,
+        "x-mdk-fix": "Send a smaller body, or have the operator raise `bodyLimit`."
+      },
+      "BodyMalformed": {
+        "description": "A request other than `GET` carries a body that does not parse as its content type, such as malformed JSON, or an empty body sent as `application/json`. The Gateway reads the body after the rate limit and the caller's authentication or custom verifier, and before authorization. The message is Fastify's parse error, not an `ERR_*` code.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Body parsing",
+        "x-mdk-status": 400,
+        "x-mdk-fix": "Send a body that parses as its `Content-Type`."
+      },
+      "Forbidden": {
+        "description": "The caller may not make this call.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Authorization",
+        "x-mdk-status": 403,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_AUTH_FORBIDDEN",
+            "description": "No `spec.rbac` rule grants the caller the route's verb on its resource, or the Gateway's copy of the policy is stale. The message names the caller, the verb, and the resource, and the Gateway's decision log names the reason.",
+            "fix": "Ask an operator for a role that grants the call in `spec.rbac`.",
+            "stage": "Authorization"
+          }
+        ]
+      },
+      "RequestInvalid": {
+        "description": "The request's path parameters, query, or body fail the schema the app's route table declares for the route. The message is Fastify's validation error, not an `ERR_*` code.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Body validation",
+        "x-mdk-status": 400,
+        "x-mdk-fix": "Send the parameters and body the operation declares."
+      },
+      "AppRequestRefused": {
+        "description": "The app runtime refused the request the Gateway forwarded.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 400,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_BAD_REQUEST",
+            "description": "The app runtime refused the request envelope the Gateway sent: malformed, with no `routeId`, or with an `actor` that is not an access token.",
+            "fix": "Run the Gateway and the app runtime from the same MDK release.",
+            "stage": "Forwarding"
+          },
+          {
+            "code": "ERR_APP_ROUTE_IS_STREAM",
+            "description": "The Gateway called a stream route as a unary one, such as when the Gateway and the app runtime loaded different route tables.",
+            "fix": "Restart the Gateway and the app runtime on the same route table.",
+            "stage": "Forwarding"
+          },
+          {
+            "code": "ERR_APP_ROUTE_NOT_STREAM",
+            "description": "The Gateway called a unary route as a stream, such as when the Gateway and the app runtime loaded different route tables.",
+            "fix": "Restart the Gateway and the app runtime on the same route table.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "AppRouteNotFound": {
+        "description": "The app runtime has no such route.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 404,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_ROUTE_NOT_FOUND",
+            "description": "The app runtime has no route with the id the Gateway forwarded, such as when the Gateway and the app runtime loaded different route tables.",
+            "fix": "Restart the Gateway and the app runtime on the same route table.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "AppRuntimeBadGateway": {
+        "description": "The Gateway could not reach the app runtime, or could not read its answer.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 502,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_PROTOCOL_VERSION",
+            "description": "The app runtime answered in a different protocol version from the Gateway's client.",
+            "fix": "Run the Gateway and the app runtime from the same MDK release.",
+            "stage": "Forwarding"
+          },
+          {
+            "code": "ERR_APP_RUNTIME_UNAVAILABLE",
+            "description": "The app runtime is unreachable, does not allow the Gateway's key, or closed or garbled its reply.",
+            "fix": "Check that the app runtime is running and allows the Gateway's key, then retry. A call that changes something may have run before its reply was lost, so check its result first.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "AppRuntimeNotStarted": {
+        "description": "The app runtime is not serving yet.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 503,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_RUNTIME_UNAVAILABLE",
+            "description": "The app runtime has not published its key file: it has not started yet, or it has stopped.",
+            "fix": "Start the app runtime, or retry once it has started.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "AppRuntimeTimeout": {
+        "description": "The app runtime did not answer in time.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Forwarding",
+        "x-mdk-status": 504,
+        "x-mdk-errors": [
+          {
+            "code": "ERR_APP_RUNTIME_TIMEOUT",
+            "description": "The app runtime sent no answer, or no stream head, within the Gateway's `appTimeoutMs`, `60000` by default. The Gateway stops waiting, but the route's controller is not stopped, so the call may still complete.",
+            "fix": "Retry a call that only reads. For a call that changes something, check its result or the device's state before sending it again. If it repeats, check the route's controller, or raise `appTimeoutMs`.",
+            "stage": "Forwarding"
+          }
+        ]
+      },
+      "ControllerError": {
+        "description": "An error the route's controller throws arrives with its `statusCode` when that is `400` or more, else `403` for `ERR_KERNEL_ACTION_FORBIDDEN` (the Kernel refused the call under `spec.rbac`), `400` for any other `ERR_*` error, and `500` for anything else. A message that does not start with `ERR_` arrives as the status text, such as `Internal Server Error`, and the app runtime logs the original. The app's route table declares the codes its controllers throw.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Controller",
+        "x-mdk-fix": "Act on the code as the operation declares it."
+      },
+      "KernelClientError": {
+        "description": "A controller that passes on an error from its Kernel client relays the client's `ERR_*` code, which arrives as `400` by the controller rule, or `403` for `ERR_KERNEL_ACTION_FORBIDDEN`. The `@tetherto/mdk-client` README documents the client's transport codes, and the `@tetherto/mdk-kernel` README the Kernel's refusals.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GatewayError"
+            }
+          }
+        },
+        "x-mdk-stage": "Controller",
+        "x-mdk-fix": "Act on the code as the package that throws it documents."
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@
 title: Build your first app with a UI
 description: "[⏱️ ~15 min] From an npm install to your own MDK app, with its page in the MDK dashboard, reading a mock miner"
 docs@tether_slug: tutorials/build-your-first-app
-lastReviewedAt: "0.13.1"
+lastReviewedAt: "0.14.0"
 ---
 
 > [!NOTE]
@@ -72,7 +72,7 @@ covers `npx` for one-off use, and the source checkout for working on the CLI its
 
 ### Create a project
 
-Make a directory anywhere and write its stack spec:
+Make a directory anywhere and write its [stack file][mdk-yaml]:
 
 ```bash
 mkdir ~/my-site && cd ~/my-site
@@ -92,13 +92,12 @@ YAML
 ```
 
 > [!TIP]
-> `mdk onboard` writes the same file interactively and can add Workers, apps and the dashboard for you. It needs an interactive terminal.
-> CLI `0.13.1` and later also write `spec.network.dht`; if `mdk --version` prints `0.13.0`, add that block to the file by hand.
+> `mdk onboard` writes the same file interactively, including `spec.network.dht`, and can add Workers, apps and the dashboard for you.
+> It needs an interactive terminal.
 
 `spec.network.dht` keeps the stack on a private bootstrap on loopback, so it needs no internet access. Drop it and every
-component joins the public HyperDHT through `*.hyperdht.org`, which needs outbound UDP to those hosts — on a network that
-blocks it, `mdk run` stops after `Starting worker …` and `mdk status` reports the Kernel unreachable with
-`ERR_MDK_STATUS_TIMEOUT`. [Private DHT](../guides/deployment/private-dht.md) covers multi-host setups.
+component joins the public HyperDHT, which needs outbound UDP to `*.hyperdht.org`. Loopback is one of several shapes the
+[local and air-gapped profile][private-dht] covers, with an isolated LAN and Docker among the others.
 
 </Step>
 
@@ -136,6 +135,9 @@ Expected output includes:
 That last line is the app's own access policy: `mdk create app` writes an `app-ops` role from the app's `mdk-app.yaml`
 permissions and binds it to the `app:ops` service account, so the app can reach the Kernel once the stack runs.
 
+Both `mdk create` commands can print `npm warn install-scripts` lines naming packages such as `esbuild`; npm is reporting
+install scripts it ran, and the command still succeeds.
+
 #### 3.3 Create the dashboard
 
 ```bash
@@ -143,6 +145,8 @@ mdk create dashboard
 ```
 
 This copies the MDK dashboard into `apps/dashboard/`, points its dev server at the Gateway port from `mdk.yaml`, and installs it.
+On npm 11.0 to 11.5 the install is retried with `--legacy-peer-deps`, and the command says so; the npm
+error above that line can be ignored.
 
 </Step>
 
@@ -175,7 +179,7 @@ No route is open, so the dashboard and the HTTP call below both need a signed-in
 with the Kernel still running:
 
 ```bash
-mdk user add ops@example.com --admin   # prompts for a password
+mdk user add ops@example.com --admin   # prompts for a password, then its confirmation
 ```
 
 `--admin` binds the user to a role holding wildcards, which is what makes every route below answer. [Creating the first
@@ -251,6 +255,8 @@ To reset the stack's state, delete `~/my-site/.mdk/`. To remove the project, del
 ## Next steps
 
 - [Add your own route][cli-apps]: extend `apps/ops/plugin/` and read live telemetry from the Worker
+- [Install a demo app][demo-apps]: run a ready-made app beside the one you built
+- [Study the reporting app][reporting-app]: one package with a Gateway plugin and a dashboard UI
 - [Connect your own hardware][build-a-worker]: turn the scaffolded Worker into one for a real device
 - [Run a mining site end to end][run-a-site]: boot the full demo site with several Worker families and a richer dashboard
 - [Wire a dashboard by hand][build-a-dashboard]: learn what the CLI scaffolds by assembling each piece yourself
@@ -264,8 +270,20 @@ To reset the stack's state, delete `~/my-site/.mdk/`. To remove the project, del
 [cli-apps]: ../guides/gateway/apps.md
 <!-- docs@tether.io: cli-apps → guides/gateway/apps -->
 
+[demo-apps]: ../reference/supported-apps.md#availability
+<!-- docs@tether.io: demo-apps → reference/supported-apps#availability -->
+
+[reporting-app]: https://github.com/tetherto/mdk-app-reporting-tool
+<!-- docs@tether.io: reporting-app → https://github.com/tetherto/mdk-app-reporting-tool -->
+
 [cli-install]: ../guides/cli/install.md
 <!-- docs@tether.io: cli-install → guides/cli/run-with-npm -->
+
+[mdk-yaml]: ../reference/mdk-yaml.md
+<!-- docs@tether.io: mdk-yaml → reference/mdk-yaml -->
+
+[private-dht]: ../guides/deployment/private-dht.md
+<!-- docs@tether.io: private-dht → guides/deployment/private-dht -->
 
 [first-operator]: ../guides/security/create-the-first-operator.md
 <!-- docs@tether.io: first-operator → guides/security/create-the-first-operator -->
